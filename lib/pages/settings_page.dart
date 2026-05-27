@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/proximity_service.dart';
 import 'log_page.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -18,6 +19,24 @@ class SettingsPage extends StatelessWidget {
             title: const Text('自动连接'),
             subtitle: const Text('打开 app 时自动连接上次的设备'),
             trailing: Switch(value: false, onChanged: (v) {}),
+          ),
+          StreamBuilder<bool>(
+            stream: ProximityService().enabledStream,
+            initialData: ProximityService().enabled,
+            builder: (context, snapshot) {
+              final enabled = snapshot.data ?? false;
+              return ListTile(
+                leading: const Icon(Icons.sensors),
+                title: const Text('感应解锁'),
+                subtitle: Text(enabled
+                    ? '靠近车辆时自动解锁（RSSI > -75dBm）'
+                    : '关闭'),
+                trailing: Switch(
+                  value: enabled,
+                  onChanged: (v) => ProximityService().setEnabled(v),
+                ),
+              );
+            },
           ),
           ListTile(
             leading: const Icon(Icons.cloud_outlined),

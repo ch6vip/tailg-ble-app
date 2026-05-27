@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import 'ble/connection_manager.dart';
+import 'ble/connection_manager.dart' as ble;
+import 'services/proximity_service.dart';
 import 'pages/scan_page.dart';
 import 'pages/control_page.dart';
 import 'pages/settings_page.dart';
 
-final connectionManager = ConnectionManager();
+final connectionManager = ble.ConnectionManager();
+final proximityService = ProximityService();
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await proximityService.init(connectionManager);
   runApp(const TailgBleApp());
 }
 
@@ -51,8 +55,38 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   int _currentIndex = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    connectionManager.stateStream.listen((state) {
+      if (state == ble.ConnectionState.ready) {
+        proximityService.onConnected();
+        final device = connectionManager.device;
+        if (device != null) {
+          proximityService.setTargetDevice(device.remoteId.toString());
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      proximityService.onAppResumed();
+    } else if (state == AppLifecycleState.paused) {
+      proximityService.onAppPaused();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
