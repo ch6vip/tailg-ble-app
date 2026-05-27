@@ -180,7 +180,6 @@ class _StatusSection extends StatelessWidget {
       builder: (context, snapshot) {
         final bike = snapshot.data;
         final battery = bike?.batteryPercent;
-        final voltage = bike?.voltage;
         final batteryColor = battery == null
             ? Colors.grey
             : battery > 60
@@ -233,23 +232,24 @@ class _StatusSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('当前电压',
+                    Text('预估里程',
                         style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
                     const SizedBox(height: 8),
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
                       children: [
-                        Icon(Icons.bolt, color: Colors.amber.shade700, size: 28),
-                        const SizedBox(width: 4),
                         Text(
-                          voltage != null ? voltage.toStringAsFixed(1) : '--',
+                          battery != null
+                              ? '${(battery * 0.65).round()}'
+                              : '--',
                           style: const TextStyle(
-                              fontSize: 28, fontWeight: FontWeight.w300),
+                              fontSize: 48, fontWeight: FontWeight.w300),
                         ),
                         const Padding(
-                          padding: EdgeInsets.only(bottom: 4),
-                          child: Text('V',
-                              style: TextStyle(fontSize: 14, color: Colors.black54)),
+                          padding: EdgeInsets.only(bottom: 8),
+                          child: Text('km',
+                              style: TextStyle(fontSize: 16, color: Colors.black54)),
                         ),
                       ],
                     ),
