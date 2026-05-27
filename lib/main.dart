@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'ble/connection_manager.dart' as ble;
@@ -65,6 +66,7 @@ class _HomePageState extends State<HomePage>
   late AnimationController _pageAnimController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
+  StreamSubscription? _stateSub;
 
   @override
   void initState() {
@@ -84,7 +86,7 @@ class _HomePageState extends State<HomePage>
     _pageAnimController.value = 1.0;
 
     WidgetsBinding.instance.addObserver(this);
-    connectionManager.stateStream.listen((state) {
+    _stateSub = connectionManager.stateStream.listen((state) {
       if (state == ble.ConnectionState.ready) {
         proximityService.onConnected();
         final device = connectionManager.device;
@@ -100,6 +102,7 @@ class _HomePageState extends State<HomePage>
 
   @override
   void dispose() {
+    _stateSub?.cancel();
     _pageAnimController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();

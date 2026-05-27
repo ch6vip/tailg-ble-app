@@ -95,27 +95,32 @@ class ConnectionManager {
   }
 
   Future<void> _discoverAndSetup() async {
-    final services = await _device!.discoverServices();
+    try {
+      final services = await _device!.discoverServices();
 
-    _log.ble('发现 ${services.length} 个服务',
-        detail: services.map((s) => s.serviceUuid.toString()).join(', '));
+      _log.ble('发现 ${services.length} 个服务',
+          detail: services.map((s) => s.serviceUuid.toString()).join(', '));
 
-    final hasFeb0 = services.any(
-        (s) => s.serviceUuid.toString().contains('feb0'));
-    final hasFee5 = services.any(
-        (s) => s.serviceUuid.toString().contains('fee5'));
+      final hasFeb0 = services.any(
+          (s) => s.serviceUuid.toString().contains('feb0'));
+      final hasFee5 = services.any(
+          (s) => s.serviceUuid.toString().contains('fee5'));
 
-    if (hasFeb0) {
-      _protocol = ProtocolType.qgj;
-      _log.ble('识别协议: QGJ (feb0)', level: LogLevel.info);
-      await _setupQgj(services);
-    } else if (hasFee5) {
-      _protocol = ProtocolType.standard;
-      _log.ble('识别协议: Standard (fee5)', level: LogLevel.info);
-      await _setupStandard(services);
-    } else {
-      _protocol = ProtocolType.unknown;
-      _log.ble('未识别协议', level: LogLevel.warning);
+      if (hasFeb0) {
+        _protocol = ProtocolType.qgj;
+        _log.ble('识别协议: QGJ (feb0)', level: LogLevel.info);
+        await _setupQgj(services);
+      } else if (hasFee5) {
+        _protocol = ProtocolType.standard;
+        _log.ble('识别协议: Standard (fee5)', level: LogLevel.info);
+        await _setupStandard(services);
+      } else {
+        _protocol = ProtocolType.unknown;
+        _log.ble('未识别协议', level: LogLevel.warning);
+      }
+    } catch (e) {
+      _log.ble('服务发现/设置失败', detail: e.toString(), level: LogLevel.error);
+      _setState(ConnectionState.disconnected);
     }
   }
 

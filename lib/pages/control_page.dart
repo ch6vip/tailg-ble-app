@@ -7,6 +7,7 @@ import '../widgets/slide_to_action.dart';
 import 'location_page.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
+const _kmPerPercent = 0.65;
 const _cardDecoration = BoxDecoration(
   color: Colors.white,
   borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -242,7 +243,7 @@ class _StatusSection extends StatelessWidget {
                       children: [
                         Text(
                           battery != null
-                              ? '${(battery * 0.65).round()}'
+                              ? '${(battery * _kmPerPercent).round()}'
                               : '--',
                           style: const TextStyle(
                               fontSize: 48, fontWeight: FontWeight.w300),

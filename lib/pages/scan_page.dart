@@ -277,16 +277,18 @@ class _DeviceList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (results.isEmpty) return const SizedBox.shrink();
-    return Padding(
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: results.map((r) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _DeviceCard(result: r, onTap: () => onTap(r.device)),
-          );
-        }).toList(),
-      ),
+      itemCount: results.length,
+      itemBuilder: (context, index) {
+        final r = results[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _DeviceCard(result: r, onTap: () => onTap(r.device)),
+        );
+      },
     );
   }
 }
@@ -309,7 +311,7 @@ class _DeviceCardState extends State<_DeviceCard> {
         ? widget.result.device.platformName
         : '未知设备';
     final isTailg =
-        name.contains('TL') || name.contains('tailg') || name.contains('Tailg');
+        name.toLowerCase().contains('tl') || name.toLowerCase().contains('tailg');
     final rssi = widget.result.rssi;
     final strength = rssi > -60
         ? _SignalStrength.strong

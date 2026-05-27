@@ -68,7 +68,7 @@ class AutoConnectService {
           scanSub?.cancel();
           timeout?.cancel();
           FlutterBluePlus.stopScan();
-          _doConnect(r.device).then((_) {
+          _doConnect(r.device).whenComplete(() {
             if (!completer.isCompleted) completer.complete();
           });
           return;
