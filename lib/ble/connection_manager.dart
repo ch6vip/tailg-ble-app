@@ -53,13 +53,14 @@ class ConnectionManager {
     _log.ble('连接设备 ${device.platformName}', detail: device.remoteId.toString());
 
     try {
+      await device.connect(timeout: const Duration(seconds: 10));
+
       _connectionSub = device.connectionState.listen((state) {
         if (state == BluetoothConnectionState.disconnected) {
           _onDisconnected();
         }
       });
 
-      await device.connect(timeout: const Duration(seconds: 10));
       _setState(ConnectionState.connected);
 
       await Future.delayed(const Duration(milliseconds: 500));
