@@ -42,4 +42,40 @@ void main() {
     expect(first, second);
     expect(first.hashCode, second.hashCode);
   });
+
+  test('BikeState parses feb3 fault bits as active high', () {
+    final normal = BikeState.fromFeb3([
+      0x00,
+      0x00,
+      0x00,
+      0x01,
+      0xE5,
+      0x01,
+      0x06,
+      0xC9,
+      0x00,
+      80,
+    ]);
+    final faulted = BikeState.fromFeb3([
+      0x00,
+      0x00,
+      0x00,
+      0x01,
+      0xE5,
+      0x01,
+      0x06,
+      0xC9,
+      0x35,
+      80,
+    ]);
+
+    expect(normal?.faultMotor, isFalse);
+    expect(normal?.faultController, isFalse);
+    expect(normal?.faultBrake, isFalse);
+    expect(normal?.faultLowVoltage, isFalse);
+    expect(faulted?.faultMotor, isTrue);
+    expect(faulted?.faultController, isTrue);
+    expect(faulted?.faultBrake, isTrue);
+    expect(faulted?.faultLowVoltage, isTrue);
+  });
 }

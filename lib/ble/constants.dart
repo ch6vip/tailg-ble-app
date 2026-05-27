@@ -145,10 +145,10 @@ class BikeState {
     final signalStrength = data[7].toSigned(8);
 
     final faults = data[8];
-    final faultMotor = (faults & 0x01) == 0;
-    final faultController = (faults & 0x04) == 0;
-    final faultBrake = (faults & 0x10) == 0;
-    final faultLowVoltage = (faults & 0x20) == 0;
+    final faultMotor = (faults & 0x01) != 0;
+    final faultController = (faults & 0x04) != 0;
+    final faultBrake = (faults & 0x10) != 0;
+    final faultLowVoltage = (faults & 0x20) != 0;
 
     final batteryPercent = data[9].clamp(0, 100);
 
