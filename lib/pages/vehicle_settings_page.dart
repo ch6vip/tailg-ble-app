@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
-import '../services/log_service.dart';
+import '../services/vehicle_settings_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
@@ -17,7 +17,7 @@ class VehicleSettingsPage extends StatefulWidget {
 }
 
 class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
-  final _log = LogService();
+  late final VehicleSettingsService _settingsService;
   bool _headlight = false;
   bool _turnSignal = false;
   bool _startupSound = true;
@@ -32,6 +32,9 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
   @override
   void initState() {
     super.initState();
+    _settingsService = VehicleSettingsService(
+      connectionManager: connectionManager,
+    );
     _ridingMode = connectionManager.ridingMode;
     _loadSensitivity();
   }
@@ -48,163 +51,81 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
     await prefs.setInt('shock_sensitivity', value);
   }
 
-  Future<void> _writeFcc1(List<int> data, {int retries = 2}) async {
-    if (connectionManager.state != ble.ConnectionState.ready) {
-      _showSnack('未连接车辆');
-      return;
-    }
-
-    setState(() => _sending = true);
-
-    for (int attempt = 0; attempt <= retries; attempt++) {
-      try {
-        final char = _getFcc1Char();
-        if (char == null) {
-          _showSnack('fcc1 特征未找到');
-          break;
-        }
-        await char.write(data, withoutResponse: false);
-        _log.operation(
-          'fcc1 写入成功',
-          detail: data
-              .map((b) => b.toRadixString(16).padLeft(2, '0'))
-              .join(' '),
-        );
-
-        await Future.delayed(const Duration(milliseconds: 200));
-        await _readBackState(char);
-
-        setState(() => _sending = false);
-        return;
-      } catch (e) {
-        if (attempt == retries) {
-          _log.operation(
-            'fcc1 写入失败',
-            detail: e.toString(),
-            level: LogLevel.error,
-          );
-          _showSnack('写入失败，请重试');
-        } else {
-          await Future.delayed(const Duration(milliseconds: 500));
-        }
-      }
-    }
-    setState(() => _sending = false);
-  }
-
-  dynamic _getFcc1Char() {
-    final device = connectionManager.device;
-    if (device == null) return null;
-    // Access through the discovered services cache in flutter_blue_plus
-    for (final service in device.servicesList) {
-      if (service.serviceUuid.toString().contains('fcc0')) {
-        for (final c in service.characteristics) {
-          if (c.characteristicUuid.toString().contains('fcc1')) return c;
-        }
-      }
-    }
-    return null;
-  }
-
-  Future<void> _readBackState(dynamic char) async {
-    try {
-      final response = await char.read();
-      if (response.isEmpty) return;
-      _log.operation(
-        'fcc1 读回',
-        detail: response
-            .map((b) => (b as int).toRadixString(16).padLeft(2, '0'))
-            .join(' '),
-      );
-      _parseDeviceState(List<int>.from(response));
-    } catch (e) {
-      _log.operation('fcc1 读取失败', detail: e.toString(), level: LogLevel.debug);
-    }
-  }
-
   Future<void> _refreshSettings() async {
-    if (connectionManager.state != ble.ConnectionState.ready) {
-      _showSnack('未连接车辆');
-      return;
-    }
     setState(() => _sending = true);
     try {
-      final char = _getFcc1Char();
-      if (char == null) {
-        _showSnack('fcc1 特征未找到');
+      final snapshot = await _settingsService.refresh();
+      if (snapshot == null) {
+        _showSnack('未读取到可识别的设置状态');
       } else {
-        await _readBackState(char);
+        _applySnapshot(snapshot);
+        _showSnack('设置状态已刷新');
       }
+    } on VehicleSettingsException catch (e) {
+      _showSnack(e.message);
     } finally {
       if (mounted) setState(() => _sending = false);
     }
   }
 
-  void _parseDeviceState(List<int> data) {
-    if (data.length < 7 && data.length < 11) return;
-
-    if (data.length >= 7 && data[0] == 0x00 && data[1] == 0x07) {
-      setState(() {
-        _headlight = (data[4] & 0x01) != 0;
-        _turnSignal = (data[4] & 0x02) != 0;
-      });
-      _showSnack('灯光状态已刷新');
-    } else if (data.length >= 11 && data[0] == 0x85) {
-      setState(() {
-        _powerOnSound = data[5] != 0;
-        _startupSound = data[6] != 0;
-        _unlockSound = data[7] != 0;
-        _lockSound = data[8] != 0;
-        _buzzerVolume = data[10].clamp(0, 5);
-      });
-      _showSnack('声音状态已刷新');
-    }
-  }
-
-  List<int> _buildSoundCommand() {
-    // Format: 85 06 4A 3C 02 [powerOn] [powerOff] [unlock] [lock] [01] [induction]
-    return [
-      0x85,
-      0x06,
-      0x4A,
-      0x3C,
-      0x02,
-      _powerOnSound ? 0x01 : 0x00,
-      _startupSound ? 0x01 : 0x00,
-      _unlockSound ? 0x01 : 0x00,
-      _lockSound ? 0x01 : 0x00,
-      0x01,
-      _buzzerVolume & 0xFF,
-    ];
-  }
-
-  List<int> _buildLightCommand() {
-    // Format: 00 07 00 02 [state1] [state2] [state3]
-    int state1 = 0;
-    if (_headlight) state1 |= 0x01;
-    if (_turnSignal) state1 |= 0x02;
-    return [0x00, 0x07, 0x00, 0x02, state1, 0x00, 0x00];
-  }
-
-  List<int> _buildSensitivityCommand() {
-    // Shock sensitivity via fcc1: A7 00 00 04 10 03 [level] [level]
-    // level 1-5 maps to sensitivity (1=lowest, 5=highest)
-    return [
-      0xA7,
-      0x00,
-      0x00,
-      0x04,
-      0x10,
-      0x03,
-      _shockSensitivity,
-      _shockSensitivity,
-    ];
+  void _applySnapshot(VehicleSettingsSnapshot snapshot) {
+    setState(() {
+      _headlight = snapshot.headlight ?? _headlight;
+      _turnSignal = snapshot.turnSignal ?? _turnSignal;
+      _powerOnSound = snapshot.powerOnSound ?? _powerOnSound;
+      _startupSound = snapshot.startupSound ?? _startupSound;
+      _unlockSound = snapshot.unlockSound ?? _unlockSound;
+      _lockSound = snapshot.lockSound ?? _lockSound;
+      _buzzerVolume = snapshot.buzzerVolume ?? _buzzerVolume;
+    });
   }
 
   Future<void> _setSensitivity(int value) async {
     setState(() => _shockSensitivity = value);
-    await _writeFcc1(_buildSensitivityCommand());
-    await _saveSensitivity(value);
+    await _writeSetting(
+      () => _settingsService.writeSensitivity(value),
+      successMessage: '防盗灵敏度已设置为 $value',
+    );
+    await _saveSensitivity(_shockSensitivity);
+  }
+
+  Future<void> _writeLightSetting() {
+    return _writeSetting(
+      () => _settingsService.writeLight(
+        headlight: _headlight,
+        turnSignal: _turnSignal,
+      ),
+      successMessage: '灯光设置已写入',
+    );
+  }
+
+  Future<void> _writeSoundSetting() {
+    return _writeSetting(
+      () => _settingsService.writeSound(
+        powerOnSound: _powerOnSound,
+        startupSound: _startupSound,
+        unlockSound: _unlockSound,
+        lockSound: _lockSound,
+        buzzerVolume: _buzzerVolume,
+      ),
+      successMessage: '声音设置已写入',
+    );
+  }
+
+  Future<void> _writeSetting(
+    Future<VehicleSettingsSnapshot?> Function() action, {
+    required String successMessage,
+  }) async {
+    setState(() => _sending = true);
+    try {
+      final snapshot = await action();
+      if (snapshot != null) _applySnapshot(snapshot);
+      _showSnack(successMessage);
+    } on VehicleSettingsException catch (e) {
+      _showSnack(e.message);
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
   Future<void> _setRidingMode(RidingMode mode) async {
@@ -294,7 +215,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                         onChanged: isConnected
                             ? (v) {
                                 setState(() => _headlight = v);
-                                _writeFcc1(_buildLightCommand());
+                                _writeLightSetting();
                               }
                             : null,
                       ),
@@ -306,7 +227,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                         onChanged: isConnected
                             ? (v) {
                                 setState(() => _turnSignal = v);
-                                _writeFcc1(_buildLightCommand());
+                                _writeLightSetting();
                               }
                             : null,
                       ),
@@ -319,7 +240,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                         onChanged: isConnected
                             ? (v) {
                                 setState(() => _startupSound = v);
-                                _writeFcc1(_buildSoundCommand());
+                                _writeSoundSetting();
                               }
                             : null,
                       ),
@@ -330,7 +251,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                         onChanged: isConnected
                             ? (v) {
                                 setState(() => _lockSound = v);
-                                _writeFcc1(_buildSoundCommand());
+                                _writeSoundSetting();
                               }
                             : null,
                       ),
@@ -341,7 +262,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                         onChanged: isConnected
                             ? (v) {
                                 setState(() => _unlockSound = v);
-                                _writeFcc1(_buildSoundCommand());
+                                _writeSoundSetting();
                               }
                             : null,
                       ),
@@ -352,7 +273,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                         onChanged: isConnected
                             ? (v) {
                                 setState(() => _powerOnSound = v);
-                                _writeFcc1(_buildSoundCommand());
+                                _writeSoundSetting();
                               }
                             : null,
                       ),
@@ -379,7 +300,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                                     : null,
                                 onChangeEnd: isConnected
                                     ? (v) {
-                                        _writeFcc1(_buildSoundCommand());
+                                        _writeSoundSetting();
                                       }
                                     : null,
                               ),

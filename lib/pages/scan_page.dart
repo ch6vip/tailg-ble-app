@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../main.dart';
+import '../services/permission_service.dart';
 import '../theme/app_colors.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
@@ -66,20 +66,13 @@ class _ScanPageState extends State<ScanPage>
   }
 
   Future<bool> _requestPermissions() async {
-    final statuses = await [
-      Permission.bluetoothScan,
-      Permission.bluetoothConnect,
-      Permission.location,
-    ].request();
-    final blocked = statuses.values.any(
-      (s) => s.isDenied || s.isPermanentlyDenied || s.isRestricted,
-    );
-    if (blocked && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('请授予蓝牙和定位权限后再扫描')));
+    final result = await AppPermissionService().requestBleScanPermissions();
+    if (!result.granted && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message ?? '请授予蓝牙和定位权限后再扫描')),
+      );
     }
-    return !blocked;
+    return result.granted;
   }
 
   Future<void> _startScan() async {

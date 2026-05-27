@@ -74,15 +74,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 );
               },
             ),
-            _settingItem(
-              icon: Icons.cloud_outlined,
-              title: '云端 Token',
-              subtitle: '与 Web 端共享连接凭证',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CloudTokenPage()),
-              ),
-            ),
             _divider(),
             _sectionLabel('车辆'),
             _settingItem(
@@ -112,6 +103,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 MaterialPageRoute(builder: (_) => const BatteryDetailsPage()),
               ),
             ),
+            _divider(),
+            _sectionLabel('高级'),
             _settingItem(
               icon: Icons.system_update_alt,
               title: 'OTA 前置检测',
@@ -126,6 +119,15 @@ class _SettingsPageState extends State<SettingsPage> {
               title: '协议类型',
               subtitle: '自动识别',
               onTap: () => _showProtocolDialog(),
+            ),
+            _settingItem(
+              icon: Icons.cloud_outlined,
+              title: '云端 Token',
+              subtitle: '与 Web 端共享连接凭证',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CloudTokenPage()),
+              ),
             ),
             _divider(),
             _sectionLabel('调试'),

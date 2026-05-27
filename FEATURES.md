@@ -49,6 +49,7 @@
 - **骑行参数**：设置页支持节能 / 标准 / 强力三档切换
 - **手动刷新**：车辆设置页可读取 fcc1 当前状态并回填 UI
 - **写入确认**：每次写入后 200ms 读回 fcc1 确认设备实际状态
+- **服务层封装**：fcc1 查找、写入、读回和解析已抽离到 `VehicleSettingsService`
 
 ## 故障诊断
 
@@ -69,7 +70,7 @@
 - **双类型日志**：BLE 通信日志 + 操作日志
 - **500 条环形缓冲**：自动淘汰旧记录
 - **Tab 分类查看**：全部 / BLE / 操作
-- **一键复制**：当前 tab 全部日志复制到剪贴板
+- **诊断报告复制**：复制当前 tab 日志时附带车辆档案、协议、设备 ID、服务/特征 UUID 和环境摘要
 
 ## 与官方 3.5.6 功能差距
 
@@ -153,6 +154,9 @@ lib/
 │   ├── log_service.dart         # 日志服务
 │   ├── vehicle_store.dart       # 本地车辆档案存储
 │   ├── location_service.dart    # 定位权限和最后位置记录
+│   ├── permission_service.dart  # 蓝牙/定位权限统一处理
+│   ├── vehicle_settings_service.dart # fcc1 设置读写服务
+│   ├── diagnostic_export_service.dart # 诊断报告导出
 │   ├── auto_connect_service.dart # 默认车辆自动连接
 │   └── proximity_service.dart   # 感应解锁服务
 └── widgets/

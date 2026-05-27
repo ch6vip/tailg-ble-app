@@ -45,3 +45,4 @@ flutter build apk --release
 
 - [功能清单](FEATURES.md)
 - [第一批功能真机验证清单](docs/first_batch_verification.md)
+- [Android 构建说明](docs/android_build_notes.md)

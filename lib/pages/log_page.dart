@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../main.dart';
+import '../services/diagnostic_export_service.dart';
 import '../services/log_service.dart';
+import '../services/vehicle_store.dart';
 import '../widgets/app_chrome.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
@@ -46,19 +49,6 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
     };
   }
 
-  String _formatEntries(List<LogEntry> entries) {
-    return entries
-        .map((e) {
-          final t =
-              '${e.time.hour.toString().padLeft(2, '0')}:'
-              '${e.time.minute.toString().padLeft(2, '0')}:'
-              '${e.time.second.toString().padLeft(2, '0')}';
-          final tag = e.category == LogCategory.ble ? '[BLE]' : '[OP]';
-          return '$t $tag ${e.message}${e.detail != null ? ' | ${e.detail}' : ''}';
-        })
-        .join('\n');
-  }
-
   void _copyAll() {
     final entries = _getEntries(_tabController.index);
     if (entries.isEmpty) {
@@ -70,10 +60,15 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
       );
       return;
     }
-    Clipboard.setData(ClipboardData(text: _formatEntries(entries)));
+    final report = DiagnosticExportService(
+      connectionManager: connectionManager,
+      logService: _log,
+      vehicleStore: VehicleStore(),
+    ).buildReport(entries);
+    Clipboard.setData(ClipboardData(text: report));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('已复制 ${entries.length} 条日志'),
+        content: Text('已复制诊断报告（${entries.length} 条日志）'),
         duration: const Duration(seconds: 1),
       ),
     );

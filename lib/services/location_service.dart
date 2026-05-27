@@ -2,6 +2,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../models/vehicle_profile.dart';
 import 'log_service.dart';
+import 'permission_service.dart';
 import 'vehicle_store.dart';
 
 class LocationCaptureException implements Exception {
@@ -22,20 +23,11 @@ class LocationService {
   Future<VehicleLocation> captureCurrentLocation({
     bool requestPermission = false,
   }) async {
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      throw const LocationCaptureException('定位服务未开启');
-    }
-
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied && requestPermission) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.denied) {
-      throw const LocationCaptureException('未授予定位权限');
-    }
-    if (permission == LocationPermission.deniedForever) {
-      throw const LocationCaptureException('定位权限已被永久拒绝，请到系统设置开启');
+    final permission = await AppPermissionService().ensureLocationPermission(
+      request: requestPermission,
+    );
+    if (!permission.granted) {
+      throw LocationCaptureException(permission.message ?? '定位权限不可用');
     }
 
     final position = await Geolocator.getCurrentPosition(
