@@ -35,6 +35,17 @@ enum RidingMode {
   final int code;
   final String label;
   const RidingMode(this.code, this.label);
+
+  int get qgjPodgValue => code + 1;
+
+  static RidingMode? fromQgjPodgValue(int value) {
+    return switch (value) {
+      1 => RidingMode.eco,
+      2 => RidingMode.standard,
+      3 => RidingMode.sport,
+      _ => null,
+    };
+  }
 }
 
 class BleUuids {
@@ -101,6 +112,29 @@ class QgjControlOpCodes {
   };
 }
 
+List<int>? extractFcc1StatusBytes(List<int> data) {
+  if (data.length >= 11) {
+    return [data[8], data[9], data[10]];
+  }
+  if (data.length >= 7 && data[0] == 0x00 && data[1] == 0x07) {
+    return [data[4], data[5], data[6]];
+  }
+  return null;
+}
+
+RidingMode? parseQgjRidingMode(List<int> data) {
+  final status = extractFcc1StatusBytes(data);
+  if (status == null) return null;
+  return RidingMode.fromQgjPodgValue(status[1] & 0x07);
+}
+
+List<int>? buildQgjRidingModeFrame(List<int> readback, RidingMode mode) {
+  final status = extractFcc1StatusBytes(readback);
+  if (status == null) return null;
+  final state2 = (status[1] & 0xF8) | mode.qgjPodgValue;
+  return [0x00, 0x07, 0x00, 0x02, status[0], state2, status[2]];
+}
+
 class BikeState {
   final bool isLocked;
   final bool isPowerOn;
@@ -129,7 +163,7 @@ class BikeState {
   });
 
   static BikeState? fromFeb3(List<int> data) {
-    if (data.length < 10) return null;
+    if (data.length < 6) return null;
 
     final status1 = data[0];
     final isLocked = (status1 & 0x01) != 0;
@@ -139,27 +173,25 @@ class BikeState {
     final voltageRaw = (data[3] << 8) | data[4];
     final voltage = voltageRaw / 10.0;
 
-    final tempRaw = (data[5] << 8) | data[6];
-    final temperature = tempRaw / 10.0;
-
-    final signalStrength = data[7].toSigned(8);
-
-    final faults = data[8];
+    final faults = data[5];
     final faultMotor = (faults & 0x01) != 0;
     final faultController = (faults & 0x04) != 0;
     final faultBrake = (faults & 0x10) != 0;
     final faultLowVoltage = (faults & 0x20) != 0;
 
-    final batteryPercent = data[9].clamp(0, 100);
+    final batteryRaw = data.length > 6 ? data[6] : null;
+    final batteryValue = batteryRaw == null ? null : batteryRaw & 0x7F;
+    final batteryPercent = batteryRaw != null && (batteryRaw & 0x80) != 0
+        ? (batteryValue! > 100 ? 100 : batteryValue)
+        : null;
 
     return BikeState(
       isLocked: isLocked,
       isPowerOn: isPowerOn,
       isMuted: isMuted,
       voltage: voltage > 0 ? voltage : null,
-      temperature: temperature > 0 ? temperature : null,
+      temperature: null,
       batteryPercent: batteryPercent,
-      signalStrength: signalStrength,
       faultMotor: faultMotor,
       faultController: faultController,
       faultBrake: faultBrake,

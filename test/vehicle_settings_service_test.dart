@@ -18,6 +18,27 @@ void main() {
     expect(snapshot?.hasLightState, isTrue);
   });
 
+  test('VehicleSettingsSnapshot parses long fcc1 readback status bytes', () {
+    final snapshot = VehicleSettingsSnapshot.parse([
+      0x00,
+      0x07,
+      0x00,
+      0x08,
+      0xFF,
+      0xFF,
+      0xFF,
+      0xFF,
+      0x03,
+      0x02,
+      0x00,
+      0x00,
+    ]);
+
+    expect(snapshot?.headlight, isTrue);
+    expect(snapshot?.turnSignal, isTrue);
+    expect(snapshot?.hasLightState, isTrue);
+  });
+
   test('VehicleSettingsSnapshot parses sound state', () {
     final snapshot = VehicleSettingsSnapshot.parse([
       0x85,

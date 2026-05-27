@@ -40,13 +40,6 @@ class VehicleSettingsSnapshot {
       buzzerVolume != null;
 
   static VehicleSettingsSnapshot? parse(List<int> data) {
-    if (data.length >= 7 && data[0] == 0x00 && data[1] == 0x07) {
-      return VehicleSettingsSnapshot(
-        headlight: (data[4] & 0x01) != 0,
-        turnSignal: (data[4] & 0x02) != 0,
-      );
-    }
-
     if (data.length >= 11 && data[0] == 0x85) {
       return VehicleSettingsSnapshot(
         powerOnSound: data[5] != 0,
@@ -54,6 +47,14 @@ class VehicleSettingsSnapshot {
         unlockSound: data[7] != 0,
         lockSound: data[8] != 0,
         buzzerVolume: data[10].clamp(0, 5),
+      );
+    }
+
+    final fcc1Status = extractFcc1StatusBytes(data);
+    if (fcc1Status != null) {
+      return VehicleSettingsSnapshot(
+        headlight: (fcc1Status[0] & 0x01) != 0,
+        turnSignal: (fcc1Status[0] & 0x02) != 0,
       );
     }
 

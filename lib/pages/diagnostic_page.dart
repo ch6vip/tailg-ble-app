@@ -149,8 +149,8 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
     try {
       final data = await connectionManager.readFeb3();
       if (data == null) throw Exception('feb3 特征未找到');
-      if (data.length < 9) throw Exception('数据不完整 (${data.length} bytes)');
-      final faultByte = data[8];
+      if (data.length < 6) throw Exception('数据不完整 (${data.length} bytes)');
+      final faultByte = data[5];
       final faults = _parseFaults(faultByte);
       final activeFaults = faults.where((f) => f.active).toList();
       setState(() {

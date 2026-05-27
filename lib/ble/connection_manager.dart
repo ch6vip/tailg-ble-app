@@ -410,26 +410,17 @@ class ConnectionManager {
       final fcc1 = _fcc1Char ?? _findFcc1Char();
       if (fcc1 == null) return false;
 
-      // fcc1 ECU control: 00070002 + state1 + state2 + state3
-      // Mode encoded in state2 bits 3-4
-      final state2 = (mode.code & 0x03) << 3;
-      final data = [0x00, 0x07, 0x00, 0x02, 0x00, state2, 0x00];
       final response = await runGattOperation(() async {
+        final current = await fcc1.read();
+        final data = buildQgjRidingModeFrame(current, mode);
+        if (data == null) {
+          throw const FormatException('fcc1 状态数据不完整');
+        }
         await fcc1.write(data, withoutResponse: false);
         await Future.delayed(BleTimings.fccReadbackDelay);
         return fcc1.read();
       });
-      if (response.isNotEmpty) {
-        final confirmedMode = (response.length > 5)
-            ? (response[5] >> 3) & 0x03
-            : mode.code;
-        _ridingMode = RidingMode.values.firstWhere(
-          (m) => m.code == confirmedMode,
-          orElse: () => mode,
-        );
-      } else {
-        _ridingMode = mode;
-      }
+      _ridingMode = parseQgjRidingMode(response) ?? mode;
 
       _ridingModeController.add(_ridingMode);
       _log.operation('模式已切换: ${_ridingMode.label}', level: LogLevel.info);
