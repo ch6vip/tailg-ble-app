@@ -49,15 +49,16 @@ class ConnectionManager {
     _log.ble('连接设备 ${device.platformName}', detail: device.remoteId.toString());
 
     try {
-      await device.connect(timeout: const Duration(seconds: 10));
-
       _connectionSub = device.connectionState.listen((state) {
         if (state == BluetoothConnectionState.disconnected) {
           _onDisconnected();
         }
       });
 
+      await device.connect(timeout: const Duration(seconds: 10));
       _setState(ConnectionState.connected);
+
+      await Future.delayed(const Duration(milliseconds: 500));
       await _discoverAndSetup();
     } catch (e) {
       _log.ble('连接失败', detail: e.toString(), level: LogLevel.error);
@@ -132,6 +133,9 @@ class ConnectionManager {
       if (uuid.contains('feb3')) _feb3Char = c;
     }
 
+    _log.ble('QGJ characteristics',
+        detail: 'feb1=${_feb1Char != null}, feb2=${_feb2Char != null}, feb3=${_feb3Char != null}');
+
     if (_feb2Char != null) {
       await _feb2Char!.setNotifyValue(true);
       _notifySub = _feb2Char!.onValueReceived.listen(_onQgjNotify);
@@ -173,11 +177,18 @@ class ConnectionManager {
 
   void _startHeartbeat() {
     _heartbeatTimer?.cancel();
+    int failCount = 0;
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
       if (_feb3Char != null) {
         try {
           await _feb3Char!.read();
-        } catch (_) {}
+          failCount = 0;
+        } catch (e) {
+          failCount++;
+          if (failCount == 3) {
+            _log.ble('心跳连续失败 3 次', detail: e.toString(), level: LogLevel.warning);
+          }
+        }
       }
     });
   }
