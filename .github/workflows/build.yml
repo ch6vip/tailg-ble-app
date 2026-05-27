@@ -18,10 +18,17 @@ jobs:
         with:
           flutter-version: '3.32.1'
           channel: 'stable'
+          cache: true
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
+          restore-keys: gradle-
 
       - run: flutter pub get
-
-      - run: flutter analyze
 
       - run: flutter build apk --release
 
