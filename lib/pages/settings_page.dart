@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/proximity_service.dart';
+import '../services/auto_connect_service.dart';
 import 'log_page.dart';
 import 'vehicle_settings_page.dart';
 import 'diagnostic_page.dart';
@@ -17,7 +18,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _autoConnect = false;
 
   @override
   Widget build(BuildContext context) {
@@ -39,13 +39,22 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             _sectionLabel('连接'),
-            _settingItem(
-              icon: Icons.bluetooth,
-              title: '自动连接',
-              subtitle: '打开 app 时自动连接上次的设备',
-              trailing: _buildToggle(_autoConnect, (v) {
-                setState(() => _autoConnect = v);
-              }),
+            StreamBuilder<bool>(
+              stream: AutoConnectService().enabledStream,
+              initialData: AutoConnectService().enabled,
+              builder: (context, snapshot) {
+                final enabled = snapshot.data ?? false;
+                return _settingItem(
+                  icon: Icons.bluetooth,
+                  title: '自动连接',
+                  subtitle: enabled
+                      ? '打开 app 时自动连接上次的设备'
+                      : '关闭',
+                  trailing: _buildToggle(enabled, (v) {
+                    AutoConnectService().setEnabled(v);
+                  }),
+                );
+              },
             ),
             StreamBuilder<bool>(
               stream: ProximityService().enabledStream,

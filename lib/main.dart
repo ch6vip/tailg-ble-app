@@ -2,16 +2,19 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'ble/connection_manager.dart' as ble;
 import 'services/proximity_service.dart';
+import 'services/auto_connect_service.dart';
 import 'pages/scan_page.dart';
 import 'pages/control_page.dart';
 import 'pages/settings_page.dart';
 
 final connectionManager = ble.ConnectionManager();
 final proximityService = ProximityService();
+final autoConnectService = AutoConnectService();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await proximityService.init(connectionManager);
+  await autoConnectService.init(connectionManager);
   runApp(const TailgBleApp());
 }
 
@@ -87,9 +90,12 @@ class _HomePageState extends State<HomePage>
         final device = connectionManager.device;
         if (device != null) {
           proximityService.setTargetDevice(device.remoteId.toString());
+          autoConnectService.saveDevice(device);
         }
       }
     });
+
+    autoConnectService.tryAutoConnect();
   }
 
   @override
