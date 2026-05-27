@@ -9,7 +9,13 @@ import 'parser.dart';
 
 enum ProtocolType { standard, qgj, unknown }
 
-enum ConnectionState { disconnected, connecting, reconnecting, connected, ready }
+enum ConnectionState {
+  disconnected,
+  connecting,
+  reconnecting,
+  connected,
+  ready,
+}
 
 class ConnectionManager {
   final _log = LogService();
@@ -18,6 +24,7 @@ class ConnectionManager {
   ConnectionState _state = ConnectionState.disconnected;
   String? _token;
   ModelType _model = ModelType.KKS;
+  BikeState? _latestBikeState;
 
   BluetoothCharacteristic? _writeChar;
   BluetoothCharacteristic? _notifyChar;
@@ -47,6 +54,7 @@ class ConnectionManager {
   ProtocolType get protocol => _protocol;
   String? get token => _token;
   BluetoothDevice? get device => _device;
+  BikeState? get latestBikeState => _latestBikeState;
 
   void setModel(ModelType model) => _model = model;
 
@@ -98,13 +106,17 @@ class ConnectionManager {
     try {
       final services = await _device!.discoverServices();
 
-      _log.ble('发现 ${services.length} 个服务',
-          detail: services.map((s) => s.serviceUuid.toString()).join(', '));
+      _log.ble(
+        '发现 ${services.length} 个服务',
+        detail: services.map((s) => s.serviceUuid.toString()).join(', '),
+      );
 
       final hasFeb0 = services.any(
-          (s) => s.serviceUuid.toString().contains('feb0'));
+        (s) => s.serviceUuid.toString().contains('feb0'),
+      );
       final hasFee5 = services.any(
-          (s) => s.serviceUuid.toString().contains('fee5'));
+        (s) => s.serviceUuid.toString().contains('fee5'),
+      );
 
       if (hasFeb0) {
         _protocol = ProtocolType.qgj;
@@ -126,7 +138,8 @@ class ConnectionManager {
 
   Future<void> _setupStandard(List<BluetoothService> services) async {
     final service = services.firstWhere(
-        (s) => s.serviceUuid.toString().contains('fee5'));
+      (s) => s.serviceUuid.toString().contains('fee5'),
+    );
 
     for (final c in service.characteristics) {
       final uuid = c.characteristicUuid.toString();
@@ -147,7 +160,8 @@ class ConnectionManager {
 
   Future<void> _setupQgj(List<BluetoothService> services) async {
     final service = services.firstWhere(
-        (s) => s.serviceUuid.toString().contains('feb0'));
+      (s) => s.serviceUuid.toString().contains('feb0'),
+    );
 
     for (final c in service.characteristics) {
       final uuid = c.characteristicUuid.toString();
@@ -156,8 +170,11 @@ class ConnectionManager {
       if (uuid.contains('feb3')) _feb3Char = c;
     }
 
-    _log.ble('QGJ characteristics',
-        detail: 'feb1=${_feb1Char != null}, feb2=${_feb2Char != null}, feb3=${_feb3Char != null}');
+    _log.ble(
+      'QGJ characteristics',
+      detail:
+          'feb1=${_feb1Char != null}, feb2=${_feb2Char != null}, feb3=${_feb3Char != null}',
+    );
 
     // 订阅 fcc0 服务的 fcc1/fbb1/fcc2/fbb2（原 app 必须步骤，否则设备超时断开）
     await _subscribeFcc0(services);
@@ -175,7 +192,8 @@ class ConnectionManager {
 
   Future<void> _subscribeFcc0(List<BluetoothService> services) async {
     final fcc0Service = services.where(
-        (s) => s.serviceUuid.toString().contains('fcc0'));
+      (s) => s.serviceUuid.toString().contains('fcc0'),
+    );
     if (fcc0Service.isEmpty) {
       _log.ble('fcc0 服务未找到', level: LogLevel.warning);
       return;
@@ -199,7 +217,10 @@ class ConnectionManager {
 
   void _onStandardNotify(List<int> value) {
     final data = Uint8List.fromList(value);
-    _log.ble('← 收到数据', detail: data.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' '));
+    _log.ble(
+      '← 收到数据',
+      detail: data.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' '),
+    );
     final response = parseResponse(_model.aesKey, data);
     _responseController.add(response);
 
@@ -207,13 +228,16 @@ class ConnectionManager {
       _token = response.token;
       _setState(ConnectionState.ready);
     } else if (response is StateResponse && response.bikeState != null) {
-      _bikeStateController.add(response.bikeState);
+      _publishBikeState(response.bikeState);
     }
   }
 
   void _onQgjNotify(List<int> value) {
     final data = Uint8List.fromList(value);
-    _log.ble('← QGJ 响应', detail: data.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' '));
+    _log.ble(
+      '← QGJ 响应',
+      detail: data.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' '),
+    );
     final response = parseQgjResponse(data);
     if (response == null) return;
 
@@ -239,24 +263,36 @@ class ConnectionManager {
 
     void tick() {
       if (_state != ConnectionState.ready || _feb3Char == null) return;
-      _feb3Char!.read().then((data) {
-        failCount = 0;
-        if (data.isNotEmpty) {
-          final state = BikeState.fromFeb3(data);
-          if (state != null) {
-            _bikeStateController.add(state);
-          }
-        }
-      }).catchError((e) {
-        failCount++;
-        if (failCount == 3) {
-          _log.ble('心跳连续失败 3 次', detail: e.toString(), level: LogLevel.warning);
-        }
-      });
+      _feb3Char!
+          .read()
+          .then((data) {
+            failCount = 0;
+            if (data.isNotEmpty) {
+              final state = BikeState.fromFeb3(data);
+              if (state != null) {
+                _publishBikeState(state);
+              }
+            }
+          })
+          .catchError((e) {
+            failCount++;
+            if (failCount == 3) {
+              _log.ble(
+                '心跳连续失败 3 次',
+                detail: e.toString(),
+                level: LogLevel.warning,
+              );
+            }
+          });
     }
 
     Future.delayed(const Duration(milliseconds: 500), tick);
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 1), (_) => tick());
+  }
+
+  void _publishBikeState(BikeState? state) {
+    _latestBikeState = state;
+    _bikeStateController.add(state);
   }
 
   Future<bool> sendCommand(CommandCode cmd) async {
@@ -277,8 +313,10 @@ class ConnectionManager {
       _cmdAckCompleter = Completer<bool>();
       await _feb1Char!.write(frame.toList(), withoutResponse: false);
 
-      final success = await _cmdAckCompleter!.future
-          .timeout(const Duration(seconds: 5), onTimeout: () => false);
+      final success = await _cmdAckCompleter!.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => false,
+      );
       _cmdAckCompleter = null;
 
       if (success) {
@@ -318,8 +356,9 @@ class ConnectionManager {
             ? (response[5] >> 3) & 0x03
             : mode.code;
         _ridingMode = RidingMode.values.firstWhere(
-            (m) => m.code == confirmedMode,
-            orElse: () => mode);
+          (m) => m.code == confirmedMode,
+          orElse: () => mode,
+        );
       } else {
         _ridingMode = mode;
       }
@@ -367,10 +406,16 @@ class ConnectionManager {
     _reconnecting = true;
     _reconnectAttempt = 0;
 
-    while (_reconnectAttempt < _maxReconnectAttempts && _state == ConnectionState.reconnecting) {
+    while (_reconnectAttempt < _maxReconnectAttempts &&
+        _state == ConnectionState.reconnecting) {
       _reconnectAttempt++;
-      final delay = Duration(milliseconds: (3000 * (1 << (_reconnectAttempt - 1)).clamp(1, 3)));
-      _log.ble('重连 $_reconnectAttempt/$_maxReconnectAttempts，${delay.inSeconds}s 后重试', level: LogLevel.info);
+      final delay = Duration(
+        milliseconds: (3000 * (1 << (_reconnectAttempt - 1)).clamp(1, 3)),
+      );
+      _log.ble(
+        '重连 $_reconnectAttempt/$_maxReconnectAttempts，${delay.inSeconds}s 后重试',
+        level: LogLevel.info,
+      );
 
       await Future.delayed(delay);
 

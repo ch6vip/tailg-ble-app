@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../ble/connection_manager.dart';
+import '../models/vehicle_profile.dart';
 import 'log_service.dart';
+import 'vehicle_store.dart';
 
 class AutoConnectService {
   static final AutoConnectService _instance = AutoConnectService._();
@@ -27,10 +29,22 @@ class AutoConnectService {
 
   Future<void> init(ConnectionManager manager) async {
     _connectionManager = manager;
+    await VehicleStore().init();
     final prefs = await SharedPreferences.getInstance();
     _enabled = prefs.getBool(_prefEnabled) ?? false;
-    _lastDeviceId = prefs.getString(_prefDeviceId);
-    _lastDeviceName = prefs.getString(_prefDeviceName);
+    final defaultVehicle = VehicleStore().defaultVehicle;
+    if (defaultVehicle == null) {
+      final legacyId = prefs.getString(_prefDeviceId);
+      if (legacyId != null) {
+        await VehicleStore().upsert(
+          id: legacyId,
+          name: prefs.getString(_prefDeviceName) ?? '未命名车辆',
+          protocol: VehicleProtocol.auto,
+          makeDefault: true,
+        );
+      }
+    }
+    _refreshTarget();
     _enabledController.add(_enabled);
   }
 
@@ -44,6 +58,13 @@ class AutoConnectService {
   Future<void> saveDevice(BluetoothDevice device) async {
     _lastDeviceId = device.remoteId.toString();
     _lastDeviceName = device.platformName;
+    await VehicleStore().upsert(
+      id: _lastDeviceId!,
+      name: _lastDeviceName ?? '未命名车辆',
+      protocol: VehicleProtocol.auto,
+      makeDefault: true,
+      lastConnectedAt: DateTime.now(),
+    );
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefDeviceId, _lastDeviceId!);
     if (_lastDeviceName != null && _lastDeviceName!.isNotEmpty) {
@@ -52,7 +73,11 @@ class AutoConnectService {
   }
 
   Future<void> tryAutoConnect() async {
-    if (!_enabled || _lastDeviceId == null || _connectionManager == null) return;
+    await VehicleStore().init();
+    _refreshTarget();
+    if (!_enabled || _lastDeviceId == null || _connectionManager == null) {
+      return;
+    }
     if (_connectionManager!.state != ConnectionState.disconnected) return;
 
     _log.operation('自动连接: 扫描 $_lastDeviceName ($_lastDeviceId)');
@@ -85,6 +110,12 @@ class AutoConnectService {
 
     await FlutterBluePlus.startScan(timeout: const Duration(seconds: 8));
     await completer.future;
+  }
+
+  void _refreshTarget() {
+    final defaultVehicle = VehicleStore().defaultVehicle;
+    _lastDeviceId = defaultVehicle?.id ?? _lastDeviceId;
+    _lastDeviceName = defaultVehicle?.displayName ?? _lastDeviceName;
   }
 
   Future<void> _doConnect(BluetoothDevice device) async {

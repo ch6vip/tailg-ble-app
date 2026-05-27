@@ -40,3 +40,8 @@ flutter build apk --release
 - 包名：`de.tttq.tailg_ble_app`
 - 最低 Android 版本：待定（建议 API 23+，BLE 需要）
 - 部署：GitHub Actions 编译 release APK
+
+## 文档
+
+- [功能清单](FEATURES.md)
+- [第一批功能真机验证清单](docs/first_batch_verification.md)

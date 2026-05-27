@@ -6,6 +6,9 @@ import 'log_page.dart';
 import 'vehicle_settings_page.dart';
 import 'diagnostic_page.dart';
 import 'cloud_token_page.dart';
+import 'garage_page.dart';
+import 'battery_details_page.dart';
+import 'ota_precheck_page.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
 const _primary = Color(0xFF1E88E5);
@@ -83,12 +86,39 @@ class _SettingsPageState extends State<SettingsPage> {
             _divider(),
             _sectionLabel('车辆'),
             _settingItem(
+              icon: Icons.garage_outlined,
+              title: '我的车库',
+              subtitle: '绑定车辆、默认车辆、多车管理',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const GaragePage()),
+              ),
+            ),
+            _settingItem(
               icon: Icons.tune,
               title: '灯光与声音',
               subtitle: '前灯、转向灯、提示音设置',
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const VehicleSettingsPage()),
+              ),
+            ),
+            _settingItem(
+              icon: Icons.battery_charging_full,
+              title: '电池/BMS',
+              subtitle: '电量、电压、温度、故障和预留 BMS 数据',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BatteryDetailsPage()),
+              ),
+            ),
+            _settingItem(
+              icon: Icons.system_update_alt,
+              title: 'OTA 前置检测',
+              subtitle: '协议、设备信息、固件版本和升级风险检查',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const OtaPrecheckPage()),
               ),
             ),
             _settingItem(

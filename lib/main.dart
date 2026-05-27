@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'ble/connection_manager.dart' as ble;
+import 'models/vehicle_profile.dart';
 import 'services/proximity_service.dart';
 import 'services/auto_connect_service.dart';
+import 'services/location_service.dart';
+import 'services/vehicle_store.dart';
 import 'pages/scan_page.dart';
 import 'pages/control_page.dart';
 import 'pages/settings_page.dart';
@@ -12,7 +15,17 @@ import 'theme/app_colors.dart';
 final connectionManager = ble.ConnectionManager();
 final proximityService = ProximityService();
 final autoConnectService = AutoConnectService();
+final locationService = LocationService();
+final vehicleStore = VehicleStore();
 final homeTabIndex = ValueNotifier<int>(1);
+
+VehicleProtocol vehicleProtocolFromBle(ble.ProtocolType protocol) {
+  return switch (protocol) {
+    ble.ProtocolType.standard => VehicleProtocol.standard,
+    ble.ProtocolType.qgj => VehicleProtocol.qgj,
+    ble.ProtocolType.unknown => VehicleProtocol.auto,
+  };
+}
 
 void openScanTab(BuildContext context) {
   Navigator.of(context).popUntil((route) => route.isFirst);
@@ -21,6 +34,11 @@ void openScanTab(BuildContext context) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await vehicleStore.init();
+  final defaultVehicle = vehicleStore.defaultVehicle;
+  if (defaultVehicle != null) {
+    proximityService.setTargetDevice(defaultVehicle.id);
+  }
   await proximityService.init(connectionManager);
   await autoConnectService.init(connectionManager);
   runApp(const TailgBleApp());
@@ -102,6 +120,16 @@ class _HomePageState extends State<HomePage>
         if (device != null) {
           proximityService.setTargetDevice(device.remoteId.toString());
           autoConnectService.saveDevice(device);
+          unawaited(() async {
+            final profile = await vehicleStore.upsert(
+              id: device.remoteId.toString(),
+              name: device.platformName,
+              protocol: vehicleProtocolFromBle(connectionManager.protocol),
+              makeDefault: true,
+              lastConnectedAt: DateTime.now(),
+            );
+            await locationService.recordVehicleLocation(profile.id);
+          }());
         }
       }
     });

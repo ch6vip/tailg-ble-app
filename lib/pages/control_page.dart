@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
+import '../models/vehicle_profile.dart';
 import '../theme/app_colors.dart';
 import '../widgets/slide_to_action.dart';
+import 'garage_page.dart';
 import 'location_page.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
@@ -76,12 +80,6 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final deviceName = connectionManager.device?.platformName;
-    final displayName = deviceName != null && deviceName.isNotEmpty
-        ? deviceName
-        : connState == ble.ConnectionState.disconnected
-        ? '未绑定车辆'
-        : '超能S·苍穹灰';
     final statusText = switch (connState) {
       ble.ConnectionState.disconnected => '离线',
       ble.ConnectionState.connecting => '连接中',
@@ -98,84 +96,114 @@ class _Header extends StatelessWidget {
         connState == ble.ConnectionState.connecting ||
         connState == ble.ConnectionState.reconnecting;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                Text(
-                  displayName,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E),
+    return StreamBuilder<List<VehicleProfile>>(
+      stream: vehicleStore.vehiclesStream,
+      initialData: vehicleStore.vehicles,
+      builder: (context, snapshot) {
+        final defaultVehicle = vehicleStore.defaultVehicle;
+        final deviceName = connectionManager.device?.platformName;
+        final displayName =
+            defaultVehicle?.displayName ??
+            (deviceName != null && deviceName.isNotEmpty
+                ? deviceName
+                : connState == ble.ConnectionState.disconnected
+                ? '未绑定车辆'
+                : '当前车辆');
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const GaragePage()),
+                  ),
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1A1A2E),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_drop_down, size: 20),
+                      const SizedBox(width: 8),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          statusText,
+                          style: TextStyle(fontSize: 12, color: statusColor),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Icon(Icons.arrow_drop_down, size: 20),
-                const SizedBox(width: 8),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
+              ),
+              GestureDetector(
+                onTap: connState != ble.ConnectionState.disconnected
+                    ? () => connectionManager.disconnect()
+                    : null,
+                child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 3,
+                    horizontal: 14,
+                    vertical: 8,
                   ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x0D000000),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    statusText,
-                    style: TextStyle(fontSize: 12, color: statusColor),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isConnecting)
+                        const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else
+                        Icon(
+                          connState == ble.ConnectionState.ready
+                              ? Icons.bluetooth_connected
+                              : Icons.bluetooth_disabled,
+                          size: 14,
+                          color: statusColor,
+                        ),
+                      const SizedBox(width: 6),
+                      Text(statusText, style: const TextStyle(fontSize: 13)),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: connState != ble.ConnectionState.disconnected
-                ? () => connectionManager.disconnect()
-                : null,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.all(Radius.circular(20)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x0D000000),
-                    blurRadius: 8,
-                    offset: Offset(0, 2),
-                  ),
-                ],
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (isConnecting)
-                    const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  else
-                    Icon(
-                      connState == ble.ConnectionState.ready
-                          ? Icons.bluetooth_connected
-                          : Icons.bluetooth_disabled,
-                      size: 14,
-                      color: statusColor,
-                    ),
-                  const SizedBox(width: 6),
-                  Text(statusText, style: const TextStyle(fontSize: 13)),
-                ],
-              ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -422,6 +450,9 @@ class _ControlAreaState extends State<_ControlArea> {
     HapticFeedback.mediumImpact();
     try {
       final success = await connectionManager.sendCommand(cmd);
+      if (success) {
+        unawaited(locationService.recordDefaultVehicleLocation());
+      }
       if (!success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

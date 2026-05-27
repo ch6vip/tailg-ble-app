@@ -111,10 +111,18 @@ class _ScanPageState extends State<ScanPage>
     );
     try {
       await connectionManager.connect(device);
+      final profile = await vehicleStore.upsert(
+        id: device.remoteId.toString(),
+        name: device.platformName,
+        protocol: vehicleProtocolFromBle(connectionManager.protocol),
+        makeDefault: true,
+        lastConnectedAt: DateTime.now(),
+      );
+      unawaited(locationService.recordVehicleLocation(profile.id));
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('连接成功')));
+        ).showSnackBar(const SnackBar(content: Text('连接成功，已绑定为默认车辆')));
       }
     } catch (e) {
       if (mounted) {
@@ -491,7 +499,17 @@ class _DeviceCardState extends State<_DeviceCard> {
                   ],
                 ),
               ),
-              _SignalBars(strength: strength),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _SignalBars(strength: strength),
+                  const SizedBox(height: 6),
+                  const Text(
+                    '连接绑定',
+                    style: TextStyle(fontSize: 11, color: _textTertiary),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
+import '../ble/constants.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
@@ -23,11 +26,13 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
   bool _powerOnSound = true;
   int _buzzerVolume = 2;
   int _shockSensitivity = 3;
+  RidingMode _ridingMode = RidingMode.standard;
   bool _sending = false;
 
   @override
   void initState() {
     super.initState();
+    _ridingMode = connectionManager.ridingMode;
     _loadSensitivity();
   }
 
@@ -117,6 +122,24 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
     }
   }
 
+  Future<void> _refreshSettings() async {
+    if (connectionManager.state != ble.ConnectionState.ready) {
+      _showSnack('未连接车辆');
+      return;
+    }
+    setState(() => _sending = true);
+    try {
+      final char = _getFcc1Char();
+      if (char == null) {
+        _showSnack('fcc1 特征未找到');
+      } else {
+        await _readBackState(char);
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
   void _parseDeviceState(List<int> data) {
     if (data.length < 7 && data.length < 11) return;
 
@@ -184,6 +207,20 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
     await _saveSensitivity(value);
   }
 
+  Future<void> _setRidingMode(RidingMode mode) async {
+    if (_sending || mode == _ridingMode) return;
+    setState(() => _sending = true);
+    final success = await connectionManager.setRidingMode(mode);
+    if (success) {
+      setState(() => _ridingMode = connectionManager.ridingMode);
+      unawaited(locationService.recordDefaultVehicleLocation());
+      _showSnack('骑行模式已切换为 ${connectionManager.ridingMode.label}');
+    } else {
+      _showSnack('骑行模式切换失败');
+    }
+    if (mounted) setState(() => _sending = false);
+  }
+
   String get _sensitivityLabel => switch (_shockSensitivity) {
     1 => '最低',
     2 => '较低',
@@ -231,6 +268,12 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
+                      )
+                    else
+                      IconButton(
+                        tooltip: '刷新设置',
+                        onPressed: isConnected ? _refreshSettings : null,
+                        icon: const Icon(Icons.refresh),
                       ),
                   ],
                 ),
@@ -345,6 +388,54 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                           ],
                         ),
                       ),
+                      const Divider(),
+                      const AppSectionLabel('骑行参数'),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: RidingMode.values.map((mode) {
+                            final selected = mode == _ridingMode;
+                            return Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 3,
+                                ),
+                                child: Material(
+                                  color: selected
+                                      ? AppColors.primary.withValues(
+                                          alpha: 0.14,
+                                        )
+                                      : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: InkWell(
+                                    onTap: isConnected
+                                        ? () => _setRidingMode(mode)
+                                        : null,
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Container(
+                                      height: 46,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        mode.label,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: selected
+                                              ? FontWeight.w700
+                                              : FontWeight.w500,
+                                          color: selected
+                                              ? AppColors.primary
+                                              : Colors.grey.shade700,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       const Divider(),
                       const AppSectionLabel('防盗灵敏度'),
                       Padding(
