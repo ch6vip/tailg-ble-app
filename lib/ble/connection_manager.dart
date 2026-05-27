@@ -141,6 +141,9 @@ class ConnectionManager {
     _log.ble('QGJ characteristics',
         detail: 'feb1=${_feb1Char != null}, feb2=${_feb2Char != null}, feb3=${_feb3Char != null}');
 
+    // 订阅 fcc0 服务的 fcc1/fbb1/fcc2/fbb2（原 app 必须步骤，否则设备超时断开）
+    await _subscribeFcc0(services);
+
     if (_feb2Char != null) {
       await _feb2Char!.setNotifyValue(true, forceIndications: true);
       _notifySub = _feb2Char!.onValueReceived.listen(_onQgjNotify);
@@ -150,6 +153,30 @@ class ConnectionManager {
       final loginFrame = buildQgjLoginFrame();
       await _feb1Char!.write(loginFrame.toList(), withoutResponse: false);
     }
+  }
+
+  Future<void> _subscribeFcc0(List<BluetoothService> services) async {
+    final fcc0Service = services.where(
+        (s) => s.serviceUuid.toString().contains('fcc0'));
+    if (fcc0Service.isEmpty) {
+      _log.ble('fcc0 服务未找到', level: LogLevel.warning);
+      return;
+    }
+
+    final service = fcc0Service.first;
+    int subscribed = 0;
+    for (final c in service.characteristics) {
+      final uuid = c.characteristicUuid.toString();
+      if (c.properties.notify || c.properties.indicate) {
+        try {
+          await c.setNotifyValue(true);
+          subscribed++;
+        } catch (e) {
+          _log.ble('订阅 $uuid 失败', detail: e.toString(), level: LogLevel.debug);
+        }
+      }
+    }
+    _log.ble('fcc0 已订阅 $subscribed 个特征', level: LogLevel.info);
   }
 
   void _onStandardNotify(List<int> value) {
