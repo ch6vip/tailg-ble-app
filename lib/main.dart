@@ -99,29 +99,91 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           SettingsPage(),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        animationDuration: const Duration(milliseconds: 400),
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() => _currentIndex = index);
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.bluetooth_searching),
-            selectedIcon: Icon(Icons.bluetooth_connected),
-            label: '扫描',
+      extendBody: true,
+      bottomNavigationBar: ClipRRect(
+        child: BackdropFilter(
+          filter: ColorFilter.mode(
+            Colors.white.withValues(alpha: 0.92),
+            BlendMode.srcOver,
           ),
-          NavigationDestination(
-            icon: Icon(Icons.electric_bike_outlined),
-            selectedIcon: Icon(Icons.electric_bike),
-            label: '爱车',
+          child: Container(
+            height: 82,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.92),
+              border: Border(
+                top: BorderSide(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  width: 0.5,
+                ),
+              ),
+            ),
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _NavItem(
+                  icon: Icons.search,
+                  label: '扫描',
+                  active: _currentIndex == 0,
+                  onTap: () => setState(() => _currentIndex = 0),
+                ),
+                _NavItem(
+                  icon: Icons.directions_car_outlined,
+                  label: '爱车',
+                  active: _currentIndex == 1,
+                  onTap: () => setState(() => _currentIndex = 1),
+                ),
+                _NavItem(
+                  icon: Icons.settings_outlined,
+                  label: '设置',
+                  active: _currentIndex == 2,
+                  onTap: () => setState(() => _currentIndex = 2),
+                ),
+              ],
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: '设置',
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active ? const Color(0xFF1E88E5) : const Color(0xFFBDBDBD);
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 24, color: color),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: color,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

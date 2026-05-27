@@ -270,7 +270,7 @@ class _BikeImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        height: 180,
+        height: 160,
         margin: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.5),

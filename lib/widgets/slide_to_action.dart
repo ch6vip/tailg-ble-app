@@ -12,9 +12,9 @@ class SlideToAction extends StatefulWidget {
     super.key,
     this.onSlideComplete,
     this.label = '右滑启动',
-    this.icon = Icons.power_settings_new,
+    this.icon = Icons.lock_outline,
     this.backgroundColor = const Color(0xFF424242),
-    this.thumbColor = const Color(0x44FFFFFF),
+    this.thumbColor = const Color(0x40FFFFFF),
   });
 
   @override
@@ -22,16 +22,19 @@ class SlideToAction extends StatefulWidget {
 }
 
 class _SlideToActionState extends State<SlideToAction>
-    with SingleTickerProviderStateMixin {
-  double _progress = 0;
-  bool _completed = false;
+    with TickerProviderStateMixin {
+  final _dragNotifier = ValueNotifier<double>(0);
   late AnimationController _resetController;
-  late Animation<double> _resetAnimation;
+  late AnimationController _successController;
 
   @override
   void initState() {
     super.initState();
     _resetController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _successController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
@@ -41,27 +44,44 @@ class _SlideToActionState extends State<SlideToAction>
   void didUpdateWidget(SlideToAction oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.label != widget.label) {
-      _completed = false;
-      _progress = 0;
+      _dragNotifier.value = 0;
     }
   }
 
   @override
   void dispose() {
     _resetController.dispose();
+    _successController.dispose();
+    _dragNotifier.dispose();
     super.dispose();
   }
 
-  void _resetThumb() {
-    final startVal = _progress;
-    _resetAnimation = Tween<double>(begin: startVal, end: 0).animate(
-      CurvedAnimation(parent: _resetController, curve: Curves.elasticOut),
-    );
-    _resetAnimation.addListener(() {
-      setState(() => _progress = _resetAnimation.value.clamp(0, 1));
+  void _onSlideSuccess(double maxDrag) {
+    HapticFeedback.heavyImpact();
+    _dragNotifier.value = maxDrag;
+    _successController.forward(from: 0).then((_) {
+      _resetThumb();
     });
-    _resetController.forward(from: 0);
+    widget.onSlideComplete?.call();
   }
+
+  void _resetThumb() {
+    final startVal = _dragNotifier.value;
+    _resetController.reset();
+    _resetController.addListener(_onResetTick);
+    _resetController.forward();
+    _resetController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _resetController.removeListener(_onResetTick);
+      }
+    });
+    _onResetTick = () {
+      final t = Curves.elasticOut.transform(_resetController.value);
+      _dragNotifier.value = startVal * (1 - t);
+    };
+  }
+
+  late VoidCallback _onResetTick = () {};
 
   @override
   Widget build(BuildContext context) {
@@ -69,89 +89,106 @@ class _SlideToActionState extends State<SlideToAction>
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxDrag = constraints.maxWidth - 56;
-        return Container(
-          height: 56,
-          decoration: BoxDecoration(
-            color: enabled
-                ? widget.backgroundColor
-                : widget.backgroundColor.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(28),
-          ),
+        return AnimatedBuilder(
+          animation: _successController,
+          builder: (context, child) {
+            final successValue = _successController.value;
+            final glowOpacity = successValue < 0.5
+                ? successValue * 2
+                : (1 - successValue) * 2;
+            return Container(
+              height: 56,
+              decoration: BoxDecoration(
+                color: enabled
+                    ? widget.backgroundColor
+                    : widget.backgroundColor.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: glowOpacity > 0
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF4CAF50)
+                              .withValues(alpha: glowOpacity * 0.4),
+                          blurRadius: 16,
+                          spreadRadius: 2,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: child,
+            );
+          },
           child: Stack(
             children: [
-              Center(
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 150),
-                  opacity: (1 - _progress * 2).clamp(0, 1),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.chevron_right,
-                          color: Colors.white38, size: 20),
-                      const Icon(Icons.chevron_right,
-                          color: Colors.white54, size: 20),
-                      const SizedBox(width: 4),
-                      Text(widget.label,
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 14)),
-                    ],
-                  ),
-                ),
+              ValueListenableBuilder<double>(
+                valueListenable: _dragNotifier,
+                builder: (context, pos, _) {
+                  final progress = maxDrag > 0 ? pos / maxDrag : 0.0;
+                  return Center(
+                    child: Opacity(
+                      opacity: (1 - progress * 1.8).clamp(0.0, 1.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.chevron_right,
+                              color: Colors.white.withValues(alpha: 0.5),
+                              size: 18),
+                          Icon(Icons.chevron_right,
+                              color: Colors.white.withValues(alpha: 0.5),
+                              size: 18),
+                          const SizedBox(width: 4),
+                          Text(widget.label,
+                              style: TextStyle(
+                                  color:
+                                      Colors.white.withValues(alpha: 0.6),
+                                  fontSize: 14)),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
-              AnimatedPositioned(
-                duration: _resetController.isAnimating
-                    ? Duration.zero
-                    : const Duration(milliseconds: 0),
-                left: (_progress * maxDrag) + 4,
-                top: 4,
+              ValueListenableBuilder<double>(
+                valueListenable: _dragNotifier,
+                builder: (context, pos, child) {
+                  return Positioned(
+                    left: pos + 4,
+                    top: 4,
+                    child: child!,
+                  );
+                },
                 child: GestureDetector(
                   onHorizontalDragUpdate: enabled
                       ? (details) {
-                          setState(() {
-                            _progress = (_progress + details.delta.dx / maxDrag)
-                                .clamp(0.0, 1.0);
-                          });
-                          if (_progress > 0.3 && !_completed) {
+                          final prev = _dragNotifier.value;
+                          _dragNotifier.value =
+                              (_dragNotifier.value + details.delta.dx)
+                                  .clamp(0.0, maxDrag);
+                          if (prev < maxDrag * 0.3 &&
+                              _dragNotifier.value >= maxDrag * 0.3) {
                             HapticFeedback.selectionClick();
                           }
                         }
                       : null,
                   onHorizontalDragEnd: enabled
                       ? (details) {
-                          if (_progress > 0.75) {
-                            HapticFeedback.heavyImpact();
-                            _completed = true;
-                            setState(() => _progress = 1.0);
-                            widget.onSlideComplete?.call();
-                            Future.delayed(const Duration(milliseconds: 800), () {
-                              if (mounted) {
-                                _completed = false;
-                                _resetThumb();
-                              }
-                            });
+                          if (_dragNotifier.value > maxDrag * 0.75) {
+                            _onSlideSuccess(maxDrag);
                           } else {
                             _resetThumb();
                           }
                         }
                       : null,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 100),
+                  child: Container(
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: _progress > 0.75
-                          ? Colors.white.withValues(alpha: 0.4)
-                          : widget.thumbColor,
+                      color: enabled
+                          ? widget.thumbColor
+                          : Colors.white.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
-                      boxShadow: _progress > 0
-                          ? [BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 8,
-                              offset: const Offset(2, 0),
-                            )]
-                          : null,
                     ),
-                    child: Icon(widget.icon, color: Colors.white, size: 24),
+                    child:
+                        Icon(widget.icon, color: Colors.white, size: 24),
                   ),
                 ),
               ),
