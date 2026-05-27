@@ -141,7 +141,7 @@ class ConnectionManager {
         detail: 'feb1=${_feb1Char != null}, feb2=${_feb2Char != null}, feb3=${_feb3Char != null}');
 
     if (_feb2Char != null) {
-      await _feb2Char!.setNotifyValue(true);
+      await _feb2Char!.setNotifyValue(true, forceIndications: true);
       _notifySub = _feb2Char!.onValueReceived.listen(_onQgjNotify);
     }
 
@@ -175,7 +175,9 @@ class ConnectionManager {
       _token = 'qgj';
       _log.ble('QGJ 登录成功', level: LogLevel.info);
       _setState(ConnectionState.ready);
-      _startHeartbeat();
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        _startHeartbeat();
+      });
     }
   }
 
