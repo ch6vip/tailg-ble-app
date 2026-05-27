@@ -266,6 +266,60 @@ class ConnectionManager {
     }
   }
 
+  RidingMode _ridingMode = RidingMode.standard;
+  RidingMode get ridingMode => _ridingMode;
+  final _ridingModeController = StreamController<RidingMode>.broadcast();
+  Stream<RidingMode> get ridingModeStream => _ridingModeController.stream;
+
+  Future<bool> setRidingMode(RidingMode mode) async {
+    if (_state != ConnectionState.ready) return false;
+
+    _log.operation('切换模式: ${mode.label}', detail: 'code=${mode.code}');
+
+    try {
+      final fcc1 = _findFcc1Char();
+      if (fcc1 == null) return false;
+
+      // fcc1 ECU control: 00070002 + state1 + state2 + state3
+      // Mode encoded in state2 bits 3-4
+      final state2 = (mode.code & 0x03) << 3;
+      final data = [0x00, 0x07, 0x00, 0x02, 0x00, state2, 0x00];
+      await fcc1.write(data, withoutResponse: false);
+
+      await Future.delayed(const Duration(milliseconds: 200));
+      final response = await fcc1.read();
+      if (response.isNotEmpty) {
+        final confirmedMode = (response.length > 5)
+            ? (response[5] >> 3) & 0x03
+            : mode.code;
+        _ridingMode = RidingMode.values.firstWhere(
+            (m) => m.code == confirmedMode,
+            orElse: () => mode);
+      } else {
+        _ridingMode = mode;
+      }
+
+      _ridingModeController.add(_ridingMode);
+      _log.operation('模式已切换: ${_ridingMode.label}', level: LogLevel.info);
+      return true;
+    } catch (e) {
+      _log.operation('模式切换失败', detail: e.toString(), level: LogLevel.error);
+      return false;
+    }
+  }
+
+  BluetoothCharacteristic? _findFcc1Char() {
+    if (_device == null) return null;
+    for (final service in _device!.servicesList) {
+      if (service.serviceUuid.toString().contains('fcc0')) {
+        for (final c in service.characteristics) {
+          if (c.characteristicUuid.toString().contains('fcc1')) return c;
+        }
+      }
+    }
+    return null;
+  }
+
   void _onDisconnected() {
     _log.ble('设备断开连接', level: LogLevel.warning);
     _heartbeatTimer?.cancel();
@@ -353,5 +407,6 @@ class ConnectionManager {
     _stateController.close();
     _responseController.close();
     _bikeStateController.close();
+    _ridingModeController.close();
   }
 }

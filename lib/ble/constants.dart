@@ -27,6 +27,16 @@ enum ModelType {
   const ModelType(this.aesKey);
 }
 
+enum RidingMode {
+  eco(0, '节能'),
+  standard(1, '标准'),
+  sport(2, '强力');
+
+  final int code;
+  final String label;
+  const RidingMode(this.code, this.label);
+}
+
 class BleUuids {
   static const serviceFee5 = '0000fee5-0000-1000-8000-00805f9b34fb';
   static const serviceFcc0 = '0000fcc0-0000-1000-8000-00805f9b34fb';

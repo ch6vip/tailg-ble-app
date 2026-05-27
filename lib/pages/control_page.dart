@@ -54,6 +54,8 @@ class _ControlPageState extends State<ControlPage>
                   const SizedBox(height: 20),
                   _ControlArea(connState: connState),
                   const SizedBox(height: 20),
+                  _RidingModeSelector(connState: connState),
+                  const SizedBox(height: 20),
                   const _LocationCard(),
                   const SizedBox(height: 20),
                 ],
@@ -510,6 +512,92 @@ class _ActionButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _RidingModeSelector extends StatelessWidget {
+  final ble.ConnectionState connState;
+  const _RidingModeSelector({required this.connState});
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = connState == ble.ConnectionState.ready;
+    return StreamBuilder<RidingMode>(
+      stream: connectionManager.ridingModeStream,
+      initialData: connectionManager.ridingMode,
+      builder: (context, snapshot) {
+        final currentMode = snapshot.data ?? RidingMode.standard;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: _cardDecoration,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('骑行模式',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 12),
+                Row(
+                  children: RidingMode.values.map((mode) {
+                    final selected = mode == currentMode;
+                    final icon = switch (mode) {
+                      RidingMode.eco => Icons.eco,
+                      RidingMode.standard => Icons.speed,
+                      RidingMode.sport => Icons.bolt,
+                    };
+                    final color = switch (mode) {
+                      RidingMode.eco => Colors.green,
+                      RidingMode.standard => Colors.blue,
+                      RidingMode.sport => Colors.orange,
+                    };
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Material(
+                          color: selected
+                              ? color.withValues(alpha: 0.15)
+                              : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                          child: InkWell(
+                            onTap: enabled && !selected
+                                ? () async {
+                                    HapticFeedback.mediumImpact();
+                                    await connectionManager.setRidingMode(mode);
+                                  }
+                                : null,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Column(
+                                children: [
+                                  Icon(icon,
+                                      color: selected ? color : Colors.grey.shade500,
+                                      size: 24),
+                                  const SizedBox(height: 4),
+                                  Text(mode.label,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: selected ? color : Colors.grey.shade600,
+                                        fontWeight: selected
+                                            ? FontWeight.w600
+                                            : FontWeight.normal,
+                                      )),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
