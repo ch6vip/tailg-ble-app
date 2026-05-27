@@ -218,8 +218,14 @@ class ConnectionManager {
 
     void tick() {
       if (_state != ConnectionState.ready || _feb3Char == null) return;
-      _feb3Char!.read().then((_) {
+      _feb3Char!.read().then((data) {
         failCount = 0;
+        if (data.isNotEmpty) {
+          final state = BikeState.fromFeb3(data);
+          if (state != null) {
+            _bikeStateController.add(state);
+          }
+        }
       }).catchError((e) {
         failCount++;
         if (failCount == 3) {

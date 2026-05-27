@@ -43,13 +43,66 @@ class BleUuids {
 class BikeState {
   final bool isLocked;
   final bool isPowerOn;
+  final bool isMuted;
   final double? voltage;
+  final double? temperature;
   final int? batteryPercent;
+  final int? signalStrength;
+  final bool faultMotor;
+  final bool faultController;
+  final bool faultBrake;
+  final bool faultLowVoltage;
 
   const BikeState({
     required this.isLocked,
     required this.isPowerOn,
+    this.isMuted = false,
     this.voltage,
+    this.temperature,
     this.batteryPercent,
+    this.signalStrength,
+    this.faultMotor = false,
+    this.faultController = false,
+    this.faultBrake = false,
+    this.faultLowVoltage = false,
   });
+
+  static BikeState? fromFeb3(List<int> data) {
+    if (data.length < 10) return null;
+
+    final status1 = data[0];
+    final isLocked = (status1 & 0x01) != 0;
+    final isPowerOn = (status1 & 0x02) != 0;
+    final isMuted = (status1 & 0x04) != 0;
+
+    final voltageRaw = (data[3] << 8) | data[4];
+    final voltage = voltageRaw / 10.0;
+
+    final tempRaw = (data[5] << 8) | data[6];
+    final temperature = tempRaw / 10.0;
+
+    final signalStrength = data[7].toSigned(8);
+
+    final faults = data[8];
+    final faultMotor = (faults & 0x01) == 0;
+    final faultController = (faults & 0x04) == 0;
+    final faultBrake = (faults & 0x10) == 0;
+    final faultLowVoltage = (faults & 0x20) == 0;
+
+    final batteryPercent = data[9].clamp(0, 100);
+
+    return BikeState(
+      isLocked: isLocked,
+      isPowerOn: isPowerOn,
+      isMuted: isMuted,
+      voltage: voltage > 0 ? voltage : null,
+      temperature: temperature > 0 ? temperature : null,
+      batteryPercent: batteryPercent,
+      signalStrength: signalStrength,
+      faultMotor: faultMotor,
+      faultController: faultController,
+      faultBrake: faultBrake,
+      faultLowVoltage: faultLowVoltage,
+    );
+  }
 }

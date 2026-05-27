@@ -167,53 +167,91 @@ class _StatusSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return StreamBuilder<BikeState?>(
+      stream: connectionManager.bikeStateStream,
+      builder: (context, snapshot) {
+        final bike = snapshot.data;
+        final battery = bike?.batteryPercent;
+        final voltage = bike?.voltage;
+        final batteryColor = battery == null
+            ? Colors.grey
+            : battery > 60
+                ? Colors.green
+                : battery > 20
+                    ? Colors.orange
+                    : Colors.red;
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          child: Row(
             children: [
-              Text('剩余电量',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
-              const SizedBox(width: 24),
-              Text('预估里程',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                width: 48,
-                height: 22,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.green, width: 2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(2),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(2),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('剩余电量',
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Icon(
+                          battery == null
+                              ? Icons.battery_unknown
+                              : battery > 80
+                                  ? Icons.battery_full
+                                  : battery > 60
+                                      ? Icons.battery_5_bar
+                                      : battery > 40
+                                          ? Icons.battery_4_bar
+                                          : battery > 20
+                                              ? Icons.battery_2_bar
+                                              : Icons.battery_1_bar,
+                          color: batteryColor,
+                          size: 32,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          battery != null ? '$battery%' : '--',
+                          style: const TextStyle(
+                              fontSize: 28, fontWeight: FontWeight.w300),
+                        ),
+                      ],
                     ),
-                  ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 24),
-              const Text('--',
-                  style: TextStyle(fontSize: 48, fontWeight: FontWeight.w300)),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8),
-                child:
-                    Text('km', style: TextStyle(fontSize: 16, color: Colors.black54)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('当前电压',
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Icon(Icons.bolt, color: Colors.amber.shade700, size: 28),
+                        const SizedBox(width: 4),
+                        Text(
+                          voltage != null ? voltage.toStringAsFixed(1) : '--',
+                          style: const TextStyle(
+                              fontSize: 28, fontWeight: FontWeight.w300),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 4),
+                          child: Text('V',
+                              style: TextStyle(fontSize: 14, color: Colors.black54)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -245,47 +283,80 @@ class _StateLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stateText =
-        connState == ble.ConnectionState.ready ? '已关机设防' : '未连接';
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
+    return StreamBuilder<BikeState?>(
+      stream: connectionManager.bikeStateStream,
+      builder: (context, snapshot) {
+        final bike = snapshot.data;
+        final isConnected = connState == ble.ConnectionState.ready;
+
+        String stateText;
+        IconData stateIcon;
+        List<Color> gradientColors;
+
+        if (!isConnected) {
+          stateText = '未连接';
+          stateIcon = Icons.bluetooth_disabled;
+          gradientColors = [Colors.grey.shade300, Colors.grey.shade400];
+        } else if (bike == null) {
+          stateText = '已连接';
+          stateIcon = Icons.bluetooth_connected;
+          gradientColors = [Colors.blue.shade200, Colors.blue.shade300];
+        } else if (bike.isLocked && !bike.isPowerOn) {
+          stateText = '已设防';
+          stateIcon = Icons.lock_outline;
+          gradientColors = [Colors.purple.shade200, Colors.blue.shade200];
+        } else if (!bike.isLocked && bike.isPowerOn) {
+          stateText = '已通电';
+          stateIcon = Icons.power;
+          gradientColors = [Colors.green.shade300, Colors.teal.shade300];
+        } else if (!bike.isLocked) {
+          stateText = '已解锁';
+          stateIcon = Icons.lock_open;
+          gradientColors = [Colors.orange.shade200, Colors.amber.shade300];
+        } else {
+          stateText = '已上锁';
+          stateIcon = Icons.lock_outline;
+          gradientColors = [Colors.purple.shade200, Colors.blue.shade200];
+        }
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.purple.shade200, Colors.blue.shade200],
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: gradientColors),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(stateIcon, size: 18, color: Colors.white),
                   ),
-                  shape: BoxShape.circle,
+                  const SizedBox(width: 10),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Text(stateText,
+                        key: ValueKey(stateText),
+                        style: const TextStyle(fontSize: 14)),
+                  ),
+                ],
+              ),
+              if (bike != null && bike.temperature != null)
+                Row(
+                  children: [
+                    Icon(Icons.thermostat, size: 16, color: Colors.grey.shade500),
+                    const SizedBox(width: 4),
+                    Text('${bike.temperature!.toStringAsFixed(0)}°C',
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                  ],
                 ),
-                child: const Icon(Icons.lock_outline,
-                    size: 18, color: Colors.white),
-              ),
-              const SizedBox(width: 10),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Text(stateText,
-                    key: ValueKey(stateText),
-                    style: const TextStyle(fontSize: 14)),
-              ),
             ],
           ),
-          Row(
-            children: [
-              Text('手动模式',
-                  style:
-                      TextStyle(fontSize: 13, color: Colors.grey.shade600)),
-              const SizedBox(width: 4),
-              const Switch(value: false, onChanged: null),
-            ],
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
