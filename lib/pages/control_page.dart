@@ -368,27 +368,40 @@ class _StateLabel extends StatelessWidget {
   }
 }
 
-class _ControlArea extends StatelessWidget {
+class _ControlArea extends StatefulWidget {
   final ble.ConnectionState connState;
   const _ControlArea({required this.connState});
 
-  void _send(BuildContext context, CommandCode cmd) async {
+  @override
+  State<_ControlArea> createState() => _ControlAreaState();
+}
+
+class _ControlAreaState extends State<_ControlArea> {
+  bool _busy = false;
+
+  Future<void> _send(CommandCode cmd) async {
+    if (_busy) return;
+    setState(() => _busy = true);
     HapticFeedback.mediumImpact();
-    final success = await connectionManager.sendCommand(cmd);
-    if (!success && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${cmd.label}失败'),
-          backgroundColor: Colors.red.shade400,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+    try {
+      final success = await connectionManager.sendCommand(cmd);
+      if (!success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${cmd.label}失败'),
+            backgroundColor: Colors.red.shade400,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final enabled = connState == ble.ConnectionState.ready;
+    final enabled = widget.connState == ble.ConnectionState.ready && !_busy;
     return StreamBuilder<BikeState?>(
       stream: connectionManager.bikeStateStream,
       builder: (context, snapshot) {
@@ -409,7 +422,8 @@ class _ControlArea extends StatelessWidget {
                       child: _LockToggleButton(
                         isLocked: isLocked,
                         enabled: enabled,
-                        onTap: () => _send(context,
+                        loading: _busy,
+                        onTap: () => _send(
                             isLocked ? CommandCode.unlock : CommandCode.lock),
                       ),
                     ),
@@ -417,7 +431,7 @@ class _ControlArea extends StatelessWidget {
                     _ControlButton(
                       icon: Icons.event_seat_outlined,
                       onTap: enabled
-                          ? () => _send(context, CommandCode.openSeat)
+                          ? () => _send(CommandCode.openSeat)
                           : null,
                     ),
                   ],
@@ -430,7 +444,7 @@ class _ControlArea extends StatelessWidget {
                       ? const Color(0xFF5D4037)
                       : const Color(0xFF424242),
                   onSlideComplete: enabled
-                      ? () => _send(context,
+                      ? () => _send(
                           isPowerOn ? CommandCode.powerOff : CommandCode.powerOn)
                       : null,
                 ),
@@ -442,7 +456,7 @@ class _ControlArea extends StatelessWidget {
                         icon: Icons.volume_up_outlined,
                         label: '寻车',
                         onTap: enabled
-                            ? () => _send(context, CommandCode.find)
+                            ? () => _send(CommandCode.find)
                             : null,
                       ),
                     ),
@@ -460,48 +474,72 @@ class _ControlArea extends StatelessWidget {
 class _LockToggleButton extends StatelessWidget {
   final bool isLocked;
   final bool enabled;
+  final bool loading;
   final VoidCallback onTap;
 
   const _LockToggleButton({
     required this.isLocked,
     required this.enabled,
+    required this.loading,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = enabled
+    final color = enabled || loading
         ? (isLocked ? Colors.blue : Colors.orange)
         : Colors.grey.shade400;
-    return Material(
-      color: color.withValues(alpha: 0.1),
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: enabled ? () {
-          HapticFeedback.mediumImpact();
-          onTap();
-        } : null,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      height: 56,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(14),
-        child: SizedBox(
-          height: 56,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                isLocked ? Icons.lock_outline : Icons.lock_open,
-                color: color,
-                size: 22,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                isLocked ? '解锁' : '设防',
-                style: TextStyle(
-                  color: color,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? () {
+            HapticFeedback.mediumImpact();
+            onTap();
+          } : null,
+          borderRadius: BorderRadius.circular(14),
+          child: Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: loading
+                  ? SizedBox(
+                      key: const ValueKey('loading'),
+                      width: 20, height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: color))
+                  : Row(
+                      key: ValueKey(isLocked),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(
+                            isLocked ? Icons.lock_outline : Icons.lock_open,
+                            key: ValueKey(isLocked),
+                            color: color,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          isLocked ? '解锁' : '设防',
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
           ),
         ),
       ),
