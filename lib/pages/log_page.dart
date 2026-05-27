@@ -34,12 +34,36 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
     };
   }
 
+  String _formatEntries(List<LogEntry> entries) {
+    return entries.map((e) {
+      final t = '${e.time.hour.toString().padLeft(2, '0')}:'
+          '${e.time.minute.toString().padLeft(2, '0')}:'
+          '${e.time.second.toString().padLeft(2, '0')}';
+      final tag = e.category == LogCategory.ble ? '[BLE]' : '[OP]';
+      return '$t $tag ${e.message}${e.detail != null ? ' | ${e.detail}' : ''}';
+    }).join('\n');
+  }
+
+  void _copyAll() {
+    final entries = _getEntries(_tabController.index);
+    if (entries.isEmpty) return;
+    Clipboard.setData(ClipboardData(text: _formatEntries(entries)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('已复制 ${entries.length} 条日志'), duration: const Duration(seconds: 1)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('日志'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.copy),
+            tooltip: '复制全部',
+            onPressed: _copyAll,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => setState(() {}),
@@ -107,44 +131,35 @@ class _LogTile extends StatelessWidget {
       LogLevel.error => Colors.red,
     };
 
-    return InkWell(
-      onLongPress: () {
-        final text = '$timeStr ${entry.message}${entry.detail != null ? '\n${entry.detail}' : ''}';
-        Clipboard.setData(ClipboardData(text: text));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('已复制'), duration: Duration(seconds: 1)),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(timeStr,
-                style: TextStyle(
-                    fontSize: 11, color: Colors.grey.shade500, fontFamily: 'monospace')),
-            const SizedBox(width: 8),
-            Container(
-              width: 4,
-              height: 4,
-              margin: const EdgeInsets.only(top: 6),
-              decoration: BoxDecoration(color: levelColor, shape: BoxShape.circle),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(timeStr,
+              style: TextStyle(
+                  fontSize: 11, color: Colors.grey.shade500, fontFamily: 'monospace')),
+          const SizedBox(width: 8),
+          Container(
+            width: 4,
+            height: 4,
+            margin: const EdgeInsets.only(top: 6),
+            decoration: BoxDecoration(color: levelColor, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(entry.message, style: const TextStyle(fontSize: 13)),
+                if (entry.detail != null)
+                  Text(entry.detail!,
+                      style: TextStyle(
+                          fontSize: 11, color: Colors.grey.shade600, fontFamily: 'monospace')),
+              ],
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(entry.message, style: const TextStyle(fontSize: 13)),
-                  if (entry.detail != null)
-                    Text(entry.detail!,
-                        style: TextStyle(
-                            fontSize: 11, color: Colors.grey.shade600, fontFamily: 'monospace')),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
