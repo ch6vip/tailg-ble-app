@@ -4,6 +4,7 @@ import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
 import '../widgets/slide_to_action.dart';
+import 'location_page.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
 const _cardDecoration = BoxDecoration(
@@ -352,15 +353,14 @@ class _StateLabel extends StatelessWidget {
                   ),
                 ],
               ),
-              if (bike != null && bike.temperature != null)
-                Row(
-                  children: [
-                    Icon(Icons.thermostat, size: 16, color: Colors.grey.shade500),
-                    const SizedBox(width: 4),
-                    Text('${bike.temperature!.toStringAsFixed(0)}°C',
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
-                  ],
-                ),
+              Row(
+                children: [
+                  Text('手动模式',
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                  const SizedBox(width: 4),
+                  _ManualModeToggle(enabled: isConnected),
+                ],
+              ),
             ],
           ),
         );
@@ -701,6 +701,59 @@ class _RidingModeSelector extends StatelessWidget {
   }
 }
 
+class _ManualModeToggle extends StatefulWidget {
+  final bool enabled;
+  const _ManualModeToggle({required this.enabled});
+
+  @override
+  State<_ManualModeToggle> createState() => _ManualModeToggleState();
+}
+
+class _ManualModeToggleState extends State<_ManualModeToggle> {
+  bool _manualMode = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.enabled
+          ? () {
+              setState(() => _manualMode = !_manualMode);
+              HapticFeedback.selectionClick();
+            }
+          : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 44,
+        height: 26,
+        decoration: BoxDecoration(
+          color: _manualMode ? const Color(0xFF1E88E5) : const Color(0xFFE0E0E0),
+          borderRadius: BorderRadius.circular(13),
+        ),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 200),
+          alignment: _manualMode ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            width: 22,
+            height: 22,
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 3,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _LocationCard extends StatelessWidget {
   const _LocationCard();
 
@@ -708,16 +761,22 @@ class _LocationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: _cardDecoration,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('车辆位置',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            Icon(Icons.chevron_right, color: Colors.grey.shade400),
-          ],
+      child: GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LocationPage()),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: _cardDecoration,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('车辆位置',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              Icon(Icons.chevron_right, color: Colors.grey.shade400),
+            ],
+          ),
         ),
       ),
     );

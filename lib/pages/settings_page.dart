@@ -4,6 +4,7 @@ import '../services/auto_connect_service.dart';
 import 'log_page.dart';
 import 'vehicle_settings_page.dart';
 import 'diagnostic_page.dart';
+import 'cloud_token_page.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
 const _primary = Color(0xFF1E88E5);
@@ -77,6 +78,10 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: Icons.cloud_outlined,
               title: '云端 Token',
               subtitle: '与 Web 端共享连接凭证',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CloudTokenPage()),
+              ),
             ),
             _divider(),
             _sectionLabel('车辆'),
@@ -93,6 +98,7 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: Icons.swap_horiz,
               title: '协议类型',
               subtitle: '自动识别',
+              onTap: () => _showProtocolDialog(),
             ),
             _divider(),
             _sectionLabel('调试'),
@@ -235,6 +241,33 @@ class _SettingsPageState extends State<SettingsPage> {
     return const Padding(
       padding: EdgeInsets.symmetric(horizontal: 16),
       child: Divider(height: 1, color: Color(0xFFEEEEEE)),
+    );
+  }
+
+  void _showProtocolDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('选择协议类型'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        children: [
+          _protocolOption('自动识别', '根据服务 UUID 自动判断', true),
+          _protocolOption('Standard (fee5)', '标准台铃协议', false),
+          _protocolOption('QGJ (feb0)', '骑管家协议', false),
+        ],
+      ),
+    );
+  }
+
+  Widget _protocolOption(String title, String subtitle, bool selected) {
+    return ListTile(
+      leading: Icon(
+        selected ? Icons.radio_button_checked : Icons.radio_button_off,
+        color: selected ? _primary : _textTertiary,
+      ),
+      title: Text(title, style: const TextStyle(fontSize: 15)),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: _textTertiary)),
+      onTap: () => Navigator.pop(context),
     );
   }
 }
