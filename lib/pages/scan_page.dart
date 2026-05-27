@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../main.dart';
 
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
@@ -39,6 +40,27 @@ class _ScanPageState extends State<ScanPage> {
 
   void _stopScan() {
     FlutterBluePlus.stopScan();
+  }
+
+  Future<void> _connectDevice(BluetoothDevice device) async {
+    _stopScan();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('正在连接 ${device.platformName}...')),
+    );
+    try {
+      await connectionManager.connect(device);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('连接成功')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('连接失败: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -104,9 +126,7 @@ class _ScanPageState extends State<ScanPage> {
                     title: Text(name),
                     subtitle: Text(r.device.remoteId.toString()),
                     trailing: Text('${r.rssi} dBm'),
-                    onTap: () {
-                      // TODO: connect to device
-                    },
+                    onTap: () => _connectDevice(r.device),
                   ),
                 );
               },

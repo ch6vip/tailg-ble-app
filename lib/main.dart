@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'ble/connection_manager.dart';
 import 'pages/scan_page.dart';
 import 'pages/control_page.dart';
 import 'pages/settings_page.dart';
+
+final connectionManager = ConnectionManager();
 
 void main() {
   runApp(const TailgBleApp());
@@ -14,6 +17,7 @@ class TailgBleApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Tailg BLE',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF1E88E5),
@@ -43,16 +47,17 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 1;
 
-  final _pages = const [
-    ScanPage(),
-    ControlPage(),
-    SettingsPage(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: const [
+          ScanPage(),
+          ControlPage(),
+          SettingsPage(),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../main.dart';
+import '../ble/connection_manager.dart' as ble;
+import '../ble/constants.dart';
 
 class ControlPage extends StatelessWidget {
   const ControlPage({super.key});
@@ -8,28 +11,45 @@ class ControlPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
-              _buildStatusSection(context),
-              const SizedBox(height: 20),
-              _buildBikeImage(context),
-              _buildStateLabel(context),
-              const SizedBox(height: 20),
-              _buildControlArea(context),
-              const SizedBox(height: 20),
-              _buildLocationCard(context),
-              const SizedBox(height: 20),
-            ],
-          ),
+        child: StreamBuilder<ble.ConnectionState>(
+          stream: connectionManager.stateStream,
+          initialData: connectionManager.state,
+          builder: (context, snapshot) {
+            final connState = snapshot.data ?? ble.ConnectionState.disconnected;
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context, connState),
+                  _buildStatusSection(context),
+                  const SizedBox(height: 20),
+                  _buildBikeImage(context),
+                  _buildStateLabel(context, connState),
+                  const SizedBox(height: 20),
+                  _buildControlArea(context, connState),
+                  const SizedBox(height: 20),
+                  _buildLocationCard(context),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, ble.ConnectionState connState) {
+    final statusText = switch (connState) {
+      ble.ConnectionState.disconnected => '离线',
+      ble.ConnectionState.connecting => '连接中',
+      ble.ConnectionState.connected => '已连接',
+      ble.ConnectionState.ready => '在线',
+    };
+    final statusColor = connState == ble.ConnectionState.ready
+        ? Colors.green
+        : Colors.grey;
+    final isConnecting = connState == ble.ConnectionState.connecting;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
@@ -50,12 +70,12 @@ class ControlPage extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: statusColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Text(
-                    '离线',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  child: Text(
+                    statusText,
+                    style: TextStyle(fontSize: 12, color: statusColor),
                   ),
                 ),
               ],
@@ -74,16 +94,25 @@ class ControlPage extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                SizedBox(width: 6),
-                Text('连接中', style: TextStyle(fontSize: 13)),
+                if (isConnecting)
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  Icon(
+                    connState == ble.ConnectionState.ready
+                        ? Icons.bluetooth_connected
+                        : Icons.bluetooth_disabled,
+                    size: 14,
+                    color: statusColor,
+                  ),
+                const SizedBox(width: 6),
+                Text(statusText, style: const TextStyle(fontSize: 13)),
               ],
             ),
           ),
@@ -165,7 +194,8 @@ class ControlPage extends StatelessWidget {
     );
   }
 
-  Widget _buildStateLabel(BuildContext context) {
+  Widget _buildStateLabel(BuildContext context, ble.ConnectionState connState) {
+    final stateText = connState == ble.ConnectionState.ready ? '已关机设防' : '未连接';
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
@@ -186,7 +216,7 @@ class ControlPage extends StatelessWidget {
                     const Icon(Icons.lock_outline, size: 18, color: Colors.white),
               ),
               const SizedBox(width: 10),
-              const Text('已关机设防', style: TextStyle(fontSize: 14)),
+              Text(stateText, style: const TextStyle(fontSize: 14)),
             ],
           ),
           Row(
@@ -202,7 +232,8 @@ class ControlPage extends StatelessWidget {
     );
   }
 
-  Widget _buildControlArea(BuildContext context) {
+  Widget _buildControlArea(BuildContext context, ble.ConnectionState connState) {
+    final enabled = connState == ble.ConnectionState.ready;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
@@ -237,12 +268,20 @@ class ControlPage extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _buildActionButton(
-                            Icons.volume_up_outlined, '寻车'),
+                            Icons.volume_up_outlined, '寻车',
+                            onTap: enabled
+                                ? () => connectionManager
+                                    .sendCommand(CommandCode.find)
+                                : null),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child:
-                            _buildActionButton(Icons.lock_outline, '设防'),
+                        child: _buildActionButton(
+                            Icons.lock_outline, '设防',
+                            onTap: enabled
+                                ? () => connectionManager
+                                    .sendCommand(CommandCode.lock)
+                                : null),
                       ),
                     ],
                   ),
@@ -306,21 +345,24 @@ class ControlPage extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label) {
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: Colors.grey.shade700, size: 22),
-          const SizedBox(width: 6),
-          Text(label,
-              style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
-        ],
+  Widget _buildActionButton(IconData icon, String label, {VoidCallback? onTap}) {
+    final color = onTap != null ? Colors.grey.shade700 : Colors.grey.shade400;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(color: color, fontSize: 14)),
+          ],
+        ),
       ),
     );
   }
