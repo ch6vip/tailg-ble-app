@@ -17,6 +17,7 @@ class _ScanPageState extends State<ScanPage>
   bool _scanning = false;
   StreamSubscription? _scanResultsSub;
   StreamSubscription? _isScanSub;
+  Timer? _throttle;
 
   @override
   bool get wantKeepAlive => true;
@@ -25,7 +26,11 @@ class _ScanPageState extends State<ScanPage>
   void initState() {
     super.initState();
     _scanResultsSub = FlutterBluePlus.scanResults.listen((results) {
-      if (mounted) setState(() => _results = results);
+      if (!mounted) return;
+      if (_throttle?.isActive ?? false) return;
+      _throttle = Timer(const Duration(milliseconds: 300), () {
+        if (mounted) setState(() => _results = results);
+      });
     });
     _isScanSub = FlutterBluePlus.isScanning.listen((scanning) {
       if (mounted) setState(() => _scanning = scanning);
@@ -34,6 +39,7 @@ class _ScanPageState extends State<ScanPage>
 
   @override
   void dispose() {
+    _throttle?.cancel();
     _scanResultsSub?.cancel();
     _isScanSub?.cancel();
     super.dispose();

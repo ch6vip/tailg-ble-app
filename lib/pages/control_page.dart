@@ -1,56 +1,87 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
 import '../widgets/slide_to_action.dart';
 
-class ControlPage extends StatelessWidget {
+const _pageBg = Color(0xFFF5F6FA);
+const _cardDecoration = BoxDecoration(
+  color: Colors.white,
+  borderRadius: BorderRadius.all(Radius.circular(20)),
+  boxShadow: [
+    BoxShadow(
+      color: Color(0x0A000000),
+      blurRadius: 10,
+      offset: Offset(0, 2),
+    ),
+  ],
+);
+
+class ControlPage extends StatefulWidget {
   const ControlPage({super.key});
 
   @override
+  State<ControlPage> createState() => _ControlPageState();
+}
+
+class _ControlPageState extends State<ControlPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
-      body: SafeArea(
-        child: StreamBuilder<ble.ConnectionState>(
-          stream: connectionManager.stateStream,
-          initialData: connectionManager.state,
-          builder: (context, snapshot) {
-            final connState = snapshot.data ?? ble.ConnectionState.disconnected;
-            return SingleChildScrollView(
+    super.build(context);
+    return StreamBuilder<ble.ConnectionState>(
+      stream: connectionManager.stateStream,
+      initialData: connectionManager.state,
+      builder: (context, snapshot) {
+        final connState = snapshot.data ?? ble.ConnectionState.disconnected;
+        return Scaffold(
+          backgroundColor: _pageBg,
+          body: SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(context, connState),
-                  _buildStatusSection(context),
+                  _Header(connState: connState),
+                  const _StatusSection(),
                   const SizedBox(height: 20),
-                  _buildBikeImage(context),
-                  _buildStateLabel(context, connState),
+                  const _BikeImage(),
+                  _StateLabel(connState: connState),
                   const SizedBox(height: 20),
-                  _buildControlArea(context, connState),
+                  _ControlArea(connState: connState),
                   const SizedBox(height: 20),
-                  _buildLocationCard(context),
+                  const _LocationCard(),
                   const SizedBox(height: 20),
                 ],
               ),
-            );
-          },
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
+}
 
-  Widget _buildHeader(BuildContext context, ble.ConnectionState connState) {
+class _Header extends StatelessWidget {
+  final ble.ConnectionState connState;
+  const _Header({required this.connState});
+
+  @override
+  Widget build(BuildContext context) {
     final statusText = switch (connState) {
       ble.ConnectionState.disconnected => '离线',
       ble.ConnectionState.connecting => '连接中',
       ble.ConnectionState.connected => '已连接',
       ble.ConnectionState.ready => '在线',
     };
-    final statusColor = connState == ble.ConnectionState.ready
-        ? Colors.green
-        : Colors.grey;
+    final statusColor =
+        connState == ble.ConnectionState.ready ? Colors.green : Colors.grey;
     final isConnecting = connState == ble.ConnectionState.connecting;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
@@ -60,14 +91,16 @@ class ControlPage extends StatelessWidget {
               children: [
                 Text(
                   '超能S·苍穹灰',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(width: 8),
                 const Icon(Icons.arrow_drop_down, size: 20),
                 const SizedBox(width: 8),
-                Container(
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
@@ -87,15 +120,16 @@ class ControlPage extends StatelessWidget {
                 ? () => connectionManager.disconnect()
                 : null,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.all(Radius.circular(20)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: Color(0x0D000000),
                     blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    offset: Offset(0, 2),
                   ),
                 ],
               ),
@@ -126,8 +160,13 @@ class ControlPage extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildStatusSection(BuildContext context) {
+class _StatusSection extends StatelessWidget {
+  const _StatusSection();
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Column(
@@ -164,14 +203,12 @@ class ControlPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 24),
-              const Text(
-                '--',
-                style: TextStyle(fontSize: 48, fontWeight: FontWeight.w300),
-              ),
+              const Text('--',
+                  style: TextStyle(fontSize: 48, fontWeight: FontWeight.w300)),
               const Padding(
                 padding: EdgeInsets.only(bottom: 8),
-                child: Text('km',
-                    style: TextStyle(fontSize: 16, color: Colors.black54)),
+                child:
+                    Text('km', style: TextStyle(fontSize: 16, color: Colors.black54)),
               ),
             ],
           ),
@@ -179,8 +216,13 @@ class ControlPage extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildBikeImage(BuildContext context) {
+class _BikeImage extends StatelessWidget {
+  const _BikeImage();
+
+  @override
+  Widget build(BuildContext context) {
     return Center(
       child: Container(
         height: 180,
@@ -190,18 +232,21 @@ class ControlPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Center(
-          child: Icon(
-            Icons.electric_bike,
-            size: 100,
-            color: Colors.grey.shade300,
-          ),
+          child: Icon(Icons.electric_bike, size: 100, color: Colors.grey.shade300),
         ),
       ),
     );
   }
+}
 
-  Widget _buildStateLabel(BuildContext context, ble.ConnectionState connState) {
-    final stateText = connState == ble.ConnectionState.ready ? '已关机设防' : '未连接';
+class _StateLabel extends StatelessWidget {
+  final ble.ConnectionState connState;
+  const _StateLabel({required this.connState});
+
+  @override
+  Widget build(BuildContext context) {
+    final stateText =
+        connState == ble.ConnectionState.ready ? '已关机设防' : '未连接';
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
@@ -218,157 +263,191 @@ class ControlPage extends StatelessWidget {
                   ),
                   shape: BoxShape.circle,
                 ),
-                child:
-                    const Icon(Icons.lock_outline, size: 18, color: Colors.white),
+                child: const Icon(Icons.lock_outline,
+                    size: 18, color: Colors.white),
               ),
               const SizedBox(width: 10),
-              Text(stateText, style: const TextStyle(fontSize: 14)),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Text(stateText,
+                    key: ValueKey(stateText),
+                    style: const TextStyle(fontSize: 14)),
+              ),
             ],
           ),
           Row(
             children: [
               Text('手动模式',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                  style:
+                      TextStyle(fontSize: 13, color: Colors.grey.shade600)),
               const SizedBox(width: 4),
-              Switch(value: false, onChanged: null),
+              const Switch(value: false, onChanged: null),
             ],
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildControlArea(BuildContext context, ble.ConnectionState connState) {
+class _ControlArea extends StatelessWidget {
+  final ble.ConnectionState connState;
+  const _ControlArea({required this.connState});
+
+  @override
+  Widget build(BuildContext context) {
     final enabled = connState == ble.ConnectionState.ready;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: _cardDecoration,
+            child: Column(
               children: [
-                _buildSmallButton(Icons.event_seat_outlined,
-                    onTap: enabled
-                        ? () =>
-                            connectionManager.sendCommand(CommandCode.openSeat)
-                        : null),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: SlideToAction(
-                    onSlideComplete: enabled
-                        ? () =>
-                            connectionManager.sendCommand(CommandCode.unlock)
-                        : null,
-                  ),
+                Row(
+                  children: [
+                    _ControlButton(
+                      icon: Icons.event_seat_outlined,
+                      onTap: enabled
+                          ? () => connectionManager
+                              .sendCommand(CommandCode.openSeat)
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SlideToAction(
+                        onSlideComplete: enabled
+                            ? () => connectionManager
+                                .sendCommand(CommandCode.unlock)
+                            : null,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    _ControlButton(
+                      icon: Icons.power_off_outlined,
+                      onTap: enabled
+                          ? () => connectionManager
+                              .sendCommand(CommandCode.powerOff)
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _ActionButton(
+                              icon: Icons.volume_up_outlined,
+                              label: '寻车',
+                              onTap: enabled
+                                  ? () => connectionManager
+                                      .sendCommand(CommandCode.find)
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _ActionButton(
+                              icon: Icons.lock_outline,
+                              label: '设防',
+                              onTap: enabled
+                                  ? () => connectionManager
+                                      .sendCommand(CommandCode.lock)
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _buildSmallButton(Icons.power_off_outlined,
-                    onTap: enabled
-                        ? () =>
-                            connectionManager.sendCommand(CommandCode.powerOff)
-                        : null),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _buildActionButton(
-                            Icons.volume_up_outlined, '寻车',
-                            onTap: enabled
-                                ? () => connectionManager
-                                    .sendCommand(CommandCode.find)
-                                : null),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildActionButton(
-                            Icons.lock_outline, '设防',
-                            onTap: enabled
-                                ? () => connectionManager
-                                    .sendCommand(CommandCode.lock)
-                                : null),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
   }
+}
 
-  Widget _buildSmallButton(IconData icon, {VoidCallback? onTap}) {
+class _ControlButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _ControlButton({required this.icon, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
     final color = onTap != null ? Colors.grey.shade700 : Colors.grey.shade400;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(14),
+    return Material(
+      color: Colors.grey.shade100,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: () {
+          if (onTap != null) {
+            HapticFeedback.mediumImpact();
+            onTap!();
+          }
+        },
+        borderRadius: BorderRadius.circular(14),
+        child: SizedBox(
+          width: 56,
+          height: 56,
+          child: Icon(icon, color: color, size: 24),
         ),
-        child: Icon(icon, color: color, size: 24),
       ),
     );
   }
+}
 
-  Widget _buildActionButton(IconData icon, String label, {VoidCallback? onTap}) {
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  const _ActionButton({required this.icon, required this.label, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
     final color = onTap != null ? Colors.grey.shade700 : Colors.grey.shade400;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 56,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(color: color, fontSize: 14)),
-          ],
+    return Material(
+      color: Colors.grey.shade100,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: () {
+          if (onTap != null) {
+            HapticFeedback.mediumImpact();
+            onTap!();
+          }
+        },
+        borderRadius: BorderRadius.circular(14),
+        child: SizedBox(
+          height: 56,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(width: 6),
+              Text(label, style: TextStyle(color: color, fontSize: 14)),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildLocationCard(BuildContext context) {
+class _LocationCard extends StatelessWidget {
+  const _LocationCard();
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
+        decoration: _cardDecoration,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

@@ -33,6 +33,13 @@ class TailgBleApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const HomePage(),
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(boldText: false, textScaler: TextScaler.noScaling),
+          child: child!,
+        );
+      },
     );
   }
 }
@@ -46,20 +53,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 1;
-  final _pageController = PageController(initialPage: 1);
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
+      body: IndexedStack(
+        index: _currentIndex,
         children: const [
           ScanPage(),
           ControlPage(),
@@ -71,11 +70,6 @@ class _HomePageState extends State<HomePage> {
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
           setState(() => _currentIndex = index);
-          _pageController.animateToPage(
-            index,
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOutCubic,
-          );
         },
         destinations: const [
           NavigationDestination(

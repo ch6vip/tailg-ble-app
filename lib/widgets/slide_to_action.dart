@@ -23,9 +23,8 @@ class SlideToAction extends StatefulWidget {
 
 class _SlideToActionState extends State<SlideToAction>
     with SingleTickerProviderStateMixin {
-  double _dragPosition = 0;
+  final _dragNotifier = ValueNotifier<double>(0);
   late AnimationController _resetController;
-  late Animation<double> _resetAnimation;
 
   @override
   void initState() {
@@ -34,19 +33,32 @@ class _SlideToActionState extends State<SlideToAction>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _resetAnimation = Tween<double>(begin: 0, end: 0).animate(
-      CurvedAnimation(parent: _resetController, curve: Curves.easeOut),
-    );
-    _resetController.addListener(() {
-      setState(() => _dragPosition = _resetAnimation.value);
-    });
   }
 
   @override
   void dispose() {
     _resetController.dispose();
+    _dragNotifier.dispose();
     super.dispose();
   }
+
+  void _resetThumb() {
+    final startVal = _dragNotifier.value;
+    _resetController.reset();
+    _resetController.addListener(_onResetTick);
+    _resetController.forward();
+    _resetController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _resetController.removeListener(_onResetTick);
+      }
+    });
+    _onResetTick = () {
+      final t = Curves.easeOut.transform(_resetController.value);
+      _dragNotifier.value = startVal * (1 - t);
+    };
+  }
+
+  late VoidCallback _onResetTick = () {};
 
   @override
   Widget build(BuildContext context) {
@@ -64,52 +76,54 @@ class _SlideToActionState extends State<SlideToAction>
           ),
           child: Stack(
             children: [
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.chevron_right,
-                        color: Colors.white54.withValues(
-                            alpha: 0.5 * (1 - _dragPosition / maxDrag)),
-                        size: 20),
-                    Icon(Icons.chevron_right,
-                        color: Colors.white70.withValues(
-                            alpha: 0.7 * (1 - _dragPosition / maxDrag)),
-                        size: 20),
-                    const SizedBox(width: 4),
-                    Opacity(
-                      opacity: (1 - _dragPosition / maxDrag * 2).clamp(0, 1),
-                      child: Text(widget.label,
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 14)),
+              ValueListenableBuilder<double>(
+                valueListenable: _dragNotifier,
+                builder: (context, pos, _) {
+                  final progress = maxDrag > 0 ? pos / maxDrag : 0.0;
+                  return Center(
+                    child: Opacity(
+                      opacity: (1 - progress * 1.5).clamp(0, 1),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.chevron_right,
+                              color: Colors.white54, size: 20),
+                          const Icon(Icons.chevron_right,
+                              color: Colors.white70, size: 20),
+                          const SizedBox(width: 4),
+                          Text(widget.label,
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 14)),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
-              Positioned(
-                left: _dragPosition + 4,
-                top: 4,
+              ValueListenableBuilder<double>(
+                valueListenable: _dragNotifier,
+                builder: (context, pos, child) {
+                  return Positioned(
+                    left: pos + 4,
+                    top: 4,
+                    child: child!,
+                  );
+                },
                 child: GestureDetector(
                   onHorizontalDragUpdate: enabled
                       ? (details) {
-                          setState(() {
-                            _dragPosition = (_dragPosition + details.delta.dx)
-                                .clamp(0.0, maxDrag);
-                          });
+                          _dragNotifier.value =
+                              (_dragNotifier.value + details.delta.dx)
+                                  .clamp(0.0, maxDrag);
                         }
                       : null,
                   onHorizontalDragEnd: enabled
                       ? (details) {
-                          if (_dragPosition > maxDrag * 0.75) {
+                          if (_dragNotifier.value > maxDrag * 0.75) {
                             HapticFeedback.heavyImpact();
                             widget.onSlideComplete?.call();
                           }
-                          _resetAnimation = Tween<double>(
-                            begin: _dragPosition,
-                            end: 0,
-                          ).animate(CurvedAnimation(
-                              parent: _resetController, curve: Curves.easeOut));
-                          _resetController.forward(from: 0);
+                          _resetThumb();
                         }
                       : null,
                   child: Container(
@@ -119,7 +133,8 @@ class _SlideToActionState extends State<SlideToAction>
                       color: widget.thumbColor,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(widget.icon, color: Colors.white, size: 24),
+                    child:
+                        Icon(widget.icon, color: Colors.white, size: 24),
                   ),
                 ),
               ),
