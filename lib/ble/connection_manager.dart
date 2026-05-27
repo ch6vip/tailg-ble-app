@@ -44,6 +44,10 @@ class ConnectionManager {
   void setModel(ModelType model) => _model = model;
 
   Future<void> connect(BluetoothDevice device) async {
+    _notifySub?.cancel();
+    _connectionSub?.cancel();
+    _heartbeatTimer?.cancel();
+
     _device = device;
     _setState(ConnectionState.connecting);
     _log.ble('连接设备 ${device.platformName}', detail: device.remoteId.toString());
@@ -177,6 +181,11 @@ class ConnectionManager {
 
   void _startHeartbeat() {
     _heartbeatTimer?.cancel();
+    _log.ble('心跳启动 feb3=${_feb3Char != null}', level: LogLevel.info);
+    if (_feb3Char == null) {
+      _log.ble('feb3 未找到，无法维持心跳', level: LogLevel.error);
+      return;
+    }
     int failCount = 0;
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
       if (_feb3Char != null) {
@@ -214,6 +223,10 @@ class ConnectionManager {
     _log.ble('设备断开连接', level: LogLevel.warning);
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    _notifySub?.cancel();
+    _notifySub = null;
+    _connectionSub?.cancel();
+    _connectionSub = null;
     _reset();
   }
 
