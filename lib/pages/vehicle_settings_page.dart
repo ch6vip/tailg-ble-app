@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../services/log_service.dart';
@@ -19,7 +20,26 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
   bool _unlockSound = true;
   bool _powerOnSound = true;
   int _buzzerVolume = 2;
+  int _shockSensitivity = 3;
   bool _sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSensitivity();
+  }
+
+  Future<void> _loadSensitivity() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _shockSensitivity = prefs.getInt('shock_sensitivity') ?? 3;
+    });
+  }
+
+  Future<void> _saveSensitivity(int value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('shock_sensitivity', value);
+  }
 
   Future<void> _writeFcc1(List<int> data, {int retries = 2}) async {
     if (connectionManager.state != ble.ConnectionState.ready) {
@@ -122,6 +142,34 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
     if (_turnSignal) state1 |= 0x02;
     return [0x00, 0x07, 0x00, 0x02, state1, 0x00, 0x00];
   }
+
+  List<int> _buildSensitivityCommand() {
+    // Shock sensitivity via fcc1: A7 00 00 04 10 03 [level] [level]
+    // level 1-5 maps to sensitivity (1=lowest, 5=highest)
+    return [0xA7, 0x00, 0x00, 0x04, 0x10, 0x03, _shockSensitivity, _shockSensitivity];
+  }
+
+  Future<void> _setSensitivity(int value) async {
+    setState(() => _shockSensitivity = value);
+    await _writeFcc1(_buildSensitivityCommand());
+    await _saveSensitivity(value);
+  }
+
+  String get _sensitivityLabel => switch (_shockSensitivity) {
+    1 => '最低',
+    2 => '较低',
+    3 => '中等',
+    4 => '较高',
+    _ => '最高',
+  };
+
+  Color get _sensitivityColor => switch (_shockSensitivity) {
+    1 => Colors.green,
+    2 => Colors.lightGreen,
+    3 => Colors.orange,
+    4 => Colors.deepOrange,
+    _ => Colors.red,
+  };
 
   void _showSnack(String msg) {
     if (!mounted) return;
@@ -227,6 +275,66 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                   ),
                 ),
                 const Icon(Icons.volume_up, size: 20),
+              ],
+            ),
+          ),
+          const Divider(),
+          _SectionHeader('防盗灵敏度'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                const Icon(Icons.shield_outlined, size: 20),
+                const SizedBox(width: 12),
+                Text('当前等级: $_shockSensitivity',
+                    style: const TextStyle(fontSize: 14)),
+                const Spacer(),
+                Text(_sensitivityLabel,
+                    style: TextStyle(fontSize: 13, color: _sensitivityColor)),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: List.generate(5, (i) {
+                final level = i + 1;
+                final selected = level == _shockSensitivity;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: Material(
+                      color: selected
+                          ? _sensitivityColor.withValues(alpha: 0.2)
+                          : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(10),
+                      child: InkWell(
+                        onTap: isConnected ? () => _setSensitivity(level) : null,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          alignment: Alignment.center,
+                          child: Text('$level',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                                color: selected ? _sensitivityColor : Colors.grey.shade600,
+                              )),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('低', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                Text('高', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
               ],
             ),
           ),
