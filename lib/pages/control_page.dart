@@ -389,7 +389,14 @@ class _ControlArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = connState == ble.ConnectionState.ready;
-    return Padding(
+    return StreamBuilder<BikeState?>(
+      stream: connectionManager.bikeStateStream,
+      builder: (context, snapshot) {
+        final bike = snapshot.data;
+        final isLocked = bike?.isLocked ?? true;
+        final isPowerOn = bike?.isPowerOn ?? false;
+
+        return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Container(
             padding: const EdgeInsets.all(16),
@@ -398,55 +405,45 @@ class _ControlArea extends StatelessWidget {
               children: [
                 Row(
                   children: [
+                    Expanded(
+                      child: _LockToggleButton(
+                        isLocked: isLocked,
+                        enabled: enabled,
+                        onTap: () => _send(context,
+                            isLocked ? CommandCode.unlock : CommandCode.lock),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     _ControlButton(
                       icon: Icons.event_seat_outlined,
                       onTap: enabled
                           ? () => _send(context, CommandCode.openSeat)
                           : null,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: SlideToAction(
-                        onSlideComplete: enabled
-                            ? () => _send(context, CommandCode.unlock)
-                            : null,
-                      ),
-                    ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                SlideToAction(
+                  label: isPowerOn ? '右滑断电' : '右滑通电',
+                  icon: isPowerOn ? Icons.power_off : Icons.power_settings_new,
+                  backgroundColor: isPowerOn
+                      ? const Color(0xFF5D4037)
+                      : const Color(0xFF424242),
+                  onSlideComplete: enabled
+                      ? () => _send(context,
+                          isPowerOn ? CommandCode.powerOff : CommandCode.powerOn)
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    _ControlButton(
-                      icon: Icons.power_off_outlined,
-                      onTap: enabled
-                          ? () => _send(context, CommandCode.powerOff)
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _ActionButton(
-                              icon: Icons.volume_up_outlined,
-                              label: '寻车',
-                              onTap: enabled
-                                  ? () => _send(context, CommandCode.find)
-                                  : null,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _ActionButton(
-                              icon: Icons.lock_outline,
-                              label: '设防',
-                              onTap: enabled
-                                  ? () => _send(context, CommandCode.lock)
-                                  : null,
-                            ),
-                          ),
-                        ],
+                      child: _ActionButton(
+                        icon: Icons.volume_up_outlined,
+                        label: '寻车',
+                        onTap: enabled
+                            ? () => _send(context, CommandCode.find)
+                            : null,
                       ),
                     ),
                   ],
@@ -455,6 +452,60 @@ class _ControlArea extends StatelessWidget {
             ),
           ),
         );
+      },
+    );
+  }
+}
+
+class _LockToggleButton extends StatelessWidget {
+  final bool isLocked;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  const _LockToggleButton({
+    required this.isLocked,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = enabled
+        ? (isLocked ? Colors.blue : Colors.orange)
+        : Colors.grey.shade400;
+    return Material(
+      color: color.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: enabled ? () {
+          HapticFeedback.mediumImpact();
+          onTap();
+        } : null,
+        borderRadius: BorderRadius.circular(14),
+        child: SizedBox(
+          height: 56,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isLocked ? Icons.lock_outline : Icons.lock_open,
+                color: color,
+                size: 22,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                isLocked ? '解锁' : '设防',
+                style: TextStyle(
+                  color: color,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
