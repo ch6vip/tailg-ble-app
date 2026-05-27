@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -10,19 +11,32 @@ class ScanPage extends StatefulWidget {
   State<ScanPage> createState() => _ScanPageState();
 }
 
-class _ScanPageState extends State<ScanPage> {
+class _ScanPageState extends State<ScanPage>
+    with AutomaticKeepAliveClientMixin {
   List<ScanResult> _results = [];
   bool _scanning = false;
+  StreamSubscription? _scanResultsSub;
+  StreamSubscription? _isScanSub;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    FlutterBluePlus.scanResults.listen((results) {
+    _scanResultsSub = FlutterBluePlus.scanResults.listen((results) {
       if (mounted) setState(() => _results = results);
     });
-    FlutterBluePlus.isScanning.listen((scanning) {
+    _isScanSub = FlutterBluePlus.isScanning.listen((scanning) {
       if (mounted) setState(() => _scanning = scanning);
     });
+  }
+
+  @override
+  void dispose() {
+    _scanResultsSub?.cancel();
+    _isScanSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _requestPermissions() async {
@@ -44,8 +58,12 @@ class _ScanPageState extends State<ScanPage> {
 
   Future<void> _connectDevice(BluetoothDevice device) async {
     _stopScan();
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('正在连接 ${device.platformName}...')),
+      SnackBar(
+        content: Text('正在连接 ${device.platformName}...'),
+        duration: const Duration(seconds: 2),
+      ),
     );
     try {
       await connectionManager.connect(device);
@@ -65,6 +83,7 @@ class _ScanPageState extends State<ScanPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('搜索设备'),
@@ -80,61 +99,91 @@ class _ScanPageState extends State<ScanPage> {
             ),
         ],
       ),
-      body: _results.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.bluetooth_disabled,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _scanning ? '正在搜索...' : '点击下方按钮开始搜索',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              itemCount: _results.length,
-              itemBuilder: (context, index) {
-                final r = _results[index];
-                final name = r.device.platformName.isNotEmpty
-                    ? r.device.platformName
-                    : '未知设备';
-                final isTailg = name.contains('TL') ||
-                    name.contains('tailg') ||
-                    name.contains('Tailg');
-                return Card(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: isTailg
-                          ? Theme.of(context).colorScheme.primaryContainer
-                          : Theme.of(context).colorScheme.surfaceContainerHighest,
-                      child: Icon(
-                        isTailg ? Icons.electric_bike : Icons.bluetooth,
-                        color: isTailg
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.outline,
-                      ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _results.isEmpty
+            ? Center(
+                key: const ValueKey('empty'),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.bluetooth_disabled,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.outline,
                     ),
-                    title: Text(name),
-                    subtitle: Text(r.device.remoteId.toString()),
-                    trailing: Text('${r.rssi} dBm'),
+                    const SizedBox(height: 16),
+                    Text(
+                      _scanning ? '正在搜索...' : '点击下方按钮开始搜索',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ],
+                ),
+              )
+            : ListView.builder(
+                key: const ValueKey('list'),
+                itemCount: _results.length,
+                itemBuilder: (context, index) {
+                  final r = _results[index];
+                  return _DeviceCard(
+                    result: r,
                     onTap: () => _connectDevice(r.device),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _scanning ? _stopScan : _startScan,
-        icon: Icon(_scanning ? Icons.stop : Icons.bluetooth_searching),
-        label: Text(_scanning ? '停止' : '扫描'),
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: Icon(
+            _scanning ? Icons.stop : Icons.bluetooth_searching,
+            key: ValueKey(_scanning),
+          ),
+        ),
+        label: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: Text(
+            _scanning ? '停止' : '扫描',
+            key: ValueKey(_scanning),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DeviceCard extends StatelessWidget {
+  final ScanResult result;
+  final VoidCallback onTap;
+
+  const _DeviceCard({required this.result, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = result.device.platformName.isNotEmpty
+        ? result.device.platformName
+        : '未知设备';
+    final isTailg =
+        name.contains('TL') || name.contains('tailg') || name.contains('Tailg');
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: isTailg
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: Icon(
+            isTailg ? Icons.electric_bike : Icons.bluetooth,
+            color: isTailg
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outline,
+          ),
+        ),
+        title: Text(name),
+        subtitle: Text(result.device.remoteId.toString()),
+        trailing: Text('${result.rssi} dBm'),
+        onTap: onTap,
       ),
     );
   }
