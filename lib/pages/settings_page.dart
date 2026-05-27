@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/proximity_service.dart';
 import 'log_page.dart';
+import 'vehicle_settings_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -46,7 +47,17 @@ class SettingsPage extends StatelessWidget {
             onTap: () {},
           ),
           const Divider(),
-          const _SectionHeader('协议'),
+          const _SectionHeader('车辆'),
+          ListTile(
+            leading: const Icon(Icons.tune),
+            title: const Text('灯光与声音'),
+            subtitle: const Text('前灯、转向灯、提示音设置'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const VehicleSettingsPage()),
+            ),
+          ),
           ListTile(
             leading: const Icon(Icons.swap_horiz),
             title: const Text('协议类型'),
