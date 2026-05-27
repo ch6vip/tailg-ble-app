@@ -1,5 +1,6 @@
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 
+import '../ble/constants.dart';
 import '../ble/connection_manager.dart' as ble;
 import 'log_service.dart';
 
@@ -92,10 +93,7 @@ class VehicleSettingsService {
     required int buzzerVolume,
   }) {
     return _writeAndRead([
-      0x85,
-      0x06,
-      0x4A,
-      0x3C,
+      ...QgjCommandHeaders.setSound,
       0x02,
       powerOnSound ? 0x01 : 0x00,
       startupSound ? 0x01 : 0x00,
@@ -134,7 +132,7 @@ class VehicleSettingsService {
               .map((b) => b.toRadixString(16).padLeft(2, '0'))
               .join(' '),
         );
-        await Future.delayed(const Duration(milliseconds: 200));
+        await Future.delayed(BleTimings.fccReadbackDelay);
         return _readBackState(char);
       } catch (e) {
         if (attempt == retries) {
@@ -145,7 +143,7 @@ class VehicleSettingsService {
           );
           throw VehicleSettingsException('写入失败，请重试');
         }
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(BleTimings.fccRetryDelay);
       }
     }
     return null;
@@ -159,6 +157,9 @@ class VehicleSettingsService {
     if (device == null) {
       throw const VehicleSettingsException('未连接车辆');
     }
+    final cachedFcc1 = connectionManager.fcc1Char;
+    if (cachedFcc1 != null) return cachedFcc1;
+
     for (final service in device.servicesList) {
       if (service.serviceUuid.toString().contains('fcc0')) {
         for (final char in service.characteristics) {

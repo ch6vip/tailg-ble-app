@@ -1,18 +1,6 @@
 import 'dart:typed_data';
 import 'constants.dart';
 
-const _qgjCmdLogin = 0x1001;
-const _qgjCmdSetStatus = 0x1002;
-
-const _opCodes = <String, int>{
-  '01': 0x02, // lock
-  '02': 0x01, // unlock
-  '05': 0x07, // open seat
-  '06': 0x03, // power on
-  '07': 0x04, // power off
-  '08': 0x08, // find
-};
-
 Uint8List buildQgjLoginFrame({int password = 0, int userId = 0}) {
   final payload = Uint8List(8);
   final view = ByteData.sublistView(payload);
@@ -25,8 +13,8 @@ Uint8List buildQgjLoginFrame({int password = 0, int userId = 0}) {
   frame[1] = 0x00;
   frame[2] = (length >> 8) & 0xFF;
   frame[3] = length & 0xFF;
-  frame[4] = (_qgjCmdLogin >> 8) & 0xFF;
-  frame[5] = _qgjCmdLogin & 0xFF;
+  frame[4] = (QgjCommandIds.login >> 8) & 0xFF;
+  frame[5] = QgjCommandIds.login & 0xFF;
   frame.setRange(6, frame.length, payload);
   return frame;
 }
@@ -46,9 +34,9 @@ Uint8List buildQgjCommand(int cmdId, [Uint8List? payload]) {
 }
 
 Uint8List? buildQgjControlFrame(CommandCode cmd) {
-  final opCode = _opCodes[cmd.code];
+  final opCode = QgjControlOpCodes.byCommandCode[cmd.code];
   if (opCode == null) return null;
-  return buildQgjCommand(_qgjCmdSetStatus, Uint8List.fromList([opCode]));
+  return buildQgjCommand(QgjCommandIds.setStatus, Uint8List.fromList([opCode]));
 }
 
 class QgjResponse {
@@ -68,5 +56,9 @@ QgjResponse? parseQgjResponse(Uint8List data) {
   final cmdId = (data[4] << 8) | data[5];
   final payload = data.sublist(6);
   final statusNibble = (data[1] >> 4) & 0x0F;
-  return QgjResponse(cmdId: cmdId, payload: payload, success: statusNibble == 0);
+  return QgjResponse(
+    cmdId: cmdId,
+    payload: payload,
+    success: statusNibble == 0,
+  );
 }

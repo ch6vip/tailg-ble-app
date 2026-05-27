@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../ble/constants.dart';
 import '../ble/connection_manager.dart';
 import '../models/vehicle_profile.dart';
 import 'log_service.dart';
@@ -101,14 +102,14 @@ class AutoConnectService {
       }
     });
 
-    timeout = Timer(const Duration(seconds: 8), () {
+    timeout = Timer(BleTimings.autoConnectScanTimeout, () {
       scanSub?.cancel();
       FlutterBluePlus.stopScan();
       _log.operation('自动连接: 超时未找到设备', level: LogLevel.warning);
       if (!completer.isCompleted) completer.complete();
     });
 
-    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 8));
+    await FlutterBluePlus.startScan(timeout: BleTimings.autoConnectScanTimeout);
     await completer.future;
   }
 

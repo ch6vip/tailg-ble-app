@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import '../ble/constants.dart';
 import '../main.dart';
 import '../services/permission_service.dart';
 import '../theme/app_colors.dart';
@@ -86,7 +87,7 @@ class _ScanPageState extends State<ScanPage>
       }
       return;
     }
-    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
+    await FlutterBluePlus.startScan(timeout: BleTimings.manualScanTimeout);
   }
 
   void _stopScan() {

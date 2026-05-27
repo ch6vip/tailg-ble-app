@@ -25,12 +25,17 @@ class ConnectionManager {
   String? _token;
   ModelType _model = ModelType.KKS;
   BikeState? _latestBikeState;
+  BikeState? _lastPublishedBikeState;
 
   BluetoothCharacteristic? _writeChar;
   BluetoothCharacteristic? _notifyChar;
   BluetoothCharacteristic? _feb1Char;
   BluetoothCharacteristic? _feb2Char;
   BluetoothCharacteristic? _feb3Char;
+  BluetoothCharacteristic? _fcc1Char;
+  BluetoothCharacteristic? _fcc2Char;
+  BluetoothCharacteristic? _fbb1Char;
+  BluetoothCharacteristic? _fbb2Char;
 
   Timer? _heartbeatTimer;
   StreamSubscription? _connectionSub;
@@ -55,6 +60,10 @@ class ConnectionManager {
   String? get token => _token;
   BluetoothDevice? get device => _device;
   BikeState? get latestBikeState => _latestBikeState;
+  BluetoothCharacteristic? get fcc1Char => _fcc1Char;
+  BluetoothCharacteristic? get fcc2Char => _fcc2Char;
+  BluetoothCharacteristic? get fbb1Char => _fbb1Char;
+  BluetoothCharacteristic? get fbb2Char => _fbb2Char;
 
   void setModel(ModelType model) => _model = model;
 
@@ -71,7 +80,7 @@ class ConnectionManager {
     _log.ble('连接设备 ${device.platformName}', detail: device.remoteId.toString());
 
     try {
-      await device.connect(timeout: const Duration(seconds: 10));
+      await device.connect(timeout: BleTimings.connectTimeout);
 
       _connectionSub = device.connectionState.listen((state) {
         if (state == BluetoothConnectionState.disconnected) {
@@ -81,7 +90,7 @@ class ConnectionManager {
 
       _setState(ConnectionState.connected);
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(BleTimings.serviceSetupDelay);
       await _discoverAndSetup();
     } catch (e) {
       _log.ble('连接失败', detail: e.toString(), level: LogLevel.error);
@@ -203,6 +212,10 @@ class ConnectionManager {
     int subscribed = 0;
     for (final c in service.characteristics) {
       final uuid = c.characteristicUuid.toString();
+      if (uuid.contains('fcc1')) _fcc1Char = c;
+      if (uuid.contains('fcc2')) _fcc2Char = c;
+      if (uuid.contains('fbb1')) _fbb1Char = c;
+      if (uuid.contains('fbb2')) _fbb2Char = c;
       if (c.properties.notify || c.properties.indicate) {
         try {
           await c.setNotifyValue(true);
@@ -212,7 +225,12 @@ class ConnectionManager {
         }
       }
     }
-    _log.ble('fcc0 已订阅 $subscribed 个特征', level: LogLevel.info);
+    _log.ble(
+      'fcc0 已订阅 $subscribed 个特征',
+      detail:
+          'fcc1=${_fcc1Char != null}, fcc2=${_fcc2Char != null}, fbb1=${_fbb1Char != null}, fbb2=${_fbb2Char != null}',
+      level: LogLevel.info,
+    );
   }
 
   void _onStandardNotify(List<int> value) {
@@ -241,12 +259,12 @@ class ConnectionManager {
     final response = parseQgjResponse(data);
     if (response == null) return;
 
-    if (response.cmdId == 0x1001 && response.success) {
+    if (response.cmdId == QgjCommandIds.login && response.success) {
       _token = 'qgj';
       _log.ble('QGJ 登录成功', level: LogLevel.info);
       _setState(ConnectionState.ready);
       _startHeartbeat();
-    } else if (response.cmdId == 0x1002) {
+    } else if (response.cmdId == QgjCommandIds.setStatus) {
       _cmdAckCompleter?.complete(response.success);
       _cmdAckCompleter = null;
     }
@@ -286,12 +304,17 @@ class ConnectionManager {
           });
     }
 
-    Future.delayed(const Duration(milliseconds: 500), tick);
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 1), (_) => tick());
+    Future.delayed(BleTimings.heartbeatInitialDelay, tick);
+    _heartbeatTimer = Timer.periodic(
+      BleTimings.heartbeatInterval,
+      (_) => tick(),
+    );
   }
 
   void _publishBikeState(BikeState? state) {
+    if (state == _lastPublishedBikeState) return;
     _latestBikeState = state;
+    _lastPublishedBikeState = state;
     _bikeStateController.add(state);
   }
 
@@ -314,7 +337,7 @@ class ConnectionManager {
       await _feb1Char!.write(frame.toList(), withoutResponse: false);
 
       final success = await _cmdAckCompleter!.future.timeout(
-        const Duration(seconds: 5),
+        BleTimings.commandAckTimeout,
         onTimeout: () => false,
       );
       _cmdAckCompleter = null;
@@ -340,7 +363,7 @@ class ConnectionManager {
     _log.operation('切换模式: ${mode.label}', detail: 'code=${mode.code}');
 
     try {
-      final fcc1 = _findFcc1Char();
+      final fcc1 = _fcc1Char ?? _findFcc1Char();
       if (fcc1 == null) return false;
 
       // fcc1 ECU control: 00070002 + state1 + state2 + state3
@@ -349,7 +372,7 @@ class ConnectionManager {
       final data = [0x00, 0x07, 0x00, 0x02, 0x00, state2, 0x00];
       await fcc1.write(data, withoutResponse: false);
 
-      await Future.delayed(const Duration(milliseconds: 200));
+      await Future.delayed(BleTimings.fccReadbackDelay);
       final response = await fcc1.read();
       if (response.isNotEmpty) {
         final confirmedMode = (response.length > 5)
@@ -422,7 +445,7 @@ class ConnectionManager {
       if (_state != ConnectionState.reconnecting) break;
 
       try {
-        await _device!.connect(timeout: const Duration(seconds: 8));
+        await _device!.connect(timeout: BleTimings.reconnectConnectTimeout);
 
         _connectionSub = _device!.connectionState.listen((state) {
           if (state == BluetoothConnectionState.disconnected) {
@@ -431,7 +454,7 @@ class ConnectionManager {
         });
 
         _setState(ConnectionState.connected);
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(BleTimings.serviceSetupDelay);
         await _discoverAndSetup();
 
         _reconnecting = false;
@@ -457,6 +480,11 @@ class ConnectionManager {
     _feb1Char = null;
     _feb2Char = null;
     _feb3Char = null;
+    _fcc1Char = null;
+    _fcc2Char = null;
+    _fbb1Char = null;
+    _fbb2Char = null;
+    _lastPublishedBikeState = null;
   }
 
   void _reset() {

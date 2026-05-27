@@ -69,7 +69,7 @@ class ProximityService {
     });
 
     FlutterBluePlus.startScan(
-      timeout: const Duration(seconds: 30),
+      timeout: BleTimings.proximityScanTimeout,
       continuousUpdates: true,
     );
   }
@@ -121,13 +121,17 @@ class ProximityService {
     if (_connectionManager == null) return;
     try {
       await _connectionManager!.connect(device);
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(BleTimings.serviceSetupDelay);
       if (_connectionManager!.state == ConnectionState.ready) {
         await _connectionManager!.sendCommand(CommandCode.unlock);
         _log.operation('感应解锁: 解锁成功', level: LogLevel.info);
       }
     } catch (e) {
-      _log.operation('感应解锁: 连接失败', detail: e.toString(), level: LogLevel.warning);
+      _log.operation(
+        '感应解锁: 连接失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
     }
   }
 

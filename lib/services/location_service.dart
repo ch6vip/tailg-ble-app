@@ -1,5 +1,6 @@
 import 'package:geolocator/geolocator.dart';
 
+import '../ble/constants.dart';
 import '../models/vehicle_profile.dart';
 import 'log_service.dart';
 import 'permission_service.dart';
@@ -18,7 +19,10 @@ class LocationService {
   factory LocationService() => _instance;
   LocationService._();
 
+  static const silentCaptureThrottle = BleTimings.silentLocationThrottle;
+
   final _log = LogService();
+  final _lastSilentCaptures = <String, DateTime>{};
 
   Future<VehicleLocation> captureCurrentLocation({
     bool requestPermission = false,
@@ -33,7 +37,7 @@ class LocationService {
     final position = await Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 8),
+        timeLimit: BleTimings.locationCaptureTimeout,
       ),
     );
 
@@ -49,11 +53,23 @@ class LocationService {
     String vehicleId, {
     bool requestPermission = false,
   }) async {
+    final store = VehicleStore();
     try {
+      await store.init();
+      final throttledLocation = _throttledLocation(
+        store,
+        vehicleId,
+        requestPermission: requestPermission,
+      );
+      if (throttledLocation != null) return throttledLocation;
+
       final location = await captureCurrentLocation(
         requestPermission: requestPermission,
       );
-      await VehicleStore().updateLastLocation(vehicleId, location);
+      await store.updateLastLocation(vehicleId, location);
+      if (!requestPermission) {
+        _lastSilentCaptures[vehicleId] = location.recordedAt;
+      }
       _log.operation(
         '记录车辆位置',
         detail: '$vehicleId ${location.coordinateText}',
@@ -65,6 +81,38 @@ class LocationService {
       if (requestPermission) rethrow;
       return null;
     }
+  }
+
+  VehicleLocation? _throttledLocation(
+    VehicleStore store,
+    String vehicleId, {
+    required bool requestPermission,
+  }) {
+    if (requestPermission) return null;
+
+    final now = DateTime.now();
+    final lastCapture = _lastSilentCaptures[vehicleId];
+    if (lastCapture != null &&
+        now.difference(lastCapture) < silentCaptureThrottle) {
+      return _cachedLocation(store, vehicleId);
+    }
+
+    final cached = _cachedLocation(store, vehicleId);
+    if (cached != null &&
+        now.difference(cached.recordedAt) < silentCaptureThrottle) {
+      _lastSilentCaptures[vehicleId] = cached.recordedAt;
+      _log.operation('记录车辆位置已节流', detail: vehicleId, level: LogLevel.debug);
+      return cached;
+    }
+
+    return null;
+  }
+
+  VehicleLocation? _cachedLocation(VehicleStore store, String vehicleId) {
+    for (final vehicle in store.vehicles) {
+      if (vehicle.id == vehicleId) return vehicle.lastLocation;
+    }
+    return null;
   }
 
   Future<VehicleLocation?> recordDefaultVehicleLocation({

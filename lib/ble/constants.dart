@@ -42,12 +42,63 @@ class BleUuids {
   static const serviceFcc0 = '0000fcc0-0000-1000-8000-00805f9b34fb';
   static const serviceFe01 = '0000fe01-0000-1000-8000-00805f9b34fb';
   static const serviceFeb0 = '0000feb0-0000-1000-8000-00805f9b34fb';
+  static const serviceOta = '00002600-0000-1000-8000-00805f9b34fb';
   static const writeChar = '0000feb5-0000-1000-8000-00805f9b34fb';
   static const notifyChar = '0000feb6-0000-1000-8000-00805f9b34fb';
   static const feb1 = '0000feb1-0000-1000-8000-00805f9b34fb';
   static const feb2 = '0000feb2-0000-1000-8000-00805f9b34fb';
   static const feb3 = '0000feb3-0000-1000-8000-00805f9b34fb';
   static const fcc1 = '0000fcc1-0000-1000-8000-00805f9b34fb';
+  static const fcc2 = '0000fcc2-0000-1000-8000-00805f9b34fb';
+  static const fbb1 = '0000fbb1-0000-1000-8000-00805f9b34fb';
+  static const fbb2 = '0000fbb2-0000-1000-8000-00805f9b34fb';
+  static const otaOrder = '00007000-0000-1000-8000-00805f9b34fb';
+  static const otaFile = '00007001-0000-1000-8000-00805f9b34fb';
+}
+
+class BleTimings {
+  static const connectTimeout = Duration(seconds: 10);
+  static const reconnectConnectTimeout = Duration(seconds: 8);
+  static const autoConnectScanTimeout = Duration(seconds: 8);
+  static const manualScanTimeout = Duration(seconds: 30);
+  static const proximityScanTimeout = Duration(seconds: 30);
+  static const serviceSetupDelay = Duration(milliseconds: 500);
+  static const heartbeatInitialDelay = Duration(milliseconds: 500);
+  static const heartbeatInterval = Duration(seconds: 1);
+  static const commandAckTimeout = Duration(seconds: 5);
+  static const fccReadbackDelay = Duration(milliseconds: 200);
+  static const fccRetryDelay = Duration(milliseconds: 500);
+  static const locationCaptureTimeout = Duration(seconds: 8);
+  static const silentLocationThrottle = Duration(seconds: 60);
+  static const qgjSearchCountdown = Duration(seconds: 30);
+  static const gpsSearchCountdown = Duration(seconds: 6);
+}
+
+class QgjCommandHeaders {
+  static const checkSound = [0x85, 0x03, 0x4A, 0x3C];
+  static const setSound = [0x85, 0x06, 0x4A, 0x3C];
+  static const checkSensitivity = [0x85, 0x03, 0x4A, 0x36];
+  static const setSensitivity = [0x85, 0x04, 0x4A, 0x36];
+  static const inductionStatus = [0x85, 0x03, 0x4A, 0x33];
+  static const inductionSet = [0x85, 0x04, 0x4A, 0x33];
+  static const autoLockSearch = [0x85, 0x03, 0x4A, 0x30];
+  static const autoLockSet = [0x85, 0x05, 0x4A, 0x30];
+}
+
+class QgjCommandIds {
+  static const login = 0x1001;
+  static const setStatus = 0x1002;
+}
+
+class QgjControlOpCodes {
+  static const byCommandCode = <String, int>{
+    '01': 0x02, // lock
+    '02': 0x01, // unlock
+    '05': 0x07, // open seat
+    '06': 0x03, // power on
+    '07': 0x04, // power off
+    '08': 0x08, // find
+  };
 }
 
 class BikeState {
@@ -115,4 +166,36 @@ class BikeState {
       faultLowVoltage: faultLowVoltage,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BikeState &&
+          runtimeType == other.runtimeType &&
+          isLocked == other.isLocked &&
+          isPowerOn == other.isPowerOn &&
+          isMuted == other.isMuted &&
+          voltage == other.voltage &&
+          temperature == other.temperature &&
+          batteryPercent == other.batteryPercent &&
+          signalStrength == other.signalStrength &&
+          faultMotor == other.faultMotor &&
+          faultController == other.faultController &&
+          faultBrake == other.faultBrake &&
+          faultLowVoltage == other.faultLowVoltage;
+
+  @override
+  int get hashCode => Object.hash(
+    isLocked,
+    isPowerOn,
+    isMuted,
+    voltage,
+    temperature,
+    batteryPercent,
+    signalStrength,
+    faultMotor,
+    faultController,
+    faultBrake,
+    faultLowVoltage,
+  );
 }

@@ -20,4 +20,26 @@ void main() {
     expect(snapshot.estimatedRangeKm, 52);
     expect(snapshot.faults, isEmpty);
   });
+
+  test('BikeState compares by value', () {
+    const first = BikeState(
+      isLocked: true,
+      isPowerOn: false,
+      voltage: 48.5,
+      temperature: 26.2,
+      batteryPercent: 80,
+      signalStrength: -55,
+    );
+    const second = BikeState(
+      isLocked: true,
+      isPowerOn: false,
+      voltage: 48.5,
+      temperature: 26.2,
+      batteryPercent: 80,
+      signalStrength: -55,
+    );
+
+    expect(first, second);
+    expect(first.hashCode, second.hashCode);
+  });
 }
