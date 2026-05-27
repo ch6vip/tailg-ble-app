@@ -9,7 +9,7 @@ import 'parser.dart';
 
 enum ProtocolType { standard, qgj, unknown }
 
-enum ConnectionState { disconnected, connecting, connected, ready }
+enum ConnectionState { disconnected, connecting, reconnecting, connected, ready }
 
 class ConnectionManager {
   final _log = LogService();
@@ -29,6 +29,11 @@ class ConnectionManager {
   StreamSubscription? _connectionSub;
   StreamSubscription? _notifySub;
 
+  bool _userDisconnected = false;
+  bool _reconnecting = false;
+  int _reconnectAttempt = 0;
+  static const _maxReconnectAttempts = 8;
+
   final _stateController = StreamController<ConnectionState>.broadcast();
   final _responseController = StreamController<ParsedResponse>.broadcast();
   final _bikeStateController = StreamController<BikeState?>.broadcast();
@@ -44,6 +49,9 @@ class ConnectionManager {
   void setModel(ModelType model) => _model = model;
 
   Future<void> connect(BluetoothDevice device) async {
+    _userDisconnected = false;
+    _reconnecting = false;
+    _reconnectAttempt = 0;
     _notifySub?.cancel();
     _connectionSub?.cancel();
     _heartbeatTimer?.cancel();
@@ -73,6 +81,9 @@ class ConnectionManager {
   }
 
   Future<void> disconnect() async {
+    _userDisconnected = true;
+    _reconnecting = false;
+    _reconnectAttempt = 0;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
     _notifySub?.cancel();
@@ -263,12 +274,58 @@ class ConnectionManager {
     _notifySub = null;
     _connectionSub?.cancel();
     _connectionSub = null;
-    _reset();
+    _resetCharacteristics();
+    if (!_userDisconnected && _device != null) {
+      _setState(ConnectionState.reconnecting);
+      _attemptReconnect();
+    } else {
+      _setState(ConnectionState.disconnected);
+    }
   }
 
-  void _reset() {
-    _state = ConnectionState.disconnected;
-    _stateController.add(_state);
+  Future<void> _attemptReconnect() async {
+    if (_reconnecting || _device == null) return;
+    _reconnecting = true;
+    _reconnectAttempt = 0;
+
+    while (_reconnectAttempt < _maxReconnectAttempts && _state == ConnectionState.reconnecting) {
+      _reconnectAttempt++;
+      final delay = Duration(milliseconds: (3000 * (1 << (_reconnectAttempt - 1)).clamp(1, 3)));
+      _log.ble('重连 $_reconnectAttempt/$_maxReconnectAttempts，${delay.inSeconds}s 后重试', level: LogLevel.info);
+
+      await Future.delayed(delay);
+
+      if (_state != ConnectionState.reconnecting) break;
+
+      try {
+        await _device!.connect(timeout: const Duration(seconds: 8));
+
+        _connectionSub = _device!.connectionState.listen((state) {
+          if (state == BluetoothConnectionState.disconnected) {
+            _onDisconnected();
+          }
+        });
+
+        _setState(ConnectionState.connected);
+        await Future.delayed(const Duration(milliseconds: 500));
+        await _discoverAndSetup();
+
+        _reconnecting = false;
+        _reconnectAttempt = 0;
+        _log.ble('重连成功', level: LogLevel.info);
+        return;
+      } catch (e) {
+        _log.ble('重连失败', detail: e.toString(), level: LogLevel.debug);
+      }
+    }
+
+    _reconnecting = false;
+    _reconnectAttempt = 0;
+    _setState(ConnectionState.disconnected);
+    _log.ble('重连次数已用尽', level: LogLevel.warning);
+  }
+
+  void _resetCharacteristics() {
     _protocol = ProtocolType.unknown;
     _token = null;
     _writeChar = null;
@@ -276,6 +333,12 @@ class ConnectionManager {
     _feb1Char = null;
     _feb2Char = null;
     _feb3Char = null;
+  }
+
+  void _reset() {
+    _state = ConnectionState.disconnected;
+    _stateController.add(_state);
+    _resetCharacteristics();
   }
 
   void _setState(ConnectionState s) {

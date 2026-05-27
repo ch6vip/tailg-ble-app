@@ -75,12 +75,17 @@ class _Header extends StatelessWidget {
     final statusText = switch (connState) {
       ble.ConnectionState.disconnected => '离线',
       ble.ConnectionState.connecting => '连接中',
+      ble.ConnectionState.reconnecting => '重连中',
       ble.ConnectionState.connected => '已连接',
       ble.ConnectionState.ready => '在线',
     };
-    final statusColor =
-        connState == ble.ConnectionState.ready ? Colors.green : Colors.grey;
-    final isConnecting = connState == ble.ConnectionState.connecting;
+    final statusColor = switch (connState) {
+      ble.ConnectionState.ready => Colors.green,
+      ble.ConnectionState.reconnecting => Colors.orange,
+      _ => Colors.grey,
+    };
+    final isConnecting = connState == ble.ConnectionState.connecting ||
+        connState == ble.ConnectionState.reconnecting;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
