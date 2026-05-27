@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/proximity_service.dart';
 import '../services/auto_connect_service.dart';
+import '../theme/app_colors.dart';
 import 'log_page.dart';
 import 'vehicle_settings_page.dart';
 import 'diagnostic_page.dart';
@@ -19,7 +20,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,6 +27,7 @@ class _SettingsPageState extends State<SettingsPage> {
       body: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
           children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
@@ -48,9 +49,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 return _settingItem(
                   icon: Icons.bluetooth,
                   title: '自动连接',
-                  subtitle: enabled
-                      ? '打开 app 时自动连接上次的设备'
-                      : '关闭',
+                  subtitle: enabled ? '打开 app 时自动连接上次的设备' : '关闭',
                   trailing: _buildToggle(enabled, (v) {
                     AutoConnectService().setEnabled(v);
                   }),
@@ -65,9 +64,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 return _settingItem(
                   icon: Icons.sensors,
                   title: '感应解锁',
-                  subtitle: enabled
-                      ? '靠近车辆时自动解锁（RSSI > -75dBm）'
-                      : '关闭',
+                  subtitle: enabled ? '靠近车辆时自动解锁（RSSI > -75dBm）' : '关闭',
                   trailing: _buildToggle(enabled, (v) {
                     ProximityService().setEnabled(v);
                   }),
@@ -177,16 +174,23 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: _textPrimary)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: _textPrimary,
+                    ),
+                  ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 1),
-                    Text(subtitle,
-                        style:
-                            const TextStyle(fontSize: 12, color: _textTertiary)),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: _textTertiary,
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -194,8 +198,7 @@ class _SettingsPageState extends State<SettingsPage> {
             if (trailing != null)
               trailing
             else if (showChevron)
-              Icon(Icons.chevron_right,
-                  size: 20, color: Colors.grey.shade400),
+              Icon(Icons.chevron_right, size: 20, color: Colors.grey.shade400),
           ],
         ),
       ),
@@ -266,7 +269,10 @@ class _SettingsPageState extends State<SettingsPage> {
         color: selected ? _primary : _textTertiary,
       ),
       title: Text(title, style: const TextStyle(fontSize: 15)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: _textTertiary)),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(fontSize: 12, color: _textTertiary),
+      ),
       onTap: () => Navigator.pop(context),
     );
   }

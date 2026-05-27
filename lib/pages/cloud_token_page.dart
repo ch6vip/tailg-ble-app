@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
+import '../widgets/app_chrome.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
 const _primary = Color(0xFF1E88E5);
@@ -49,7 +50,10 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
     setState(() => _savedToken = token);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token 已保存'), duration: Duration(seconds: 1)),
+        const SnackBar(
+          content: Text('Token 已保存'),
+          duration: Duration(seconds: 1),
+        ),
       );
     }
   }
@@ -81,133 +85,121 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Row(
+            const AppPageHeader(title: '云端 Token'),
+            const SizedBox(height: 20),
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: _textPrimary),
-                    onPressed: () => Navigator.pop(context),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  const Text(
+                    '当前连接 Token',
+                    style: TextStyle(fontSize: 13, color: _textTertiary),
                   ),
-                  const SizedBox(width: 12),
-                  const Text('云端 Token',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: _textPrimary)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          isConnected && currentToken != null
+                              ? currentToken
+                              : '未连接',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontFamily: 'monospace',
+                            color: isConnected ? _textPrimary : _textTertiary,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isConnected && currentToken != null)
+                        IconButton(
+                          icon: Icon(
+                            Icons.copy,
+                            size: 18,
+                            color: Colors.grey.shade400,
+                          ),
+                          onPressed: _copyToken,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 2)),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('当前连接 Token',
-                        style: TextStyle(fontSize: 13, color: _textTertiary)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            isConnected && currentToken != null ? currentToken : '未连接',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontFamily: 'monospace',
-                              color: isConnected ? _textPrimary : _textTertiary,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (isConnected && currentToken != null)
-                          IconButton(
-                            icon: Icon(Icons.copy, size: 18, color: Colors.grey.shade400),
-                            onPressed: _copyToken,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
             const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 2)),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('共享 Token',
-                        style: TextStyle(fontSize: 13, color: _textTertiary)),
-                    const SizedBox(height: 4),
-                    const Text('输入 Web 端的 Token 可直接使用',
-                        style: TextStyle(fontSize: 12, color: _textTertiary)),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _controller,
-                      style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
-                      decoration: InputDecoration(
-                        hintText: '粘贴 Token...',
-                        hintStyle: const TextStyle(color: _textTertiary),
-                        filled: true,
-                        fillColor: const Color(0xFFF5F5F5),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '共享 Token',
+                    style: TextStyle(fontSize: 13, color: _textTertiary),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    '输入 Web 端的 Token 可直接使用',
+                    style: TextStyle(fontSize: 12, color: _textTertiary),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _controller,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontFamily: 'monospace',
+                    ),
+                    decoration: InputDecoration(
+                      hintText: '粘贴 Token...',
+                      hintStyle: const TextStyle(color: _textTertiary),
+                      filled: true,
+                      fillColor: const Color(0xFFF5F5F5),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        if (isConnected)
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: _useCurrentToken,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: _primary,
-                                side: const BorderSide(color: _primary),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              child: const Text('使用当前'),
-                            ),
-                          ),
-                        if (isConnected) const SizedBox(width: 12),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      if (isConnected)
                         Expanded(
-                          child: FilledButton(
-                            onPressed: _saveToken,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: _primary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          child: OutlinedButton(
+                            onPressed: _useCurrentToken,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: _primary,
+                              side: const BorderSide(color: _primary),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
-                            child: const Text('保存'),
+                            child: const Text('使用当前'),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      if (isConnected) const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: _saveToken,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text('保存'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],

@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../services/log_service.dart';
+import '../theme/app_colors.dart';
+import '../widgets/app_chrome.dart';
 
 class VehicleSettingsPage extends StatefulWidget {
   const VehicleSettingsPage({super.key});
@@ -57,7 +59,12 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
           break;
         }
         await char.write(data, withoutResponse: false);
-        _log.operation('fcc1 写入成功', detail: data.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' '));
+        _log.operation(
+          'fcc1 写入成功',
+          detail: data
+              .map((b) => b.toRadixString(16).padLeft(2, '0'))
+              .join(' '),
+        );
 
         await Future.delayed(const Duration(milliseconds: 200));
         await _readBackState(char);
@@ -66,7 +73,11 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
         return;
       } catch (e) {
         if (attempt == retries) {
-          _log.operation('fcc1 写入失败', detail: e.toString(), level: LogLevel.error);
+          _log.operation(
+            'fcc1 写入失败',
+            detail: e.toString(),
+            level: LogLevel.error,
+          );
           _showSnack('写入失败，请重试');
         } else {
           await Future.delayed(const Duration(milliseconds: 500));
@@ -94,7 +105,12 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
     try {
       final response = await char.read();
       if (response.isEmpty) return;
-      _log.operation('fcc1 读回', detail: response.map((b) => (b as int).toRadixString(16).padLeft(2, '0')).join(' '));
+      _log.operation(
+        'fcc1 读回',
+        detail: response
+            .map((b) => (b as int).toRadixString(16).padLeft(2, '0'))
+            .join(' '),
+      );
       _parseDeviceState(List<int>.from(response));
     } catch (e) {
       _log.operation('fcc1 读取失败', detail: e.toString(), level: LogLevel.debug);
@@ -125,7 +141,11 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
   List<int> _buildSoundCommand() {
     // Format: 85 06 4A 3C 02 [powerOn] [powerOff] [unlock] [lock] [01] [induction]
     return [
-      0x85, 0x06, 0x4A, 0x3C, 0x02,
+      0x85,
+      0x06,
+      0x4A,
+      0x3C,
+      0x02,
       _powerOnSound ? 0x01 : 0x00,
       _startupSound ? 0x01 : 0x00,
       _unlockSound ? 0x01 : 0x00,
@@ -146,7 +166,16 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
   List<int> _buildSensitivityCommand() {
     // Shock sensitivity via fcc1: A7 00 00 04 10 03 [level] [level]
     // level 1-5 maps to sensitivity (1=lowest, 5=highest)
-    return [0xA7, 0x00, 0x00, 0x04, 0x10, 0x03, _shockSensitivity, _shockSensitivity];
+    return [
+      0xA7,
+      0x00,
+      0x00,
+      0x04,
+      0x10,
+      0x03,
+      _shockSensitivity,
+      _shockSensitivity,
+    ];
   }
 
   Future<void> _setSensitivity(int value) async {
@@ -180,187 +209,244 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isConnected = connectionManager.state == ble.ConnectionState.ready;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('车辆设置'),
-        actions: [
-          if (_sending)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-            ),
-        ],
-      ),
-      body: ListView(
-        children: [
-          _SectionHeader('灯光控制'),
-          SwitchListTile(
-            secondary: const Icon(Icons.lightbulb_outline),
-            title: const Text('前灯'),
-            value: _headlight,
-            onChanged: isConnected ? (v) {
-              setState(() => _headlight = v);
-              _writeFcc1(_buildLightCommand());
-            } : null,
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.turn_slight_right),
-            title: const Text('转向灯模式'),
-            subtitle: const Text('开启后转向灯常亮'),
-            value: _turnSignal,
-            onChanged: isConnected ? (v) {
-              setState(() => _turnSignal = v);
-              _writeFcc1(_buildLightCommand());
-            } : null,
-          ),
-          const Divider(),
-          _SectionHeader('声音控制'),
-          SwitchListTile(
-            secondary: const Icon(Icons.volume_up),
-            title: const Text('启动提示音'),
-            value: _startupSound,
-            onChanged: isConnected ? (v) {
-              setState(() => _startupSound = v);
-              _writeFcc1(_buildSoundCommand());
-            } : null,
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.lock_clock),
-            title: const Text('上锁提示音'),
-            value: _lockSound,
-            onChanged: isConnected ? (v) {
-              setState(() => _lockSound = v);
-              _writeFcc1(_buildSoundCommand());
-            } : null,
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.lock_open),
-            title: const Text('解锁提示音'),
-            value: _unlockSound,
-            onChanged: isConnected ? (v) {
-              setState(() => _unlockSound = v);
-              _writeFcc1(_buildSoundCommand());
-            } : null,
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.power_settings_new),
-            title: const Text('通电提示音'),
-            value: _powerOnSound,
-            onChanged: isConnected ? (v) {
-              setState(() => _powerOnSound = v);
-              _writeFcc1(_buildSoundCommand());
-            } : null,
-          ),
-          const Divider(),
-          _SectionHeader('蜂鸣器音量'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
+    return StreamBuilder<ble.ConnectionState>(
+      stream: connectionManager.stateStream,
+      initialData: connectionManager.state,
+      builder: (context, snapshot) {
+        final connState = snapshot.data ?? ble.ConnectionState.disconnected;
+        final isConnected = connState == ble.ConnectionState.ready;
+        return Scaffold(
+          backgroundColor: AppColors.pageBg,
+          body: SafeArea(
+            child: Column(
               children: [
-                const Icon(Icons.volume_mute, size: 20),
-                Expanded(
-                  child: Slider(
-                    value: _buzzerVolume.toDouble(),
-                    min: 0,
-                    max: 5,
-                    divisions: 5,
-                    label: '$_buzzerVolume',
-                    onChanged: isConnected ? (v) {
-                      setState(() => _buzzerVolume = v.round());
-                    } : null,
-                    onChangeEnd: isConnected ? (v) {
-                      _writeFcc1(_buildSoundCommand());
-                    } : null,
-                  ),
-                ),
-                const Icon(Icons.volume_up, size: 20),
-              ],
-            ),
-          ),
-          const Divider(),
-          _SectionHeader('防盗灵敏度'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                const Icon(Icons.shield_outlined, size: 20),
-                const SizedBox(width: 12),
-                Text('当前等级: $_shockSensitivity',
-                    style: const TextStyle(fontSize: 14)),
-                const Spacer(),
-                Text(_sensitivityLabel,
-                    style: TextStyle(fontSize: 13, color: _sensitivityColor)),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: List.generate(5, (i) {
-                final level = i + 1;
-                final selected = level == _shockSensitivity;
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 3),
-                    child: Material(
-                      color: selected
-                          ? _sensitivityColor.withValues(alpha: 0.2)
-                          : Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(10),
-                      child: InkWell(
-                        onTap: isConnected ? () => _setSensitivity(level) : null,
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          alignment: Alignment.center,
-                          child: Text('$level',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                                color: selected ? _sensitivityColor : Colors.grey.shade600,
-                              )),
+                AppPageHeader(
+                  title: '车辆设置',
+                  actions: [
+                    if (_sending)
+                      const Padding(
+                        padding: EdgeInsets.only(right: 8),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       ),
-                    ),
+                  ],
+                ),
+                ConnectionStatusBanner(
+                  state: connState,
+                  onScanTap: () => openScanTab(context),
+                ),
+                Expanded(
+                  child: ListView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 24),
+                    children: [
+                      const AppSectionLabel('灯光控制'),
+                      SwitchListTile(
+                        secondary: const Icon(Icons.lightbulb_outline),
+                        title: const Text('前灯'),
+                        value: _headlight,
+                        onChanged: isConnected
+                            ? (v) {
+                                setState(() => _headlight = v);
+                                _writeFcc1(_buildLightCommand());
+                              }
+                            : null,
+                      ),
+                      SwitchListTile(
+                        secondary: const Icon(Icons.turn_slight_right),
+                        title: const Text('转向灯模式'),
+                        subtitle: const Text('开启后转向灯常亮'),
+                        value: _turnSignal,
+                        onChanged: isConnected
+                            ? (v) {
+                                setState(() => _turnSignal = v);
+                                _writeFcc1(_buildLightCommand());
+                              }
+                            : null,
+                      ),
+                      const Divider(),
+                      const AppSectionLabel('声音控制'),
+                      SwitchListTile(
+                        secondary: const Icon(Icons.volume_up),
+                        title: const Text('启动提示音'),
+                        value: _startupSound,
+                        onChanged: isConnected
+                            ? (v) {
+                                setState(() => _startupSound = v);
+                                _writeFcc1(_buildSoundCommand());
+                              }
+                            : null,
+                      ),
+                      SwitchListTile(
+                        secondary: const Icon(Icons.lock_clock),
+                        title: const Text('上锁提示音'),
+                        value: _lockSound,
+                        onChanged: isConnected
+                            ? (v) {
+                                setState(() => _lockSound = v);
+                                _writeFcc1(_buildSoundCommand());
+                              }
+                            : null,
+                      ),
+                      SwitchListTile(
+                        secondary: const Icon(Icons.lock_open),
+                        title: const Text('解锁提示音'),
+                        value: _unlockSound,
+                        onChanged: isConnected
+                            ? (v) {
+                                setState(() => _unlockSound = v);
+                                _writeFcc1(_buildSoundCommand());
+                              }
+                            : null,
+                      ),
+                      SwitchListTile(
+                        secondary: const Icon(Icons.power_settings_new),
+                        title: const Text('通电提示音'),
+                        value: _powerOnSound,
+                        onChanged: isConnected
+                            ? (v) {
+                                setState(() => _powerOnSound = v);
+                                _writeFcc1(_buildSoundCommand());
+                              }
+                            : null,
+                      ),
+                      const Divider(),
+                      const AppSectionLabel('蜂鸣器音量'),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.volume_mute, size: 20),
+                            Expanded(
+                              child: Slider(
+                                value: _buzzerVolume.toDouble(),
+                                min: 0,
+                                max: 5,
+                                divisions: 5,
+                                label: '$_buzzerVolume',
+                                onChanged: isConnected
+                                    ? (v) {
+                                        setState(
+                                          () => _buzzerVolume = v.round(),
+                                        );
+                                      }
+                                    : null,
+                                onChangeEnd: isConnected
+                                    ? (v) {
+                                        _writeFcc1(_buildSoundCommand());
+                                      }
+                                    : null,
+                              ),
+                            ),
+                            const Icon(Icons.volume_up, size: 20),
+                          ],
+                        ),
+                      ),
+                      const Divider(),
+                      const AppSectionLabel('防盗灵敏度'),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.shield_outlined, size: 20),
+                            const SizedBox(width: 12),
+                            Text(
+                              '当前等级: $_shockSensitivity',
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            const Spacer(),
+                            Text(
+                              _sensitivityLabel,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: _sensitivityColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: List.generate(5, (i) {
+                            final level = i + 1;
+                            final selected = level == _shockSensitivity;
+                            return Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 3,
+                                ),
+                                child: Material(
+                                  color: selected
+                                      ? _sensitivityColor.withValues(alpha: 0.2)
+                                      : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: InkWell(
+                                    onTap: isConnected
+                                        ? () => _setSensitivity(level)
+                                        : null,
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        '$level',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: selected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                          color: selected
+                                              ? _sensitivityColor
+                                              : Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '低',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                            Text(
+                              '高',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                );
-              }),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('低', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-                Text('高', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                ),
               ],
             ),
           ),
-          if (!isConnected)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text('请先连接车辆', textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey)),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader(this.title);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Text(title,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Theme.of(context).colorScheme.primary)),
+        );
+      },
     );
   }
 }

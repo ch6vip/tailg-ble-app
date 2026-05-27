@@ -7,10 +7,17 @@ import 'services/auto_connect_service.dart';
 import 'pages/scan_page.dart';
 import 'pages/control_page.dart';
 import 'pages/settings_page.dart';
+import 'theme/app_colors.dart';
 
 final connectionManager = ble.ConnectionManager();
 final proximityService = ProximityService();
 final autoConnectService = AutoConnectService();
+final homeTabIndex = ValueNotifier<int>(1);
+
+void openScanTab(BuildContext context) {
+  Navigator.of(context).popUntil((route) => route.isFirst);
+  homeTabIndex.value = 0;
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,8 +51,9 @@ class TailgBleApp extends StatelessWidget {
       home: const HomePage(),
       builder: (context, child) {
         return MediaQuery(
-          data: MediaQuery.of(context)
-              .copyWith(boldText: false, textScaler: TextScaler.noScaling),
+          data: MediaQuery.of(
+            context,
+          ).copyWith(boldText: false, textScaler: TextScaler.noScaling),
           child: child!,
         );
       },
@@ -85,6 +93,7 @@ class _HomePageState extends State<HomePage>
     ).animate(_fadeAnim);
     _pageAnimController.value = 1.0;
 
+    homeTabIndex.addListener(_onExternalTabChanged);
     WidgetsBinding.instance.addObserver(this);
     _stateSub = connectionManager.stateStream.listen((state) {
       if (state == ble.ConnectionState.ready) {
@@ -103,15 +112,24 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     _stateSub?.cancel();
+    homeTabIndex.removeListener(_onExternalTabChanged);
     _pageAnimController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _onExternalTabChanged() {
+    final index = homeTabIndex.value;
+    if (index == _currentIndex || index < 0 || index > 2) return;
+    setState(() => _currentIndex = index);
+    _pageAnimController.forward(from: 0);
   }
 
   void _switchTab(int index) {
     if (index == _currentIndex) return;
     setState(() => _currentIndex = index);
     _pageAnimController.forward(from: 0);
+    homeTabIndex.value = index;
   }
 
   @override
@@ -125,6 +143,7 @@ class _HomePageState extends State<HomePage>
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     return Scaffold(
       body: FadeTransition(
         opacity: _fadeAnim,
@@ -132,11 +151,7 @@ class _HomePageState extends State<HomePage>
           position: _slideAnim,
           child: IndexedStack(
             index: _currentIndex,
-            children: const [
-              ScanPage(),
-              ControlPage(),
-              SettingsPage(),
-            ],
+            children: const [ScanPage(), ControlPage(), SettingsPage()],
           ),
         ),
       ),
@@ -145,7 +160,7 @@ class _HomePageState extends State<HomePage>
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            height: 82,
+            height: AppNav.barBaseHeight + bottomInset,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.92),
               border: Border(
@@ -155,7 +170,7 @@ class _HomePageState extends State<HomePage>
                 ),
               ),
             ),
-            padding: const EdgeInsets.only(top: 8),
+            padding: EdgeInsets.only(top: 8, bottom: bottomInset),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [

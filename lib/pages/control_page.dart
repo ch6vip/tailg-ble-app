@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
+import '../theme/app_colors.dart';
 import '../widgets/slide_to_action.dart';
 import 'location_page.dart';
 
@@ -12,11 +13,7 @@ const _cardDecoration = BoxDecoration(
   color: Colors.white,
   borderRadius: BorderRadius.all(Radius.circular(20)),
   boxShadow: [
-    BoxShadow(
-      color: Color(0x0A000000),
-      blurRadius: 10,
-      offset: Offset(0, 2),
-    ),
+    BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 2)),
   ],
 );
 
@@ -45,6 +42,9 @@ class _ControlPageState extends State<ControlPage>
           body: SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.only(
+                bottom: AppNav.contentBottomPadding,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -76,6 +76,12 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final deviceName = connectionManager.device?.platformName;
+    final displayName = deviceName != null && deviceName.isNotEmpty
+        ? deviceName
+        : connState == ble.ConnectionState.disconnected
+        ? '未绑定车辆'
+        : '超能S·苍穹灰';
     final statusText = switch (connState) {
       ble.ConnectionState.disconnected => '离线',
       ble.ConnectionState.connecting => '连接中',
@@ -88,7 +94,8 @@ class _Header extends StatelessWidget {
       ble.ConnectionState.reconnecting => Colors.orange,
       _ => Colors.grey,
     };
-    final isConnecting = connState == ble.ConnectionState.connecting ||
+    final isConnecting =
+        connState == ble.ConnectionState.connecting ||
         connState == ble.ConnectionState.reconnecting;
 
     return Padding(
@@ -98,8 +105,8 @@ class _Header extends StatelessWidget {
           Expanded(
             child: Row(
               children: [
-                const Text(
-                  '超能S·苍穹灰',
+                Text(
+                  displayName,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -111,8 +118,10 @@ class _Header extends StatelessWidget {
                 const SizedBox(width: 8),
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
@@ -130,8 +139,7 @@ class _Header extends StatelessWidget {
                 ? () => connectionManager.disconnect()
                 : null,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -185,10 +193,10 @@ class _StatusSection extends StatelessWidget {
         final batteryColor = battery == null
             ? Colors.grey
             : battery > 60
-                ? Colors.green
-                : battery > 20
-                    ? Colors.orange
-                    : Colors.red;
+            ? Colors.green
+            : battery > 20
+            ? Colors.orange
+            : Colors.red;
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -198,8 +206,13 @@ class _StatusSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('剩余电量',
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                    Text(
+                      '剩余电量',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -208,14 +221,14 @@ class _StatusSection extends StatelessWidget {
                           battery == null
                               ? Icons.battery_unknown
                               : battery > 80
-                                  ? Icons.battery_full
-                                  : battery > 60
-                                      ? Icons.battery_5_bar
-                                      : battery > 40
-                                          ? Icons.battery_4_bar
-                                          : battery > 20
-                                              ? Icons.battery_2_bar
-                                              : Icons.battery_1_bar,
+                              ? Icons.battery_full
+                              : battery > 60
+                              ? Icons.battery_5_bar
+                              : battery > 40
+                              ? Icons.battery_4_bar
+                              : battery > 20
+                              ? Icons.battery_2_bar
+                              : Icons.battery_1_bar,
                           color: batteryColor,
                           size: 32,
                         ),
@@ -223,7 +236,9 @@ class _StatusSection extends StatelessWidget {
                         Text(
                           battery != null ? '$battery%' : '--',
                           style: const TextStyle(
-                              fontSize: 28, fontWeight: FontWeight.w300),
+                            fontSize: 28,
+                            fontWeight: FontWeight.w300,
+                          ),
                         ),
                       ],
                     ),
@@ -234,8 +249,13 @@ class _StatusSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('预估里程',
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                    Text(
+                      '预估里程',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -246,12 +266,19 @@ class _StatusSection extends StatelessWidget {
                               ? '${(battery * _kmPerPercent).round()}'
                               : '--',
                           style: const TextStyle(
-                              fontSize: 48, fontWeight: FontWeight.w300),
+                            fontSize: 48,
+                            fontWeight: FontWeight.w300,
+                          ),
                         ),
                         const Padding(
                           padding: EdgeInsets.only(bottom: 8),
-                          child: Text('km',
-                              style: TextStyle(fontSize: 16, color: Colors.black54)),
+                          child: Text(
+                            'km',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black54,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -280,7 +307,11 @@ class _BikeImage extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Center(
-          child: Icon(Icons.electric_bike, size: 100, color: Colors.grey.shade300),
+          child: Icon(
+            Icons.electric_bike,
+            size: 100,
+            color: Colors.grey.shade300,
+          ),
         ),
       ),
     );
@@ -308,8 +339,8 @@ class _StateLabel extends StatelessWidget {
           stateIcon = Icons.bluetooth_disabled;
           gradientColors = [Colors.grey.shade300, Colors.grey.shade400];
         } else if (bike == null) {
-          stateText = '已连接';
-          stateIcon = Icons.bluetooth_connected;
+          stateText = '等待车辆状态';
+          stateIcon = Icons.sync;
           gradientColors = [Colors.blue.shade200, Colors.blue.shade300];
         } else if (bike.isLocked && !bike.isPowerOn) {
           stateText = '已设防';
@@ -348,16 +379,20 @@ class _StateLabel extends StatelessWidget {
                   const SizedBox(width: 10),
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 200),
-                    child: Text(stateText,
-                        key: ValueKey(stateText),
-                        style: const TextStyle(fontSize: 14)),
+                    child: Text(
+                      stateText,
+                      key: ValueKey(stateText),
+                      style: const TextStyle(fontSize: 14),
+                    ),
                   ),
                 ],
               ),
               Row(
                 children: [
-                  Text('手动模式',
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                  Text(
+                    '手动模式',
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  ),
                   const SizedBox(width: 4),
                   _ManualModeToggle(enabled: isConnected),
                 ],
@@ -426,15 +461,14 @@ class _ControlAreaState extends State<_ControlArea> {
                         enabled: enabled,
                         loading: _busy,
                         onTap: () => _send(
-                            isLocked ? CommandCode.unlock : CommandCode.lock),
+                          isLocked ? CommandCode.unlock : CommandCode.lock,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     _ControlButton(
                       icon: Icons.event_seat_outlined,
-                      onTap: enabled
-                          ? () => _send(CommandCode.openSeat)
-                          : null,
+                      onTap: enabled ? () => _send(CommandCode.openSeat) : null,
                     ),
                   ],
                 ),
@@ -447,7 +481,10 @@ class _ControlAreaState extends State<_ControlArea> {
                       : const Color(0xFF424242),
                   onSlideComplete: enabled
                       ? () => _send(
-                          isPowerOn ? CommandCode.powerOff : CommandCode.powerOn)
+                          isPowerOn
+                              ? CommandCode.powerOff
+                              : CommandCode.powerOn,
+                        )
                       : null,
                 ),
                 const SizedBox(height: 12),
@@ -457,9 +494,7 @@ class _ControlAreaState extends State<_ControlArea> {
                       child: _ActionButton(
                         icon: Icons.volume_up_outlined,
                         label: '寻车',
-                        onTap: enabled
-                            ? () => _send(CommandCode.find)
-                            : null,
+                        onTap: enabled ? () => _send(CommandCode.find) : null,
                       ),
                     ),
                   ],
@@ -503,10 +538,12 @@ class _LockToggleButton extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: enabled ? () {
-            HapticFeedback.mediumImpact();
-            onTap();
-          } : null,
+          onTap: enabled
+              ? () {
+                  HapticFeedback.mediumImpact();
+                  onTap();
+                }
+              : null,
           borderRadius: BorderRadius.circular(14),
           child: Center(
             child: AnimatedSwitcher(
@@ -514,9 +551,13 @@ class _LockToggleButton extends StatelessWidget {
               child: loading
                   ? SizedBox(
                       key: const ValueKey('loading'),
-                      width: 20, height: 20,
+                      width: 20,
+                      height: 20,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: color))
+                        strokeWidth: 2,
+                        color: color,
+                      ),
+                    )
                   : Row(
                       key: ValueKey(isLocked),
                       mainAxisSize: MainAxisSize.min,
@@ -636,8 +677,10 @@ class _RidingModeSelector extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('骑行模式',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                const Text(
+                  '骑行模式',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 12),
                 Row(
                   children: RidingMode.values.map((mode) {
@@ -672,18 +715,26 @@ class _RidingModeSelector extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               child: Column(
                                 children: [
-                                  Icon(icon,
-                                      color: selected ? color : Colors.grey.shade500,
-                                      size: 24),
+                                  Icon(
+                                    icon,
+                                    color: selected
+                                        ? color
+                                        : Colors.grey.shade500,
+                                    size: 24,
+                                  ),
                                   const SizedBox(height: 4),
-                                  Text(mode.label,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: selected ? color : Colors.grey.shade600,
-                                        fontWeight: selected
-                                            ? FontWeight.w600
-                                            : FontWeight.normal,
-                                      )),
+                                  Text(
+                                    mode.label,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: selected
+                                          ? color
+                                          : Colors.grey.shade600,
+                                      fontWeight: selected
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -727,7 +778,9 @@ class _ManualModeToggleState extends State<_ManualModeToggle> {
         width: 44,
         height: 26,
         decoration: BoxDecoration(
-          color: _manualMode ? const Color(0xFF1E88E5) : const Color(0xFFE0E0E0),
+          color: _manualMode
+              ? const Color(0xFF1E88E5)
+              : const Color(0xFFE0E0E0),
           borderRadius: BorderRadius.circular(13),
         ),
         child: AnimatedAlign(
@@ -773,8 +826,10 @@ class _LocationCard extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('车辆位置',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              const Text(
+                '车辆位置',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
               Icon(Icons.chevron_right, color: Colors.grey.shade400),
             ],
           ),

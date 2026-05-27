@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/log_service.dart';
+import '../widgets/app_chrome.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
 const _primary = Color(0xFF1E88E5);
 const _textPrimary = Color(0xFF1A1A2E);
-const _textSecondary = Color(0xFF666666);
 const _textTertiary = Color(0xFF999999);
 
 class LogPage extends StatefulWidget {
@@ -47,24 +47,59 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
   }
 
   String _formatEntries(List<LogEntry> entries) {
-    return entries.map((e) {
-      final t = '${e.time.hour.toString().padLeft(2, '0')}:'
-          '${e.time.minute.toString().padLeft(2, '0')}:'
-          '${e.time.second.toString().padLeft(2, '0')}';
-      final tag = e.category == LogCategory.ble ? '[BLE]' : '[OP]';
-      return '$t $tag ${e.message}${e.detail != null ? ' | ${e.detail}' : ''}';
-    }).join('\n');
+    return entries
+        .map((e) {
+          final t =
+              '${e.time.hour.toString().padLeft(2, '0')}:'
+              '${e.time.minute.toString().padLeft(2, '0')}:'
+              '${e.time.second.toString().padLeft(2, '0')}';
+          final tag = e.category == LogCategory.ble ? '[BLE]' : '[OP]';
+          return '$t $tag ${e.message}${e.detail != null ? ' | ${e.detail}' : ''}';
+        })
+        .join('\n');
   }
 
   void _copyAll() {
     final entries = _getEntries(_tabController.index);
-    if (entries.isEmpty) return;
+    if (entries.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('当前没有可复制的日志'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
     Clipboard.setData(ClipboardData(text: _formatEntries(entries)));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-          content: Text('已复制 ${entries.length} 条日志'),
-          duration: const Duration(seconds: 1)),
+        content: Text('已复制 ${entries.length} 条日志'),
+        duration: const Duration(seconds: 1),
+      ),
     );
+  }
+
+  Future<void> _confirmClear() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('清空日志'),
+        content: const Text('清空后无法恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('清空'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    _log.clear();
+    setState(() {});
   }
 
   @override
@@ -74,64 +109,37 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
+            AppPageHeader(
+              title: '日志',
+              actions: [
+                AppHeaderAction(
+                  icon: Icons.copy,
+                  tooltip: '复制全部',
+                  onTap: _copyAll,
+                ),
+                AppHeaderAction(
+                  icon: Icons.refresh,
+                  tooltip: '刷新',
+                  onTap: () => setState(() {}),
+                ),
+                AppHeaderAction(
+                  icon: Icons.delete_outline,
+                  tooltip: '清空',
+                  onTap: _confirmClear,
+                ),
+              ],
+            ),
             _buildTabs(),
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children:
-                    List.generate(3, (i) => _LogList(entries: _getEntries(i))),
+                children: List.generate(
+                  3,
+                  (i) => _LogList(entries: _getEntries(i)),
+                ),
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: _textPrimary),
-            onPressed: () => Navigator.pop(context),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text(
-              '日志',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: _textPrimary,
-              ),
-            ),
-          ),
-          _headerAction(Icons.copy, _copyAll),
-          _headerAction(Icons.refresh, () => setState(() {})),
-          _headerAction(Icons.delete_outline, () {
-            _log.clear();
-            setState(() {});
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _headerAction(IconData icon, VoidCallback onTap) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: SizedBox(
-          width: 36,
-          height: 36,
-          child: Icon(icon, size: 20, color: _textSecondary),
         ),
       ),
     );
@@ -192,7 +200,8 @@ class _LogList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (entries.isEmpty) {
       return const Center(
-          child: Text('暂无日志', style: TextStyle(color: _textTertiary)));
+        child: Text('暂无日志', style: TextStyle(color: _textTertiary)),
+      );
     }
     return ListView.builder(
       reverse: true,
@@ -212,7 +221,8 @@ class _LogTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final timeStr = '${entry.time.hour.toString().padLeft(2, '0')}:'
+    final timeStr =
+        '${entry.time.hour.toString().padLeft(2, '0')}:'
         '${entry.time.minute.toString().padLeft(2, '0')}:'
         '${entry.time.second.toString().padLeft(2, '0')}';
     final levelColor = switch (entry.level) {
@@ -227,27 +237,37 @@ class _LogTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(timeStr,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Color(0xFF9E9E9E),
-                fontFamily: 'monospace',
-              )),
+          Text(
+            timeStr,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF9E9E9E),
+              fontFamily: 'monospace',
+            ),
+          ),
           const SizedBox(width: 8),
           Container(
             width: 6,
             height: 6,
             margin: const EdgeInsets.only(top: 6),
-            decoration: BoxDecoration(color: levelColor, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: levelColor,
+              shape: BoxShape.circle,
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(entry.message,
-                    style: const TextStyle(
-                        fontSize: 13, color: _textPrimary, height: 1.4)),
+                Text(
+                  entry.message,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: _textPrimary,
+                    height: 1.4,
+                  ),
+                ),
                 if (entry.detail != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),

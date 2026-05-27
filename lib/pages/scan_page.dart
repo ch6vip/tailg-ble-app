@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../main.dart';
+import '../theme/app_colors.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
 const _primary = Color(0xFF1E88E5);
@@ -64,16 +65,34 @@ class _ScanPageState extends State<ScanPage>
     super.dispose();
   }
 
-  Future<void> _requestPermissions() async {
-    await [
+  Future<bool> _requestPermissions() async {
+    final statuses = await [
       Permission.bluetoothScan,
       Permission.bluetoothConnect,
       Permission.location,
     ].request();
+    final blocked = statuses.values.any(
+      (s) => s.isDenied || s.isPermanentlyDenied || s.isRestricted,
+    );
+    if (blocked && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('请授予蓝牙和定位权限后再扫描')));
+    }
+    return !blocked;
   }
 
   Future<void> _startScan() async {
-    await _requestPermissions();
+    if (!await _requestPermissions()) return;
+    final adapterState = await FlutterBluePlus.adapterState.first;
+    if (adapterState != BluetoothAdapterState.on) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('请先开启蓝牙')));
+      }
+      return;
+    }
     await FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
   }
 
@@ -93,15 +112,15 @@ class _ScanPageState extends State<ScanPage>
     try {
       await connectionManager.connect(device);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('连接成功')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('连接成功')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('连接失败: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('连接失败: $e')));
       }
     }
   }
@@ -109,75 +128,160 @@ class _ScanPageState extends State<ScanPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Scaffold(
-      backgroundColor: _pageBg,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: 80),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-                    child: Row(
-                      children: [
-                        Text(
-                          '搜索设备',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            color: _textPrimary,
-                          ),
+    return StreamBuilder<BluetoothAdapterState>(
+      stream: FlutterBluePlus.adapterState,
+      initialData: BluetoothAdapterState.unknown,
+      builder: (context, adapterSnapshot) {
+        final bluetoothOn = adapterSnapshot.data == BluetoothAdapterState.on;
+        return Scaffold(
+          backgroundColor: _pageBg,
+          body: SafeArea(
+            child: Stack(
+              children: [
+                SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.only(
+                    bottom: AppNav.contentBottomPadding,
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                        child: Row(
+                          children: [
+                            Text(
+                              '搜索设备',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
+                                color: _textPrimary,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16, bottom: 20),
-                    child: _RadarWidget(animation: _radarController),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: Column(
-                      children: [
-                        Text(
-                          _scanning ? '正在搜索附近设备...' : '点击下方按钮开始搜索',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: _textPrimary,
-                          ),
+                      ),
+                      if (!bluetoothOn)
+                        const _ScanHintCard(
+                          icon: Icons.bluetooth_disabled,
+                          title: '蓝牙未开启',
+                          subtitle: '开启蓝牙后即可搜索附近车辆',
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '请确保蓝牙已开启且靠近车辆',
-                          style: TextStyle(fontSize: 12, color: _textTertiary),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16, bottom: 20),
+                        child: _RadarWidget(animation: _radarController),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: Column(
+                          children: [
+                            Text(
+                              !bluetoothOn
+                                  ? '等待蓝牙开启'
+                                  : _scanning
+                                  ? '正在搜索附近设备...'
+                                  : '点击下方按钮开始搜索',
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: _textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '请确保蓝牙已开启且靠近车辆',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: _textTertiary,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      _DeviceList(results: _results, onTap: _connectDevice),
+                    ],
                   ),
-                  _DeviceList(
-                    results: _results,
-                    onTap: _connectDevice,
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              bottom: 16,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: _ScanFab(
-                  scanning: _scanning,
-                  onTap: _scanning ? _stopScan : _startScan,
                 ),
-              ),
+                Positioned(
+                  bottom: 16,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: _ScanFab(
+                      scanning: _scanning,
+                      enabled: bluetoothOn,
+                      onTap: _scanning ? _stopScan : _startScan,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ScanHintCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _ScanHintCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: _primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: _primary, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: _textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 12, color: _textTertiary),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -219,8 +323,11 @@ class _RadarWidget extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.bluetooth_searching,
-                color: Colors.white, size: 22),
+            child: const Icon(
+              Icons.bluetooth_searching,
+              color: Colors.white,
+              size: 22,
+            ),
           ),
         ),
       ),
@@ -248,10 +355,7 @@ class _RadarPainter extends CustomPainter {
       ..shader = SweepGradient(
         startAngle: sweepAngle - 1.05,
         endAngle: sweepAngle,
-        colors: [
-          Colors.transparent,
-          _primary.withValues(alpha: 0.15),
-        ],
+        colors: [Colors.transparent, _primary.withValues(alpha: 0.15)],
         transform: GradientRotation(sweepAngle - 1.05),
       ).createShader(Rect.fromCircle(center: center, radius: 80));
 
@@ -311,13 +415,14 @@ class _DeviceCardState extends State<_DeviceCard> {
         ? widget.result.device.platformName
         : '未知设备';
     final isTailg =
-        name.toLowerCase().contains('tl') || name.toLowerCase().contains('tailg');
+        name.toLowerCase().contains('tl') ||
+        name.toLowerCase().contains('tailg');
     final rssi = widget.result.rssi;
     final strength = rssi > -60
         ? _SignalStrength.strong
         : rssi > -80
-            ? _SignalStrength.medium
-            : _SignalStrength.weak;
+        ? _SignalStrength.medium
+        : _SignalStrength.weak;
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
@@ -349,7 +454,8 @@ class _DeviceCardState extends State<_DeviceCard> {
                 decoration: BoxDecoration(
                   gradient: isTailg
                       ? const LinearGradient(
-                          colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)])
+                          colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
+                        )
                       : null,
                   color: isTailg ? null : const Color(0xFFF5F5F5),
                   borderRadius: BorderRadius.circular(12),
@@ -365,11 +471,14 @@ class _DeviceCardState extends State<_DeviceCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name,
-                        style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: _textPrimary)),
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: _textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       widget.result.device.remoteId.toString(),
@@ -429,22 +538,33 @@ class _SignalBars extends StatelessWidget {
 
 class _ScanFab extends StatelessWidget {
   final bool scanning;
+  final bool enabled;
   final VoidCallback onTap;
-  const _ScanFab({required this.scanning, required this.onTap});
+  const _ScanFab({
+    required this.scanning,
+    required this.enabled,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: enabled ? onTap : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
-          color: scanning ? const Color(0xFF757575) : _primary,
+          color: !enabled
+              ? const Color(0xFFBDBDBD)
+              : scanning
+              ? const Color(0xFF757575)
+              : _primary,
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: scanning
+              color: !enabled
+                  ? Colors.black.withValues(alpha: 0.08)
+                  : scanning
                   ? Colors.black.withValues(alpha: 0.15)
                   : _primary.withValues(alpha: 0.35),
               blurRadius: 16,

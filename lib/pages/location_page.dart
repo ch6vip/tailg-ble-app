@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../widgets/app_chrome.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
 const _primary = Color(0xFF1E88E5);
@@ -16,29 +17,7 @@ class LocationPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: _textPrimary),
-                    onPressed: () => Navigator.pop(context),
-                    padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints(minWidth: 32, minHeight: 32),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    '车辆位置',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: _textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            const AppPageHeader(title: '车辆位置'),
             const SizedBox(height: 16),
             Expanded(
               child: Container(
@@ -60,12 +39,19 @@ class LocationPage extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.map_outlined,
-                              size: 64, color: Colors.grey.shade300),
+                          Icon(
+                            Icons.map_outlined,
+                            size: 64,
+                            color: Colors.grey.shade300,
+                          ),
                           const SizedBox(height: 12),
-                          Text('地图加载中...',
-                              style: TextStyle(
-                                  fontSize: 14, color: _textTertiary)),
+                          Text(
+                            '地图加载中...',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: _textTertiary,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -98,8 +84,11 @@ class LocationPage extends StatelessWidget {
                                     color: _primary.withValues(alpha: 0.1),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.location_on,
-                                      color: _primary, size: 20),
+                                  child: const Icon(
+                                    Icons.location_on,
+                                    color: _primary,
+                                    size: 20,
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 const Expanded(
@@ -107,31 +96,42 @@ class LocationPage extends StatelessWidget {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text('最后停车位置',
-                                          style: TextStyle(
-                                              fontSize: 13,
-                                              color: _textTertiary)),
+                                      Text(
+                                        '最后停车位置',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: _textTertiary,
+                                        ),
+                                      ),
                                       SizedBox(height: 2),
-                                      Text('等待定位数据...',
-                                          style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w500,
-                                              color: _textPrimary)),
+                                      Text(
+                                        '等待定位数据...',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                          color: _textPrimary,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
                                 GestureDetector(
                                   onTap: () {
-                                    Clipboard.setData(const ClipboardData(
-                                        text: '暂无坐标'));
+                                    Clipboard.setData(
+                                      const ClipboardData(text: '暂无坐标'),
+                                    );
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                          content: Text('坐标已复制'),
-                                          duration: Duration(seconds: 1)),
+                                        content: Text('坐标已复制'),
+                                        duration: Duration(seconds: 1),
+                                      ),
                                     );
                                   },
-                                  child: Icon(Icons.copy,
-                                      size: 18, color: Colors.grey.shade400),
+                                  child: Icon(
+                                    Icons.copy,
+                                    size: 18,
+                                    color: Colors.grey.shade400,
+                                  ),
                                 ),
                               ],
                             ),
