@@ -176,9 +176,7 @@ class ConnectionManager {
       _token = 'qgj';
       _log.ble('QGJ 登录成功', level: LogLevel.info);
       _setState(ConnectionState.ready);
-      Future.delayed(const Duration(milliseconds: 1000), () {
-        _startHeartbeat();
-      });
+      _startHeartbeat();
     }
   }
 
@@ -190,19 +188,21 @@ class ConnectionManager {
       return;
     }
     int failCount = 0;
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
-      if (_feb3Char != null) {
-        try {
-          await _feb3Char!.read();
-          failCount = 0;
-        } catch (e) {
-          failCount++;
-          if (failCount == 3) {
-            _log.ble('心跳连续失败 3 次', detail: e.toString(), level: LogLevel.warning);
-          }
+
+    void tick() {
+      if (_state != ConnectionState.ready || _feb3Char == null) return;
+      _feb3Char!.read().then((_) {
+        failCount = 0;
+      }).catchError((e) {
+        failCount++;
+        if (failCount == 3) {
+          _log.ble('心跳连续失败 3 次', detail: e.toString(), level: LogLevel.warning);
         }
-      }
-    });
+      });
+    }
+
+    Future.delayed(const Duration(milliseconds: 500), tick);
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 1), (_) => tick());
   }
 
   Future<void> sendCommand(CommandCode cmd) async {
