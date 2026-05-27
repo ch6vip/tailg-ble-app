@@ -82,39 +82,44 @@ class ControlPage extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (isConnecting)
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else
-                  Icon(
-                    connState == ble.ConnectionState.ready
-                        ? Icons.bluetooth_connected
-                        : Icons.bluetooth_disabled,
-                    size: 14,
-                    color: statusColor,
+          GestureDetector(
+            onTap: connState != ble.ConnectionState.disconnected
+                ? () => connectionManager.disconnect()
+                : null,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                const SizedBox(width: 6),
-                Text(statusText, style: const TextStyle(fontSize: 13)),
-              ],
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isConnecting)
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Icon(
+                      connState == ble.ConnectionState.ready
+                          ? Icons.bluetooth_connected
+                          : Icons.bluetooth_disabled,
+                      size: 14,
+                      color: statusColor,
+                    ),
+                  const SizedBox(width: 6),
+                  Text(statusText, style: const TextStyle(fontSize: 13)),
+                ],
+              ),
             ),
           ),
         ],
@@ -254,7 +259,11 @@ class ControlPage extends StatelessWidget {
           children: [
             Row(
               children: [
-                _buildSmallButton(Icons.bookmark_border),
+                _buildSmallButton(Icons.event_seat_outlined,
+                    onTap: enabled
+                        ? () =>
+                            connectionManager.sendCommand(CommandCode.openSeat)
+                        : null),
                 const SizedBox(width: 12),
                 Expanded(
                   child: SlideToAction(
@@ -269,7 +278,11 @@ class ControlPage extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                _buildSmallButton(Icons.add_circle_outline),
+                _buildSmallButton(Icons.power_off_outlined,
+                    onTap: enabled
+                        ? () =>
+                            connectionManager.sendCommand(CommandCode.powerOff)
+                        : null),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Row(
@@ -302,15 +315,19 @@ class ControlPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSmallButton(IconData icon) {
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(14),
+  Widget _buildSmallButton(IconData icon, {VoidCallback? onTap}) {
+    final color = onTap != null ? Colors.grey.shade700 : Colors.grey.shade400;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(icon, color: color, size: 24),
       ),
-      child: Icon(icon, color: Colors.grey.shade700, size: 24),
     );
   }
 
