@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/proximity_service.dart';
 import 'log_page.dart';
 import 'vehicle_settings_page.dart';
+import 'diagnostic_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -67,6 +68,16 @@ class SettingsPage extends StatelessWidget {
           ),
           const Divider(),
           const _SectionHeader('调试'),
+          ListTile(
+            leading: const Icon(Icons.health_and_safety),
+            title: const Text('故障诊断'),
+            subtitle: const Text('读取车辆错误码'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DiagnosticPage()),
+            ),
+          ),
           ListTile(
             leading: const Icon(Icons.article_outlined),
             title: const Text('日志'),
