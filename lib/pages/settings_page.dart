@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'log_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -33,6 +34,18 @@ class SettingsPage extends StatelessWidget {
             subtitle: const Text('自动识别'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {},
+          ),
+          const Divider(),
+          const _SectionHeader('调试'),
+          ListTile(
+            leading: const Icon(Icons.article_outlined),
+            title: const Text('日志'),
+            subtitle: const Text('查看 BLE 通信和操作记录'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LogPage()),
+            ),
           ),
           const Divider(),
           const _SectionHeader('关于'),

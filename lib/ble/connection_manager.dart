@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
+import '../services/log_service.dart';
 import 'constants.dart';
 import 'protocol.dart';
 import 'qgj_protocol.dart';
@@ -11,6 +12,7 @@ enum ProtocolType { standard, qgj, unknown }
 enum ConnectionState { disconnected, connecting, connected, ready }
 
 class ConnectionManager {
+  final _log = LogService();
   BluetoothDevice? _device;
   ProtocolType _protocol = ProtocolType.unknown;
   ConnectionState _state = ConnectionState.disconnected;
@@ -44,6 +46,7 @@ class ConnectionManager {
   Future<void> connect(BluetoothDevice device) async {
     _device = device;
     _setState(ConnectionState.connecting);
+    _log.ble('连接设备 ${device.platformName}', detail: device.remoteId.toString());
 
     try {
       await device.connect(timeout: const Duration(seconds: 10));
@@ -57,6 +60,7 @@ class ConnectionManager {
       _setState(ConnectionState.connected);
       await _discoverAndSetup();
     } catch (e) {
+      _log.ble('连接失败', detail: e.toString(), level: LogLevel.error);
       _setState(ConnectionState.disconnected);
       rethrow;
     }
@@ -81,12 +85,15 @@ class ConnectionManager {
 
     if (hasFeb0) {
       _protocol = ProtocolType.qgj;
+      _log.ble('识别协议: QGJ (feb0)', level: LogLevel.info);
       await _setupQgj(services);
     } else if (hasFee5) {
       _protocol = ProtocolType.standard;
+      _log.ble('识别协议: Standard (fee5)', level: LogLevel.info);
       await _setupStandard(services);
     } else {
       _protocol = ProtocolType.unknown;
+      _log.ble('未识别协议', level: LogLevel.warning);
     }
   }
 
@@ -135,6 +142,7 @@ class ConnectionManager {
 
   void _onStandardNotify(List<int> value) {
     final data = Uint8List.fromList(value);
+    _log.ble('← 收到数据', detail: data.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' '));
     final response = parseResponse(_model.aesKey, data);
     _responseController.add(response);
 
@@ -148,11 +156,13 @@ class ConnectionManager {
 
   void _onQgjNotify(List<int> value) {
     final data = Uint8List.fromList(value);
+    _log.ble('← QGJ 响应', detail: data.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' '));
     final response = parseQgjResponse(data);
     if (response == null) return;
 
     if (response.cmdId == 0x1001 && response.success) {
       _token = 'qgj';
+      _log.ble('QGJ 登录成功', level: LogLevel.info);
       _setState(ConnectionState.ready);
       _startHeartbeat();
     }
@@ -172,6 +182,8 @@ class ConnectionManager {
   Future<void> sendCommand(CommandCode cmd) async {
     if (_state != ConnectionState.ready) return;
 
+    _log.operation('发送指令: ${cmd.label}', detail: 'code=${cmd.code}');
+
     if (_protocol == ProtocolType.standard) {
       if (_writeChar == null || _token == null) return;
       final frame = buildCommand(_model.aesKey, cmd, _token!);
@@ -185,6 +197,7 @@ class ConnectionManager {
   }
 
   void _onDisconnected() {
+    _log.ble('设备断开连接', level: LogLevel.warning);
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
     _reset();

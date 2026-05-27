@@ -1,15 +1,16 @@
 enum CommandCode {
-  lock('01'),
-  unlock('02'),
-  openSeat('05'),
-  powerOn('06'),
-  powerOff('07'),
-  find('08'),
-  readState('0D'),
-  readAntiTheft('0E');
+  lock('01', '设防'),
+  unlock('02', '解锁'),
+  openSeat('05', '开座桶'),
+  powerOn('06', '通电'),
+  powerOff('07', '断电'),
+  find('08', '寻车'),
+  readState('0D', '读取状态'),
+  readAntiTheft('0E', '读取防盗');
 
   final String code;
-  const CommandCode(this.code);
+  final String label;
+  const CommandCode(this.code, this.label);
 }
 
 enum ModelType {
