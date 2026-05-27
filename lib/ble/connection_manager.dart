@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import '../services/log_service.dart';
 import 'constants.dart';
@@ -47,6 +47,7 @@ class ConnectionManager {
   static const _maxReconnectAttempts = 8;
 
   Completer<bool>? _cmdAckCompleter;
+  Future<void> _gattQueue = Future.value();
 
   final _stateController = StreamController<ConnectionState>.broadcast();
   final _responseController = StreamController<ParsedResponse>.broadcast();
@@ -66,6 +67,19 @@ class ConnectionManager {
   BluetoothCharacteristic? get fbb2Char => _fbb2Char;
 
   void setModel(ModelType model) => _model = model;
+
+  Future<T> runGattOperation<T>(Future<T> Function() operation) {
+    final next = _gattQueue.then((_) => operation());
+    _gattQueue = next.then<void>((_) {}, onError: (_) {});
+    return next;
+  }
+
+  Future<List<int>?> readFeb3() {
+    return runGattOperation(() async {
+      if (_state != ConnectionState.ready || _feb3Char == null) return null;
+      return _feb3Char!.read();
+    });
+  }
 
   Future<void> connect(BluetoothDevice device) async {
     _userDisconnected = false;
@@ -157,13 +171,15 @@ class ConnectionManager {
     }
 
     if (_notifyChar != null) {
-      await _notifyChar!.setNotifyValue(true);
+      await _enableNotifyOrIndicate(_notifyChar!);
       _notifySub = _notifyChar!.onValueReceived.listen(_onStandardNotify);
     }
 
     if (_writeChar != null) {
       final tokenReq = buildTokenRequest(_model.aesKey);
-      await _writeChar!.write(tokenReq.toList(), withoutResponse: false);
+      await runGattOperation(
+        () => _writeChar!.write(tokenReq.toList(), withoutResponse: false),
+      );
     }
   }
 
@@ -189,14 +205,32 @@ class ConnectionManager {
     await _subscribeFcc0(services);
 
     if (_feb2Char != null) {
-      await _feb2Char!.setNotifyValue(true, forceIndications: true);
+      await _enableNotifyOrIndicate(_feb2Char!, forceIndications: true);
       _notifySub = _feb2Char!.onValueReceived.listen(_onQgjNotify);
     }
 
     if (_feb1Char != null) {
       final loginFrame = buildQgjLoginFrame();
-      await _feb1Char!.write(loginFrame.toList(), withoutResponse: false);
+      await runGattOperation(
+        () => _feb1Char!.write(loginFrame.toList(), withoutResponse: false),
+      );
     }
+  }
+
+  Future<void> _enableNotifyOrIndicate(
+    BluetoothCharacteristic characteristic, {
+    bool forceIndications = false,
+  }) async {
+    await runGattOperation(
+      () => characteristic.setNotifyValue(
+        true,
+        forceIndications:
+            defaultTargetPlatform == TargetPlatform.android &&
+            (forceIndications ||
+                (characteristic.properties.indicate &&
+                    !characteristic.properties.notify)),
+      ),
+    );
   }
 
   Future<void> _subscribeFcc0(List<BluetoothService> services) async {
@@ -218,7 +252,7 @@ class ConnectionManager {
       if (uuid.contains('fbb2')) _fbb2Char = c;
       if (c.properties.notify || c.properties.indicate) {
         try {
-          await c.setNotifyValue(true);
+          await _enableNotifyOrIndicate(c);
           subscribed++;
         } catch (e) {
           _log.ble('订阅 $uuid 失败', detail: e.toString(), level: LogLevel.debug);
@@ -278,14 +312,16 @@ class ConnectionManager {
       return;
     }
     int failCount = 0;
+    bool heartbeatInFlight = false;
 
     void tick() {
       if (_state != ConnectionState.ready || _feb3Char == null) return;
-      _feb3Char!
-          .read()
+      if (heartbeatInFlight) return;
+      heartbeatInFlight = true;
+      readFeb3()
           .then((data) {
             failCount = 0;
-            if (data.isNotEmpty) {
+            if (data != null && data.isNotEmpty) {
               final state = BikeState.fromFeb3(data);
               if (state != null) {
                 _publishBikeState(state);
@@ -301,7 +337,8 @@ class ConnectionManager {
                 level: LogLevel.warning,
               );
             }
-          });
+          })
+          .whenComplete(() => heartbeatInFlight = false);
     }
 
     Future.delayed(BleTimings.heartbeatInitialDelay, tick);
@@ -326,21 +363,28 @@ class ConnectionManager {
     if (_protocol == ProtocolType.standard) {
       if (_writeChar == null || _token == null) return false;
       final frame = buildCommand(_model.aesKey, cmd, _token!);
-      await _writeChar!.write(frame.toList(), withoutResponse: false);
+      await runGattOperation(
+        () => _writeChar!.write(frame.toList(), withoutResponse: false),
+      );
       return true;
     } else if (_protocol == ProtocolType.qgj) {
       if (_feb1Char == null) return false;
       final frame = buildQgjControlFrame(cmd);
       if (frame == null) return false;
 
-      _cmdAckCompleter = Completer<bool>();
-      await _feb1Char!.write(frame.toList(), withoutResponse: false);
+      final success = await runGattOperation(() async {
+        _cmdAckCompleter = Completer<bool>();
+        try {
+          await _feb1Char!.write(frame.toList(), withoutResponse: false);
 
-      final success = await _cmdAckCompleter!.future.timeout(
-        BleTimings.commandAckTimeout,
-        onTimeout: () => false,
-      );
-      _cmdAckCompleter = null;
+          return _cmdAckCompleter!.future.timeout(
+            BleTimings.commandAckTimeout,
+            onTimeout: () => false,
+          );
+        } finally {
+          _cmdAckCompleter = null;
+        }
+      });
 
       if (success) {
         _log.operation('指令确认: ${cmd.label}', level: LogLevel.info);
@@ -370,10 +414,11 @@ class ConnectionManager {
       // Mode encoded in state2 bits 3-4
       final state2 = (mode.code & 0x03) << 3;
       final data = [0x00, 0x07, 0x00, 0x02, 0x00, state2, 0x00];
-      await fcc1.write(data, withoutResponse: false);
-
-      await Future.delayed(BleTimings.fccReadbackDelay);
-      final response = await fcc1.read();
+      final response = await runGattOperation(() async {
+        await fcc1.write(data, withoutResponse: false);
+        await Future.delayed(BleTimings.fccReadbackDelay);
+        return fcc1.read();
+      });
       if (response.isNotEmpty) {
         final confirmedMode = (response.length > 5)
             ? (response[5] >> 3) & 0x03
@@ -411,6 +456,10 @@ class ConnectionManager {
     _log.ble('设备断开连接', level: LogLevel.warning);
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    if (_cmdAckCompleter != null && !_cmdAckCompleter!.isCompleted) {
+      _cmdAckCompleter!.complete(false);
+    }
+    _cmdAckCompleter = null;
     _notifySub?.cancel();
     _notifySub = null;
     _connectionSub?.cancel();

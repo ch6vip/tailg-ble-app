@@ -72,7 +72,7 @@ class VehicleSettingsService {
 
   Future<VehicleSettingsSnapshot?> refresh() async {
     final char = _requireFcc1();
-    return _readBackState(char);
+    return connectionManager.runGattOperation(() => _readBackState(char));
   }
 
   Future<VehicleSettingsSnapshot?> writeLight({
@@ -125,15 +125,17 @@ class VehicleSettingsService {
     final char = _requireFcc1();
     for (int attempt = 0; attempt <= retries; attempt++) {
       try {
-        await char.write(data, withoutResponse: false);
-        _log.operation(
-          'fcc1 写入成功',
-          detail: data
-              .map((b) => b.toRadixString(16).padLeft(2, '0'))
-              .join(' '),
-        );
-        await Future.delayed(BleTimings.fccReadbackDelay);
-        return _readBackState(char);
+        return connectionManager.runGattOperation(() async {
+          await char.write(data, withoutResponse: false);
+          _log.operation(
+            'fcc1 写入成功',
+            detail: data
+                .map((b) => b.toRadixString(16).padLeft(2, '0'))
+                .join(' '),
+          );
+          await Future.delayed(BleTimings.fccReadbackDelay);
+          return _readBackState(char);
+        });
       } catch (e) {
         if (attempt == retries) {
           _log.operation(

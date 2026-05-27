@@ -64,7 +64,7 @@ class BleTimings {
   static const proximityScanTimeout = Duration(seconds: 30);
   static const serviceSetupDelay = Duration(milliseconds: 500);
   static const heartbeatInitialDelay = Duration(milliseconds: 500);
-  static const heartbeatInterval = Duration(seconds: 1);
+  static const heartbeatInterval = Duration(seconds: 5);
   static const commandAckTimeout = Duration(seconds: 5);
   static const fccReadbackDelay = Duration(milliseconds: 200);
   static const fccRetryDelay = Duration(milliseconds: 500);

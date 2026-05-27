@@ -147,23 +147,10 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
     setState(() => _scanning = true);
     _log.operation('开始故障诊断');
     try {
-      final device = connectionManager.device;
-      if (device == null) throw Exception('设备未连接');
-      dynamic feb3Char;
-      for (final service in device.servicesList) {
-        if (service.serviceUuid.toString().contains('feb0')) {
-          for (final c in service.characteristics) {
-            if (c.characteristicUuid.toString().contains('feb3')) {
-              feb3Char = c;
-              break;
-            }
-          }
-        }
-      }
-      if (feb3Char == null) throw Exception('feb3 特征未找到');
-      final data = await feb3Char.read();
+      final data = await connectionManager.readFeb3();
+      if (data == null) throw Exception('feb3 特征未找到');
       if (data.length < 9) throw Exception('数据不完整 (${data.length} bytes)');
-      final faultByte = data[8] as int;
+      final faultByte = data[8];
       final faults = _parseFaults(faultByte);
       final activeFaults = faults.where((f) => f.active).toList();
       setState(() {
