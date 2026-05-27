@@ -372,6 +372,20 @@ class _ControlArea extends StatelessWidget {
   final ble.ConnectionState connState;
   const _ControlArea({required this.connState});
 
+  void _send(BuildContext context, CommandCode cmd) async {
+    HapticFeedback.mediumImpact();
+    final success = await connectionManager.sendCommand(cmd);
+    if (!success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${cmd.label}失败'),
+          backgroundColor: Colors.red.shade400,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final enabled = connState == ble.ConnectionState.ready;
@@ -387,16 +401,14 @@ class _ControlArea extends StatelessWidget {
                     _ControlButton(
                       icon: Icons.event_seat_outlined,
                       onTap: enabled
-                          ? () => connectionManager
-                              .sendCommand(CommandCode.openSeat)
+                          ? () => _send(context, CommandCode.openSeat)
                           : null,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: SlideToAction(
                         onSlideComplete: enabled
-                            ? () => connectionManager
-                                .sendCommand(CommandCode.unlock)
+                            ? () => _send(context, CommandCode.unlock)
                             : null,
                       ),
                     ),
@@ -408,8 +420,7 @@ class _ControlArea extends StatelessWidget {
                     _ControlButton(
                       icon: Icons.power_off_outlined,
                       onTap: enabled
-                          ? () => connectionManager
-                              .sendCommand(CommandCode.powerOff)
+                          ? () => _send(context, CommandCode.powerOff)
                           : null,
                     ),
                     const SizedBox(width: 12),
@@ -421,8 +432,7 @@ class _ControlArea extends StatelessWidget {
                               icon: Icons.volume_up_outlined,
                               label: '寻车',
                               onTap: enabled
-                                  ? () => connectionManager
-                                      .sendCommand(CommandCode.find)
+                                  ? () => _send(context, CommandCode.find)
                                   : null,
                             ),
                           ),
@@ -432,8 +442,7 @@ class _ControlArea extends StatelessWidget {
                               icon: Icons.lock_outline,
                               label: '设防',
                               onTap: enabled
-                                  ? () => connectionManager
-                                      .sendCommand(CommandCode.lock)
+                                  ? () => _send(context, CommandCode.lock)
                                   : null,
                             ),
                           ),

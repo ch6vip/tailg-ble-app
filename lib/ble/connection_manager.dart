@@ -34,6 +34,8 @@ class ConnectionManager {
   int _reconnectAttempt = 0;
   static const _maxReconnectAttempts = 8;
 
+  Completer<bool>? _cmdAckCompleter;
+
   final _stateController = StreamController<ConnectionState>.broadcast();
   final _responseController = StreamController<ParsedResponse>.broadcast();
   final _bikeStateController = StreamController<BikeState?>.broadcast();
@@ -215,6 +217,9 @@ class ConnectionManager {
       _log.ble('QGJ 登录成功', level: LogLevel.info);
       _setState(ConnectionState.ready);
       _startHeartbeat();
+    } else if (response.cmdId == 0x1002) {
+      _cmdAckCompleter?.complete(response.success);
+      _cmdAckCompleter = null;
     }
   }
 
@@ -249,21 +254,36 @@ class ConnectionManager {
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 1), (_) => tick());
   }
 
-  Future<void> sendCommand(CommandCode cmd) async {
-    if (_state != ConnectionState.ready) return;
+  Future<bool> sendCommand(CommandCode cmd) async {
+    if (_state != ConnectionState.ready) return false;
 
     _log.operation('发送指令: ${cmd.label}', detail: 'code=${cmd.code}');
 
     if (_protocol == ProtocolType.standard) {
-      if (_writeChar == null || _token == null) return;
+      if (_writeChar == null || _token == null) return false;
       final frame = buildCommand(_model.aesKey, cmd, _token!);
       await _writeChar!.write(frame.toList(), withoutResponse: false);
+      return true;
     } else if (_protocol == ProtocolType.qgj) {
-      if (_feb1Char == null) return;
+      if (_feb1Char == null) return false;
       final frame = buildQgjControlFrame(cmd);
-      if (frame == null) return;
+      if (frame == null) return false;
+
+      _cmdAckCompleter = Completer<bool>();
       await _feb1Char!.write(frame.toList(), withoutResponse: false);
+
+      final success = await _cmdAckCompleter!.future
+          .timeout(const Duration(seconds: 5), onTimeout: () => false);
+      _cmdAckCompleter = null;
+
+      if (success) {
+        _log.operation('指令确认: ${cmd.label}', level: LogLevel.info);
+      } else {
+        _log.operation('指令失败: ${cmd.label}', level: LogLevel.warning);
+      }
+      return success;
     }
+    return false;
   }
 
   RidingMode _ridingMode = RidingMode.standard;
