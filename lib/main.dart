@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'ble/connection_manager.dart' as ble;
 import 'services/proximity_service.dart';
@@ -55,12 +56,30 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+class _HomePageState extends State<HomePage>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   int _currentIndex = 1;
+  late AnimationController _pageAnimController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
 
   @override
   void initState() {
     super.initState();
+    _pageAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _pageAnimController,
+      curve: Curves.easeOut,
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.02),
+      end: Offset.zero,
+    ).animate(_fadeAnim);
+    _pageAnimController.value = 1.0;
+
     WidgetsBinding.instance.addObserver(this);
     connectionManager.stateStream.listen((state) {
       if (state == ble.ConnectionState.ready) {
@@ -75,8 +94,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _pageAnimController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _switchTab(int index) {
+    if (index == _currentIndex) return;
+    setState(() => _currentIndex = index);
+    _pageAnimController.forward(from: 0);
   }
 
   @override
@@ -91,21 +117,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: const [
-          ScanPage(),
-          ControlPage(),
-          SettingsPage(),
-        ],
+      body: FadeTransition(
+        opacity: _fadeAnim,
+        child: SlideTransition(
+          position: _slideAnim,
+          child: IndexedStack(
+            index: _currentIndex,
+            children: const [
+              ScanPage(),
+              ControlPage(),
+              SettingsPage(),
+            ],
+          ),
+        ),
       ),
       extendBody: true,
       bottomNavigationBar: ClipRRect(
         child: BackdropFilter(
-          filter: ColorFilter.mode(
-            Colors.white.withValues(alpha: 0.92),
-            BlendMode.srcOver,
-          ),
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
             height: 82,
             decoration: BoxDecoration(
@@ -125,19 +154,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   icon: Icons.search,
                   label: '扫描',
                   active: _currentIndex == 0,
-                  onTap: () => setState(() => _currentIndex = 0),
+                  onTap: () => _switchTab(0),
                 ),
                 _NavItem(
                   icon: Icons.directions_car_outlined,
                   label: '爱车',
                   active: _currentIndex == 1,
-                  onTap: () => setState(() => _currentIndex = 1),
+                  onTap: () => _switchTab(1),
                 ),
                 _NavItem(
                   icon: Icons.settings_outlined,
                   label: '设置',
                   active: _currentIndex == 2,
-                  onTap: () => setState(() => _currentIndex = 2),
+                  onTap: () => _switchTab(2),
                 ),
               ],
             ),

@@ -96,12 +96,13 @@ class _Header extends StatelessWidget {
           Expanded(
             child: Row(
               children: [
-                Text(
+                const Text(
                   '超能S·苍穹灰',
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A2E),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 const Icon(Icons.arrow_drop_down, size: 20),

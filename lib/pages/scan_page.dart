@@ -134,7 +134,10 @@ class _ScanPageState extends State<ScanPage>
                       ],
                     ),
                   ),
-                  _RadarWidget(animation: _radarController),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16, bottom: 20),
+                    child: _RadarWidget(animation: _radarController),
+                  ),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 20),
                     child: Column(
@@ -288,19 +291,26 @@ class _DeviceList extends StatelessWidget {
   }
 }
 
-class _DeviceCard extends StatelessWidget {
+class _DeviceCard extends StatefulWidget {
   final ScanResult result;
   final VoidCallback onTap;
   const _DeviceCard({required this.result, required this.onTap});
 
   @override
+  State<_DeviceCard> createState() => _DeviceCardState();
+}
+
+class _DeviceCardState extends State<_DeviceCard> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    final name = result.device.platformName.isNotEmpty
-        ? result.device.platformName
+    final name = widget.result.device.platformName.isNotEmpty
+        ? widget.result.device.platformName
         : '未知设备';
     final isTailg =
         name.contains('TL') || name.contains('tailg') || name.contains('Tailg');
-    final rssi = result.rssi;
+    final rssi = widget.result.rssi;
     final strength = rssi > -60
         ? _SignalStrength.strong
         : rssi > -80
@@ -308,63 +318,71 @@ class _DeviceCard extends StatelessWidget {
             : _SignalStrength.weak;
 
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 10,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                gradient: isTailg
-                    ? const LinearGradient(
-                        colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)])
-                    : null,
-                color: isTailg ? null : const Color(0xFFF5F5F5),
-                borderRadius: BorderRadius.circular(12),
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? 0.98 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0x0A000000),
+                blurRadius: _pressed ? 4 : 10,
+                offset: const Offset(0, 2),
               ),
-              child: Icon(
-                isTailg ? Icons.electric_bike : Icons.bluetooth,
-                size: 22,
-                color: isTailg ? _primary : const Color(0xFF9E9E9E),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: isTailg
+                      ? const LinearGradient(
+                          colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)])
+                      : null,
+                  color: isTailg ? null : const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isTailg ? Icons.electric_bike : Icons.bluetooth,
+                  size: 22,
+                  color: isTailg ? _primary : const Color(0xFF9E9E9E),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name,
+                        style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: _textPrimary)),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.result.device.remoteId.toString(),
                       style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: _textPrimary)),
-                  const SizedBox(height: 2),
-                  Text(
-                    result.device.remoteId.toString(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: _textTertiary,
-                      fontFamily: 'monospace',
+                        fontSize: 12,
+                        color: _textTertiary,
+                        fontFamily: 'monospace',
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            _SignalBars(strength: strength),
-          ],
+              _SignalBars(strength: strength),
+            ],
+          ),
         ),
       ),
     );
