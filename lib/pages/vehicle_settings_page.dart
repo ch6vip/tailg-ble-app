@@ -38,6 +38,10 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
         }
         await char.write(data, withoutResponse: false);
         _log.operation('fcc1 写入成功', detail: data.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' '));
+
+        await Future.delayed(const Duration(milliseconds: 200));
+        await _readBackState(char);
+
         setState(() => _sending = false);
         return;
       } catch (e) {
@@ -64,6 +68,38 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
       }
     }
     return null;
+  }
+
+  Future<void> _readBackState(dynamic char) async {
+    try {
+      final response = await char.read();
+      if (response.isEmpty) return;
+      _log.operation('fcc1 读回', detail: response.map((b) => (b as int).toRadixString(16).padLeft(2, '0')).join(' '));
+      _parseDeviceState(List<int>.from(response));
+    } catch (e) {
+      _log.operation('fcc1 读取失败', detail: e.toString(), level: LogLevel.debug);
+    }
+  }
+
+  void _parseDeviceState(List<int> data) {
+    if (data.length < 7 && data.length < 11) return;
+
+    if (data.length >= 7 && data[0] == 0x00 && data[1] == 0x07) {
+      setState(() {
+        _headlight = (data[4] & 0x01) != 0;
+        _turnSignal = (data[4] & 0x02) != 0;
+      });
+      _showSnack('灯光状态已刷新');
+    } else if (data.length >= 11 && data[0] == 0x85) {
+      setState(() {
+        _powerOnSound = data[5] != 0;
+        _startupSound = data[6] != 0;
+        _unlockSound = data[7] != 0;
+        _lockSound = data[8] != 0;
+        _buzzerVolume = data[10].clamp(0, 5);
+      });
+      _showSnack('声音状态已刷新');
+    }
   }
 
   List<int> _buildSoundCommand() {
