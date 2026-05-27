@@ -78,10 +78,13 @@ class ConnectionManager {
   Future<void> _discoverAndSetup() async {
     final services = await _device!.discoverServices();
 
+    _log.ble('发现 ${services.length} 个服务',
+        detail: services.map((s) => s.serviceUuid.toString()).join(', '));
+
     final hasFeb0 = services.any(
-        (s) => s.serviceUuid.toString() == BleUuids.serviceFeb0);
+        (s) => s.serviceUuid.toString().contains('feb0'));
     final hasFee5 = services.any(
-        (s) => s.serviceUuid.toString() == BleUuids.serviceFee5);
+        (s) => s.serviceUuid.toString().contains('fee5'));
 
     if (hasFeb0) {
       _protocol = ProtocolType.qgj;
@@ -99,12 +102,12 @@ class ConnectionManager {
 
   Future<void> _setupStandard(List<BluetoothService> services) async {
     final service = services.firstWhere(
-        (s) => s.serviceUuid.toString() == BleUuids.serviceFee5);
+        (s) => s.serviceUuid.toString().contains('fee5'));
 
     for (final c in service.characteristics) {
       final uuid = c.characteristicUuid.toString();
-      if (uuid == BleUuids.writeChar) _writeChar = c;
-      if (uuid == BleUuids.notifyChar) _notifyChar = c;
+      if (uuid.contains('feb5')) _writeChar = c;
+      if (uuid.contains('feb6')) _notifyChar = c;
     }
 
     if (_notifyChar != null) {
@@ -120,13 +123,13 @@ class ConnectionManager {
 
   Future<void> _setupQgj(List<BluetoothService> services) async {
     final service = services.firstWhere(
-        (s) => s.serviceUuid.toString() == BleUuids.serviceFeb0);
+        (s) => s.serviceUuid.toString().contains('feb0'));
 
     for (final c in service.characteristics) {
       final uuid = c.characteristicUuid.toString();
-      if (uuid == BleUuids.feb1) _feb1Char = c;
-      if (uuid == BleUuids.feb2) _feb2Char = c;
-      if (uuid == BleUuids.feb3) _feb3Char = c;
+      if (uuid.contains('feb1')) _feb1Char = c;
+      if (uuid.contains('feb2')) _feb2Char = c;
+      if (uuid.contains('feb3')) _feb3Char = c;
     }
 
     if (_feb2Char != null) {
