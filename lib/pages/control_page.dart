@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
+import '../widgets/slide_to_action.dart';
 
 class ControlPage extends StatelessWidget {
   const ControlPage({super.key});
@@ -255,7 +256,14 @@ class ControlPage extends StatelessWidget {
               children: [
                 _buildSmallButton(Icons.bookmark_border),
                 const SizedBox(width: 12),
-                Expanded(child: _buildPowerSlider()),
+                Expanded(
+                  child: SlideToAction(
+                    onSlideComplete: enabled
+                        ? () =>
+                            connectionManager.sendCommand(CommandCode.unlock)
+                        : null,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -303,45 +311,6 @@ class ControlPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
       ),
       child: Icon(icon, color: Colors.grey.shade700, size: 24),
-    );
-  }
-
-  Widget _buildPowerSlider() {
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade800,
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            margin: const EdgeInsets.only(left: 4),
-            decoration: const BoxDecoration(
-              color: Colors.white24,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.power_settings_new,
-                color: Colors.white, size: 24),
-          ),
-          const Expanded(
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.chevron_right, color: Colors.white54, size: 20),
-                  Icon(Icons.chevron_right, color: Colors.white70, size: 20),
-                  SizedBox(width: 4),
-                  Text('右滑启动',
-                      style: TextStyle(color: Colors.white70, fontSize: 14)),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
