@@ -87,8 +87,8 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             _settingItem(
               icon: Icons.tune,
-              title: '灯光与声音',
-              subtitle: '前灯、转向灯、提示音设置',
+              title: '车辆设置',
+              subtitle: '声音、灵敏度、车辆功能、骑行设置',
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const VehicleSettingsPage()),

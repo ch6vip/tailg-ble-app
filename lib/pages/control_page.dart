@@ -10,6 +10,7 @@ import '../theme/app_colors.dart';
 import '../widgets/slide_to_action.dart';
 import 'garage_page.dart';
 import 'location_page.dart';
+import 'vehicle_settings_page.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
 const _kmPerPercent = 0.65;
@@ -59,6 +60,8 @@ class _ControlPageState extends State<ControlPage>
                   _StateLabel(connState: connState),
                   const SizedBox(height: 20),
                   _ControlArea(connState: connState),
+                  const SizedBox(height: 20),
+                  const _FunctionSettingsCard(),
                   const SizedBox(height: 20),
                   _RidingModeSelector(connState: connState),
                   const SizedBox(height: 20),
@@ -535,6 +538,123 @@ class _ControlAreaState extends State<_ControlArea> {
           ),
         );
       },
+    );
+  }
+}
+
+class _FunctionSettingsCard extends StatelessWidget {
+  const _FunctionSettingsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+        decoration: _cardDecoration,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '功能设置',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1A1A2E),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _FunctionShortcut(
+                    icon: Icons.tune,
+                    label: '车辆设置',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const VehicleSettingsPage(),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _FunctionShortcut(
+                    icon: Icons.location_searching,
+                    label: '电子围栏',
+                    onTap: () => _showUnavailable(context, '电子围栏'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _FunctionShortcut(
+                    icon: Icons.ios_share,
+                    label: '分享用车',
+                    onTap: () => _showUnavailable(context, '分享用车'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUnavailable(BuildContext context, String title) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$title功能待接入'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+}
+
+class _FunctionShortcut extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _FunctionShortcut({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.grey.shade100,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(14),
+        child: SizedBox(
+          height: 86,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 24, color: AppColors.textSecondary),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
