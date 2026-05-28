@@ -163,6 +163,74 @@ class OfficialVehicle {
   }
 }
 
+class OfficialBatteryInfo {
+  final Map<String, dynamic> raw;
+  final String dumpEnergyPercent;
+  final String dumpEnergyPercentLabel;
+  final String remainingMileage;
+  final String mileage;
+  final String capacitance;
+  final String consumePowerPercent;
+  final String loopCount;
+  final String temperature;
+  final String batteryScore;
+  final String voltage;
+
+  const OfficialBatteryInfo({
+    required this.raw,
+    required this.dumpEnergyPercent,
+    required this.dumpEnergyPercentLabel,
+    required this.remainingMileage,
+    required this.mileage,
+    required this.capacitance,
+    required this.consumePowerPercent,
+    required this.loopCount,
+    required this.temperature,
+    required this.batteryScore,
+    required this.voltage,
+  });
+
+  factory OfficialBatteryInfo.fromJson(Map<String, dynamic> json) {
+    final dumpEnergyPercent = _clean(json['dumpEnergyPercent']);
+    return OfficialBatteryInfo(
+      raw: Map<String, dynamic>.from(json),
+      dumpEnergyPercent: dumpEnergyPercent ?? '',
+      dumpEnergyPercentLabel:
+          _clean(json['dumpEnergyPercentLabel']) ??
+          (dumpEnergyPercent == null ? null : '$dumpEnergyPercent%') ??
+          '',
+      remainingMileage: _clean(json['remainingMileage']) ?? '',
+      mileage: _clean(json['mileage']) ?? '',
+      capacitance: _clean(json['capacitance']) ?? '',
+      consumePowerPercent: _clean(json['consumePowerPercent']) ?? '',
+      loopCount: _clean(json['loopCount']) ?? '',
+      temperature: _clean(json['temperature']) ?? '',
+      batteryScore: _clean(json['batteryScore']) ?? '',
+      voltage: _clean(json['voltage']) ?? '',
+    );
+  }
+
+  bool get hasData =>
+      dumpEnergyPercent.isNotEmpty ||
+      remainingMileage.isNotEmpty ||
+      mileage.isNotEmpty ||
+      capacitance.isNotEmpty ||
+      consumePowerPercent.isNotEmpty ||
+      loopCount.isNotEmpty ||
+      temperature.isNotEmpty ||
+      batteryScore.isNotEmpty ||
+      voltage.isNotEmpty;
+
+  static String? _clean(Object? value) {
+    if (value == null) return null;
+    final text = value.toString().trim();
+    if (text.isEmpty || text == '--' || text.toLowerCase() == 'null') {
+      return null;
+    }
+    return text;
+  }
+}
+
 class OfficialVehicleSelfCheck {
   final Map<String, dynamic> raw;
   final int? code;

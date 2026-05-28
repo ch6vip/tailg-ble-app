@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/ble/constants.dart';
 import 'package:tailg_ble_app/ble/qgj_protocol.dart';
 import 'package:tailg_ble_app/models/battery_snapshot.dart';
+import 'package:tailg_ble_app/models/official_vehicle.dart';
 
 void main() {
   test('BatterySnapshot maps bike state into battery details', () {
@@ -22,6 +23,7 @@ void main() {
     expect(snapshot.faults, isEmpty);
     expect(snapshot.bms.soc, '80');
     expect(snapshot.bms.currentBatteryVoltage, '48.5');
+    expect(snapshot.bms.socSource, BatteryDataSource.ble);
   });
 
   test('BmsSnapshot exposes official field structure without fake values', () {
@@ -55,6 +57,72 @@ void main() {
     expect(fields[3].displayValue, '48.5V');
     expect(fields[8].displayValue, '待读取');
   });
+
+  test('BatterySnapshot uses official cloud vehicle as fallback', () {
+    final snapshot = BatterySnapshot.fromSources(
+      officialVehicle: _officialVehicle(
+        electricQuantity: 66,
+        voltage: 52.4,
+        mileage: 1234.5,
+      ),
+    );
+
+    expect(snapshot.percent, 66);
+    expect(snapshot.voltage, 52.4);
+    expect(snapshot.remainingMileage, '42.9');
+    expect(snapshot.totalMileage, '1234.5');
+    expect(snapshot.percentSource, BatteryDataSource.officialVehicle);
+    expect(snapshot.voltageSource, BatteryDataSource.officialVehicle);
+  });
+
+  test(
+    'BatterySnapshot uses official battery info and keeps BLE preferred',
+    () {
+      final officialBattery = OfficialBatteryInfo.fromJson({
+        'dumpEnergyPercent': '68',
+        'remainingMileage': '45',
+        'mileage': '2000',
+        'capacitance': '24Ah',
+        'consumePowerPercent': '8',
+        'loopCount': '12',
+        'temperature': '31',
+        'batteryScore': '95',
+        'voltage': '52.2',
+      });
+
+      final cloudOnly = BatterySnapshot.fromSources(
+        officialBatteryInfo: officialBattery,
+      );
+      expect(cloudOnly.percent, 68);
+      expect(cloudOnly.voltage, 52.2);
+      expect(cloudOnly.temperature, 31);
+      expect(cloudOnly.remainingMileage, '45');
+      expect(cloudOnly.capacitance, '24Ah');
+      expect(cloudOnly.consumePowerPercent, '8');
+      expect(cloudOnly.loopCount, '12');
+      expect(cloudOnly.batteryScore, '95');
+      expect(cloudOnly.percentSource, BatteryDataSource.officialBattery);
+      expect(cloudOnly.bms.fields[0].displayValue, '24Ah');
+      expect(cloudOnly.bms.fields[8].displayValue, '12');
+
+      final blePreferred = BatterySnapshot.fromSources(
+        bikeState: const BikeState(
+          isLocked: true,
+          isPowerOn: false,
+          voltage: 48.5,
+          temperature: 26.2,
+          batteryPercent: 80,
+        ),
+        officialBatteryInfo: officialBattery,
+      );
+      expect(blePreferred.percent, 80);
+      expect(blePreferred.voltage, 48.5);
+      expect(blePreferred.temperature, 26.2);
+      expect(blePreferred.percentSource, BatteryDataSource.ble);
+      expect(blePreferred.voltageSource, BatteryDataSource.ble);
+      expect(blePreferred.temperatureSource, BatteryDataSource.ble);
+    },
+  );
 
   test('BikeState compares by value', () {
     const first = BikeState(
@@ -145,4 +213,31 @@ void main() {
       0x08,
     ]);
   });
+}
+
+OfficialVehicle _officialVehicle({
+  int? electricQuantity,
+  double? voltage,
+  double? mileage,
+}) {
+  return OfficialVehicle(
+    imei: 'imei-1',
+    imeiGps: '',
+    carId: 'car-1',
+    carName: 'TAILG',
+    carNickName: '',
+    carPhoto: '',
+    frame: '',
+    defenceStatus: 1,
+    acc: 0,
+    electricQuantity: electricQuantity,
+    voltage: voltage,
+    online: true,
+    btname: '',
+    btmac: '',
+    longitude: '',
+    latitude: '',
+    modelType: null,
+    mileage: mileage,
+  );
 }

@@ -30,6 +30,9 @@ class OfficialCloudState {
   final String? selectedVehicleKey;
   final OfficialControlChannel controlChannel;
   final Map<String, String> localVehicleLinks;
+  final OfficialBatteryInfo? batteryInfo;
+  final bool batteryInfoLoading;
+  final String? batteryInfoError;
 
   const OfficialCloudState({
     required this.initialized,
@@ -41,6 +44,9 @@ class OfficialCloudState {
     required this.selectedVehicleKey,
     required this.controlChannel,
     required this.localVehicleLinks,
+    required this.batteryInfo,
+    required this.batteryInfoLoading,
+    required this.batteryInfoError,
   });
 
   factory OfficialCloudState.initial() => const OfficialCloudState(
@@ -53,6 +59,9 @@ class OfficialCloudState {
     selectedVehicleKey: null,
     controlChannel: OfficialControlChannel.automatic,
     localVehicleLinks: {},
+    batteryInfo: null,
+    batteryInfoLoading: false,
+    batteryInfoError: null,
   );
 
   bool get signedIn => token.isNotEmpty;
@@ -79,6 +88,9 @@ class OfficialCloudState {
     Object? selectedVehicleKey = _sentinel,
     OfficialControlChannel? controlChannel,
     Map<String, String>? localVehicleLinks,
+    Object? batteryInfo = _sentinel,
+    bool? batteryInfoLoading,
+    Object? batteryInfoError = _sentinel,
   }) {
     return OfficialCloudState(
       initialized: initialized ?? this.initialized,
@@ -92,6 +104,13 @@ class OfficialCloudState {
           : selectedVehicleKey as String?,
       controlChannel: controlChannel ?? this.controlChannel,
       localVehicleLinks: localVehicleLinks ?? this.localVehicleLinks,
+      batteryInfo: identical(batteryInfo, _sentinel)
+          ? this.batteryInfo
+          : batteryInfo as OfficialBatteryInfo?,
+      batteryInfoLoading: batteryInfoLoading ?? this.batteryInfoLoading,
+      batteryInfoError: identical(batteryInfoError, _sentinel)
+          ? this.batteryInfoError
+          : batteryInfoError as String?,
     );
   }
 
@@ -245,6 +264,9 @@ class OfficialCloudService {
       vehicles: const [],
       selectedVehicleKey: null,
       error: null,
+      batteryInfo: null,
+      batteryInfoLoading: false,
+      batteryInfoError: null,
     );
     _emit();
     _log.operation('官方云已退出登录');
@@ -294,6 +316,7 @@ class OfficialCloudService {
       );
       _emit();
       _log.operation('官方车辆列表已刷新', detail: 'count=${vehicles.length}');
+      unawaited(refreshBatteryInfo(silent: true));
     } catch (e) {
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
@@ -319,6 +342,60 @@ class OfficialCloudService {
     await prefs.setString(_prefControlChannel, channel.name);
     _state = _state.copyWith(controlChannel: channel);
     _emit();
+  }
+
+  Future<void> refreshBatteryInfo({bool silent = false}) async {
+    if (_state.token.isEmpty) return;
+    if (!silent) {
+      _state = _state.copyWith(
+        batteryInfoLoading: true,
+        batteryInfoError: null,
+      );
+      _emit();
+    }
+    try {
+      final response = await _request(
+        'app/mine/batteryInfo',
+        method: 'POST',
+        token: _state.token,
+      );
+      _ensureSuccess(response.body, fallback: '获取官方电池信息失败');
+      final data = response.body['data'];
+      final info = data is Map
+          ? OfficialBatteryInfo.fromJson(Map<String, dynamic>.from(data))
+          : OfficialBatteryInfo.fromJson(const <String, dynamic>{});
+      _state = _state.copyWith(
+        batteryInfo: info.hasData ? info : null,
+        batteryInfoLoading: false,
+        batteryInfoError: null,
+      );
+      _emit();
+      _log.operation(
+        '官方电池信息已刷新',
+        detail: info.hasData ? 'hasData=true' : 'hasData=false',
+      );
+    } catch (e) {
+      await _handleAuthFailureIfNeeded(e);
+      if (_state.signedIn) {
+        final message = _errorMessage(e);
+        _state = _state.copyWith(
+          batteryInfoLoading: false,
+          batteryInfoError: message,
+        );
+        _emit();
+      }
+      if (!silent) rethrow;
+      _log.operation(
+        '官方电池信息刷新失败',
+        detail: _errorMessage(e),
+        level: LogLevel.warning,
+      );
+    } finally {
+      if (!silent && _state.batteryInfoLoading) {
+        _state = _state.copyWith(batteryInfoLoading: false);
+        _emit();
+      }
+    }
   }
 
   Future<void> linkLocalVehicle({
