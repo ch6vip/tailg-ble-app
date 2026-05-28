@@ -35,6 +35,16 @@ flutter build apk --release
 - 标准 fee5/AES 协议（KKS/BB/AX/JD/HJ/JW/XL/YY 车型）
 - QGJ (Q_BASH) 3通道 kuyi 协议（feb0/fcc0 服务）
 
+## 当前能力摘要
+
+- 本地 BLE 控车：解锁、设防、寻车、开座桶、通电、断电
+- QGJ 控车与设置：登录、心跳、重连、骑行模式、光感、声音、震动灵敏度
+- QGJ 高级只读：自动锁车、上电自动锁车、感应状态/距离、HID、电子龙头锁、安全锁、边撑、坐垫、侧翻检测
+- 车辆管理：本地车库、默认车辆、QGJ 登录参数、自动连接、感应解锁
+- 信息与诊断：电池/BMS 详情、设备信息、OTA 前置检测、故障诊断、日志和诊断报告
+
+高级 QGJ 写入、密码解锁、NFC 真加钥匙和 OTA 仍需真机验证后再开放。
+
 ## 项目信息
 
 - 包名：`de.tttq.tailg_ble_app`
@@ -45,4 +55,5 @@ flutter build apk --release
 
 - [功能清单](FEATURES.md)
 - [第一批功能真机验证清单](docs/first_batch_verification.md)
+- [官方 3.5.6 可安全复刻任务计划](docs/official_replicable_tasks.md)
 - [Android 构建说明](docs/android_build_notes.md)

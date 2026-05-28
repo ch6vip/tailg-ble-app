@@ -134,6 +134,10 @@
 
 ## 工程与 CI
 
+- **项目文档**：`docs/official_replicable_tasks.md` 记录官方 3.5.6 对齐、已确认 QGJ 命令、待测清单和禁写边界
+- **真机验证清单**：`docs/first_batch_verification.md` 已覆盖高级只读诊断、BMS 字段化详情、OTA 前置检测和基础回归
+- **测试覆盖**：单元测试覆盖 QGJ 命令帧、高级只读解析、BMS 字段结构、车库持久化和首页渲染
+
 - **GitHub Actions CI**：每次 push 自动编译 APK
 - **正式签名**：keystore 通过 GitHub Secrets 管理
 - **版本发布**：打 `v*` tag 时自动创建 Release + 上传 APK
@@ -162,6 +166,7 @@ lib/
 │   ├── settings_page.dart       # 设置页
 │   ├── garage_page.dart         # 本地车库/多车管理
 │   ├── vehicle_settings_page.dart # 灯光/声音/灵敏度设置
+│   ├── qgj_advanced_settings_page.dart # QGJ 高级设置只读诊断
 │   ├── battery_details_page.dart # 电池/BMS 详情
 │   ├── ota_precheck_page.dart   # OTA 前置检测
 │   ├── diagnostic_page.dart     # 故障诊断
