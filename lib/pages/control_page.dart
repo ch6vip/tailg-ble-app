@@ -457,6 +457,7 @@ class _ControlAreaState extends State<_ControlArea> {
   final _replicaStore = ReplicaFeatureStore();
   QuickControlConfig _quickConfig = const QuickControlConfig();
   bool _busy = false;
+  String? _activeControlId;
 
   @override
   void initState() {
@@ -470,9 +471,12 @@ class _ControlAreaState extends State<_ControlArea> {
     setState(() => _quickConfig = config);
   }
 
-  Future<void> _send(CommandCode cmd) async {
+  Future<void> _send(CommandCode cmd, {required String actionId}) async {
     if (_busy) return;
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _activeControlId = actionId;
+    });
     HapticFeedback.mediumImpact();
     try {
       final success = await connectionManager.sendCommand(cmd);
@@ -489,14 +493,19 @@ class _ControlAreaState extends State<_ControlArea> {
         );
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _activeControlId = null;
+        });
+      }
     }
   }
 
   Future<void> _runQuickAction(_QuickControlSpec spec, bool enabled) async {
     if (spec.command != null) {
       if (!enabled) return;
-      await _send(spec.command!);
+      await _send(spec.command!, actionId: 'quick:${spec.id}');
       return;
     }
     HapticFeedback.mediumImpact();
@@ -531,6 +540,8 @@ class _ControlAreaState extends State<_ControlArea> {
         final isPowerOn = bike?.isPowerOn ?? false;
         final firstQuick = _quickControlSpec(_quickConfig.firstActionId);
         final secondQuick = _quickControlSpec(_quickConfig.secondActionId);
+        final firstQuickActive = _activeControlId == 'quick:${firstQuick.id}';
+        final secondQuickActive = _activeControlId == 'quick:${secondQuick.id}';
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -551,7 +562,8 @@ class _ControlAreaState extends State<_ControlArea> {
                             icon: firstQuick.icon,
                             label: firstQuick.label,
                             enabled: firstQuick.command == null || enabled,
-                            loading: _busy && firstQuick.command != null,
+                            active: firstQuickActive,
+                            loading: firstQuickActive,
                             onTap: () => _runQuickAction(firstQuick, enabled),
                           ),
                         ),
@@ -565,7 +577,8 @@ class _ControlAreaState extends State<_ControlArea> {
                                   label: secondQuick.label,
                                   enabled:
                                       secondQuick.command == null || enabled,
-                                  loading: _busy && secondQuick.command != null,
+                                  active: secondQuickActive,
+                                  loading: secondQuickActive,
                                   onTap: () =>
                                       _runQuickAction(secondQuick, enabled),
                                 ),
@@ -604,6 +617,7 @@ class _ControlAreaState extends State<_ControlArea> {
                                       isPowerOn
                                           ? CommandCode.powerOff
                                           : CommandCode.powerOn,
+                                      actionId: 'slidePower',
                                     )
                                   : null,
                             ),
@@ -618,8 +632,12 @@ class _ControlAreaState extends State<_ControlArea> {
                                   icon: Icons.volume_up_outlined,
                                   label: '寻车',
                                   enabled: enabled,
-                                  loading: _busy,
-                                  onTap: () => _send(CommandCode.find),
+                                  active: _activeControlId == 'fixedFind',
+                                  loading: _activeControlId == 'fixedFind',
+                                  onTap: () => _send(
+                                    CommandCode.find,
+                                    actionId: 'fixedFind',
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -630,11 +648,13 @@ class _ControlAreaState extends State<_ControlArea> {
                                       : Icons.lock_outline,
                                   label: isLocked ? '解锁' : '设防',
                                   enabled: enabled,
-                                  loading: _busy,
+                                  active: _activeControlId == 'fixedLock',
+                                  loading: _activeControlId == 'fixedLock',
                                   onTap: () => _send(
                                     isLocked
                                         ? CommandCode.unlock
                                         : CommandCode.lock,
+                                    actionId: 'fixedLock',
                                   ),
                                 ),
                               ),
@@ -948,10 +968,11 @@ class _QuickEditOption extends StatelessWidget {
   }
 }
 
-class _ControlTile extends StatelessWidget {
+class _ControlTile extends StatefulWidget {
   final IconData icon;
   final String label;
   final bool enabled;
+  final bool active;
   final bool loading;
   final VoidCallback onTap;
 
@@ -959,54 +980,121 @@ class _ControlTile extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.enabled,
+    this.active = false,
     required this.loading,
     required this.onTap,
   });
 
   @override
+  State<_ControlTile> createState() => _ControlTileState();
+}
+
+class _ControlTileState extends State<_ControlTile> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (!mounted || _pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final color = enabled ? AppColors.textSecondary : AppColors.textTertiary;
-    return Material(
-      color: enabled ? Colors.grey.shade100 : const Color(0xFFF2F2F2),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: enabled && !loading
-            ? () {
-                HapticFeedback.mediumImpact();
-                onTap();
-              }
-            : null,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (loading)
-                SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: color,
+    final interactive = widget.enabled && !widget.loading;
+    final color = widget.active
+        ? AppColors.primary
+        : widget.enabled
+        ? AppColors.textSecondary
+        : AppColors.textTertiary;
+    final background = widget.active
+        ? AppColors.primary.withValues(alpha: 0.12)
+        : _pressed
+        ? AppColors.primary.withValues(alpha: 0.08)
+        : widget.enabled
+        ? Colors.grey.shade100
+        : const Color(0xFFF2F2F2);
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+      scale: _pressed ? 0.96 : 1,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: widget.active
+                ? AppColors.primary.withValues(alpha: 0.32)
+                : Colors.transparent,
+            width: 1.2,
+          ),
+          boxShadow: widget.active
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.16),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                )
-              else
-                Icon(icon, color: color, size: 26),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  height: 1.1,
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                ),
+                ]
+              : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            onTap: interactive
+                ? () {
+                    _setPressed(false);
+                    HapticFeedback.mediumImpact();
+                    widget.onTap();
+                  }
+                : null,
+            onTapDown: interactive ? (_) => _setPressed(true) : null,
+            onTapCancel: interactive ? () => _setPressed(false) : null,
+            onTapUp: interactive ? (_) => _setPressed(false) : null,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    child: widget.loading
+                        ? SizedBox(
+                            key: const ValueKey('loading'),
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.4,
+                              color: color,
+                            ),
+                          )
+                        : Icon(
+                            widget.icon,
+                            key: ValueKey(widget.icon),
+                            color: color,
+                            size: widget.active ? 28 : 26,
+                          ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.1,
+                      color: color,
+                      fontWeight: widget.active
+                          ? FontWeight.w700
+                          : FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
