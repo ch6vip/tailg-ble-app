@@ -85,4 +85,19 @@ void main() {
       );
     });
   });
+
+  group('OfficialVehicleSelfCheck', () {
+    test('keeps raw official status response without guessing meanings', () {
+      final result = OfficialVehicleSelfCheck.fromResponse({
+        'code': '200',
+        'msg': '成功',
+        'data': {'imei': '123456789012345', 'voltage': 52.6, 'fault': 0},
+      });
+
+      expect(result.code, 200);
+      expect(result.displayMessage, '成功');
+      expect(result.dataMap['voltage'], 52.6);
+      expect(result.raw['msg'], '成功');
+    });
+  });
 }

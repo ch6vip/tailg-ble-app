@@ -506,7 +506,7 @@ class _ControlAreaState extends State<_ControlArea> {
 
   Future<bool> _sendBySelectedChannel(CommandCode cmd) async {
     final cloudState = officialCloudService.state;
-    final canUseBle = widget.connState == ble.ConnectionState.ready;
+    final canUseBle = _canUseLinkedBle(cloudState);
     final canUseCloud =
         cloudState.signedIn && cloudState.selectedVehicle != null;
 
@@ -524,6 +524,15 @@ class _ControlAreaState extends State<_ControlArea> {
         }
         return false;
     }
+  }
+
+  bool _canUseLinkedBle(OfficialCloudState cloudState) {
+    if (widget.connState != ble.ConnectionState.ready) return false;
+    final selected = cloudState.selectedVehicle;
+    if (selected == null) return true;
+    final linkedId = cloudState.linkedLocalVehicleId(selected.key);
+    if (linkedId == null || linkedId.isEmpty) return true;
+    return vehicleStore.defaultVehicleId == linkedId;
   }
 
   Future<bool> _sendOfficialCloudCommand(CommandCode cmd) async {
@@ -591,7 +600,7 @@ class _ControlAreaState extends State<_ControlArea> {
       initialData: officialCloudService.state,
       builder: (context, cloudSnapshot) {
         final cloudState = cloudSnapshot.data ?? officialCloudService.state;
-        final canUseBle = widget.connState == ble.ConnectionState.ready;
+        final canUseBle = _canUseLinkedBle(cloudState);
         final canUseCloud =
             cloudState.signedIn && cloudState.selectedVehicle != null;
         final enabled =

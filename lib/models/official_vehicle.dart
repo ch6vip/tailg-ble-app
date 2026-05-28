@@ -162,3 +162,40 @@ class OfficialVehicle {
     return double.tryParse(value.toString());
   }
 }
+
+class OfficialVehicleSelfCheck {
+  final Map<String, dynamic> raw;
+  final int? code;
+  final String message;
+  final Object? data;
+
+  const OfficialVehicleSelfCheck({
+    required this.raw,
+    required this.code,
+    required this.message,
+    required this.data,
+  });
+
+  factory OfficialVehicleSelfCheck.fromResponse(Map<String, dynamic> json) {
+    return OfficialVehicleSelfCheck(
+      raw: Map<String, dynamic>.from(json),
+      code: OfficialVehicle._intOrNull(json['code']),
+      message: json['msg']?.toString() ?? '',
+      data: json['data'],
+    );
+  }
+
+  bool get hasData => data != null;
+
+  Map<String, dynamic> get dataMap {
+    final value = data;
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return const {};
+  }
+
+  String get displayMessage {
+    if (message.trim().isNotEmpty) return message.trim();
+    if (code != null) return 'code=$code';
+    return '自检已返回';
+  }
+}

@@ -27,6 +27,9 @@
   - `app/device/cmd/stop`
   - `app/device/cmd/search`
   - `app/device/cmd/openCushion`
+- 反编译官方 `TailgService.java`
+  - `app/device/cmd/status`
+  - `Forward-Service-Ip`
 - `src/cloud/types.ts`
   - `CarInfo`
   - `CloudCmd`
@@ -36,7 +39,7 @@
   - 路径白名单
   - CORS 边界
 
-迁移时不直接照搬 Web 端 token 存储方式。Flutter 侧应使用本地安全存储，并在日志和诊断报告中脱敏 token、手机号、IMEI 等敏感字段。
+迁移时不直接照搬 Web 端 token 存储方式。Flutter 侧已使用本地安全存储保存官方 token/手机号，并在日志和诊断报告中脱敏 token、手机号、IMEI 等敏感字段。
 
 ## 推荐架构
 
@@ -79,8 +82,9 @@ Optional Proxy
 - 新增 `OfficialCloudApi`：
   - 获取短信验证码。
   - 短信验证码登录。
-  - token 保存和清理。
-  - token 失效检测。
+  - token 使用 `flutter_secure_storage` 保存和清理。
+  - 旧版 `shared_preferences` token/手机号一次性迁移后清理。
+  - 车辆列表和云端控车统一 token 失效检测。
 - 新增官方车辆模型：
   - `imei`
   - `imeiGps`
@@ -142,9 +146,10 @@ Optional Proxy
 - 控制页支持通道选择：
   - 官方云端。
   - BLE 直连。
-  - 自动：优先 BLE ready，否则走官方云端。
+  - 自动：官方车辆有关联本地车辆时，仅关联的本地默认车 ready 才优先 BLE，否则走官方云端；未关联时保持 BLE ready 优先。
 - 每次云控车后刷新车辆状态。
 - 云控车失败时不影响 BLE 通道。
+- 官方请求头兼容 `Forward-Service-Ip` 和 Web 侧历史 `Forward-ServiceIp`。
 
 验收：
 
@@ -175,7 +180,10 @@ Optional Proxy
   - 经纬度。
 - 和本地车库关联：
   - 通过 `btmac` / `btname` / 车辆名辅助匹配本地 BLE 车辆。
-  - 用户可以手动把官方车辆和本地车辆绑定。
+  - 用户可以手动把官方车辆和本地车辆绑定，绑定后同步切换本地默认车辆。
+- 云端自检：
+  - 已接入 `app/device/cmd/status`。
+  - 当前只展示返回状态和原始字段摘要，字段含义待真实车辆确认。
 - 状态来源标记：
   - 官方云端。
   - BLE 心跳。
@@ -188,6 +196,7 @@ Optional Proxy
 - 用户能看出每个状态字段来自官方云、BLE 还是本地缓存。
 - 官方车辆可以关联到本地 BLE 车辆。
 - 官方云状态不覆盖未确认的 BLE/BMS 字段。
+- 云端自检可发送并展示成功/失败，字段解释不做猜测。
 
 ## 第四阶段：官方服务生态页面复刻
 

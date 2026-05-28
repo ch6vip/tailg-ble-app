@@ -399,6 +399,7 @@ class _OfficialVehicleCard extends StatelessWidget {
         onTap: () async {
           HapticFeedback.selectionClick();
           await officialCloudService.selectVehicle(vehicle);
+          await _applyLinkedLocalVehicle(vehicle);
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -576,17 +577,225 @@ class OfficialVehicleDetailPage extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(height: 12),
+            AppCard(
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          OfficialVehicleSelfCheckPage(vehicle: vehicle),
+                    ),
+                  ),
+                  icon: const Icon(Icons.health_and_safety_outlined),
+                  label: const Text('云端自检'),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+}
 
-  static String _maskId(String value) {
-    if (value.isEmpty) return '未返回';
-    if (value.length <= 6) return '***';
-    return '${value.substring(0, 3)}***${value.substring(value.length - 3)}';
+class OfficialVehicleSelfCheckPage extends StatefulWidget {
+  final OfficialVehicle vehicle;
+
+  const OfficialVehicleSelfCheckPage({super.key, required this.vehicle});
+
+  @override
+  State<OfficialVehicleSelfCheckPage> createState() =>
+      _OfficialVehicleSelfCheckPageState();
+}
+
+class _OfficialVehicleSelfCheckPageState
+    extends State<OfficialVehicleSelfCheckPage> {
+  OfficialVehicleSelfCheck? _result;
+  String? _error;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _runCheck();
   }
+
+  Future<void> _runCheck() async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final result = await officialCloudService.selfCheck();
+      if (!mounted) return;
+      setState(() => _result = result);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = _errorMessage(e));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String _errorMessage(Object e) {
+    if (e is OfficialCloudApiException) return e.message;
+    return e.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _pageBg,
+      body: SafeArea(
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
+          children: [
+            AppPageHeader(
+              title: '云端自检',
+              actions: [
+                AppHeaderAction(
+                  icon: Icons.refresh,
+                  tooltip: '重新自检',
+                  onTap: _loading ? null : _runCheck,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.vehicle.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _DetailLine('命令 IMEI', _maskId(widget.vehicle.commandImei)),
+                  _DetailLine(
+                    '车型 modelType',
+                    widget.vehicle.modelType?.toString() ?? '未返回',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (_loading)
+              const AppCard(child: Center(child: CircularProgressIndicator()))
+            else if (_error != null)
+              AppCard(
+                color: AppColors.danger.withValues(alpha: 0.08),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: AppColors.danger, fontSize: 13),
+                ),
+              )
+            else if (_result != null)
+              _SelfCheckResultCard(result: _result!)
+            else
+              const AppCard(
+                child: Text(
+                  '暂未返回自检结果',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SelfCheckResultCard extends StatelessWidget {
+  final OfficialVehicleSelfCheck result;
+
+  const _SelfCheckResultCard({required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    final data = result.dataMap;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _DetailLine('返回状态', result.displayMessage),
+          _DetailLine('返回 code', result.code?.toString() ?? '未返回'),
+          if (data.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            const Text(
+              '自检字段',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            ...data.entries.map(
+              (entry) => _DetailLine(
+                entry.key,
+                _maskSensitiveValue(entry.key, entry.value),
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 8),
+            const Text(
+              '官方自检字段含义待真车确认，当前保留原始返回摘要。',
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.4,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static String _maskSensitiveValue(String key, Object? value) {
+    final text = value?.toString() ?? '未返回';
+    final lowerKey = key.toLowerCase();
+    if (lowerKey.contains('imei') ||
+        lowerKey.contains('mac') ||
+        lowerKey.contains('phone') ||
+        lowerKey.contains('token')) {
+      return _maskId(text);
+    }
+    return text;
+  }
+}
+
+String _maskId(String value) {
+  if (value.isEmpty) return '未返回';
+  if (value.length <= 6) return '***';
+  return '${value.substring(0, 3)}***${value.substring(value.length - 3)}';
+}
+
+Future<void> _applyLinkedLocalVehicle(OfficialVehicle vehicle) async {
+  final localId = officialCloudService.state.linkedLocalVehicleId(vehicle.key);
+  if (localId == null || localId.isEmpty) return;
+  for (final local in vehicleStore.vehicles) {
+    if (local.id == localId) {
+      await _applyLocalVehicle(local);
+      return;
+    }
+  }
+}
+
+Future<void> _applyLocalVehicle(VehicleProfile local) async {
+  await vehicleStore.setDefault(local.id);
+  applyVehicleBleCredentials(local);
 }
 
 class OfficialVehicleLinkPage extends StatelessWidget {
@@ -661,9 +870,12 @@ class OfficialVehicleLinkPage extends StatelessWidget {
                                 officialVehicleKey: vehicle.key,
                                 localVehicleId: local.id,
                               );
+                              await _applyLocalVehicle(local);
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('已关联本地车辆')),
+                                  const SnackBar(
+                                    content: Text('已关联并切换为默认本地车辆'),
+                                  ),
                                 );
                               }
                             },

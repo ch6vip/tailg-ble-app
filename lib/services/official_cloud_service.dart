@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../ble/constants.dart';
@@ -122,19 +123,26 @@ class _OfficialApiResponse {
 class OfficialCloudService {
   static final OfficialCloudService _instance = OfficialCloudService._();
   factory OfficialCloudService() => _instance;
-  OfficialCloudService._();
 
   static const _apiBase = 'https://www.tailgdd.com/v1/api/';
   static const _prefToken = 'official_cloud_token';
   static const _prefPhone = 'official_cloud_phone';
+  static const _secureToken = 'official_cloud_token';
+  static const _securePhone = 'official_cloud_phone';
   static const _prefSelectedVehicle = 'official_cloud_selected_vehicle';
   static const _prefControlChannel = 'official_cloud_control_channel';
   static const _prefVehicleLinks = 'official_cloud_vehicle_links';
 
+  final FlutterSecureStorage _secureStorage;
   final _log = LogService();
   final _stateController = StreamController<OfficialCloudState>.broadcast();
   OfficialCloudState _state = OfficialCloudState.initial();
   bool _initialized = false;
+
+  OfficialCloudService._()
+    : _secureStorage = const FlutterSecureStorage(
+        aOptions: AndroidOptions(storageNamespace: 'official_cloud'),
+      );
 
   Stream<OfficialCloudState> get stateStream => _stateController.stream;
   OfficialCloudState get state => _state;
@@ -144,10 +152,11 @@ class OfficialCloudService {
     final prefs = await SharedPreferences.getInstance();
     final channelName = prefs.getString(_prefControlChannel);
     final linksRaw = prefs.getString(_prefVehicleLinks);
+    final credentials = await _loadSecureCredentials(prefs);
     _state = _state.copyWith(
       initialized: true,
-      token: prefs.getString(_prefToken) ?? '',
-      phone: prefs.getString(_prefPhone) ?? '',
+      token: credentials.$1,
+      phone: credentials.$2,
       selectedVehicleKey: prefs.getString(_prefSelectedVehicle),
       controlChannel: OfficialControlChannel.values.firstWhere(
         (item) => item.name == channelName,
@@ -207,9 +216,7 @@ class OfficialCloudService {
         throw const OfficialCloudApiException('登录失败，未返回 token');
       }
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_prefToken, token);
-      await prefs.setString(_prefPhone, normalizedPhone);
+      await _saveSecureCredentials(token: token, phone: normalizedPhone);
       _state = _state.copyWith(
         token: token,
         phone: normalizedPhone,
@@ -225,8 +232,7 @@ class OfficialCloudService {
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_prefToken);
-    await prefs.remove(_prefPhone);
+    await _clearSecureCredentials(prefs);
     await prefs.remove(_prefSelectedVehicle);
     _state = _state.copyWith(
       token: '',
@@ -284,12 +290,9 @@ class OfficialCloudService {
       _emit();
       _log.operation('官方车辆列表已刷新', detail: 'count=${vehicles.length}');
     } catch (e) {
-      final message = _errorMessage(e);
-      if (_looksLikeAuthError(message)) {
-        await logout();
-        _state = _state.copyWith(error: '官方登录已失效，请重新登录');
-        _emit();
-      } else {
+      await _handleAuthFailureIfNeeded(e);
+      if (_state.signedIn) {
+        final message = _errorMessage(e);
         _state = _state.copyWith(error: message);
         _emit();
       }
@@ -328,6 +331,32 @@ class OfficialCloudService {
     await _saveLinks(links);
   }
 
+  Future<OfficialVehicleSelfCheck> selfCheck() async {
+    final vehicle = _state.selectedVehicle;
+    if (_state.token.isEmpty || vehicle == null) {
+      throw const OfficialCloudApiException('请先登录官方账号并选择车辆');
+    }
+    if (vehicle.commandImei.isEmpty) {
+      throw const OfficialCloudApiException('当前车辆缺少官方 IMEI，无法云端自检');
+    }
+
+    try {
+      _log.operation('发送官方云端自检');
+      final response = await _request(
+        'app/device/cmd/status',
+        method: 'POST',
+        token: _state.token,
+        body: {'imei': vehicle.commandImei},
+      );
+      _ensureSuccess(response.body, fallback: '云端自检失败');
+      _log.operation('官方云端自检已返回');
+      return OfficialVehicleSelfCheck.fromResponse(response.body);
+    } catch (e) {
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
+    }
+  }
+
   Future<String> sendCommand(CommandCode command) async {
     final cloudCommand = OfficialCloudCommand.fromCommandCode(command);
     if (cloudCommand == null) {
@@ -341,18 +370,72 @@ class OfficialCloudService {
       throw const OfficialCloudApiException('当前车辆缺少官方 IMEI，无法云端控车');
     }
 
-    _log.operation('发送官方云端指令: ${command.label}');
-    final response = await _request(
-      'app/device/cmd/${cloudCommand.apiName}',
-      method: 'POST',
-      token: _state.token,
-      body: {'imei': vehicle.commandImei},
-    );
-    _ensureSuccess(response.body, fallback: '${command.label}失败');
-    final message = response.body['msg']?.toString();
-    _log.operation('官方云端指令已返回: ${command.label}');
-    await refreshVehicles(silent: true);
-    return message == null || message.isEmpty ? 'success' : message;
+    try {
+      _log.operation('发送官方云端指令: ${command.label}');
+      final response = await _request(
+        'app/device/cmd/${cloudCommand.apiName}',
+        method: 'POST',
+        token: _state.token,
+        body: {'imei': vehicle.commandImei},
+      );
+      _ensureSuccess(response.body, fallback: '${command.label}失败');
+      final message = response.body['msg']?.toString();
+      _log.operation('官方云端指令已返回: ${command.label}');
+      await refreshVehicles(silent: true);
+      return message == null || message.isEmpty ? 'success' : message;
+    } catch (e) {
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
+    }
+  }
+
+  Future<(String, String)> _loadSecureCredentials(
+    SharedPreferences prefs,
+  ) async {
+    final secureToken = await _secureStorage.read(key: _secureToken);
+    final securePhone = await _secureStorage.read(key: _securePhone);
+    final legacyToken = prefs.getString(_prefToken) ?? '';
+    final legacyPhone = prefs.getString(_prefPhone) ?? '';
+    final token = secureToken ?? legacyToken;
+    final phone = securePhone ?? legacyPhone;
+    if (legacyToken.isNotEmpty || legacyPhone.isNotEmpty) {
+      if (token.isNotEmpty) {
+        await _secureStorage.write(key: _secureToken, value: token);
+      }
+      if (phone.isNotEmpty) {
+        await _secureStorage.write(key: _securePhone, value: phone);
+      }
+      await prefs.remove(_prefToken);
+      await prefs.remove(_prefPhone);
+      _log.operation('官方云登录态已迁移到安全存储');
+    }
+    return (token, phone);
+  }
+
+  Future<void> _saveSecureCredentials({
+    required String token,
+    required String phone,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await _secureStorage.write(key: _secureToken, value: token);
+    await _secureStorage.write(key: _securePhone, value: phone);
+    await prefs.remove(_prefToken);
+    await prefs.remove(_prefPhone);
+  }
+
+  Future<void> _clearSecureCredentials(SharedPreferences prefs) async {
+    await _secureStorage.delete(key: _secureToken);
+    await _secureStorage.delete(key: _securePhone);
+    await prefs.remove(_prefToken);
+    await prefs.remove(_prefPhone);
+  }
+
+  Future<void> _handleAuthFailureIfNeeded(Object e) async {
+    final message = _errorMessage(e);
+    if (!_looksLikeAuthError(message)) return;
+    await logout();
+    _state = _state.copyWith(error: '官方登录已失效，请重新登录');
+    _emit();
   }
 
   Future<_OfficialApiResponse> _request(
@@ -367,8 +450,11 @@ class OfficialCloudService {
       final uri = Uri.parse('$_apiBase$path');
       final request = await client.openUrl(method, uri);
       request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
+      request.headers.set('Forward-Service-Ip', 'localhost');
       request.headers.set('Forward-ServiceIp', 'localhost');
       request.headers.set('language', 'zh_CN');
+      request.headers.set(HttpHeaders.acceptLanguageHeader, 'zh_CN');
+      request.headers.set('Zone-id', 'UTC+08:00');
       request.headers.set('Api-Version', '3.0.0');
       request.headers.set(HttpHeaders.userAgentHeader, 'okhttp/4.9.3');
       if (token != null && token.isNotEmpty) {
