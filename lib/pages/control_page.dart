@@ -6,12 +6,14 @@ import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
 import '../models/vehicle_profile.dart';
+import '../services/official_cloud_service.dart';
 import '../services/replica_feature_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/slide_to_action.dart';
 import 'garage_page.dart';
 import 'location_page.dart';
+import 'official_cloud_page.dart';
 import 'official_replica_pages.dart';
 import 'vehicle_settings_page.dart';
 
@@ -479,7 +481,7 @@ class _ControlAreaState extends State<_ControlArea> {
     });
     HapticFeedback.mediumImpact();
     try {
-      final success = await connectionManager.sendCommand(cmd);
+      final success = await _sendBySelectedChannel(cmd);
       if (success) {
         unawaited(locationService.recordDefaultVehicleLocation());
       }
@@ -500,6 +502,59 @@ class _ControlAreaState extends State<_ControlArea> {
         });
       }
     }
+  }
+
+  Future<bool> _sendBySelectedChannel(CommandCode cmd) async {
+    final cloudState = officialCloudService.state;
+    final canUseBle = widget.connState == ble.ConnectionState.ready;
+    final canUseCloud =
+        cloudState.signedIn && cloudState.selectedVehicle != null;
+
+    switch (cloudState.controlChannel) {
+      case OfficialControlChannel.ble:
+        return connectionManager.sendCommand(cmd);
+      case OfficialControlChannel.officialCloud:
+        return _sendOfficialCloudCommand(cmd);
+      case OfficialControlChannel.automatic:
+        if (canUseBle) {
+          return connectionManager.sendCommand(cmd);
+        }
+        if (canUseCloud) {
+          return _sendOfficialCloudCommand(cmd);
+        }
+        return false;
+    }
+  }
+
+  Future<bool> _sendOfficialCloudCommand(CommandCode cmd) async {
+    try {
+      final message = await officialCloudService.sendCommand(cmd);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${cmd.label}已通过官方云端返回：$message'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      return true;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_cloudErrorMessage(e)),
+            backgroundColor: Colors.red.shade400,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      return false;
+    }
+  }
+
+  String _cloudErrorMessage(Object e) {
+    if (e is OfficialCloudApiException) return e.message;
+    return e.toString();
   }
 
   Future<void> _runQuickAction(_QuickControlSpec spec, bool enabled) async {
@@ -531,145 +586,280 @@ class _ControlAreaState extends State<_ControlArea> {
 
   @override
   Widget build(BuildContext context) {
-    final enabled = widget.connState == ble.ConnectionState.ready && !_busy;
-    return StreamBuilder<BikeState?>(
-      stream: connectionManager.bikeStateStream,
-      builder: (context, snapshot) {
-        final bike = snapshot.data;
-        final isLocked = bike?.isLocked ?? true;
-        final isPowerOn = bike?.isPowerOn ?? false;
-        final firstQuick = _quickControlSpec(_quickConfig.firstActionId);
-        final secondQuick = _quickControlSpec(_quickConfig.secondActionId);
-        final firstQuickActive = _activeControlId == 'quick:${firstQuick.id}';
-        final secondQuickActive = _activeControlId == 'quick:${secondQuick.id}';
+    return StreamBuilder<OfficialCloudState>(
+      stream: officialCloudService.stateStream,
+      initialData: officialCloudService.state,
+      builder: (context, cloudSnapshot) {
+        final cloudState = cloudSnapshot.data ?? officialCloudService.state;
+        final canUseBle = widget.connState == ble.ConnectionState.ready;
+        final canUseCloud =
+            cloudState.signedIn && cloudState.selectedVehicle != null;
+        final enabled =
+            !_busy &&
+            (switch (cloudState.controlChannel) {
+              OfficialControlChannel.ble => canUseBle,
+              OfficialControlChannel.officialCloud => canUseCloud,
+              OfficialControlChannel.automatic => canUseBle || canUseCloud,
+            });
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: _cardDecoration,
-            child: SizedBox(
-              height: 232,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(
-                    width: 92,
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: _ControlTile(
-                            icon: firstQuick.icon,
-                            label: firstQuick.label,
-                            enabled: firstQuick.command == null || enabled,
-                            active: firstQuickActive,
-                            loading: firstQuickActive,
-                            onTap: () => _runQuickAction(firstQuick, enabled),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Expanded(
-                          child: Stack(
-                            children: [
-                              Positioned.fill(
-                                child: _ControlTile(
-                                  icon: secondQuick.icon,
-                                  label: secondQuick.label,
-                                  enabled:
-                                      secondQuick.command == null || enabled,
-                                  active: secondQuickActive,
-                                  loading: secondQuickActive,
-                                  onTap: () =>
-                                      _runQuickAction(secondQuick, enabled),
-                                ),
-                              ),
-                              Positioned(
-                                right: 4,
-                                bottom: 4,
-                                child: _QuickEditButton(
-                                  onTap: _editQuickControls,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+        return StreamBuilder<BikeState?>(
+          stream: connectionManager.bikeStateStream,
+          builder: (context, snapshot) {
+            final bike = snapshot.data;
+            final cloudVehicle = cloudState.selectedVehicle;
+            final useBleState =
+                canUseBle &&
+                cloudState.controlChannel !=
+                    OfficialControlChannel.officialCloud;
+            final isLocked = useBleState
+                ? bike?.isLocked ?? true
+                : cloudVehicle?.isLocked ?? true;
+            final isPowerOn = useBleState
+                ? bike?.isPowerOn ?? false
+                : cloudVehicle?.isPowerOn ?? false;
+            final firstQuick = _quickControlSpec(_quickConfig.firstActionId);
+            final secondQuick = _quickControlSpec(_quickConfig.secondActionId);
+            final firstQuickActive =
+                _activeControlId == 'quick:${firstQuick.id}';
+            final secondQuickActive =
+                _activeControlId == 'quick:${secondQuick.id}';
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: _cardDecoration,
+                child: Column(
+                  children: [
+                    _ControlChannelBar(
+                      channel: cloudState.controlChannel,
+                      canUseBle: canUseBle,
+                      canUseCloud: canUseCloud,
+                      vehicleName: cloudVehicle?.displayName,
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height: 86,
-                          child: Center(
-                            child: SlideToAction(
-                              label: isPowerOn ? '左滑关闭' : '右滑启动',
-                              icon: isPowerOn
-                                  ? Icons.power_off
-                                  : Icons.power_settings_new,
-                              reverseSlide: isPowerOn,
-                              backgroundColor: isPowerOn
-                                  ? const Color(0xFF5D4037)
-                                  : const Color(0xFF424242),
-                              onSlideComplete: enabled
-                                  ? () => _send(
-                                      isPowerOn
-                                          ? CommandCode.powerOff
-                                          : CommandCode.powerOn,
-                                      actionId: 'slidePower',
-                                    )
-                                  : null,
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 232,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SizedBox(
+                            width: 92,
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: _ControlTile(
+                                    icon: firstQuick.icon,
+                                    label: firstQuick.label,
+                                    enabled:
+                                        firstQuick.command == null || enabled,
+                                    active: firstQuickActive,
+                                    loading: firstQuickActive,
+                                    onTap: () =>
+                                        _runQuickAction(firstQuick, enabled),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Expanded(
+                                  child: Stack(
+                                    children: [
+                                      Positioned.fill(
+                                        child: _ControlTile(
+                                          icon: secondQuick.icon,
+                                          label: secondQuick.label,
+                                          enabled:
+                                              secondQuick.command == null ||
+                                              enabled,
+                                          active: secondQuickActive,
+                                          loading: secondQuickActive,
+                                          onTap: () => _runQuickAction(
+                                            secondQuick,
+                                            enabled,
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        right: 4,
+                                        bottom: 4,
+                                        child: _QuickEditButton(
+                                          onTap: _editQuickControls,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 10),
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: _ControlTile(
-                                  icon: Icons.volume_up_outlined,
-                                  label: '寻车',
-                                  enabled: enabled,
-                                  active: _activeControlId == 'fixedFind',
-                                  loading: _activeControlId == 'fixedFind',
-                                  onTap: () => _send(
-                                    CommandCode.find,
-                                    actionId: 'fixedFind',
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                SizedBox(
+                                  height: 86,
+                                  child: Center(
+                                    child: SlideToAction(
+                                      label: isPowerOn ? '左滑关闭' : '右滑启动',
+                                      icon: isPowerOn
+                                          ? Icons.power_off
+                                          : Icons.power_settings_new,
+                                      reverseSlide: isPowerOn,
+                                      backgroundColor: isPowerOn
+                                          ? const Color(0xFF5D4037)
+                                          : const Color(0xFF424242),
+                                      onSlideComplete: enabled
+                                          ? () => _send(
+                                              isPowerOn
+                                                  ? CommandCode.powerOff
+                                                  : CommandCode.powerOn,
+                                              actionId: 'slidePower',
+                                            )
+                                          : null,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _ControlTile(
-                                  icon: isLocked
-                                      ? Icons.lock_open
-                                      : Icons.lock_outline,
-                                  label: isLocked ? '解锁' : '设防',
-                                  enabled: enabled,
-                                  active: _activeControlId == 'fixedLock',
-                                  loading: _activeControlId == 'fixedLock',
-                                  onTap: () => _send(
-                                    isLocked
-                                        ? CommandCode.unlock
-                                        : CommandCode.lock,
-                                    actionId: 'fixedLock',
+                                const SizedBox(height: 10),
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: _ControlTile(
+                                          icon: Icons.volume_up_outlined,
+                                          label: '寻车',
+                                          enabled: enabled,
+                                          active:
+                                              _activeControlId == 'fixedFind',
+                                          loading:
+                                              _activeControlId == 'fixedFind',
+                                          onTap: () => _send(
+                                            CommandCode.find,
+                                            actionId: 'fixedFind',
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: _ControlTile(
+                                          icon: isLocked
+                                              ? Icons.lock_open
+                                              : Icons.lock_outline,
+                                          label: isLocked ? '解锁' : '设防',
+                                          enabled: enabled,
+                                          active:
+                                              _activeControlId == 'fixedLock',
+                                          loading:
+                                              _activeControlId == 'fixedLock',
+                                          onTap: () => _send(
+                                            isLocked
+                                                ? CommandCode.unlock
+                                                : CommandCode.lock,
+                                            actionId: 'fixedLock',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
+    );
+  }
+}
+
+class _ControlChannelBar extends StatelessWidget {
+  final OfficialControlChannel channel;
+  final bool canUseBle;
+  final bool canUseCloud;
+  final String? vehicleName;
+
+  const _ControlChannelBar({
+    required this.channel,
+    required this.canUseBle,
+    required this.canUseCloud,
+    required this.vehicleName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final effective = switch (channel) {
+      OfficialControlChannel.ble => 'BLE',
+      OfficialControlChannel.officialCloud => '官方云端',
+      OfficialControlChannel.automatic =>
+        canUseBle
+            ? '自动：BLE'
+            : canUseCloud
+            ? '自动：官方云端'
+            : '自动：待连接',
+    };
+    final color = canUseBle || canUseCloud
+        ? AppColors.primary
+        : AppColors.textTertiary;
+    final subtitle = canUseCloud
+        ? vehicleName ?? '官方车辆已选择'
+        : canUseBle
+        ? '本地蓝牙已就绪'
+        : '连接 BLE 或登录官方账号后可控车';
+
+    return Material(
+      color: color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const OfficialCloudPage()),
+        ),
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(Icons.cloud_sync_outlined, color: color, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '控车通道 · $effective',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.textTertiary,
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

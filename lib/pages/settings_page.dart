@@ -7,7 +7,7 @@ import 'app_preferences_pages.dart';
 import 'log_page.dart';
 import 'vehicle_settings_page.dart';
 import 'diagnostic_page.dart';
-import 'cloud_token_page.dart';
+import 'official_cloud_page.dart';
 import 'garage_page.dart';
 import 'battery_details_page.dart';
 import 'device_info_page.dart';
@@ -187,11 +187,11 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             _settingItem(
               icon: Icons.cloud_outlined,
-              title: '云端 Token',
-              subtitle: '与 Web 端共享连接凭证',
+              title: '官方账号',
+              subtitle: '登录官方账号、车辆列表、云端控车',
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const CloudTokenPage()),
+                MaterialPageRoute(builder: (_) => const OfficialCloudPage()),
               ),
             ),
             _divider(),

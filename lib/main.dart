@@ -6,6 +6,7 @@ import 'models/vehicle_profile.dart';
 import 'services/proximity_service.dart';
 import 'services/auto_connect_service.dart';
 import 'services/location_service.dart';
+import 'services/official_cloud_service.dart';
 import 'services/vehicle_store.dart';
 import 'pages/scan_page.dart';
 import 'pages/control_page.dart';
@@ -17,6 +18,7 @@ final proximityService = ProximityService();
 final autoConnectService = AutoConnectService();
 final locationService = LocationService();
 final vehicleStore = VehicleStore();
+final officialCloudService = OfficialCloudService();
 final homeTabIndex = ValueNotifier<int>(1);
 
 void applyVehicleBleCredentials(VehicleProfile? vehicle) {
@@ -42,6 +44,7 @@ void openScanTab(BuildContext context) {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await vehicleStore.init();
+  await officialCloudService.init();
   final defaultVehicle = vehicleStore.defaultVehicle;
   if (defaultVehicle != null) {
     applyVehicleBleCredentials(defaultVehicle);
