@@ -119,6 +119,10 @@
 - **光感开关**：官方 `QgjFunctionSetFragment` 使用 `ecuLightSensorEnabledGet/Set`，命令实体为 `9233/9232`，`SwitchState.OFF/ON` 对应 `0/1`；当前已按此命令读写。
 - **连接初始化**：官方 QGJ 管理器连接后 `requestMtu(515)`，订阅 `feb2` indications；若存在 `fe01` 则订阅 `fe03` notifications；登录后 `EcuStatus` 每 1000ms 读取 `feb3`。当前已按此节奏对齐。
 - **ECU 登录参数**：官方 `QgjSearchBleFragment.sendDevicePwd(str)` 调用 `ecuLogin(str, PrefsUtil.getUid())`，BLE 层 `OpEcuLogin` 编码为 4 字节 password + 4 字节 userID；当前已支持在车库为单车配置这两个本地参数。
+- **QGJ V3 高级设置命令表**：官方 `com/kuyi/h/y0.java` 注册了 `ECU_AUTO_LOCK_GET/SET` 与 `ECU_AUTO_LOCK_TIME_GET/SET` 复用 `0x2000/0x2001`、`ECU_POWER_ON_AUTO_LOCK_TIME_GET/SET=0x2010/0x2011`、`ECU_PROXIMITY_GET/SET_STATUS=0x2030/0x2031`、`ECU_PROXIMITY_GET/SET_DISTANCE=0x2032/0x2033`、`ECU_HANDLEBAR_LOCK_ENABLED_SET/GET=0x2050/0x2051`、`ECU_POSTURE_DETECTION_SET/GET=0x2070/0x2071`、`ECU_PASSWORD_UNLOCK_GET/SET=0x2080/0x2081`、`ECU_HID_SET/GET_STATUS=0x2140/0x2142`、`ECU_SAFE_LOCK_SET/GET=0x2360/0x2361`、`ECU_KICKSTAND_ENABLED_SET/GET=0x2370/0x2371`、`ECU_SEAT_SENSOR_ENABLED_SET/GET=0x2400/0x2401`、`ECU_ENTER_OTA_MODE=0x5004`；当前已记录常量和单元测试，但未开放写入 UI。
+- **QGJ 通用 payload 编码**：官方 `CommonDataCodec` 使用大端 `UInt8/UInt16`，`SwitchState.OFF/ON` 对应 `0/1`，`CommonResult.OK` 对应 `0`；`CommandEntity` 第三个参数是 flag，`4` 表示 `FLAG_SUPPORT_ASYNC`，不是 payload 长度。
+- **自动锁车开关与 HID 状态**：官方 `v0.java` 的自动锁车 SET 使用 `UInt16(45)` 表示开启、`UInt16(0)` 表示关闭；`i.java/j.java` 的 HID 状态使用 `OpHID.Close/Open/OpenWithAutolock` 枚举 ordinal `0/1/2`。
+- **密码解锁命令**：官方 `SingleConnectionViewModel.ecuPasswordUnlockGet()` 发送 `ECU_PASSWORD_UNLOCK_GET` + `UInt8Value(0)`；`h0.java` 的 SET payload 顺序为 `state, (cate << 7) | type, [passwordLength, passwordBytes]`。因密码类型、长度限制和失败回滚尚未真机验证，当前只记录命令和测试帧。
 
 ### 建议实现优先级
 

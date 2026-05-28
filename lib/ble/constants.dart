@@ -104,12 +104,43 @@ class QgjCommandHeaders {
 class QgjCommandIds {
   static const login = 0x1001;
   static const setStatus = 0x1002;
+  static const autoLockTimeGet = 0x2000;
+  static const autoLockTimeSet = 0x2001;
+  static const autoLockGet = autoLockTimeGet;
+  static const autoLockSet = autoLockTimeSet;
+  static const powerOnAutoLockTimeGet = 0x2010;
+  static const powerOnAutoLockTimeSet = 0x2011;
+  static const proximityStatusGet = 0x2030;
+  static const proximityStatusSet = 0x2031;
+  static const proximityDistanceGet = 0x2032;
+  static const proximityDistanceSet = 0x2033;
+  static const handlebarLockSet = 0x2050;
+  static const handlebarLockGet = 0x2051;
   static const vibrateSensitivityGet = 0x2060;
   static const vibrateSensitivitySet = 0x2061;
+  static const postureDetectionSet = 0x2070;
+  static const postureDetectionGet = 0x2071;
+  static const passwordUnlockGet = 0x2080;
+  static const passwordUnlockSet = 0x2081;
+  static const hidStatusSet = 0x2140;
+  static const hidStatusGet = 0x2142;
+  static const safeLockSet = 0x2360;
+  static const safeLockGet = 0x2361;
+  static const kickstandSet = 0x2370;
+  static const kickstandGet = 0x2371;
+  static const seatSensorSet = 0x2400;
+  static const seatSensorGet = 0x2401;
   static const lightSensorSet = 0x2410;
   static const lightSensorGet = 0x2411;
   static const soundAdjustGet = 0x2420;
   static const soundAdjustSet = 0x2421;
+  static const enterOtaMode = 0x5004;
+}
+
+class QgjHidModes {
+  static const close = 0;
+  static const open = 1;
+  static const openWithAutoLock = 2;
 }
 
 class QgjSoundIndexes {

@@ -11,6 +11,7 @@
 - 2026-05-28：控车按钮效果已增强为单按钮反馈：按下缩放、高亮边框、当前按钮独立加载态，命令执行期间其他按钮置灰禁用，避免全局一起转圈。
 - 2026-05-28：已补 `车辆信息` 与 `消息中心` 设置入口。车辆信息页复刻官方车辆/设备信息页的只读结构，展示本地车辆档案、BLE 连接状态、协议、QGJ 参数状态、180A 设备信息和 GATT 服务/特征；消息中心按官方 `系统消息 / 设备消息` 分组，把本地 BLE/操作日志映射为车辆消息，支持详情、已读和本地清空，不接入官方云端推送。
 - 2026-05-29：已补官方设置基础项 `语言设置 / 单位设置 / 关于`。语言页按官方 `跟随系统 / 简体中文 / English` 结构保存本地偏好；单位页保存 `公制 / 英制`；关于页展示版本、Git 提交占位、开源依赖、GitHub 入口和诊断报告复制入口。
+- 2026-05-29：继续对齐官方 QGJ V3 命令表。已从 `jadx\sources\com\kuyi\h\y0.java`、`CommonDataCodec.java`、`g0.java`、`h0.java` 确认 T10/T11 相关命令 ID 与基础 payload 编码，并补入 `QgjCommandIds` 与单元测试；未真机验证的高级写入仍不接入界面。
 
 ## 安全边界
 
@@ -188,6 +189,32 @@
 ## 第三批：命令确认后再实现
 
 这些任务需要先从 JADX/抓包/真机验证中确认命令实体、payload、响应语义和失败回滚策略。
+
+### 已确认的 QGJ V3 命令证据
+
+来源：
+- `jadx\sources\com\kuyi\h\y0.java`
+- `jadx\sources\com\kuyi\blesdk\profile\data\CommonDataCodec.java`
+- `jadx\sources\com\kuyi\h\g0.java`
+- `jadx\sources\com\kuyi\h\h0.java`
+- `jadx\sources\com\kuyi\blesdk\model\SingleConnectionViewModel.java`
+
+| 能力 | 官方 Tag | 命令 ID | payload 状态 | 当前处理 |
+| --- | --- | --- | --- | --- |
+| 自动锁车开关/时间 | `ECU_AUTO_LOCK_GET/SET` 与 `ECU_AUTO_LOCK_TIME_GET/SET` | `0x2000/0x2001` | 时间为 `UInt16Value` 大端；开关 SET 为 `UInt16(45/0)` | 已记录常量和帧测试，未开放 UI |
+| 上电自动锁车时间 | `ECU_POWER_ON_AUTO_LOCK_TIME_GET/SET` | `0x2010/0x2011` | `UInt16Value` 大端 | 已记录常量，未开放 UI |
+| 感应/HID 状态 | `ECU_PROXIMITY_GET/SET_STATUS` | `0x2030/0x2031` | `SwitchState` 或 `OpCode`，需真机区分 | 已记录常量，未开放 UI |
+| 感应/HID 距离 | `ECU_PROXIMITY_GET/SET_DISTANCE` | `0x2032/0x2033` | `UInt8Value` | 已记录常量和帧测试，未开放 UI |
+| 电子龙头锁 | `ECU_HANDLEBAR_LOCK_ENABLED_SET/GET` | `0x2050/0x2051` | `SwitchState`，SET 支持 async flag | 已记录常量和帧测试，未开放 UI |
+| 侧翻/姿态检测 | `ECU_POSTURE_DETECTION_SET/GET` | `0x2070/0x2071` | `SwitchState`，SET 支持 async flag | 已记录常量，未开放 UI |
+| 密码解锁 | `ECU_PASSWORD_UNLOCK_GET/SET` | `0x2080/0x2081` | GET 为 `UInt8Value(0)`；SET 为专用结构 | 已记录常量和基础帧测试，未开放 UI |
+| HID 配对状态 | `ECU_HID_SET/GET_STATUS` | `0x2140/0x2142` | `OpHID.Close/Open/OpenWithAutolock` 为 `0/1/2` | 已记录常量和帧测试，未开放 UI |
+| 安全锁 | `ECU_SAFE_LOCK_SET/GET` | `0x2360/0x2361` | `SwitchState` | 已记录常量，未开放 UI |
+| 边撑感应 | `ECU_KICKSTAND_ENABLED_SET/GET` | `0x2370/0x2371` | `SwitchState` | 已记录常量，未开放 UI |
+| 坐垫感应 | `ECU_SEAT_SENSOR_ENABLED_SET/GET` | `0x2400/0x2401` | `SwitchState` | 已记录常量，未开放 UI |
+| OTA 模式入口 | `ECU_ENTER_OTA_MODE` | `0x5004` | `CommonResult` | 只记录命令，禁止误触发 |
+
+注意：官方 `CommandEntity` 构造参数中的 `4` 是 `FLAG_SUPPORT_ASYNC`，不是 payload 字节数。所有高级写入开放前必须先做只读刷新、写入确认、读回确认和失败回滚验证。
 
 ### T10 QGJ 车辆设置高级项
 

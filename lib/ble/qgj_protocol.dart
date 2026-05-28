@@ -33,6 +33,28 @@ Uint8List buildQgjCommand(int cmdId, [Uint8List? payload]) {
   return frame;
 }
 
+Uint8List buildQgjUInt8Payload(int value) {
+  return Uint8List.fromList([value & 0xFF]);
+}
+
+Uint8List buildQgjUInt16Payload(int value) {
+  final payload = Uint8List(2);
+  ByteData.sublistView(payload).setUint16(0, value & 0xFFFF, Endian.big);
+  return payload;
+}
+
+Uint8List buildQgjSwitchPayload(bool enabled) {
+  return Uint8List.fromList([enabled ? 1 : 0]);
+}
+
+Uint8List buildQgjAutoLockPayload(bool enabled) {
+  return buildQgjUInt16Payload(enabled ? 45 : 0);
+}
+
+Uint8List buildQgjHidPayload(int mode) {
+  return buildQgjUInt8Payload(mode);
+}
+
 Uint8List? buildQgjControlFrame(CommandCode cmd) {
   final opCode = QgjControlOpCodes.byCommandCode[cmd.code];
   if (opCode == null) return null;

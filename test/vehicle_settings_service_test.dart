@@ -66,6 +66,95 @@ void main() {
     );
   });
 
+  test('QGJ advanced command ids match official V3 registry', () {
+    expect(QgjCommandIds.autoLockGet, 0x2000);
+    expect(QgjCommandIds.autoLockSet, 0x2001);
+    expect(QgjCommandIds.autoLockTimeGet, 0x2000);
+    expect(QgjCommandIds.autoLockTimeSet, 0x2001);
+    expect(QgjCommandIds.powerOnAutoLockTimeGet, 0x2010);
+    expect(QgjCommandIds.powerOnAutoLockTimeSet, 0x2011);
+    expect(QgjCommandIds.proximityStatusGet, 0x2030);
+    expect(QgjCommandIds.proximityStatusSet, 0x2031);
+    expect(QgjCommandIds.proximityDistanceGet, 0x2032);
+    expect(QgjCommandIds.proximityDistanceSet, 0x2033);
+    expect(QgjCommandIds.handlebarLockSet, 0x2050);
+    expect(QgjCommandIds.handlebarLockGet, 0x2051);
+    expect(QgjCommandIds.postureDetectionSet, 0x2070);
+    expect(QgjCommandIds.postureDetectionGet, 0x2071);
+    expect(QgjCommandIds.passwordUnlockGet, 0x2080);
+    expect(QgjCommandIds.passwordUnlockSet, 0x2081);
+    expect(QgjCommandIds.hidStatusSet, 0x2140);
+    expect(QgjCommandIds.hidStatusGet, 0x2142);
+    expect(QgjCommandIds.safeLockSet, 0x2360);
+    expect(QgjCommandIds.safeLockGet, 0x2361);
+    expect(QgjCommandIds.kickstandSet, 0x2370);
+    expect(QgjCommandIds.kickstandGet, 0x2371);
+    expect(QgjCommandIds.seatSensorSet, 0x2400);
+    expect(QgjCommandIds.seatSensorGet, 0x2401);
+    expect(QgjCommandIds.enterOtaMode, 0x5004);
+  });
+
+  test('QGJ common payload helpers match official common codec', () {
+    expect(buildQgjUInt8Payload(0x123), [0x23]);
+    expect(buildQgjUInt16Payload(30), [0x00, 0x1E]);
+    expect(buildQgjSwitchPayload(false), [0x00]);
+    expect(buildQgjSwitchPayload(true), [0x01]);
+    expect(buildQgjAutoLockPayload(false), [0x00, 0x00]);
+    expect(buildQgjAutoLockPayload(true), [0x00, 0x2D]);
+    expect(buildQgjHidPayload(QgjHidModes.openWithAutoLock), [0x02]);
+  });
+
+  test('QGJ advanced command frames stay readback-safe', () {
+    expect(buildQgjCommand(QgjCommandIds.autoLockTimeGet), [
+      0xA7,
+      0x00,
+      0x00,
+      0x02,
+      0x20,
+      0x00,
+    ]);
+    expect(
+      buildQgjCommand(QgjCommandIds.autoLockTimeSet, buildQgjUInt16Payload(30)),
+      [0xA7, 0x00, 0x00, 0x04, 0x20, 0x01, 0x00, 0x1E],
+    );
+    expect(
+      buildQgjCommand(QgjCommandIds.autoLockSet, buildQgjAutoLockPayload(true)),
+      [0xA7, 0x00, 0x00, 0x04, 0x20, 0x01, 0x00, 0x2D],
+    );
+    expect(
+      buildQgjCommand(
+        QgjCommandIds.proximityDistanceSet,
+        buildQgjUInt8Payload(2),
+      ),
+      [0xA7, 0x00, 0x00, 0x03, 0x20, 0x33, 0x02],
+    );
+    expect(
+      buildQgjCommand(
+        QgjCommandIds.handlebarLockSet,
+        buildQgjSwitchPayload(true),
+      ),
+      [0xA7, 0x00, 0x00, 0x03, 0x20, 0x50, 0x01],
+    );
+    expect(
+      buildQgjCommand(
+        QgjCommandIds.hidStatusSet,
+        buildQgjHidPayload(QgjHidModes.openWithAutoLock),
+      ),
+      [0xA7, 0x00, 0x00, 0x03, 0x21, 0x40, 0x02],
+    );
+    expect(
+      buildQgjCommand(QgjCommandIds.passwordUnlockGet, buildQgjUInt8Payload(0)),
+      [0xA7, 0x00, 0x00, 0x03, 0x20, 0x80, 0x00],
+    );
+    expect(
+      buildQgjCommand(
+        QgjCommandIds.passwordUnlockSet,
+        Uint8List.fromList([0, 0]),
+      ),
+      [0xA7, 0x00, 0x00, 0x04, 0x20, 0x81, 0x00, 0x00],
+    );
+  });
+
   test('QGJ light sensor response maps SwitchState values', () {
     final response = parseQgjResponse(
       Uint8List.fromList([0xA7, 0x00, 0x00, 0x03, 0x24, 0x11, 0x01]),
