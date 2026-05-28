@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/proximity_service.dart';
 import '../services/auto_connect_service.dart';
+import '../services/app_preferences_service.dart';
 import '../theme/app_colors.dart';
+import 'app_preferences_pages.dart';
 import 'log_page.dart';
 import 'vehicle_settings_page.dart';
 import 'diagnostic_page.dart';
@@ -25,6 +27,14 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  final _preferences = AppPreferencesService();
+
+  @override
+  void initState() {
+    super.initState();
+    _preferences.init();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,6 +83,41 @@ class _SettingsPageState extends State<SettingsPage> {
                   trailing: _buildToggle(enabled, (v) {
                     ProximityService().setEnabled(v);
                   }),
+                );
+              },
+            ),
+            _divider(),
+            _sectionLabel('通用'),
+            StreamBuilder<AppLanguagePreference>(
+              stream: _preferences.languageStream,
+              initialData: _preferences.language,
+              builder: (context, snapshot) {
+                return _settingItem(
+                  icon: Icons.language,
+                  title: '语言设置',
+                  subtitle: snapshot.data?.label ?? '跟随系统',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const LanguageSettingsPage(),
+                    ),
+                  ),
+                );
+              },
+            ),
+            StreamBuilder<DistanceUnitPreference>(
+              stream: _preferences.distanceUnitStream,
+              initialData: _preferences.distanceUnit,
+              builder: (context, snapshot) {
+                final unit = snapshot.data ?? DistanceUnitPreference.metric;
+                return _settingItem(
+                  icon: Icons.straighten,
+                  title: '单位设置',
+                  subtitle: '${unit.label} · ${unit.hint}',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const UnitSettingsPage()),
+                  ),
                 );
               },
             ),
@@ -173,14 +218,18 @@ class _SettingsPageState extends State<SettingsPage> {
             _sectionLabel('关于'),
             _settingItem(
               icon: Icons.info_outline,
-              title: '版本',
-              subtitle: '1.0.0',
-              showChevron: false,
+              title: '关于 Tailg BLE',
+              subtitle: '版本、开源依赖、诊断导出',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AboutAppPage()),
+              ),
             ),
             _settingItem(
               icon: Icons.code,
               title: 'GitHub',
               subtitle: 'ch6vip/tailg-ble-app',
+              showChevron: false,
             ),
           ],
         ),
