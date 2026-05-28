@@ -17,6 +17,7 @@
 - 2026-05-29：项目方向调整为官方 App 复刻优先。近期暂停自建云端主线，优先把 `tailg-ble-web` 已验证的官方短信登录、车辆列表、车辆状态和官方云端控车能力迁入 Flutter；BLE 直连继续作为兜底。
 - 2026-05-29：官方云端复刻第一批已一次性接入代码。新增 `OfficialCloudService`、`OfficialVehicle`、官方账号页、官方车辆列表、官方车辆详情、本地 BLE 车辆关联、控车通道 `自动 / BLE / 官方云端`，并接入官方云端 `lock/unlock/start/stop/search/openCushion` 命令映射；已通过 `flutter analyze` 和 `flutter test`，仍需真实官方账号与车辆验证接口返回和命令效果。
 - 2026-05-29：官方云端未完成项已补第一轮整改。官方 token/手机号迁入 `flutter_secure_storage` 并保留旧 `shared_preferences` 一次性迁移；请求头兼容反编译源码 `Forward-Service-Ip`；车辆列表和云端控车统一处理 token 失效；车辆详情新增 `app/device/cmd/status` 云端自检入口；官方车辆关联本地 BLE 车辆后会同步切换本地默认车辆，自动通道只在关联默认车 ready 时优先 BLE。
+- 2026-05-29：真实报告显示官方验证码、登录、车辆列表和云端通电/断电已返回成功；同时发现诊断报告缺官方云车辆状态、自检失败无日志。已补 `Official Cloud` 诊断段和自检成功/失败日志，便于继续确认 `modelType`、命令 IMEI、自检返回和车辆实际状态。
 
 ## 安全边界
 

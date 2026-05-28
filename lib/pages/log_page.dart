@@ -64,6 +64,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
       connectionManager: connectionManager,
       logService: _log,
       vehicleStore: VehicleStore(),
+      officialCloudService: officialCloudService,
     ).buildReport(entries);
     Clipboard.setData(ClipboardData(text: report));
     ScaffoldMessenger.of(context).showSnackBar(

@@ -349,10 +349,20 @@ class OfficialCloudService {
         body: {'imei': vehicle.commandImei},
       );
       _ensureSuccess(response.body, fallback: '云端自检失败');
-      _log.operation('官方云端自检已返回');
-      return OfficialVehicleSelfCheck.fromResponse(response.body);
+      final result = OfficialVehicleSelfCheck.fromResponse(response.body);
+      _log.operation(
+        '官方云端自检已返回',
+        detail:
+            'code=${result.code?.toString() ?? 'none'}, data=${result.hasData}',
+      );
+      return result;
     } catch (e) {
       await _handleAuthFailureIfNeeded(e);
+      _log.operation(
+        '官方云端自检失败',
+        detail: _errorMessage(e),
+        level: LogLevel.warning,
+      );
       rethrow;
     }
   }

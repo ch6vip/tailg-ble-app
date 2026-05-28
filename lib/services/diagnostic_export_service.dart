@@ -2,17 +2,20 @@ import 'package:flutter/foundation.dart';
 
 import '../ble/connection_manager.dart' as ble;
 import 'log_service.dart';
+import 'official_cloud_service.dart';
 import 'vehicle_store.dart';
 
 class DiagnosticExportService {
   final ble.ConnectionManager connectionManager;
   final LogService logService;
   final VehicleStore vehicleStore;
+  final OfficialCloudService officialCloudService;
 
   const DiagnosticExportService({
     required this.connectionManager,
     required this.logService,
     required this.vehicleStore,
+    required this.officialCloudService,
   });
 
   String buildReport(List<LogEntry> entries) {
@@ -21,11 +24,55 @@ class DiagnosticExportService {
       '',
       _buildVehicleSection(),
       '',
+      _buildOfficialCloudSection(),
+      '',
       _buildBleSection(),
       '',
       '## Logs (${entries.length})',
       ...entries.map(_formatEntry),
     ].join('\n');
+  }
+
+  String _buildOfficialCloudSection() {
+    final state = officialCloudService.state;
+    final vehicle = state.selectedVehicle;
+    final lines = [
+      '## Official Cloud',
+      'Initialized: ${state.initialized}',
+      'Signed in: ${state.signedIn}',
+      'Phone: ${state.phone.isEmpty ? 'none' : _maskPhone(state.phone)}',
+      'Token: ${state.token.isEmpty ? 'none' : 'present'}',
+      'Vehicles: ${state.vehicles.length}',
+      'Control channel: ${state.controlChannel.label}',
+      'Selected vehicle: ${vehicle?.displayName ?? 'none'}',
+    ];
+
+    if (vehicle != null) {
+      final linkedId = state.linkedLocalVehicleId(vehicle.key);
+      lines.add('Selected key: ${_maskId(vehicle.key)}');
+      lines.add(
+        'Linked local vehicle: ${linkedId == null ? 'none' : _maskId(linkedId)}',
+      );
+      lines.add('Online: ${vehicle.online}');
+      lines.add('Defence: ${vehicle.defenceLabel}');
+      lines.add('ACC: ${vehicle.powerLabel}');
+      lines.add('Battery: ${vehicle.electricQuantity?.toString() ?? '--'}%');
+      lines.add('Voltage: ${vehicle.voltage?.toString() ?? '--'}V');
+      lines.add('ModelType: ${vehicle.modelType?.toString() ?? 'none'}');
+      lines.add('Command IMEI: ${_maskId(vehicle.commandImei)}');
+      lines.add('IMEI: ${_maskId(vehicle.imei)}');
+      lines.add('GPS IMEI: ${_maskId(vehicle.imeiGps)}');
+      lines.add('BT name: ${vehicle.btname.isEmpty ? 'none' : vehicle.btname}');
+      lines.add('BT MAC: ${_maskId(vehicle.btmac)}');
+      lines.add(
+        'Location: ${vehicle.latitude.isEmpty || vehicle.longitude.isEmpty ? 'none' : '${vehicle.latitude}, ${vehicle.longitude}'}',
+      );
+    }
+
+    if (state.error != null) {
+      lines.add('Error: ${state.error}');
+    }
+    return lines.join('\n');
   }
 
   String _buildHeader() {
@@ -104,5 +151,16 @@ class DiagnosticExportService {
     final level = entry.level.name.toUpperCase();
     return '$t $tag [$level] ${entry.message}'
         '${entry.detail != null ? ' | ${entry.detail}' : ''}';
+  }
+
+  String _maskPhone(String phone) {
+    if (phone.length < 7) return 'present';
+    return '${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}';
+  }
+
+  String _maskId(String value) {
+    if (value.isEmpty) return 'none';
+    if (value.length <= 6) return '***';
+    return '${value.substring(0, 3)}***${value.substring(value.length - 3)}';
   }
 }

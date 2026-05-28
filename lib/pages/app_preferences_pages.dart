@@ -193,6 +193,7 @@ class AboutAppPage extends StatelessWidget {
       connectionManager: connectionManager,
       logService: logService,
       vehicleStore: VehicleStore(),
+      officialCloudService: officialCloudService,
     ).buildReport(logService.all);
     await Clipboard.setData(ClipboardData(text: report));
     if (!context.mounted) return;
