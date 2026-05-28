@@ -59,10 +59,17 @@ class DiagnosticExportService {
 
   String _buildBleSection() {
     final device = connectionManager.device;
+    final protocol = connectionManager.protocol;
+    final lastKnownProtocol = connectionManager.lastKnownProtocol;
+    final protocolText = protocol != ble.ProtocolType.unknown
+        ? protocol.name
+        : lastKnownProtocol != ble.ProtocolType.unknown
+        ? '${lastKnownProtocol.name} (last known)'
+        : protocol.name;
     final lines = [
       '## BLE',
       'State: ${connectionManager.state.name}',
-      'Protocol: ${connectionManager.protocol.name}',
+      'Protocol: $protocolText',
       'Device: ${device?.platformName ?? 'none'}',
       'Remote ID: ${device?.remoteId.toString() ?? 'none'}',
       'Token: ${connectionManager.token == null ? 'none' : 'present'}',

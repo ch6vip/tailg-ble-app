@@ -28,9 +28,9 @@ enum ModelType {
 }
 
 enum RidingMode {
-  eco(0, '节能'),
-  standard(1, '标准'),
-  sport(2, '强力');
+  eco(0, '超能跑'),
+  standard(1, '全速跑'),
+  sport(2, '超速跑');
 
   final int code;
   final String label;

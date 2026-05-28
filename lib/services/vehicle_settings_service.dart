@@ -1,6 +1,5 @@
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 
-import '../ble/constants.dart';
 import '../ble/connection_manager.dart' as ble;
 import 'log_service.dart';
 
@@ -50,14 +49,6 @@ class VehicleSettingsSnapshot {
       );
     }
 
-    final fcc1Status = extractFcc1StatusBytes(data);
-    if (fcc1Status != null) {
-      return VehicleSettingsSnapshot(
-        headlight: (fcc1Status[0] & 0x01) != 0,
-        turnSignal: (fcc1Status[0] & 0x02) != 0,
-      );
-    }
-
     return null;
   }
 }
@@ -80,10 +71,7 @@ class VehicleSettingsService {
     required bool headlight,
     required bool turnSignal,
   }) {
-    int state1 = 0;
-    if (headlight) state1 |= 0x01;
-    if (turnSignal) state1 |= 0x02;
-    return _writeAndRead([0x00, 0x07, 0x00, 0x02, state1, 0x00, 0x00]);
+    throw const VehicleSettingsException('灯光设置尚未按官方 QGJ 协议实现，已禁用写入');
   }
 
   Future<VehicleSettingsSnapshot?> writeSound({
@@ -93,63 +81,11 @@ class VehicleSettingsService {
     required bool lockSound,
     required int buzzerVolume,
   }) {
-    return _writeAndRead([
-      ...QgjCommandHeaders.setSound,
-      0x02,
-      powerOnSound ? 0x01 : 0x00,
-      startupSound ? 0x01 : 0x00,
-      unlockSound ? 0x01 : 0x00,
-      lockSound ? 0x01 : 0x00,
-      0x01,
-      buzzerVolume.clamp(0, 5),
-    ]);
+    throw const VehicleSettingsException('声音设置尚未按官方 QGJ 协议实现，已禁用写入');
   }
 
   Future<VehicleSettingsSnapshot?> writeSensitivity(int level) {
-    final safeLevel = level.clamp(1, 5);
-    return _writeAndRead([
-      0xA7,
-      0x00,
-      0x00,
-      0x04,
-      0x10,
-      0x03,
-      safeLevel,
-      safeLevel,
-    ]);
-  }
-
-  Future<VehicleSettingsSnapshot?> _writeAndRead(
-    List<int> data, {
-    int retries = 2,
-  }) async {
-    final char = _requireFcc1();
-    for (int attempt = 0; attempt <= retries; attempt++) {
-      try {
-        return connectionManager.runGattOperation(() async {
-          await char.write(data, withoutResponse: false);
-          _log.operation(
-            'fcc1 写入成功',
-            detail: data
-                .map((b) => b.toRadixString(16).padLeft(2, '0'))
-                .join(' '),
-          );
-          await Future.delayed(BleTimings.fccReadbackDelay);
-          return _readBackState(char);
-        });
-      } catch (e) {
-        if (attempt == retries) {
-          _log.operation(
-            'fcc1 写入失败',
-            detail: e.toString(),
-            level: LogLevel.error,
-          );
-          throw VehicleSettingsException('写入失败，请重试');
-        }
-        await Future.delayed(BleTimings.fccRetryDelay);
-      }
-    }
-    return null;
+    throw const VehicleSettingsException('震动灵敏度尚未按官方 QGJ 协议实现，已禁用写入');
   }
 
   BluetoothCharacteristic _requireFcc1() {

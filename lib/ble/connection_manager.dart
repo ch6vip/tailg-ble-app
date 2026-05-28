@@ -21,6 +21,7 @@ class ConnectionManager {
   final _log = LogService();
   BluetoothDevice? _device;
   ProtocolType _protocol = ProtocolType.unknown;
+  ProtocolType _lastKnownProtocol = ProtocolType.unknown;
   ConnectionState _state = ConnectionState.disconnected;
   String? _token;
   ModelType _model = ModelType.KKS;
@@ -58,6 +59,7 @@ class ConnectionManager {
   Stream<BikeState?> get bikeStateStream => _bikeStateController.stream;
   ConnectionState get state => _state;
   ProtocolType get protocol => _protocol;
+  ProtocolType get lastKnownProtocol => _lastKnownProtocol;
   String? get token => _token;
   BluetoothDevice? get device => _device;
   BikeState? get latestBikeState => _latestBikeState;
@@ -90,6 +92,7 @@ class ConnectionManager {
     _heartbeatTimer?.cancel();
 
     _device = device;
+    _lastKnownProtocol = ProtocolType.unknown;
     _setState(ConnectionState.connecting);
     _log.ble('连接设备 ${device.platformName}', detail: device.remoteId.toString());
 
@@ -143,10 +146,12 @@ class ConnectionManager {
 
       if (hasFeb0) {
         _protocol = ProtocolType.qgj;
+        _lastKnownProtocol = _protocol;
         _log.ble('识别协议: QGJ (feb0)', level: LogLevel.info);
         await _setupQgj(services);
       } else if (hasFee5) {
         _protocol = ProtocolType.standard;
+        _lastKnownProtocol = _protocol;
         _log.ble('识别协议: Standard (fee5)', level: LogLevel.info);
         await _setupStandard(services);
       } else {

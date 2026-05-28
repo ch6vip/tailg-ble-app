@@ -2,42 +2,44 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/services/vehicle_settings_service.dart';
 
 void main() {
-  test('VehicleSettingsSnapshot parses light state', () {
-    final snapshot = VehicleSettingsSnapshot.parse([
-      0x00,
-      0x07,
-      0x00,
-      0x02,
-      0x03,
-      0x00,
-      0x00,
-    ]);
+  test(
+    'VehicleSettingsSnapshot does not treat short fcc1 state as light state',
+    () {
+      final snapshot = VehicleSettingsSnapshot.parse([
+        0x00,
+        0x07,
+        0x00,
+        0x02,
+        0x03,
+        0x00,
+        0x00,
+      ]);
 
-    expect(snapshot?.headlight, isTrue);
-    expect(snapshot?.turnSignal, isTrue);
-    expect(snapshot?.hasLightState, isTrue);
-  });
+      expect(snapshot, isNull);
+    },
+  );
 
-  test('VehicleSettingsSnapshot parses long fcc1 readback status bytes', () {
-    final snapshot = VehicleSettingsSnapshot.parse([
-      0x00,
-      0x07,
-      0x00,
-      0x08,
-      0xFF,
-      0xFF,
-      0xFF,
-      0xFF,
-      0x03,
-      0x02,
-      0x00,
-      0x00,
-    ]);
+  test(
+    'VehicleSettingsSnapshot does not treat long fcc1 readback as light state',
+    () {
+      final snapshot = VehicleSettingsSnapshot.parse([
+        0x00,
+        0x07,
+        0x00,
+        0x08,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0x03,
+        0x02,
+        0x00,
+        0x00,
+      ]);
 
-    expect(snapshot?.headlight, isTrue);
-    expect(snapshot?.turnSignal, isTrue);
-    expect(snapshot?.hasLightState, isTrue);
-  });
+      expect(snapshot, isNull);
+    },
+  );
 
   test('VehicleSettingsSnapshot parses sound state', () {
     final snapshot = VehicleSettingsSnapshot.parse([

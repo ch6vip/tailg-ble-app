@@ -46,11 +46,6 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
     });
   }
 
-  Future<void> _saveSensitivity(int value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('shock_sensitivity', value);
-  }
-
   Future<void> _refreshSettings() async {
     setState(() => _sending = true);
     try {
@@ -78,54 +73,6 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
       _lockSound = snapshot.lockSound ?? _lockSound;
       _buzzerVolume = snapshot.buzzerVolume ?? _buzzerVolume;
     });
-  }
-
-  Future<void> _setSensitivity(int value) async {
-    setState(() => _shockSensitivity = value);
-    await _writeSetting(
-      () => _settingsService.writeSensitivity(value),
-      successMessage: '防盗灵敏度已设置为 $value',
-    );
-    await _saveSensitivity(_shockSensitivity);
-  }
-
-  Future<void> _writeLightSetting() {
-    return _writeSetting(
-      () => _settingsService.writeLight(
-        headlight: _headlight,
-        turnSignal: _turnSignal,
-      ),
-      successMessage: '灯光设置已写入',
-    );
-  }
-
-  Future<void> _writeSoundSetting() {
-    return _writeSetting(
-      () => _settingsService.writeSound(
-        powerOnSound: _powerOnSound,
-        startupSound: _startupSound,
-        unlockSound: _unlockSound,
-        lockSound: _lockSound,
-        buzzerVolume: _buzzerVolume,
-      ),
-      successMessage: '声音设置已写入',
-    );
-  }
-
-  Future<void> _writeSetting(
-    Future<VehicleSettingsSnapshot?> Function() action, {
-    required String successMessage,
-  }) async {
-    setState(() => _sending = true);
-    try {
-      final snapshot = await action();
-      if (snapshot != null) _applySnapshot(snapshot);
-      _showSnack(successMessage);
-    } on VehicleSettingsException catch (e) {
-      _showSnack(e.message);
-    } finally {
-      if (mounted) setState(() => _sending = false);
-    }
   }
 
   Future<void> _setRidingMode(RidingMode mode) async {
@@ -211,71 +158,46 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                       SwitchListTile(
                         secondary: const Icon(Icons.lightbulb_outline),
                         title: const Text('前灯'),
+                        subtitle: const Text('官方协议未对齐，暂不写入'),
                         value: _headlight,
-                        onChanged: isConnected
-                            ? (v) {
-                                setState(() => _headlight = v);
-                                _writeLightSetting();
-                              }
-                            : null,
+                        onChanged: null,
                       ),
                       SwitchListTile(
                         secondary: const Icon(Icons.turn_slight_right),
                         title: const Text('转向灯模式'),
-                        subtitle: const Text('开启后转向灯常亮'),
+                        subtitle: const Text('官方协议未对齐，暂不写入'),
                         value: _turnSignal,
-                        onChanged: isConnected
-                            ? (v) {
-                                setState(() => _turnSignal = v);
-                                _writeLightSetting();
-                              }
-                            : null,
+                        onChanged: null,
                       ),
                       const Divider(),
                       const AppSectionLabel('声音控制'),
                       SwitchListTile(
                         secondary: const Icon(Icons.volume_up),
                         title: const Text('启动提示音'),
+                        subtitle: const Text('官方声音命令待适配'),
                         value: _startupSound,
-                        onChanged: isConnected
-                            ? (v) {
-                                setState(() => _startupSound = v);
-                                _writeSoundSetting();
-                              }
-                            : null,
+                        onChanged: null,
                       ),
                       SwitchListTile(
                         secondary: const Icon(Icons.lock_clock),
                         title: const Text('上锁提示音'),
+                        subtitle: const Text('官方声音命令待适配'),
                         value: _lockSound,
-                        onChanged: isConnected
-                            ? (v) {
-                                setState(() => _lockSound = v);
-                                _writeSoundSetting();
-                              }
-                            : null,
+                        onChanged: null,
                       ),
                       SwitchListTile(
                         secondary: const Icon(Icons.lock_open),
                         title: const Text('解锁提示音'),
+                        subtitle: const Text('官方声音命令待适配'),
                         value: _unlockSound,
-                        onChanged: isConnected
-                            ? (v) {
-                                setState(() => _unlockSound = v);
-                                _writeSoundSetting();
-                              }
-                            : null,
+                        onChanged: null,
                       ),
                       SwitchListTile(
                         secondary: const Icon(Icons.power_settings_new),
                         title: const Text('通电提示音'),
+                        subtitle: const Text('官方声音命令待适配'),
                         value: _powerOnSound,
-                        onChanged: isConnected
-                            ? (v) {
-                                setState(() => _powerOnSound = v);
-                                _writeSoundSetting();
-                              }
-                            : null,
+                        onChanged: null,
                       ),
                       const Divider(),
                       const AppSectionLabel('蜂鸣器音量'),
@@ -291,18 +213,8 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                                 max: 5,
                                 divisions: 5,
                                 label: '$_buzzerVolume',
-                                onChanged: isConnected
-                                    ? (v) {
-                                        setState(
-                                          () => _buzzerVolume = v.round(),
-                                        );
-                                      }
-                                    : null,
-                                onChangeEnd: isConnected
-                                    ? (v) {
-                                        _writeSoundSetting();
-                                      }
-                                    : null,
+                                onChanged: null,
+                                onChangeEnd: null,
                               ),
                             ),
                             const Icon(Icons.volume_up, size: 20),
@@ -400,9 +312,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                                       : Colors.grey.shade100,
                                   borderRadius: BorderRadius.circular(10),
                                   child: InkWell(
-                                    onTap: isConnected
-                                        ? () => _setSensitivity(level)
-                                        : null,
+                                    onTap: null,
                                     borderRadius: BorderRadius.circular(10),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
