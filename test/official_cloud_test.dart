@@ -100,4 +100,70 @@ void main() {
       expect(result.raw['msg'], '成功');
     });
   });
+
+  group('Official map replica models', () {
+    test('parses official parking location and fence fields', () {
+      final location = OfficialVehicleLocation.fromJson({
+        'extendId': 'ext-1',
+        'bleConnectTime': '2026-05-29 10:00:00',
+        'bleConnectLat': '25.123456',
+        'bleConnectLng': '104.654321',
+        'carId': 'car-1',
+        'bleConnectAddress': '停车点',
+      });
+      final fence = OfficialFenceData.fromJson({
+        'fenceRadius': '5',
+        'fenceRadiusMax': '10',
+        'fenceRadiusMin': '1',
+        'fenceSwitch': '1',
+        'fenceTimeFr': '08:00',
+        'fenceTimeTo': '22:00',
+      });
+
+      expect(location.hasData, isTrue);
+      expect(location.latitude, 25.123456);
+      expect(location.longitude, 104.654321);
+      expect(fence.enabled, isTrue);
+      expect(fence.statusLabel, '已开启');
+      expect(fence.radiusLabel, '500m');
+      expect(fence.timeLabel, '08:00 - 22:00');
+    });
+
+    test('parses official travel list and track points', () {
+      final day = OfficialTravelDay.fromJson({
+        'travelDate': '2026-05-29',
+        'totalTime': '1800',
+        'totalMileage': '12.5',
+        'deviceTravelDtoList': [
+          {
+            'deviceTravelId': 'travel-1',
+            'travelDate': '2026-05-29',
+            'startTime': '10:00',
+            'endTime': '10:30',
+            'mileage': '12.5',
+            'averageSpeed': '25',
+            'maxSpeed': '42',
+            'min': '30',
+          },
+        ],
+      });
+      final point = OfficialTravelPoint.fromJson({
+        'lat': '25.1',
+        'lng': '104.1',
+        'heading': '90',
+        'speed': '20',
+        'starsNum': '8',
+        'reportTime': '2026-05-29 10:01:00',
+      });
+
+      expect(day.hasData, isTrue);
+      expect(day.records, hasLength(1));
+      expect(day.records.first.deviceTravelId, 'travel-1');
+      expect(day.records.first.mileageLabel, '12.5km');
+      expect(day.records.first.averageSpeedLabel, '25km/h');
+      expect(point.hasCoordinate, isTrue);
+      expect(point.latitude, 25.1);
+      expect(point.longitude, 104.1);
+    });
+  });
 }

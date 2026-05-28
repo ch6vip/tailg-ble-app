@@ -2023,7 +2023,10 @@ class _HomeQuickSection extends StatelessWidget {
         accent: AppColors.success,
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const ElectricFencePage()),
+          MaterialPageRoute(
+            builder: (_) =>
+                const LocationPage(initialTab: LocationInitialTab.fence),
+          ),
         ),
       ),
       _HomeQuickItem(

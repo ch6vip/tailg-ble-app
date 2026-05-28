@@ -163,6 +163,281 @@ class OfficialVehicle {
   }
 }
 
+class OfficialVehicleLocation {
+  final Map<String, dynamic> raw;
+  final String extendId;
+  final String bleConnectTime;
+  final String bleConnectLat;
+  final String bleConnectLng;
+  final String carId;
+  final String bleConnectAddress;
+
+  const OfficialVehicleLocation({
+    required this.raw,
+    required this.extendId,
+    required this.bleConnectTime,
+    required this.bleConnectLat,
+    required this.bleConnectLng,
+    required this.carId,
+    required this.bleConnectAddress,
+  });
+
+  factory OfficialVehicleLocation.fromJson(Map<String, dynamic> json) {
+    return OfficialVehicleLocation(
+      raw: Map<String, dynamic>.from(json),
+      extendId: _clean(json['extendId']) ?? '',
+      bleConnectTime: _clean(json['bleConnectTime']) ?? '',
+      bleConnectLat: _clean(json['bleConnectLat']) ?? '',
+      bleConnectLng: _clean(json['bleConnectLng']) ?? '',
+      carId: _clean(json['carId']) ?? '',
+      bleConnectAddress: _clean(json['bleConnectAddress']) ?? '',
+    );
+  }
+
+  bool get hasData =>
+      bleConnectLat.isNotEmpty ||
+      bleConnectLng.isNotEmpty ||
+      bleConnectAddress.isNotEmpty ||
+      bleConnectTime.isNotEmpty;
+
+  double? get latitude => _double(bleConnectLat);
+  double? get longitude => _double(bleConnectLng);
+
+  static double? _double(String value) => double.tryParse(value.trim());
+}
+
+class OfficialFenceData {
+  final Map<String, dynamic> raw;
+  final String fenceRadius;
+  final String fenceRadiusMax;
+  final String fenceRadiusMin;
+  final String fenceSwitch;
+  final String fenceTimeFr;
+  final String fenceTimeTo;
+
+  const OfficialFenceData({
+    required this.raw,
+    required this.fenceRadius,
+    required this.fenceRadiusMax,
+    required this.fenceRadiusMin,
+    required this.fenceSwitch,
+    required this.fenceTimeFr,
+    required this.fenceTimeTo,
+  });
+
+  factory OfficialFenceData.fromJson(Map<String, dynamic> json) {
+    return OfficialFenceData(
+      raw: Map<String, dynamic>.from(json),
+      fenceRadius: _clean(json['fenceRadius'] ?? json['range']) ?? '',
+      fenceRadiusMax: _clean(json['fenceRadiusMax']) ?? '',
+      fenceRadiusMin: _clean(json['fenceRadiusMin']) ?? '',
+      fenceSwitch: _clean(json['fenceSwitch']) ?? '',
+      fenceTimeFr: _clean(json['fenceTimeFr']) ?? '',
+      fenceTimeTo: _clean(json['fenceTimeTo']) ?? '',
+    );
+  }
+
+  bool get hasData =>
+      fenceRadius.isNotEmpty ||
+      fenceRadiusMax.isNotEmpty ||
+      fenceRadiusMin.isNotEmpty ||
+      fenceSwitch.isNotEmpty ||
+      fenceTimeFr.isNotEmpty ||
+      fenceTimeTo.isNotEmpty;
+
+  bool get enabled => fenceSwitch == '1' || fenceSwitch.toLowerCase() == 'true';
+
+  String get statusLabel {
+    if (fenceSwitch.isEmpty) return '待读取';
+    return enabled ? '已开启' : '已关闭';
+  }
+
+  String get radiusLabel {
+    if (fenceRadius.isEmpty) return '待读取';
+    final value = double.tryParse(fenceRadius);
+    if (value == null) return fenceRadius;
+    final meters = value * 100;
+    return '${meters.toStringAsFixed(0)}m';
+  }
+
+  String get timeLabel {
+    if (fenceTimeFr.isEmpty && fenceTimeTo.isEmpty) return '待读取';
+    return '${fenceTimeFr.isEmpty ? '--' : fenceTimeFr} - ${fenceTimeTo.isEmpty ? '--' : fenceTimeTo}';
+  }
+}
+
+class OfficialTravelDay {
+  final Map<String, dynamic> raw;
+  final String sec;
+  final String hours;
+  final String min;
+  final String travelDate;
+  final String totalTime;
+  final List<OfficialTravelRecord> records;
+  final String days;
+  final String totalMileage;
+
+  const OfficialTravelDay({
+    required this.raw,
+    required this.sec,
+    required this.hours,
+    required this.min,
+    required this.travelDate,
+    required this.totalTime,
+    required this.records,
+    required this.days,
+    required this.totalMileage,
+  });
+
+  factory OfficialTravelDay.fromJson(Map<String, dynamic> json) {
+    final list = json['deviceTravelDtoList'];
+    return OfficialTravelDay(
+      raw: Map<String, dynamic>.from(json),
+      sec: _clean(json['sec']) ?? '',
+      hours: _clean(json['hours']) ?? '',
+      min: _clean(json['min']) ?? '',
+      travelDate: _clean(json['travelDate']) ?? '',
+      totalTime: _clean(json['totalTime']) ?? '',
+      records: list is List
+          ? list
+                .whereType<Map>()
+                .map(
+                  (item) => OfficialTravelRecord.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ),
+                )
+                .toList(growable: false)
+          : const [],
+      days: _clean(json['days']) ?? '',
+      totalMileage: _clean(json['totalMileage']) ?? '',
+    );
+  }
+
+  bool get hasData =>
+      travelDate.isNotEmpty ||
+      totalTime.isNotEmpty ||
+      totalMileage.isNotEmpty ||
+      records.isNotEmpty;
+}
+
+class OfficialTravelRecord {
+  final Map<String, dynamic> raw;
+  final String hours;
+  final String carName;
+  final String averageSpeed;
+  final String deviceTravelId;
+  final String sec;
+  final String min;
+  final String travelDate;
+  final String imei;
+  final String days;
+  final String startTime;
+  final String endTime;
+  final String mileage;
+  final String frame;
+  final String maxSpeed;
+
+  const OfficialTravelRecord({
+    required this.raw,
+    required this.hours,
+    required this.carName,
+    required this.averageSpeed,
+    required this.deviceTravelId,
+    required this.sec,
+    required this.min,
+    required this.travelDate,
+    required this.imei,
+    required this.days,
+    required this.startTime,
+    required this.endTime,
+    required this.mileage,
+    required this.frame,
+    required this.maxSpeed,
+  });
+
+  factory OfficialTravelRecord.fromJson(Map<String, dynamic> json) {
+    return OfficialTravelRecord(
+      raw: Map<String, dynamic>.from(json),
+      hours: _clean(json['hours']) ?? '',
+      carName: _clean(json['carName']) ?? '',
+      averageSpeed: _clean(json['averageSpeed']) ?? '',
+      deviceTravelId: _clean(json['deviceTravelId']) ?? '',
+      sec: _clean(json['sec']) ?? '',
+      min: _clean(json['min']) ?? '',
+      travelDate: _clean(json['travelDate']) ?? '',
+      imei: _clean(json['imei']) ?? '',
+      days: _clean(json['days']) ?? '',
+      startTime: _clean(json['startTime']) ?? '',
+      endTime: _clean(json['endTime']) ?? '',
+      mileage: _clean(json['mileage']) ?? '',
+      frame: _clean(json['frame']) ?? '',
+      maxSpeed: _clean(json['maxSpeed']) ?? '',
+    );
+  }
+
+  String get durationLabel {
+    final parts = <String>[];
+    if (hours.isNotEmpty && hours != '0') {
+      parts.add('${hours}h');
+    }
+    if (min.isNotEmpty && min != '0') {
+      parts.add('${min}m');
+    }
+    if (sec.isNotEmpty && sec != '0') {
+      parts.add('${sec}s');
+    }
+    if (parts.isNotEmpty) {
+      return parts.join(' ');
+    }
+    if (startTime.isNotEmpty && endTime.isNotEmpty) {
+      return '$startTime - $endTime';
+    }
+    return '待读取';
+  }
+
+  String get mileageLabel => mileage.isEmpty ? '待读取' : '${mileage}km';
+  String get averageSpeedLabel =>
+      averageSpeed.isEmpty ? '待读取' : '${averageSpeed}km/h';
+  String get maxSpeedLabel => maxSpeed.isEmpty ? '待读取' : '${maxSpeed}km/h';
+}
+
+class OfficialTravelPoint {
+  final Map<String, dynamic> raw;
+  final String lng;
+  final String heading;
+  final String starsNum;
+  final String lat;
+  final String reportTime;
+  final String speed;
+
+  const OfficialTravelPoint({
+    required this.raw,
+    required this.lng,
+    required this.heading,
+    required this.starsNum,
+    required this.lat,
+    required this.reportTime,
+    required this.speed,
+  });
+
+  factory OfficialTravelPoint.fromJson(Map<String, dynamic> json) {
+    return OfficialTravelPoint(
+      raw: Map<String, dynamic>.from(json),
+      lng: _clean(json['lng']) ?? '',
+      heading: _clean(json['heading']) ?? '',
+      starsNum: _clean(json['starsNum']) ?? '',
+      lat: _clean(json['lat']) ?? '',
+      reportTime: _clean(json['reportTime']) ?? '',
+      speed: _clean(json['speed']) ?? '',
+    );
+  }
+
+  double? get latitude => double.tryParse(lat);
+  double? get longitude => double.tryParse(lng);
+
+  bool get hasCoordinate => latitude != null && longitude != null;
+}
+
 class OfficialBatteryInfo {
   final Map<String, dynamic> raw;
   final String dumpEnergyPercent;
@@ -191,22 +466,22 @@ class OfficialBatteryInfo {
   });
 
   factory OfficialBatteryInfo.fromJson(Map<String, dynamic> json) {
-    final dumpEnergyPercent = _clean(json['dumpEnergyPercent']);
+    final dumpEnergyPercent = _cleanBatteryText(json['dumpEnergyPercent']);
     return OfficialBatteryInfo(
       raw: Map<String, dynamic>.from(json),
       dumpEnergyPercent: dumpEnergyPercent ?? '',
       dumpEnergyPercentLabel:
-          _clean(json['dumpEnergyPercentLabel']) ??
+          _cleanBatteryText(json['dumpEnergyPercentLabel']) ??
           (dumpEnergyPercent == null ? null : '$dumpEnergyPercent%') ??
           '',
-      remainingMileage: _clean(json['remainingMileage']) ?? '',
-      mileage: _clean(json['mileage']) ?? '',
-      capacitance: _clean(json['capacitance']) ?? '',
-      consumePowerPercent: _clean(json['consumePowerPercent']) ?? '',
-      loopCount: _clean(json['loopCount']) ?? '',
-      temperature: _clean(json['temperature']) ?? '',
-      batteryScore: _clean(json['batteryScore']) ?? '',
-      voltage: _clean(json['voltage']) ?? '',
+      remainingMileage: _cleanBatteryText(json['remainingMileage']) ?? '',
+      mileage: _cleanBatteryText(json['mileage']) ?? '',
+      capacitance: _cleanBatteryText(json['capacitance']) ?? '',
+      consumePowerPercent: _cleanBatteryText(json['consumePowerPercent']) ?? '',
+      loopCount: _cleanBatteryText(json['loopCount']) ?? '',
+      temperature: _cleanBatteryText(json['temperature']) ?? '',
+      batteryScore: _cleanBatteryText(json['batteryScore']) ?? '',
+      voltage: _cleanBatteryText(json['voltage']) ?? '',
     );
   }
 
@@ -221,14 +496,16 @@ class OfficialBatteryInfo {
       batteryScore.isNotEmpty ||
       voltage.isNotEmpty;
 
-  static String? _clean(Object? value) {
-    if (value == null) return null;
-    final text = value.toString().trim();
-    if (text.isEmpty || text == '--' || text.toLowerCase() == 'null') {
-      return null;
-    }
-    return text;
+  static String? _cleanBatteryText(Object? value) => _clean(value);
+}
+
+String? _clean(Object? value) {
+  if (value == null) return null;
+  final text = value.toString().trim();
+  if (text.isEmpty || text == '--' || text.toLowerCase() == 'null') {
+    return null;
   }
+  return text;
 }
 
 class OfficialVehicleSelfCheck {

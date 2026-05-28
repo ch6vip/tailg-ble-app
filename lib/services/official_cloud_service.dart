@@ -24,6 +24,7 @@ class OfficialCloudState {
   final bool initialized;
   final String token;
   final String phone;
+  final String userId;
   final bool loading;
   final String? error;
   final List<OfficialVehicle> vehicles;
@@ -33,11 +34,25 @@ class OfficialCloudState {
   final OfficialBatteryInfo? batteryInfo;
   final bool batteryInfoLoading;
   final String? batteryInfoError;
+  final OfficialVehicleLocation? vehicleLocation;
+  final bool vehicleLocationLoading;
+  final String? vehicleLocationError;
+  final OfficialFenceData? fenceData;
+  final bool fenceLoading;
+  final String? fenceError;
+  final List<OfficialTravelDay> travelDays;
+  final String travelMonth;
+  final bool travelLoading;
+  final String? travelError;
+  final Map<String, List<OfficialTravelPoint>> travelDetails;
+  final bool travelDetailLoading;
+  final String? travelDetailError;
 
   const OfficialCloudState({
     required this.initialized,
     required this.token,
     required this.phone,
+    required this.userId,
     required this.loading,
     required this.error,
     required this.vehicles,
@@ -47,12 +62,26 @@ class OfficialCloudState {
     required this.batteryInfo,
     required this.batteryInfoLoading,
     required this.batteryInfoError,
+    required this.vehicleLocation,
+    required this.vehicleLocationLoading,
+    required this.vehicleLocationError,
+    required this.fenceData,
+    required this.fenceLoading,
+    required this.fenceError,
+    required this.travelDays,
+    required this.travelMonth,
+    required this.travelLoading,
+    required this.travelError,
+    required this.travelDetails,
+    required this.travelDetailLoading,
+    required this.travelDetailError,
   });
 
   factory OfficialCloudState.initial() => const OfficialCloudState(
     initialized: false,
     token: '',
     phone: '',
+    userId: '',
     loading: false,
     error: null,
     vehicles: [],
@@ -62,6 +91,19 @@ class OfficialCloudState {
     batteryInfo: null,
     batteryInfoLoading: false,
     batteryInfoError: null,
+    vehicleLocation: null,
+    vehicleLocationLoading: false,
+    vehicleLocationError: null,
+    fenceData: null,
+    fenceLoading: false,
+    fenceError: null,
+    travelDays: [],
+    travelMonth: '',
+    travelLoading: false,
+    travelError: null,
+    travelDetails: {},
+    travelDetailLoading: false,
+    travelDetailError: null,
   );
 
   bool get signedIn => token.isNotEmpty;
@@ -82,6 +124,7 @@ class OfficialCloudState {
     bool? initialized,
     String? token,
     String? phone,
+    String? userId,
     bool? loading,
     Object? error = _sentinel,
     List<OfficialVehicle>? vehicles,
@@ -91,11 +134,25 @@ class OfficialCloudState {
     Object? batteryInfo = _sentinel,
     bool? batteryInfoLoading,
     Object? batteryInfoError = _sentinel,
+    Object? vehicleLocation = _sentinel,
+    bool? vehicleLocationLoading,
+    Object? vehicleLocationError = _sentinel,
+    Object? fenceData = _sentinel,
+    bool? fenceLoading,
+    Object? fenceError = _sentinel,
+    List<OfficialTravelDay>? travelDays,
+    String? travelMonth,
+    bool? travelLoading,
+    Object? travelError = _sentinel,
+    Map<String, List<OfficialTravelPoint>>? travelDetails,
+    bool? travelDetailLoading,
+    Object? travelDetailError = _sentinel,
   }) {
     return OfficialCloudState(
       initialized: initialized ?? this.initialized,
       token: token ?? this.token,
       phone: phone ?? this.phone,
+      userId: userId ?? this.userId,
       loading: loading ?? this.loading,
       error: identical(error, _sentinel) ? this.error : error as String?,
       vehicles: vehicles ?? this.vehicles,
@@ -111,6 +168,32 @@ class OfficialCloudState {
       batteryInfoError: identical(batteryInfoError, _sentinel)
           ? this.batteryInfoError
           : batteryInfoError as String?,
+      vehicleLocation: identical(vehicleLocation, _sentinel)
+          ? this.vehicleLocation
+          : vehicleLocation as OfficialVehicleLocation?,
+      vehicleLocationLoading:
+          vehicleLocationLoading ?? this.vehicleLocationLoading,
+      vehicleLocationError: identical(vehicleLocationError, _sentinel)
+          ? this.vehicleLocationError
+          : vehicleLocationError as String?,
+      fenceData: identical(fenceData, _sentinel)
+          ? this.fenceData
+          : fenceData as OfficialFenceData?,
+      fenceLoading: fenceLoading ?? this.fenceLoading,
+      fenceError: identical(fenceError, _sentinel)
+          ? this.fenceError
+          : fenceError as String?,
+      travelDays: travelDays ?? this.travelDays,
+      travelMonth: travelMonth ?? this.travelMonth,
+      travelLoading: travelLoading ?? this.travelLoading,
+      travelError: identical(travelError, _sentinel)
+          ? this.travelError
+          : travelError as String?,
+      travelDetails: travelDetails ?? this.travelDetails,
+      travelDetailLoading: travelDetailLoading ?? this.travelDetailLoading,
+      travelDetailError: identical(travelDetailError, _sentinel)
+          ? this.travelDetailError
+          : travelDetailError as String?,
     );
   }
 
@@ -148,9 +231,11 @@ class OfficialCloudService {
   static const _prefPhone = 'official_cloud_phone';
   static const _secureToken = 'official_cloud_token';
   static const _securePhone = 'official_cloud_phone';
+  static const _secureUserId = 'official_cloud_user_id';
   static const _prefSelectedVehicle = 'official_cloud_selected_vehicle';
   static const _prefControlChannel = 'official_cloud_control_channel';
   static const _prefVehicleLinks = 'official_cloud_vehicle_links';
+  static const _prefUserId = 'official_cloud_user_id';
 
   final FlutterSecureStorage _secureStorage;
   final _log = LogService();
@@ -178,6 +263,7 @@ class OfficialCloudService {
       initialized: true,
       token: credentials.$1,
       phone: credentials.$2,
+      userId: credentials.$3,
       selectedVehicleKey: prefs.getString(_prefSelectedVehicle),
       controlChannel: OfficialControlChannel.values.firstWhere(
         (item) => item.name == channelName,
@@ -240,10 +326,16 @@ class OfficialCloudService {
         throw const OfficialCloudApiException('登录失败，未返回 token');
       }
 
-      await _saveSecureCredentials(token: token, phone: normalizedPhone);
+      final userId = _extractUserId(response.body);
+      await _saveSecureCredentials(
+        token: token,
+        phone: normalizedPhone,
+        userId: userId,
+      );
       _state = _state.copyWith(
         token: token,
         phone: normalizedPhone,
+        userId: userId,
         error: null,
       );
       _emit();
@@ -261,18 +353,35 @@ class OfficialCloudService {
     _state = _state.copyWith(
       token: '',
       phone: '',
+      userId: '',
       vehicles: const [],
       selectedVehicleKey: null,
       error: null,
       batteryInfo: null,
       batteryInfoLoading: false,
       batteryInfoError: null,
+      vehicleLocation: null,
+      vehicleLocationLoading: false,
+      vehicleLocationError: null,
+      fenceData: null,
+      fenceLoading: false,
+      fenceError: null,
+      travelDays: const [],
+      travelMonth: '',
+      travelLoading: false,
+      travelError: null,
+      travelDetails: const {},
+      travelDetailLoading: false,
+      travelDetailError: null,
     );
     _emit();
     _log.operation('官方云已退出登录');
   }
 
-  Future<void> refreshVehicles({bool silent = false}) async {
+  Future<void> refreshVehicles({
+    bool silent = false,
+    bool refreshReplicaDetails = true,
+  }) async {
     if (_state.token.isEmpty) return;
     if (!silent) _setLoading(true);
     try {
@@ -317,6 +426,10 @@ class OfficialCloudService {
       _emit();
       _log.operation('官方车辆列表已刷新', detail: 'count=${vehicles.length}');
       unawaited(refreshBatteryInfo(silent: true));
+      if (refreshReplicaDetails) {
+        unawaited(refreshVehicleLocation(silent: true));
+        unawaited(refreshFenceData(silent: true));
+      }
     } catch (e) {
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
@@ -393,6 +506,249 @@ class OfficialCloudService {
     } finally {
       if (!silent && _state.batteryInfoLoading) {
         _state = _state.copyWith(batteryInfoLoading: false);
+        _emit();
+      }
+    }
+  }
+
+  Future<void> refreshVehicleLocation({bool silent = false}) async {
+    final vehicle = _state.selectedVehicle;
+    if (_state.token.isEmpty || vehicle == null || vehicle.carId.isEmpty) {
+      return;
+    }
+    if (!silent) {
+      _state = _state.copyWith(
+        vehicleLocationLoading: true,
+        vehicleLocationError: null,
+      );
+      _emit();
+    }
+    try {
+      final response = await _request(
+        'app/car/extend/getByCarId',
+        method: 'POST',
+        token: _state.token,
+        body: {'carId': vehicle.carId},
+      );
+      _ensureSuccess(response.body, fallback: '获取官方停车位置失败');
+      final data = response.body['data'];
+      final location = data is Map
+          ? OfficialVehicleLocation.fromJson(Map<String, dynamic>.from(data))
+          : OfficialVehicleLocation.fromJson(const <String, dynamic>{});
+      _state = _state.copyWith(
+        vehicleLocation: location.hasData ? location : null,
+        vehicleLocationLoading: false,
+        vehicleLocationError: null,
+      );
+      _emit();
+      _log.operation(
+        '官方停车位置已刷新',
+        detail: location.hasData ? 'hasData=true' : 'hasData=false',
+      );
+    } catch (e) {
+      await _handleAuthFailureIfNeeded(e);
+      if (_state.signedIn) {
+        _state = _state.copyWith(
+          vehicleLocationLoading: false,
+          vehicleLocationError: _errorMessage(e),
+        );
+        _emit();
+      }
+      if (!silent) rethrow;
+      _log.operation(
+        '官方停车位置刷新失败',
+        detail: _errorMessage(e),
+        level: LogLevel.warning,
+      );
+    } finally {
+      if (!silent && _state.vehicleLocationLoading) {
+        _state = _state.copyWith(vehicleLocationLoading: false);
+        _emit();
+      }
+    }
+  }
+
+  Future<void> refreshFenceData({bool silent = false}) async {
+    final vehicle = _state.selectedVehicle;
+    if (_state.token.isEmpty || vehicle == null || vehicle.carId.isEmpty) {
+      return;
+    }
+    if (!silent) {
+      _state = _state.copyWith(fenceLoading: true, fenceError: null);
+      _emit();
+    }
+    try {
+      final response = await _request(
+        'app/device/getFenceData',
+        method: 'POST',
+        token: _state.token,
+        body: {'carId': vehicle.carId},
+      );
+      _ensureSuccess(response.body, fallback: '获取官方围栏失败');
+      final data = response.body['data'];
+      final fence = data is Map
+          ? OfficialFenceData.fromJson(Map<String, dynamic>.from(data))
+          : OfficialFenceData.fromJson(const <String, dynamic>{});
+      _state = _state.copyWith(
+        fenceData: fence.hasData ? fence : null,
+        fenceLoading: false,
+        fenceError: null,
+      );
+      _emit();
+      _log.operation(
+        '官方电子围栏已刷新',
+        detail: fence.hasData ? 'hasData=true' : 'hasData=false',
+      );
+    } catch (e) {
+      await _handleAuthFailureIfNeeded(e);
+      if (_state.signedIn) {
+        _state = _state.copyWith(
+          fenceLoading: false,
+          fenceError: _errorMessage(e),
+        );
+        _emit();
+      }
+      if (!silent) rethrow;
+      _log.operation(
+        '官方电子围栏刷新失败',
+        detail: _errorMessage(e),
+        level: LogLevel.warning,
+      );
+    } finally {
+      if (!silent && _state.fenceLoading) {
+        _state = _state.copyWith(fenceLoading: false);
+        _emit();
+      }
+    }
+  }
+
+  Future<void> refreshTravelHistory({
+    String? month,
+    bool silent = false,
+  }) async {
+    final vehicle = _state.selectedVehicle;
+    if (_state.token.isEmpty || vehicle == null) return;
+    final userId = _state.userId.trim();
+    if (userId.isEmpty) {
+      _state = _state.copyWith(
+        travelDays: const [],
+        travelMonth: month ?? _currentMonth(),
+        travelError: '官方登录未返回 uid，无法读取历史轨迹',
+      );
+      _emit();
+      return;
+    }
+    final queryMonth = month ?? _state.travelMonth.ifEmpty(_currentMonth);
+    if (!silent) {
+      _state = _state.copyWith(
+        travelLoading: true,
+        travelError: null,
+        travelMonth: queryMonth,
+      );
+      _emit();
+    }
+    try {
+      final response = await _request(
+        'app/centralControl/deviceTravel',
+        method: 'POST',
+        token: _state.token,
+        body: {'queryMonth': queryMonth, 'frame': vehicle.frame, 'uid': userId},
+      );
+      _ensureSuccess(response.body, fallback: '获取官方历史轨迹失败');
+      final data = response.body['data'];
+      final days = data is List
+          ? data
+                .whereType<Map>()
+                .map(
+                  (item) => OfficialTravelDay.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ),
+                )
+                .where((day) => day.hasData)
+                .toList(growable: false)
+          : const <OfficialTravelDay>[];
+      _state = _state.copyWith(
+        travelDays: days,
+        travelMonth: queryMonth,
+        travelLoading: false,
+        travelError: null,
+      );
+      _emit();
+      _log.operation('官方历史轨迹已刷新', detail: 'days=${days.length}');
+    } catch (e) {
+      await _handleAuthFailureIfNeeded(e);
+      if (_state.signedIn) {
+        _state = _state.copyWith(
+          travelLoading: false,
+          travelError: _errorMessage(e),
+        );
+        _emit();
+      }
+      if (!silent) rethrow;
+      _log.operation(
+        '官方历史轨迹刷新失败',
+        detail: _errorMessage(e),
+        level: LogLevel.warning,
+      );
+    } finally {
+      if (!silent && _state.travelLoading) {
+        _state = _state.copyWith(travelLoading: false);
+        _emit();
+      }
+    }
+  }
+
+  Future<void> refreshTravelDetail(String travelId) async {
+    if (_state.token.isEmpty || travelId.trim().isEmpty) return;
+    _state = _state.copyWith(
+      travelDetailLoading: true,
+      travelDetailError: null,
+    );
+    _emit();
+    try {
+      final response = await _request(
+        'app/centralControl/deviceTravelDetail',
+        method: 'POST',
+        token: _state.token,
+        body: {'deviceTravelId': travelId},
+      );
+      _ensureSuccess(response.body, fallback: '获取官方轨迹详情失败');
+      final data = response.body['data'];
+      final points = data is List
+          ? data
+                .whereType<Map>()
+                .map(
+                  (item) => OfficialTravelPoint.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ),
+                )
+                .where((point) => point.hasCoordinate)
+                .toList(growable: false)
+          : const <OfficialTravelPoint>[];
+      final details = Map<String, List<OfficialTravelPoint>>.from(
+        _state.travelDetails,
+      );
+      details[travelId] = points;
+      _state = _state.copyWith(
+        travelDetails: details,
+        travelDetailLoading: false,
+        travelDetailError: null,
+      );
+      _emit();
+      _log.operation('官方轨迹详情已刷新', detail: 'points=${points.length}');
+    } catch (e) {
+      await _handleAuthFailureIfNeeded(e);
+      if (_state.signedIn) {
+        _state = _state.copyWith(
+          travelDetailLoading: false,
+          travelDetailError: _errorMessage(e),
+        );
+        _emit();
+      }
+      rethrow;
+    } finally {
+      if (_state.travelDetailLoading) {
+        _state = _state.copyWith(travelDetailLoading: false);
         _emit();
       }
     }
@@ -503,45 +859,63 @@ class OfficialCloudService {
     );
   }
 
-  Future<(String, String)> _loadSecureCredentials(
+  Future<(String, String, String)> _loadSecureCredentials(
     SharedPreferences prefs,
   ) async {
     final secureToken = await _secureStorage.read(key: _secureToken);
     final securePhone = await _secureStorage.read(key: _securePhone);
+    final secureUserId = await _secureStorage.read(key: _secureUserId);
     final legacyToken = prefs.getString(_prefToken) ?? '';
     final legacyPhone = prefs.getString(_prefPhone) ?? '';
+    final legacyUserId = prefs.getString(_prefUserId) ?? '';
     final token = secureToken ?? legacyToken;
     final phone = securePhone ?? legacyPhone;
-    if (legacyToken.isNotEmpty || legacyPhone.isNotEmpty) {
+    final userId = secureUserId ?? legacyUserId;
+    if (legacyToken.isNotEmpty ||
+        legacyPhone.isNotEmpty ||
+        legacyUserId.isNotEmpty) {
       if (token.isNotEmpty) {
         await _secureStorage.write(key: _secureToken, value: token);
       }
       if (phone.isNotEmpty) {
         await _secureStorage.write(key: _securePhone, value: phone);
       }
+      if (userId.isNotEmpty) {
+        await _secureStorage.write(key: _secureUserId, value: userId);
+      }
       await prefs.remove(_prefToken);
       await prefs.remove(_prefPhone);
+      await prefs.remove(_prefUserId);
       _log.operation('官方云登录态已迁移到安全存储');
     }
-    return (token, phone);
+    return (token, phone, userId);
   }
 
   Future<void> _saveSecureCredentials({
     required String token,
     required String phone,
+    required String userId,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await _secureStorage.write(key: _secureToken, value: token);
     await _secureStorage.write(key: _securePhone, value: phone);
+    if (userId.isEmpty) {
+      await _secureStorage.delete(key: _secureUserId);
+    } else {
+      await _secureStorage.write(key: _secureUserId, value: userId);
+    }
     await prefs.remove(_prefToken);
     await prefs.remove(_prefPhone);
+    await prefs.remove(_prefUserId);
   }
 
   Future<void> _clearSecureCredentials(SharedPreferences prefs) async {
     await _secureStorage.delete(key: _secureToken);
     await _secureStorage.delete(key: _securePhone);
+    await _secureStorage.delete(key: _secureUserId);
     await prefs.remove(_prefToken);
     await prefs.remove(_prefPhone);
+    await prefs.remove(_prefUserId);
   }
 
   Future<void> _handleAuthFailureIfNeeded(Object e) async {
@@ -771,9 +1145,44 @@ class OfficialCloudService {
 
   bool _validSmsCode(String value) => RegExp(r'^\d{4,8}$').hasMatch(value);
 
+  String _extractUserId(Map<String, dynamic> body) {
+    Object? find(Object? value) {
+      if (value is Map) {
+        for (final key in const ['uid', 'userId', 'id']) {
+          final candidate = value[key];
+          if (candidate != null && candidate.toString().trim().isNotEmpty) {
+            return candidate;
+          }
+        }
+        for (final child in value.values) {
+          final found = find(child);
+          if (found != null) return found;
+        }
+      } else if (value is List) {
+        for (final child in value) {
+          final found = find(child);
+          if (found != null) return found;
+        }
+      }
+      return null;
+    }
+
+    return find(body)?.toString().trim() ?? '';
+  }
+
+  String _currentMonth() {
+    final now = DateTime.now();
+    final month = now.month.toString().padLeft(2, '0');
+    return '${now.year}-$month';
+  }
+
   void _emit() {
     _stateController.add(_state);
   }
+}
+
+extension on String {
+  String ifEmpty(String Function() fallback) => isEmpty ? fallback() : this;
 }
 
 class OfficialCloudRequestSummary {
