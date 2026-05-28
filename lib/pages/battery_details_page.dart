@@ -37,7 +37,9 @@ class BatteryDetailsPage extends StatelessWidget {
                       const SizedBox(height: 14),
                       _FaultCard(snapshot: data),
                       const SizedBox(height: 14),
-                      const _BmsPlaceholder(),
+                      _BmsDetailsCard(snapshot: data),
+                      const SizedBox(height: 14),
+                      const _BatteryNotesCard(),
                     ],
                   ),
                 ),
@@ -223,8 +225,99 @@ class _FaultCard extends StatelessWidget {
   }
 }
 
-class _BmsPlaceholder extends StatelessWidget {
-  const _BmsPlaceholder();
+class _BmsDetailsCard extends StatelessWidget {
+  final BatterySnapshot snapshot;
+  const _BmsDetailsCard({required this.snapshot});
+
+  @override
+  Widget build(BuildContext context) {
+    final fields = snapshot.bms.fields;
+    return Container(
+      decoration: cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              'BMS 详情',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          ...List.generate(fields.length, (index) {
+            final field = fields[index];
+            return Column(
+              children: [
+                _BmsFieldRow(field: field),
+                if (index != fields.length - 1)
+                  const Divider(height: 1, indent: 16, color: AppColors.border),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _BmsFieldRow extends StatelessWidget {
+  final BmsField field;
+  const _BmsFieldRow({required this.field});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = field.hasValue
+        ? AppColors.textPrimary
+        : AppColors.textTertiary;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 11, 16, 11),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  field.label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '来源：${field.source}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            field.displayValue,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BatteryNotesCard extends StatelessWidget {
+  const _BatteryNotesCard();
 
   @override
   Widget build(BuildContext context) {
@@ -244,7 +337,7 @@ class _BmsPlaceholder extends StatelessWidget {
           ),
           SizedBox(height: 8),
           Text(
-            '已预留 TLV/BMS 数据结构，后续识别到电芯电压、循环次数、健康度等字段后可直接接入。',
+            '字段结构已按官方 TLV/BMS/C39 页面预留。当前只展示 feb3 心跳中可确认的 SOC、电压和温度；循环次数、SOH、容量、版本等仍需确认读取来源后接入。',
             style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
           ),
         ],

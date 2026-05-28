@@ -20,6 +20,40 @@ void main() {
     expect(snapshot.healthLabel, '正常');
     expect(snapshot.estimatedRangeKm, 52);
     expect(snapshot.faults, isEmpty);
+    expect(snapshot.bms.soc, '80');
+    expect(snapshot.bms.currentBatteryVoltage, '48.5');
+  });
+
+  test('BmsSnapshot exposes official field structure without fake values', () {
+    final snapshot = BatterySnapshot.fromBikeState(
+      const BikeState(
+        isLocked: true,
+        isPowerOn: false,
+        voltage: 48.5,
+        batteryPercent: 80,
+      ),
+    );
+
+    final fields = snapshot.bms.fields;
+    expect(fields.map((field) => field.label), [
+      '估算容量',
+      'SOC',
+      'SOH',
+      '当前电压',
+      '充电状态',
+      '电池容量',
+      '电池电流',
+      '环境温度',
+      '循环次数',
+      '电池温度',
+      '电池类型',
+      '硬件版本',
+      '软件版本',
+    ]);
+    expect(fields.first.displayValue, '待读取');
+    expect(fields[1].displayValue, '80%');
+    expect(fields[3].displayValue, '48.5V');
+    expect(fields[8].displayValue, '待读取');
   });
 
   test('BikeState compares by value', () {
