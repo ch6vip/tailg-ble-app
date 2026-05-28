@@ -155,6 +155,44 @@ void main() {
     );
   });
 
+  test('QGJ advanced read-only snapshot parses official payloads', () {
+    final snapshot = const VehicleAdvancedSettingsSnapshot()
+        .merge(
+          VehicleAdvancedSettingsSnapshot.fromAutoLockPayload([0x00, 0x2D]),
+        )
+        .merge(
+          VehicleAdvancedSettingsSnapshot.fromPowerOnAutoLockPayload([
+            0x00,
+            0x3C,
+          ]),
+        )
+        .merge(
+          VehicleAdvancedSettingsSnapshot.fromProximityStatusPayload([0x01]),
+        )
+        .merge(
+          VehicleAdvancedSettingsSnapshot.fromProximityDistancePayload([0x02]),
+        )
+        .merge(VehicleAdvancedSettingsSnapshot.fromHandlebarLockPayload([0x01]))
+        .merge(VehicleAdvancedSettingsSnapshot.fromPostureDetectionPayload([0]))
+        .merge(VehicleAdvancedSettingsSnapshot.fromHidPayload([0x02]))
+        .merge(VehicleAdvancedSettingsSnapshot.fromSafeLockPayload([0x01]))
+        .merge(VehicleAdvancedSettingsSnapshot.fromKickstandPayload([0x00]))
+        .merge(VehicleAdvancedSettingsSnapshot.fromSeatSensorPayload([0x01]));
+
+    expect(snapshot.hasAnyState, isTrue);
+    expect(snapshot.autoLockEnabled, isTrue);
+    expect(snapshot.autoLockTimeSeconds, 45);
+    expect(snapshot.powerOnAutoLockTimeSeconds, 60);
+    expect(snapshot.proximityEnabled, isTrue);
+    expect(snapshot.proximityDistance, 2);
+    expect(snapshot.handlebarLockEnabled, isTrue);
+    expect(snapshot.postureDetectionEnabled, isFalse);
+    expect(snapshot.hidMode, QgjHidModes.openWithAutoLock);
+    expect(snapshot.safeLockEnabled, isTrue);
+    expect(snapshot.kickstandEnabled, isFalse);
+    expect(snapshot.seatSensorEnabled, isTrue);
+  });
+
   test('QGJ light sensor response maps SwitchState values', () {
     final response = parseQgjResponse(
       Uint8List.fromList([0xA7, 0x00, 0x00, 0x03, 0x24, 0x11, 0x01]),

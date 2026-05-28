@@ -7,6 +7,7 @@ import '../ble/constants.dart';
 import '../services/vehicle_settings_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import 'qgj_advanced_settings_page.dart';
 
 class VehicleSettingsPage extends StatefulWidget {
   const VehicleSettingsPage({super.key});
@@ -253,20 +254,33 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                           AppCard(
                             padding: EdgeInsets.zero,
                             child: Column(
-                              children: const [
-                                _DisabledInfoRow(
+                              children: [
+                                _NavSettingRow(
+                                  icon: Icons.manage_search,
+                                  title: '高级设置只读',
+                                  subtitle: '自动锁车、HID、龙头锁等官方 GET 状态',
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const QgjAdvancedSettingsPage(),
+                                    ),
+                                  ),
+                                ),
+                                const _InsetDivider(),
+                                const _DisabledInfoRow(
                                   icon: Icons.timer_outlined,
                                   title: '自动下电',
                                   subtitle: '车辆静止后断电时间，命令待确认',
                                 ),
-                                _InsetDivider(),
+                                const _InsetDivider(),
                                 _DisabledInfoRow(
                                   icon: Icons.lock_clock,
                                   title: '自动锁车',
-                                  subtitle: '下电后多久自动上锁，命令待确认',
+                                  subtitle: '已支持只读刷新，写入暂未开放',
                                 ),
-                                _InsetDivider(),
-                                _DisabledInfoRow(
+                                const _InsetDivider(),
+                                const _DisabledInfoRow(
                                   icon: Icons.key_outlined,
                                   title: '密码解锁',
                                   subtitle: '官方有入口，当前暂不写入车辆',

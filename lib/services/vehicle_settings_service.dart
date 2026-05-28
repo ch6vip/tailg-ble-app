@@ -89,6 +89,162 @@ class VehicleSettingsSnapshot {
   }
 }
 
+class VehicleAdvancedSettingsSnapshot {
+  final bool? autoLockEnabled;
+  final int? autoLockTimeSeconds;
+  final int? powerOnAutoLockTimeSeconds;
+  final bool? proximityEnabled;
+  final int? proximityDistance;
+  final bool? handlebarLockEnabled;
+  final bool? postureDetectionEnabled;
+  final int? hidMode;
+  final bool? safeLockEnabled;
+  final bool? kickstandEnabled;
+  final bool? seatSensorEnabled;
+
+  const VehicleAdvancedSettingsSnapshot({
+    this.autoLockEnabled,
+    this.autoLockTimeSeconds,
+    this.powerOnAutoLockTimeSeconds,
+    this.proximityEnabled,
+    this.proximityDistance,
+    this.handlebarLockEnabled,
+    this.postureDetectionEnabled,
+    this.hidMode,
+    this.safeLockEnabled,
+    this.kickstandEnabled,
+    this.seatSensorEnabled,
+  });
+
+  bool get hasAnyState =>
+      autoLockEnabled != null ||
+      autoLockTimeSeconds != null ||
+      powerOnAutoLockTimeSeconds != null ||
+      proximityEnabled != null ||
+      proximityDistance != null ||
+      handlebarLockEnabled != null ||
+      postureDetectionEnabled != null ||
+      hidMode != null ||
+      safeLockEnabled != null ||
+      kickstandEnabled != null ||
+      seatSensorEnabled != null;
+
+  VehicleAdvancedSettingsSnapshot merge(VehicleAdvancedSettingsSnapshot other) {
+    return VehicleAdvancedSettingsSnapshot(
+      autoLockEnabled: other.autoLockEnabled ?? autoLockEnabled,
+      autoLockTimeSeconds: other.autoLockTimeSeconds ?? autoLockTimeSeconds,
+      powerOnAutoLockTimeSeconds:
+          other.powerOnAutoLockTimeSeconds ?? powerOnAutoLockTimeSeconds,
+      proximityEnabled: other.proximityEnabled ?? proximityEnabled,
+      proximityDistance: other.proximityDistance ?? proximityDistance,
+      handlebarLockEnabled: other.handlebarLockEnabled ?? handlebarLockEnabled,
+      postureDetectionEnabled:
+          other.postureDetectionEnabled ?? postureDetectionEnabled,
+      hidMode: other.hidMode ?? hidMode,
+      safeLockEnabled: other.safeLockEnabled ?? safeLockEnabled,
+      kickstandEnabled: other.kickstandEnabled ?? kickstandEnabled,
+      seatSensorEnabled: other.seatSensorEnabled ?? seatSensorEnabled,
+    );
+  }
+
+  static VehicleAdvancedSettingsSnapshot fromAutoLockPayload(
+    List<int> payload,
+  ) {
+    final value = _readUInt16(payload);
+    return VehicleAdvancedSettingsSnapshot(
+      autoLockEnabled: value == null ? null : value > 0,
+      autoLockTimeSeconds: value,
+    );
+  }
+
+  static VehicleAdvancedSettingsSnapshot fromPowerOnAutoLockPayload(
+    List<int> payload,
+  ) {
+    return VehicleAdvancedSettingsSnapshot(
+      powerOnAutoLockTimeSeconds: _readUInt16(payload),
+    );
+  }
+
+  static VehicleAdvancedSettingsSnapshot fromProximityStatusPayload(
+    List<int> payload,
+  ) {
+    return VehicleAdvancedSettingsSnapshot(
+      proximityEnabled: _readSwitch(payload),
+    );
+  }
+
+  static VehicleAdvancedSettingsSnapshot fromProximityDistancePayload(
+    List<int> payload,
+  ) {
+    return VehicleAdvancedSettingsSnapshot(
+      proximityDistance: _readUInt8(payload),
+    );
+  }
+
+  static VehicleAdvancedSettingsSnapshot fromHandlebarLockPayload(
+    List<int> payload,
+  ) {
+    return VehicleAdvancedSettingsSnapshot(
+      handlebarLockEnabled: _readSwitch(payload),
+    );
+  }
+
+  static VehicleAdvancedSettingsSnapshot fromPostureDetectionPayload(
+    List<int> payload,
+  ) {
+    return VehicleAdvancedSettingsSnapshot(
+      postureDetectionEnabled: _readSwitch(payload),
+    );
+  }
+
+  static VehicleAdvancedSettingsSnapshot fromHidPayload(List<int> payload) {
+    return VehicleAdvancedSettingsSnapshot(hidMode: _readUInt8(payload));
+  }
+
+  static VehicleAdvancedSettingsSnapshot fromSafeLockPayload(
+    List<int> payload,
+  ) {
+    return VehicleAdvancedSettingsSnapshot(
+      safeLockEnabled: _readSwitch(payload),
+    );
+  }
+
+  static VehicleAdvancedSettingsSnapshot fromKickstandPayload(
+    List<int> payload,
+  ) {
+    return VehicleAdvancedSettingsSnapshot(
+      kickstandEnabled: _readSwitch(payload),
+    );
+  }
+
+  static VehicleAdvancedSettingsSnapshot fromSeatSensorPayload(
+    List<int> payload,
+  ) {
+    return VehicleAdvancedSettingsSnapshot(
+      seatSensorEnabled: _readSwitch(payload),
+    );
+  }
+
+  static int? _readUInt8(List<int> payload) {
+    if (payload.isEmpty) return null;
+    return payload.first & 0xFF;
+  }
+
+  static int? _readUInt16(List<int> payload) {
+    if (payload.length < 2) return null;
+    return ((payload[0] & 0xFF) << 8) | (payload[1] & 0xFF);
+  }
+
+  static bool? _readSwitch(List<int> payload) {
+    final value = _readUInt8(payload);
+    return switch (value) {
+      0 => false,
+      1 => true,
+      _ => null,
+    };
+  }
+}
+
 class QgjSoundAdjust {
   final int index;
   final int volume;
@@ -175,6 +331,67 @@ class VehicleSettingsService {
         VehicleSettingsSnapshot.fromSensitivityPayload(sensitivity.payload),
       );
     }
+
+    return snapshot?.hasAnyState == true ? snapshot : null;
+  }
+
+  Future<VehicleAdvancedSettingsSnapshot?> refreshAdvancedReadOnly() async {
+    _requireReady();
+    VehicleAdvancedSettingsSnapshot? snapshot;
+
+    Future<void> read(
+      int cmdId,
+      VehicleAdvancedSettingsSnapshot Function(List<int> payload) parse, [
+      List<int> payload = const [],
+    ]) async {
+      final response = await _send(cmdId, payload);
+      if (response != null && response.success) {
+        snapshot = (snapshot ?? const VehicleAdvancedSettingsSnapshot()).merge(
+          parse(response.payload),
+        );
+      }
+    }
+
+    await read(
+      QgjCommandIds.autoLockTimeGet,
+      VehicleAdvancedSettingsSnapshot.fromAutoLockPayload,
+    );
+    await read(
+      QgjCommandIds.powerOnAutoLockTimeGet,
+      VehicleAdvancedSettingsSnapshot.fromPowerOnAutoLockPayload,
+    );
+    await read(
+      QgjCommandIds.proximityStatusGet,
+      VehicleAdvancedSettingsSnapshot.fromProximityStatusPayload,
+    );
+    await read(
+      QgjCommandIds.proximityDistanceGet,
+      VehicleAdvancedSettingsSnapshot.fromProximityDistancePayload,
+    );
+    await read(
+      QgjCommandIds.handlebarLockGet,
+      VehicleAdvancedSettingsSnapshot.fromHandlebarLockPayload,
+    );
+    await read(
+      QgjCommandIds.postureDetectionGet,
+      VehicleAdvancedSettingsSnapshot.fromPostureDetectionPayload,
+    );
+    await read(
+      QgjCommandIds.hidStatusGet,
+      VehicleAdvancedSettingsSnapshot.fromHidPayload,
+    );
+    await read(
+      QgjCommandIds.safeLockGet,
+      VehicleAdvancedSettingsSnapshot.fromSafeLockPayload,
+    );
+    await read(
+      QgjCommandIds.kickstandGet,
+      VehicleAdvancedSettingsSnapshot.fromKickstandPayload,
+    );
+    await read(
+      QgjCommandIds.seatSensorGet,
+      VehicleAdvancedSettingsSnapshot.fromSeatSensorPayload,
+    );
 
     return snapshot?.hasAnyState == true ? snapshot : null;
   }
