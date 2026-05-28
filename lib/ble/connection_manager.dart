@@ -96,6 +96,16 @@ class ConnectionManager {
     });
   }
 
+  Future<BikeState?> refreshBikeState() async {
+    final data = await readFeb3();
+    if (data == null || data.isEmpty) return null;
+    final state = BikeState.fromFeb3(data);
+    if (state != null) {
+      _publishBikeState(state);
+    }
+    return state;
+  }
+
   Future<void> connect(BluetoothDevice device) async {
     _userDisconnected = false;
     _reconnecting = false;

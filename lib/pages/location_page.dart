@@ -54,6 +54,38 @@ class _LocationPageState extends State<LocationPage> {
     }
   }
 
+  Future<void> _refreshCloudLocation() async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await OfficialCloudService().refreshVehicles();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('官方车辆位置已刷新'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _error = _errorMessage(e));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  String _errorMessage(Object e) {
+    if (e is OfficialCloudApiException) return e.message;
+    return e.toString();
+  }
+
   Future<void> _copyLocation(VehicleLocation location) async {
     await Clipboard.setData(ClipboardData(text: location.coordinateText));
     if (mounted) {
@@ -115,6 +147,11 @@ class _LocationPageState extends State<LocationPage> {
                 final location = vehicle?.lastLocation ?? _cloudLocation();
                 final vehicleName =
                     vehicle?.displayName ?? cloudVehicle?.displayName;
+                final refreshAction = vehicle != null
+                    ? () => _refreshLocation(vehicle)
+                    : cloudVehicle != null
+                    ? _refreshCloudLocation
+                    : null;
                 return Column(
                   children: [
                     AppPageHeader(
@@ -122,9 +159,7 @@ class _LocationPageState extends State<LocationPage> {
                       actions: [
                         IconButton(
                           tooltip: '刷新位置',
-                          onPressed: vehicle == null || _loading
-                              ? null
-                              : () => _refreshLocation(vehicle),
+                          onPressed: _loading ? null : refreshAction,
                           icon: _loading
                               ? const SizedBox(
                                   width: 18,
@@ -150,9 +185,7 @@ class _LocationPageState extends State<LocationPage> {
                             location: location,
                             error: _error,
                             loading: _loading,
-                            onRefresh: vehicle == null
-                                ? null
-                                : () => _refreshLocation(vehicle),
+                            onRefresh: refreshAction,
                             onCopy: location == null
                                 ? null
                                 : () => _copyLocation(location),

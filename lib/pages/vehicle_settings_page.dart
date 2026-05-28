@@ -191,6 +191,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                               subtitle: '官方入口已对齐，写入命令待确认',
                               value: false,
                               onChanged: null,
+                              disabledReason: _pendingCommandMessage,
                             ),
                           ),
                           const AppSectionLabel('功能设置'),
@@ -375,6 +376,7 @@ class _QgjSoundSettingsPage extends StatelessWidget {
                               subtitle: '车辆报警提示音，写入命令待确认',
                               value: true,
                               onChanged: null,
+                              disabledReason: _pendingCommandMessage,
                             ),
                           ),
                           const AppSectionLabel('声音开关'),
@@ -532,6 +534,7 @@ class _QgjFunctionSettingsPage extends StatelessWidget {
                                   subtitle: '命令待确认，暂不写入车辆',
                                   value: false,
                                   onChanged: null,
+                                  disabledReason: _pendingCommandMessage,
                                 ),
                                 _InsetDivider(),
                                 const _SwitchSettingRow(
@@ -540,6 +543,7 @@ class _QgjFunctionSettingsPage extends StatelessWidget {
                                   subtitle: '命令待确认，暂不写入车辆',
                                   value: false,
                                   onChanged: null,
+                                  disabledReason: _pendingCommandMessage,
                                 ),
                                 _InsetDivider(),
                                 const _SwitchSettingRow(
@@ -548,6 +552,7 @@ class _QgjFunctionSettingsPage extends StatelessWidget {
                                   subtitle: '命令待确认，暂不写入车辆',
                                   value: false,
                                   onChanged: null,
+                                  disabledReason: _pendingCommandMessage,
                                 ),
                                 _InsetDivider(),
                                 const _SwitchSettingRow(
@@ -556,6 +561,7 @@ class _QgjFunctionSettingsPage extends StatelessWidget {
                                   subtitle: '命令待确认，暂不写入车辆',
                                   value: false,
                                   onChanged: null,
+                                  disabledReason: _pendingCommandMessage,
                                 ),
                               ],
                             ),
@@ -1012,6 +1018,7 @@ class _SwitchSettingRow extends StatelessWidget {
   final String? subtitle;
   final bool value;
   final ValueChanged<bool>? onChanged;
+  final String? disabledReason;
 
   const _SwitchSettingRow({
     required this.icon,
@@ -1019,46 +1026,53 @@ class _SwitchSettingRow extends StatelessWidget {
     this.subtitle,
     required this.value,
     required this.onChanged,
+    this.disabledReason,
   });
 
   @override
   Widget build(BuildContext context) {
     final enabled = onChanged != null;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 10, 12),
-      child: Row(
-        children: [
-          _RowIcon(icon, enabled: enabled),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: enabled
-                        ? AppColors.textPrimary
-                        : AppColors.textTertiary,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle!,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? null : () => _showInfoSnack(context, disabledReason),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 10, 12),
+          child: Row(
+            children: [
+              _RowIcon(icon, enabled: enabled),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: enabled
+                            ? AppColors.textPrimary
+                            : AppColors.textTertiary,
+                      ),
                     ),
-                  ),
-                ],
-              ],
-            ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Switch(value: value, onChanged: onChanged),
+            ],
           ),
-          Switch(value: value, onChanged: onChanged),
-        ],
+        ),
       ),
     );
   }
@@ -1077,43 +1091,58 @@ class _DisabledInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      child: Row(
-        children: [
-          _RowIcon(icon, enabled: false),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textTertiary,
-                  ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showInfoSnack(context, _pendingCommandMessage),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Row(
+            children: [
+              _RowIcon(icon, enabled: false),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              const Text(
+                '待确认',
+                style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
+              ),
+            ],
           ),
-          const Text(
-            '待确认',
-            style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
-          ),
-        ],
+        ),
       ),
     );
   }
+}
+
+const _pendingCommandMessage = '命令待真机验证，暂不开放写入';
+
+void _showInfoSnack(BuildContext context, String? message) {
+  final text = message ?? _pendingCommandMessage;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(text), duration: const Duration(seconds: 2)),
+  );
 }
 
 class _RowIcon extends StatelessWidget {

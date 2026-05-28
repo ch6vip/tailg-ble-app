@@ -14,6 +14,7 @@ import '../widgets/app_chrome.dart';
 import '../widgets/slide_to_action.dart';
 import 'garage_page.dart';
 import 'location_page.dart';
+import 'log_page.dart';
 import 'official_cloud_page.dart';
 import 'official_replica_pages.dart';
 import 'vehicle_settings_page.dart';
@@ -584,6 +585,7 @@ class _ControlAreaState extends State<_ControlArea> {
   QuickControlConfig _quickConfig = const QuickControlConfig();
   bool _busy = false;
   String? _activeControlId;
+  String? _lastFailureMessage;
 
   @override
   void initState() {
@@ -602,21 +604,20 @@ class _ControlAreaState extends State<_ControlArea> {
     setState(() {
       _busy = true;
       _activeControlId = actionId;
+      _lastFailureMessage = null;
     });
     HapticFeedback.mediumImpact();
     try {
+      final usesBle = _willUseBle(officialCloudService.state);
       final success = await _sendBySelectedChannel(cmd);
       if (success) {
         unawaited(locationService.recordDefaultVehicleLocation());
+        if (usesBle) {
+          unawaited(connectionManager.refreshBikeState());
+        }
       }
       if (!success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${cmd.label}失败'),
-            backgroundColor: Colors.red.shade400,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        _showFailureSnack(_lastFailureMessage ?? '${cmd.label}失败');
       }
     } finally {
       if (mounted) {
@@ -626,6 +627,15 @@ class _ControlAreaState extends State<_ControlArea> {
         });
       }
     }
+  }
+
+  bool _willUseBle(OfficialCloudState cloudState) {
+    return switch (cloudState.controlChannel) {
+      OfficialControlChannel.ble =>
+        widget.connState == ble.ConnectionState.ready,
+      OfficialControlChannel.officialCloud => false,
+      OfficialControlChannel.automatic => _canUseLinkedBle(cloudState),
+    };
   }
 
   Future<bool> _sendBySelectedChannel(CommandCode cmd) async {
@@ -691,17 +701,27 @@ class _ControlAreaState extends State<_ControlArea> {
       }
       return true;
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_cloudErrorMessage(e)),
-            backgroundColor: Colors.red.shade400,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
+      _lastFailureMessage = _cloudErrorMessage(e);
       return false;
     }
+  }
+
+  void _showFailureSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade400,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: '查看日志',
+          textColor: Colors.white,
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LogPage()),
+          ),
+        ),
+      ),
+    );
   }
 
   String _cloudErrorMessage(Object e) {

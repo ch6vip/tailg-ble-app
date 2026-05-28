@@ -25,6 +25,7 @@ class _ScanPageState extends State<ScanPage>
     with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   List<ScanResult> _results = [];
   bool _scanning = false;
+  String? _connectingRemoteId;
   StreamSubscription? _scanResultsSub;
   StreamSubscription? _isScanSub;
   Timer? _throttle;
@@ -96,6 +97,8 @@ class _ScanPageState extends State<ScanPage>
   }
 
   Future<void> _connectDevice(BluetoothDevice device) async {
+    if (_connectingRemoteId != null) return;
+    setState(() => _connectingRemoteId = device.remoteId.toString());
     _stopScan();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -133,6 +136,10 @@ class _ScanPageState extends State<ScanPage>
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('连接失败: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _connectingRemoteId = null);
       }
     }
   }
@@ -209,7 +216,11 @@ class _ScanPageState extends State<ScanPage>
                           ],
                         ),
                       ),
-                      _DeviceList(results: _results, onTap: _connectDevice),
+                      _DeviceList(
+                        results: _results,
+                        connectingRemoteId: _connectingRemoteId,
+                        onTap: _connectDevice,
+                      ),
                     ],
                   ),
                 ),
@@ -387,8 +398,13 @@ class _RadarPainter extends CustomPainter {
 
 class _DeviceList extends StatelessWidget {
   final List<ScanResult> results;
+  final String? connectingRemoteId;
   final void Function(BluetoothDevice) onTap;
-  const _DeviceList({required this.results, required this.onTap});
+  const _DeviceList({
+    required this.results,
+    required this.connectingRemoteId,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -400,9 +416,17 @@ class _DeviceList extends StatelessWidget {
       itemCount: results.length,
       itemBuilder: (context, index) {
         final r = results[index];
+        final remoteId = r.device.remoteId.toString();
+        final connecting = connectingRemoteId == remoteId;
+        final disabled = connectingRemoteId != null && !connecting;
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
-          child: _DeviceCard(result: r, onTap: () => onTap(r.device)),
+          child: _DeviceCard(
+            result: r,
+            connecting: connecting,
+            disabled: disabled,
+            onTap: () => onTap(r.device),
+          ),
         );
       },
     );
@@ -411,8 +435,15 @@ class _DeviceList extends StatelessWidget {
 
 class _DeviceCard extends StatefulWidget {
   final ScanResult result;
+  final bool connecting;
+  final bool disabled;
   final VoidCallback onTap;
-  const _DeviceCard({required this.result, required this.onTap});
+  const _DeviceCard({
+    required this.result,
+    required this.connecting,
+    required this.disabled,
+    required this.onTap,
+  });
 
   @override
   State<_DeviceCard> createState() => _DeviceCardState();
@@ -436,11 +467,13 @@ class _DeviceCardState extends State<_DeviceCard> {
         ? _SignalStrength.medium
         : _SignalStrength.weak;
 
+    final interactive = !widget.disabled && !widget.connecting;
+
     return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onTap,
+      onTapDown: interactive ? (_) => setState(() => _pressed = true) : null,
+      onTapUp: interactive ? (_) => setState(() => _pressed = false) : null,
+      onTapCancel: interactive ? () => setState(() => _pressed = false) : null,
+      onTap: interactive ? widget.onTap : null,
       child: AnimatedScale(
         scale: _pressed ? 0.98 : 1.0,
         duration: const Duration(milliseconds: 150),
@@ -448,7 +481,7 @@ class _DeviceCardState extends State<_DeviceCard> {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: widget.disabled ? const Color(0xFFF8F8F8) : Colors.white,
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
@@ -503,17 +536,37 @@ class _DeviceCardState extends State<_DeviceCard> {
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _SignalBars(strength: strength),
-                  const SizedBox(height: 6),
-                  const Text(
-                    '连接绑定',
-                    style: TextStyle(fontSize: 11, color: _textTertiary),
-                  ),
-                ],
-              ),
+              if (widget.connecting)
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      '连接中',
+                      style: TextStyle(fontSize: 11, color: _textTertiary),
+                    ),
+                  ],
+                )
+              else
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _SignalBars(strength: strength),
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.disabled ? '等待' : '连接绑定',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: _textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),

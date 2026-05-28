@@ -43,7 +43,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
   Future<void> _requestCode() async {
     if (_smsCountdown > 0) return;
     try {
-      await officialCloudService.requestSmsCode(_phoneController.text);
+      await officialCloudService.requestSmsCode(_normalizedPhone);
       if (!mounted) return;
       _startSmsCountdown();
       _showSnack('验证码已发送');
@@ -73,8 +73,8 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
   Future<void> _login() async {
     try {
       await officialCloudService.login(
-        _phoneController.text,
-        _smsController.text,
+        _normalizedPhone,
+        _smsController.text.trim(),
       );
       if (!mounted) return;
       _showSnack('官方账号登录成功');
@@ -83,6 +83,9 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
       _showSnack(_errorMessage(e), error: true);
     }
   }
+
+  String get _normalizedPhone =>
+      _phoneController.text.replaceAll(RegExp(r'\s+'), '');
 
   Future<void> _refresh() async {
     try {
@@ -186,7 +189,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
   }
 }
 
-class _LoginCard extends StatelessWidget {
+class _LoginCard extends StatefulWidget {
   final TextEditingController phoneController;
   final TextEditingController smsController;
   final bool loading;
@@ -204,8 +207,58 @@ class _LoginCard extends StatelessWidget {
   });
 
   @override
+  State<_LoginCard> createState() => _LoginCardState();
+}
+
+class _LoginCardState extends State<_LoginCard> {
+  @override
+  void initState() {
+    super.initState();
+    widget.phoneController.addListener(_onTextChanged);
+    widget.smsController.addListener(_onTextChanged);
+  }
+
+  @override
+  void didUpdateWidget(_LoginCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.phoneController != widget.phoneController) {
+      oldWidget.phoneController.removeListener(_onTextChanged);
+      widget.phoneController.addListener(_onTextChanged);
+    }
+    if (oldWidget.smsController != widget.smsController) {
+      oldWidget.smsController.removeListener(_onTextChanged);
+      widget.smsController.addListener(_onTextChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.phoneController.removeListener(_onTextChanged);
+    widget.smsController.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    if (mounted) setState(() {});
+  }
+
+  String get _phoneText =>
+      widget.phoneController.text.replaceAll(RegExp(r'\s+'), '');
+
+  String get _smsText => widget.smsController.text.trim();
+
+  bool get _validPhone => RegExp(r'^\d{11}$').hasMatch(_phoneText);
+
+  bool get _validSms => RegExp(r'^\d{4,8}$').hasMatch(_smsText);
+
+  @override
   Widget build(BuildContext context) {
-    final canRequestCode = !loading && smsCountdown == 0;
+    final showPhoneError =
+        widget.phoneController.text.isNotEmpty && !_validPhone;
+    final showSmsError = widget.smsController.text.isNotEmpty && !_validSms;
+    final canRequestCode =
+        !widget.loading && widget.smsCountdown == 0 && _validPhone;
+    final canLogin = !widget.loading && _validPhone && _validSms;
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,28 +273,44 @@ class _LoginCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           TextField(
-            controller: phoneController,
+            controller: widget.phoneController,
             keyboardType: TextInputType.phone,
             autofillHints: const [AutofillHints.telephoneNumber],
-            decoration: _inputDecoration('手机号'),
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(11),
+            ],
+            decoration: _inputDecoration(
+              '手机号',
+              errorText: showPhoneError ? '请输入 11 位手机号' : null,
+            ),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: TextField(
-                  controller: smsController,
+                  controller: widget.smsController,
                   keyboardType: TextInputType.number,
                   autofillHints: const [AutofillHints.oneTimeCode],
-                  decoration: _inputDecoration('短信验证码'),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(8),
+                  ],
+                  decoration: _inputDecoration(
+                    '短信验证码',
+                    errorText: showSmsError ? '请输入短信验证码' : null,
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
               SizedBox(
                 height: 48,
                 child: OutlinedButton(
-                  onPressed: canRequestCode ? onRequestCode : null,
-                  child: Text(smsCountdown > 0 ? '${smsCountdown}s' : '获取'),
+                  onPressed: canRequestCode ? widget.onRequestCode : null,
+                  child: Text(
+                    widget.smsCountdown > 0 ? '${widget.smsCountdown}s' : '获取',
+                  ),
                 ),
               ),
             ],
@@ -251,8 +320,8 @@ class _LoginCard extends StatelessWidget {
             width: double.infinity,
             height: 48,
             child: FilledButton(
-              onPressed: loading ? null : onLogin,
-              child: loading
+              onPressed: canLogin ? widget.onLogin : null,
+              child: widget.loading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
@@ -266,9 +335,10 @@ class _LoginCard extends StatelessWidget {
     );
   }
 
-  InputDecoration _inputDecoration(String hint) {
+  InputDecoration _inputDecoration(String hint, {String? errorText}) {
     return InputDecoration(
       hintText: hint,
+      errorText: errorText,
       filled: true,
       fillColor: const Color(0xFFF5F6FA),
       border: OutlineInputBorder(
@@ -419,6 +489,11 @@ class _OfficialVehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final linkedId = officialCloudService.state.linkedLocalVehicleId(
+      vehicle.key,
+    );
+    final linked = linkedId != null && linkedId.isNotEmpty;
+    final linkLabel = linked ? '更换关联' : '关联本地 BLE';
     return AppCard(
       color: selected
           ? AppColors.primary.withValues(alpha: 0.08)
@@ -513,20 +588,56 @@ class _OfficialVehicleCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            OfficialVehicleLinkPage(vehicle: vehicle),
-                      ),
-                    ),
-                    icon: const Icon(Icons.link, size: 18),
-                    label: const Text('关联'),
+                  child: Builder(
+                    builder: (context) {
+                      void openLinkPage() => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              OfficialVehicleLinkPage(vehicle: vehicle),
+                        ),
+                      );
+                      if (linked) {
+                        return OutlinedButton.icon(
+                          onPressed: openLinkPage,
+                          icon: const Icon(Icons.link, size: 18),
+                          label: Text(linkLabel),
+                        );
+                      }
+                      return FilledButton.icon(
+                        onPressed: openLinkPage,
+                        icon: const Icon(Icons.link, size: 18),
+                        label: Text(linkLabel),
+                      );
+                    },
                   ),
                 ),
               ],
             ),
+            if (linked) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle_outline,
+                    size: 16,
+                    color: AppColors.success,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '已关联本地车辆 $linkedId',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

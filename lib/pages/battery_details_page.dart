@@ -273,6 +273,7 @@ class _BmsFieldRow extends StatelessWidget {
     final color = field.hasValue
         ? AppColors.textPrimary
         : AppColors.textTertiary;
+    final source = _sourceDisplay(field);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 11, 16, 11),
       child: Row(
@@ -290,11 +291,22 @@ class _BmsFieldRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  '来源：${field.source}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textTertiary,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: source.color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    source.label,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: source.color,
+                    ),
                   ),
                 ),
               ],
@@ -314,6 +326,23 @@ class _BmsFieldRow extends StatelessWidget {
       ),
     );
   }
+
+  _SourceChip _sourceDisplay(BmsField field) {
+    if (field.source == 'feb3') {
+      return const _SourceChip('BLE feb3 已确认', AppColors.info);
+    }
+    if (!field.hasValue) {
+      return const _SourceChip('官方字段预留', AppColors.warning);
+    }
+    return const _SourceChip('BMS 读取', AppColors.success);
+  }
+}
+
+class _SourceChip {
+  final String label;
+  final Color color;
+
+  const _SourceChip(this.label, this.color);
 }
 
 class _BatteryNotesCard extends StatelessWidget {
@@ -337,7 +366,7 @@ class _BatteryNotesCard extends StatelessWidget {
           ),
           SizedBox(height: 8),
           Text(
-            '字段结构已按官方 TLV/BMS/C39 页面预留。当前只展示 feb3 心跳中可确认的 SOC、电压和温度；循环次数、SOH、容量、版本等仍需确认读取来源后接入。',
+            '字段结构已按官方 TLV/BMS/C39 页面预留。当前标记为“BLE feb3 已确认”的 SOC、电压和温度来自心跳；“官方字段预留”的循环次数、SOH、容量、版本等仍需确认读取来源后接入。',
             style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
           ),
         ],
