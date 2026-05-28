@@ -7,6 +7,7 @@ class SlideToAction extends StatefulWidget {
   final IconData icon;
   final Color backgroundColor;
   final Color thumbColor;
+  final bool reverseSlide;
 
   const SlideToAction({
     super.key,
@@ -15,6 +16,7 @@ class SlideToAction extends StatefulWidget {
     this.icon = Icons.lock_outline,
     this.backgroundColor = const Color(0xFF424242),
     this.thumbColor = const Color(0x40FFFFFF),
+    this.reverseSlide = false,
   });
 
   @override
@@ -43,7 +45,8 @@ class _SlideToActionState extends State<SlideToAction>
   @override
   void didUpdateWidget(SlideToAction oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.label != widget.label) {
+    if (oldWidget.label != widget.label ||
+        oldWidget.reverseSlide != widget.reverseSlide) {
       _dragNotifier.value = 0;
     }
   }
@@ -68,17 +71,13 @@ class _SlideToActionState extends State<SlideToAction>
   void _resetThumb() {
     final startVal = _dragNotifier.value;
     _resetController.reset();
-    _resetController.addListener(_onResetTick);
-    _resetController.forward();
-    _resetController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _resetController.removeListener(_onResetTick);
-      }
-    });
+    _resetController.removeListener(_onResetTick);
     _onResetTick = () {
       final t = Curves.elasticOut.transform(_resetController.value);
       _dragNotifier.value = startVal * (1 - t);
     };
+    _resetController.addListener(_onResetTick);
+    _resetController.forward();
   }
 
   late VoidCallback _onResetTick = () {};
@@ -106,8 +105,9 @@ class _SlideToActionState extends State<SlideToAction>
                 boxShadow: glowOpacity > 0
                     ? [
                         BoxShadow(
-                          color: const Color(0xFF4CAF50)
-                              .withValues(alpha: glowOpacity * 0.4),
+                          color: const Color(
+                            0xFF4CAF50,
+                          ).withValues(alpha: glowOpacity * 0.4),
                           blurRadius: 16,
                           spreadRadius: 2,
                         ),
@@ -129,18 +129,30 @@ class _SlideToActionState extends State<SlideToAction>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.chevron_right,
-                              color: Colors.white.withValues(alpha: 0.5),
-                              size: 18),
-                          Icon(Icons.chevron_right,
-                              color: Colors.white.withValues(alpha: 0.5),
-                              size: 18),
+                          Icon(
+                            Icons.chevron_right,
+                            textDirection: widget.reverseSlide
+                                ? TextDirection.rtl
+                                : TextDirection.ltr,
+                            color: Colors.white.withValues(alpha: 0.5),
+                            size: 18,
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            textDirection: widget.reverseSlide
+                                ? TextDirection.rtl
+                                : TextDirection.ltr,
+                            color: Colors.white.withValues(alpha: 0.5),
+                            size: 18,
+                          ),
                           const SizedBox(width: 4),
-                          Text(widget.label,
-                              style: TextStyle(
-                                  color:
-                                      Colors.white.withValues(alpha: 0.6),
-                                  fontSize: 14)),
+                          Text(
+                            widget.label,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 14,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -151,7 +163,7 @@ class _SlideToActionState extends State<SlideToAction>
                 valueListenable: _dragNotifier,
                 builder: (context, pos, child) {
                   return Positioned(
-                    left: pos + 4,
+                    left: (widget.reverseSlide ? maxDrag - pos : pos) + 4,
                     top: 4,
                     child: child!,
                   );
@@ -160,9 +172,11 @@ class _SlideToActionState extends State<SlideToAction>
                   onHorizontalDragUpdate: enabled
                       ? (details) {
                           final prev = _dragNotifier.value;
-                          _dragNotifier.value =
-                              (_dragNotifier.value + details.delta.dx)
-                                  .clamp(0.0, maxDrag);
+                          final delta = widget.reverseSlide
+                              ? -details.delta.dx
+                              : details.delta.dx;
+                          _dragNotifier.value = (_dragNotifier.value + delta)
+                              .clamp(0.0, maxDrag);
                           if (prev < maxDrag * 0.3 &&
                               _dragNotifier.value >= maxDrag * 0.3) {
                             HapticFeedback.selectionClick();
@@ -187,8 +201,7 @@ class _SlideToActionState extends State<SlideToAction>
                           : Colors.white.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child:
-                        Icon(widget.icon, color: Colors.white, size: 24),
+                    child: Icon(widget.icon, color: Colors.white, size: 24),
                   ),
                 ),
               ),

@@ -6,7 +6,9 @@ import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
 import '../models/vehicle_profile.dart';
+import '../services/replica_feature_store.dart';
 import '../theme/app_colors.dart';
+import '../widgets/app_chrome.dart';
 import '../widgets/slide_to_action.dart';
 import 'garage_page.dart';
 import 'location_page.dart';
@@ -452,7 +454,21 @@ class _ControlArea extends StatefulWidget {
 }
 
 class _ControlAreaState extends State<_ControlArea> {
+  final _replicaStore = ReplicaFeatureStore();
+  QuickControlConfig _quickConfig = const QuickControlConfig();
   bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadQuickConfig();
+  }
+
+  Future<void> _loadQuickConfig() async {
+    final config = await _replicaStore.loadQuickControlConfig();
+    if (!mounted) return;
+    setState(() => _quickConfig = config);
+  }
 
   Future<void> _send(CommandCode cmd) async {
     if (_busy) return;
@@ -477,6 +493,33 @@ class _ControlAreaState extends State<_ControlArea> {
     }
   }
 
+  Future<void> _runQuickAction(_QuickControlSpec spec, bool enabled) async {
+    if (spec.command != null) {
+      if (!enabled) return;
+      await _send(spec.command!);
+      return;
+    }
+    HapticFeedback.mediumImpact();
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => spec.pageBuilder!(context)),
+    );
+  }
+
+  Future<void> _editQuickControls() async {
+    final next = await Navigator.push<QuickControlConfig>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => QuickControlEditPage(initialConfig: _quickConfig),
+      ),
+    );
+    if (next == null) return;
+    await _replicaStore.saveQuickControlConfig(next);
+    if (!mounted) return;
+    setState(() => _quickConfig = next);
+  }
+
   @override
   Widget build(BuildContext context) {
     final enabled = widget.connState == ble.ConnectionState.ready && !_busy;
@@ -486,65 +529,510 @@ class _ControlAreaState extends State<_ControlArea> {
         final bike = snapshot.data;
         final isLocked = bike?.isLocked ?? true;
         final isPowerOn = bike?.isPowerOn ?? false;
+        final firstQuick = _quickControlSpec(_quickConfig.firstActionId);
+        final secondQuick = _quickControlSpec(_quickConfig.secondActionId);
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             decoration: _cardDecoration,
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _LockToggleButton(
-                        isLocked: isLocked,
-                        enabled: enabled,
-                        loading: _busy,
-                        onTap: () => _send(
-                          isLocked ? CommandCode.unlock : CommandCode.lock,
+            child: SizedBox(
+              height: 232,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(
+                    width: 92,
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: _ControlTile(
+                            icon: firstQuick.icon,
+                            label: firstQuick.label,
+                            enabled: firstQuick.command == null || enabled,
+                            loading: _busy && firstQuick.command != null,
+                            onTap: () => _runQuickAction(firstQuick, enabled),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: _ControlTile(
+                                  icon: secondQuick.icon,
+                                  label: secondQuick.label,
+                                  enabled:
+                                      secondQuick.command == null || enabled,
+                                  loading: _busy && secondQuick.command != null,
+                                  onTap: () =>
+                                      _runQuickAction(secondQuick, enabled),
+                                ),
+                              ),
+                              Positioned(
+                                right: 4,
+                                bottom: 4,
+                                child: _QuickEditButton(
+                                  onTap: _editQuickControls,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    _ControlButton(
-                      icon: Icons.event_seat_outlined,
-                      onTap: enabled ? () => _send(CommandCode.openSeat) : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height: 86,
+                          child: Center(
+                            child: SlideToAction(
+                              label: isPowerOn ? '左滑关闭' : '右滑启动',
+                              icon: isPowerOn
+                                  ? Icons.power_off
+                                  : Icons.power_settings_new,
+                              reverseSlide: isPowerOn,
+                              backgroundColor: isPowerOn
+                                  ? const Color(0xFF5D4037)
+                                  : const Color(0xFF424242),
+                              onSlideComplete: enabled
+                                  ? () => _send(
+                                      isPowerOn
+                                          ? CommandCode.powerOff
+                                          : CommandCode.powerOn,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _ControlTile(
+                                  icon: Icons.volume_up_outlined,
+                                  label: '寻车',
+                                  enabled: enabled,
+                                  loading: _busy,
+                                  onTap: () => _send(CommandCode.find),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _ControlTile(
+                                  icon: isLocked
+                                      ? Icons.lock_open
+                                      : Icons.lock_outline,
+                                  label: isLocked ? '解锁' : '设防',
+                                  enabled: enabled,
+                                  loading: _busy,
+                                  onTap: () => _send(
+                                    isLocked
+                                        ? CommandCode.unlock
+                                        : CommandCode.lock,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SlideToAction(
-                  label: isPowerOn ? '右滑断电' : '右滑通电',
-                  icon: isPowerOn ? Icons.power_off : Icons.power_settings_new,
-                  backgroundColor: isPowerOn
-                      ? const Color(0xFF5D4037)
-                      : const Color(0xFF424242),
-                  onSlideComplete: enabled
-                      ? () => _send(
-                          isPowerOn
-                              ? CommandCode.powerOff
-                              : CommandCode.powerOn,
-                        )
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ActionButton(
-                        icon: Icons.volume_up_outlined,
-                        label: '寻车',
-                        onTap: enabled ? () => _send(CommandCode.find) : null,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _QuickControlSpec {
+  final String id;
+  final String label;
+  final IconData icon;
+  final CommandCode? command;
+  final WidgetBuilder? pageBuilder;
+
+  const _QuickControlSpec({
+    required this.id,
+    required this.label,
+    required this.icon,
+    this.command,
+    this.pageBuilder,
+  });
+}
+
+List<_QuickControlSpec> get _quickControlSpecs => [
+  _QuickControlSpec(
+    id: 'soundEffects',
+    label: '声音设置',
+    icon: Icons.graphic_eq,
+    pageBuilder: (_) => const QgjSoundEffectsPage(),
+  ),
+  _QuickControlSpec(
+    id: 'share',
+    label: '分享用车',
+    icon: Icons.ios_share,
+    pageBuilder: (_) => const ShareBikePage(),
+  ),
+  _QuickControlSpec(
+    id: 'fence',
+    label: '电子围栏',
+    icon: Icons.location_searching,
+    pageBuilder: (_) => const ElectricFencePage(),
+  ),
+  _QuickControlSpec(
+    id: 'nfc',
+    label: 'NFC钥匙',
+    icon: Icons.nfc,
+    pageBuilder: (_) => const NfcKeyPage(),
+  ),
+  _QuickControlSpec(
+    id: 'rideRecord',
+    label: '骑行记录',
+    icon: Icons.route_outlined,
+    pageBuilder: (_) => const RideRecordPage(),
+  ),
+  const _QuickControlSpec(
+    id: 'seat',
+    label: '坐垫锁',
+    icon: Icons.event_seat_outlined,
+    command: CommandCode.openSeat,
+  ),
+  const _QuickControlSpec(
+    id: 'find',
+    label: '寻车',
+    icon: Icons.volume_up_outlined,
+    command: CommandCode.find,
+  ),
+];
+
+_QuickControlSpec _quickControlSpec(String id) {
+  return _quickControlSpecs.firstWhere(
+    (spec) => spec.id == id,
+    orElse: () => _quickControlSpecs.first,
+  );
+}
+
+class QuickControlEditPage extends StatefulWidget {
+  final QuickControlConfig initialConfig;
+
+  const QuickControlEditPage({super.key, required this.initialConfig});
+
+  @override
+  State<QuickControlEditPage> createState() => _QuickControlEditPageState();
+}
+
+class _QuickControlEditPageState extends State<QuickControlEditPage> {
+  late String _firstActionId;
+  late String _secondActionId;
+
+  @override
+  void initState() {
+    super.initState();
+    _firstActionId = widget.initialConfig.firstActionId;
+    _secondActionId = widget.initialConfig.secondActionId;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            AppPageHeader(
+              title: '添加快捷键',
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(
+                    context,
+                    QuickControlConfig(
+                      firstActionId: _firstActionId,
+                      secondActionId: _secondActionId,
+                    ),
+                  ),
+                  child: const Text('保存'),
+                ),
+              ],
+            ),
+            Expanded(
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 24),
+                children: [
+                  _QuickEditSection(
+                    title: '快捷功能1',
+                    subtitle: '点击选择快捷功能',
+                    selectedId: _firstActionId,
+                    specs: _quickControlSpecs
+                        .where((spec) => spec.command == null)
+                        .toList(growable: false),
+                    onSelected: (id) => setState(() => _firstActionId = id),
+                  ),
+                  _QuickEditSection(
+                    title: '快捷功能2',
+                    subtitle: '建议放置电子坐垫锁',
+                    selectedId: _secondActionId,
+                    specs: _quickControlSpecs
+                        .where(
+                          (spec) =>
+                              spec.id == 'seat' ||
+                              spec.id == 'find' ||
+                              spec.command == null,
+                        )
+                        .toList(growable: false),
+                    onSelected: (id) => setState(() => _secondActionId = id),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(20, 8, 20, 0),
+                    child: Text(
+                      '* 车辆命令仅使用已验证的本地 BLE 控车命令；页面入口不会写入车辆。',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickEditSection extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String selectedId;
+  final List<_QuickControlSpec> specs;
+  final ValueChanged<String> onSelected;
+
+  const _QuickEditSection({
+    required this.title,
+    required this.subtitle,
+    required this.selectedId,
+    required this.specs,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '（$subtitle）',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: specs.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.55,
+            ),
+            itemBuilder: (context, index) {
+              final spec = specs[index];
+              final selected = spec.id == selectedId;
+              return _QuickEditOption(
+                spec: spec,
+                selected: selected,
+                onTap: () => onSelected(spec.id),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickEditOption extends StatelessWidget {
+  final _QuickControlSpec spec;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _QuickEditOption({
+    required this.spec,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? AppColors.primary : AppColors.textSecondary;
+    return Material(
+      color: selected ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: selected
+                  ? AppColors.primary.withValues(alpha: 0.45)
+                  : Colors.transparent,
+              width: 1.5,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(spec.icon, color: color, size: 24),
+                    const SizedBox(width: 10),
+                    Text(
+                      spec.label,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (selected)
+                const Positioned(
+                  right: 8,
+                  bottom: 8,
+                  child: Icon(
+                    Icons.check_circle,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ControlTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool enabled;
+  final bool loading;
+  final VoidCallback onTap;
+
+  const _ControlTile({
+    required this.icon,
+    required this.label,
+    required this.enabled,
+    required this.loading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = enabled ? AppColors.textSecondary : AppColors.textTertiary;
+    return Material(
+      color: enabled ? Colors.grey.shade100 : const Color(0xFFF2F2F2),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: enabled && !loading
+            ? () {
+                HapticFeedback.mediumImpact();
+                onTap();
+              }
+            : null,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (loading)
+                SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: color,
+                  ),
+                )
+              else
+                Icon(icon, color: color, size: 26),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1.1,
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickEditButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _QuickEditButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.primary,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: const SizedBox(
+          width: 28,
+          height: 28,
+          child: Icon(Icons.edit, color: Colors.white, size: 16),
+        ),
+      ),
     );
   }
 }
@@ -793,155 +1281,6 @@ class _HomeFeatureCard extends StatelessWidget {
                 const Icon(Icons.chevron_right, color: AppColors.textTertiary),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LockToggleButton extends StatelessWidget {
-  final bool isLocked;
-  final bool enabled;
-  final bool loading;
-  final VoidCallback onTap;
-
-  const _LockToggleButton({
-    required this.isLocked,
-    required this.enabled,
-    required this.loading,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = enabled || loading
-        ? (isLocked ? Colors.blue : Colors.orange)
-        : Colors.grey.shade400;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      height: 56,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: enabled
-              ? () {
-                  HapticFeedback.mediumImpact();
-                  onTap();
-                }
-              : null,
-          borderRadius: BorderRadius.circular(14),
-          child: Center(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: loading
-                  ? SizedBox(
-                      key: const ValueKey('loading'),
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: color,
-                      ),
-                    )
-                  : Row(
-                      key: ValueKey(isLocked),
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          child: Icon(
-                            isLocked ? Icons.lock_outline : Icons.lock_open,
-                            key: ValueKey(isLocked),
-                            color: color,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          isLocked ? '解锁' : '设防',
-                          style: TextStyle(
-                            color: color,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ControlButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  const _ControlButton({required this.icon, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = onTap != null ? Colors.grey.shade700 : Colors.grey.shade400;
-    return Material(
-      color: Colors.grey.shade100,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: () {
-          if (onTap != null) {
-            HapticFeedback.mediumImpact();
-            onTap!();
-          }
-        },
-        borderRadius: BorderRadius.circular(14),
-        child: SizedBox(
-          width: 56,
-          height: 56,
-          child: Icon(icon, color: color, size: 24),
-        ),
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-
-  const _ActionButton({required this.icon, required this.label, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = onTap != null ? Colors.grey.shade700 : Colors.grey.shade400;
-    return Material(
-      color: Colors.grey.shade100,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: () {
-          if (onTap != null) {
-            HapticFeedback.mediumImpact();
-            onTap!();
-          }
-        },
-        borderRadius: BorderRadius.circular(14),
-        child: SizedBox(
-          height: 56,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 22),
-              const SizedBox(width: 6),
-              Text(label, style: TextStyle(color: color, fontSize: 14)),
-            ],
           ),
         ),
       ),

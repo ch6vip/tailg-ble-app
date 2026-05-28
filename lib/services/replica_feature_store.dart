@@ -120,6 +120,35 @@ class ShareMemberRecord {
   }
 }
 
+class QuickControlConfig {
+  final String firstActionId;
+  final String secondActionId;
+
+  const QuickControlConfig({
+    this.firstActionId = 'soundEffects',
+    this.secondActionId = 'seat',
+  });
+
+  Map<String, dynamic> toJson() => {
+    'firstActionId': firstActionId,
+    'secondActionId': secondActionId,
+  };
+
+  factory QuickControlConfig.fromJson(Map<String, dynamic> json) {
+    return QuickControlConfig(
+      firstActionId: json['firstActionId'] as String? ?? 'soundEffects',
+      secondActionId: json['secondActionId'] as String? ?? 'seat',
+    );
+  }
+
+  QuickControlConfig copyWith({String? firstActionId, String? secondActionId}) {
+    return QuickControlConfig(
+      firstActionId: firstActionId ?? this.firstActionId,
+      secondActionId: secondActionId ?? this.secondActionId,
+    );
+  }
+}
+
 class ReplicaFeatureStore {
   static final ReplicaFeatureStore _instance = ReplicaFeatureStore._();
   factory ReplicaFeatureStore() => _instance;
@@ -128,6 +157,7 @@ class ReplicaFeatureStore {
   static const _prefNfcKeys = 'replica_nfc_keys';
   static const _prefFenceConfig = 'replica_fence_config';
   static const _prefShareMembers = 'replica_share_members';
+  static const _prefQuickControlConfig = 'replica_quick_control_config';
 
   Future<List<NfcKeyRecord>> loadNfcKeys() async {
     final raw = (await SharedPreferences.getInstance()).getString(_prefNfcKeys);
@@ -165,6 +195,21 @@ class ReplicaFeatureStore {
       _prefShareMembers,
       records.map((record) => record.toJson()),
     );
+  }
+
+  Future<QuickControlConfig> loadQuickControlConfig() async {
+    final raw = (await SharedPreferences.getInstance()).getString(
+      _prefQuickControlConfig,
+    );
+    if (raw == null || raw.isEmpty) return const QuickControlConfig();
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map) return const QuickControlConfig();
+    return QuickControlConfig.fromJson(Map<String, dynamic>.from(decoded));
+  }
+
+  Future<void> saveQuickControlConfig(QuickControlConfig config) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefQuickControlConfig, jsonEncode(config.toJson()));
   }
 
   String makeId() => DateTime.now().microsecondsSinceEpoch.toString();
