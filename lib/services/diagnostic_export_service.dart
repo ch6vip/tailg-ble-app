@@ -72,6 +72,20 @@ class DiagnosticExportService {
     if (state.error != null) {
       lines.add('Error: ${state.error}');
     }
+    final lastRequest = officialCloudService.lastRequest;
+    if (lastRequest != null) {
+      lines.add('Last request: ${lastRequest.method} ${lastRequest.path}');
+      lines.add(
+        'Last request status: ${lastRequest.statusCode?.toString() ?? 'none'}',
+      );
+      lines.add('Last request code: ${lastRequest.code ?? 'none'}');
+      lines.add(
+        'Last request elapsed: ${lastRequest.elapsed.inMilliseconds}ms',
+      );
+      lines.add('Last request success: ${lastRequest.success}');
+      lines.add('Last request message: ${lastRequest.message ?? 'none'}');
+      lines.add('Last request time: ${lastRequest.at.toIso8601String()}');
+    }
     return lines.join('\n');
   }
 

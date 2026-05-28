@@ -110,10 +110,7 @@ class ConnectionManager {
     _userDisconnected = false;
     _reconnecting = false;
     _reconnectAttempt = 0;
-    _notifySub?.cancel();
-    _gpsNotifySub?.cancel();
-    _connectionSub?.cancel();
-    _heartbeatTimer?.cancel();
+    await _clearRuntimeResources(disconnectDevice: false);
 
     _device = device;
     _lastKnownProtocol = ProtocolType.unknown;
@@ -140,6 +137,8 @@ class ConnectionManager {
       await _discoverAndSetup();
     } catch (e) {
       _log.ble('连接失败', detail: e.toString(), level: LogLevel.error);
+      await _clearRuntimeResources(disconnectDevice: true);
+      _resetCharacteristics();
       _setState(ConnectionState.disconnected);
       rethrow;
     }
@@ -190,7 +189,10 @@ class ConnectionManager {
       }
     } catch (e) {
       _log.ble('服务发现/设置失败', detail: e.toString(), level: LogLevel.error);
+      await _clearRuntimeResources(disconnectDevice: true);
+      _resetCharacteristics();
       _setState(ConnectionState.disconnected);
+      rethrow;
     }
   }
 
@@ -274,6 +276,7 @@ class ConnectionManager {
           detail: e.toString(),
           level: LogLevel.debug,
         );
+        await _recoverFailedConnect(device, e);
         await Future.delayed(BleTimings.initialConnectRetryDelay);
       }
     }
@@ -605,16 +608,7 @@ class ConnectionManager {
     _log.ble('设备断开连接', level: LogLevel.warning);
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
-    if (_cmdAckCompleter != null && !_cmdAckCompleter!.isCompleted) {
-      _cmdAckCompleter!.complete(false);
-    }
-    _cmdAckCompleter = null;
-    for (final completer in _qgjResponseCompleters.values) {
-      if (!completer.isCompleted) {
-        completer.completeError(StateError('QGJ disconnected'));
-      }
-    }
-    _qgjResponseCompleters.clear();
+    _completePendingOperations(StateError('QGJ disconnected'));
     _notifySub?.cancel();
     _notifySub = null;
     _gpsNotifySub?.cancel();
@@ -673,6 +667,7 @@ class ConnectionManager {
         return;
       } catch (e) {
         _log.ble('重连失败', detail: e.toString(), level: LogLevel.debug);
+        await _recoverFailedConnect(_device!, e);
       }
     }
 
@@ -697,6 +692,66 @@ class ConnectionManager {
     _fbb1Char = null;
     _fbb2Char = null;
     _lastPublishedBikeState = null;
+  }
+
+  Future<void> _clearRuntimeResources({required bool disconnectDevice}) async {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    await _notifySub?.cancel();
+    _notifySub = null;
+    await _gpsNotifySub?.cancel();
+    _gpsNotifySub = null;
+    await _connectionSub?.cancel();
+    _connectionSub = null;
+    _completePendingOperations(StateError('BLE runtime cleared'));
+    if (disconnectDevice) {
+      try {
+        await _device?.disconnect();
+      } catch (e) {
+        _log.ble('断开旧连接失败', detail: e.toString(), level: LogLevel.debug);
+      }
+    }
+  }
+
+  Future<void> _recoverFailedConnect(
+    BluetoothDevice device,
+    Object error,
+  ) async {
+    final text = error.toString();
+    final isAndroidGatt133 =
+        defaultTargetPlatform == TargetPlatform.android &&
+        text.contains('android-code: 133');
+    final isTimeout = text.toLowerCase().contains('timed out');
+    if (!isAndroidGatt133 && !isTimeout) return;
+    try {
+      await device.disconnect();
+    } catch (_) {
+      // Best-effort cleanup for Android GATT cache/state issues.
+    }
+    _resetCharacteristics();
+    _log.ble(
+      '连接失败后已清理 GATT 状态',
+      detail: isAndroidGatt133 ? 'android-code: 133' : 'timeout',
+      level: LogLevel.debug,
+    );
+    await Future.delayed(
+      isAndroidGatt133
+          ? BleTimings.androidGattErrorRecoveryDelay
+          : BleTimings.failedConnectRecoveryDelay,
+    );
+  }
+
+  void _completePendingOperations(Object error) {
+    if (_cmdAckCompleter != null && !_cmdAckCompleter!.isCompleted) {
+      _cmdAckCompleter!.complete(false);
+    }
+    _cmdAckCompleter = null;
+    for (final completer in _qgjResponseCompleters.values) {
+      if (!completer.isCompleted) {
+        completer.completeError(error);
+      }
+    }
+    _qgjResponseCompleters.clear();
   }
 
   void _reset() {

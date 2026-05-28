@@ -73,6 +73,8 @@ class BleTimings {
   static const connectTimeout = Duration(seconds: 10);
   static const reconnectConnectTimeout = Duration(seconds: 8);
   static const initialConnectRetryDelay = Duration(milliseconds: 500);
+  static const failedConnectRecoveryDelay = Duration(milliseconds: 600);
+  static const androidGattErrorRecoveryDelay = Duration(milliseconds: 1200);
   static const qgjRequestedMtu = 515;
   static const autoConnectScanTimeout = Duration(seconds: 8);
   static const manualScanTimeout = Duration(seconds: 30);

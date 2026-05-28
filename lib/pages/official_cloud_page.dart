@@ -458,6 +458,7 @@ class _VehicleListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    _pruneStaleLocalLinks();
     if (state.loading && state.vehicles.isEmpty) {
       return const AppCard(child: Center(child: CircularProgressIndicator()));
     }
@@ -479,6 +480,11 @@ class _VehicleListCard extends StatelessWidget {
       }).toList(),
     );
   }
+
+  void _pruneStaleLocalLinks() {
+    final validIds = vehicleStore.vehicles.map((vehicle) => vehicle.id).toSet();
+    unawaited(officialCloudService.pruneLocalVehicleLinks(validIds));
+  }
 }
 
 class _OfficialVehicleCard extends StatelessWidget {
@@ -489,10 +495,15 @@ class _OfficialVehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localVehicles = vehicleStore.vehicles;
     final linkedId = officialCloudService.state.linkedLocalVehicleId(
       vehicle.key,
     );
-    final linked = linkedId != null && linkedId.isNotEmpty;
+    final linkedVehicle = linkedId == null
+        ? null
+        : _findLocalVehicle(localVehicles, linkedId);
+    final linked = linkedVehicle != null;
+    final staleLinked = linkedId != null && linkedId.isNotEmpty && !linked;
     final linkLabel = linked ? '更换关联' : '关联本地 BLE';
     return AppCard(
       color: selected
@@ -626,7 +637,7 @@ class _OfficialVehicleCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      '已关联本地车辆 $linkedId',
+                      '已关联 ${linkedVehicle.displayName}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -637,8 +648,58 @@ class _OfficialVehicleCard extends StatelessWidget {
                   ),
                 ],
               ),
+            ] else if (staleLinked) ...[
+              const SizedBox(height: 8),
+              _StaleLinkNotice(vehicle: vehicle),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+VehicleProfile? _findLocalVehicle(List<VehicleProfile> vehicles, String id) {
+  for (final vehicle in vehicles) {
+    if (vehicle.id == id) return vehicle;
+  }
+  return null;
+}
+
+class _StaleLinkNotice extends StatelessWidget {
+  final OfficialVehicle vehicle;
+
+  const _StaleLinkNotice({required this.vehicle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.warning.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () async {
+          await officialCloudService.unlinkLocalVehicle(vehicle.key);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('已清理失效关联，请重新关联本地 BLE 车辆')),
+            );
+          }
+        },
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            children: [
+              Icon(Icons.link_off, size: 16, color: AppColors.warning),
+              SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '关联的本地车辆已不存在，点击清理',
+                  style: TextStyle(fontSize: 12, color: AppColors.warning),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

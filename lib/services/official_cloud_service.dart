@@ -138,6 +138,7 @@ class OfficialCloudService {
   final _stateController = StreamController<OfficialCloudState>.broadcast();
   OfficialCloudState _state = OfficialCloudState.initial();
   bool _initialized = false;
+  OfficialCloudRequestSummary? _lastRequest;
 
   OfficialCloudService._()
     : _secureStorage = const FlutterSecureStorage(
@@ -146,6 +147,7 @@ class OfficialCloudService {
 
   Stream<OfficialCloudState> get stateStream => _stateController.stream;
   OfficialCloudState get state => _state;
+  OfficialCloudRequestSummary? get lastRequest => _lastRequest;
 
   Future<void> init() async {
     if (_initialized) return;
@@ -173,8 +175,8 @@ class OfficialCloudService {
 
   Future<void> requestSmsCode(String phone) async {
     final normalized = phone.trim();
-    if (normalized.isEmpty) {
-      throw const OfficialCloudApiException('请输入手机号');
+    if (!_validPhone(normalized)) {
+      throw const OfficialCloudApiException('请输入 11 位手机号');
     }
     _setLoading(true);
     try {
@@ -192,8 +194,11 @@ class OfficialCloudService {
   Future<void> login(String phone, String smsCode) async {
     final normalizedPhone = phone.trim();
     final normalizedSms = smsCode.trim();
-    if (normalizedPhone.isEmpty || normalizedSms.isEmpty) {
-      throw const OfficialCloudApiException('请输入手机号和验证码');
+    if (!_validPhone(normalizedPhone)) {
+      throw const OfficialCloudApiException('请输入 11 位手机号');
+    }
+    if (!_validSmsCode(normalizedSms)) {
+      throw const OfficialCloudApiException('请输入短信验证码');
     }
     _setLoading(true);
     try {
@@ -331,6 +336,16 @@ class OfficialCloudService {
     await _saveLinks(links);
   }
 
+  Future<void> pruneLocalVehicleLinks(Set<String> validLocalVehicleIds) async {
+    final links = Map<String, String>.from(_state.localVehicleLinks);
+    links.removeWhere((_, localVehicleId) {
+      return !validLocalVehicleIds.contains(localVehicleId);
+    });
+    if (links.length == _state.localVehicleLinks.length) return;
+    await _saveLinks(links);
+    _log.operation('官方车辆失效关联已清理');
+  }
+
   Future<OfficialVehicleSelfCheck> selfCheck() async {
     final vehicle = _state.selectedVehicle;
     if (_state.token.isEmpty || vehicle == null) {
@@ -391,12 +406,24 @@ class OfficialCloudService {
       _ensureSuccess(response.body, fallback: '${command.label}失败');
       final message = response.body['msg']?.toString();
       _log.operation('官方云端指令已返回: ${command.label}');
-      await refreshVehicles(silent: true);
+      _refreshVehiclesAfterCommand(command);
       return message == null || message.isEmpty ? 'success' : message;
     } catch (e) {
       await _handleAuthFailureIfNeeded(e);
       rethrow;
     }
+  }
+
+  void _refreshVehiclesAfterCommand(CommandCode command) {
+    unawaited(
+      refreshVehicles(silent: true).catchError((Object e) {
+        _log.operation(
+          '官方云端指令后刷新状态失败: ${command.label}',
+          detail: _errorMessage(e),
+          level: LogLevel.warning,
+        );
+      }),
+    );
   }
 
   Future<(String, String)> _loadSecureCredentials(
@@ -456,6 +483,7 @@ class OfficialCloudService {
   }) async {
     final client = HttpClient();
     client.connectionTimeout = const Duration(seconds: 15);
+    final startedAt = DateTime.now();
     try {
       final uri = Uri.parse('$_apiBase$path');
       final request = await client.openUrl(method, uri);
@@ -480,6 +508,13 @@ class OfficialCloudService {
       );
       final text = await response.transform(utf8.decoder).join();
       final decoded = _decodeBody(text);
+      _recordRequest(
+        path: path,
+        method: method,
+        startedAt: startedAt,
+        statusCode: response.statusCode,
+        body: decoded,
+      );
       final headers = <String, String>{};
       response.headers.forEach((name, values) {
         if (values.isNotEmpty) headers[name.toLowerCase()] = values.first;
@@ -496,12 +531,94 @@ class OfficialCloudService {
         body: decoded,
       );
     } on TimeoutException {
+      _recordRequestFailure(
+        path: path,
+        method: method,
+        startedAt: startedAt,
+        message: '请求超时，请检查网络',
+      );
       throw const OfficialCloudApiException('请求超时，请检查网络');
     } on SocketException {
+      _recordRequestFailure(
+        path: path,
+        method: method,
+        startedAt: startedAt,
+        message: '网络不可用，请检查连接',
+      );
       throw const OfficialCloudApiException('网络不可用，请检查连接');
+    } on OfficialCloudApiException catch (e) {
+      _recordRequestFailure(
+        path: path,
+        method: method,
+        startedAt: startedAt,
+        message: e.message,
+        statusCode: e.statusCode,
+      );
+      rethrow;
     } finally {
       client.close(force: true);
     }
+  }
+
+  void _recordRequest({
+    required String path,
+    required String method,
+    required DateTime startedAt,
+    required int statusCode,
+    required Map<String, dynamic> body,
+  }) {
+    final elapsed = DateTime.now().difference(startedAt);
+    final code = body['code']?.toString();
+    final msg = _shortMessage(body['msg']?.toString());
+    _lastRequest = OfficialCloudRequestSummary(
+      path: path,
+      method: method,
+      statusCode: statusCode,
+      code: code,
+      message: msg,
+      elapsed: elapsed,
+      success: statusCode >= 200 && statusCode < 300,
+      at: DateTime.now(),
+    );
+    _log.operation(
+      '官方云接口返回',
+      detail:
+          '$method $path status=$statusCode code=${code ?? 'none'} elapsed=${elapsed.inMilliseconds}ms msg=${msg ?? 'none'}',
+      level: LogLevel.debug,
+    );
+  }
+
+  void _recordRequestFailure({
+    required String path,
+    required String method,
+    required DateTime startedAt,
+    required String message,
+    int? statusCode,
+  }) {
+    final elapsed = DateTime.now().difference(startedAt);
+    _lastRequest = OfficialCloudRequestSummary(
+      path: path,
+      method: method,
+      statusCode: statusCode,
+      code: null,
+      message: _shortMessage(message),
+      elapsed: elapsed,
+      success: false,
+      at: DateTime.now(),
+    );
+    _log.operation(
+      '官方云接口失败',
+      detail:
+          '$method $path status=${statusCode?.toString() ?? 'none'} elapsed=${elapsed.inMilliseconds}ms msg=${_shortMessage(message)}',
+      level: LogLevel.warning,
+    );
+  }
+
+  String? _shortMessage(String? message) {
+    if (message == null || message.trim().isEmpty) return null;
+    final normalized = message.trim();
+    if (normalized.length <= 80) return normalized;
+    return normalized.substring(0, 80);
   }
 
   Map<String, dynamic> _decodeBody(String text) {
@@ -573,7 +690,33 @@ class OfficialCloudService {
     return e.toString();
   }
 
+  bool _validPhone(String value) => RegExp(r'^\d{11}$').hasMatch(value);
+
+  bool _validSmsCode(String value) => RegExp(r'^\d{4,8}$').hasMatch(value);
+
   void _emit() {
     _stateController.add(_state);
   }
+}
+
+class OfficialCloudRequestSummary {
+  final String path;
+  final String method;
+  final int? statusCode;
+  final String? code;
+  final String? message;
+  final Duration elapsed;
+  final bool success;
+  final DateTime at;
+
+  const OfficialCloudRequestSummary({
+    required this.path,
+    required this.method,
+    required this.statusCode,
+    required this.code,
+    required this.message,
+    required this.elapsed,
+    required this.success,
+    required this.at,
+  });
 }
