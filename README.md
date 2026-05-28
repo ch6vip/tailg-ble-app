@@ -53,7 +53,11 @@ flutter build apk --release
 
 ## 文档
 
-- [功能清单](FEATURES.md)
-- [第一批功能真机验证清单](docs/first_batch_verification.md)
-- [官方 3.5.6 可安全复刻任务计划](docs/official_replicable_tasks.md)
-- [Android 构建说明](docs/android_build_notes.md)
+完整导航见 [项目文档索引](docs/README.md)。
+
+| 文档 | 用途 |
+|------|------|
+| [功能清单](FEATURES.md) | 已实现能力、官方 3.5.6 差距、工程结构 |
+| [官方 3.5.6 可安全复刻任务计划](docs/official_replicable_tasks.md) | 复刻任务、安全边界、QGJ 命令证据 |
+| [第一批功能真机验证清单](docs/first_batch_verification.md) | 暂不执行但后续必须验证的真机测试项 |
+| [Android 构建说明](docs/android_build_notes.md) | Android 构建 warning 和处理建议 |
