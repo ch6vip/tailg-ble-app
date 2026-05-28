@@ -40,5 +40,18 @@ void main() {
       store.defaultVehicle?.lastLocation?.coordinateText,
       '31.230400, 121.473700',
     );
+
+    await store.updateQgjCredentials(
+      id: vehicle.id,
+      password: 123456,
+      userId: 789,
+    );
+
+    expect(store.defaultVehicle?.qgjLoginPassword, 123456);
+    expect(store.defaultVehicle?.qgjUserId, 789);
+
+    await store.updateQgjCredentials(id: vehicle.id, clear: true);
+
+    expect(store.defaultVehicle?.hasQgjCredentials, isFalse);
   });
 }

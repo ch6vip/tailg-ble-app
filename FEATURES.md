@@ -15,6 +15,7 @@
 ## 车辆档案与车库
 
 - **本地车辆档案**：保存车辆名称、蓝牙 ID、协议类型、创建/更新时间、最后连接时间
+- **QGJ 登录参数**：每辆车可本地保存 ECU 登录密码和用户 UID，默认使用 0/0，便于对齐官方账号 UID 参与登录的车辆
 - **扫描绑定车辆**：扫描页连接成功后自动加入车库，并设为默认车辆
 - **我的车库**：支持查看车辆列表、编辑名称、切换默认车辆、删除车辆
 - **默认车辆联动**：自动连接、感应解锁和控制页车辆名称优先使用默认车辆
@@ -113,6 +114,7 @@
 - **声音设置**：官方 `QgjSoundSetFragment` 使用 `ecuSoundAdjustGet/Set`，命令实体为 `ECU_SOUND_ADJUST_GET=9248`、`ECU_SOUND_ADJUST_SET=9249`，单项音量用 `OpSoundAdjust(index, volume)`，开关语义为 0/100；当前原自定义声音帧未确认，已禁写。
 - **震动灵敏度**：官方 `EVBikeQgjSettingFragment` 使用 `ecuVibrateSensitivityGet/Set`，命令实体为 `8288/8289`，四档值为 `0/15/50/85`；当前原 1-5 档帧未确认，已禁写。
 - **连接初始化**：官方 QGJ 管理器连接后 `requestMtu(515)`，订阅 `feb2` indications；若存在 `fe01` 则订阅 `fe03` notifications；登录后 `EcuStatus` 每 1000ms 读取 `feb3`。当前已按此节奏对齐。
+- **ECU 登录参数**：官方 `QgjSearchBleFragment.sendDevicePwd(str)` 调用 `ecuLogin(str, PrefsUtil.getUid())`，BLE 层 `OpEcuLogin` 编码为 4 字节 password + 4 字节 userID；当前已支持在车库为单车配置这两个本地参数。
 
 ### 建议实现优先级
 

@@ -4,8 +4,8 @@ import 'constants.dart';
 Uint8List buildQgjLoginFrame({int password = 0, int userId = 0}) {
   final payload = Uint8List(8);
   final view = ByteData.sublistView(payload);
-  view.setUint32(0, password, Endian.big);
-  view.setUint32(4, userId, Endian.big);
+  view.setUint32(0, password & 0xFFFFFFFF, Endian.big);
+  view.setUint32(4, userId & 0xFFFFFFFF, Endian.big);
 
   final length = payload.length + 2;
   final frame = Uint8List(4 + 2 + payload.length);

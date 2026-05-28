@@ -120,6 +120,30 @@ class VehicleStore {
     await _save();
   }
 
+  Future<void> updateQgjCredentials({
+    required String id,
+    int? password,
+    int? userId,
+    bool clear = false,
+  }) async {
+    await init();
+    final index = _vehicles.indexWhere((vehicle) => vehicle.id == id);
+    if (index < 0) return;
+    final current = _vehicles[index];
+    _vehicles[index] = VehicleProfile(
+      id: current.id,
+      name: current.name,
+      protocol: current.protocol,
+      createdAt: current.createdAt,
+      updatedAt: DateTime.now(),
+      lastConnectedAt: current.lastConnectedAt,
+      lastLocation: current.lastLocation,
+      qgjLoginPassword: clear ? null : password,
+      qgjUserId: clear ? null : userId,
+    );
+    await _save();
+  }
+
   Future<void> setDefault(String id) async {
     await init();
     if (!_vehicles.any((vehicle) => vehicle.id == id)) return;

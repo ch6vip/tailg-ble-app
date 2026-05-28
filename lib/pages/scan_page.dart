@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../ble/constants.dart';
 import '../main.dart';
+import '../models/vehicle_profile.dart';
 import '../services/permission_service.dart';
 import '../theme/app_colors.dart';
 
@@ -104,6 +105,14 @@ class _ScanPageState extends State<ScanPage>
       ),
     );
     try {
+      VehicleProfile? existingProfile;
+      for (final vehicle in vehicleStore.vehicles) {
+        if (vehicle.id == device.remoteId.toString()) {
+          existingProfile = vehicle;
+          break;
+        }
+      }
+      applyVehicleBleCredentials(existingProfile);
       await connectionManager.connect(device);
       final profile = await vehicleStore.upsert(
         id: device.remoteId.toString(),
@@ -112,6 +121,7 @@ class _ScanPageState extends State<ScanPage>
         makeDefault: true,
         lastConnectedAt: DateTime.now(),
       );
+      applyVehicleBleCredentials(profile);
       unawaited(locationService.recordVehicleLocation(profile.id));
       if (mounted) {
         ScaffoldMessenger.of(

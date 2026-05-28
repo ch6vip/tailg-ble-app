@@ -58,6 +58,8 @@ class VehicleProfile {
   final DateTime updatedAt;
   final DateTime? lastConnectedAt;
   final VehicleLocation? lastLocation;
+  final int? qgjLoginPassword;
+  final int? qgjUserId;
 
   const VehicleProfile({
     required this.id,
@@ -67,9 +69,12 @@ class VehicleProfile {
     required this.updatedAt,
     this.lastConnectedAt,
     this.lastLocation,
+    this.qgjLoginPassword,
+    this.qgjUserId,
   });
 
   String get displayName => name.trim().isEmpty ? '未命名车辆' : name.trim();
+  bool get hasQgjCredentials => qgjLoginPassword != null || qgjUserId != null;
 
   VehicleProfile copyWith({
     String? name,
@@ -77,6 +82,9 @@ class VehicleProfile {
     DateTime? updatedAt,
     DateTime? lastConnectedAt,
     VehicleLocation? lastLocation,
+    int? qgjLoginPassword,
+    int? qgjUserId,
+    bool clearQgjCredentials = false,
   }) {
     return VehicleProfile(
       id: id,
@@ -86,6 +94,10 @@ class VehicleProfile {
       updatedAt: updatedAt ?? this.updatedAt,
       lastConnectedAt: lastConnectedAt ?? this.lastConnectedAt,
       lastLocation: lastLocation ?? this.lastLocation,
+      qgjLoginPassword: clearQgjCredentials
+          ? null
+          : qgjLoginPassword ?? this.qgjLoginPassword,
+      qgjUserId: clearQgjCredentials ? null : qgjUserId ?? this.qgjUserId,
     );
   }
 
@@ -97,6 +109,8 @@ class VehicleProfile {
     'updatedAt': updatedAt.toIso8601String(),
     'lastConnectedAt': lastConnectedAt?.toIso8601String(),
     'lastLocation': lastLocation?.toJson(),
+    'qgjLoginPassword': qgjLoginPassword,
+    'qgjUserId': qgjUserId,
   };
 
   factory VehicleProfile.fromJson(Map<String, dynamic> json) {
@@ -114,6 +128,8 @@ class VehicleProfile {
       lastLocation: locationJson is Map
           ? VehicleLocation.fromJson(Map<String, dynamic>.from(locationJson))
           : null,
+      qgjLoginPassword: (json['qgjLoginPassword'] as num?)?.toInt(),
+      qgjUserId: (json['qgjUserId'] as num?)?.toInt(),
     );
   }
 }

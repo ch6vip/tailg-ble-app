@@ -25,6 +25,8 @@ class ConnectionManager {
   ConnectionState _state = ConnectionState.disconnected;
   String? _token;
   ModelType _model = ModelType.KKS;
+  int _qgjLoginPassword = 0;
+  int _qgjUserId = 0;
   BikeState? _latestBikeState;
   BikeState? _lastPublishedBikeState;
 
@@ -66,12 +68,19 @@ class ConnectionManager {
   String? get token => _token;
   BluetoothDevice? get device => _device;
   BikeState? get latestBikeState => _latestBikeState;
+  int get qgjLoginPassword => _qgjLoginPassword;
+  int get qgjUserId => _qgjUserId;
   BluetoothCharacteristic? get fcc1Char => _fcc1Char;
   BluetoothCharacteristic? get fcc2Char => _fcc2Char;
   BluetoothCharacteristic? get fbb1Char => _fbb1Char;
   BluetoothCharacteristic? get fbb2Char => _fbb2Char;
 
   void setModel(ModelType model) => _model = model;
+
+  void setQgjCredentials({int? password, int? userId}) {
+    _qgjLoginPassword = password ?? 0;
+    _qgjUserId = userId ?? 0;
+  }
 
   Future<T> runGattOperation<T>(Future<T> Function() operation) {
     final next = _gattQueue.then((_) => operation());
@@ -226,7 +235,10 @@ class ConnectionManager {
     }
 
     if (_feb1Char != null) {
-      final loginFrame = buildQgjLoginFrame();
+      final loginFrame = buildQgjLoginFrame(
+        password: _qgjLoginPassword,
+        userId: _qgjUserId,
+      );
       await runGattOperation(
         () => _feb1Char!.write(loginFrame.toList(), withoutResponse: false),
       );

@@ -47,6 +47,7 @@ class DiagnosticExportService {
       'Default ID: ${vehicle.id}',
       'Name: ${vehicle.displayName}',
       'Protocol: ${vehicle.protocol.label}',
+      'QGJ credentials: ${vehicle.hasQgjCredentials ? 'custom' : 'default'}',
       'Last connected: ${vehicle.lastConnectedAt?.toIso8601String() ?? 'none'}',
     ];
     if (location != null) {
@@ -73,6 +74,7 @@ class DiagnosticExportService {
       'Device: ${device?.platformName ?? 'none'}',
       'Remote ID: ${device?.remoteId.toString() ?? 'none'}',
       'Token: ${connectionManager.token == null ? 'none' : 'present'}',
+      'QGJ login: password=${connectionManager.qgjLoginPassword == 0 ? 'default' : 'custom'}, userId=${connectionManager.qgjUserId == 0 ? 'default' : 'custom'}',
     ];
 
     if (device != null) {

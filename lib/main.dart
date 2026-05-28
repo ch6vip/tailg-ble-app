@@ -19,6 +19,13 @@ final locationService = LocationService();
 final vehicleStore = VehicleStore();
 final homeTabIndex = ValueNotifier<int>(1);
 
+void applyVehicleBleCredentials(VehicleProfile? vehicle) {
+  connectionManager.setQgjCredentials(
+    password: vehicle?.qgjLoginPassword,
+    userId: vehicle?.qgjUserId,
+  );
+}
+
 VehicleProtocol vehicleProtocolFromBle(ble.ProtocolType protocol) {
   return switch (protocol) {
     ble.ProtocolType.standard => VehicleProtocol.standard,
@@ -37,6 +44,7 @@ void main() async {
   await vehicleStore.init();
   final defaultVehicle = vehicleStore.defaultVehicle;
   if (defaultVehicle != null) {
+    applyVehicleBleCredentials(defaultVehicle);
     proximityService.setTargetDevice(defaultVehicle.id);
   }
   await proximityService.init(connectionManager);

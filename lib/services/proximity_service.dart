@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../ble/connection_manager.dart';
 import '../ble/constants.dart';
 import 'log_service.dart';
+import 'vehicle_store.dart';
 
 class ProximityService {
   static final ProximityService _instance = ProximityService._();
@@ -120,6 +121,11 @@ class ProximityService {
   Future<void> _connectAndUnlock(BluetoothDevice device) async {
     if (_connectionManager == null) return;
     try {
+      final vehicle = VehicleStore().defaultVehicle;
+      _connectionManager!.setQgjCredentials(
+        password: vehicle?.qgjLoginPassword,
+        userId: vehicle?.qgjUserId,
+      );
       await _connectionManager!.connect(device);
       await Future.delayed(BleTimings.serviceSetupDelay);
       if (_connectionManager!.state == ConnectionState.ready) {

@@ -121,6 +121,11 @@ class AutoConnectService {
 
   Future<void> _doConnect(BluetoothDevice device) async {
     try {
+      final vehicle = VehicleStore().defaultVehicle;
+      _connectionManager!.setQgjCredentials(
+        password: vehicle?.qgjLoginPassword,
+        userId: vehicle?.qgjUserId,
+      );
       await _connectionManager!.connect(device);
       _log.operation('自动连接: 成功');
     } catch (e) {

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/ble/constants.dart';
+import 'package:tailg_ble_app/ble/qgj_protocol.dart';
 import 'package:tailg_ble_app/models/battery_snapshot.dart';
 
 void main() {
@@ -88,5 +89,26 @@ void main() {
 
     expect(frame, [0x00, 0x07, 0x00, 0x02, 0xA0, 0xFB, 0x05]);
     expect(parseQgjRidingMode(frame!), RidingMode.sport);
+  });
+
+  test('QGJ login frame carries password and user id', () {
+    final frame = buildQgjLoginFrame(password: 0x01020304, userId: 0x05060708);
+
+    expect(frame, [
+      0xA7,
+      0x00,
+      0x00,
+      0x0A,
+      0x10,
+      0x01,
+      0x01,
+      0x02,
+      0x03,
+      0x04,
+      0x05,
+      0x06,
+      0x07,
+      0x08,
+    ]);
   });
 }

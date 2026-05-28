@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../main.dart';
 import '../models/vehicle_profile.dart';
@@ -204,6 +205,10 @@ class _VehicleCard extends StatelessWidget {
                 onSelected: (value) => _handleAction(context, value),
                 itemBuilder: (context) => [
                   const PopupMenuItem(value: 'rename', child: Text('编辑名称')),
+                  const PopupMenuItem(
+                    value: 'qgj_credentials',
+                    child: Text('QGJ登录参数'),
+                  ),
                   if (!isDefault)
                     const PopupMenuItem(value: 'default', child: Text('设为默认')),
                   const PopupMenuItem(value: 'delete', child: Text('删除车辆')),
@@ -216,6 +221,14 @@ class _VehicleCard extends StatelessWidget {
             children: [
               _InfoPill(icon: Icons.swap_horiz, label: vehicle.protocol.label),
               const SizedBox(width: 8),
+              if (vehicle.protocol == VehicleProtocol.qgj ||
+                  vehicle.hasQgjCredentials) ...[
+                _InfoPill(
+                  icon: Icons.key_outlined,
+                  label: vehicle.hasQgjCredentials ? '自定义登录' : '默认登录',
+                ),
+                const SizedBox(width: 8),
+              ],
               Expanded(
                 child: _InfoPill(
                   icon: Icons.schedule,
@@ -234,12 +247,110 @@ class _VehicleCard extends StatelessWidget {
   Future<void> _handleAction(BuildContext context, String value) async {
     if (value == 'rename') {
       await _showRenameDialog(context);
+    } else if (value == 'qgj_credentials') {
+      await _showQgjCredentialsDialog(context);
     } else if (value == 'default') {
       await VehicleStore().setDefault(vehicle.id);
       proximityService.setTargetDevice(vehicle.id);
+      applyVehicleBleCredentials(VehicleStore().defaultVehicle);
     } else if (value == 'delete') {
       await _confirmDelete(context);
     }
+  }
+
+  Future<void> _showQgjCredentialsDialog(BuildContext context) async {
+    final passwordController = TextEditingController(
+      text: vehicle.qgjLoginPassword?.toString() ?? '',
+    );
+    final userIdController = TextEditingController(
+      text: vehicle.qgjUserId?.toString() ?? '',
+    );
+
+    final result = await showDialog<_QgjCredentialEdit>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('QGJ登录参数'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '官方 ECU 登录使用车辆密码和账号 UID。留空则使用默认 0。',
+              style: TextStyle(fontSize: 13, color: _textTertiary),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: passwordController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                labelText: '车辆密码',
+                hintText: '默认 0',
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: userIdController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                labelText: '用户 UID',
+                hintText: '默认 0',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(context, const _QgjCredentialEdit.clear()),
+            child: const Text('清空'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final password = _parseUint32(passwordController.text);
+              final userId = _parseUint32(userIdController.text);
+              if (password == null &&
+                  passwordController.text.trim().isNotEmpty) {
+                return;
+              }
+              if (userId == null && userIdController.text.trim().isNotEmpty) {
+                return;
+              }
+              Navigator.pop(
+                context,
+                _QgjCredentialEdit(password: password, userId: userId),
+              );
+            },
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    passwordController.dispose();
+    userIdController.dispose();
+    if (result == null) return;
+
+    await VehicleStore().updateQgjCredentials(
+      id: vehicle.id,
+      password: result.password,
+      userId: result.userId,
+      clear: result.clear,
+    );
+    if (VehicleStore().defaultVehicle?.id == vehicle.id) {
+      applyVehicleBleCredentials(VehicleStore().defaultVehicle);
+    }
+  }
+
+  int? _parseUint32(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return null;
+    final parsed = int.tryParse(trimmed);
+    if (parsed == null || parsed < 0 || parsed > 0xFFFFFFFF) return null;
+    return parsed;
   }
 
   Future<void> _showRenameDialog(BuildContext context) async {
@@ -295,6 +406,7 @@ class _VehicleCard extends StatelessWidget {
       final defaultVehicle = VehicleStore().defaultVehicle;
       if (defaultVehicle != null) {
         proximityService.setTargetDevice(defaultVehicle.id);
+        applyVehicleBleCredentials(defaultVehicle);
       }
     }
   }
@@ -303,6 +415,18 @@ class _VehicleCard extends StatelessWidget {
     String two(int number) => number.toString().padLeft(2, '0');
     return '${value.month}/${value.day} ${two(value.hour)}:${two(value.minute)}';
   }
+}
+
+class _QgjCredentialEdit {
+  final int? password;
+  final int? userId;
+  final bool clear;
+
+  const _QgjCredentialEdit({this.password, this.userId}) : clear = false;
+  const _QgjCredentialEdit.clear()
+    : password = null,
+      userId = null,
+      clear = true;
 }
 
 class _InfoPill extends StatelessWidget {
