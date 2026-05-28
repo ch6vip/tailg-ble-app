@@ -10,6 +10,7 @@ import '../theme/app_colors.dart';
 import '../widgets/slide_to_action.dart';
 import 'garage_page.dart';
 import 'location_page.dart';
+import 'official_replica_pages.dart';
 import 'vehicle_settings_page.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
@@ -61,11 +62,17 @@ class _ControlPageState extends State<ControlPage>
                   const SizedBox(height: 20),
                   _ControlArea(connState: connState),
                   const SizedBox(height: 20),
+                  const _LocationCard(),
+                  const SizedBox(height: 20),
                   const _FunctionSettingsCard(),
                   const SizedBox(height: 20),
-                  _RidingModeSelector(connState: connState),
+                  const _SoundEffectsBanner(),
                   const SizedBox(height: 20),
-                  const _LocationCard(),
+                  const _NfcKeyCard(),
+                  const SizedBox(height: 20),
+                  const _RideRecordCard(),
+                  const SizedBox(height: 20),
+                  _RidingModeSelector(connState: connState),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -583,7 +590,12 @@ class _FunctionSettingsCard extends StatelessWidget {
                   child: _FunctionShortcut(
                     icon: Icons.location_searching,
                     label: '电子围栏',
-                    onTap: () => _showUnavailable(context, '电子围栏'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ElectricFencePage(),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -591,22 +603,16 @@ class _FunctionSettingsCard extends StatelessWidget {
                   child: _FunctionShortcut(
                     icon: Icons.ios_share,
                     label: '分享用车',
-                    onTap: () => _showUnavailable(context, '分享用车'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ShareBikePage()),
+                    ),
                   ),
                 ),
               ],
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showUnavailable(BuildContext context, String title) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$title功能待接入'),
-        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -652,6 +658,141 @@ class _FunctionShortcut extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SoundEffectsBanner extends StatelessWidget {
+  const _SoundEffectsBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return _HomeFeatureCard(
+      icon: Icons.graphic_eq,
+      title: 'QGJ音效设置',
+      subtitle: '复刻官方音效入口，当前不写入车辆',
+      accent: const Color(0xFF00A896),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const QgjSoundEffectsPage()),
+      ),
+    );
+  }
+}
+
+class _NfcKeyCard extends StatelessWidget {
+  const _NfcKeyCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _HomeFeatureCard(
+      icon: Icons.nfc,
+      title: 'NFC钥匙',
+      subtitle: '刷卡骑行新体验，本地钥匙列表',
+      accent: const Color(0xFF7B61FF),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const NfcKeyPage()),
+      ),
+    );
+  }
+}
+
+class _RideRecordCard extends StatelessWidget {
+  const _RideRecordCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _HomeFeatureCard(
+      icon: Icons.route_outlined,
+      title: '今日骑行记录',
+      subtitle: '查看本地控车、定位和操作记录',
+      accent: const Color(0xFFFF8A00),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const RideRecordPage()),
+      ),
+    );
+  }
+}
+
+class _HomeFeatureCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color accent;
+  final VoidCallback onTap;
+
+  const _HomeFeatureCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.accent,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            onTap();
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: _cardDecoration,
+            child: Row(
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(icon, color: accent, size: 28),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+              ],
+            ),
           ),
         ),
       ),
