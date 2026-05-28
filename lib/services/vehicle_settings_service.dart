@@ -317,7 +317,7 @@ class VehicleSettingsService {
 
     final sound = await _send(
       QgjCommandIds.soundAdjustGet,
-      buildSoundAdjustGetPayload(),
+      payload: buildSoundAdjustGetPayload(),
     );
     if (sound != null && sound.success) {
       snapshot = (snapshot ?? const VehicleSettingsSnapshot()).merge(
@@ -339,58 +339,101 @@ class VehicleSettingsService {
     _requireReady();
     VehicleAdvancedSettingsSnapshot? snapshot;
 
-    Future<void> read(
-      int cmdId,
-      VehicleAdvancedSettingsSnapshot Function(List<int> payload) parse, [
+    Future<void> read({
+      required String label,
+      required int cmdId,
+      required VehicleAdvancedSettingsSnapshot Function(List<int> payload)
+      parse,
+      required String Function(VehicleAdvancedSettingsSnapshot snapshot)
+      describe,
       List<int> payload = const [],
-    ]) async {
-      final response = await _send(cmdId, payload);
+    }) async {
+      final response = await _send(
+        cmdId,
+        payload: payload,
+        label: 'QGJ 高级只读: $label',
+      );
       if (response != null && response.success) {
+        final parsed = parse(response.payload);
         snapshot = (snapshot ?? const VehicleAdvancedSettingsSnapshot()).merge(
-          parse(response.payload),
+          parsed,
+        );
+        _log.operation(
+          'QGJ 高级只读响应: $label',
+          detail:
+              'cmd=${_cmdHex(cmdId)}, req=${_payloadHex(payload)}, resp=${_payloadHex(response.payload)}, parsed=${describe(parsed)}',
+          level: LogLevel.debug,
+        );
+      } else {
+        _log.operation(
+          'QGJ 高级只读无有效响应: $label',
+          detail:
+              'cmd=${_cmdHex(cmdId)}, req=${_payloadHex(payload)}, success=${response?.success}',
+          level: LogLevel.warning,
         );
       }
     }
 
     await read(
-      QgjCommandIds.autoLockTimeGet,
-      VehicleAdvancedSettingsSnapshot.fromAutoLockPayload,
+      label: '自动锁车',
+      cmdId: QgjCommandIds.autoLockTimeGet,
+      parse: VehicleAdvancedSettingsSnapshot.fromAutoLockPayload,
+      describe: (s) =>
+          'enabled=${s.autoLockEnabled}, rawSeconds=${s.autoLockTimeSeconds}',
     );
     await read(
-      QgjCommandIds.powerOnAutoLockTimeGet,
-      VehicleAdvancedSettingsSnapshot.fromPowerOnAutoLockPayload,
+      label: '上电自动锁车',
+      cmdId: QgjCommandIds.powerOnAutoLockTimeGet,
+      parse: VehicleAdvancedSettingsSnapshot.fromPowerOnAutoLockPayload,
+      describe: (s) => 'seconds=${s.powerOnAutoLockTimeSeconds}',
     );
     await read(
-      QgjCommandIds.proximityStatusGet,
-      VehicleAdvancedSettingsSnapshot.fromProximityStatusPayload,
+      label: '感应状态',
+      cmdId: QgjCommandIds.proximityStatusGet,
+      parse: VehicleAdvancedSettingsSnapshot.fromProximityStatusPayload,
+      describe: (s) => 'enabled=${s.proximityEnabled}',
     );
     await read(
-      QgjCommandIds.proximityDistanceGet,
-      VehicleAdvancedSettingsSnapshot.fromProximityDistancePayload,
+      label: '感应距离',
+      cmdId: QgjCommandIds.proximityDistanceGet,
+      parse: VehicleAdvancedSettingsSnapshot.fromProximityDistancePayload,
+      describe: (s) => 'distance=${s.proximityDistance}',
     );
     await read(
-      QgjCommandIds.handlebarLockGet,
-      VehicleAdvancedSettingsSnapshot.fromHandlebarLockPayload,
+      label: '电子龙头锁',
+      cmdId: QgjCommandIds.handlebarLockGet,
+      parse: VehicleAdvancedSettingsSnapshot.fromHandlebarLockPayload,
+      describe: (s) => 'enabled=${s.handlebarLockEnabled}',
     );
     await read(
-      QgjCommandIds.postureDetectionGet,
-      VehicleAdvancedSettingsSnapshot.fromPostureDetectionPayload,
+      label: '侧翻检测',
+      cmdId: QgjCommandIds.postureDetectionGet,
+      parse: VehicleAdvancedSettingsSnapshot.fromPostureDetectionPayload,
+      describe: (s) => 'enabled=${s.postureDetectionEnabled}',
     );
     await read(
-      QgjCommandIds.hidStatusGet,
-      VehicleAdvancedSettingsSnapshot.fromHidPayload,
+      label: 'HID 配对状态',
+      cmdId: QgjCommandIds.hidStatusGet,
+      parse: VehicleAdvancedSettingsSnapshot.fromHidPayload,
+      describe: (s) => 'mode=${s.hidMode}',
     );
     await read(
-      QgjCommandIds.safeLockGet,
-      VehicleAdvancedSettingsSnapshot.fromSafeLockPayload,
+      label: '安全锁',
+      cmdId: QgjCommandIds.safeLockGet,
+      parse: VehicleAdvancedSettingsSnapshot.fromSafeLockPayload,
+      describe: (s) => 'enabled=${s.safeLockEnabled}',
     );
     await read(
-      QgjCommandIds.kickstandGet,
-      VehicleAdvancedSettingsSnapshot.fromKickstandPayload,
+      label: '边撑感应',
+      cmdId: QgjCommandIds.kickstandGet,
+      parse: VehicleAdvancedSettingsSnapshot.fromKickstandPayload,
+      describe: (s) => 'enabled=${s.kickstandEnabled}',
     );
     await read(
-      QgjCommandIds.seatSensorGet,
-      VehicleAdvancedSettingsSnapshot.fromSeatSensorPayload,
+      label: '坐垫感应',
+      cmdId: QgjCommandIds.seatSensorGet,
+      parse: VehicleAdvancedSettingsSnapshot.fromSeatSensorPayload,
+      describe: (s) => 'enabled=${s.seatSensorEnabled}',
     );
 
     return snapshot?.hasAnyState == true ? snapshot : null;
@@ -398,9 +441,10 @@ class VehicleSettingsService {
 
   Future<VehicleSettingsSnapshot?> writeLightSensor(bool enabled) async {
     _requireReady();
-    final response = await _send(QgjCommandIds.lightSensorSet, [
-      enabled ? 1 : 0,
-    ]);
+    final response = await _send(
+      QgjCommandIds.lightSensorSet,
+      payload: [enabled ? 1 : 0],
+    );
     if (!_isCommonOk(response)) {
       throw const VehicleSettingsException('光感开关设置失败');
     }
@@ -431,7 +475,7 @@ class VehicleSettingsService {
 
     final response = await _send(
       QgjCommandIds.soundAdjustSet,
-      buildSoundAdjustSetPayload(items),
+      payload: buildSoundAdjustSetPayload(items),
     );
     if (!_isCommonOk(response)) {
       throw const VehicleSettingsException('声音设置失败');
@@ -442,7 +486,10 @@ class VehicleSettingsService {
   Future<VehicleSettingsSnapshot?> writeSensitivityLevel(int level) async {
     _requireReady();
     final value = sensitivityLevelToValue(level);
-    final response = await _send(QgjCommandIds.vibrateSensitivitySet, [value]);
+    final response = await _send(
+      QgjCommandIds.vibrateSensitivitySet,
+      payload: [value],
+    );
     if (!_isCommonOk(response)) {
       throw const VehicleSettingsException('震动灵敏度设置失败');
     }
@@ -459,11 +506,14 @@ class VehicleSettingsService {
     }
   }
 
-  Future<QgjResponse?> _send(int cmdId, [List<int> payload = const []]) async {
+  Future<QgjResponse?> _send(
+    int cmdId, {
+    List<int> payload = const [],
+    String label = 'QGJ 设置命令',
+  }) async {
     _log.operation(
-      'QGJ 设置命令',
-      detail:
-          'cmd=0x${cmdId.toRadixString(16)}, payload=${payload.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
+      label,
+      detail: 'cmd=${_cmdHex(cmdId)}, payload=${_payloadHex(payload)}',
       level: LogLevel.debug,
     );
     try {
@@ -479,5 +529,16 @@ class VehicleSettingsService {
   static bool _isCommonOk(QgjResponse? response) {
     if (response == null || !response.success) return false;
     return response.payload.isEmpty || response.payload.first == 0;
+  }
+
+  static String _cmdHex(int cmdId) {
+    return '0x${cmdId.toRadixString(16).padLeft(4, '0')}';
+  }
+
+  static String _payloadHex(List<int> payload) {
+    if (payload.isEmpty) return 'none';
+    return payload
+        .map((b) => (b & 0xFF).toRadixString(16).padLeft(2, '0'))
+        .join(' ');
   }
 }

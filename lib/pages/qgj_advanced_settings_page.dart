@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
@@ -49,6 +50,48 @@ class _QgjAdvancedSettingsPageState extends State<QgjAdvancedSettingsPage> {
     }
   }
 
+  Future<void> _copySnapshot() async {
+    final snapshot = _snapshot;
+    if (snapshot == null) {
+      _showSnack('暂无高级设置结果', false);
+      return;
+    }
+    await Clipboard.setData(
+      ClipboardData(text: _buildSnapshotReport(snapshot)),
+    );
+    if (!mounted) return;
+    _showSnack('已复制高级设置结果', true);
+  }
+
+  String _buildSnapshotReport(VehicleAdvancedSettingsSnapshot snapshot) {
+    final device = connectionManager.device;
+    return [
+      '# QGJ Advanced Settings Read-only Result',
+      'Generated: ${DateTime.now().toIso8601String()}',
+      'State: ${connectionManager.state.name}',
+      'Protocol: ${connectionManager.protocol.name}',
+      'Device: ${device?.platformName ?? 'none'}',
+      'Remote ID: ${device?.remoteId.toString() ?? 'none'}',
+      '',
+      '## Values',
+      'Auto lock: ${_switchLabel(snapshot.autoLockEnabled)}',
+      'Auto lock raw seconds: ${snapshot.autoLockTimeSeconds ?? 'unread'}',
+      'Power-on auto lock: ${_secondsLabel(snapshot.powerOnAutoLockTimeSeconds)}',
+      'Proximity status: ${_switchLabel(snapshot.proximityEnabled)}',
+      'Proximity distance: ${_levelLabel(snapshot.proximityDistance)}',
+      'HID status: ${_hidLabel(snapshot.hidMode)}',
+      'Handlebar lock: ${_switchLabel(snapshot.handlebarLockEnabled)}',
+      'Safe lock: ${_switchLabel(snapshot.safeLockEnabled)}',
+      'Kickstand: ${_switchLabel(snapshot.kickstandEnabled)}',
+      'Seat sensor: ${_switchLabel(snapshot.seatSensorEnabled)}',
+      'Posture detection: ${_switchLabel(snapshot.postureDetectionEnabled)}',
+      '',
+      '## Not Auto-read',
+      'Password unlock: skipped',
+      'OTA mode: blocked',
+    ].join('\n');
+  }
+
   void _showSnack(String message, bool success) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -76,6 +119,11 @@ class _QgjAdvancedSettingsPageState extends State<QgjAdvancedSettingsPage> {
                 AppPageHeader(
                   title: '高级设置只读',
                   actions: [
+                    IconButton(
+                      tooltip: '复制结果',
+                      onPressed: _snapshot == null ? null : _copySnapshot,
+                      icon: const Icon(Icons.copy),
+                    ),
                     _RefreshButton(
                       loading: _loading,
                       enabled: canRefresh,
