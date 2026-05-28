@@ -146,7 +146,7 @@
 
 ## 工程与 CI
 
-- **项目文档**：`docs/official_replicable_tasks.md` 记录官方 3.5.6 对齐、已确认 QGJ 命令、待测清单和禁写边界
+- **项目文档**：`docs/official_3_5_6_deep_comparison.md` 记录官方 3.5.6 复刻度、主要差距和下一步建议
 - **云端方案**：`docs/cloud_architecture_plan.md` 记录官方 App 复刻优先、官方云桥接、BLE 兜底和服务生态规划
 - **真机验证清单**：`docs/first_batch_verification.md` 已覆盖高级只读诊断、BMS 字段化详情、OTA 前置检测和基础回归
 - **测试覆盖**：单元测试覆盖 QGJ 命令帧、高级只读解析、BMS 字段结构、车库持久化和首页渲染

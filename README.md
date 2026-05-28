@@ -59,7 +59,7 @@ flutter build apk --release
 | 文档 | 用途 |
 |------|------|
 | [功能清单](FEATURES.md) | 已实现能力、官方 3.5.6 差距、工程结构 |
-| [官方 3.5.6 可安全复刻任务计划](docs/official_replicable_tasks.md) | 复刻任务、安全边界、QGJ 命令证据 |
+| [官方 3.5.6 复刻对比简报](docs/official_3_5_6_deep_comparison.md) | 当前复刻度、主要差距、下一步建议 |
 | [第一批功能真机验证清单](docs/first_batch_verification.md) | 暂不执行但后续必须验证的真机测试项 |
 | [官方云端复刻方案](docs/cloud_architecture_plan.md) | 官方账号、官方云控车、BLE 兜底和服务生态规划 |
 | [Android 构建说明](docs/android_build_notes.md) | Android 构建 warning 和处理建议 |
