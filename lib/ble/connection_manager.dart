@@ -53,6 +53,7 @@ class ConnectionManager {
   static const _maxReconnectAttempts = 8;
 
   Completer<bool>? _cmdAckCompleter;
+  final Map<int, Completer<QgjResponse?>> _qgjResponseCompleters = {};
   Future<void> _gattQueue = Future.value();
 
   final _stateController = StreamController<ConnectionState>.broadcast();
@@ -398,6 +399,11 @@ class ConnectionManager {
       _cmdAckCompleter?.complete(response.success);
       _cmdAckCompleter = null;
     }
+
+    final completer = _qgjResponseCompleters.remove(response.cmdId);
+    if (completer != null && !completer.isCompleted) {
+      completer.complete(response);
+    }
   }
 
   void _onQgjGpsNotify(List<int> value) {
@@ -505,6 +511,39 @@ class ConnectionManager {
     return false;
   }
 
+  Future<QgjResponse?> sendQgjCommand(
+    int cmdId, [
+    List<int> payload = const [],
+  ]) async {
+    if (_state != ConnectionState.ready || _protocol != ProtocolType.qgj) {
+      return null;
+    }
+    if (_feb1Char == null) return null;
+
+    final frame = buildQgjCommand(cmdId, Uint8List.fromList(payload));
+    return runGattOperation(() async {
+      final previous = _qgjResponseCompleters.remove(cmdId);
+      if (previous != null && !previous.isCompleted) {
+        previous.completeError(StateError('QGJ command superseded'));
+      }
+
+      final completer = Completer<QgjResponse?>();
+      _qgjResponseCompleters[cmdId] = completer;
+      try {
+        await _feb1Char!.write(frame.toList(), withoutResponse: false);
+        return await completer.future.timeout(
+          BleTimings.commandAckTimeout,
+          onTimeout: () => null,
+        );
+      } finally {
+        final current = _qgjResponseCompleters[cmdId];
+        if (identical(current, completer)) {
+          _qgjResponseCompleters.remove(cmdId);
+        }
+      }
+    });
+  }
+
   RidingMode _ridingMode = RidingMode.standard;
   RidingMode get ridingMode => _ridingMode;
   final _ridingModeController = StreamController<RidingMode>.broadcast();
@@ -560,6 +599,12 @@ class ConnectionManager {
       _cmdAckCompleter!.complete(false);
     }
     _cmdAckCompleter = null;
+    for (final completer in _qgjResponseCompleters.values) {
+      if (!completer.isCompleted) {
+        completer.completeError(StateError('QGJ disconnected'));
+      }
+    }
+    _qgjResponseCompleters.clear();
     _notifySub?.cancel();
     _notifySub = null;
     _gpsNotifySub?.cancel();

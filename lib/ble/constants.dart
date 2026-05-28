@@ -104,6 +104,23 @@ class QgjCommandHeaders {
 class QgjCommandIds {
   static const login = 0x1001;
   static const setStatus = 0x1002;
+  static const vibrateSensitivityGet = 0x2060;
+  static const vibrateSensitivitySet = 0x2061;
+  static const lightSensorSet = 0x2410;
+  static const lightSensorGet = 0x2411;
+  static const soundAdjustGet = 0x2420;
+  static const soundAdjustSet = 0x2421;
+}
+
+class QgjSoundIndexes {
+  static const lock = 1;
+  static const unlock = 3;
+  static const start = 14;
+  static const stop = 15;
+  static const speed = 17;
+  static const all = 255;
+
+  static const known = <int>[lock, unlock, start, stop, speed];
 }
 
 class QgjControlOpCodes {

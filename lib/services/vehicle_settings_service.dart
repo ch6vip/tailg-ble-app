@@ -1,6 +1,6 @@
-import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
-
 import '../ble/connection_manager.dart' as ble;
+import '../ble/constants.dart';
+import '../ble/qgj_protocol.dart';
 import 'log_service.dart';
 
 class VehicleSettingsException implements Exception {
@@ -12,45 +12,131 @@ class VehicleSettingsException implements Exception {
 }
 
 class VehicleSettingsSnapshot {
-  final bool? headlight;
-  final bool? turnSignal;
-  final bool? startupSound;
+  final bool? lightSensor;
+  final bool? startSound;
+  final bool? stopSound;
   final bool? lockSound;
   final bool? unlockSound;
-  final bool? powerOnSound;
-  final int? buzzerVolume;
+  final bool? speedSound;
+  final int? sensitivityValue;
 
   const VehicleSettingsSnapshot({
-    this.headlight,
-    this.turnSignal,
-    this.startupSound,
+    this.lightSensor,
+    this.startSound,
+    this.stopSound,
     this.lockSound,
     this.unlockSound,
-    this.powerOnSound,
-    this.buzzerVolume,
+    this.speedSound,
+    this.sensitivityValue,
   });
 
-  bool get hasLightState => headlight != null || turnSignal != null;
+  bool get hasLightState => lightSensor != null;
   bool get hasSoundState =>
-      startupSound != null ||
+      startSound != null ||
+      stopSound != null ||
       lockSound != null ||
       unlockSound != null ||
-      powerOnSound != null ||
-      buzzerVolume != null;
+      speedSound != null;
+  bool get hasSensitivityState => sensitivityValue != null;
+  bool get hasAnyState => hasLightState || hasSoundState || hasSensitivityState;
+
+  VehicleSettingsSnapshot merge(VehicleSettingsSnapshot other) {
+    return VehicleSettingsSnapshot(
+      lightSensor: other.lightSensor ?? lightSensor,
+      startSound: other.startSound ?? startSound,
+      stopSound: other.stopSound ?? stopSound,
+      lockSound: other.lockSound ?? lockSound,
+      unlockSound: other.unlockSound ?? unlockSound,
+      speedSound: other.speedSound ?? speedSound,
+      sensitivityValue: other.sensitivityValue ?? sensitivityValue,
+    );
+  }
 
   static VehicleSettingsSnapshot? parse(List<int> data) {
-    if (data.length >= 11 && data[0] == 0x85) {
-      return VehicleSettingsSnapshot(
-        powerOnSound: data[5] != 0,
-        startupSound: data[6] != 0,
-        unlockSound: data[7] != 0,
-        lockSound: data[8] != 0,
-        buzzerVolume: data[10].clamp(0, 5),
-      );
-    }
-
     return null;
   }
+
+  static VehicleSettingsSnapshot fromLightSensorPayload(List<int> payload) {
+    return VehicleSettingsSnapshot(lightSensor: _readSwitch(payload));
+  }
+
+  static VehicleSettingsSnapshot fromSensitivityPayload(List<int> payload) {
+    if (payload.isEmpty) return const VehicleSettingsSnapshot();
+    return VehicleSettingsSnapshot(
+      sensitivityValue: normalizeSensitivityValue(payload.first),
+    );
+  }
+
+  static VehicleSettingsSnapshot fromSoundPayload(List<int> payload) {
+    final values = parseSoundAdjustPayload(payload);
+    return VehicleSettingsSnapshot(
+      lockSound: _soundEnabled(values[QgjSoundIndexes.lock]),
+      unlockSound: _soundEnabled(values[QgjSoundIndexes.unlock]),
+      startSound: _soundEnabled(values[QgjSoundIndexes.start]),
+      stopSound: _soundEnabled(values[QgjSoundIndexes.stop]),
+      speedSound: _soundEnabled(values[QgjSoundIndexes.speed]),
+    );
+  }
+
+  static bool? _readSwitch(List<int> payload) {
+    if (payload.isEmpty) return null;
+    return payload.first == 1;
+  }
+
+  static bool? _soundEnabled(int? volume) {
+    if (volume == null) return null;
+    return volume == 100;
+  }
+}
+
+class QgjSoundAdjust {
+  final int index;
+  final int volume;
+
+  const QgjSoundAdjust(this.index, this.volume);
+}
+
+List<int> buildSoundAdjustGetPayload([List<int> indexes = const []]) {
+  final targetIndexes = indexes.isEmpty ? const [QgjSoundIndexes.all] : indexes;
+  return targetIndexes.map((index) => index & 0xFF).toList(growable: false);
+}
+
+List<int> buildSoundAdjustSetPayload(List<QgjSoundAdjust> items) {
+  final payload = <int>[];
+  for (final item in items) {
+    payload
+      ..add(item.index & 0xFF)
+      ..add(item.volume.clamp(0, 100).toInt());
+  }
+  return payload;
+}
+
+Map<int, int> parseSoundAdjustPayload(List<int> payload) {
+  final values = <int, int>{};
+  for (var i = 0; i + 1 < payload.length; i += 2) {
+    values[payload[i]] = payload[i + 1];
+  }
+  return values;
+}
+
+int sensitivityLevelToValue(int level) {
+  return switch (level) {
+    <= 1 => 0,
+    2 => 15,
+    3 => 50,
+    _ => 85,
+  };
+}
+
+int sensitivityValueToLevel(int value) {
+  if (value == 0) return 1;
+  if (value <= 30) return 2;
+  if (value <= 70) return 3;
+  return 4;
+}
+
+int normalizeSensitivityValue(int value) {
+  return sensitivityLevelToValue(sensitivityValueToLevel(value));
 }
 
 class VehicleSettingsService {
@@ -63,70 +149,118 @@ class VehicleSettingsService {
   }) : _log = logService ?? LogService();
 
   Future<VehicleSettingsSnapshot?> refresh() async {
-    final char = _requireFcc1();
-    return connectionManager.runGattOperation(() => _readBackState(char));
+    _requireReady();
+    VehicleSettingsSnapshot? snapshot;
+
+    final light = await _send(QgjCommandIds.lightSensorGet);
+    if (light != null && light.success) {
+      snapshot = (snapshot ?? const VehicleSettingsSnapshot()).merge(
+        VehicleSettingsSnapshot.fromLightSensorPayload(light.payload),
+      );
+    }
+
+    final sound = await _send(
+      QgjCommandIds.soundAdjustGet,
+      buildSoundAdjustGetPayload(),
+    );
+    if (sound != null && sound.success) {
+      snapshot = (snapshot ?? const VehicleSettingsSnapshot()).merge(
+        VehicleSettingsSnapshot.fromSoundPayload(sound.payload),
+      );
+    }
+
+    final sensitivity = await _send(QgjCommandIds.vibrateSensitivityGet);
+    if (sensitivity != null && sensitivity.success) {
+      snapshot = (snapshot ?? const VehicleSettingsSnapshot()).merge(
+        VehicleSettingsSnapshot.fromSensitivityPayload(sensitivity.payload),
+      );
+    }
+
+    return snapshot?.hasAnyState == true ? snapshot : null;
   }
 
-  Future<VehicleSettingsSnapshot?> writeLight({
-    required bool headlight,
-    required bool turnSignal,
-  }) {
-    throw const VehicleSettingsException('灯光设置尚未按官方 QGJ 协议实现，已禁用写入');
+  Future<VehicleSettingsSnapshot?> writeLightSensor(bool enabled) async {
+    _requireReady();
+    final response = await _send(QgjCommandIds.lightSensorSet, [
+      enabled ? 1 : 0,
+    ]);
+    if (!_isCommonOk(response)) {
+      throw const VehicleSettingsException('光感开关设置失败');
+    }
+    return refresh();
   }
 
   Future<VehicleSettingsSnapshot?> writeSound({
-    required bool powerOnSound,
-    required bool startupSound,
-    required bool unlockSound,
-    required bool lockSound,
-    required int buzzerVolume,
-  }) {
-    throw const VehicleSettingsException('声音设置尚未按官方 QGJ 协议实现，已禁用写入');
+    bool? startSound,
+    bool? stopSound,
+    bool? lockSound,
+    bool? unlockSound,
+    bool? speedSound,
+  }) async {
+    _requireReady();
+    final items = <QgjSoundAdjust>[
+      if (lockSound != null)
+        QgjSoundAdjust(QgjSoundIndexes.lock, _soundVolume(lockSound)),
+      if (unlockSound != null)
+        QgjSoundAdjust(QgjSoundIndexes.unlock, _soundVolume(unlockSound)),
+      if (startSound != null)
+        QgjSoundAdjust(QgjSoundIndexes.start, _soundVolume(startSound)),
+      if (stopSound != null)
+        QgjSoundAdjust(QgjSoundIndexes.stop, _soundVolume(stopSound)),
+      if (speedSound != null)
+        QgjSoundAdjust(QgjSoundIndexes.speed, _soundVolume(speedSound)),
+    ];
+    if (items.isEmpty) return refresh();
+
+    final response = await _send(
+      QgjCommandIds.soundAdjustSet,
+      buildSoundAdjustSetPayload(items),
+    );
+    if (!_isCommonOk(response)) {
+      throw const VehicleSettingsException('声音设置失败');
+    }
+    return refresh();
   }
 
-  Future<VehicleSettingsSnapshot?> writeSensitivity(int level) {
-    throw const VehicleSettingsException('震动灵敏度尚未按官方 QGJ 协议实现，已禁用写入');
+  Future<VehicleSettingsSnapshot?> writeSensitivityLevel(int level) async {
+    _requireReady();
+    final value = sensitivityLevelToValue(level);
+    final response = await _send(QgjCommandIds.vibrateSensitivitySet, [value]);
+    if (!_isCommonOk(response)) {
+      throw const VehicleSettingsException('震动灵敏度设置失败');
+    }
+    return refresh();
   }
 
-  BluetoothCharacteristic _requireFcc1() {
+  void _requireReady() {
     if (connectionManager.state != ble.ConnectionState.ready) {
       throw const VehicleSettingsException('未连接车辆');
     }
-    final device = connectionManager.device;
-    if (device == null) {
-      throw const VehicleSettingsException('未连接车辆');
+    if (connectionManager.protocol != ble.ProtocolType.qgj &&
+        connectionManager.lastKnownProtocol != ble.ProtocolType.qgj) {
+      throw const VehicleSettingsException('当前车辆不是 QGJ 协议');
     }
-    final cachedFcc1 = connectionManager.fcc1Char;
-    if (cachedFcc1 != null) return cachedFcc1;
-
-    for (final service in device.servicesList) {
-      if (service.serviceUuid.toString().contains('fcc0')) {
-        for (final char in service.characteristics) {
-          if (char.characteristicUuid.toString().contains('fcc1')) {
-            return char;
-          }
-        }
-      }
-    }
-    throw const VehicleSettingsException('fcc1 特征未找到');
   }
 
-  Future<VehicleSettingsSnapshot?> _readBackState(
-    BluetoothCharacteristic char,
-  ) async {
+  Future<QgjResponse?> _send(int cmdId, [List<int> payload = const []]) async {
+    _log.operation(
+      'QGJ 设置命令',
+      detail:
+          'cmd=0x${cmdId.toRadixString(16)}, payload=${payload.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
+      level: LogLevel.debug,
+    );
     try {
-      final response = await char.read();
-      if (response.isEmpty) return null;
-      _log.operation(
-        'fcc1 读回',
-        detail: response
-            .map((b) => b.toRadixString(16).padLeft(2, '0'))
-            .join(' '),
-      );
-      return VehicleSettingsSnapshot.parse(List<int>.from(response));
+      return await connectionManager.sendQgjCommand(cmdId, payload);
     } catch (e) {
-      _log.operation('fcc1 读取失败', detail: e.toString(), level: LogLevel.debug);
+      _log.operation('QGJ 设置命令失败', detail: e.toString(), level: LogLevel.debug);
       return null;
     }
+  }
+
+  static int _soundVolume(bool enabled) => enabled ? 100 : 0;
+
+  static bool _isCommonOk(QgjResponse? response) {
+    if (response == null || !response.success) return false;
+    return response.payload.isEmpty || response.payload.first == 0;
   }
 }

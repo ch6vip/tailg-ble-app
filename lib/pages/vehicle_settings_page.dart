@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
@@ -18,14 +17,13 @@ class VehicleSettingsPage extends StatefulWidget {
 
 class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
   late final VehicleSettingsService _settingsService;
-  bool _headlight = false;
-  bool _turnSignal = false;
-  bool _startupSound = true;
+  bool _lightSensor = false;
+  bool _startSound = true;
+  bool _stopSound = true;
   bool _lockSound = true;
   bool _unlockSound = true;
-  bool _powerOnSound = true;
-  int _buzzerVolume = 2;
-  int _shockSensitivity = 3;
+  bool _speedSound = true;
+  int _shockSensitivityLevel = 3;
   RidingMode _ridingMode = RidingMode.standard;
   bool _sending = false;
 
@@ -36,17 +34,10 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
       connectionManager: connectionManager,
     );
     _ridingMode = connectionManager.ridingMode;
-    _loadSensitivity();
-  }
-
-  Future<void> _loadSensitivity() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _shockSensitivity = prefs.getInt('shock_sensitivity') ?? 3;
-    });
   }
 
   Future<void> _refreshSettings() async {
+    if (_sending) return;
     setState(() => _sending = true);
     try {
       final snapshot = await _settingsService.refresh();
@@ -58,21 +49,94 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
       }
     } on VehicleSettingsException catch (e) {
       _showSnack(e.message);
+    } catch (_) {
+      _showSnack('设置读取失败');
     } finally {
       if (mounted) setState(() => _sending = false);
     }
   }
 
   void _applySnapshot(VehicleSettingsSnapshot snapshot) {
+    if (!mounted) return;
     setState(() {
-      _headlight = snapshot.headlight ?? _headlight;
-      _turnSignal = snapshot.turnSignal ?? _turnSignal;
-      _powerOnSound = snapshot.powerOnSound ?? _powerOnSound;
-      _startupSound = snapshot.startupSound ?? _startupSound;
-      _unlockSound = snapshot.unlockSound ?? _unlockSound;
+      _lightSensor = snapshot.lightSensor ?? _lightSensor;
+      _startSound = snapshot.startSound ?? _startSound;
+      _stopSound = snapshot.stopSound ?? _stopSound;
       _lockSound = snapshot.lockSound ?? _lockSound;
-      _buzzerVolume = snapshot.buzzerVolume ?? _buzzerVolume;
+      _unlockSound = snapshot.unlockSound ?? _unlockSound;
+      _speedSound = snapshot.speedSound ?? _speedSound;
+      if (snapshot.sensitivityValue != null) {
+        _shockSensitivityLevel = sensitivityValueToLevel(
+          snapshot.sensitivityValue!,
+        );
+      }
     });
+  }
+
+  Future<void> _setLightSensor(bool enabled) {
+    return _runSetting(
+      operation: () => _settingsService.writeLightSensor(enabled),
+      fallback: () => _lightSensor = enabled,
+      successMessage: enabled ? '光感已开启' : '光感已关闭',
+    );
+  }
+
+  Future<void> _setSound({
+    bool? startSound,
+    bool? stopSound,
+    bool? lockSound,
+    bool? unlockSound,
+    bool? speedSound,
+  }) {
+    return _runSetting(
+      operation: () => _settingsService.writeSound(
+        startSound: startSound,
+        stopSound: stopSound,
+        lockSound: lockSound,
+        unlockSound: unlockSound,
+        speedSound: speedSound,
+      ),
+      fallback: () {
+        _startSound = startSound ?? _startSound;
+        _stopSound = stopSound ?? _stopSound;
+        _lockSound = lockSound ?? _lockSound;
+        _unlockSound = unlockSound ?? _unlockSound;
+        _speedSound = speedSound ?? _speedSound;
+      },
+      successMessage: '声音设置已更新',
+    );
+  }
+
+  Future<void> _setSensitivity(int level) {
+    return _runSetting(
+      operation: () => _settingsService.writeSensitivityLevel(level),
+      fallback: () => _shockSensitivityLevel = level,
+      successMessage: '震动灵敏度已切换为 ${_sensitivityLabelForLevel(level)}',
+    );
+  }
+
+  Future<void> _runSetting({
+    required Future<VehicleSettingsSnapshot?> Function() operation,
+    required VoidCallback fallback,
+    required String successMessage,
+  }) async {
+    if (_sending) return;
+    setState(() => _sending = true);
+    try {
+      final snapshot = await operation();
+      if (snapshot != null) {
+        _applySnapshot(snapshot);
+      } else if (mounted) {
+        setState(fallback);
+      }
+      _showSnack(successMessage);
+    } on VehicleSettingsException catch (e) {
+      _showSnack(e.message);
+    } catch (_) {
+      _showSnack('设置失败');
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
   Future<void> _setRidingMode(RidingMode mode) async {
@@ -89,19 +153,22 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
     if (mounted) setState(() => _sending = false);
   }
 
-  String get _sensitivityLabel => switch (_shockSensitivity) {
-    1 => '最低',
-    2 => '较低',
-    3 => '中等',
-    4 => '较高',
-    _ => '最高',
-  };
+  String get _sensitivityLabel =>
+      _sensitivityLabelForLevel(_shockSensitivityLevel);
 
-  Color get _sensitivityColor => switch (_shockSensitivity) {
-    1 => Colors.green,
+  String _sensitivityLabelForLevel(int level) {
+    return switch (level) {
+      1 => '关闭',
+      2 => '低',
+      3 => '中',
+      _ => '高',
+    };
+  }
+
+  Color get _sensitivityColor => switch (_shockSensitivityLevel) {
+    1 => Colors.grey,
     2 => Colors.lightGreen,
     3 => Colors.orange,
-    4 => Colors.deepOrange,
     _ => Colors.red,
   };
 
@@ -120,6 +187,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
       builder: (context, snapshot) {
         final connState = snapshot.data ?? ble.ConnectionState.disconnected;
         final isConnected = connState == ble.ConnectionState.ready;
+        final canSend = isConnected && !_sending;
         return Scaffold(
           backgroundColor: AppColors.pageBg,
           body: SafeArea(
@@ -154,72 +222,50 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                     physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.only(bottom: 24),
                     children: [
-                      const AppSectionLabel('灯光控制'),
+                      const AppSectionLabel('灯光功能'),
                       SwitchListTile(
-                        secondary: const Icon(Icons.lightbulb_outline),
-                        title: const Text('前灯'),
-                        subtitle: const Text('官方协议未对齐，暂不写入'),
-                        value: _headlight,
-                        onChanged: null,
-                      ),
-                      SwitchListTile(
-                        secondary: const Icon(Icons.turn_slight_right),
-                        title: const Text('转向灯模式'),
-                        subtitle: const Text('官方协议未对齐，暂不写入'),
-                        value: _turnSignal,
-                        onChanged: null,
+                        secondary: const Icon(Icons.wb_twilight_outlined),
+                        title: const Text('光感开关'),
+                        subtitle: const Text('官方 QGJ 命令 0x2410 / 0x2411'),
+                        value: _lightSensor,
+                        onChanged: canSend ? _setLightSensor : null,
                       ),
                       const Divider(),
                       const AppSectionLabel('声音控制'),
-                      SwitchListTile(
-                        secondary: const Icon(Icons.volume_up),
-                        title: const Text('启动提示音'),
-                        subtitle: const Text('官方声音命令待适配'),
-                        value: _startupSound,
-                        onChanged: null,
+                      _SoundSwitchTile(
+                        icon: Icons.play_circle_outline,
+                        title: '启动提示音',
+                        value: _startSound,
+                        enabled: canSend,
+                        onChanged: (value) => _setSound(startSound: value),
                       ),
-                      SwitchListTile(
-                        secondary: const Icon(Icons.lock_clock),
-                        title: const Text('上锁提示音'),
-                        subtitle: const Text('官方声音命令待适配'),
+                      _SoundSwitchTile(
+                        icon: Icons.stop_circle_outlined,
+                        title: '熄火提示音',
+                        value: _stopSound,
+                        enabled: canSend,
+                        onChanged: (value) => _setSound(stopSound: value),
+                      ),
+                      _SoundSwitchTile(
+                        icon: Icons.lock_clock,
+                        title: '上锁提示音',
                         value: _lockSound,
-                        onChanged: null,
+                        enabled: canSend,
+                        onChanged: (value) => _setSound(lockSound: value),
                       ),
-                      SwitchListTile(
-                        secondary: const Icon(Icons.lock_open),
-                        title: const Text('解锁提示音'),
-                        subtitle: const Text('官方声音命令待适配'),
+                      _SoundSwitchTile(
+                        icon: Icons.lock_open,
+                        title: '解锁提示音',
                         value: _unlockSound,
-                        onChanged: null,
+                        enabled: canSend,
+                        onChanged: (value) => _setSound(unlockSound: value),
                       ),
-                      SwitchListTile(
-                        secondary: const Icon(Icons.power_settings_new),
-                        title: const Text('通电提示音'),
-                        subtitle: const Text('官方声音命令待适配'),
-                        value: _powerOnSound,
-                        onChanged: null,
-                      ),
-                      const Divider(),
-                      const AppSectionLabel('蜂鸣器音量'),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.volume_mute, size: 20),
-                            Expanded(
-                              child: Slider(
-                                value: _buzzerVolume.toDouble(),
-                                min: 0,
-                                max: 5,
-                                divisions: 5,
-                                label: '$_buzzerVolume',
-                                onChanged: null,
-                                onChangeEnd: null,
-                              ),
-                            ),
-                            const Icon(Icons.volume_up, size: 20),
-                          ],
-                        ),
+                      _SoundSwitchTile(
+                        icon: Icons.speed,
+                        title: '速度提示音',
+                        value: _speedSound,
+                        enabled: canSend,
+                        onChanged: (value) => _setSound(speedSound: value),
                       ),
                       const Divider(),
                       const AppSectionLabel('骑行参数'),
@@ -241,7 +287,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                                       : Colors.grey.shade100,
                                   borderRadius: BorderRadius.circular(10),
                                   child: InkWell(
-                                    onTap: isConnected
+                                    onTap: canSend
                                         ? () => _setRidingMode(mode)
                                         : null,
                                     borderRadius: BorderRadius.circular(10),
@@ -281,12 +327,12 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                             const Icon(Icons.shield_outlined, size: 20),
                             const SizedBox(width: 12),
                             Text(
-                              '当前等级: $_shockSensitivity',
+                              '当前: $_sensitivityLabel',
                               style: const TextStyle(fontSize: 14),
                             ),
                             const Spacer(),
                             Text(
-                              _sensitivityLabel,
+                              '值 ${sensitivityLevelToValue(_shockSensitivityLevel)}',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: _sensitivityColor,
@@ -298,9 +344,10 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Row(
-                          children: List.generate(5, (i) {
+                          children: List.generate(4, (i) {
                             final level = i + 1;
-                            final selected = level == _shockSensitivity;
+                            final selected = level == _shockSensitivityLevel;
+                            final label = _sensitivityLabelForLevel(level);
                             return Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
@@ -312,17 +359,17 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                                       : Colors.grey.shade100,
                                   borderRadius: BorderRadius.circular(10),
                                   child: InkWell(
-                                    onTap: null,
+                                    onTap: canSend
+                                        ? () => _setSensitivity(level)
+                                        : null,
                                     borderRadius: BorderRadius.circular(10),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                      ),
+                                      height: 46,
                                       alignment: Alignment.center,
                                       child: Text(
-                                        '$level',
+                                        label,
                                         style: TextStyle(
-                                          fontSize: 16,
+                                          fontSize: 15,
                                           fontWeight: selected
                                               ? FontWeight.bold
                                               : FontWeight.normal,
@@ -339,28 +386,6 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                           }),
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '低',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade500,
-                              ),
-                            ),
-                            Text(
-                              '高',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -369,6 +394,33 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
           ),
         );
       },
+    );
+  }
+}
+
+class _SoundSwitchTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final bool value;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  const _SoundSwitchTile({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile(
+      secondary: Icon(icon),
+      title: Text(title),
+      subtitle: const Text('官方 QGJ 声音调节命令'),
+      value: value,
+      onChanged: enabled ? onChanged : null,
     );
   }
 }

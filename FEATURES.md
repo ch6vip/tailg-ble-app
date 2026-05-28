@@ -25,7 +25,7 @@
 
 - **基础控制**：解锁、设防、寻车、开座桶、通电、断电
 - **滑动解锁**：右滑手势触发解锁，防误触
-- **骑行模式切换**：节能 / 标准 / 强力 三档，写入 fcc1 后读回确认
+- **骑行模式切换**：超能跑 / 全速跑 / 超速跑 三档，写入 fcc1 后读回确认
 - **感应解锁**：App 前台时 BLE 扫描已知设备，RSSI ≥ -75dBm 自动连接解锁（30s 冷却）
 
 ## 车辆状态
@@ -46,8 +46,11 @@
 
 - **骑行参数**：设置页支持超能跑 / 全速跑 / 超速跑三档切换
 - **官方对齐**：骑行模式使用 `fcc1` 当前状态字节，保留其他 ECU 位后写入并读回确认
-- **风险禁写**：灯光、声音、蜂鸣器、震动灵敏度入口暂不写入设备，避免误写未确认协议位
-- **服务层封装**：fcc1 查找和读回已抽离到 `VehicleSettingsService`
+- **光感开关**：使用官方 QGJ `ECU_LIGHT_SENSOR_ENABLED_GET/SET` (`0x2411/0x2410`) 读写
+- **声音开关**：使用官方 QGJ `ECU_SOUND_ADJUST_GET/SET` (`0x2420/0x2421`) 读写启动、熄火、上锁、解锁、速度提示音
+- **震动灵敏度**：使用官方 QGJ `ECU_VIBRATE_SENSITIVITY_GET/SET` (`0x2060/0x2061`) 四档值 `0/15/50/85`
+- **风险禁写**：前灯、转向灯、蜂鸣器独立音量等未确认语义不写入设备
+- **服务层封装**：QGJ 设置命令读写已抽离到 `VehicleSettingsService`
 
 ## 故障诊断
 
@@ -82,7 +85,7 @@
 
 - **本地蓝牙控车**：扫描、连接、重连、解锁、设防、寻车、开座桶、通电、断电
 - **QGJ 基础协议**：登录、心跳、状态读取、基础响应解析
-- **部分车辆设置**：骑行模式；灯光、声音、蜂鸣器、防盗灵敏度仍需按官方命令适配
+- **部分车辆设置**：骑行模式、光感开关、声音开关、防盗灵敏度已按官方 QGJ 命令适配
 - **基础诊断与日志**：故障字节解析、诊断历史、BLE/操作日志
 - **体验增强**：滑动解锁、感应解锁、基础位置入口、云 token 入口
 
@@ -111,8 +114,9 @@
 - **骑行模式**：`QgjRideSettingFragment` 将 `EcuPodgStatus` 设置为 `001/010/011`，`TLinkBleManagerQgj.writeEcu(..., 10)` 写入 `fcc1State2` 低 3 位；当前已按此逻辑实现。
 - **QGJ 档位文案**：官方三档为“超能跑 / 全速跑 / 超速跑”，四档扩展多一个“极速跑”；当前 UI 使用三档官方文案。
 - **fcc1 状态字节**：官方把 `fcc1State1/2/3` 用作 TCS、定速、倒车、能量回收、低电循环、默认档位等 ECU 功能，不是前灯/转向灯状态；当前已禁用原灯光误写入口。
-- **声音设置**：官方 `QgjSoundSetFragment` 使用 `ecuSoundAdjustGet/Set`，命令实体为 `ECU_SOUND_ADJUST_GET=9248`、`ECU_SOUND_ADJUST_SET=9249`，单项音量用 `OpSoundAdjust(index, volume)`，开关语义为 0/100；当前原自定义声音帧未确认，已禁写。
-- **震动灵敏度**：官方 `EVBikeQgjSettingFragment` 使用 `ecuVibrateSensitivityGet/Set`，命令实体为 `8288/8289`，四档值为 `0/15/50/85`；当前原 1-5 档帧未确认，已禁写。
+- **声音设置**：官方 `QgjSoundSetFragment` 使用 `ecuSoundAdjustGet/Set`，命令实体为 `ECU_SOUND_ADJUST_GET=9248`、`ECU_SOUND_ADJUST_SET=9249`，单项音量用 `OpSoundAdjust(index, volume)`，开关语义为 `0/100`；当前已支持 `1/3/14/15/17` 五个确认索引。
+- **震动灵敏度**：官方 `EVBikeQgjSettingFragment` 使用 `ecuVibrateSensitivityGet/Set`，命令实体为 `8288/8289`，四档值为 `0/15/50/85`；当前已按“关闭/低/中/高”四档写入。
+- **光感开关**：官方 `QgjFunctionSetFragment` 使用 `ecuLightSensorEnabledGet/Set`，命令实体为 `9233/9232`，`SwitchState.OFF/ON` 对应 `0/1`；当前已按此命令读写。
 - **连接初始化**：官方 QGJ 管理器连接后 `requestMtu(515)`，订阅 `feb2` indications；若存在 `fe01` 则订阅 `fe03` notifications；登录后 `EcuStatus` 每 1000ms 读取 `feb3`。当前已按此节奏对齐。
 - **ECU 登录参数**：官方 `QgjSearchBleFragment.sendDevicePwd(str)` 调用 `ecuLogin(str, PrefsUtil.getUid())`，BLE 层 `OpEcuLogin` 编码为 4 字节 password + 4 字节 userID；当前已支持在车库为单车配置这两个本地参数。
 
@@ -163,7 +167,7 @@ lib/
 │   ├── vehicle_store.dart       # 本地车辆档案存储
 │   ├── location_service.dart    # 定位权限和最后位置记录
 │   ├── permission_service.dart  # 蓝牙/定位权限统一处理
-│   ├── vehicle_settings_service.dart # fcc1 设置读写服务
+│   ├── vehicle_settings_service.dart # QGJ 设置命令读写服务
 │   ├── diagnostic_export_service.dart # 诊断报告导出
 │   ├── auto_connect_service.dart # 默认车辆自动连接
 │   └── proximity_service.dart   # 感应解锁服务
