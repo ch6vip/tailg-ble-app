@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/vehicle_profile.dart';
+import '../services/official_cloud_service.dart';
 import '../services/location_service.dart';
 import '../services/vehicle_store.dart';
 import '../widgets/app_chrome.dart';
@@ -76,6 +77,22 @@ class _LocationPageState extends State<LocationPage> {
     }
   }
 
+  VehicleLocation? _cloudLocation() {
+    final cloudState = OfficialCloudService().state;
+    final vehicle = cloudState.selectedVehicle;
+    if (!cloudState.signedIn || vehicle == null) return null;
+    final latitude = double.tryParse(vehicle.latitude);
+    final longitude = double.tryParse(vehicle.longitude);
+    if (latitude == null || longitude == null) return null;
+    if (latitude == 0 && longitude == 0) return null;
+    return VehicleLocation(
+      latitude: latitude,
+      longitude: longitude,
+      accuracy: 0,
+      recordedAt: DateTime.now(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,55 +102,70 @@ class _LocationPageState extends State<LocationPage> {
           stream: VehicleStore().vehiclesStream,
           initialData: VehicleStore().vehicles,
           builder: (context, snapshot) {
-            final vehicle = VehicleStore().defaultVehicle;
-            final location = vehicle?.lastLocation;
-            return Column(
-              children: [
-                AppPageHeader(
-                  title: '车辆位置',
-                  actions: [
-                    IconButton(
-                      tooltip: '刷新位置',
-                      onPressed: vehicle == null || _loading
-                          ? null
-                          : () => _refreshLocation(vehicle),
-                      icon: _loading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.my_location),
+            return StreamBuilder<OfficialCloudState>(
+              stream: OfficialCloudService().stateStream,
+              initialData: OfficialCloudService().state,
+              builder: (context, cloudSnapshot) {
+                final cloudState =
+                    cloudSnapshot.data ?? OfficialCloudService().state;
+                final vehicle = VehicleStore().defaultVehicle;
+                final cloudVehicle = cloudState.signedIn
+                    ? cloudState.selectedVehicle
+                    : null;
+                final location = vehicle?.lastLocation ?? _cloudLocation();
+                final vehicleName =
+                    vehicle?.displayName ?? cloudVehicle?.displayName;
+                return Column(
+                  children: [
+                    AppPageHeader(
+                      title: '车辆位置',
+                      actions: [
+                        IconButton(
+                          tooltip: '刷新位置',
+                          onPressed: vehicle == null || _loading
+                              ? null
+                              : () => _refreshLocation(vehicle),
+                          icon: _loading
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.my_location),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: ListView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                        children: [
+                          _MapPanel(location: location),
+                          const SizedBox(height: 14),
+                          _LocationDetailCard(
+                            vehicleName: vehicleName,
+                            location: location,
+                            error: _error,
+                            loading: _loading,
+                            onRefresh: vehicle == null
+                                ? null
+                                : () => _refreshLocation(vehicle),
+                            onCopy: location == null
+                                ? null
+                                : () => _copyLocation(location),
+                            onOpenMap: location == null
+                                ? null
+                                : () => _openMap(location),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: ListView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                    children: [
-                      _MapPanel(location: location),
-                      const SizedBox(height: 14),
-                      _LocationDetailCard(
-                        vehicle: vehicle,
-                        location: location,
-                        error: _error,
-                        loading: _loading,
-                        onRefresh: vehicle == null
-                            ? null
-                            : () => _refreshLocation(vehicle),
-                        onCopy: location == null
-                            ? null
-                            : () => _copyLocation(location),
-                        onOpenMap: location == null
-                            ? null
-                            : () => _openMap(location),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                );
+              },
             );
           },
         ),
@@ -196,7 +228,7 @@ class _MapPanel extends StatelessWidget {
 }
 
 class _LocationDetailCard extends StatelessWidget {
-  final VehicleProfile? vehicle;
+  final String? vehicleName;
   final VehicleLocation? location;
   final String? error;
   final bool loading;
@@ -205,7 +237,7 @@ class _LocationDetailCard extends StatelessWidget {
   final VoidCallback? onOpenMap;
 
   const _LocationDetailCard({
-    required this.vehicle,
+    required this.vehicleName,
     required this.location,
     required this.error,
     required this.loading,
@@ -216,10 +248,12 @@ class _LocationDetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = vehicle?.displayName ?? '未绑定车辆';
+    final title = vehicleName ?? '未绑定车辆';
     final subtitle = location == null
         ? '暂无位置记录'
-        : '${location!.coordinateText}  ·  精度约 ${location!.accuracy.toStringAsFixed(0)}m';
+        : location!.accuracy > 0
+        ? '${location!.coordinateText}  ·  精度约 ${location!.accuracy.toStringAsFixed(0)}m'
+        : location!.coordinateText;
 
     return Container(
       padding: const EdgeInsets.all(16),

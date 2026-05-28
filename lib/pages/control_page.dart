@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
+import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
 import '../services/official_cloud_service.dart';
 import '../services/replica_feature_store.dart';
@@ -26,6 +27,11 @@ const _cardDecoration = BoxDecoration(
     BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 2)),
   ],
 );
+
+int? _normalizePercent(int? value) {
+  if (value == null) return null;
+  return value.clamp(0, 100).toInt();
+}
 
 class ControlPage extends StatefulWidget {
   const ControlPage({super.key});
@@ -59,7 +65,7 @@ class _ControlPageState extends State<ControlPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _Header(connState: connState),
-                  const _StatusSection(),
+                  _StatusSection(connState: connState),
                   const SizedBox(height: 20),
                   const _BikeImage(),
                   _StateLabel(connState: connState),
@@ -115,107 +121,153 @@ class _Header extends StatelessWidget {
       initialData: vehicleStore.vehicles,
       builder: (context, snapshot) {
         final defaultVehicle = vehicleStore.defaultVehicle;
-        final deviceName = connectionManager.device?.platformName;
-        final displayName =
-            defaultVehicle?.displayName ??
-            (deviceName != null && deviceName.isNotEmpty
-                ? deviceName
-                : connState == ble.ConnectionState.disconnected
-                ? '未绑定车辆'
-                : '当前车辆');
+        return StreamBuilder<OfficialCloudState>(
+          stream: officialCloudService.stateStream,
+          initialData: officialCloudService.state,
+          builder: (context, cloudSnapshot) {
+            final cloudState = cloudSnapshot.data ?? officialCloudService.state;
+            final cloudVehicle = cloudState.signedIn
+                ? cloudState.selectedVehicle
+                : null;
+            final deviceName = connectionManager.device?.platformName;
+            final hasDeviceName = deviceName != null && deviceName.isNotEmpty;
+            final usesCloudIdentity =
+                defaultVehicle == null &&
+                !hasDeviceName &&
+                cloudVehicle != null;
+            final useCloudStatus =
+                usesCloudIdentity &&
+                connState == ble.ConnectionState.disconnected;
+            final displayName =
+                defaultVehicle?.displayName ??
+                (hasDeviceName
+                    ? deviceName
+                    : cloudVehicle?.displayName ??
+                          (connState == ble.ConnectionState.disconnected
+                              ? '未绑定车辆'
+                              : '当前车辆'));
+            final effectiveStatusText = useCloudStatus
+                ? cloudVehicle.online
+                      ? '云端在线'
+                      : '云端离线'
+                : statusText;
+            final effectiveStatusColor = useCloudStatus
+                ? cloudVehicle.online
+                      ? Colors.green
+                      : Colors.grey
+                : statusColor;
+            final statusIcon = useCloudStatus
+                ? cloudVehicle.online
+                      ? Icons.cloud_done
+                      : Icons.cloud_off
+                : connState == ble.ConnectionState.ready
+                ? Icons.bluetooth_connected
+                : Icons.bluetooth_disabled;
 
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-          child: Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const GaragePage()),
-                  ),
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A1A2E),
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => usesCloudIdentity
+                              ? const OfficialCloudPage()
+                              : const GaragePage(),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              displayName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1A1A2E),
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_drop_down, size: 20),
+                          const SizedBox(width: 8),
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: effectiveStatusColor.withValues(
+                                alpha: 0.15,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              effectiveStatusText,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: effectiveStatusColor,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.arrow_drop_down, size: 20),
-                      const SizedBox(width: 8),
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          statusText,
-                          style: TextStyle(fontSize: 12, color: statusColor),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  GestureDetector(
+                    onTap: connState != ble.ConnectionState.disconnected
+                        ? () => connectionManager.disconnect()
+                        : null,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.all(Radius.circular(20)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x0D000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isConnecting)
+                            const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          else
+                            Icon(
+                              statusIcon,
+                              size: 14,
+                              color: effectiveStatusColor,
+                            ),
+                          const SizedBox(width: 6),
+                          Text(
+                            effectiveStatusText,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              GestureDetector(
-                onTap: connState != ble.ConnectionState.disconnected
-                    ? () => connectionManager.disconnect()
-                    : null,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0x0D000000),
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (isConnecting)
-                        const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      else
-                        Icon(
-                          connState == ble.ConnectionState.ready
-                              ? Icons.bluetooth_connected
-                              : Icons.bluetooth_disabled,
-                          size: 14,
-                          color: statusColor,
-                        ),
-                      const SizedBox(width: 6),
-                      Text(statusText, style: const TextStyle(fontSize: 13)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -223,112 +275,129 @@ class _Header extends StatelessWidget {
 }
 
 class _StatusSection extends StatelessWidget {
-  const _StatusSection();
+  final ble.ConnectionState connState;
+  const _StatusSection({required this.connState});
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<BikeState?>(
       stream: connectionManager.bikeStateStream,
+      initialData: connectionManager.latestBikeState,
       builder: (context, snapshot) {
         final bike = snapshot.data;
-        final battery = bike?.batteryPercent;
-        final batteryColor = battery == null
-            ? Colors.grey
-            : battery > 60
-            ? Colors.green
-            : battery > 20
-            ? Colors.orange
-            : Colors.red;
+        return StreamBuilder<OfficialCloudState>(
+          stream: officialCloudService.stateStream,
+          initialData: officialCloudService.state,
+          builder: (context, cloudSnapshot) {
+            final cloudState = cloudSnapshot.data ?? officialCloudService.state;
+            final cloudVehicle = cloudState.signedIn
+                ? cloudState.selectedVehicle
+                : null;
+            final isBleReady = connState == ble.ConnectionState.ready;
+            final battery = _normalizePercent(
+              isBleReady
+                  ? bike?.batteryPercent ?? cloudVehicle?.electricQuantity
+                  : cloudVehicle?.electricQuantity,
+            );
+            final batteryColor = battery == null
+                ? Colors.grey
+                : battery > 60
+                ? Colors.green
+                : battery > 20
+                ? Colors.orange
+                : Colors.red;
 
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '剩余电量',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Icon(
-                          battery == null
-                              ? Icons.battery_unknown
-                              : battery > 80
-                              ? Icons.battery_full
-                              : battery > 60
-                              ? Icons.battery_5_bar
-                              : battery > 40
-                              ? Icons.battery_4_bar
-                              : battery > 20
-                              ? Icons.battery_2_bar
-                              : Icons.battery_1_bar,
-                          color: batteryColor,
-                          size: 32,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          battery != null ? '$battery%' : '--',
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w300,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '预估里程',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          battery != null
-                              ? '${(battery * _kmPerPercent).round()}'
-                              : '--',
-                          style: const TextStyle(
-                            fontSize: 48,
-                            fontWeight: FontWeight.w300,
+                          '剩余电量',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
                           ),
                         ),
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 8),
-                          child: Text(
-                            'km',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.black54,
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Icon(
+                              battery == null
+                                  ? Icons.battery_unknown
+                                  : battery > 80
+                                  ? Icons.battery_full
+                                  : battery > 60
+                                  ? Icons.battery_5_bar
+                                  : battery > 40
+                                  ? Icons.battery_4_bar
+                                  : battery > 20
+                                  ? Icons.battery_2_bar
+                                  : Icons.battery_1_bar,
+                              color: batteryColor,
+                              size: 32,
                             ),
-                          ),
+                            const SizedBox(width: 6),
+                            Text(
+                              battery != null ? '$battery%' : '--',
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w300,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '预估里程',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              battery != null
+                                  ? '${(battery * _kmPerPercent).round()}'
+                                  : '--',
+                              style: const TextStyle(
+                                fontSize: 48,
+                                fontWeight: FontWeight.w300,
+                              ),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 8),
+                              child: Text(
+                                'km',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -368,83 +437,138 @@ class _StateLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<BikeState?>(
       stream: connectionManager.bikeStateStream,
+      initialData: connectionManager.latestBikeState,
       builder: (context, snapshot) {
         final bike = snapshot.data;
         final isConnected = connState == ble.ConnectionState.ready;
+        return StreamBuilder<OfficialCloudState>(
+          stream: officialCloudService.stateStream,
+          initialData: officialCloudService.state,
+          builder: (context, cloudSnapshot) {
+            final cloudState = cloudSnapshot.data ?? officialCloudService.state;
+            final cloudVehicle = cloudState.signedIn
+                ? cloudState.selectedVehicle
+                : null;
 
-        String stateText;
-        IconData stateIcon;
-        List<Color> gradientColors;
+            String stateText;
+            IconData stateIcon;
+            List<Color> gradientColors;
 
-        if (!isConnected) {
-          stateText = '未连接';
-          stateIcon = Icons.bluetooth_disabled;
-          gradientColors = [Colors.grey.shade300, Colors.grey.shade400];
-        } else if (bike == null) {
-          stateText = '等待车辆状态';
-          stateIcon = Icons.sync;
-          gradientColors = [Colors.blue.shade200, Colors.blue.shade300];
-        } else if (bike.isLocked && !bike.isPowerOn) {
-          stateText = '已设防';
-          stateIcon = Icons.lock_outline;
-          gradientColors = [Colors.purple.shade200, Colors.blue.shade200];
-        } else if (!bike.isLocked && bike.isPowerOn) {
-          stateText = '已通电';
-          stateIcon = Icons.power;
-          gradientColors = [Colors.green.shade300, Colors.teal.shade300];
-        } else if (!bike.isLocked) {
-          stateText = '已解锁';
-          stateIcon = Icons.lock_open;
-          gradientColors = [Colors.orange.shade200, Colors.amber.shade300];
-        } else {
-          stateText = '已上锁';
-          stateIcon = Icons.lock_outline;
-          gradientColors = [Colors.purple.shade200, Colors.blue.shade200];
-        }
+            if (isConnected && bike != null) {
+              if (bike.isLocked && !bike.isPowerOn) {
+                stateText = '已设防';
+                stateIcon = Icons.lock_outline;
+                gradientColors = [Colors.purple.shade200, Colors.blue.shade200];
+              } else if (!bike.isLocked && bike.isPowerOn) {
+                stateText = '已通电';
+                stateIcon = Icons.power;
+                gradientColors = [Colors.green.shade300, Colors.teal.shade300];
+              } else if (!bike.isLocked) {
+                stateText = '已解锁';
+                stateIcon = Icons.lock_open;
+                gradientColors = [
+                  Colors.orange.shade200,
+                  Colors.amber.shade300,
+                ];
+              } else {
+                stateText = '已上锁';
+                stateIcon = Icons.lock_outline;
+                gradientColors = [Colors.purple.shade200, Colors.blue.shade200];
+              }
+            } else if (cloudVehicle != null) {
+              final cloudDisplay = _cloudVehicleStateDisplay(cloudVehicle);
+              stateText = cloudDisplay.$1;
+              stateIcon = cloudDisplay.$2;
+              gradientColors = cloudDisplay.$3;
+            } else if (!isConnected) {
+              stateText = '未连接';
+              stateIcon = Icons.bluetooth_disabled;
+              gradientColors = [Colors.grey.shade300, Colors.grey.shade400];
+            } else {
+              stateText = '等待车辆状态';
+              stateIcon = Icons.sync;
+              gradientColors = [Colors.blue.shade200, Colors.blue.shade300];
+            }
 
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: gradientColors),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(stateIcon, size: 18, color: Colors.white),
+                  Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: gradientColors),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(stateIcon, size: 18, color: Colors.white),
+                      ),
+                      const SizedBox(width: 10),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: Text(
+                          stateText,
+                          key: ValueKey(stateText),
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 10),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: Text(
-                      stateText,
-                      key: ValueKey(stateText),
-                      style: const TextStyle(fontSize: 14),
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        '手动模式',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      _ManualModeToggle(enabled: isConnected),
+                    ],
                   ),
                 ],
               ),
-              Row(
-                children: [
-                  Text(
-                    '手动模式',
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                  ),
-                  const SizedBox(width: 4),
-                  _ManualModeToggle(enabled: isConnected),
-                ],
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
+}
+
+(String, IconData, List<Color>) _cloudVehicleStateDisplay(
+  OfficialVehicle vehicle,
+) {
+  if (!vehicle.online) {
+    return (
+      '云端离线',
+      Icons.cloud_off,
+      [Colors.grey.shade300, Colors.grey.shade400],
+    );
+  }
+  if (vehicle.isPowerOn) {
+    return (
+      '云端已通电',
+      Icons.power,
+      [Colors.green.shade300, Colors.teal.shade300],
+    );
+  }
+  if (vehicle.isLocked) {
+    return (
+      '云端已设防',
+      Icons.lock_outline,
+      [Colors.purple.shade200, Colors.blue.shade200],
+    );
+  }
+  return (
+    '云端已解锁',
+    Icons.lock_open,
+    [Colors.orange.shade200, Colors.amber.shade300],
+  );
 }
 
 class _ControlArea extends StatefulWidget {

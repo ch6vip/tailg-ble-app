@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
+import '../services/official_cloud_service.dart';
 import '../services/replica_feature_store.dart';
 import '../services/vehicle_store.dart';
 import '../theme/app_colors.dart';
@@ -605,6 +606,12 @@ class RideRecordPage extends StatelessWidget {
           builder: (context, snapshot) {
             final vehicle = VehicleStore().defaultVehicle;
             final location = vehicle?.lastLocation;
+            final cloudState = OfficialCloudService().state;
+            final cloudVehicle = cloudState.signedIn
+                ? cloudState.selectedVehicle
+                : null;
+            final displayName =
+                vehicle?.displayName ?? cloudVehicle?.displayName ?? '未绑定';
             return Column(
               children: [
                 const AppPageHeader(title: '今日骑行记录'),
@@ -620,7 +627,7 @@ class RideRecordPage extends StatelessWidget {
                             Expanded(
                               child: _MetricBlock(
                                 label: '默认车辆',
-                                value: vehicle?.displayName ?? '未绑定',
+                                value: displayName,
                               ),
                             ),
                             Expanded(

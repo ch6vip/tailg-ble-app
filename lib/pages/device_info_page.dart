@@ -5,7 +5,9 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 import '../ble/connection_manager.dart' as ble;
 import '../main.dart';
+import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
+import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
@@ -128,66 +130,82 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
           initialData: vehicleStore.vehicles,
           builder: (context, vehicleSnapshot) {
             final vehicle = vehicleStore.defaultVehicle;
-            return Scaffold(
-              backgroundColor: AppColors.pageBg,
-              body: SafeArea(
-                child: Column(
-                  children: [
-                    AppPageHeader(
-                      title: '车辆信息',
-                      actions: [
-                        IconButton(
-                          tooltip: '刷新',
-                          onPressed: _loading ? null : _refresh,
-                          icon: _loading
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
+            return StreamBuilder<OfficialCloudState>(
+              stream: officialCloudService.stateStream,
+              initialData: officialCloudService.state,
+              builder: (context, cloudSnapshot) {
+                final cloudState =
+                    cloudSnapshot.data ?? officialCloudService.state;
+                final cloudVehicle = cloudState.signedIn
+                    ? cloudState.selectedVehicle
+                    : null;
+                return Scaffold(
+                  backgroundColor: AppColors.pageBg,
+                  body: SafeArea(
+                    child: Column(
+                      children: [
+                        AppPageHeader(
+                          title: '车辆信息',
+                          actions: [
+                            IconButton(
+                              tooltip: '刷新',
+                              onPressed: _loading ? null : _refresh,
+                              icon: _loading
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.refresh),
+                            ),
+                          ],
+                        ),
+                        ConnectionStatusBanner(
+                          state: connState,
+                          onScanTap: () => openScanTab(context),
+                        ),
+                        Expanded(
+                          child: ListView(
+                            physics: const BouncingScrollPhysics(),
+                            padding: const EdgeInsets.only(bottom: 24),
+                            children: [
+                              const AppSectionLabel('车辆档案'),
+                              _VehicleProfileCard(
+                                vehicle: vehicle,
+                                officialVehicle: cloudVehicle,
+                              ),
+                              const AppSectionLabel('蓝牙设备'),
+                              _BleDeviceCard(
+                                device: device,
+                                state: connState,
+                                protocol: connectionManager.protocol,
+                                lastKnownProtocol:
+                                    connectionManager.lastKnownProtocol,
+                                token: connectionManager.token,
+                              ),
+                              const AppSectionLabel('设备信息服务'),
+                              _DeviceInfoCard(info: _deviceInfo),
+                              const AppSectionLabel('服务与特征'),
+                              if (_deviceInfo.services.isEmpty)
+                                const _EmptyInfoCard(
+                                  icon: Icons.bluetooth_disabled,
+                                  title: '暂无 GATT 服务',
+                                  subtitle: '连接车辆并完成服务发现后，可查看服务 UUID 和特征属性。',
                                 )
-                              : const Icon(Icons.refresh),
+                              else
+                                _GattServiceList(
+                                  services: _deviceInfo.services,
+                                ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                    ConnectionStatusBanner(
-                      state: connState,
-                      onScanTap: () => openScanTab(context),
-                    ),
-                    Expanded(
-                      child: ListView(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.only(bottom: 24),
-                        children: [
-                          const AppSectionLabel('车辆档案'),
-                          _VehicleProfileCard(vehicle: vehicle),
-                          const AppSectionLabel('蓝牙设备'),
-                          _BleDeviceCard(
-                            device: device,
-                            state: connState,
-                            protocol: connectionManager.protocol,
-                            lastKnownProtocol:
-                                connectionManager.lastKnownProtocol,
-                            token: connectionManager.token,
-                          ),
-                          const AppSectionLabel('设备信息服务'),
-                          _DeviceInfoCard(info: _deviceInfo),
-                          const AppSectionLabel('服务与特征'),
-                          if (_deviceInfo.services.isEmpty)
-                            const _EmptyInfoCard(
-                              icon: Icons.bluetooth_disabled,
-                              title: '暂无 GATT 服务',
-                              subtitle: '连接车辆并完成服务发现后，可查看服务 UUID 和特征属性。',
-                            )
-                          else
-                            _GattServiceList(services: _deviceInfo.services),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             );
           },
         );
@@ -198,8 +216,12 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
 
 class _VehicleProfileCard extends StatelessWidget {
   final VehicleProfile? vehicle;
+  final OfficialVehicle? officialVehicle;
 
-  const _VehicleProfileCard({required this.vehicle});
+  const _VehicleProfileCard({
+    required this.vehicle,
+    required this.officialVehicle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -208,11 +230,29 @@ class _VehicleProfileCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: Column(
         children: [
-          _InfoRow(label: '车辆名称', value: vehicle?.displayName ?? '未绑定车辆'),
+          _InfoRow(
+            label: '车辆名称',
+            value:
+                vehicle?.displayName ?? officialVehicle?.displayName ?? '未绑定车辆',
+          ),
           const _InsetDivider(),
-          _InfoRow(label: '车辆 ID', value: vehicle?.id ?? '--'),
+          _InfoRow(
+            label: '车辆 ID',
+            value: vehicle?.id ?? officialVehicle?.carId ?? '--',
+          ),
           const _InsetDivider(),
           _InfoRow(label: '协议偏好', value: vehicle?.protocol.label ?? '自动识别'),
+          if (officialVehicle != null) ...[
+            const _InsetDivider(),
+            _InfoRow(label: '官方在线', value: officialVehicle!.onlineLabel),
+            const _InsetDivider(),
+            _InfoRow(
+              label: '官方电量',
+              value: officialVehicle!.electricQuantity == null
+                  ? '--'
+                  : '${officialVehicle!.electricQuantity}%',
+            ),
+          ],
           const _InsetDivider(),
           _InfoRow(
             label: '最后连接',
