@@ -59,6 +59,8 @@ class BleUuids {
   static const feb1 = '0000feb1-0000-1000-8000-00805f9b34fb';
   static const feb2 = '0000feb2-0000-1000-8000-00805f9b34fb';
   static const feb3 = '0000feb3-0000-1000-8000-00805f9b34fb';
+  static const fe02 = '0000fe02-0000-1000-8000-00805f9b34fb';
+  static const fe03 = '0000fe03-0000-1000-8000-00805f9b34fb';
   static const fcc1 = '0000fcc1-0000-1000-8000-00805f9b34fb';
   static const fcc2 = '0000fcc2-0000-1000-8000-00805f9b34fb';
   static const fbb1 = '0000fbb1-0000-1000-8000-00805f9b34fb';
@@ -70,12 +72,15 @@ class BleUuids {
 class BleTimings {
   static const connectTimeout = Duration(seconds: 10);
   static const reconnectConnectTimeout = Duration(seconds: 8);
+  static const initialConnectRetryDelay = Duration(milliseconds: 500);
+  static const qgjRequestedMtu = 515;
   static const autoConnectScanTimeout = Duration(seconds: 8);
   static const manualScanTimeout = Duration(seconds: 30);
   static const proximityScanTimeout = Duration(seconds: 30);
   static const serviceSetupDelay = Duration(milliseconds: 500);
   static const heartbeatInitialDelay = Duration(milliseconds: 500);
   static const heartbeatInterval = Duration(seconds: 5);
+  static const qgjStatusPollInterval = Duration(seconds: 1);
   static const commandAckTimeout = Duration(seconds: 5);
   static const fccReadbackDelay = Duration(milliseconds: 200);
   static const fccRetryDelay = Duration(milliseconds: 500);

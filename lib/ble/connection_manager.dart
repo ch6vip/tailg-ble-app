@@ -33,6 +33,8 @@ class ConnectionManager {
   BluetoothCharacteristic? _feb1Char;
   BluetoothCharacteristic? _feb2Char;
   BluetoothCharacteristic? _feb3Char;
+  BluetoothCharacteristic? _fe02Char;
+  BluetoothCharacteristic? _fe03Char;
   BluetoothCharacteristic? _fcc1Char;
   BluetoothCharacteristic? _fcc2Char;
   BluetoothCharacteristic? _fbb1Char;
@@ -41,6 +43,7 @@ class ConnectionManager {
   Timer? _heartbeatTimer;
   StreamSubscription? _connectionSub;
   StreamSubscription? _notifySub;
+  StreamSubscription? _gpsNotifySub;
 
   bool _userDisconnected = false;
   bool _reconnecting = false;
@@ -88,6 +91,7 @@ class ConnectionManager {
     _reconnecting = false;
     _reconnectAttempt = 0;
     _notifySub?.cancel();
+    _gpsNotifySub?.cancel();
     _connectionSub?.cancel();
     _heartbeatTimer?.cancel();
 
@@ -97,7 +101,11 @@ class ConnectionManager {
     _log.ble('连接设备 ${device.platformName}', detail: device.remoteId.toString());
 
     try {
-      await device.connect(timeout: BleTimings.connectTimeout);
+      await _connectDeviceWithRetry(
+        device,
+        timeout: BleTimings.connectTimeout,
+        attempts: 3,
+      );
 
       _connectionSub = device.connectionState.listen((state) {
         if (state == BluetoothConnectionState.disconnected) {
@@ -107,6 +115,7 @@ class ConnectionManager {
 
       _setState(ConnectionState.connected);
 
+      await _requestQgjMtu(device);
       await Future.delayed(BleTimings.serviceSetupDelay);
       await _discoverAndSetup();
     } catch (e) {
@@ -123,6 +132,7 @@ class ConnectionManager {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
     _notifySub?.cancel();
+    _gpsNotifySub?.cancel();
     _connectionSub?.cancel();
     await _device?.disconnect();
     _reset();
@@ -208,6 +218,7 @@ class ConnectionManager {
 
     // 订阅 fcc0 服务的 fcc1/fbb1/fcc2/fbb2（原 app 必须步骤，否则设备超时断开）
     await _subscribeFcc0(services);
+    await _subscribeQgjGps(services);
 
     if (_feb2Char != null) {
       await _enableNotifyOrIndicate(_feb2Char!, forceIndications: true);
@@ -219,6 +230,40 @@ class ConnectionManager {
       await runGattOperation(
         () => _feb1Char!.write(loginFrame.toList(), withoutResponse: false),
       );
+    }
+  }
+
+  Future<void> _connectDeviceWithRetry(
+    BluetoothDevice device, {
+    required Duration timeout,
+    required int attempts,
+  }) async {
+    Object? lastError;
+    for (var attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        await device.connect(timeout: timeout, mtu: null);
+        return;
+      } catch (e) {
+        lastError = e;
+        if (attempt == attempts) break;
+        _log.ble(
+          '连接失败，短暂重试 $attempt/$attempts',
+          detail: e.toString(),
+          level: LogLevel.debug,
+        );
+        await Future.delayed(BleTimings.initialConnectRetryDelay);
+      }
+    }
+    throw lastError ?? StateError('连接失败');
+  }
+
+  Future<void> _requestQgjMtu(BluetoothDevice device) async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+    try {
+      final mtu = await device.requestMtu(BleTimings.qgjRequestedMtu);
+      _log.ble('MTU 已请求', detail: mtu.toString(), level: LogLevel.debug);
+    } catch (e) {
+      _log.ble('MTU 请求失败', detail: e.toString(), level: LogLevel.debug);
     }
   }
 
@@ -272,6 +317,40 @@ class ConnectionManager {
     );
   }
 
+  Future<void> _subscribeQgjGps(List<BluetoothService> services) async {
+    final fe01Service = services.where(
+      (s) => s.serviceUuid.toString().contains('fe01'),
+    );
+    if (fe01Service.isEmpty) return;
+
+    for (final c in fe01Service.first.characteristics) {
+      final uuid = c.characteristicUuid.toString();
+      if (uuid.contains('fe02')) _fe02Char = c;
+      if (uuid.contains('fe03')) _fe03Char = c;
+    }
+
+    final canWriteGps =
+        _fe02Char?.properties.writeWithoutResponse == true ||
+        _fe02Char?.properties.write == true;
+    final canNotifyGps = _fe03Char?.properties.notify == true;
+    if (!canWriteGps || !canNotifyGps || _fe03Char == null) {
+      _log.ble(
+        'fe01 GPS 服务不完整',
+        detail: 'fe02=$canWriteGps, fe03=$canNotifyGps',
+        level: LogLevel.debug,
+      );
+      return;
+    }
+
+    try {
+      await _enableNotifyOrIndicate(_fe03Char!);
+      _gpsNotifySub = _fe03Char!.onValueReceived.listen(_onQgjGpsNotify);
+      _log.ble('fe03 GPS 通知已订阅', level: LogLevel.info);
+    } catch (e) {
+      _log.ble('fe03 GPS 通知订阅失败', detail: e.toString(), level: LogLevel.debug);
+    }
+  }
+
   void _onStandardNotify(List<int> value) {
     final data = Uint8List.fromList(value);
     _log.ble(
@@ -309,9 +388,22 @@ class ConnectionManager {
     }
   }
 
+  void _onQgjGpsNotify(List<int> value) {
+    if (value.isEmpty) return;
+    _log.ble(
+      '← QGJ GPS 通知',
+      detail: value.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' '),
+      level: LogLevel.debug,
+    );
+  }
+
   void _startHeartbeat() {
     _heartbeatTimer?.cancel();
-    _log.ble('心跳启动 feb3=${_feb3Char != null}', level: LogLevel.info);
+    _log.ble(
+      '心跳启动 feb3=${_feb3Char != null}',
+      detail: 'interval=${BleTimings.qgjStatusPollInterval.inSeconds}s',
+      level: LogLevel.info,
+    );
     if (_feb3Char == null) {
       _log.ble('feb3 未找到，无法维持心跳', level: LogLevel.error);
       return;
@@ -348,7 +440,7 @@ class ConnectionManager {
 
     Future.delayed(BleTimings.heartbeatInitialDelay, tick);
     _heartbeatTimer = Timer.periodic(
-      BleTimings.heartbeatInterval,
+      BleTimings.qgjStatusPollInterval,
       (_) => tick(),
     );
   }
@@ -458,6 +550,8 @@ class ConnectionManager {
     _cmdAckCompleter = null;
     _notifySub?.cancel();
     _notifySub = null;
+    _gpsNotifySub?.cancel();
+    _gpsNotifySub = null;
     _connectionSub?.cancel();
     _connectionSub = null;
     _resetCharacteristics();
@@ -490,7 +584,10 @@ class ConnectionManager {
       if (_state != ConnectionState.reconnecting) break;
 
       try {
-        await _device!.connect(timeout: BleTimings.reconnectConnectTimeout);
+        await _device!.connect(
+          timeout: BleTimings.reconnectConnectTimeout,
+          mtu: null,
+        );
 
         _connectionSub = _device!.connectionState.listen((state) {
           if (state == BluetoothConnectionState.disconnected) {
@@ -499,6 +596,7 @@ class ConnectionManager {
         });
 
         _setState(ConnectionState.connected);
+        await _requestQgjMtu(_device!);
         await Future.delayed(BleTimings.serviceSetupDelay);
         await _discoverAndSetup();
 
@@ -525,6 +623,8 @@ class ConnectionManager {
     _feb1Char = null;
     _feb2Char = null;
     _feb3Char = null;
+    _fe02Char = null;
+    _fe03Char = null;
     _fcc1Char = null;
     _fcc2Char = null;
     _fbb1Char = null;
@@ -546,6 +646,7 @@ class ConnectionManager {
   void dispose() {
     _heartbeatTimer?.cancel();
     _notifySub?.cancel();
+    _gpsNotifySub?.cancel();
     _connectionSub?.cancel();
     _stateController.close();
     _responseController.close();

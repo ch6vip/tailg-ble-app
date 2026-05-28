@@ -7,7 +7,8 @@
 - **双协议自动识别**：连接后自动检测 feb0 (QGJ) 或 fee5 (标准) 服务
 - **QGJ 协议完整实现**：feb1 写入指令、feb2 indicate 接收响应、feb3 心跳保活
 - **fcc0 服务订阅**：自动订阅 fcc1/fbb1/fcc2/fbb2（设备要求，否则超时断开）
-- **心跳保活**：登录成功后 500ms 首次读取 feb3，之后降频轮询并串行化 GATT 操作，降低 Android 断连概率
+- **QGJ 初始化对齐**：连接后按官方流程请求 515 MTU，并在存在 fe01 时订阅 fe03 GPS 通知
+- **心跳保活**：登录成功后 500ms 首次读取 feb3，之后按官方 1 秒节奏轮询并串行化 GATT 操作，降低 Android 断连概率
 - **自动重连**：断开后指数退避重连（3s→6s→8s，最多 8 次），重连后自动恢复订阅和心跳
 - **UUID 模糊匹配**：兼容不同平台返回的 UUID 格式差异
 
@@ -111,6 +112,7 @@
 - **fcc1 状态字节**：官方把 `fcc1State1/2/3` 用作 TCS、定速、倒车、能量回收、低电循环、默认档位等 ECU 功能，不是前灯/转向灯状态；当前已禁用原灯光误写入口。
 - **声音设置**：官方 `QgjSoundSetFragment` 使用 `ecuSoundAdjustGet/Set`，命令实体为 `ECU_SOUND_ADJUST_GET=9248`、`ECU_SOUND_ADJUST_SET=9249`，单项音量用 `OpSoundAdjust(index, volume)`，开关语义为 0/100；当前原自定义声音帧未确认，已禁写。
 - **震动灵敏度**：官方 `EVBikeQgjSettingFragment` 使用 `ecuVibrateSensitivityGet/Set`，命令实体为 `8288/8289`，四档值为 `0/15/50/85`；当前原 1-5 档帧未确认，已禁写。
+- **连接初始化**：官方 QGJ 管理器连接后 `requestMtu(515)`，订阅 `feb2` indications；若存在 `fe01` 则订阅 `fe03` notifications；登录后 `EcuStatus` 每 1000ms 读取 `feb3`。当前已按此节奏对齐。
 
 ### 建议实现优先级
 
