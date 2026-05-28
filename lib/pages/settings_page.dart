@@ -8,7 +8,9 @@ import 'diagnostic_page.dart';
 import 'cloud_token_page.dart';
 import 'garage_page.dart';
 import 'battery_details_page.dart';
+import 'device_info_page.dart';
 import 'ota_precheck_page.dart';
+import 'vehicle_message_page.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
 const _primary = Color(0xFF1E88E5);
@@ -92,6 +94,24 @@ class _SettingsPageState extends State<SettingsPage> {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const VehicleSettingsPage()),
+              ),
+            ),
+            _settingItem(
+              icon: Icons.directions_bike_outlined,
+              title: '车辆信息',
+              subtitle: '车辆档案、蓝牙设备、服务和固件信息',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DeviceInfoPage()),
+              ),
+            ),
+            _settingItem(
+              icon: Icons.mark_email_unread_outlined,
+              title: '消息中心',
+              subtitle: '系统消息、设备消息和安全提醒',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const VehicleMessagePage()),
               ),
             ),
             _settingItem(
