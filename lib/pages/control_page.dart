@@ -21,6 +21,14 @@ import 'vehicle_settings_page.dart';
 
 const _pageBg = Color(0xFFF5F6FA);
 const _kmPerPercent = 0.65;
+const _phoneControlPanelBg = Color(0xFF252525);
+const _phoneControlPanelDown = Color(0xFF1E1E1E);
+const _phoneControlItemBg = Color(0x33999999);
+const _phoneControlItemPressed = Color(0x1A999999);
+const _phoneControlPrimary = Color(0xFF2196F3);
+const _phoneControlPrimaryPressed = Color(0x802196F3);
+const _phoneControlGearBg = Color(0x80181818);
+const _phoneControlRadius = 8.0;
 const _cardDecoration = BoxDecoration(
   color: Colors.white,
   borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -796,14 +804,36 @@ class _ControlAreaState extends State<_ControlArea> {
                 _activeControlId == 'quick:${firstQuick.id}';
             final secondQuickActive =
                 _activeControlId == 'quick:${secondQuick.id}';
+            final powerLabel = isPowerOn ? '断电' : '通电';
+            final lockLabel = isLocked ? '解锁' : '设防';
+            final primaryPowerColor = isPowerOn
+                ? AppColors.danger
+                : _phoneControlPrimary;
 
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: _cardDecoration,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: _phoneControlPanelBg,
+                  borderRadius: BorderRadius.circular(_phoneControlRadius),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x16000000),
+                      blurRadius: 18,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _ControlPanelHeader(
+                      enabled: enabled,
+                      isLocked: isLocked,
+                      isPowerOn: isPowerOn,
+                    ),
+                    const SizedBox(height: 12),
                     _ControlChannelBar(
                       channel: cloudState.controlChannel,
                       canUseBle: canUseBle,
@@ -811,141 +841,103 @@ class _ControlAreaState extends State<_ControlArea> {
                       vehicleName: cloudVehicle?.displayName,
                       disabledReason: enabled ? null : disabledReason,
                     ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ControlTile(
+                            icon: isLocked
+                                ? Icons.lock_open
+                                : Icons.lock_outline,
+                            label: lockLabel,
+                            enabled: enabled,
+                            active: _activeControlId == 'fixedLock',
+                            loading: _activeControlId == 'fixedLock',
+                            disabledReason: disabledReason,
+                            statusText: isLocked ? '当前设防' : '当前解锁',
+                            onTap: () => _send(
+                              isLocked ? CommandCode.unlock : CommandCode.lock,
+                              actionId: 'fixedLock',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _ControlTile(
+                            icon: Icons.volume_up_outlined,
+                            label: '寻车',
+                            enabled: enabled,
+                            active: _activeControlId == 'fixedFind',
+                            loading: _activeControlId == 'fixedFind',
+                            disabledReason: disabledReason,
+                            statusText: '鸣笛定位',
+                            onTap: () =>
+                                _send(CommandCode.find, actionId: 'fixedFind'),
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 10),
-                    SizedBox(
-                      height: 232,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          SizedBox(
-                            width: 92,
-                            child: Column(
-                              children: [
-                                Expanded(
-                                  child: _ControlTile(
-                                    icon: firstQuick.icon,
-                                    label: firstQuick.label,
-                                    enabled:
-                                        firstQuick.command == null || enabled,
-                                    active: firstQuickActive,
-                                    loading: firstQuickActive,
-                                    disabledReason: disabledReason,
-                                    onTap: () =>
-                                        _runQuickAction(firstQuick, enabled),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                Expanded(
-                                  child: Stack(
-                                    children: [
-                                      Positioned.fill(
-                                        child: _ControlTile(
-                                          icon: secondQuick.icon,
-                                          label: secondQuick.label,
-                                          enabled:
-                                              secondQuick.command == null ||
-                                              enabled,
-                                          active: secondQuickActive,
-                                          loading: secondQuickActive,
-                                          disabledReason: disabledReason,
-                                          onTap: () => _runQuickAction(
-                                            secondQuick,
-                                            enabled,
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        right: 4,
-                                        bottom: 4,
-                                        child: _QuickEditButton(
-                                          onTap: _editQuickControls,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                SizedBox(
-                                  height: 86,
-                                  child: Center(
-                                    child: SlideToAction(
-                                      label: isPowerOn ? '左滑断电' : '右滑通电',
-                                      icon: isPowerOn
-                                          ? Icons.power_off
-                                          : Icons.power_settings_new,
-                                      reverseSlide: isPowerOn,
-                                      loading: _activeControlId == 'slidePower',
-                                      loadingLabel: isPowerOn ? '正在断电' : '正在通电',
-                                      backgroundColor: isPowerOn
-                                          ? AppColors.danger
-                                          : AppColors.success,
-                                      enabled: enabled,
-                                      onDisabledTap: () =>
-                                          _showUnavailableSnack(disabledReason),
-                                      onSlideComplete: () => _send(
-                                        isPowerOn
-                                            ? CommandCode.powerOff
-                                            : CommandCode.powerOn,
-                                        actionId: 'slidePower',
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                Expanded(
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: _ControlTile(
-                                          icon: Icons.volume_up_outlined,
-                                          label: '寻车',
-                                          enabled: enabled,
-                                          active:
-                                              _activeControlId == 'fixedFind',
-                                          loading:
-                                              _activeControlId == 'fixedFind',
-                                          disabledReason: disabledReason,
-                                          onTap: () => _send(
-                                            CommandCode.find,
-                                            actionId: 'fixedFind',
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: _ControlTile(
-                                          icon: isLocked
-                                              ? Icons.lock_open
-                                              : Icons.lock_outline,
-                                          label: isLocked ? '解锁' : '设防',
-                                          enabled: enabled,
-                                          active:
-                                              _activeControlId == 'fixedLock',
-                                          loading:
-                                              _activeControlId == 'fixedLock',
-                                          disabledReason: disabledReason,
-                                          onTap: () => _send(
-                                            isLocked
-                                                ? CommandCode.unlock
-                                                : CommandCode.lock,
-                                            actionId: 'fixedLock',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                    _PrimaryPowerControl(
+                      label: powerLabel,
+                      hint: isPowerOn ? '左滑关闭车辆电源' : '右滑开启车辆电源',
+                      icon: isPowerOn
+                          ? Icons.power_off
+                          : Icons.power_settings_new,
+                      reverseSlide: isPowerOn,
+                      loading: _activeControlId == 'slidePower',
+                      loadingLabel: isPowerOn ? '正在断电' : '正在通电',
+                      color: primaryPowerColor,
+                      enabled: enabled,
+                      onDisabledTap: () =>
+                          _showUnavailableSnack(disabledReason),
+                      onSlideComplete: () => _send(
+                        isPowerOn ? CommandCode.powerOff : CommandCode.powerOn,
+                        actionId: 'slidePower',
                       ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ControlTile(
+                            icon: firstQuick.icon,
+                            label: firstQuick.label,
+                            enabled: firstQuick.command == null || enabled,
+                            active: firstQuickActive,
+                            loading: firstQuickActive,
+                            disabledReason: disabledReason,
+                            compact: true,
+                            onTap: () => _runQuickAction(firstQuick, enabled),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              _ControlTile(
+                                icon: secondQuick.icon,
+                                label: secondQuick.label,
+                                enabled: secondQuick.command == null || enabled,
+                                active: secondQuickActive,
+                                loading: secondQuickActive,
+                                disabledReason: disabledReason,
+                                compact: true,
+                                onTap: () =>
+                                    _runQuickAction(secondQuick, enabled),
+                              ),
+                              Positioned(
+                                right: 4,
+                                bottom: 4,
+                                child: _QuickEditButton(
+                                  onTap: _editQuickControls,
+                                  dark: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -1044,6 +1036,152 @@ class _ControlChannelBar extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ControlPanelHeader extends StatelessWidget {
+  final bool enabled;
+  final bool isLocked;
+  final bool isPowerOn;
+
+  const _ControlPanelHeader({
+    required this.enabled,
+    required this.isLocked,
+    required this.isPowerOn,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final stateText = enabled
+        ? [isLocked ? '已设防' : '已解锁', isPowerOn ? '已通电' : '未通电'].join(' · ')
+        : '待连接';
+    return Row(
+      children: [
+        const Text(
+          '手机控车',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+        const Spacer(),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: _phoneControlGearBg,
+            borderRadius: BorderRadius.circular(_phoneControlRadius),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                enabled ? Icons.radio_button_checked : Icons.radio_button_off,
+                size: 12,
+                color: enabled ? _phoneControlPrimary : Colors.white38,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                stateText,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: enabled ? Colors.white : Colors.white54,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PrimaryPowerControl extends StatelessWidget {
+  final String label;
+  final String hint;
+  final IconData icon;
+  final bool reverseSlide;
+  final bool loading;
+  final String loadingLabel;
+  final Color color;
+  final bool enabled;
+  final VoidCallback onDisabledTap;
+  final VoidCallback onSlideComplete;
+
+  const _PrimaryPowerControl({
+    required this.label,
+    required this.hint,
+    required this.icon,
+    required this.reverseSlide,
+    required this.loading,
+    required this.loadingLabel,
+    required this.color,
+    required this.enabled,
+    required this.onDisabledTap,
+    required this.onSlideComplete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: _phoneControlItemBg,
+        borderRadius: BorderRadius.circular(_phoneControlRadius),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: enabled ? color : _phoneControlPrimaryPressed,
+              borderRadius: BorderRadius.circular(_phoneControlRadius),
+            ),
+            child: Icon(icon, color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  hint,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12, color: Colors.white54),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 144,
+            child: SlideToAction(
+              label: reverseSlide ? '左滑' : '右滑',
+              icon: icon,
+              reverseSlide: reverseSlide,
+              loading: loading,
+              loadingLabel: loadingLabel,
+              backgroundColor: color,
+              enabled: enabled,
+              onDisabledTap: onDisabledTap,
+              onSlideComplete: onSlideComplete,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1349,6 +1487,8 @@ class _ControlTile extends StatefulWidget {
   final bool enabled;
   final bool active;
   final bool loading;
+  final bool compact;
+  final String? statusText;
   final String? disabledReason;
   final VoidCallback onTap;
 
@@ -1358,6 +1498,8 @@ class _ControlTile extends StatefulWidget {
     required this.enabled,
     this.active = false,
     required this.loading,
+    this.compact = false,
+    this.statusText,
     this.disabledReason,
     required this.onTap,
   });
@@ -1386,17 +1528,19 @@ class _ControlTileState extends State<_ControlTile> {
   Widget build(BuildContext context) {
     final interactive = widget.enabled && !widget.loading;
     final color = widget.active
-        ? AppColors.primary
+        ? Colors.white
         : widget.enabled
-        ? AppColors.textSecondary
-        : AppColors.textTertiary;
+        ? Colors.white
+        : Colors.white38;
+    final secondaryColor = widget.enabled ? Colors.white54 : Colors.white30;
     final background = widget.active
-        ? AppColors.primary.withValues(alpha: 0.12)
+        ? _phoneControlPrimary
         : _pressed
-        ? AppColors.primary.withValues(alpha: 0.08)
+        ? _phoneControlItemPressed
         : widget.enabled
-        ? Colors.grey.shade100
-        : const Color(0xFFF2F2F2);
+        ? _phoneControlItemBg
+        : _phoneControlPanelDown;
+    final radius = BorderRadius.circular(_phoneControlRadius);
     return AnimatedScale(
       duration: const Duration(milliseconds: 120),
       curve: Curves.easeOut,
@@ -1406,17 +1550,17 @@ class _ControlTileState extends State<_ControlTile> {
         curve: Curves.easeOut,
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: radius,
           border: Border.all(
             color: widget.active
-                ? AppColors.primary.withValues(alpha: 0.32)
+                ? _phoneControlPrimary.withValues(alpha: 0.42)
                 : Colors.transparent,
-            width: 1.2,
+            width: 1,
           ),
           boxShadow: widget.active
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.16),
+                    color: _phoneControlPrimary.withValues(alpha: 0.22),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -1425,7 +1569,7 @@ class _ControlTileState extends State<_ControlTile> {
         ),
         child: Material(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: radius,
           child: InkWell(
             onTap: widget.loading
                 ? null
@@ -1439,19 +1583,21 @@ class _ControlTileState extends State<_ControlTile> {
             onTapDown: interactive ? (_) => _setPressed(true) : null,
             onTapCancel: interactive ? () => _setPressed(false) : null,
             onTapUp: interactive ? (_) => _setPressed(false) : null,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: radius,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              padding: EdgeInsets.symmetric(
+                horizontal: widget.compact ? 10 : 12,
+                vertical: widget.compact ? 12 : 14,
+              ),
+              child: Row(
                 children: [
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 180),
                     child: widget.loading
                         ? SizedBox(
                             key: const ValueKey('loading'),
-                            width: 24,
-                            height: 24,
+                            width: widget.compact ? 20 : 24,
+                            height: widget.compact ? 20 : 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.4,
                               color: color,
@@ -1461,22 +1607,41 @@ class _ControlTileState extends State<_ControlTile> {
                             widget.icon,
                             key: ValueKey(widget.icon),
                             color: color,
-                            size: widget.active ? 28 : 26,
+                            size: widget.compact ? 22 : 26,
                           ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      height: 1.1,
-                      color: color,
-                      fontWeight: widget.active
-                          ? FontWeight.w700
-                          : FontWeight.w600,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: widget.compact ? 13 : 15,
+                            height: 1.1,
+                            color: color,
+                            fontWeight: widget.active
+                                ? FontWeight.w800
+                                : FontWeight.w700,
+                          ),
+                        ),
+                        if (widget.statusText != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.statusText!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: secondaryColor,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
@@ -1491,30 +1656,33 @@ class _ControlTileState extends State<_ControlTile> {
 
 class _QuickEditButton extends StatelessWidget {
   final VoidCallback onTap;
+  final bool dark;
 
-  const _QuickEditButton({required this.onTap});
+  const _QuickEditButton({required this.onTap, this.dark = false});
 
   @override
   Widget build(BuildContext context) {
+    final background = dark ? Colors.white24 : AppColors.primary;
+    final foreground = dark ? Colors.white : Colors.white;
     return Material(
       color: Colors.transparent,
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
-        child: const SizedBox(
+        child: SizedBox(
           width: 44,
           height: 44,
           child: Center(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: AppColors.primary,
+                color: background,
                 shape: BoxShape.circle,
               ),
               child: SizedBox(
                 width: 28,
                 height: 28,
-                child: Icon(Icons.edit, color: Colors.white, size: 16),
+                child: Icon(Icons.edit, color: foreground, size: 16),
               ),
             ),
           ),
