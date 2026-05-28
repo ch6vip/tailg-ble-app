@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -76,20 +77,11 @@ class _ControlPageState extends State<ControlPage>
                   _Header(connState: connState),
                   _StatusSection(connState: connState),
                   const SizedBox(height: 20),
-                  const _BikeImage(),
-                  _StateLabel(connState: connState),
+                  _BikeImage(connState: connState),
                   const SizedBox(height: 20),
                   _ControlArea(connState: connState),
                   const SizedBox(height: 20),
-                  const _LocationCard(),
-                  const SizedBox(height: 20),
-                  const _FunctionSettingsCard(),
-                  const SizedBox(height: 20),
-                  const _SoundEffectsBanner(),
-                  const SizedBox(height: 20),
-                  const _NfcKeyCard(),
-                  const SizedBox(height: 20),
-                  const _RideRecordCard(),
+                  const _HomeQuickSection(),
                   const SizedBox(height: 20),
                   _RidingModeSelector(connState: connState),
                   const SizedBox(height: 20),
@@ -414,33 +406,9 @@ class _StatusSection extends StatelessWidget {
 }
 
 class _BikeImage extends StatelessWidget {
-  const _BikeImage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        height: 160,
-        margin: const EdgeInsets.symmetric(horizontal: 20),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Icon(
-            Icons.electric_bike,
-            size: 100,
-            color: Colors.grey.shade300,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StateLabel extends StatelessWidget {
   final ble.ConnectionState connState;
-  const _StateLabel({required this.connState});
+
+  const _BikeImage({required this.connState});
 
   @override
   Widget build(BuildContext context) {
@@ -458,88 +426,68 @@ class _StateLabel extends StatelessWidget {
             final cloudVehicle = cloudState.signedIn
                 ? cloudState.selectedVehicle
                 : null;
-
-            String stateText;
-            IconData stateIcon;
-            List<Color> gradientColors;
-
-            if (isConnected && bike != null) {
-              if (bike.isLocked && !bike.isPowerOn) {
-                stateText = '已设防';
-                stateIcon = Icons.lock_outline;
-                gradientColors = [Colors.purple.shade200, Colors.blue.shade200];
-              } else if (!bike.isLocked && bike.isPowerOn) {
-                stateText = '已通电';
-                stateIcon = Icons.power;
-                gradientColors = [Colors.green.shade300, Colors.teal.shade300];
-              } else if (!bike.isLocked) {
-                stateText = '已解锁';
-                stateIcon = Icons.lock_open;
-                gradientColors = [
-                  Colors.orange.shade200,
-                  Colors.amber.shade300,
-                ];
-              } else {
-                stateText = '已上锁';
-                stateIcon = Icons.lock_outline;
-                gradientColors = [Colors.purple.shade200, Colors.blue.shade200];
-              }
-            } else if (cloudVehicle != null) {
-              final cloudDisplay = _cloudVehicleStateDisplay(cloudVehicle);
-              stateText = cloudDisplay.$1;
-              stateIcon = cloudDisplay.$2;
-              gradientColors = cloudDisplay.$3;
-            } else if (!isConnected) {
-              stateText = '未连接';
-              stateIcon = Icons.bluetooth_disabled;
-              gradientColors = [Colors.grey.shade300, Colors.grey.shade400];
-            } else {
-              stateText = '等待车辆状态';
-              stateIcon = Icons.sync;
-              gradientColors = [Colors.blue.shade200, Colors.blue.shade300];
-            }
-
+            final display = _vehicleStateDisplay(
+              connState: connState,
+              bike: bike,
+              cloudVehicle: cloudVehicle,
+            );
+            final isPowerOn = isConnected && bike != null
+                ? bike.isPowerOn
+                : cloudVehicle?.isPowerOn ?? false;
+            final isLocked = isConnected && bike != null
+                ? bike.isLocked
+                : cloudVehicle?.isLocked ?? true;
             return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(colors: gradientColors),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(stateIcon, size: 18, color: Colors.white),
-                      ),
-                      const SizedBox(width: 10),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        child: Text(
-                          stateText,
-                          key: ValueKey(stateText),
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Text(
-                        '手动模式',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                height: 196,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x0A000000),
+                      blurRadius: 16,
+                      offset: Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: CustomPaint(
+                          painter: _BikeModelPainter(
+                            accent: display.colors.last,
+                            isPowerOn: isPowerOn,
+                            isLocked: isLocked,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      _ManualModeToggle(enabled: isConnected),
-                    ],
-                  ),
-                ],
+                    ),
+                    Positioned(
+                      left: 18,
+                      top: 16,
+                      child: _VehicleStateChip(display: display),
+                    ),
+                    Positioned(
+                      right: 16,
+                      top: 14,
+                      child: _ManualModePill(enabled: isConnected),
+                    ),
+                    Positioned(
+                      left: 18,
+                      right: 18,
+                      bottom: 14,
+                      child: _VehicleModelMeta(
+                        connState: connState,
+                        isPowerOn: isPowerOn,
+                        isLocked: isLocked,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -549,35 +497,325 @@ class _StateLabel extends StatelessWidget {
   }
 }
 
-(String, IconData, List<Color>) _cloudVehicleStateDisplay(
-  OfficialVehicle vehicle,
-) {
+class _VehicleStateDisplay {
+  final String text;
+  final IconData icon;
+  final List<Color> colors;
+
+  const _VehicleStateDisplay(this.text, this.icon, this.colors);
+}
+
+_VehicleStateDisplay _vehicleStateDisplay({
+  required ble.ConnectionState connState,
+  required BikeState? bike,
+  required OfficialVehicle? cloudVehicle,
+}) {
+  final isConnected = connState == ble.ConnectionState.ready;
+  if (isConnected && bike != null) {
+    if (bike.isLocked && !bike.isPowerOn) {
+      return _VehicleStateDisplay('已设防', Icons.lock_outline, [
+        Colors.purple.shade200,
+        Colors.blue.shade200,
+      ]);
+    }
+    if (!bike.isLocked && bike.isPowerOn) {
+      return _VehicleStateDisplay('已通电', Icons.power, [
+        Colors.green.shade300,
+        Colors.teal.shade300,
+      ]);
+    }
+    if (!bike.isLocked) {
+      return _VehicleStateDisplay('已解锁', Icons.lock_open, [
+        Colors.orange.shade200,
+        Colors.amber.shade300,
+      ]);
+    }
+    return _VehicleStateDisplay('已上锁', Icons.lock_outline, [
+      Colors.purple.shade200,
+      Colors.blue.shade200,
+    ]);
+  }
+  if (cloudVehicle != null) return _cloudVehicleStateDisplay(cloudVehicle);
+  if (!isConnected) {
+    return _VehicleStateDisplay('未连接', Icons.bluetooth_disabled, [
+      Colors.grey.shade300,
+      Colors.grey.shade400,
+    ]);
+  }
+  return _VehicleStateDisplay('等待车辆状态', Icons.sync, [
+    Colors.blue.shade200,
+    Colors.blue.shade300,
+  ]);
+}
+
+_VehicleStateDisplay _cloudVehicleStateDisplay(OfficialVehicle vehicle) {
   if (!vehicle.online) {
-    return (
-      '云端离线',
-      Icons.cloud_off,
-      [Colors.grey.shade300, Colors.grey.shade400],
-    );
+    return _VehicleStateDisplay('云端离线', Icons.cloud_off, [
+      Colors.grey.shade300,
+      Colors.grey.shade400,
+    ]);
   }
   if (vehicle.isPowerOn) {
-    return (
-      '云端已通电',
-      Icons.power,
-      [Colors.green.shade300, Colors.teal.shade300],
-    );
+    return _VehicleStateDisplay('云端已通电', Icons.power, [
+      Colors.green.shade300,
+      Colors.teal.shade300,
+    ]);
   }
   if (vehicle.isLocked) {
-    return (
-      '云端已设防',
-      Icons.lock_outline,
-      [Colors.purple.shade200, Colors.blue.shade200],
+    return _VehicleStateDisplay('云端已设防', Icons.lock_outline, [
+      Colors.purple.shade200,
+      Colors.blue.shade200,
+    ]);
+  }
+  return _VehicleStateDisplay('云端已解锁', Icons.lock_open, [
+    Colors.orange.shade200,
+    Colors.amber.shade300,
+  ]);
+}
+
+class _VehicleStateChip extends StatelessWidget {
+  final _VehicleStateDisplay display;
+
+  const _VehicleStateChip({required this.display});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: display.colors),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(display.icon, size: 15, color: Colors.white),
+          const SizedBox(width: 6),
+          Text(
+            display.text,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
-  return (
-    '云端已解锁',
-    Icons.lock_open,
-    [Colors.orange.shade200, Colors.amber.shade300],
-  );
+}
+
+class _VehicleModelMeta extends StatelessWidget {
+  final ble.ConnectionState connState;
+  final bool isPowerOn;
+  final bool isLocked;
+
+  const _VehicleModelMeta({
+    required this.connState,
+    required this.isPowerOn,
+    required this.isLocked,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final state = connState == ble.ConnectionState.ready
+        ? '${isPowerOn ? '电源开启' : '电源关闭'} · ${isLocked ? '防盗中' : '可骑行'}'
+        : '连接车辆后显示实时状态';
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            '智能电动车',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          state,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        ),
+      ],
+    );
+  }
+}
+
+class _ManualModePill extends StatefulWidget {
+  final bool enabled;
+  const _ManualModePill({required this.enabled});
+
+  @override
+  State<_ManualModePill> createState() => _ManualModePillState();
+}
+
+class _ManualModePillState extends State<_ManualModePill> {
+  bool _manualMode = false;
+
+  void _toggleManualMode() {
+    if (!widget.enabled) return;
+    setState(() => _manualMode = !_manualMode);
+    HapticFeedback.selectionClick();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.78),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: widget.enabled ? _toggleManualMode : null,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '手动模式',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: widget.enabled
+                      ? AppColors.textSecondary
+                      : AppColors.textTertiary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 6),
+              _ManualModeToggle(
+                enabled: widget.enabled,
+                value: _manualMode,
+                onChanged: (_) => _toggleManualMode(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BikeModelPainter extends CustomPainter {
+  final Color accent;
+  final bool isPowerOn;
+  final bool isLocked;
+
+  const _BikeModelPainter({
+    required this.accent,
+    required this.isPowerOn,
+    required this.isLocked,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final centerY = size.height * 0.56;
+    final front = Offset(size.width * 0.72, centerY + 28);
+    final rear = Offset(size.width * 0.30, centerY + 28);
+    final bodyPaint = Paint()
+      ..color = const Color(0xFF2C3038)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final accentPaint = Paint()
+      ..color = accent.withValues(alpha: isPowerOn ? 0.88 : 0.42)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 7
+      ..strokeCap = StrokeCap.round;
+    final softPaint = Paint()
+      ..color = accent.withValues(alpha: 0.08)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(Offset(size.width * 0.50, centerY + 12), 96, softPaint);
+    _drawWheel(canvas, rear, 34, isLocked);
+    _drawWheel(canvas, front, 34, isLocked);
+
+    final frame = Path()
+      ..moveTo(rear.dx, rear.dy)
+      ..lineTo(size.width * 0.43, centerY - 12)
+      ..lineTo(size.width * 0.58, centerY + 28)
+      ..lineTo(front.dx, front.dy)
+      ..moveTo(size.width * 0.43, centerY - 12)
+      ..lineTo(size.width * 0.54, centerY - 46)
+      ..lineTo(size.width * 0.66, centerY - 18);
+    canvas.drawPath(frame, bodyPaint);
+
+    final battery = RRect.fromRectAndRadius(
+      Rect.fromLTWH(size.width * 0.43, centerY - 4, size.width * 0.18, 32),
+      const Radius.circular(12),
+    );
+    canvas.drawRRect(battery, Paint()..color = const Color(0xFF121418));
+    canvas.drawRRect(
+      battery.deflate(5),
+      Paint()..color = accent.withValues(alpha: isPowerOn ? 0.78 : 0.22),
+    );
+
+    canvas.drawLine(
+      Offset(size.width * 0.54, centerY - 46),
+      Offset(size.width * 0.49, centerY - 70),
+      bodyPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.46, centerY - 70),
+      Offset(size.width * 0.58, centerY - 70),
+      bodyPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.66, centerY - 18),
+      Offset(size.width * 0.72, centerY - 56),
+      bodyPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.72, centerY - 56),
+      Offset(size.width * 0.80, centerY - 50),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.30, centerY + 28),
+      Offset(size.width * 0.25, centerY - 20),
+      accentPaint,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.80, centerY - 50),
+      5,
+      Paint()..color = isPowerOn ? accent : Colors.grey.shade500,
+    );
+  }
+
+  void _drawWheel(Canvas canvas, Offset center, double radius, bool locked) {
+    final wheelPaint = Paint()
+      ..color = const Color(0xFF252525)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 9;
+    final rimPaint = Paint()
+      ..color = locked ? Colors.grey.shade400 : accent.withValues(alpha: 0.78)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawCircle(center, radius, wheelPaint);
+    canvas.drawCircle(center, radius - 11, rimPaint);
+    for (var i = 0; i < 6; i++) {
+      final angle = i * 3.14159 / 3;
+      final end = Offset(
+        center.dx + (radius - 13) * math.cos(angle),
+        center.dy + (radius - 13) * math.sin(angle),
+      );
+      canvas.drawLine(center, end, rimPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BikeModelPainter oldDelegate) {
+    return oldDelegate.accent != accent ||
+        oldDelegate.isPowerOn != isPowerOn ||
+        oldDelegate.isLocked != isLocked;
+  }
 }
 
 class _ControlArea extends StatefulWidget {
@@ -841,6 +1079,8 @@ class _ControlAreaState extends State<_ControlArea> {
                       vehicleName: cloudVehicle?.displayName,
                       disabledReason: enabled ? null : disabledReason,
                     ),
+                    const SizedBox(height: 10),
+                    _CurrentGearStrip(enabled: enabled),
                     const SizedBox(height: 14),
                     Row(
                       children: [
@@ -1183,6 +1423,67 @@ class _PrimaryPowerControl extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CurrentGearStrip extends StatelessWidget {
+  final bool enabled;
+
+  const _CurrentGearStrip({required this.enabled});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<RidingMode>(
+      stream: connectionManager.ridingModeStream,
+      initialData: connectionManager.ridingMode,
+      builder: (context, snapshot) {
+        final mode = snapshot.data ?? RidingMode.standard;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: _phoneControlGearBg,
+            borderRadius: BorderRadius.circular(_phoneControlRadius),
+          ),
+          child: Row(
+            children: [
+              const Text(
+                '当前档位',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white54,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                    minHeight: 4,
+                    value: enabled
+                        ? (mode.index + 1) / RidingMode.values.length
+                        : 0,
+                    backgroundColor: _phoneControlItemBg,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      enabled ? _phoneControlPrimary : Colors.white24,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                enabled ? mode.label : '未连接',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: enabled ? Colors.white : Colors.white38,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -1692,67 +1993,136 @@ class _QuickEditButton extends StatelessWidget {
   }
 }
 
-class _FunctionSettingsCard extends StatelessWidget {
-  const _FunctionSettingsCard();
+class _HomeQuickSection extends StatelessWidget {
+  const _HomeQuickSection();
 
   @override
   Widget build(BuildContext context) {
+    final items = [
+      _HomeQuickItem(
+        icon: Icons.location_on_outlined,
+        label: '车辆位置',
+        accent: AppColors.info,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LocationPage()),
+        ),
+      ),
+      _HomeQuickItem(
+        icon: Icons.tune,
+        label: '车辆设置',
+        accent: _phoneControlPrimary,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const VehicleSettingsPage()),
+        ),
+      ),
+      _HomeQuickItem(
+        icon: Icons.location_searching,
+        label: '电子围栏',
+        accent: AppColors.success,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ElectricFencePage()),
+        ),
+      ),
+      _HomeQuickItem(
+        icon: Icons.ios_share,
+        label: '分享用车',
+        accent: const Color(0xFF7B61FF),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ShareBikePage()),
+        ),
+      ),
+      _HomeQuickItem(
+        icon: Icons.graphic_eq,
+        label: '音效设置',
+        accent: const Color(0xFF00A896),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const QgjSoundEffectsPage()),
+        ),
+      ),
+      _HomeQuickItem(
+        icon: Icons.nfc,
+        label: 'NFC钥匙',
+        accent: const Color(0xFF7B61FF),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const NfcKeyPage()),
+        ),
+      ),
+      _HomeQuickItem(
+        icon: Icons.route_outlined,
+        label: '骑行记录',
+        accent: const Color(0xFFFF8A00),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const RideRecordPage()),
+        ),
+      ),
+    ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-        decoration: _cardDecoration,
+        padding: const EdgeInsets.fromLTRB(0, 16, 0, 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0A000000),
+              blurRadius: 10,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '功能设置',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A2E),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                '快捷功能',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1A1A2E),
+                ),
               ),
             ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: _FunctionShortcut(
-                    icon: Icons.tune,
-                    label: '车辆设置',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const VehicleSettingsPage(),
-                      ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 92,
+              child: ListView.separated(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                scrollDirection: Axis.horizontal,
+                itemCount: items.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) => SizedBox(
+                  width: 82,
+                  child: _HomeQuickTile(item: items[index]),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Center(
+              child: SizedBox(
+                width: 60,
+                height: 4,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                    value: 3 / items.length,
+                    backgroundColor: const Color(0xFFDFDFDF),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFF2C2C2C),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _FunctionShortcut(
-                    icon: Icons.location_searching,
-                    label: '电子围栏',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ElectricFencePage(),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _FunctionShortcut(
-                    icon: Icons.ios_share,
-                    label: '分享用车',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ShareBikePage()),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ],
         ),
@@ -1761,181 +2131,62 @@ class _FunctionSettingsCard extends StatelessWidget {
   }
 }
 
-class _FunctionShortcut extends StatelessWidget {
+class _HomeQuickItem {
   final IconData icon;
   final String label;
+  final Color accent;
   final VoidCallback onTap;
 
-  const _FunctionShortcut({
+  const _HomeQuickItem({
     required this.icon,
     required this.label,
+    required this.accent,
     required this.onTap,
   });
+}
+
+class _HomeQuickTile extends StatelessWidget {
+  final _HomeQuickItem item;
+
+  const _HomeQuickTile({required this.item});
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.grey.shade100,
-      borderRadius: BorderRadius.circular(14),
+      color: const Color(0xFFF7F8FA),
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: () {
           HapticFeedback.mediumImpact();
-          onTap();
+          item.onTap();
         },
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         child: SizedBox(
-          height: 86,
+          height: 92,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 24, color: AppColors.textSecondary),
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: item.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(item.icon, size: 22, color: item.accent),
+              ),
               const SizedBox(height: 8),
               Text(
-                label,
+                item.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 12,
                   color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SoundEffectsBanner extends StatelessWidget {
-  const _SoundEffectsBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    return _HomeFeatureCard(
-      icon: Icons.graphic_eq,
-      title: 'QGJ音效设置',
-      subtitle: '复刻官方音效入口，当前不写入车辆',
-      accent: const Color(0xFF00A896),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const QgjSoundEffectsPage()),
-      ),
-    );
-  }
-}
-
-class _NfcKeyCard extends StatelessWidget {
-  const _NfcKeyCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return _HomeFeatureCard(
-      icon: Icons.nfc,
-      title: 'NFC钥匙',
-      subtitle: '刷卡骑行新体验，本地钥匙列表',
-      accent: const Color(0xFF7B61FF),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const NfcKeyPage()),
-      ),
-    );
-  }
-}
-
-class _RideRecordCard extends StatelessWidget {
-  const _RideRecordCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return _HomeFeatureCard(
-      icon: Icons.route_outlined,
-      title: '今日骑行记录',
-      subtitle: '查看本地控车、定位和操作记录',
-      accent: const Color(0xFFFF8A00),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const RideRecordPage()),
-      ),
-    );
-  }
-}
-
-class _HomeFeatureCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color accent;
-  final VoidCallback onTap;
-
-  const _HomeFeatureCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.accent,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            onTap();
-          },
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.all(18),
-            decoration: _cardDecoration,
-            child: Row(
-              children: [
-                Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(icon, color: accent, size: 28),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                const Icon(Icons.chevron_right, color: AppColors.textTertiary),
-              ],
-            ),
           ),
         ),
       ),
@@ -2041,7 +2292,9 @@ class _RidingModeSelector extends StatelessWidget {
 
 class _ManualModeToggle extends StatefulWidget {
   final bool enabled;
-  const _ManualModeToggle({required this.enabled});
+  final bool? value;
+  final ValueChanged<bool>? onChanged;
+  const _ManualModeToggle({required this.enabled, this.value, this.onChanged});
 
   @override
   State<_ManualModeToggle> createState() => _ManualModeToggleState();
@@ -2052,10 +2305,15 @@ class _ManualModeToggleState extends State<_ManualModeToggle> {
 
   @override
   Widget build(BuildContext context) {
+    final selected = widget.value ?? _manualMode;
     return GestureDetector(
       onTap: widget.enabled
           ? () {
-              setState(() => _manualMode = !_manualMode);
+              final next = !selected;
+              if (widget.value == null) {
+                setState(() => _manualMode = next);
+              }
+              widget.onChanged?.call(next);
               HapticFeedback.selectionClick();
             }
           : null,
@@ -2064,14 +2322,12 @@ class _ManualModeToggleState extends State<_ManualModeToggle> {
         width: 44,
         height: 26,
         decoration: BoxDecoration(
-          color: _manualMode
-              ? const Color(0xFF1E88E5)
-              : const Color(0xFFE0E0E0),
+          color: selected ? const Color(0xFF1E88E5) : const Color(0xFFE0E0E0),
           borderRadius: BorderRadius.circular(13),
         ),
         child: AnimatedAlign(
           duration: const Duration(milliseconds: 200),
-          alignment: _manualMode ? Alignment.centerRight : Alignment.centerLeft,
+          alignment: selected ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
             width: 22,
             height: 22,
@@ -2087,37 +2343,6 @@ class _ManualModeToggleState extends State<_ManualModeToggle> {
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LocationCard extends StatelessWidget {
-  const _LocationCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: GestureDetector(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const LocationPage()),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: _cardDecoration,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '车辆位置',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              Icon(Icons.chevron_right, color: Colors.grey.shade400),
-            ],
           ),
         ),
       ),
