@@ -659,6 +659,25 @@ class _ControlAreaState extends State<_ControlArea> {
     return vehicleStore.defaultVehicleId == linkedId;
   }
 
+  String _disabledReason(OfficialCloudState cloudState) {
+    switch (cloudState.controlChannel) {
+      case OfficialControlChannel.ble:
+        return widget.connState == ble.ConnectionState.ready
+            ? '当前官方车辆未关联这台本地 BLE 车辆'
+            : 'BLE 未连接，当前通道不可用';
+      case OfficialControlChannel.officialCloud:
+        return cloudState.signedIn ? '官方账号未选择车辆' : '请先登录官方账号';
+      case OfficialControlChannel.automatic:
+        return '请连接 BLE 或登录官方账号后再控车';
+    }
+  }
+
+  void _showUnavailableSnack(String reason) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(reason), duration: const Duration(seconds: 2)),
+    );
+  }
+
   Future<bool> _sendOfficialCloudCommand(CommandCode cmd) async {
     try {
       final message = await officialCloudService.sendCommand(cmd);
@@ -734,6 +753,7 @@ class _ControlAreaState extends State<_ControlArea> {
               OfficialControlChannel.officialCloud => canUseCloud,
               OfficialControlChannel.automatic => canUseBle || canUseCloud,
             });
+        final disabledReason = _disabledReason(cloudState);
 
         return StreamBuilder<BikeState?>(
           stream: connectionManager.bikeStateStream,
@@ -769,6 +789,7 @@ class _ControlAreaState extends State<_ControlArea> {
                       canUseBle: canUseBle,
                       canUseCloud: canUseCloud,
                       vehicleName: cloudVehicle?.displayName,
+                      disabledReason: enabled ? null : disabledReason,
                     ),
                     const SizedBox(height: 10),
                     SizedBox(
@@ -788,6 +809,7 @@ class _ControlAreaState extends State<_ControlArea> {
                                         firstQuick.command == null || enabled,
                                     active: firstQuickActive,
                                     loading: firstQuickActive,
+                                    disabledReason: disabledReason,
                                     onTap: () =>
                                         _runQuickAction(firstQuick, enabled),
                                   ),
@@ -805,6 +827,7 @@ class _ControlAreaState extends State<_ControlArea> {
                                               enabled,
                                           active: secondQuickActive,
                                           loading: secondQuickActive,
+                                          disabledReason: disabledReason,
                                           onTap: () => _runQuickAction(
                                             secondQuick,
                                             enabled,
@@ -832,22 +855,25 @@ class _ControlAreaState extends State<_ControlArea> {
                                   height: 86,
                                   child: Center(
                                     child: SlideToAction(
-                                      label: isPowerOn ? '左滑关闭' : '右滑启动',
+                                      label: isPowerOn ? '左滑断电' : '右滑通电',
                                       icon: isPowerOn
                                           ? Icons.power_off
                                           : Icons.power_settings_new,
                                       reverseSlide: isPowerOn,
+                                      loading: _activeControlId == 'slidePower',
+                                      loadingLabel: isPowerOn ? '正在断电' : '正在通电',
                                       backgroundColor: isPowerOn
-                                          ? const Color(0xFF5D4037)
-                                          : const Color(0xFF424242),
-                                      onSlideComplete: enabled
-                                          ? () => _send(
-                                              isPowerOn
-                                                  ? CommandCode.powerOff
-                                                  : CommandCode.powerOn,
-                                              actionId: 'slidePower',
-                                            )
-                                          : null,
+                                          ? AppColors.danger
+                                          : AppColors.success,
+                                      enabled: enabled,
+                                      onDisabledTap: () =>
+                                          _showUnavailableSnack(disabledReason),
+                                      onSlideComplete: () => _send(
+                                        isPowerOn
+                                            ? CommandCode.powerOff
+                                            : CommandCode.powerOn,
+                                        actionId: 'slidePower',
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -864,6 +890,7 @@ class _ControlAreaState extends State<_ControlArea> {
                                               _activeControlId == 'fixedFind',
                                           loading:
                                               _activeControlId == 'fixedFind',
+                                          disabledReason: disabledReason,
                                           onTap: () => _send(
                                             CommandCode.find,
                                             actionId: 'fixedFind',
@@ -882,6 +909,7 @@ class _ControlAreaState extends State<_ControlArea> {
                                               _activeControlId == 'fixedLock',
                                           loading:
                                               _activeControlId == 'fixedLock',
+                                          disabledReason: disabledReason,
                                           onTap: () => _send(
                                             isLocked
                                                 ? CommandCode.unlock
@@ -915,12 +943,14 @@ class _ControlChannelBar extends StatelessWidget {
   final bool canUseBle;
   final bool canUseCloud;
   final String? vehicleName;
+  final String? disabledReason;
 
   const _ControlChannelBar({
     required this.channel,
     required this.canUseBle,
     required this.canUseCloud,
     required this.vehicleName,
+    required this.disabledReason,
   });
 
   @override
@@ -938,7 +968,9 @@ class _ControlChannelBar extends StatelessWidget {
     final color = canUseBle || canUseCloud
         ? AppColors.primary
         : AppColors.textTertiary;
-    final subtitle = canUseCloud
+    final subtitle = disabledReason != null
+        ? disabledReason!
+        : canUseCloud
         ? vehicleName ?? '官方车辆已选择'
         : canUseBle
         ? '本地蓝牙已就绪'
@@ -1297,6 +1329,7 @@ class _ControlTile extends StatefulWidget {
   final bool enabled;
   final bool active;
   final bool loading;
+  final String? disabledReason;
   final VoidCallback onTap;
 
   const _ControlTile({
@@ -1305,6 +1338,7 @@ class _ControlTile extends StatefulWidget {
     required this.enabled,
     this.active = false,
     required this.loading,
+    this.disabledReason,
     required this.onTap,
   });
 
@@ -1318,6 +1352,14 @@ class _ControlTileState extends State<_ControlTile> {
   void _setPressed(bool value) {
     if (!mounted || _pressed == value) return;
     setState(() => _pressed = value);
+  }
+
+  void _showDisabledReason() {
+    final reason = widget.disabledReason;
+    if (reason == null || reason.isEmpty) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(reason), duration: const Duration(seconds: 2)),
+    );
   }
 
   @override
@@ -1365,13 +1407,15 @@ class _ControlTileState extends State<_ControlTile> {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
-            onTap: interactive
+            onTap: widget.loading
+                ? null
+                : interactive
                 ? () {
                     _setPressed(false);
                     HapticFeedback.mediumImpact();
                     widget.onTap();
                   }
-                : null,
+                : _showDisabledReason,
             onTapDown: interactive ? (_) => _setPressed(true) : null,
             onTapCancel: interactive ? () => _setPressed(false) : null,
             onTapUp: interactive ? (_) => _setPressed(false) : null,
@@ -1433,15 +1477,27 @@ class _QuickEditButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.primary,
+      color: Colors.transparent,
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
         child: const SizedBox(
-          width: 28,
-          height: 28,
-          child: Icon(Icons.edit, color: Colors.white, size: 16),
+          width: 44,
+          height: 44,
+          child: Center(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
+              child: SizedBox(
+                width: 28,
+                height: 28,
+                child: Icon(Icons.edit, color: Colors.white, size: 16),
+              ),
+            ),
+          ),
         ),
       ),
     );

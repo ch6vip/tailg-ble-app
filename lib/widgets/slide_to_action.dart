@@ -8,6 +8,10 @@ class SlideToAction extends StatefulWidget {
   final Color backgroundColor;
   final Color thumbColor;
   final bool reverseSlide;
+  final bool enabled;
+  final bool loading;
+  final String loadingLabel;
+  final VoidCallback? onDisabledTap;
 
   const SlideToAction({
     super.key,
@@ -17,6 +21,10 @@ class SlideToAction extends StatefulWidget {
     this.backgroundColor = const Color(0xFF424242),
     this.thumbColor = const Color(0x40FFFFFF),
     this.reverseSlide = false,
+    this.enabled = true,
+    this.loading = false,
+    this.loadingLabel = '发送中',
+    this.onDisabledTap,
   });
 
   @override
@@ -46,7 +54,8 @@ class _SlideToActionState extends State<SlideToAction>
   void didUpdateWidget(SlideToAction oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.label != widget.label ||
-        oldWidget.reverseSlide != widget.reverseSlide) {
+        oldWidget.reverseSlide != widget.reverseSlide ||
+        oldWidget.loading != widget.loading) {
       _dragNotifier.value = 0;
     }
   }
@@ -84,7 +93,8 @@ class _SlideToActionState extends State<SlideToAction>
 
   @override
   Widget build(BuildContext context) {
-    final enabled = widget.onSlideComplete != null;
+    final enabled =
+        widget.enabled && widget.onSlideComplete != null && !widget.loading;
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxDrag = constraints.maxWidth - 56;
@@ -117,95 +127,134 @@ class _SlideToActionState extends State<SlideToAction>
               child: child,
             );
           },
-          child: Stack(
-            children: [
-              ValueListenableBuilder<double>(
-                valueListenable: _dragNotifier,
-                builder: (context, pos, _) {
-                  final progress = maxDrag > 0 ? pos / maxDrag : 0.0;
-                  return Center(
-                    child: Opacity(
-                      opacity: (1 - progress * 1.8).clamp(0.0, 1.0),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.chevron_right,
-                            textDirection: widget.reverseSlide
-                                ? TextDirection.rtl
-                                : TextDirection.ltr,
-                            color: Colors.white.withValues(alpha: 0.5),
-                            size: 18,
-                          ),
-                          Icon(
-                            Icons.chevron_right,
-                            textDirection: widget.reverseSlide
-                                ? TextDirection.rtl
-                                : TextDirection.ltr,
-                            color: Colors.white.withValues(alpha: 0.5),
-                            size: 18,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            widget.label,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
-                              fontSize: 14,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: enabled ? null : widget.onDisabledTap,
+            child: Stack(
+              children: [
+                ValueListenableBuilder<double>(
+                  valueListenable: _dragNotifier,
+                  builder: (context, pos, _) {
+                    final progress = maxDrag > 0 ? pos / maxDrag : 0.0;
+                    if (widget.loading) {
+                      return Center(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            Text(
+                              widget.loadingLabel,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.82),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return Center(
+                      child: Opacity(
+                        opacity: (1 - progress * 1.8).clamp(0.0, 1.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.chevron_right,
+                              textDirection: widget.reverseSlide
+                                  ? TextDirection.rtl
+                                  : TextDirection.ltr,
+                              color: Colors.white.withValues(alpha: 0.5),
+                              size: 18,
+                            ),
+                            Icon(
+                              Icons.chevron_right,
+                              textDirection: widget.reverseSlide
+                                  ? TextDirection.rtl
+                                  : TextDirection.ltr,
+                              color: Colors.white.withValues(alpha: 0.5),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.label,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
-              ValueListenableBuilder<double>(
-                valueListenable: _dragNotifier,
-                builder: (context, pos, child) {
-                  return Positioned(
-                    left: (widget.reverseSlide ? maxDrag - pos : pos) + 4,
-                    top: 4,
-                    child: child!,
-                  );
-                },
-                child: GestureDetector(
-                  onHorizontalDragUpdate: enabled
-                      ? (details) {
-                          final prev = _dragNotifier.value;
-                          final delta = widget.reverseSlide
-                              ? -details.delta.dx
-                              : details.delta.dx;
-                          _dragNotifier.value = (_dragNotifier.value + delta)
-                              .clamp(0.0, maxDrag);
-                          if (prev < maxDrag * 0.3 &&
-                              _dragNotifier.value >= maxDrag * 0.3) {
-                            HapticFeedback.selectionClick();
+                    );
+                  },
+                ),
+                ValueListenableBuilder<double>(
+                  valueListenable: _dragNotifier,
+                  builder: (context, pos, child) {
+                    return Positioned(
+                      left: (widget.reverseSlide ? maxDrag - pos : pos) + 4,
+                      top: 4,
+                      child: child!,
+                    );
+                  },
+                  child: GestureDetector(
+                    onHorizontalDragUpdate: enabled
+                        ? (details) {
+                            final prev = _dragNotifier.value;
+                            final delta = widget.reverseSlide
+                                ? -details.delta.dx
+                                : details.delta.dx;
+                            _dragNotifier.value = (_dragNotifier.value + delta)
+                                .clamp(0.0, maxDrag);
+                            if (prev < maxDrag * 0.3 &&
+                                _dragNotifier.value >= maxDrag * 0.3) {
+                              HapticFeedback.selectionClick();
+                            }
                           }
-                        }
-                      : null,
-                  onHorizontalDragEnd: enabled
-                      ? (details) {
-                          if (_dragNotifier.value > maxDrag * 0.75) {
-                            _onSlideSuccess(maxDrag);
-                          } else {
-                            _resetThumb();
+                        : null,
+                    onHorizontalDragEnd: enabled
+                        ? (details) {
+                            if (_dragNotifier.value > maxDrag * 0.75) {
+                              _onSlideSuccess(maxDrag);
+                            } else {
+                              _resetThumb();
+                            }
                           }
-                        }
-                      : null,
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: enabled
-                          ? widget.thumbColor
-                          : Colors.white.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
+                        : null,
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: enabled
+                            ? widget.thumbColor
+                            : Colors.white.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: widget.loading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Icon(widget.icon, color: Colors.white, size: 24),
                     ),
-                    child: Icon(widget.icon, color: Colors.white, size: 24),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

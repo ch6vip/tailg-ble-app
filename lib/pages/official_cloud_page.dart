@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -20,6 +22,8 @@ class OfficialCloudPage extends StatefulWidget {
 class _OfficialCloudPageState extends State<OfficialCloudPage> {
   final _phoneController = TextEditingController();
   final _smsController = TextEditingController();
+  Timer? _smsTimer;
+  int _smsCountdown = 0;
 
   @override
   void initState() {
@@ -30,20 +34,40 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
 
   @override
   void dispose() {
+    _smsTimer?.cancel();
     _phoneController.dispose();
     _smsController.dispose();
     super.dispose();
   }
 
   Future<void> _requestCode() async {
+    if (_smsCountdown > 0) return;
     try {
       await officialCloudService.requestSmsCode(_phoneController.text);
       if (!mounted) return;
+      _startSmsCountdown();
       _showSnack('验证码已发送');
     } catch (e) {
       if (!mounted) return;
       _showSnack(_errorMessage(e), error: true);
     }
+  }
+
+  void _startSmsCountdown() {
+    _smsTimer?.cancel();
+    setState(() => _smsCountdown = 60);
+    _smsTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_smsCountdown <= 1) {
+        timer.cancel();
+        setState(() => _smsCountdown = 0);
+      } else {
+        setState(() => _smsCountdown--);
+      }
+    });
   }
 
   Future<void> _login() async {
@@ -118,6 +142,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
                     phoneController: _phoneController,
                     smsController: _smsController,
                     loading: state.loading,
+                    smsCountdown: _smsCountdown,
                     onRequestCode: _requestCode,
                     onLogin: _login,
                   )
@@ -165,6 +190,7 @@ class _LoginCard extends StatelessWidget {
   final TextEditingController phoneController;
   final TextEditingController smsController;
   final bool loading;
+  final int smsCountdown;
   final VoidCallback onRequestCode;
   final VoidCallback onLogin;
 
@@ -172,12 +198,14 @@ class _LoginCard extends StatelessWidget {
     required this.phoneController,
     required this.smsController,
     required this.loading,
+    required this.smsCountdown,
     required this.onRequestCode,
     required this.onLogin,
   });
 
   @override
   Widget build(BuildContext context) {
+    final canRequestCode = !loading && smsCountdown == 0;
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,8 +240,8 @@ class _LoginCard extends StatelessWidget {
               SizedBox(
                 height: 48,
                 child: OutlinedButton(
-                  onPressed: loading ? null : onRequestCode,
-                  child: const Text('获取'),
+                  onPressed: canRequestCode ? onRequestCode : null,
+                  child: Text(smsCountdown > 0 ? '${smsCountdown}s' : '获取'),
                 ),
               ),
             ],
