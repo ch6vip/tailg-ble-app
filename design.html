@@ -1,1481 +1,1108 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tailg BLE 台铃智控 - 高保真原型</title>
-<style>
-:root {
-  --primary: #1E88E5;
-  --primary-light: #64B5F6;
-  --primary-dark: #1565C0;
-  --accent: #00E5FF;
-  --success: #4CAF50;
-  --success-light: #E8F5E9;
-  --warning: #FF9800;
-  --warning-light: #FFF3E0;
-  --danger: #FF5252;
-  --info: #2196F3;
-  --bg: #F5F6FA;
-  --card-bg: #ffffff;
-  --card-shadow: 0 2px 10px rgba(0,0,0,0.04);
-  --text-primary: #1a1a2e;
-  --text-secondary: #666;
-  --text-tertiary: #999;
-  --border: #eee;
-  --grey-100: #f5f5f5;
-  --grey-200: #eeeeee;
-  --grey-300: #e0e0e0;
-  --grey-400: #bdbdbd;
-  --grey-500: #9e9e9e;
-  --grey-600: #757575;
-  --grey-700: #616161;
-  --radius-xl: 28px;
-  --radius-lg: 20px;
-  --radius-md: 14px;
-  --radius-sm: 12px;
-}
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Helvetica Neue', sans-serif;
-  background: linear-gradient(135deg, #0a0e1a 0%, #111827 50%, #0f172a 100%);
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-}
-
-/* Phone Frame */
-.phone-frame {
-  width: 393px;
-  height: 852px;
-  border-radius: 52px;
-  position: relative;
-  background: linear-gradient(145deg, #3a3a3e, #1a1a1e, #2a2a2e);
-  padding: 3px;
-  box-shadow:
-    0 60px 120px rgba(0,0,0,0.5),
-    0 0 0 0.5px rgba(255,255,255,0.12),
-    inset 0 1px 0 rgba(255,255,255,0.08);
-}
-
-.phone-inner {
-  width: 100%;
-  height: 100%;
-  border-radius: 49px;
-  overflow: hidden;
-  position: relative;
-  background: var(--bg);
-}
-
-/* Dynamic Island */
-.dynamic-island {
-  position: absolute;
-  top: 11px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 126px;
-  height: 36px;
-  background: #000;
-  border-radius: 19px;
-  z-index: 1000;
-}
-
-.dynamic-island::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: 20px;
-  transform: translateY(-50%);
-  width: 9px;
-  height: 9px;
-  background: radial-gradient(circle, #1a3050 40%, #0a1020 70%);
-  border-radius: 50%;
-}
-
-/* Status Bar */
-.status-bar {
-  position: absolute;
-  top: 14px;
-  left: 30px;
-  right: 30px;
-  height: 22px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 999;
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.status-icons { display: flex; gap: 5px; align-items: center; }
-.status-icons svg { width: 16px; height: 12px; fill: currentColor; }
-
-/* Screens */
-.screen {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  padding-top: 58px;
-  padding-bottom: 82px;
-  overflow-y: auto;
-  display: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-.screen::-webkit-scrollbar { display: none; }
-.screen.active { display: block; }
-
-.screen-content {
-  padding: 0 0 20px 0;
-}
-
-/* ===== SCAN PAGE ===== */
-.scan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px 8px;
-}
-
-.scan-header h1 {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-/* Radar */
-.radar-container {
-  position: relative;
-  width: 180px;
-  height: 180px;
-  margin: 16px auto 20px;
-}
-
-.radar-ring {
-  position: absolute;
-  border: 1.5px solid rgba(30,136,229,0.12);
-  border-radius: 50%;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-}
-.radar-ring:nth-child(1) { width: 60px; height: 60px; }
-.radar-ring:nth-child(2) { width: 110px; height: 110px; }
-.radar-ring:nth-child(3) { width: 160px; height: 160px; }
-
-.radar-sweep {
-  position: absolute;
-  top: 50%; left: 50%;
-  width: 80px; height: 80px;
-  transform-origin: 0 0;
-  background: conic-gradient(from 0deg, transparent 0deg, rgba(30,136,229,0.15) 60deg, transparent 60deg);
-  border-radius: 0 80px 0 0;
-  animation: sweep 2s linear infinite;
-  transform: translate(0, -80px) rotate(0deg);
-}
-
-@keyframes sweep {
-  from { transform: translate(0, -80px) rotate(0deg); }
-  to { transform: translate(0, -80px) rotate(360deg); }
-}
-
-.radar-center {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 44px; height: 44px;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 20px rgba(30,136,229,0.35);
-}
-
-.radar-center svg { width: 22px; height: 22px; fill: white; }
-
-.scan-status {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.scan-status h3 {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-
-.scan-status p {
-  font-size: 12px;
-  color: var(--text-tertiary);
-}
-
-/* Device Cards */
-.device-list {
-  padding: 0 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.device-card {
-  display: flex;
-  align-items: center;
-  padding: 14px 16px;
-  background: var(--card-bg);
-  border-radius: var(--radius-md);
-  box-shadow: var(--card-shadow);
-  cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-.device-card:active {
-  transform: scale(0.98);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-}
-
-.device-icon {
-  width: 44px; height: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.device-icon.tailg {
-  background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
-}
-.device-icon.tailg svg { fill: var(--primary); }
-
-.device-icon.generic {
-  background: var(--grey-100);
-}
-.device-icon.generic svg { fill: var(--grey-500); }
-
-.device-icon svg { width: 22px; height: 22px; }
-
-.device-info {
-  flex: 1;
-  margin-left: 12px;
-}
-
-.device-info h4 {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 2px;
-}
-
-.device-info p {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  font-family: 'SF Mono', 'Menlo', monospace;
-}
-
-.signal-bars {
-  display: flex;
-  gap: 2px;
-  align-items: flex-end;
-  height: 20px;
-  margin-left: 8px;
-}
-
-.signal-bars span {
-  width: 4px;
-  border-radius: 1px;
-  background: var(--grey-300);
-}
-
-.signal-bars span:nth-child(1) { height: 6px; }
-.signal-bars span:nth-child(2) { height: 10px; }
-.signal-bars span:nth-child(3) { height: 14px; }
-.signal-bars span:nth-child(4) { height: 20px; }
-
-.signal-bars.strong span { background: var(--success); }
-.signal-bars.medium span:nth-child(1),
-.signal-bars.medium span:nth-child(2),
-.signal-bars.medium span:nth-child(3) { background: var(--success); }
-.signal-bars.weak span:nth-child(1),
-.signal-bars.weak span:nth-child(2) { background: var(--warning); }
-
-/* Scan FAB */
-.scan-fab {
-  position: absolute;
-  bottom: 96px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 28px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(30,136,229,0.35);
-  transition: all 0.2s;
-  z-index: 10;
-}
-
-.scan-fab:active { transform: translateX(-50%) scale(0.95); }
-.scan-fab.scanning { background: var(--grey-600); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
-
-.scan-fab svg { width: 20px; height: 20px; fill: white; }
-
-/* ===== CONTROL PAGE ===== */
-.control-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 20px 0;
-}
-
-.bike-name {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.bike-name h1 {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.bike-name .arrow {
-  font-size: 16px;
-  color: var(--text-tertiary);
-}
-
-.status-badge {
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.status-badge.online {
-  background: rgba(76,175,80,0.12);
-  color: var(--success);
-}
-
-.status-badge.offline {
-  background: rgba(158,158,158,0.12);
-  color: var(--grey-500);
-}
-
-.bt-status-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: var(--card-bg);
-  border: none;
-  border-radius: 20px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  box-shadow: var(--card-shadow);
-}
-
-.bt-status-btn svg { width: 14px; height: 14px; }
-.bt-status-btn.connected svg { fill: var(--success); }
-.bt-status-btn.offline svg { fill: var(--grey-400); }
-
-/* Status Section */
-.status-section {
-  padding: 20px 20px 0;
-}
-
-.status-row {
-  display: flex;
-  gap: 24px;
-}
-
-.status-label {
-  font-size: 13px;
-  color: var(--text-tertiary);
-  margin-bottom: 8px;
-}
-
-.battery-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 24px;
-}
-
-.battery-icon {
-  width: 48px;
-  height: 22px;
-  border: 2px solid var(--success);
-  border-radius: 4px;
-  padding: 2px;
-  flex-shrink: 0;
-}
-
-.battery-fill {
-  width: 100%;
-  height: 100%;
-  background: var(--success);
-  border-radius: 2px;
-}
-
-.range-value {
-  display: flex;
-  align-items: baseline;
-  gap: 2px;
-}
-
-.range-value .number {
-  font-size: 48px;
-  font-weight: 300;
-  color: var(--text-primary);
-  line-height: 1;
-}
-
-.range-value .unit {
-  font-size: 16px;
-  color: var(--text-secondary);
-  padding-bottom: 8px;
-}
-
-/* Bike Image Placeholder */
-.bike-image {
-  margin: 20px 20px 0;
-  height: 160px;
-  background: rgba(255,255,255,0.5);
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.bike-image svg {
-  width: 80px;
-  height: 80px;
-  fill: var(--grey-300);
-}
-
-/* State Label */
-.state-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px 0;
-}
-
-.state-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.lock-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #CE93D8, #90CAF9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.lock-icon svg { width: 18px; height: 18px; fill: white; }
-
-.state-text {
-  font-size: 14px;
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.manual-mode {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.manual-mode span {
-  font-size: 13px;
-  color: var(--text-tertiary);
-}
-
-/* Toggle switch */
-.toggle-switch {
-  width: 44px;
-  height: 26px;
-  background: var(--grey-300);
-  border-radius: 13px;
-  position: relative;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.toggle-switch.on { background: var(--primary); }
-
-.toggle-switch::after {
-  content: '';
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  background: white;
-  border-radius: 50%;
-  top: 2px;
-  left: 2px;
-  transition: transform 0.2s;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-}
-
-.toggle-switch.on::after { transform: translateX(18px); }
-
-/* Control Area */
-.control-card {
-  margin: 20px 20px 0;
-  padding: 16px;
-  background: var(--card-bg);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--card-shadow);
-}
-
-.control-row {
-  display: flex;
-  gap: 12px;
-}
-
-.control-row + .control-row { margin-top: 12px; }
-
-.ctrl-btn {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-md);
-  border: none;
-  background: var(--grey-100);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.15s;
-}
-
-.ctrl-btn:active { transform: scale(0.93); background: var(--grey-200); }
-.ctrl-btn.disabled { opacity: 0.5; cursor: default; }
-.ctrl-btn.disabled:active { transform: none; }
-
-.ctrl-btn svg { width: 24px; height: 24px; fill: var(--grey-700); }
-.ctrl-btn.disabled svg { fill: var(--grey-400); }
-
-/* Slide to Action */
-.slide-track {
-  flex: 1;
-  height: 56px;
-  background: #424242;
-  border-radius: 28px;
-  position: relative;
-  overflow: hidden;
-  cursor: default;
-}
-
-.slide-track.disabled {
-  background: rgba(66,66,66,0.4);
-}
-
-.slide-label {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: rgba(255,255,255,0.6);
-  font-size: 14px;
-  white-space: nowrap;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-
-.slide-label svg { width: 18px; height: 18px; fill: rgba(255,255,255,0.5); }
-
-.slide-thumb {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.25);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab;
-  transition: left 0.05s;
-  z-index: 2;
-}
-
-.slide-thumb:active { cursor: grabbing; }
-
-.slide-thumb.disabled {
-  background: rgba(255,255,255,0.1);
-  cursor: default;
-}
-
-.slide-thumb svg { width: 24px; height: 24px; fill: white; }
-
-/* Action Button (寻车, 设防) */
-.action-btn {
-  flex: 1;
-  height: 56px;
-  border-radius: var(--radius-md);
-  border: none;
-  background: var(--grey-100);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.action-btn:active { transform: scale(0.96); background: var(--grey-200); }
-.action-btn.disabled { opacity: 0.5; cursor: default; }
-.action-btn.disabled:active { transform: none; }
-
-.action-btn svg { width: 22px; height: 22px; fill: var(--grey-700); }
-.action-btn.disabled svg { fill: var(--grey-400); }
-.action-btn span { font-size: 14px; color: var(--grey-700); }
-.action-btn.disabled span { color: var(--grey-400); }
-
-/* Location Card */
-.location-card {
-  margin: 20px 20px 0;
-  padding: 20px;
-  background: var(--card-bg);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--card-shadow);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-}
-
-.location-card:active { background: #fafafa; }
-
-.location-card span {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.location-card svg {
-  width: 20px;
-  height: 20px;
-  fill: var(--grey-400);
-}
-
-/* ===== SETTINGS PAGE ===== */
-.settings-header {
-  padding: 12px 20px 0;
-}
-
-.settings-header h1 {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.section-label {
-  padding: 16px 16px 4px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--primary);
-}
-
-.setting-item {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  cursor: pointer;
-  transition: background 0.1s;
-}
-
-.setting-item:active { background: rgba(0,0,0,0.03); }
-
-.setting-icon {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.setting-icon svg {
-  width: 22px;
-  height: 22px;
-  fill: var(--text-primary);
-}
-
-.setting-text {
-  flex: 1;
-  margin-left: 12px;
-}
-
-.setting-text h4 {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.setting-text p {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  margin-top: 1px;
-}
-
-.setting-action {
-  flex-shrink: 0;
-  margin-left: 8px;
-}
-
-.setting-action svg {
-  width: 20px;
-  height: 20px;
-  fill: var(--grey-400);
-}
-
-.setting-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 0 16px;
-}
-
-/* ===== LOG PAGE ===== */
-.log-header {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px 0;
-  gap: 12px;
-}
-
-.log-back {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-.log-back svg { width: 24px; height: 24px; fill: var(--text-primary); }
-
-.log-header h1 {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-  flex: 1;
-}
-
-.log-actions {
-  display: flex;
-  gap: 4px;
-}
-
-.log-action-btn {
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background 0.1s;
-}
-
-.log-action-btn:active { background: rgba(0,0,0,0.06); }
-.log-action-btn svg { width: 20px; height: 20px; fill: var(--text-secondary); }
-
-/* Log Tabs */
-.log-tabs {
-  display: flex;
-  padding: 12px 16px 0;
-  gap: 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.log-tab {
-  flex: 1;
-  padding: 10px 0;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  position: relative;
-  transition: color 0.2s;
-}
-
-.log-tab.active {
-  color: var(--primary);
-}
-
-.log-tab.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 20%;
-  right: 20%;
-  height: 2px;
-  background: var(--primary);
-  border-radius: 1px;
-}
-
-/* Log Entries */
-.log-list {
-  padding: 8px 0;
-}
-
-.log-entry {
-  display: flex;
-  align-items: flex-start;
-  padding: 8px 16px;
-  gap: 8px;
-}
-
-.log-time {
-  font-size: 11px;
-  color: var(--grey-500);
-  font-family: 'SF Mono', 'Menlo', monospace;
-  flex-shrink: 0;
-  padding-top: 2px;
-}
-
-.log-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  margin-top: 6px;
-}
-
-.log-dot.info { background: var(--info); }
-.log-dot.debug { background: var(--grey-400); }
-.log-dot.warning { background: var(--warning); }
-.log-dot.error { background: var(--danger); }
-
-.log-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.log-msg {
-  font-size: 13px;
-  color: var(--text-primary);
-  line-height: 1.4;
-}
-
-.log-detail {
-  font-size: 11px;
-  color: var(--grey-600);
-  font-family: 'SF Mono', 'Menlo', monospace;
-  margin-top: 2px;
-  word-break: break-all;
-}
-
-/* ===== BOTTOM NAV ===== */
-.bottom-nav {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 82px;
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 0.5px solid rgba(0,0,0,0.08);
-  display: flex;
-  justify-content: space-around;
-  align-items: flex-start;
-  padding-top: 8px;
-  z-index: 100;
-}
-
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  cursor: pointer;
-  padding: 4px 16px;
-  transition: all 0.15s;
-}
-
-.nav-item svg {
-  width: 24px;
-  height: 24px;
-  fill: none;
-  stroke: var(--grey-400);
-  stroke-width: 1.8;
-}
-
-.nav-item span {
-  font-size: 10px;
-  color: var(--grey-400);
-  font-weight: 500;
-}
-
-.nav-item.active svg {
-  stroke: var(--primary);
-}
-
-.nav-item.active span {
-  color: var(--primary);
-}
-
-/* iPhone Home Indicator */
-.home-indicator {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 134px;
-  height: 5px;
-  background: rgba(0,0,0,0.18);
-  border-radius: 3px;
-  z-index: 101;
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.screen.active .screen-content {
-  animation: fadeIn 0.25s ease;
-}
-
-/* Theme label */
-.theme-label {
-  text-align: center;
-  padding: 20px;
-  font-size: 12px;
-  color: rgba(255,255,255,0.3);
-  margin-top: 20px;
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tailg BLE App 当前复刻界面预览</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root {
+      --page: #eff0f5;
+      --white: #ffffff;
+      --pressed: #e5e5e5;
+      --inner: #f0f0f5;
+      --ink: #1f1f1f;
+      --secondary: #4a4c52;
+      --muted: #807e89;
+      --subtle: #6d717c;
+      --line: #e5e5e5;
+      --blue: #5596ff;
+      --blue-dark: #2d6fe3;
+      --green: #4caf50;
+      --orange: #ff9800;
+      --red: #ff5252;
+      --shadow: 0 2px 10px rgba(0, 0, 0, .04);
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      background: #f5f6f8;
+      color: var(--ink);
+    }
+
+    .page {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(390px, 1fr);
+      gap: 28px;
+      padding: 28px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+      position: sticky;
+      top: 28px;
+    }
+
+    .panel h1 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .panel p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .score {
+      background: var(--page);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+
+    .score strong {
+      display: block;
+      font-size: 22px;
+      margin-bottom: 3px;
+    }
+
+    .score span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .status-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      font-size: 13px;
+      color: var(--secondary);
+      line-height: 1.45;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      margin-top: 5px;
+      background: var(--green);
+    }
+
+    .dot.wait { background: var(--orange); }
+    .dot.stop { background: var(--red); }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .tab {
+      border: 0;
+      background: var(--page);
+      color: var(--secondary);
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .12s ease, background-color .12s ease, color .12s ease;
+    }
+
+    .tab:active { transform: scale(.96); background: var(--pressed); }
+    .tab.active { background: var(--blue); color: #fff; }
+
+    .stage {
+      display: flex;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .phone {
+      width: 390px;
+      height: 844px;
+      border: 10px solid #191a1d;
+      border-radius: 42px;
+      background: var(--page);
+      box-shadow: 0 28px 70px rgba(31, 31, 31, .22);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .island {
+      position: absolute;
+      z-index: 20;
+      top: 10px;
+      left: 50%;
+      width: 116px;
+      height: 31px;
+      transform: translateX(-50%);
+      background: #08080a;
+      border-radius: 20px;
+    }
+
+    .app {
+      height: 100%;
+      overflow: hidden;
+      padding-top: 42px;
+      background: var(--page);
+      position: relative;
+    }
+
+    .screen {
+      display: none;
+      height: calc(100% - 74px);
+      overflow-y: auto;
+      padding-bottom: 24px;
+    }
+
+    .screen.active { display: block; }
+    .screen::-webkit-scrollbar { width: 0; }
+
+    .section { padding: 0 20px; }
+    .gap-10 { height: 10px; }
+    .gap-14 { height: 14px; }
+
+    .top-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px 0;
+    }
+
+    .title-select {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .title-select span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .status-pill {
+      font-size: 12px;
+      color: var(--green);
+      background: rgba(76, 175, 80, .14);
+      border-radius: 999px;
+      padding: 3px 9px;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,.76);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: transform .12s ease, background-color .12s ease;
+    }
+
+    .icon-btn:active,
+    .pressable:active {
+      transform: scale(.96);
+      background-color: var(--pressed) !important;
+    }
+
+    .small-icon {
+      width: 19px;
+      height: 19px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      padding: 18px 20px 0;
+      text-align: center;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .bike-area {
+      height: 198px;
+      margin: 4px 20px 0;
+      position: relative;
+    }
+
+    .bike-glow {
+      position: absolute;
+      inset: 15px -18px 8px;
+      border-radius: 18px;
+      background: linear-gradient(#ffffff88, #e7eaf100);
+    }
+
+    .bike {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 10px;
+      height: 142px;
+    }
+
+    .bike svg { width: 100%; height: 100%; overflow: visible; }
+
+    .tip-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 20px;
+    }
+
+    .round-chip {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--white);
+      box-shadow: var(--shadow);
+      display: grid;
+      place-items: center;
+      color: var(--blue);
+    }
+
+    .status-bar {
+      flex: 1;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--white);
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: transform .12s ease, background-color .12s ease;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: 90px 1fr;
+      gap: 10px;
+      height: 204px;
+      padding: 10px 20px 0;
+    }
+
+    .control-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 10px;
+    }
+
+    .quick-stack {
+      display: grid;
+      gap: 10px;
+      height: 100%;
+    }
+
+    .ctl-btn {
+      border: 0;
+      border-radius: var(--radius);
+      background: var(--inner);
+      color: var(--muted);
+      min-width: 0;
+      display: grid;
+      place-items: center;
+      gap: 5px;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+      transition: transform .12s ease, background-color .12s ease;
+      position: relative;
+    }
+
+    .ctl-btn:active { transform: scale(.96); background: var(--pressed); }
+    .ctl-btn.blue { color: var(--blue); background: rgba(85, 150, 255, .10); }
+    .ctl-btn .sub { display: block; color: var(--subtle); font-size: 10px; font-weight: 600; }
+
+    .edit-dot {
+      position: absolute;
+      right: -4px;
+      bottom: -4px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      box-shadow: 0 4px 10px rgba(85,150,255,.24);
+    }
+
+    .power-row {
+      height: 86px;
+      border: 1px solid rgba(85, 150, 255, .18);
+      border-radius: var(--radius);
+      background: #f7f8fa;
+      display: grid;
+      grid-template-columns: 52px 1fr 120px;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .power-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius);
+      background: var(--blue);
+      display: grid;
+      place-items: center;
+      color: #fff;
+    }
+
+    .power-text {
+      min-width: 0;
+    }
+
+    .power-text strong { display: block; font-size: 17px; }
+    .power-text span { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
+
+    .slide {
+      height: 56px;
+      border-radius: 999px;
+      background: var(--blue);
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .slide-label {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: rgba(255,255,255,.72);
+      font-size: 13px;
+    }
+
+    .slide-knob {
+      position: absolute;
+      left: 4px;
+      top: 4px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.25);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      transition: left .36s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    .slide.done .slide-knob { left: calc(100% - 52px); }
+    .slide.done .slide-label { opacity: 0; }
+
+    .sub-controls {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      height: 78px;
+    }
+
+    .quick-section {
+      margin: 14px 20px 0;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 0 10px;
+    }
+
+    .quick-section h3 {
+      margin: 0 16px 10px;
+      font-size: 15px;
+    }
+
+    .quick-list {
+      display: flex;
+      gap: 6px;
+      overflow: hidden;
+      padding: 0 16px;
+    }
+
+    .quick-item {
+      width: 86px;
+      height: 92px;
+      border-radius: var(--radius);
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      gap: 8px;
+      color: var(--secondary);
+      font-size: 12px;
+      font-weight: 800;
+      transition: transform .12s ease, background-color .12s ease;
+    }
+
+    .quick-item:active { transform: scale(.96); background: var(--pressed); }
+
+    .quick-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: var(--radius);
+      background: var(--inner);
+      display: grid;
+      place-items: center;
+      color: var(--blue);
+    }
+
+    .progress {
+      width: 60px;
+      height: 4px;
+      margin: 10px auto 0;
+      background: #dfdfdf;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress i {
+      display: block;
+      width: 43%;
+      height: 100%;
+      background: #2c2c2c;
+    }
+
+    .battery-hero {
+      height: 430px;
+      background: linear-gradient(#fff 0%, #e9f1ff 42%, #dde9ff 74%, var(--page) 100%);
+      position: relative;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .page-title {
+      height: 54px;
+      display: grid;
+      grid-template-columns: 48px 1fr 72px;
+      align-items: center;
+      padding: 0 10px;
+      font-weight: 800;
+      font-size: 18px;
+    }
+
+    .page-title button {
+      border: 0;
+      background: transparent;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .battery-art {
+      width: 188px;
+      height: 104px;
+      border-radius: 28px;
+      background: rgba(255,255,255,.56);
+      margin: 16px auto 4px;
+      display: grid;
+      place-items: center;
+    }
+
+    .battery-shell {
+      width: 148px;
+      height: 74px;
+      position: relative;
+      filter: drop-shadow(0 5px 8px rgba(0,0,0,.12));
+    }
+
+    .battery-body {
+      position: absolute;
+      left: 0;
+      top: 8px;
+      width: 136px;
+      height: 58px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #fff, #eff3fa);
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+    }
+
+    .battery-cap {
+      position: absolute;
+      right: 0;
+      top: 25px;
+      width: 12px;
+      height: 24px;
+      border-radius: 6px;
+      background: rgba(255,255,255,.9);
+    }
+
+    .seg { border-radius: 8px; background: #4caf50; }
+    .seg.dim { background: #e1e5ec; }
+
+    .percent {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      margin-top: 6px;
+    }
+
+    .percent strong {
+      font-size: 88px;
+      line-height: .92;
+      font-weight: 300;
+    }
+
+    .percent span { padding-top: 10px; font-size: 24px; }
+
+    .battery-pill {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 7px 15px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.62);
+      color: var(--secondary);
+      font-size: 13px;
+    }
+
+    .dark-summary {
+      margin: -28px 20px 14px;
+      position: relative;
+      z-index: 2;
+      background: #252525;
+      color: #fff;
+      border-radius: var(--radius);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 16px 8px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .dark-summary strong { display: block; font-size: 16px; }
+    .dark-summary span { display: block; margin-top: 5px; font-size: 11px; color: rgba(255,255,255,.66); }
+
+    .info-card {
+      margin: 0 20px 12px;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 15px;
+    }
+
+    .info-row {
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--page);
+      font-size: 13px;
+    }
+
+    .info-row:last-child { border-bottom: 0; }
+    .info-row span { color: var(--muted); }
+    .info-row strong { font-size: 13px; }
+
+    .map-screen {
+      height: 100%;
+      position: relative;
+      background: #dde6dc;
+      overflow: hidden;
+    }
+
+    .map-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(30deg, transparent 46%, rgba(255,255,255,.55) 47%, rgba(255,255,255,.55) 50%, transparent 51%) 0 0 / 90px 90px,
+        linear-gradient(120deg, transparent 46%, rgba(255,255,255,.45) 47%, rgba(255,255,255,.45) 50%, transparent 51%) 0 0 / 120px 120px,
+        radial-gradient(circle at 65% 42%, rgba(85,150,255,.22) 0 10px, transparent 11px),
+        #dce7dd;
+    }
+
+    .map-title {
+      position: absolute;
+      top: 10px;
+      left: 8px;
+      right: 8px;
+      height: 48px;
+      display: grid;
+      grid-template-columns: 48px 1fr 48px;
+      align-items: center;
+      text-align: center;
+      font-weight: 800;
+      font-size: 18px;
+      z-index: 2;
+    }
+
+    .map-title .label {
+      justify-self: center;
+      background: rgba(255,255,255,.88);
+      border-radius: 999px;
+      padding: 8px 16px;
+    }
+
+    .marker {
+      position: absolute;
+      left: 48%;
+      top: 38%;
+      transform: translate(-50%, -50%);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 3px 12px rgba(0,0,0,.16);
+      display: grid;
+      place-items: center;
+      color: var(--blue);
+      z-index: 2;
+    }
+
+    .fence-ring {
+      position: absolute;
+      left: 48%;
+      top: 38%;
+      width: 210px;
+      height: 210px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 2px solid rgba(76,175,80,.55);
+      background: rgba(76,175,80,.12);
+    }
+
+    .sheet {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 18px 18px 0 0;
+      background: #f7f7f7;
+      padding: 18px 20px 28px;
+      box-shadow: 0 -6px 18px rgba(0,0,0,.15);
+    }
+
+    .sheet-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-weight: 900;
+    }
+
+    .setting-row {
+      min-height: 56px;
+      background: var(--white);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      margin-bottom: 10px;
+    }
+
+    .setting-row span { color: var(--muted); font-size: 12px; display: block; margin-top: 3px; }
+
+    .switch {
+      width: 52px;
+      height: 28px;
+      border-radius: 999px;
+      padding: 3px;
+      background: rgba(76,175,80,.22);
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .switch i {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .range-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+
+    .range-top { display: flex; justify-content: space-between; font-weight: 800; }
+    .range-top span { color: var(--blue); }
+    .range-line { height: 6px; border-radius: 999px; background: var(--page); margin: 14px 0 8px; overflow: hidden; }
+    .range-line i { display: block; width: 42%; height: 100%; background: var(--blue); }
+    .range-labels { display: flex; justify-content: space-between; color: var(--subtle); font-size: 12px; }
+    .save-btn { width: 100%; height: 48px; border: 0; border-radius: var(--radius); margin-top: 12px; background: rgba(85,150,255,.45); color: #fff; font-size: 16px; font-weight: 900; }
+
+    .track-page { padding: 12px 20px 24px; }
+    .month-bar {
+      height: 40px;
+      background: var(--white);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      display: grid;
+      grid-template-columns: 42px 1fr 42px;
+      align-items: center;
+      text-align: center;
+      font-weight: 900;
+    }
+
+    .month-bar button { border: 0; background: transparent; height: 40px; border-radius: var(--radius); }
+
+    .day-card {
+      margin-top: 14px;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 15px 12px;
+    }
+
+    .day-title { color: var(--muted); font-weight: 900; font-size: 14px; margin-bottom: 14px; }
+    .day-summary {
+      height: 75px;
+      border-radius: var(--radius);
+      background: var(--page);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      text-align: center;
+      align-items: center;
+    }
+
+    .day-summary div + div { border-left: 1px solid #fff; }
+    .day-summary strong { display: block; font-size: 20px; }
+    .day-summary span { color: var(--muted); font-size: 11px; }
+
+    .record {
+      height: 86px;
+      margin-top: 12px;
+      border-radius: var(--radius);
+      display: grid;
+      grid-template-columns: 88px 1px 1fr 72px 20px;
+      align-items: center;
+      gap: 12px;
+      transition: transform .12s ease, background-color .12s ease;
+    }
+
+    .record:active { background: var(--pressed); transform: scale(.985); }
+    .rail { position: relative; height: 86px; font-size: 12px; color: var(--muted); }
+    .rail:before { content: ""; position: absolute; left: 7px; top: 30px; bottom: 30px; width: 1px; background: var(--page); }
+    .rail i { position: absolute; left: 0; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; }
+    .rail .start { top: 20px; background: var(--green); }
+    .rail .end { bottom: 20px; background: var(--orange); }
+    .rail .t1 { position: absolute; left: 20px; top: 15px; }
+    .rail .t2 { position: absolute; left: 20px; bottom: 15px; }
+    .record-line { height: 46px; background: var(--page); }
+    .record-main strong { font-size: 18px; display: block; }
+    .record-main span { color: var(--muted); font-size: 12px; }
+    .record-count { color: var(--muted); font-size: 12px; text-align: right; }
+
+    .bottom-nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 74px;
+      background: rgba(255,255,255,.96);
+      border-top: 1px solid rgba(0,0,0,.04);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      z-index: 5;
+    }
+
+    .nav {
+      border: 0;
+      background: transparent;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 3px;
+      color: #bdbdbd;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .nav.active { color: var(--blue); }
+    .nav:active { background: var(--pressed); }
+
+    @media (max-width: 820px) {
+      .page { grid-template-columns: 1fr; padding: 18px; }
+      .panel { position: static; }
+      .stage { justify-content: center; }
+    }
+
+    @media (max-width: 440px) {
+      .page { padding: 0; gap: 0; }
+      .panel { border-radius: 0; box-shadow: none; }
+      .phone { width: 100vw; height: 100vh; border: 0; border-radius: 0; box-shadow: none; }
+      .island { display: none; }
+    }
+  </style>
 </head>
 <body>
+  <main class="page">
+    <aside class="panel">
+      <h1>当前复刻状态</h1>
+      <p>这是按当前 Flutter 项目生成的静态界面预览，重点展示首页控车、电池/BMS、地图围栏和历史轨迹。</p>
+      <div class="score-grid">
+        <div class="score"><strong>25-35%</strong><span>按完整官方生态</span></div>
+        <div class="score"><strong>70-80%</strong><span>按控车工具体验</span></div>
+      </div>
+      <p>已经比较接近的部分是控车首页、BMS 只读、电池展示、地图/轨迹/围栏的安全只读链路。差距主要还在官方私有图片/Lottie、高德原生 SDK、账号生态、消息、NFC、绑定和售后支付等完整平台能力。</p>
+      <div class="status-list">
+        <div class="status-row"><i class="dot"></i><span>首页控车：左窄右宽白卡、小圆角按钮、官方浅灰按下态已做。</span></div>
+        <div class="status-row"><i class="dot"></i><span>BMS/电池：大号电量、分段电池图、只读字段展示已做。</span></div>
+        <div class="status-row"><i class="dot"></i><span>地图/轨迹/围栏：真实瓦片地图、围栏圆、轨迹线和底部设置面板已做。</span></div>
+        <div class="status-row"><i class="dot wait"></i><span>官方私有视觉素材未复制，当前用代码绘制和近似样式替代。</span></div>
+        <div class="status-row"><i class="dot stop"></i><span>高风险写操作仍禁用：OTA、NFC 真加删、围栏保存、支付等。</span></div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-screen="home">首页控车</button>
+        <button class="tab" data-screen="battery">电池/BMS</button>
+        <button class="tab" data-screen="map">地图围栏</button>
+        <button class="tab" data-screen="track">历史轨迹</button>
+      </div>
+    </aside>
 
-<div class="phone-frame">
-<div class="phone-inner">
-  <div class="dynamic-island"></div>
-  <div class="status-bar">
-    <span>9:41</span>
-    <div class="status-icons">
-      <svg viewBox="0 0 18 12"><path d="M1 4.5C3.5 1.5 7 0 9 0s5.5 1.5 8 4.5M3.5 7C5.3 5.2 7 4.2 9 4.2s3.7 1 5.5 2.8M6 9.5C7 8.5 8 8 9 8s2 .5 3 1.5M9 11.5a1 1 0 100-2 1 1 0 000 2z"/></svg>
-      <svg viewBox="0 0 16 12"><rect x="1" y="2" width="12" height="8" rx="2" stroke="currentColor" fill="none" stroke-width="1.2"/><rect x="13.5" y="4.5" width="1.5" height="3" rx="0.5"/><rect x="2.5" y="3.5" width="7" height="5" rx="1" fill="currentColor"/></svg>
-    </div>
-  </div>
-
-  <!-- ========== SCAN PAGE ========== -->
-  <div id="screen-scan" class="screen active">
-    <div class="screen-content">
-      <div class="scan-header">
-        <h1>搜索设备</h1>
-      </div>
-      <div class="radar-container">
-        <div class="radar-ring"></div>
-        <div class="radar-ring"></div>
-        <div class="radar-ring"></div>
-        <div class="radar-sweep"></div>
-        <div class="radar-center">
-          <svg viewBox="0 0 24 24"><path d="M7.5 3.5C5 5.5 3.5 8.5 3.5 12c0 3.5 1.5 6.5 4 8.5M16.5 3.5c2.5 2 4 5 4 8.5 0 3.5-1.5 6.5-4 8.5M10 7c-1.5 1.2-2.5 3-2.5 5s1 3.8 2.5 5M14 7c1.5 1.2 2.5 3 2.5 5s-1 3.8-2.5 5M12 11a1 1 0 100 2 1 1 0 000-2z"/></svg>
-        </div>
-      </div>
-      <div class="scan-status">
-        <h3>正在搜索附近设备...</h3>
-        <p>请确保蓝牙已开启且靠近车辆</p>
-      </div>
-      <div class="device-list">
-        <div class="device-card" onclick="switchScreen('control')">
-          <div class="device-icon tailg">
-            <svg viewBox="0 0 24 24"><path d="M19 5H5a2 2 0 00-2 2v8a2 2 0 002 2h3l2 3h4l2-3h3a2 2 0 002-2V7a2 2 0 00-2-2zm-7 10a4 4 0 110-8 4 4 0 010 8z"/></svg>
-          </div>
-          <div class="device-info">
-            <h4>台铃 T500 Pro</h4>
-            <p>A4:C1:38:XX:XX:01</p>
-          </div>
-          <div class="signal-bars strong">
-            <span></span><span></span><span></span><span></span>
-          </div>
-        </div>
-        <div class="device-card">
-          <div class="device-icon tailg">
-            <svg viewBox="0 0 24 24"><path d="M19 5H5a2 2 0 00-2 2v8a2 2 0 002 2h3l2 3h4l2-3h3a2 2 0 002-2V7a2 2 0 00-2-2zm-7 10a4 4 0 110-8 4 4 0 010 8z"/></svg>
-          </div>
-          <div class="device-info">
-            <h4>台铃 N7</h4>
-            <p>A4:C1:38:XX:XX:02</p>
-          </div>
-          <div class="signal-bars weak">
-            <span></span><span></span><span></span><span></span>
-          </div>
-        </div>
-        <div class="device-card">
-          <div class="device-icon generic">
-            <svg viewBox="0 0 24 24"><path d="M17.71 7.71L12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29zM13 5.83l1.88 1.88L13 9.59V5.83zm1.88 10.46L13 18.17v-3.76l1.88 1.88z"/></svg>
-          </div>
-          <div class="device-info">
-            <h4>BLE_Speaker_03</h4>
-            <p>8C:F6:81:XX:XX:03</p>
-          </div>
-          <div class="signal-bars medium">
-            <span></span><span></span><span></span><span></span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <button class="scan-fab scanning" onclick="toggleScan(this)">
-      <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-      <span>停止</span>
-    </button>
-  </div>
-
-  <!-- ========== CONTROL PAGE ========== -->
-  <div id="screen-control" class="screen">
-    <div class="screen-content">
-      <!-- Header -->
-      <div class="control-header">
-        <div class="bike-name">
-          <h1>超能S·苍穹灰</h1>
-          <span class="arrow">&#9662;</span>
-          <span class="status-badge online">在线</span>
-        </div>
-        <button class="bt-status-btn connected">
-          <svg viewBox="0 0 24 24"><path d="M17.71 7.71L12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29zM13 5.83l1.88 1.88L13 9.59V5.83zm1.88 10.46L13 18.17v-3.76l1.88 1.88z" fill="currentColor"/></svg>
-          <span>在线</span>
-        </button>
-      </div>
-
-      <!-- Status -->
-      <div class="status-section">
-        <div class="status-row">
-          <div>
-            <div class="status-label">剩余电量</div>
-            <div class="battery-row">
-              <div class="battery-icon"><div class="battery-fill" style="width:72%"></div></div>
+    <section class="stage">
+      <div class="phone">
+        <div class="island"></div>
+        <div class="app">
+          <section class="screen active" id="home">
+            <div class="top-row">
+              <div class="title-select pressable"><span>Q_BASH_E4BC6F54A56D</span><span>▾</span><b class="status-pill">BLE 已连接</b></div>
+              <button class="icon-btn" aria-label="车辆详情">
+                <svg class="small-icon" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>
+              </button>
+              <button class="icon-btn" aria-label="日志">
+                <svg class="small-icon" viewBox="0 0 24 24"><path d="M12 3v2M12 19v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M3 12h2M19 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/></svg>
+              </button>
             </div>
-          </div>
-          <div>
-            <div class="status-label">预估里程</div>
-            <div class="range-value">
-              <span class="number">--</span>
-              <span class="unit">km</span>
+
+            <div class="stats">
+              <div class="stat"><strong>78%</strong><span>剩余电量</span></div>
+              <div class="stat"><strong>51km</strong><span>预估里程</span></div>
+              <div class="stat"><strong>QGJ</strong><span>协议</span></div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Bike Image -->
-      <div class="bike-image">
-        <svg viewBox="0 0 24 24"><path d="M15.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM5 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5zm5.8-10l2.4-2.4.8.8c1.3 1.3 3 2.1 5 2.1v-2c-1.4 0-2.5-.5-3.4-1.4L13.1 5c-.4-.4-1-.6-1.6-.6-.6 0-1.1.2-1.4.6L7.8 7.4c-.4.4-.6.9-.6 1.4 0 .6.2 1.1.6 1.4L11 13v5h2v-6.2l-2.2-2.3zM19 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z"/></svg>
-      </div>
-
-      <!-- State Label -->
-      <div class="state-label">
-        <div class="state-left">
-          <div class="lock-icon">
-            <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-          </div>
-          <span class="state-text">已关机设防</span>
-        </div>
-        <div class="manual-mode">
-          <span>手动模式</span>
-          <div class="toggle-switch"></div>
-        </div>
-      </div>
-
-      <!-- Control Area -->
-      <div class="control-card">
-        <div class="control-row">
-          <button class="ctrl-btn" title="开座桶">
-            <svg viewBox="0 0 24 24"><path d="M4 18v3h3.5l8.5-8.5-3.5-3.5L4 18zm14.7-10.3c.2-.2.2-.5 0-.7l-2.2-2.2c-.2-.2-.5-.2-.7 0l-1.8 1.8 2.9 2.9 1.8-1.8z"/></svg>
-          </button>
-          <div class="slide-track" id="slideTrack">
-            <div class="slide-label">
-              <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-              <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-              <span>右滑启动</span>
+            <div class="bike-area">
+              <div class="bike-glow"></div>
+              <div class="bike">
+                <svg viewBox="0 0 320 150" aria-hidden="true">
+                  <ellipse cx="160" cy="122" rx="128" ry="16" fill="#dde3ec" opacity=".65"/>
+                  <circle cx="86" cy="105" r="38" fill="none" stroke="#252525" stroke-width="9"/>
+                  <circle cx="238" cy="105" r="38" fill="none" stroke="#252525" stroke-width="9"/>
+                  <circle cx="86" cy="105" r="25" fill="none" stroke="#5596ff" stroke-width="2"/>
+                  <circle cx="238" cy="105" r="25" fill="none" stroke="#5596ff" stroke-width="2"/>
+                  <path d="M86 105 L132 56 L186 105 L238 105 M132 56 L168 20 L210 50" fill="none" stroke="#2a2d35" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M142 74 L184 74" fill="none" stroke="#5596ff" stroke-width="8" stroke-linecap="round"/>
+                  <rect x="134" y="74" width="66" height="34" rx="12" fill="#121418"/>
+                  <path d="M206 48 L246 35" stroke="#2a2d35" stroke-width="9" stroke-linecap="round"/>
+                  <path d="M164 22 L126 20" stroke="#2a2d35" stroke-width="9" stroke-linecap="round"/>
+                </svg>
+              </div>
             </div>
-            <div class="slide-thumb" id="slideThumb">
-              <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0-13c1.66 0 3 1.34 3 3v2H9V6c0-1.66 1.34-3 3-3z" fill="white"/></svg>
+
+            <div class="tip-row">
+              <div class="round-chip">☻</div>
+              <div class="status-bar pressable">设防 · 未通电 · BLE</div>
+              <button class="icon-btn">⌁</button>
             </div>
-          </div>
-        </div>
-        <div class="control-row">
-          <button class="ctrl-btn" title="断电">
-            <svg viewBox="0 0 24 24"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/></svg>
-          </button>
-          <button class="action-btn" title="寻车">
-            <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-            <span>寻车</span>
-          </button>
-          <button class="action-btn" title="设防">
-            <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-            <span>设防</span>
-          </button>
+
+            <div class="control-grid">
+              <div class="control-card quick-stack">
+                <button class="ctl-btn">♫<span>声音设置</span></button>
+                <button class="ctl-btn">▣<span>坐垫锁</span><i class="edit-dot">✎</i></button>
+              </div>
+              <div class="control-card">
+                <div class="power-row">
+                  <div class="power-icon">⏻</div>
+                  <div class="power-text"><strong>通电</strong><span>右滑启动</span></div>
+                  <div class="slide" id="slide-demo"><div class="slide-label">›› 右滑</div><div class="slide-knob">⏻</div></div>
+                </div>
+                <div class="sub-controls">
+                  <button class="ctl-btn">⌕<span>寻车</span><span class="sub">鸣笛定位</span></button>
+                  <button class="ctl-btn blue">🔓<span>解锁</span><span class="sub">当前设防</span></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="quick-section">
+              <h3>功能设置</h3>
+              <div class="quick-list">
+                <div class="quick-item"><div class="quick-icon">⌖</div><span>车辆位置</span></div>
+                <div class="quick-item"><div class="quick-icon">⚙</div><span>车辆设置</span></div>
+                <div class="quick-item"><div class="quick-icon">◎</div><span>电子围栏</span></div>
+                <div class="quick-item"><div class="quick-icon">↗</div><span>分享用车</span></div>
+              </div>
+              <div class="progress"><i></i></div>
+            </div>
+          </section>
+
+          <section class="screen" id="battery">
+            <div class="battery-hero">
+              <div class="page-title"><button class="pressable">‹</button><div>电池信息</div><button class="pressable">更正电池</button></div>
+              <div class="battery-art">
+                <div class="battery-shell">
+                  <div class="battery-body"><i class="seg"></i><i class="seg"></i><i class="seg"></i><i class="seg"></i><i class="seg dim"></i></div>
+                  <div class="battery-cap"></div>
+                </div>
+              </div>
+              <div class="percent"><strong>78</strong><span>%</span></div>
+              <div class="battery-pill">Q_BASH_E4BC6F54A56D</div>
+              <div style="margin-top:10px;color:var(--green);font-weight:800;font-size:13px;">电池健康良好</div>
+            </div>
+            <div class="dark-summary">
+              <div><strong>51km</strong><span>剩余里程</span></div>
+              <div><strong>328km</strong><span>总里程</span></div>
+              <div><strong>48V</strong><span>电压</span></div>
+              <div><strong>92</strong><span>评分</span></div>
+            </div>
+            <div class="info-card">
+              <div class="info-row"><span>今日耗电</span><strong>6%</strong></div>
+              <div class="info-row"><span>循环次数</span><strong>18次</strong></div>
+              <div class="info-row"><span>当前温度</span><strong>31℃</strong></div>
+              <div class="info-row"><span>BMS 状态</span><strong>只读展示</strong></div>
+            </div>
+          </section>
+
+          <section class="screen" id="map">
+            <div class="map-screen">
+              <div class="map-bg"></div>
+              <div class="fence-ring"></div>
+              <div class="marker">车</div>
+              <div class="map-title"><button class="icon-btn">‹</button><div class="label">电子围栏</div><div></div></div>
+              <div class="sheet">
+                <div class="sheet-head"><strong>围栏设置</strong><span style="color:var(--muted)">?</span><button class="icon-btn" style="margin-left:auto;width:38px;height:38px;">↻</button></div>
+                <div class="setting-row"><div><strong>电子围栏</strong><span>官方围栏配置只读展示</span></div><div class="switch"><i></i></div></div>
+                <div class="range-card">
+                  <div class="range-top"><strong>范围设置</strong><span>300m</span></div>
+                  <div class="range-line"><i></i></div>
+                  <div class="range-labels"><span>100m</span><span>10000m</span></div>
+                  <div class="info-row" style="margin-top:14px;"><span>时间设置</span><strong>全天 ›</strong></div>
+                </div>
+                <button class="save-btn">保存</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="screen" id="track">
+            <div class="page-title"><button class="pressable">‹</button><div>历史轨迹</div><button class="pressable">说明</button></div>
+            <div class="track-page">
+              <div class="month-bar"><button class="pressable">‹</button><div>2026-05 ▾</div><button class="pressable">›</button></div>
+              <div class="day-card">
+                <div class="day-title">2026-05-29</div>
+                <div class="day-summary">
+                  <div><strong>2</strong><span>总次数</span></div>
+                  <div><strong>8.6km</strong><span>总里程</span></div>
+                  <div><strong>36m</strong><span>总时长</span></div>
+                </div>
+                <div class="record">
+                  <div class="rail"><i class="start"></i><i class="end"></i><span class="t1">08:12</span><span class="t2">08:31</span></div>
+                  <div class="record-line"></div>
+                  <div class="record-main"><strong>4.3km</strong><span>18km/h · 19m</span></div>
+                  <div class="record-count">128 点</div>
+                  <div>›</div>
+                </div>
+                <div class="record">
+                  <div class="rail"><i class="start"></i><i class="end"></i><span class="t1">18:20</span><span class="t2">18:37</span></div>
+                  <div class="record-line"></div>
+                  <div class="record-main"><strong>4.3km</strong><span>16km/h · 17m</span></div>
+                  <div class="record-count">点击读取</div>
+                  <div>›</div>
+                </div>
+              </div>
+              <div class="info-card" style="margin:14px 0 0;">
+                <div class="info-row"><span>轨迹边界</span><strong>只读</strong></div>
+                <div class="info-row"><span>删除/纠偏</span><strong>暂不开放</strong></div>
+              </div>
+            </div>
+          </section>
+
+          <nav class="bottom-nav">
+            <button class="nav" data-screen="battery">电池</button>
+            <button class="nav active" data-screen="home">爱车</button>
+            <button class="nav" data-screen="map">围栏</button>
+            <button class="nav" data-screen="track">轨迹</button>
+          </nav>
         </div>
       </div>
+    </section>
+  </main>
 
-      <!-- Location Card -->
-      <div class="location-card">
-        <span>车辆位置</span>
-        <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-      </div>
-    </div>
-  </div>
+  <script>
+    const tabs = document.querySelectorAll("[data-screen]");
+    const screens = document.querySelectorAll(".screen");
+    const sideTabs = document.querySelectorAll(".panel .tab");
+    const navTabs = document.querySelectorAll(".bottom-nav .nav");
 
-  <!-- ========== SETTINGS PAGE ========== -->
-  <div id="screen-settings" class="screen">
-    <div class="screen-content">
-      <div class="settings-header">
-        <h1>设置</h1>
-      </div>
-
-      <div class="section-label">连接</div>
-      <div class="setting-item">
-        <div class="setting-icon">
-          <svg viewBox="0 0 24 24"><path d="M17.71 7.71L12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29zM13 5.83l1.88 1.88L13 9.59V5.83zm1.88 10.46L13 18.17v-3.76l1.88 1.88z"/></svg>
-        </div>
-        <div class="setting-text">
-          <h4>自动连接</h4>
-          <p>打开 app 时自动连接上次的设备</p>
-        </div>
-        <div class="setting-action">
-          <div class="toggle-switch" onclick="this.classList.toggle('on')"></div>
-        </div>
-      </div>
-      <div class="setting-item">
-        <div class="setting-icon">
-          <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>
-        </div>
-        <div class="setting-text">
-          <h4>云端 Token</h4>
-          <p>与 Web 端共享连接凭证</p>
-        </div>
-        <div class="setting-action">
-          <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-        </div>
-      </div>
-
-      <div class="setting-divider"></div>
-      <div class="section-label">协议</div>
-      <div class="setting-item">
-        <div class="setting-icon">
-          <svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
-        </div>
-        <div class="setting-text">
-          <h4>协议类型</h4>
-          <p>自动识别</p>
-        </div>
-        <div class="setting-action">
-          <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-        </div>
-      </div>
-
-      <div class="setting-divider"></div>
-      <div class="section-label">调试</div>
-      <div class="setting-item" onclick="switchScreen('log')">
-        <div class="setting-icon">
-          <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-        </div>
-        <div class="setting-text">
-          <h4>日志</h4>
-          <p>查看 BLE 通信和操作记录</p>
-        </div>
-        <div class="setting-action">
-          <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-        </div>
-      </div>
-
-      <div class="setting-divider"></div>
-      <div class="section-label">关于</div>
-      <div class="setting-item">
-        <div class="setting-icon">
-          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-        </div>
-        <div class="setting-text">
-          <h4>版本</h4>
-          <p>1.0.0</p>
-        </div>
-      </div>
-      <div class="setting-item">
-        <div class="setting-icon">
-          <svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
-        </div>
-        <div class="setting-text">
-          <h4>GitHub</h4>
-          <p>ch6vip/tailg-ble-app</p>
-        </div>
-        <div class="setting-action">
-          <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========== LOG PAGE ========== -->
-  <div id="screen-log" class="screen">
-    <div class="screen-content">
-      <div class="log-header">
-        <button class="log-back" onclick="switchScreen('settings')">
-          <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-        </button>
-        <h1>日志</h1>
-        <div class="log-actions">
-          <button class="log-action-btn" title="复制全部">
-            <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-          </button>
-          <button class="log-action-btn" title="刷新">
-            <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-          </button>
-          <button class="log-action-btn" title="清空">
-            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="log-tabs">
-        <div class="log-tab active" onclick="switchLogTab(this, 0)">全部</div>
-        <div class="log-tab" onclick="switchLogTab(this, 1)">BLE</div>
-        <div class="log-tab" onclick="switchLogTab(this, 2)">操作</div>
-      </div>
-
-      <div class="log-list" id="logListAll">
-        <div class="log-entry">
-          <span class="log-time">14:32:08</span>
-          <div class="log-dot info"></div>
-          <div class="log-content">
-            <div class="log-msg">BLE 已连接，发现 4 个服务</div>
-          </div>
-        </div>
-        <div class="log-entry">
-          <span class="log-time">14:32:09</span>
-          <div class="log-dot info"></div>
-          <div class="log-content">
-            <div class="log-msg">自动识别协议: Standard (fee5)</div>
-          </div>
-        </div>
-        <div class="log-entry">
-          <span class="log-time">14:32:09</span>
-          <div class="log-dot debug"></div>
-          <div class="log-content">
-            <div class="log-msg">发送 Token 请求</div>
-            <div class="log-detail">78 03 C2 01 00 11 11 11 11 11 11 ...</div>
-          </div>
-        </div>
-        <div class="log-entry">
-          <span class="log-time">14:32:10</span>
-          <div class="log-dot info"></div>
-          <div class="log-content">
-            <div class="log-msg">认证成功，Token: 78 00 00 00 ...</div>
-          </div>
-        </div>
-        <div class="log-entry">
-          <span class="log-time">14:32:10</span>
-          <span class="log-time" style="visibility:hidden">00:00:00</span>
-          <div class="log-dot info"></div>
-          <div class="log-content">
-            <div class="log-msg">已进入 Ready 状态</div>
-          </div>
-        </div>
-        <div class="log-entry">
-          <span class="log-time">14:33:15</span>
-          <div class="log-dot warning"></div>
-          <div class="log-content">
-            <div class="log-msg">[操作] 用户发送: 读取状态</div>
-            <div class="log-detail">cmd=0x0D</div>
-          </div>
-        </div>
-        <div class="log-entry">
-          <span class="log-time">14:33:15</span>
-          <div class="log-dot info"></div>
-          <div class="log-content">
-            <div class="log-msg">收到响应: 电压 52.30V, 电量 72%</div>
-            <div class="log-detail">78 0E B3 10 14 6E ...</div>
-          </div>
-        </div>
-        <div class="log-entry">
-          <span class="log-time">14:35:22</span>
-          <div class="log-dot info"></div>
-          <div class="log-content">
-            <div class="log-msg">[操作] 用户发送: 设防</div>
-            <div class="log-detail">cmd=0x01</div>
-          </div>
-        </div>
-        <div class="log-entry">
-          <span class="log-time">14:35:23</span>
-          <div class="log-dot info"></div>
-          <div class="log-content">
-            <div class="log-msg">命令执行成功: 设防</div>
-          </div>
-        </div>
-        <div class="log-entry">
-          <span class="log-time">14:38:41</span>
-          <div class="log-dot error"></div>
-          <div class="log-content">
-            <div class="log-msg">BLE 通知超时，正在重连...</div>
-            <div class="log-detail">lastNotify: 32s ago</div>
-          </div>
-        </div>
-        <div class="log-entry">
-          <span class="log-time">14:38:43</span>
-          <div class="log-dot info"></div>
-          <div class="log-content">
-            <div class="log-msg">重连成功</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========== BOTTOM NAV ========== -->
-  <div class="bottom-nav" id="bottomNav">
-    <div class="nav-item" onclick="switchScreen('scan')">
-      <svg viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>扫描</span>
-    </div>
-    <div class="nav-item active" onclick="switchScreen('control')">
-      <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>爱车</span>
-    </div>
-    <div class="nav-item" onclick="switchScreen('settings')">
-      <svg viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3"/></svg>
-      <span>设置</span>
-    </div>
-  </div>
-
-  <div class="home-indicator"></div>
-</div>
-</div>
-
-<script>
-// Screen navigation
-const screenMap = { scan: 0, control: 1, settings: 2 };
-const screenNames = ['scan', 'control', 'settings'];
-
-function switchScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
-
-  // Update bottom nav (log doesn't have a nav tab)
-  const navItems = document.querySelectorAll('.nav-item');
-  navItems.forEach(n => n.classList.remove('active'));
-
-  if (name !== 'log') {
-    const idx = screenMap[name];
-    if (idx !== undefined) navItems[idx].classList.add('active');
-  }
-
-  // Hide bottom nav on log page
-  document.getElementById('bottomNav').style.display = name === 'log' ? 'none' : 'flex';
-}
-
-// Scan toggle
-function toggleScan(btn) {
-  btn.classList.toggle('scanning');
-  if (btn.classList.contains('scanning')) {
-    btn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg><span>停止</span>';
-  } else {
-    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke="white" stroke-width="2"/></svg><span>扫描</span>';
-  }
-}
-
-// Log tab switch
-function switchLogTab(el, idx) {
-  document.querySelectorAll('.log-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-}
-
-// Slide to unlock
-(function() {
-  const track = document.getElementById('slideTrack');
-  const thumb = document.getElementById('slideThumb');
-  if (!track || !thumb) return;
-
-  let dragging = false;
-  let startX = 0;
-  let thumbLeft = 4;
-
-  const getTrackWidth = () => track.offsetWidth - 56; // thumb width 48 + 8px padding
-
-  function onPointerDown(e) {
-    if (thumb.classList.contains('disabled')) return;
-    dragging = true;
-    startX = e.clientX || e.touches[0].clientX;
-    thumb.style.transition = 'none';
-    track.querySelector('.slide-label').style.transition = 'none';
-  }
-
-  function onPointerMove(e) {
-    if (!dragging) return;
-    const clientX = e.clientX || e.touches[0].clientX;
-    const delta = clientX - startX;
-    const maxDrag = getTrackWidth();
-    thumbLeft = Math.max(4, Math.min(4 + maxDrag, 4 + delta));
-    thumb.style.left = thumbLeft + 'px';
-
-    const progress = (thumbLeft - 4) / maxDrag;
-    const label = track.querySelector('.slide-label');
-    label.style.opacity = Math.max(0, 1 - progress * 1.8);
-  }
-
-  function onPointerUp() {
-    if (!dragging) return;
-    dragging = false;
-    const maxDrag = getTrackWidth();
-    const progress = (thumbLeft - 4) / maxDrag;
-
-    thumb.style.transition = 'left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-    track.querySelector('.slide-label').style.transition = 'opacity 0.3s';
-
-    if (progress > 0.75) {
-      // Success
-      thumb.style.left = (4 + maxDrag) + 'px';
-      setTimeout(() => {
-        thumb.style.left = '4px';
-        track.querySelector('.slide-label').style.opacity = '1';
-      }, 400);
-    } else {
-      thumb.style.left = '4px';
-      track.querySelector('.slide-label').style.opacity = '1';
+    function showScreen(id) {
+      screens.forEach(screen => screen.classList.toggle("active", screen.id === id));
+      sideTabs.forEach(tab => tab.classList.toggle("active", tab.dataset.screen === id));
+      navTabs.forEach(tab => tab.classList.toggle("active", tab.dataset.screen === id));
     }
-    thumbLeft = 4;
-  }
 
-  thumb.addEventListener('mousedown', onPointerDown);
-  thumb.addEventListener('touchstart', onPointerDown, { passive: true });
-  document.addEventListener('mousemove', onPointerMove);
-  document.addEventListener('touchmove', onPointerMove, { passive: true });
-  document.addEventListener('mouseup', onPointerUp);
-  document.addEventListener('touchend', onPointerUp);
-})();
-</script>
+    tabs.forEach(tab => tab.addEventListener("click", () => showScreen(tab.dataset.screen)));
+
+    const slide = document.getElementById("slide-demo");
+    if (slide) {
+      slide.addEventListener("click", () => {
+        slide.classList.toggle("done");
+        setTimeout(() => slide.classList.remove("done"), 900);
+      });
+    }
+  </script>
 </body>
 </html>
