@@ -22,13 +22,12 @@ import 'vehicle_settings_page.dart';
 
 const _pageBg = ReplicaColors.pageBg;
 const _kmPerPercent = 0.65;
-const _phoneControlPanelBg = ReplicaColors.darkPanel;
-const _phoneControlPanelDown = ReplicaColors.darkPanelDown;
-const _phoneControlItemBg = ReplicaColors.darkPanelItem;
-const _phoneControlItemPressed = Color(0x1A999999);
+const _phoneControlPanelBg = Colors.white;
+const _phoneControlPanelDown = Color(0xFFF3F5F8);
+const _phoneControlItemBg = Color(0xFFF7F8FA);
+const _phoneControlItemPressed = Color(0xFFEAF0F8);
 const _phoneControlPrimary = ReplicaColors.blue;
-const _phoneControlPrimaryPressed = Color(0x805596FF);
-const _phoneControlGearBg = Color(0x80181818);
+const _phoneControlPrimaryPressed = Color(0x225596FF);
 const _phoneControlRadius = 8.0;
 const _cardDecoration = BoxDecoration(
   color: Colors.white,
@@ -1149,11 +1148,12 @@ class _ControlAreaState extends State<_ControlArea> {
                 decoration: BoxDecoration(
                   color: _phoneControlPanelBg,
                   borderRadius: BorderRadius.circular(_phoneControlRadius),
+                  border: Border.all(color: AppColors.border),
                   boxShadow: const [
                     BoxShadow(
-                      color: Color(0x16000000),
-                      blurRadius: 18,
-                      offset: Offset(0, 8),
+                      color: Color(0x0C000000),
+                      blurRadius: 12,
+                      offset: Offset(0, 3),
                     ),
                   ],
                 ),
@@ -1398,15 +1398,16 @@ class _ControlPanelHeader extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w800,
-            color: Colors.white,
+            color: ReplicaColors.ink,
           ),
         ),
         const Spacer(),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: _phoneControlGearBg,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(_phoneControlRadius),
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1414,7 +1415,7 @@ class _ControlPanelHeader extends StatelessWidget {
               Icon(
                 enabled ? Icons.radio_button_checked : Icons.radio_button_off,
                 size: 12,
-                color: enabled ? _phoneControlPrimary : Colors.white38,
+                color: enabled ? _phoneControlPrimary : ReplicaColors.muted,
               ),
               const SizedBox(width: 6),
               Text(
@@ -1422,7 +1423,9 @@ class _ControlPanelHeader extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: enabled ? Colors.white : Colors.white54,
+                  color: enabled
+                      ? ReplicaColors.secondary
+                      : ReplicaColors.muted,
                 ),
               ),
             ],
@@ -1465,6 +1468,9 @@ class _PrimaryPowerControl extends StatelessWidget {
       decoration: BoxDecoration(
         color: _phoneControlItemBg,
         borderRadius: BorderRadius.circular(_phoneControlRadius),
+        border: Border.all(
+          color: enabled ? color.withValues(alpha: 0.18) : AppColors.border,
+        ),
       ),
       child: Row(
         children: [
@@ -1487,7 +1493,7 @@ class _PrimaryPowerControl extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                    color: ReplicaColors.ink,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1495,7 +1501,10 @@ class _PrimaryPowerControl extends StatelessWidget {
                   hint,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, color: Colors.white54),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: ReplicaColors.muted,
+                  ),
                 ),
               ],
             ),
@@ -1536,8 +1545,9 @@ class _CurrentGearStrip extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: _phoneControlGearBg,
+            color: const Color(0xFFF7F8FA),
             borderRadius: BorderRadius.circular(_phoneControlRadius),
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             children: [
@@ -1545,7 +1555,7 @@ class _CurrentGearStrip extends StatelessWidget {
                 '当前档位',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white54,
+                  color: ReplicaColors.muted,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -1558,7 +1568,7 @@ class _CurrentGearStrip extends StatelessWidget {
                     value: enabled
                         ? (mode.index + 1) / RidingMode.values.length
                         : 0,
-                    backgroundColor: _phoneControlItemBg,
+                    backgroundColor: const Color(0xFFE5E5E5),
                     valueColor: AlwaysStoppedAnimation<Color>(
                       enabled ? _phoneControlPrimary : Colors.white24,
                     ),
@@ -1570,7 +1580,7 @@ class _CurrentGearStrip extends StatelessWidget {
                 enabled ? mode.label : '未连接',
                 style: TextStyle(
                   fontSize: 12,
-                  color: enabled ? Colors.white : Colors.white38,
+                  color: enabled ? ReplicaColors.ink : ReplicaColors.muted,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -1923,14 +1933,11 @@ class _ControlTileState extends State<_ControlTile> {
   @override
   Widget build(BuildContext context) {
     final interactive = widget.enabled && !widget.loading;
-    final color = widget.active
-        ? Colors.white
-        : widget.enabled
-        ? Colors.white
-        : Colors.white38;
-    final secondaryColor = widget.enabled ? Colors.white54 : Colors.white30;
+    final iconColor = widget.enabled
+        ? (widget.active ? _phoneControlPrimary : ReplicaColors.secondary)
+        : ReplicaColors.muted;
     final background = widget.active
-        ? _phoneControlPrimary
+        ? _phoneControlPrimary.withValues(alpha: 0.14)
         : _pressed
         ? _phoneControlItemPressed
         : widget.enabled
@@ -1949,16 +1956,16 @@ class _ControlTileState extends State<_ControlTile> {
           borderRadius: radius,
           border: Border.all(
             color: widget.active
-                ? _phoneControlPrimary.withValues(alpha: 0.42)
-                : Colors.transparent,
+                ? _phoneControlPrimary.withValues(alpha: 0.28)
+                : AppColors.border,
             width: 1,
           ),
           boxShadow: widget.active
               ? [
                   BoxShadow(
-                    color: _phoneControlPrimary.withValues(alpha: 0.22),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    color: _phoneControlPrimary.withValues(alpha: 0.12),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ]
               : null,
@@ -1996,13 +2003,13 @@ class _ControlTileState extends State<_ControlTile> {
                             height: widget.compact ? 20 : 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.4,
-                              color: color,
+                              color: _phoneControlPrimary,
                             ),
                           )
                         : Icon(
                             widget.icon,
                             key: ValueKey(widget.icon),
-                            color: color,
+                            color: iconColor,
                             size: widget.compact ? 22 : 26,
                           ),
                   ),
@@ -2019,7 +2026,11 @@ class _ControlTileState extends State<_ControlTile> {
                           style: TextStyle(
                             fontSize: widget.compact ? 13 : 15,
                             height: 1.1,
-                            color: color,
+                            color: widget.enabled
+                                ? (widget.active
+                                      ? _phoneControlPrimary
+                                      : ReplicaColors.ink)
+                                : ReplicaColors.muted,
                             fontWeight: widget.active
                                 ? FontWeight.w800
                                 : FontWeight.w700,
@@ -2033,7 +2044,9 @@ class _ControlTileState extends State<_ControlTile> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 11,
-                              color: secondaryColor,
+                              color: widget.enabled
+                                  ? ReplicaColors.muted
+                                  : AppColors.textTertiary,
                             ),
                           ),
                         ],
