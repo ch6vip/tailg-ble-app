@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../ble/connection_manager.dart' as ble;
+import 'control_channel_resolver.dart';
 import 'log_service.dart';
 import 'official_cloud_service.dart';
 import 'vehicle_store.dart';
@@ -36,6 +37,11 @@ class DiagnosticExportService {
   String _buildOfficialCloudSection() {
     final state = officialCloudService.state;
     final vehicle = state.selectedVehicle;
+    final availability = ControlChannelResolver.resolve(
+      cloudState: state,
+      bleReady: connectionManager.state == ble.ConnectionState.ready,
+      defaultVehicleId: vehicleStore.defaultVehicleId,
+    );
     final lines = [
       '## Official Cloud',
       'Initialized: ${state.initialized}',
@@ -44,6 +50,11 @@ class DiagnosticExportService {
       'Token: ${state.token.isEmpty ? 'none' : 'present'}',
       'Vehicles: ${state.vehicles.length}',
       'Control channel: ${state.controlChannel.label}',
+      'Effective control channel: ${availability.effectiveChannelLabel}',
+      'BLE control available: ${availability.canUseBle}',
+      'BLE unavailable reason: ${availability.bleUnavailableReason.isEmpty ? 'none' : availability.bleUnavailableReason}',
+      'Cloud control available: ${availability.canUseCloud}',
+      'Cloud unavailable reason: ${availability.cloudUnavailableReason.isEmpty ? 'none' : availability.cloudUnavailableReason}',
       'Selected vehicle: ${vehicle?.displayName ?? 'none'}',
     ];
 
@@ -56,8 +67,12 @@ class DiagnosticExportService {
       lines.add('Online: ${vehicle.online}');
       lines.add('Defence: ${vehicle.defenceLabel}');
       lines.add('ACC: ${vehicle.powerLabel}');
-      lines.add('Battery: ${vehicle.electricQuantity?.toString() ?? '--'}%');
-      lines.add('Voltage: ${vehicle.voltage?.toString() ?? '--'}V');
+      lines.add(
+        'Official vehicle battery: ${vehicle.electricQuantity?.toString() ?? '--'}%',
+      );
+      lines.add(
+        'Official vehicle voltage: ${vehicle.voltage?.toString() ?? '--'}V',
+      );
       lines.add('ModelType: ${vehicle.modelType?.toString() ?? 'none'}');
       lines.add('Command IMEI: ${_maskId(vehicle.commandImei)}');
       lines.add('IMEI: ${_maskId(vehicle.imei)}');
@@ -67,6 +82,21 @@ class DiagnosticExportService {
       lines.add(
         'Location: ${vehicle.latitude.isEmpty || vehicle.longitude.isEmpty ? 'none' : '${vehicle.latitude}, ${vehicle.longitude}'}',
       );
+    }
+
+    final batteryInfo = state.batteryInfo;
+    if (batteryInfo != null) {
+      lines.add(
+        'Official battery detail: ${batteryInfo.dumpEnergyPercentLabel.isEmpty ? 'none' : batteryInfo.dumpEnergyPercentLabel}',
+      );
+      lines.add(
+        'Official battery detail voltage: ${batteryInfo.voltage.isEmpty ? 'none' : '${batteryInfo.voltage}V'}',
+      );
+      lines.add(
+        'Official battery detail temperature: ${batteryInfo.temperature.isEmpty ? 'none' : '${batteryInfo.temperature}C'}',
+      );
+    } else {
+      lines.add('Official battery detail: none');
     }
 
     if (state.error != null) {
@@ -163,8 +193,8 @@ class DiagnosticExportService {
         '${entry.time.second.toString().padLeft(2, '0')}';
     final tag = entry.category == LogCategory.ble ? '[BLE]' : '[OP]';
     final level = entry.level.name.toUpperCase();
-    return '$t $tag [$level] ${entry.message}'
-        '${entry.detail != null ? ' | ${entry.detail}' : ''}';
+    return '$t $tag [$level] ${OfficialCloudRedactor.text(entry.message)}'
+        '${entry.detail != null ? ' | ${OfficialCloudRedactor.text(entry.detail!)}' : ''}';
   }
 
   String _maskPhone(String phone) {

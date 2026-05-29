@@ -10,6 +10,40 @@ class OfficialCloudApiException implements Exception {
   String toString() => message;
 }
 
+class OfficialCloudRedactor {
+  static final RegExp _sensitiveQueryPattern = RegExp(
+    r'(?<=\b(?:phone|token|authorization|imei|carId|uid|frame)=)[^&\s]+',
+    caseSensitive: false,
+  );
+  static final RegExp _phonePattern = RegExp(r'\b1\d{10}\b');
+  static final RegExp _imeiPattern = RegExp(r'\b\d{14,17}\b');
+  static final RegExp _macPattern = RegExp(
+    r'\b(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b',
+  );
+
+  const OfficialCloudRedactor._();
+
+  static String requestPath(String path) {
+    return path.replaceAllMapped(_sensitiveQueryPattern, (match) {
+      return _mask(match.group(0) ?? '');
+    });
+  }
+
+  static String text(String value) {
+    return value
+        .replaceAllMapped(_phonePattern, (match) => _mask(match.group(0)!))
+        .replaceAllMapped(_imeiPattern, (match) => _mask(match.group(0)!))
+        .replaceAllMapped(_macPattern, (match) => _mask(match.group(0)!));
+  }
+
+  static String _mask(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return '***';
+    if (trimmed.length <= 6) return '***';
+    return '${trimmed.substring(0, 3)}***${trimmed.substring(trimmed.length - 3)}';
+  }
+}
+
 class _OfficialApiResponse {
   final int statusCode;
   final Map<String, String> headers;
@@ -159,10 +193,11 @@ class _OfficialCloudApiClient {
     required Map<String, dynamic> body,
   }) {
     final elapsed = DateTime.now().difference(startedAt);
+    final safePath = OfficialCloudRedactor.requestPath(path);
     final code = body['code']?.toString();
     final msg = _shortMessage(body['msg']?.toString());
     _lastRequest = OfficialCloudRequestSummary(
-      path: path,
+      path: safePath,
       method: method,
       statusCode: statusCode,
       code: code,
@@ -174,7 +209,7 @@ class _OfficialCloudApiClient {
     _log.operation(
       '官方云接口返回',
       detail:
-          '$method $path status=$statusCode code=${code ?? 'none'} elapsed=${elapsed.inMilliseconds}ms msg=${msg ?? 'none'}',
+          '$method $safePath status=$statusCode code=${code ?? 'none'} elapsed=${elapsed.inMilliseconds}ms msg=${msg ?? 'none'}',
       level: LogLevel.debug,
     );
   }
@@ -187,8 +222,9 @@ class _OfficialCloudApiClient {
     int? statusCode,
   }) {
     final elapsed = DateTime.now().difference(startedAt);
+    final safePath = OfficialCloudRedactor.requestPath(path);
     _lastRequest = OfficialCloudRequestSummary(
-      path: path,
+      path: safePath,
       method: method,
       statusCode: statusCode,
       code: null,
@@ -200,7 +236,7 @@ class _OfficialCloudApiClient {
     _log.operation(
       '官方云接口失败',
       detail:
-          '$method $path status=${statusCode?.toString() ?? 'none'} elapsed=${elapsed.inMilliseconds}ms msg=${_shortMessage(message)}',
+          '$method $safePath status=${statusCode?.toString() ?? 'none'} elapsed=${elapsed.inMilliseconds}ms msg=${_shortMessage(message)}',
       level: LogLevel.warning,
     );
   }

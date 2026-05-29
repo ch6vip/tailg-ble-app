@@ -213,6 +213,7 @@ class OfficialCloudState {
 class OfficialCloudService {
   static final OfficialCloudService _instance = OfficialCloudService._();
   factory OfficialCloudService() => _instance;
+  static const _silentRefreshTtl = Duration(seconds: 45);
 
   final _log = LogService();
   final _storage = _OfficialCloudStorage();
@@ -222,6 +223,8 @@ class OfficialCloudService {
   );
   final _stateController = StreamController<OfficialCloudState>.broadcast();
   OfficialCloudState _state = OfficialCloudState.initial();
+  final Map<String, DateTime> _lastSuccessfulRefresh = {};
+  final Map<String, Future<void>> _inFlightRefreshes = {};
   bool _initialized = false;
 
   OfficialCloudService._();
@@ -306,6 +309,7 @@ class OfficialCloudService {
         phone: normalizedPhone,
         userId: userId,
       );
+      _clearRefreshCache();
       _state = _state.copyWith(
         token: token,
         phone: normalizedPhone,
@@ -322,6 +326,7 @@ class OfficialCloudService {
 
   Future<void> logout() async {
     await _storage.clearCredentialsAndSelection();
+    _clearRefreshCache();
     _state = _state.copyWith(
       token: '',
       phone: '',
@@ -355,6 +360,35 @@ class OfficialCloudService {
     bool refreshReplicaDetails = true,
   }) async {
     if (_state.token.isEmpty) return;
+    const refreshKey = 'vehicles';
+    if (silent && _shouldUseRecentRefresh(refreshKey)) {
+      _refreshVehicleDependents(refreshReplicaDetails: refreshReplicaDetails);
+      return;
+    }
+    final inFlight = _inFlightRefreshes[refreshKey];
+    if (silent && inFlight != null) return inFlight;
+
+    late Future<void> refresh;
+    refresh = _refreshVehiclesNow(
+      silent: silent,
+      refreshReplicaDetails: refreshReplicaDetails,
+      refreshKey: refreshKey,
+    );
+    _inFlightRefreshes[refreshKey] = refresh;
+    try {
+      await refresh;
+    } finally {
+      if (identical(_inFlightRefreshes[refreshKey], refresh)) {
+        _inFlightRefreshes.remove(refreshKey);
+      }
+    }
+  }
+
+  Future<void> _refreshVehiclesNow({
+    required bool silent,
+    required bool refreshReplicaDetails,
+    required String refreshKey,
+  }) async {
     if (!silent) _setLoading(true);
     try {
       final response = await _apiClient.request(
@@ -381,20 +415,8 @@ class OfficialCloudService {
       _emit();
       await _applySelectedVehicleToLocalProfile();
       _log.operation('官方车辆列表已刷新', detail: 'count=${vehicles.length}');
-      _runSilentRefresh(
-        refreshBatteryInfo(silent: true),
-        failureMessage: '官方电池信息静默刷新失败',
-      );
-      if (refreshReplicaDetails) {
-        _runSilentRefresh(
-          refreshVehicleLocation(silent: true),
-          failureMessage: '官方停车位置静默刷新失败',
-        );
-        _runSilentRefresh(
-          refreshFenceData(silent: true),
-          failureMessage: '官方电子围栏静默刷新失败',
-        );
-      }
+      _refreshVehicleDependents(refreshReplicaDetails: refreshReplicaDetails);
+      _markRefreshSuccess(refreshKey);
     } catch (e) {
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
@@ -423,6 +445,27 @@ class OfficialCloudService {
 
   Future<void> refreshBatteryInfo({bool silent = false}) async {
     if (_state.token.isEmpty) return;
+    const refreshKey = 'batteryInfo';
+    if (silent && _shouldUseRecentRefresh(refreshKey)) return;
+    final inFlight = _inFlightRefreshes[refreshKey];
+    if (silent && inFlight != null) return inFlight;
+
+    late Future<void> refresh;
+    refresh = _refreshBatteryInfoNow(silent: silent, refreshKey: refreshKey);
+    _inFlightRefreshes[refreshKey] = refresh;
+    try {
+      await refresh;
+    } finally {
+      if (identical(_inFlightRefreshes[refreshKey], refresh)) {
+        _inFlightRefreshes.remove(refreshKey);
+      }
+    }
+  }
+
+  Future<void> _refreshBatteryInfoNow({
+    required bool silent,
+    required String refreshKey,
+  }) async {
     if (!silent) {
       _state = _state.copyWith(
         batteryInfoLoading: true,
@@ -448,6 +491,7 @@ class OfficialCloudService {
         '官方电池信息已刷新',
         detail: info.hasData ? 'hasData=true' : 'hasData=false',
       );
+      _markRefreshSuccess(refreshKey);
     } catch (e) {
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
@@ -477,6 +521,32 @@ class OfficialCloudService {
     if (_state.token.isEmpty || vehicle == null || vehicle.carId.isEmpty) {
       return;
     }
+    final refreshKey = 'vehicleLocation:${vehicle.key}';
+    if (silent && _shouldUseRecentRefresh(refreshKey)) return;
+    final inFlight = _inFlightRefreshes[refreshKey];
+    if (silent && inFlight != null) return inFlight;
+
+    late Future<void> refresh;
+    refresh = _refreshVehicleLocationNow(
+      silent: silent,
+      refreshKey: refreshKey,
+      vehicle: vehicle,
+    );
+    _inFlightRefreshes[refreshKey] = refresh;
+    try {
+      await refresh;
+    } finally {
+      if (identical(_inFlightRefreshes[refreshKey], refresh)) {
+        _inFlightRefreshes.remove(refreshKey);
+      }
+    }
+  }
+
+  Future<void> _refreshVehicleLocationNow({
+    required bool silent,
+    required String refreshKey,
+    required OfficialVehicle vehicle,
+  }) async {
     if (!silent) {
       _state = _state.copyWith(
         vehicleLocationLoading: true,
@@ -505,6 +575,7 @@ class OfficialCloudService {
         '官方停车位置已刷新',
         detail: location.hasData ? 'hasData=true' : 'hasData=false',
       );
+      _markRefreshSuccess(refreshKey);
     } catch (e) {
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
@@ -533,6 +604,32 @@ class OfficialCloudService {
     if (_state.token.isEmpty || vehicle == null || vehicle.carId.isEmpty) {
       return;
     }
+    final refreshKey = 'fence:${vehicle.key}';
+    if (silent && _shouldUseRecentRefresh(refreshKey)) return;
+    final inFlight = _inFlightRefreshes[refreshKey];
+    if (silent && inFlight != null) return inFlight;
+
+    late Future<void> refresh;
+    refresh = _refreshFenceDataNow(
+      silent: silent,
+      refreshKey: refreshKey,
+      vehicle: vehicle,
+    );
+    _inFlightRefreshes[refreshKey] = refresh;
+    try {
+      await refresh;
+    } finally {
+      if (identical(_inFlightRefreshes[refreshKey], refresh)) {
+        _inFlightRefreshes.remove(refreshKey);
+      }
+    }
+  }
+
+  Future<void> _refreshFenceDataNow({
+    required bool silent,
+    required String refreshKey,
+    required OfficialVehicle vehicle,
+  }) async {
     if (!silent) {
       _state = _state.copyWith(fenceLoading: true, fenceError: null);
       _emit();
@@ -556,6 +653,7 @@ class OfficialCloudService {
         '官方电子围栏已刷新',
         detail: fence.hasData ? 'hasData=true' : 'hasData=false',
       );
+      _markRefreshSuccess(refreshKey);
     } catch (e) {
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
@@ -596,6 +694,40 @@ class OfficialCloudService {
       return;
     }
     final queryMonth = month ?? _state.travelMonth.ifEmpty(_currentMonth);
+    final refreshKey = 'travel:${vehicle.key}:$queryMonth';
+    if (silent &&
+        _state.travelMonth == queryMonth &&
+        _shouldUseRecentRefresh(refreshKey)) {
+      return;
+    }
+    final inFlight = _inFlightRefreshes[refreshKey];
+    if (silent && inFlight != null) return inFlight;
+
+    late Future<void> refresh;
+    refresh = _refreshTravelHistoryNow(
+      silent: silent,
+      refreshKey: refreshKey,
+      vehicle: vehicle,
+      queryMonth: queryMonth,
+      userId: userId,
+    );
+    _inFlightRefreshes[refreshKey] = refresh;
+    try {
+      await refresh;
+    } finally {
+      if (identical(_inFlightRefreshes[refreshKey], refresh)) {
+        _inFlightRefreshes.remove(refreshKey);
+      }
+    }
+  }
+
+  Future<void> _refreshTravelHistoryNow({
+    required bool silent,
+    required String refreshKey,
+    required OfficialVehicle vehicle,
+    required String queryMonth,
+    required String userId,
+  }) async {
     if (!silent) {
       _state = _state.copyWith(
         travelLoading: true,
@@ -621,6 +753,7 @@ class OfficialCloudService {
       );
       _emit();
       _log.operation('官方历史轨迹已刷新', detail: 'days=${days.length}');
+      _markRefreshSuccess(refreshKey);
     } catch (e) {
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
@@ -844,6 +977,22 @@ class OfficialCloudService {
     );
   }
 
+  void _refreshVehicleDependents({required bool refreshReplicaDetails}) {
+    _runSilentRefresh(
+      refreshBatteryInfo(silent: true),
+      failureMessage: '官方电池信息静默刷新失败',
+    );
+    if (!refreshReplicaDetails) return;
+    _runSilentRefresh(
+      refreshVehicleLocation(silent: true),
+      failureMessage: '官方停车位置静默刷新失败',
+    );
+    _runSilentRefresh(
+      refreshFenceData(silent: true),
+      failureMessage: '官方电子围栏静默刷新失败',
+    );
+  }
+
   void _runSilentRefresh(
     Future<void> future, {
     required String failureMessage,
@@ -898,6 +1047,21 @@ class OfficialCloudService {
   bool _validPhone(String value) => RegExp(r'^\d{11}$').hasMatch(value);
 
   bool _validSmsCode(String value) => RegExp(r'^\d{4,8}$').hasMatch(value);
+
+  bool _shouldUseRecentRefresh(String key) {
+    final refreshedAt = _lastSuccessfulRefresh[key];
+    if (refreshedAt == null) return false;
+    return DateTime.now().difference(refreshedAt) < _silentRefreshTtl;
+  }
+
+  void _markRefreshSuccess(String key) {
+    _lastSuccessfulRefresh[key] = DateTime.now();
+  }
+
+  void _clearRefreshCache() {
+    _lastSuccessfulRefresh.clear();
+    _inFlightRefreshes.clear();
+  }
 
   String _currentMonth() {
     final now = DateTime.now();

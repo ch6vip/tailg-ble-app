@@ -140,6 +140,23 @@ void main() {
     });
   });
 
+  group('OfficialCloudRedactor', () {
+    test('masks sensitive request path values and diagnostic text', () {
+      expect(
+        OfficialCloudRedactor.requestPath(
+          'app/getCode?phone=18886120851&imei=860123456789377',
+        ),
+        'app/getCode?phone=188***851&imei=860***377',
+      );
+      expect(
+        OfficialCloudRedactor.text(
+          'phone=18886120851 imei=860123456789377 mac=AA:BB:CC:DD:EE:FF',
+        ),
+        'phone=188***851 imei=860***377 mac=AA:***:FF',
+      );
+    });
+  });
+
   group('OfficialCloudAuthParser', () {
     test('extracts user id from nested official login responses', () {
       expect(
@@ -427,7 +444,8 @@ void main() {
 
       expect(availability.canUseBle, isFalse);
       expect(availability.enabled, isFalse);
-      expect(availability.disabledReason, '当前官方车辆未关联这台本地 BLE 车辆');
+      expect(availability.bleUnavailableReason, '默认本地车辆与官方车辆关联不一致');
+      expect(availability.disabledReason, '默认本地车辆与官方车辆关联不一致');
     });
 
     test('disables BLE channel when disconnected', () {
@@ -441,7 +459,9 @@ void main() {
 
       expect(availability.canUseBle, isFalse);
       expect(availability.enabled, isFalse);
-      expect(availability.disabledReason, 'BLE 未连接，当前通道不可用');
+      expect(availability.effectiveChannelLabel, '不可用');
+      expect(availability.bleUnavailableReason, 'BLE 未连接或协议未就绪');
+      expect(availability.disabledReason, 'BLE 未连接或协议未就绪');
     });
 
     test(
@@ -473,6 +493,7 @@ void main() {
         );
 
         expect(available.enabled, isTrue);
+        expect(available.effectiveChannelLabel, '官方云端');
         expect(available.willUseBle, isFalse);
         expect(missingVehicle.enabled, isFalse);
         expect(missingVehicle.disabledReason, '官方账号未选择车辆');
@@ -500,8 +521,10 @@ void main() {
       );
 
       expect(bleAvailable.enabled, isTrue);
+      expect(bleAvailable.effectiveChannelLabel, 'BLE');
       expect(bleAvailable.willUseBle, isTrue);
       expect(cloudFallback.enabled, isTrue);
+      expect(cloudFallback.effectiveChannelLabel, '官方云端');
       expect(cloudFallback.willUseBle, isFalse);
     });
 
@@ -514,7 +537,9 @@ void main() {
 
       expect(availability.enabled, isFalse);
       expect(availability.willUseBle, isFalse);
-      expect(availability.disabledReason, '请连接 BLE 或登录官方账号后再控车');
+      expect(availability.bleUnavailableReason, 'BLE 未连接或协议未就绪');
+      expect(availability.cloudUnavailableReason, '请先登录官方账号');
+      expect(availability.disabledReason, 'BLE：BLE 未连接或协议未就绪；云端：请先登录官方账号');
     });
 
     test('busy state disables an otherwise available route', () {
@@ -851,14 +876,22 @@ ControlChannelAvailability _availability({
   bool canUseCloud = false,
   String disabledReason = '请连接 BLE 或登录官方账号后再控车',
 }) {
+  final willUseBle =
+      channel == OfficialControlChannel.ble ||
+      (channel == OfficialControlChannel.automatic && canUseBle);
   return ControlChannelAvailability(
     channel: channel,
     canUseBle: canUseBle,
     canUseCloud: canUseCloud,
     enabled: canUseBle || canUseCloud,
-    willUseBle:
-        channel == OfficialControlChannel.ble ||
-        (channel == OfficialControlChannel.automatic && canUseBle),
+    willUseBle: willUseBle,
+    effectiveChannelLabel: willUseBle
+        ? 'BLE'
+        : canUseCloud
+        ? '官方云端'
+        : '不可用',
+    bleUnavailableReason: canUseBle ? '' : 'BLE 未连接或协议未就绪',
+    cloudUnavailableReason: canUseCloud ? '' : '请先登录官方账号',
     disabledReason: disabledReason,
   );
 }

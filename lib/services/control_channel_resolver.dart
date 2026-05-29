@@ -6,6 +6,9 @@ class ControlChannelAvailability {
   final bool canUseCloud;
   final bool enabled;
   final bool willUseBle;
+  final String effectiveChannelLabel;
+  final String bleUnavailableReason;
+  final String cloudUnavailableReason;
   final String disabledReason;
 
   const ControlChannelAvailability({
@@ -14,6 +17,9 @@ class ControlChannelAvailability {
     required this.canUseCloud,
     required this.enabled,
     required this.willUseBle,
+    required this.effectiveChannelLabel,
+    required this.bleUnavailableReason,
+    required this.cloudUnavailableReason,
     required this.disabledReason,
   });
 }
@@ -33,6 +39,16 @@ class ControlChannelResolver {
       defaultVehicleId: defaultVehicleId,
     );
     final canUseCloud = _canUseOfficialCloud(cloudState);
+    final bleUnavailableReason = canUseBle
+        ? ''
+        : _bleUnavailableReason(
+            cloudState: cloudState,
+            bleReady: bleReady,
+            defaultVehicleId: defaultVehicleId,
+          );
+    final cloudUnavailableReason = canUseCloud
+        ? ''
+        : _cloudUnavailableReason(cloudState);
     final enabled =
         !busy &&
         switch (cloudState.controlChannel) {
@@ -52,9 +68,17 @@ class ControlChannelResolver {
       canUseCloud: canUseCloud,
       enabled: enabled,
       willUseBle: willUseBle,
+      effectiveChannelLabel: _effectiveChannelLabel(
+        enabled: enabled,
+        willUseBle: willUseBle,
+        canUseCloud: canUseCloud,
+      ),
+      bleUnavailableReason: bleUnavailableReason,
+      cloudUnavailableReason: cloudUnavailableReason,
       disabledReason: _disabledReason(
         cloudState: cloudState,
-        bleReady: bleReady,
+        bleUnavailableReason: bleUnavailableReason,
+        cloudUnavailableReason: cloudUnavailableReason,
       ),
     );
   }
@@ -76,17 +100,59 @@ class ControlChannelResolver {
     return cloudState.signedIn && cloudState.selectedVehicle != null;
   }
 
-  static String _disabledReason({
+  static String _effectiveChannelLabel({
+    required bool enabled,
+    required bool willUseBle,
+    required bool canUseCloud,
+  }) {
+    if (!enabled) return '不可用';
+    if (willUseBle) return 'BLE';
+    if (canUseCloud) return '官方云端';
+    return '不可用';
+  }
+
+  static String _bleUnavailableReason({
     required OfficialCloudState cloudState,
     required bool bleReady,
+    required String? defaultVehicleId,
+  }) {
+    if (!bleReady) return 'BLE 未连接或协议未就绪';
+    final selected = cloudState.selectedVehicle;
+    if (selected == null) return '';
+    final linkedId = cloudState.linkedLocalVehicleId(selected.key);
+    if (linkedId == null || linkedId.isEmpty) return '';
+    if (defaultVehicleId == null || defaultVehicleId.isEmpty) {
+      return '没有默认本地车辆';
+    }
+    return '默认本地车辆与官方车辆关联不一致';
+  }
+
+  static String _cloudUnavailableReason(OfficialCloudState cloudState) {
+    if (!cloudState.signedIn) return '请先登录官方账号';
+    if (cloudState.selectedVehicle == null) return '官方账号未选择车辆';
+    return '';
+  }
+
+  static String _disabledReason({
+    required OfficialCloudState cloudState,
+    required String bleUnavailableReason,
+    required String cloudUnavailableReason,
   }) {
     switch (cloudState.controlChannel) {
       case OfficialControlChannel.ble:
-        return bleReady ? '当前官方车辆未关联这台本地 BLE 车辆' : 'BLE 未连接，当前通道不可用';
+        return bleUnavailableReason.isEmpty
+            ? '当前官方车辆未关联这台本地 BLE 车辆'
+            : bleUnavailableReason;
       case OfficialControlChannel.officialCloud:
-        return cloudState.signedIn ? '官方账号未选择车辆' : '请先登录官方账号';
+        return cloudUnavailableReason.isEmpty
+            ? '官方云端不可用'
+            : cloudUnavailableReason;
       case OfficialControlChannel.automatic:
-        return '请连接 BLE 或登录官方账号后再控车';
+        final reasons = [
+          if (bleUnavailableReason.isNotEmpty) 'BLE：$bleUnavailableReason',
+          if (cloudUnavailableReason.isNotEmpty) '云端：$cloudUnavailableReason',
+        ];
+        return reasons.isEmpty ? '请连接 BLE 或登录官方账号后再控车' : reasons.join('；');
     }
   }
 }

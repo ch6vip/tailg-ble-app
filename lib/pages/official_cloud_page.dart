@@ -581,6 +581,10 @@ class _OfficialVehicleCard extends StatelessWidget {
               '蓝牙 MAC',
               vehicle.btmac.isEmpty ? '未返回' : vehicle.btmac,
             ),
+            if (!vehicle.hasBleIdentity) ...[
+              const SizedBox(height: 10),
+              const _MissingBleIdentityNotice(),
+            ],
             const SizedBox(height: 10),
             Row(
               children: [
@@ -652,6 +656,50 @@ class _OfficialVehicleCard extends StatelessWidget {
               const SizedBox(height: 8),
               _StaleLinkNotice(vehicle: vehicle),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MissingBleIdentityNotice extends StatelessWidget {
+  const _MissingBleIdentityNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.info.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.bluetooth_searching,
+              size: 16,
+              color: AppColors.info,
+            ),
+            const SizedBox(width: 6),
+            const Expanded(
+              child: Text(
+                '官方接口未返回蓝牙标识，无法自动生成本地 BLE 车辆。请先扫码连接一次，或进入关联页选择已保存的本地车辆。',
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1.35,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => openScanTab(context),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              child: const Text('去扫描'),
+            ),
           ],
         ),
       ),
