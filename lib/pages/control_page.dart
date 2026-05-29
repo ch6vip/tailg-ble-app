@@ -40,6 +40,12 @@ int? _normalizePercent(int? value) {
   return value.clamp(0, 100).toInt();
 }
 
+String _formatMetricNumber(num value) {
+  final rounded = value.roundToDouble();
+  if ((value - rounded).abs() < 0.05) return rounded.toInt().toString();
+  return value.toStringAsFixed(1);
+}
+
 class ControlPage extends StatefulWidget {
   const ControlPage({super.key});
 
@@ -181,6 +187,11 @@ class _Header extends StatelessWidget {
                 : connState == ble.ConnectionState.ready
                 ? Icons.bluetooth_connected
                 : Icons.bluetooth_disabled;
+            final subtitle = cloudVehicle != null
+                ? '${cloudVehicle.defenceLabel} · ${cloudVehicle.powerLabel}'
+                : hasDeviceName
+                ? 'BLE $deviceName'
+                : defaultVehicle?.id ?? '点按选择或绑定车辆';
 
             return Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
@@ -200,19 +211,36 @@ class _Header extends StatelessWidget {
                       child: Row(
                         children: [
                           Flexible(
-                            child: Text(
-                              displayName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                                color: ReplicaColors.ink,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  displayName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 23,
+                                    fontWeight: FontWeight.w800,
+                                    color: ReplicaColors.ink,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  subtitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: ReplicaColors.subtle,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Icon(Icons.arrow_drop_down, size: 20),
+                          const Icon(Icons.keyboard_arrow_down, size: 20),
                           const SizedBox(width: 8),
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
@@ -372,6 +400,13 @@ class _StatusSection extends StatelessWidget {
                 : battery > 20
                 ? Colors.orange
                 : Colors.red;
+            final mileage = cloudVehicle?.mileage;
+            final rangeText = mileage != null
+                ? _formatMetricNumber(mileage)
+                : battery != null
+                ? '${(battery * _kmPerPercent).round()}'
+                : '--';
+            final rangeLabel = mileage != null ? '累计里程' : '预估里程';
 
             return Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -389,15 +424,16 @@ class _StatusSection extends StatelessWidget {
                   const SizedBox(width: 22),
                   Expanded(
                     child: _HomeMetric(
-                      label: '预估里程',
-                      value: battery != null
-                          ? '${(battery * _kmPerPercent).round()}'
-                          : '--',
-                      unit: battery != null ? 'km' : '',
+                      label: rangeLabel,
+                      value: rangeText,
+                      unit: rangeText == '--' ? '' : 'km',
                     ),
                   ),
                   const SizedBox(width: 14),
-                  _HomeBlePill(connState: connState),
+                  _HomeChannelPill(
+                    connState: connState,
+                    cloudVehicle: cloudVehicle,
+                  ),
                 ],
               ),
             );
@@ -471,10 +507,11 @@ class _HomeMetric extends StatelessWidget {
   }
 }
 
-class _HomeBlePill extends StatelessWidget {
+class _HomeChannelPill extends StatelessWidget {
   final ble.ConnectionState connState;
+  final OfficialVehicle? cloudVehicle;
 
-  const _HomeBlePill({required this.connState});
+  const _HomeChannelPill({required this.connState, required this.cloudVehicle});
 
   @override
   Widget build(BuildContext context) {
@@ -482,31 +519,39 @@ class _HomeBlePill extends StatelessWidget {
     final connecting =
         connState == ble.ConnectionState.connecting ||
         connState == ble.ConnectionState.reconnecting;
+    final cloudReady = cloudVehicle != null;
     final color = ready
         ? AppColors.success
         : connecting
         ? AppColors.warning
+        : cloudReady
+        ? ReplicaColors.blue
         : ReplicaColors.muted;
     final text = ready
         ? 'BLE'
         : connecting
         ? '连接中'
+        : cloudReady
+        ? '云端'
         : '离线';
+    final icon = ready
+        ? Icons.bluetooth_connected
+        : connecting
+        ? Icons.sync
+        : cloudReady
+        ? Icons.cloud_done_outlined
+        : Icons.bluetooth_disabled;
     return Container(
       height: 32,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
+        color: Colors.white.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(ReplicaRadii.pill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            ready ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
-            size: 14,
-            color: color,
-          ),
+          Icon(icon, size: 14, color: color),
           const SizedBox(width: 5),
           Text(
             text,
@@ -604,6 +649,7 @@ class _BikeImage extends StatelessWidget {
                       bottom: 14,
                       child: _VehicleModelMeta(
                         connState: connState,
+                        cloudVehicle: cloudVehicle,
                         isPowerOn: isPowerOn,
                         isLocked: isLocked,
                       ),
@@ -646,6 +692,38 @@ class _VehicleVisual extends StatelessWidget {
           : Image.network(
               url,
               fit: BoxFit.contain,
+              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                if (wasSynchronouslyLoaded) return child;
+                return AnimatedOpacity(
+                  opacity: frame == null ? 0 : 1,
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOut,
+                  child: child,
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _PaintedBikeVisual(
+                      accent: accent,
+                      isPowerOn: isPowerOn,
+                      isLocked: isLocked,
+                    ),
+                    Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: accent,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
               errorBuilder: (_, __, ___) => _PaintedBikeVisual(
                 accent: accent,
                 isPowerOn: isPowerOn,
@@ -790,25 +868,32 @@ class _VehicleStateChip extends StatelessWidget {
 
 class _VehicleModelMeta extends StatelessWidget {
   final ble.ConnectionState connState;
+  final OfficialVehicle? cloudVehicle;
   final bool isPowerOn;
   final bool isLocked;
 
   const _VehicleModelMeta({
     required this.connState,
+    required this.cloudVehicle,
     required this.isPowerOn,
     required this.isLocked,
   });
 
   @override
   Widget build(BuildContext context) {
+    final usesCloud =
+        connState != ble.ConnectionState.ready && cloudVehicle != null;
     final state = connState == ble.ConnectionState.ready
         ? '${isPowerOn ? '电源开启' : '电源关闭'} · ${isLocked ? '防盗中' : '可骑行'}'
+        : usesCloud
+        ? '${cloudVehicle!.onlineLabel} · ${cloudVehicle!.defenceLabel} · ${cloudVehicle!.powerLabel}'
         : '连接车辆后显示实时状态';
+    final title = cloudVehicle?.displayName ?? '智能电动车';
     return Row(
       children: [
         Expanded(
           child: Text(
-            '智能电动车',
+            title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -1379,6 +1464,16 @@ class _ControlTipBar extends StatelessWidget {
     final status = enabled
         ? '${isLocked ? '设防' : '解锁'} · ${isPowerOn ? '已通电' : '未通电'}'
         : disabledReason ?? '请连接车辆后控车';
+    final effectiveColor = switch (effective) {
+      'BLE' => AppColors.success,
+      '云端' => ReplicaColors.blue,
+      _ => ReplicaColors.muted,
+    };
+    final effectiveIcon = switch (effective) {
+      'BLE' => Icons.bluetooth_connected,
+      '云端' => Icons.cloud_done_outlined,
+      _ => Icons.link_off,
+    };
     return Row(
       children: [
         Container(
@@ -1421,9 +1516,33 @@ class _ControlTipBar extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
+                    Container(
+                      height: 24,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: effectiveColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(effectiveIcon, size: 13, color: effectiveColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            effective,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: effectiveColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '$status · $effective',
+                        status,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -1461,10 +1580,14 @@ class _ControlTipBar extends StatelessWidget {
             color: Colors.white,
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            enabled ? Icons.touch_app_outlined : Icons.link_off,
-            size: 21,
-            color: enabled ? ReplicaColors.blue : ReplicaColors.muted,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 160),
+            child: Icon(
+              enabled ? Icons.touch_app_outlined : Icons.link_off,
+              key: ValueKey(enabled),
+              size: 21,
+              color: enabled ? ReplicaColors.blue : ReplicaColors.muted,
+            ),
           ),
         ),
       ],
@@ -1506,6 +1629,7 @@ class _OfficialQuickControlCard extends StatelessWidget {
             child: _OfficialSmallControlButton(
               icon: firstQuick.icon,
               label: firstQuick.label,
+              loadingLabel: '执行中',
               enabled: firstQuick.command == null || enabled,
               active: firstActive,
               loading: firstActive,
@@ -1521,6 +1645,7 @@ class _OfficialQuickControlCard extends StatelessWidget {
                   child: _OfficialSmallControlButton(
                     icon: secondQuick.icon,
                     label: secondQuick.label,
+                    loadingLabel: '执行中',
                     enabled: secondQuick.command == null || enabled,
                     active: secondActive,
                     loading: secondActive,
@@ -1599,6 +1724,7 @@ class _OfficialMainControlCard extends StatelessWidget {
             loadingLabel: powerLoadingLabel,
             color: powerColor,
             enabled: enabled,
+            disabledReason: disabledReason,
             onDisabledTap: onDisabledTap,
             onSlideComplete: onPowerSlideComplete,
           ),
@@ -1610,6 +1736,7 @@ class _OfficialMainControlCard extends StatelessWidget {
                   icon: Icons.volume_up_outlined,
                   label: '寻车',
                   subLabel: '鸣笛定位',
+                  loadingLabel: '寻车中',
                   enabled: enabled,
                   active: findActive,
                   loading: findActive,
@@ -1623,6 +1750,7 @@ class _OfficialMainControlCard extends StatelessWidget {
                   icon: lockIcon,
                   label: lockLabel,
                   subLabel: lockStatus,
+                  loadingLabel: lockLabel == '解锁' ? '解锁中' : '设防中',
                   enabled: enabled,
                   active: lockActive,
                   loading: lockActive,
@@ -1651,6 +1779,7 @@ class _OfficialSmallControlButton extends StatefulWidget {
   final IconData icon;
   final String label;
   final String? subLabel;
+  final String loadingLabel;
   final bool enabled;
   final bool active;
   final bool loading;
@@ -1661,6 +1790,7 @@ class _OfficialSmallControlButton extends StatefulWidget {
     required this.icon,
     required this.label,
     this.subLabel,
+    this.loadingLabel = '执行中',
     required this.enabled,
     required this.active,
     required this.loading,
@@ -1709,60 +1839,71 @@ class _OfficialSmallControlButtonState
           color: background,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          child: InkWell(
-            onTap: widget.loading
-                ? null
-                : interactive
-                ? () {
-                    _setPressed(false);
-                    HapticFeedback.mediumImpact();
-                    widget.onTap();
-                  }
-                : _showDisabledReason,
-            onTapDown: interactive ? (_) => _setPressed(true) : null,
-            onTapUp: interactive ? (_) => _setPressed(false) : null,
-            onTapCancel: interactive ? () => _setPressed(false) : null,
+        child: Opacity(
+          opacity: widget.enabled || widget.loading ? 1 : 0.54,
+          child: Material(
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (widget.loading)
-                    const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2.2),
-                    )
-                  else
-                    Icon(widget.icon, color: color, size: 26),
-                  const SizedBox(height: 6),
-                  Text(
-                    widget.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: widget.enabled ? ReplicaColors.muted : Colors.grey,
-                    ),
-                  ),
-                  if (widget.subLabel != null) ...[
-                    const SizedBox(height: 2),
+            child: InkWell(
+              onTap: widget.loading
+                  ? null
+                  : interactive
+                  ? () {
+                      _setPressed(false);
+                      HapticFeedback.mediumImpact();
+                      widget.onTap();
+                    }
+                  : _showDisabledReason,
+              onTapDown: interactive ? (_) => _setPressed(true) : null,
+              onTapUp: interactive ? (_) => _setPressed(false) : null,
+              onTapCancel: interactive ? () => _setPressed(false) : null,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 10,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (widget.loading)
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: color,
+                        ),
+                      )
+                    else
+                      Icon(widget.icon, color: color, size: 26),
+                    const SizedBox(height: 6),
                     Text(
-                      widget.subLabel!,
+                      widget.loading ? widget.loadingLabel : widget.label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: ReplicaColors.subtle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: widget.enabled
+                            ? ReplicaColors.muted
+                            : Colors.grey,
                       ),
                     ),
+                    if (widget.subLabel != null && !widget.loading) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.subLabel!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: ReplicaColors.subtle,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -1781,6 +1922,7 @@ class _PrimaryPowerControl extends StatelessWidget {
   final String loadingLabel;
   final Color color;
   final bool enabled;
+  final String disabledReason;
   final VoidCallback onDisabledTap;
   final VoidCallback onSlideComplete;
 
@@ -1793,6 +1935,7 @@ class _PrimaryPowerControl extends StatelessWidget {
     required this.loadingLabel,
     required this.color,
     required this.enabled,
+    required this.disabledReason,
     required this.onDisabledTap,
     required this.onSlideComplete,
   });
@@ -1835,12 +1978,12 @@ class _PrimaryPowerControl extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  hint,
+                  enabled ? hint : disabledReason,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: ReplicaColors.muted,
+                    color: enabled ? ReplicaColors.muted : AppColors.warning,
                   ),
                 ),
               ],
@@ -2472,8 +2615,19 @@ class _RidingModeSelector extends StatelessWidget {
               children: [
                 const Text(
                   '骑行模式',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: ReplicaColors.ink,
+                  ),
                 ),
+                if (!enabled) ...[
+                  const SizedBox(height: 4),
+                  const Text(
+                    '需 BLE 连接后切换，云端模式仅展示车辆状态',
+                    style: TextStyle(fontSize: 12, color: ReplicaColors.subtle),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Row(
                   children: RidingMode.values.map((mode) {
@@ -2495,7 +2649,9 @@ class _RidingModeSelector extends StatelessWidget {
                           color: selected
                               ? color.withValues(alpha: 0.15)
                               : Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                            _phoneControlRadius,
+                          ),
                           child: InkWell(
                             onTap: enabled && !selected
                                 ? () async {
@@ -2503,7 +2659,9 @@ class _RidingModeSelector extends StatelessWidget {
                                     await connectionManager.setRidingMode(mode);
                                   }
                                 : null,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                              _phoneControlRadius,
+                            ),
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               child: Column(
@@ -2512,7 +2670,9 @@ class _RidingModeSelector extends StatelessWidget {
                                     icon,
                                     color: selected
                                         ? color
-                                        : Colors.grey.shade500,
+                                        : enabled
+                                        ? Colors.grey.shade500
+                                        : Colors.grey.shade400,
                                     size: 24,
                                   ),
                                   const SizedBox(height: 4),
@@ -2522,7 +2682,9 @@ class _RidingModeSelector extends StatelessWidget {
                                       fontSize: 12,
                                       color: selected
                                           ? color
-                                          : Colors.grey.shade600,
+                                          : enabled
+                                          ? Colors.grey.shade600
+                                          : Colors.grey.shade400,
                                       fontWeight: selected
                                           ? FontWeight.w600
                                           : FontWeight.normal,
