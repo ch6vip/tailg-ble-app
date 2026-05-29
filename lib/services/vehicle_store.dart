@@ -56,6 +56,12 @@ class VehicleStore {
     _emit();
   }
 
+  void resetForTest() {
+    _vehicles.clear();
+    _defaultVehicleId = null;
+    _initialized = false;
+  }
+
   Future<VehicleProfile> upsert({
     required String id,
     required String name,

@@ -1,0 +1,154 @@
+part of 'official_cloud_service.dart';
+
+class _OfficialCloudStoredSession {
+  final String token;
+  final String phone;
+  final String userId;
+  final String? selectedVehicleKey;
+  final OfficialControlChannel controlChannel;
+  final Map<String, String> localVehicleLinks;
+
+  const _OfficialCloudStoredSession({
+    required this.token,
+    required this.phone,
+    required this.userId,
+    required this.selectedVehicleKey,
+    required this.controlChannel,
+    required this.localVehicleLinks,
+  });
+}
+
+class _OfficialCloudStorage {
+  static const _prefToken = 'official_cloud_token';
+  static const _prefPhone = 'official_cloud_phone';
+  static const _secureToken = 'official_cloud_token';
+  static const _securePhone = 'official_cloud_phone';
+  static const _secureUserId = 'official_cloud_user_id';
+  static const _prefSelectedVehicle = 'official_cloud_selected_vehicle';
+  static const _prefControlChannel = 'official_cloud_control_channel';
+  static const _prefVehicleLinks = 'official_cloud_vehicle_links';
+  static const _prefUserId = 'official_cloud_user_id';
+
+  final FlutterSecureStorage _secureStorage;
+  final LogService _log;
+
+  _OfficialCloudStorage({
+    FlutterSecureStorage secureStorage = const FlutterSecureStorage(
+      aOptions: AndroidOptions(storageNamespace: 'official_cloud'),
+    ),
+    LogService? log,
+  }) : _secureStorage = secureStorage,
+       _log = log ?? LogService();
+
+  Future<_OfficialCloudStoredSession> loadSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final channelName = prefs.getString(_prefControlChannel);
+    final credentials = await _loadSecureCredentials(prefs);
+    return _OfficialCloudStoredSession(
+      token: credentials.$1,
+      phone: credentials.$2,
+      userId: credentials.$3,
+      selectedVehicleKey: prefs.getString(_prefSelectedVehicle),
+      controlChannel: OfficialControlChannel.values.firstWhere(
+        (item) => item.name == channelName,
+        orElse: () => OfficialControlChannel.automatic,
+      ),
+      localVehicleLinks: _decodeLinks(prefs.getString(_prefVehicleLinks)),
+    );
+  }
+
+  Future<void> saveCredentials({
+    required String token,
+    required String phone,
+    required String userId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await _secureStorage.write(key: _secureToken, value: token);
+    await _secureStorage.write(key: _securePhone, value: phone);
+    if (userId.isEmpty) {
+      await _secureStorage.delete(key: _secureUserId);
+    } else {
+      await _secureStorage.write(key: _secureUserId, value: userId);
+    }
+    await prefs.remove(_prefToken);
+    await prefs.remove(_prefPhone);
+    await prefs.remove(_prefUserId);
+  }
+
+  Future<void> clearCredentialsAndSelection() async {
+    final prefs = await SharedPreferences.getInstance();
+    await _secureStorage.delete(key: _secureToken);
+    await _secureStorage.delete(key: _securePhone);
+    await _secureStorage.delete(key: _secureUserId);
+    await prefs.remove(_prefToken);
+    await prefs.remove(_prefPhone);
+    await prefs.remove(_prefUserId);
+    await prefs.remove(_prefSelectedVehicle);
+  }
+
+  Future<void> saveSelectedVehicleKey(String? key) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (key == null) {
+      await prefs.remove(_prefSelectedVehicle);
+    } else {
+      await prefs.setString(_prefSelectedVehicle, key);
+    }
+  }
+
+  Future<void> saveControlChannel(OfficialControlChannel channel) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefControlChannel, channel.name);
+  }
+
+  Future<void> saveLinks(Map<String, String> links) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefVehicleLinks, jsonEncode(links));
+  }
+
+  Future<(String, String, String)> _loadSecureCredentials(
+    SharedPreferences prefs,
+  ) async {
+    final secureToken = await _secureStorage.read(key: _secureToken);
+    final securePhone = await _secureStorage.read(key: _securePhone);
+    final secureUserId = await _secureStorage.read(key: _secureUserId);
+    final legacyToken = prefs.getString(_prefToken) ?? '';
+    final legacyPhone = prefs.getString(_prefPhone) ?? '';
+    final legacyUserId = prefs.getString(_prefUserId) ?? '';
+    final token = secureToken ?? legacyToken;
+    final phone = securePhone ?? legacyPhone;
+    final userId = secureUserId ?? legacyUserId;
+    if (legacyToken.isNotEmpty ||
+        legacyPhone.isNotEmpty ||
+        legacyUserId.isNotEmpty) {
+      if (token.isNotEmpty) {
+        await _secureStorage.write(key: _secureToken, value: token);
+      }
+      if (phone.isNotEmpty) {
+        await _secureStorage.write(key: _securePhone, value: phone);
+      }
+      if (userId.isNotEmpty) {
+        await _secureStorage.write(key: _secureUserId, value: userId);
+      }
+      await prefs.remove(_prefToken);
+      await prefs.remove(_prefPhone);
+      await prefs.remove(_prefUserId);
+      _log.operation('官方云登录态已迁移到安全存储');
+    }
+    return (token, phone, userId);
+  }
+
+  Map<String, String> _decodeLinks(String? raw) {
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        return decoded.map(
+          (key, value) => MapEntry(key.toString(), value.toString()),
+        );
+      }
+    } catch (_) {
+      return {};
+    }
+    return {};
+  }
+}

@@ -1,12 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
+import 'package:tailg_ble_app/services/replica_feature_store.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 
 void main() {
-  test('VehicleStore saves default vehicle and renames it', () async {
+  setUp(() {
+    VehicleStore().resetForTest();
     SharedPreferences.setMockInitialValues({});
+  });
 
+  test('VehicleStore saves default vehicle and renames it', () async {
     final store = VehicleStore();
     await store.init();
 
@@ -53,5 +57,46 @@ void main() {
     await store.updateQgjCredentials(id: vehicle.id, clear: true);
 
     expect(store.defaultVehicle?.hasQgjCredentials, isFalse);
+  });
+
+  test('VehicleStore can reload a different mock preferences state', () async {
+    final firstStore = VehicleStore();
+    await firstStore.init();
+    await firstStore.upsert(
+      id: 'AA:BB:CC:DD:EE:FF',
+      name: '第一辆车',
+      makeDefault: true,
+    );
+
+    SharedPreferences.setMockInitialValues({
+      'vehicle_profiles':
+          '[{"id":"11:22:33:44:55:66","name":"第二辆车","protocol":"standard"}]',
+      'vehicle_default_id': '11:22:33:44:55:66',
+    });
+    VehicleStore().resetForTest();
+
+    final reloadedStore = VehicleStore();
+    await reloadedStore.init();
+
+    expect(reloadedStore.vehicles, hasLength(1));
+    expect(reloadedStore.defaultVehicle?.id, '11:22:33:44:55:66');
+    expect(reloadedStore.defaultVehicle?.displayName, '第二辆车');
+    expect(reloadedStore.defaultVehicle?.protocol, VehicleProtocol.standard);
+  });
+
+  test('ReplicaFeatureStore saves quick control config', () async {
+    final store = ReplicaFeatureStore();
+
+    final defaults = await store.loadQuickControlConfig();
+    expect(defaults.firstActionId, 'soundEffects');
+    expect(defaults.secondActionId, 'seat');
+
+    await store.saveQuickControlConfig(
+      const QuickControlConfig(firstActionId: 'fence', secondActionId: 'find'),
+    );
+
+    final saved = await store.loadQuickControlConfig();
+    expect(saved.firstActionId, 'fence');
+    expect(saved.secondActionId, 'find');
   });
 }

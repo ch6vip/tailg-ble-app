@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 enum LogLevel { debug, info, warning, error }
+
 enum LogCategory { ble, operation }
 
 class LogEntry {
@@ -33,23 +34,31 @@ class LogService {
       _logs.where((e) => e.category == cat).toList();
 
   void ble(String message, {String? detail, LogLevel level = LogLevel.debug}) {
-    _add(LogEntry(
-      time: DateTime.now(),
-      level: level,
-      category: LogCategory.ble,
-      message: message,
-      detail: detail,
-    ));
+    _add(
+      LogEntry(
+        time: DateTime.now(),
+        level: level,
+        category: LogCategory.ble,
+        message: message,
+        detail: detail,
+      ),
+    );
   }
 
-  void operation(String message, {String? detail, LogLevel level = LogLevel.info}) {
-    _add(LogEntry(
-      time: DateTime.now(),
-      level: level,
-      category: LogCategory.operation,
-      message: message,
-      detail: detail,
-    ));
+  void operation(
+    String message, {
+    String? detail,
+    LogLevel level = LogLevel.info,
+  }) {
+    _add(
+      LogEntry(
+        time: DateTime.now(),
+        level: level,
+        category: LogCategory.operation,
+        message: message,
+        detail: detail,
+      ),
+    );
   }
 
   void _add(LogEntry entry) {

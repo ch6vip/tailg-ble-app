@@ -11,6 +11,14 @@ import '../models/vehicle_profile.dart';
 import 'log_service.dart';
 import 'vehicle_store.dart';
 
+part 'official_cloud_api_client.dart';
+part 'official_cloud_auth_parser.dart';
+part 'official_cloud_data_parser.dart';
+part 'official_cloud_vehicle_mapper.dart';
+part 'official_cloud_vehicle_links.dart';
+part 'official_cloud_vehicle_sync.dart';
+part 'official_cloud_storage.dart';
+
 enum OfficialControlChannel {
   automatic('自动', '优先 BLE，未连接时走官方云端'),
   ble('BLE', '只使用本地蓝牙直连'),
@@ -202,81 +210,45 @@ class OfficialCloudState {
   static const _sentinel = Object();
 }
 
-class OfficialCloudApiException implements Exception {
-  final String message;
-  final int? statusCode;
-
-  const OfficialCloudApiException(this.message, {this.statusCode});
-
-  @override
-  String toString() => message;
-}
-
-class _OfficialApiResponse {
-  final int statusCode;
-  final Map<String, String> headers;
-  final Map<String, dynamic> body;
-
-  const _OfficialApiResponse({
-    required this.statusCode,
-    required this.headers,
-    required this.body,
-  });
-}
-
 class OfficialCloudService {
   static final OfficialCloudService _instance = OfficialCloudService._();
   factory OfficialCloudService() => _instance;
 
-  static const _apiBase = 'https://www.tailgdd.com/v1/api/';
-  static const _prefToken = 'official_cloud_token';
-  static const _prefPhone = 'official_cloud_phone';
-  static const _secureToken = 'official_cloud_token';
-  static const _securePhone = 'official_cloud_phone';
-  static const _secureUserId = 'official_cloud_user_id';
-  static const _prefSelectedVehicle = 'official_cloud_selected_vehicle';
-  static const _prefControlChannel = 'official_cloud_control_channel';
-  static const _prefVehicleLinks = 'official_cloud_vehicle_links';
-  static const _prefUserId = 'official_cloud_user_id';
-
-  final FlutterSecureStorage _secureStorage;
   final _log = LogService();
+  final _storage = _OfficialCloudStorage();
+  final _apiClient = _OfficialCloudApiClient(
+    config: const OfficialCloudApiConfig(),
+    log: LogService(),
+  );
   final _stateController = StreamController<OfficialCloudState>.broadcast();
   OfficialCloudState _state = OfficialCloudState.initial();
   bool _initialized = false;
-  OfficialCloudRequestSummary? _lastRequest;
 
-  OfficialCloudService._()
-    : _secureStorage = const FlutterSecureStorage(
-        aOptions: AndroidOptions(storageNamespace: 'official_cloud'),
-      );
+  OfficialCloudService._();
 
   Stream<OfficialCloudState> get stateStream => _stateController.stream;
   OfficialCloudState get state => _state;
-  OfficialCloudRequestSummary? get lastRequest => _lastRequest;
+  OfficialCloudRequestSummary? get lastRequest => _apiClient.lastRequest;
 
   Future<void> init() async {
     if (_initialized) return;
-    final prefs = await SharedPreferences.getInstance();
-    final channelName = prefs.getString(_prefControlChannel);
-    final linksRaw = prefs.getString(_prefVehicleLinks);
-    final credentials = await _loadSecureCredentials(prefs);
+    final stored = await _storage.loadSession();
     _state = _state.copyWith(
       initialized: true,
-      token: credentials.$1,
-      phone: credentials.$2,
-      userId: credentials.$3,
-      selectedVehicleKey: prefs.getString(_prefSelectedVehicle),
-      controlChannel: OfficialControlChannel.values.firstWhere(
-        (item) => item.name == channelName,
-        orElse: () => OfficialControlChannel.automatic,
-      ),
-      localVehicleLinks: _decodeLinks(linksRaw),
+      token: stored.token,
+      phone: stored.phone,
+      userId: stored.userId,
+      selectedVehicleKey: stored.selectedVehicleKey,
+      controlChannel: stored.controlChannel,
+      localVehicleLinks: stored.localVehicleLinks,
     );
     _initialized = true;
     _emit();
     if (_state.token.isNotEmpty) {
-      unawaited(refreshVehicles(silent: true));
+      _runSilentRefresh(
+        refreshVehicles(silent: true),
+        failureMessage: '官方车辆静默刷新失败',
+      );
     }
   }
 
@@ -287,7 +259,7 @@ class OfficialCloudService {
     }
     _setLoading(true);
     try {
-      final response = await _request(
+      final response = await _apiClient.request(
         'app/getCode?phone=${Uri.encodeQueryComponent(normalized)}',
         method: 'POST',
       );
@@ -309,11 +281,11 @@ class OfficialCloudService {
     }
     _setLoading(true);
     try {
-      final response = await _request(
+      final response = await _apiClient.request(
         'app/login',
         method: 'POST',
         body: {
-          'macCode': '000000000000',
+          'macCode': _apiClient.config.loginMacCode,
           'phone': normalizedPhone,
           'smsCode': normalizedSms,
           'autoCompleteUserDetail': 'true',
@@ -328,8 +300,8 @@ class OfficialCloudService {
         throw const OfficialCloudApiException('登录失败，未返回 token');
       }
 
-      final userId = _extractUserId(response.body);
-      await _saveSecureCredentials(
+      final userId = OfficialCloudAuthParser.extractUserId(response.body);
+      await _storage.saveCredentials(
         token: token,
         phone: normalizedPhone,
         userId: userId,
@@ -349,9 +321,7 @@ class OfficialCloudService {
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await _clearSecureCredentials(prefs);
-    await prefs.remove(_prefSelectedVehicle);
+    await _storage.clearCredentialsAndSelection();
     _state = _state.copyWith(
       token: '',
       phone: '',
@@ -387,26 +357,14 @@ class OfficialCloudService {
     if (_state.token.isEmpty) return;
     if (!silent) _setLoading(true);
     try {
-      final response = await _request(
+      final response = await _apiClient.request(
         'app/centralControl/carStatus',
         method: 'POST',
         token: _state.token,
-        body: {'phoneMode': 'SM-G998B'},
+        body: {'phoneMode': _apiClient.config.phoneMode},
       );
       _ensureSuccess(response.body, fallback: '获取官方车辆失败');
-      final data = response.body['data'];
-      final List<dynamic> items = data is List
-          ? data
-          : data == null
-          ? []
-          : [data];
-      final vehicles = items
-          .whereType<Map>()
-          .map(
-            (item) => OfficialVehicle.fromJson(Map<String, dynamic>.from(item)),
-          )
-          .where((vehicle) => vehicle.key.isNotEmpty)
-          .toList(growable: false);
+      final vehicles = OfficialCloudDataParser.vehicles(response.body['data']);
       var selected = _state.selectedVehicleKey;
       if (vehicles.isEmpty) {
         selected = null;
@@ -414,12 +372,7 @@ class OfficialCloudService {
           !vehicles.any((vehicle) => vehicle.key == selected)) {
         selected = vehicles.first.key;
       }
-      final prefs = await SharedPreferences.getInstance();
-      if (selected == null) {
-        await prefs.remove(_prefSelectedVehicle);
-      } else {
-        await prefs.setString(_prefSelectedVehicle, selected);
-      }
+      await _storage.saveSelectedVehicleKey(selected);
       _state = _state.copyWith(
         vehicles: vehicles,
         selectedVehicleKey: selected,
@@ -428,10 +381,19 @@ class OfficialCloudService {
       _emit();
       await _applySelectedVehicleToLocalProfile();
       _log.operation('官方车辆列表已刷新', detail: 'count=${vehicles.length}');
-      unawaited(refreshBatteryInfo(silent: true));
+      _runSilentRefresh(
+        refreshBatteryInfo(silent: true),
+        failureMessage: '官方电池信息静默刷新失败',
+      );
       if (refreshReplicaDetails) {
-        unawaited(refreshVehicleLocation(silent: true));
-        unawaited(refreshFenceData(silent: true));
+        _runSilentRefresh(
+          refreshVehicleLocation(silent: true),
+          failureMessage: '官方停车位置静默刷新失败',
+        );
+        _runSilentRefresh(
+          refreshFenceData(silent: true),
+          failureMessage: '官方电子围栏静默刷新失败',
+        );
       }
     } catch (e) {
       await _handleAuthFailureIfNeeded(e);
@@ -447,16 +409,14 @@ class OfficialCloudService {
   }
 
   Future<void> selectVehicle(OfficialVehicle vehicle) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefSelectedVehicle, vehicle.key);
+    await _storage.saveSelectedVehicleKey(vehicle.key);
     _state = _state.copyWith(selectedVehicleKey: vehicle.key);
     _emit();
     await _applySelectedVehicleToLocalProfile();
   }
 
   Future<void> setControlChannel(OfficialControlChannel channel) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefControlChannel, channel.name);
+    await _storage.saveControlChannel(channel);
     _state = _state.copyWith(controlChannel: channel);
     _emit();
   }
@@ -471,16 +431,13 @@ class OfficialCloudService {
       _emit();
     }
     try {
-      final response = await _request(
+      final response = await _apiClient.request(
         'app/mine/batteryInfo',
         method: 'POST',
         token: _state.token,
       );
       _ensureSuccess(response.body, fallback: '获取官方电池信息失败');
-      final data = response.body['data'];
-      final info = data is Map
-          ? OfficialBatteryInfo.fromJson(Map<String, dynamic>.from(data))
-          : OfficialBatteryInfo.fromJson(const <String, dynamic>{});
+      final info = OfficialCloudDataParser.batteryInfo(response.body['data']);
       _state = _state.copyWith(
         batteryInfo: info.hasData ? info : null,
         batteryInfoLoading: false,
@@ -528,17 +485,16 @@ class OfficialCloudService {
       _emit();
     }
     try {
-      final response = await _request(
+      final response = await _apiClient.request(
         'app/car/extend/getByCarId',
         method: 'POST',
         token: _state.token,
         body: {'carId': vehicle.carId},
       );
       _ensureSuccess(response.body, fallback: '获取官方停车位置失败');
-      final data = response.body['data'];
-      final location = data is Map
-          ? OfficialVehicleLocation.fromJson(Map<String, dynamic>.from(data))
-          : OfficialVehicleLocation.fromJson(const <String, dynamic>{});
+      final location = OfficialCloudDataParser.vehicleLocation(
+        response.body['data'],
+      );
       _state = _state.copyWith(
         vehicleLocation: location.hasData ? location : null,
         vehicleLocationLoading: false,
@@ -582,17 +538,14 @@ class OfficialCloudService {
       _emit();
     }
     try {
-      final response = await _request(
+      final response = await _apiClient.request(
         'app/device/getFenceData',
         method: 'POST',
         token: _state.token,
         body: {'carId': vehicle.carId},
       );
       _ensureSuccess(response.body, fallback: '获取官方围栏失败');
-      final data = response.body['data'];
-      final fence = data is Map
-          ? OfficialFenceData.fromJson(Map<String, dynamic>.from(data))
-          : OfficialFenceData.fromJson(const <String, dynamic>{});
+      final fence = OfficialCloudDataParser.fenceData(response.body['data']);
       _state = _state.copyWith(
         fenceData: fence.hasData ? fence : null,
         fenceLoading: false,
@@ -652,25 +605,14 @@ class OfficialCloudService {
       _emit();
     }
     try {
-      final response = await _request(
+      final response = await _apiClient.request(
         'app/centralControl/deviceTravel',
         method: 'POST',
         token: _state.token,
         body: {'queryMonth': queryMonth, 'frame': vehicle.frame, 'uid': userId},
       );
       _ensureSuccess(response.body, fallback: '获取官方历史轨迹失败');
-      final data = response.body['data'];
-      final days = data is List
-          ? data
-                .whereType<Map>()
-                .map(
-                  (item) => OfficialTravelDay.fromJson(
-                    Map<String, dynamic>.from(item),
-                  ),
-                )
-                .where((day) => day.hasData)
-                .toList(growable: false)
-          : const <OfficialTravelDay>[];
+      final days = OfficialCloudDataParser.travelDays(response.body['data']);
       _state = _state.copyWith(
         travelDays: days,
         travelMonth: queryMonth,
@@ -710,25 +652,16 @@ class OfficialCloudService {
     );
     _emit();
     try {
-      final response = await _request(
+      final response = await _apiClient.request(
         'app/centralControl/deviceTravelDetail',
         method: 'POST',
         token: _state.token,
         body: {'deviceTravelId': travelId},
       );
       _ensureSuccess(response.body, fallback: '获取官方轨迹详情失败');
-      final data = response.body['data'];
-      final points = data is List
-          ? data
-                .whereType<Map>()
-                .map(
-                  (item) => OfficialTravelPoint.fromJson(
-                    Map<String, dynamic>.from(item),
-                  ),
-                )
-                .where((point) => point.hasCoordinate)
-                .toList(growable: false)
-          : const <OfficialTravelPoint>[];
+      final points = OfficialCloudDataParser.travelPoints(
+        response.body['data'],
+      );
       final details = Map<String, List<OfficialTravelPoint>>.from(
         _state.travelDetails,
       );
@@ -762,22 +695,29 @@ class OfficialCloudService {
     required String officialVehicleKey,
     required String localVehicleId,
   }) async {
-    final links = Map<String, String>.from(_state.localVehicleLinks);
-    links[officialVehicleKey] = localVehicleId;
-    await _saveLinks(links);
+    await _saveLinks(
+      OfficialCloudVehicleLinks.link(
+        _state.localVehicleLinks,
+        officialVehicleKey: officialVehicleKey,
+        localVehicleId: localVehicleId,
+      ),
+    );
   }
 
   Future<void> unlinkLocalVehicle(String officialVehicleKey) async {
-    final links = Map<String, String>.from(_state.localVehicleLinks);
-    links.remove(officialVehicleKey);
-    await _saveLinks(links);
+    await _saveLinks(
+      OfficialCloudVehicleLinks.unlink(
+        _state.localVehicleLinks,
+        officialVehicleKey,
+      ),
+    );
   }
 
   Future<void> pruneLocalVehicleLinks(Set<String> validLocalVehicleIds) async {
-    final links = Map<String, String>.from(_state.localVehicleLinks);
-    links.removeWhere((_, localVehicleId) {
-      return !validLocalVehicleIds.contains(localVehicleId);
-    });
+    final links = OfficialCloudVehicleLinks.prune(
+      _state.localVehicleLinks,
+      validLocalVehicleIds,
+    );
     if (links.length == _state.localVehicleLinks.length) return;
     await _saveLinks(links);
     _log.operation('官方车辆失效关联已清理');
@@ -789,45 +729,44 @@ class OfficialCloudService {
     final store = VehicleStore();
     await store.init();
 
-    final linkedId = _state.linkedLocalVehicleId(vehicle.key);
-    if (linkedId != null && linkedId.isNotEmpty) {
-      final hasLinkedVehicle = store.vehicles.any(
-        (local) => local.id == linkedId,
-      );
-      if (hasLinkedVehicle) {
-        await store.setDefault(linkedId);
-        return;
-      }
+    final decision = OfficialCloudVehicleSyncPlanner.plan(
+      selectedVehicle: vehicle,
+      localVehicleLinks: _state.localVehicleLinks,
+      localVehicles: store.vehicles,
+    );
+    if (decision == null) return;
+
+    if (decision.linkedLocalVehicleId != null) {
+      await store.setDefault(decision.linkedLocalVehicleId!);
+      return;
     }
 
-    final bleId = vehicle.normalizedBtmac;
-    if (bleId.isEmpty) return;
+    final profileData = decision.profileData;
+    if (profileData == null) return;
 
     final profile = await store.upsert(
-      id: bleId,
-      name: vehicle.displayName,
-      protocol: _protocolForOfficialVehicle(vehicle),
+      id: profileData.id,
+      name: profileData.name,
+      protocol: profileData.protocol,
       makeDefault: true,
     );
-    final links = Map<String, String>.from(_state.localVehicleLinks);
-    if (links[vehicle.key] != profile.id) {
-      links[vehicle.key] = profile.id;
-      await _saveLinks(links);
+    if (!OfficialCloudVehicleLinks.isLinkedTo(
+      _state.localVehicleLinks,
+      officialVehicleKey: vehicle.key,
+      localVehicleId: profile.id,
+    )) {
+      await _saveLinks(
+        OfficialCloudVehicleLinks.link(
+          _state.localVehicleLinks,
+          officialVehicleKey: vehicle.key,
+          localVehicleId: profile.id,
+        ),
+      );
     }
     _log.operation(
       '官方车辆已同步到本地车库',
       detail: '${vehicle.displayName} ${profile.id}',
     );
-  }
-
-  VehicleProtocol _protocolForOfficialVehicle(OfficialVehicle vehicle) {
-    final name = vehicle.btname.toUpperCase();
-    if (name.startsWith('Q_BASH') ||
-        name.startsWith('QGJ') ||
-        name.startsWith('Q_')) {
-      return VehicleProtocol.qgj;
-    }
-    return VehicleProtocol.auto;
   }
 
   Future<OfficialVehicleSelfCheck> selfCheck() async {
@@ -841,7 +780,7 @@ class OfficialCloudService {
 
     try {
       _log.operation('发送官方云端自检');
-      final response = await _request(
+      final response = await _apiClient.request(
         'app/device/cmd/status',
         method: 'POST',
         token: _state.token,
@@ -881,7 +820,7 @@ class OfficialCloudService {
 
     try {
       _log.operation('发送官方云端指令: ${command.label}');
-      final response = await _request(
+      final response = await _apiClient.request(
         'app/device/cmd/${cloudCommand.apiName}',
         method: 'POST',
         token: _state.token,
@@ -899,10 +838,20 @@ class OfficialCloudService {
   }
 
   void _refreshVehiclesAfterCommand(CommandCode command) {
+    _runSilentRefresh(
+      refreshVehicles(silent: true),
+      failureMessage: '官方云端指令后刷新状态失败: ${command.label}',
+    );
+  }
+
+  void _runSilentRefresh(
+    Future<void> future, {
+    required String failureMessage,
+  }) {
     unawaited(
-      refreshVehicles(silent: true).catchError((Object e) {
+      future.catchError((Object e) {
         _log.operation(
-          '官方云端指令后刷新状态失败: ${command.label}',
+          failureMessage,
           detail: _errorMessage(e),
           level: LogLevel.warning,
         );
@@ -910,231 +859,12 @@ class OfficialCloudService {
     );
   }
 
-  Future<(String, String, String)> _loadSecureCredentials(
-    SharedPreferences prefs,
-  ) async {
-    final secureToken = await _secureStorage.read(key: _secureToken);
-    final securePhone = await _secureStorage.read(key: _securePhone);
-    final secureUserId = await _secureStorage.read(key: _secureUserId);
-    final legacyToken = prefs.getString(_prefToken) ?? '';
-    final legacyPhone = prefs.getString(_prefPhone) ?? '';
-    final legacyUserId = prefs.getString(_prefUserId) ?? '';
-    final token = secureToken ?? legacyToken;
-    final phone = securePhone ?? legacyPhone;
-    final userId = secureUserId ?? legacyUserId;
-    if (legacyToken.isNotEmpty ||
-        legacyPhone.isNotEmpty ||
-        legacyUserId.isNotEmpty) {
-      if (token.isNotEmpty) {
-        await _secureStorage.write(key: _secureToken, value: token);
-      }
-      if (phone.isNotEmpty) {
-        await _secureStorage.write(key: _securePhone, value: phone);
-      }
-      if (userId.isNotEmpty) {
-        await _secureStorage.write(key: _secureUserId, value: userId);
-      }
-      await prefs.remove(_prefToken);
-      await prefs.remove(_prefPhone);
-      await prefs.remove(_prefUserId);
-      _log.operation('官方云登录态已迁移到安全存储');
-    }
-    return (token, phone, userId);
-  }
-
-  Future<void> _saveSecureCredentials({
-    required String token,
-    required String phone,
-    required String userId,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    await _secureStorage.write(key: _secureToken, value: token);
-    await _secureStorage.write(key: _securePhone, value: phone);
-    if (userId.isEmpty) {
-      await _secureStorage.delete(key: _secureUserId);
-    } else {
-      await _secureStorage.write(key: _secureUserId, value: userId);
-    }
-    await prefs.remove(_prefToken);
-    await prefs.remove(_prefPhone);
-    await prefs.remove(_prefUserId);
-  }
-
-  Future<void> _clearSecureCredentials(SharedPreferences prefs) async {
-    await _secureStorage.delete(key: _secureToken);
-    await _secureStorage.delete(key: _securePhone);
-    await _secureStorage.delete(key: _secureUserId);
-    await prefs.remove(_prefToken);
-    await prefs.remove(_prefPhone);
-    await prefs.remove(_prefUserId);
-  }
-
   Future<void> _handleAuthFailureIfNeeded(Object e) async {
     final message = _errorMessage(e);
-    if (!_looksLikeAuthError(message)) return;
+    if (!OfficialCloudAuthParser.looksLikeAuthError(message)) return;
     await logout();
     _state = _state.copyWith(error: '官方登录已失效，请重新登录');
     _emit();
-  }
-
-  Future<_OfficialApiResponse> _request(
-    String path, {
-    required String method,
-    String? token,
-    Map<String, dynamic>? body,
-  }) async {
-    final client = HttpClient();
-    client.connectionTimeout = const Duration(seconds: 15);
-    final startedAt = DateTime.now();
-    try {
-      final uri = Uri.parse('$_apiBase$path');
-      final request = await client.openUrl(method, uri);
-      request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
-      request.headers.set('Forward-Service-Ip', 'localhost');
-      request.headers.set('Forward-ServiceIp', 'localhost');
-      request.headers.set('language', 'zh_CN');
-      request.headers.set(HttpHeaders.acceptLanguageHeader, 'zh_CN');
-      request.headers.set('Zone-id', 'UTC+08:00');
-      request.headers.set('Api-Version', '3.0.0');
-      request.headers.set(HttpHeaders.userAgentHeader, 'okhttp/4.9.3');
-      if (token != null && token.isNotEmpty) {
-        request.headers.set(HttpHeaders.authorizationHeader, token);
-      }
-      if (body != null) {
-        request.add(utf8.encode(jsonEncode(body)));
-      }
-
-      final response = await request.close().timeout(
-        const Duration(seconds: 15),
-        onTimeout: () => throw const OfficialCloudApiException('请求超时，请检查网络'),
-      );
-      final text = await response.transform(utf8.decoder).join();
-      final decoded = _decodeBody(text);
-      _recordRequest(
-        path: path,
-        method: method,
-        startedAt: startedAt,
-        statusCode: response.statusCode,
-        body: decoded,
-      );
-      final headers = <String, String>{};
-      response.headers.forEach((name, values) {
-        if (values.isNotEmpty) headers[name.toLowerCase()] = values.first;
-      });
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw OfficialCloudApiException(
-          decoded['msg']?.toString() ?? '官方接口返回 ${response.statusCode}',
-          statusCode: response.statusCode,
-        );
-      }
-      return _OfficialApiResponse(
-        statusCode: response.statusCode,
-        headers: headers,
-        body: decoded,
-      );
-    } on TimeoutException {
-      _recordRequestFailure(
-        path: path,
-        method: method,
-        startedAt: startedAt,
-        message: '请求超时，请检查网络',
-      );
-      throw const OfficialCloudApiException('请求超时，请检查网络');
-    } on SocketException {
-      _recordRequestFailure(
-        path: path,
-        method: method,
-        startedAt: startedAt,
-        message: '网络不可用，请检查连接',
-      );
-      throw const OfficialCloudApiException('网络不可用，请检查连接');
-    } on OfficialCloudApiException catch (e) {
-      _recordRequestFailure(
-        path: path,
-        method: method,
-        startedAt: startedAt,
-        message: e.message,
-        statusCode: e.statusCode,
-      );
-      rethrow;
-    } finally {
-      client.close(force: true);
-    }
-  }
-
-  void _recordRequest({
-    required String path,
-    required String method,
-    required DateTime startedAt,
-    required int statusCode,
-    required Map<String, dynamic> body,
-  }) {
-    final elapsed = DateTime.now().difference(startedAt);
-    final code = body['code']?.toString();
-    final msg = _shortMessage(body['msg']?.toString());
-    _lastRequest = OfficialCloudRequestSummary(
-      path: path,
-      method: method,
-      statusCode: statusCode,
-      code: code,
-      message: msg,
-      elapsed: elapsed,
-      success: statusCode >= 200 && statusCode < 300,
-      at: DateTime.now(),
-    );
-    _log.operation(
-      '官方云接口返回',
-      detail:
-          '$method $path status=$statusCode code=${code ?? 'none'} elapsed=${elapsed.inMilliseconds}ms msg=${msg ?? 'none'}',
-      level: LogLevel.debug,
-    );
-  }
-
-  void _recordRequestFailure({
-    required String path,
-    required String method,
-    required DateTime startedAt,
-    required String message,
-    int? statusCode,
-  }) {
-    final elapsed = DateTime.now().difference(startedAt);
-    _lastRequest = OfficialCloudRequestSummary(
-      path: path,
-      method: method,
-      statusCode: statusCode,
-      code: null,
-      message: _shortMessage(message),
-      elapsed: elapsed,
-      success: false,
-      at: DateTime.now(),
-    );
-    _log.operation(
-      '官方云接口失败',
-      detail:
-          '$method $path status=${statusCode?.toString() ?? 'none'} elapsed=${elapsed.inMilliseconds}ms msg=${_shortMessage(message)}',
-      level: LogLevel.warning,
-    );
-  }
-
-  String? _shortMessage(String? message) {
-    if (message == null || message.trim().isEmpty) return null;
-    final normalized = message.trim();
-    if (normalized.length <= 80) return normalized;
-    return normalized.substring(0, 80);
-  }
-
-  Map<String, dynamic> _decodeBody(String text) {
-    if (text.trim().isEmpty) return <String, dynamic>{};
-    try {
-      final decoded = jsonDecode(text);
-      if (decoded is Map) return Map<String, dynamic>.from(decoded);
-    } catch (_) {
-      final end = text.length < 80 ? text.length : 80;
-      throw OfficialCloudApiException(
-        '服务器返回非 JSON 数据: ${text.substring(0, end)}',
-      );
-    }
-    throw const OfficialCloudApiException('服务器返回数据格式不正确');
   }
 
   void _ensureSuccess(Map<String, dynamic> body, {required String fallback}) {
@@ -1155,36 +885,9 @@ class OfficialCloudService {
   }
 
   Future<void> _saveLinks(Map<String, String> links) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefVehicleLinks, jsonEncode(links));
+    await _storage.saveLinks(links);
     _state = _state.copyWith(localVehicleLinks: links);
     _emit();
-  }
-
-  Map<String, String> _decodeLinks(String? raw) {
-    if (raw == null || raw.isEmpty) return {};
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map) {
-        return decoded.map(
-          (key, value) => MapEntry(key.toString(), value.toString()),
-        );
-      }
-    } catch (_) {
-      return {};
-    }
-    return {};
-  }
-
-  bool _looksLikeAuthError(String message) {
-    return message.contains('token') ||
-        message.contains('登录') ||
-        message.contains('认证') ||
-        message.contains('授权') ||
-        message.contains('401') ||
-        message.contains('403') ||
-        message.contains('过期') ||
-        message.contains('失效');
   }
 
   String _errorMessage(Object e) {
@@ -1195,31 +898,6 @@ class OfficialCloudService {
   bool _validPhone(String value) => RegExp(r'^\d{11}$').hasMatch(value);
 
   bool _validSmsCode(String value) => RegExp(r'^\d{4,8}$').hasMatch(value);
-
-  String _extractUserId(Map<String, dynamic> body) {
-    Object? find(Object? value) {
-      if (value is Map) {
-        for (final key in const ['uid', 'userId', 'id']) {
-          final candidate = value[key];
-          if (candidate != null && candidate.toString().trim().isNotEmpty) {
-            return candidate;
-          }
-        }
-        for (final child in value.values) {
-          final found = find(child);
-          if (found != null) return found;
-        }
-      } else if (value is List) {
-        for (final child in value) {
-          final found = find(child);
-          if (found != null) return found;
-        }
-      }
-      return null;
-    }
-
-    return find(body)?.toString().trim() ?? '';
-  }
 
   String _currentMonth() {
     final now = DateTime.now();
@@ -1234,26 +912,4 @@ class OfficialCloudService {
 
 extension on String {
   String ifEmpty(String Function() fallback) => isEmpty ? fallback() : this;
-}
-
-class OfficialCloudRequestSummary {
-  final String path;
-  final String method;
-  final int? statusCode;
-  final String? code;
-  final String? message;
-  final Duration elapsed;
-  final bool success;
-  final DateTime at;
-
-  const OfficialCloudRequestSummary({
-    required this.path,
-    required this.method,
-    required this.statusCode,
-    required this.code,
-    required this.message,
-    required this.elapsed,
-    required this.success,
-    required this.at,
-  });
 }

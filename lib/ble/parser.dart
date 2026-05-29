@@ -27,8 +27,12 @@ class CommandResponse extends ParsedResponse {
   final String commandType;
   final String statusCode;
   final bool success;
-  const CommandResponse(super.raw,
-      {required this.commandType, required this.statusCode, required this.success});
+  const CommandResponse(
+    super.raw, {
+    required this.commandType,
+    required this.statusCode,
+    required this.success,
+  });
 }
 
 class UnknownResponse extends ParsedResponse {
@@ -62,14 +66,20 @@ ParsedResponse parseResponse(String keyHex, Uint8List raw) {
       return StateResponse(hex, success: false);
     }
     final stateNum = int.parse(statusCode, radix: 16);
-    return StateResponse(hex,
-        success: true,
-        bikeState: BikeState(
-          isLocked: stateNum == 1,
-          isPowerOn: stateNum == 3 || stateNum == 4,
-        ));
+    return StateResponse(
+      hex,
+      success: true,
+      bikeState: BikeState(
+        isLocked: stateNum == 1,
+        isPowerOn: stateNum == 3 || stateNum == 4,
+      ),
+    );
   }
 
-  return CommandResponse(hex,
-      commandType: commandType, statusCode: statusCode, success: statusCode != 'FF');
+  return CommandResponse(
+    hex,
+    commandType: commandType,
+    statusCode: statusCode,
+    success: statusCode != 'FF',
+  );
 }

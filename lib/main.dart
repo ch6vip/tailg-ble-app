@@ -6,6 +6,7 @@ import 'models/vehicle_profile.dart';
 import 'services/proximity_service.dart';
 import 'services/auto_connect_service.dart';
 import 'services/location_service.dart';
+import 'services/log_service.dart';
 import 'services/official_cloud_service.dart';
 import 'services/vehicle_store.dart';
 import 'pages/scan_page.dart';
@@ -17,6 +18,7 @@ final connectionManager = ble.ConnectionManager();
 final proximityService = ProximityService();
 final autoConnectService = AutoConnectService();
 final locationService = LocationService();
+final logService = LogService();
 final vehicleStore = VehicleStore();
 final officialCloudService = OfficialCloudService();
 final homeTabIndex = ValueNotifier<int>(1);
@@ -130,22 +132,38 @@ class _HomePageState extends State<HomePage>
         final device = connectionManager.device;
         if (device != null) {
           proximityService.setTargetDevice(device.remoteId.toString());
-          autoConnectService.saveDevice(device);
-          unawaited(() async {
-            final profile = await vehicleStore.upsert(
-              id: device.remoteId.toString(),
-              name: device.platformName,
-              protocol: vehicleProtocolFromBle(connectionManager.protocol),
-              makeDefault: true,
-              lastConnectedAt: DateTime.now(),
-            );
-            await locationService.recordVehicleLocation(profile.id);
-          }());
+          unawaited(
+            () async {
+              await autoConnectService.saveDevice(device);
+              final profile = await vehicleStore.upsert(
+                id: device.remoteId.toString(),
+                name: device.platformName,
+                protocol: vehicleProtocolFromBle(connectionManager.protocol),
+                makeDefault: true,
+                lastConnectedAt: DateTime.now(),
+              );
+              await locationService.recordVehicleLocation(profile.id);
+            }().catchError((Object e) {
+              logService.operation(
+                '连接后同步车辆信息失败',
+                detail: e.toString(),
+                level: LogLevel.warning,
+              );
+            }),
+          );
         }
       }
     });
 
-    autoConnectService.tryAutoConnect();
+    unawaited(
+      autoConnectService.tryAutoConnect().catchError((Object e) {
+        logService.operation(
+          '自动连接启动失败',
+          detail: e.toString(),
+          level: LogLevel.warning,
+        );
+      }),
+    );
   }
 
   @override

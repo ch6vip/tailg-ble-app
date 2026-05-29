@@ -125,9 +125,7 @@ class OfficialVehicle {
   }
 
   String get normalizedBtmac {
-    final compact = btmac
-        .replaceAll(RegExp(r'[^0-9a-fA-F]'), '')
-        .toUpperCase();
+    final compact = btmac.replaceAll(RegExp(r'[^0-9a-fA-F]'), '').toUpperCase();
     if (compact.length != 12) return '';
     final pairs = <String>[];
     for (var index = 0; index < compact.length; index += 2) {

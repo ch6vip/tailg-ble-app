@@ -9,7 +9,9 @@ Uint8List hexToBytes(String hex) {
 }
 
 String bytesToHex(Uint8List bytes) {
-  return bytes.map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase()).join();
+  return bytes
+      .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
+      .join();
 }
 
 String intToHex2(int n) {
