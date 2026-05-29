@@ -293,7 +293,13 @@
       height: 142px;
     }
 
-    .bike svg { width: 100%; height: 100%; overflow: visible; }
+    .bike img,
+    .bike svg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      overflow: visible;
+    }
 
     .tip-row {
       display: flex;
@@ -940,7 +946,13 @@
             <div class="bike-area">
               <div class="bike-glow"></div>
               <div class="bike">
-                <svg viewBox="0 0 320 150" aria-hidden="true">
+                <img
+                  class="official-bike"
+                  alt=""
+                  src="file:///E:/test/tlcq/_____3.5.6/jadx/resources/res/drawable-xhdpi/iv_control_evbike.png"
+                  onerror="this.hidden=true;this.nextElementSibling.hidden=false"
+                />
+                <svg class="fallback-bike" viewBox="0 0 320 150" aria-hidden="true" hidden>
                   <ellipse cx="160" cy="122" rx="128" ry="16" fill="#dde3ec" opacity=".65"/>
                   <circle cx="86" cy="105" r="38" fill="none" stroke="#252525" stroke-width="9"/>
                   <circle cx="238" cy="105" r="38" fill="none" stroke="#252525" stroke-width="9"/>
