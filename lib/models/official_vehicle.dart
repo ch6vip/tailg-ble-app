@@ -124,6 +124,20 @@ class OfficialVehicle {
     return '官方车辆';
   }
 
+  String get normalizedBtmac {
+    final compact = btmac
+        .replaceAll(RegExp(r'[^0-9a-fA-F]'), '')
+        .toUpperCase();
+    if (compact.length != 12) return '';
+    final pairs = <String>[];
+    for (var index = 0; index < compact.length; index += 2) {
+      pairs.add(compact.substring(index, index + 2));
+    }
+    return pairs.join(':');
+  }
+
+  bool get hasBleIdentity => normalizedBtmac.isNotEmpty;
+
   String get commandImei {
     final type = modelType;
     if (type != null && _gpsModelTypes.contains(type) && imeiGps.isNotEmpty) {

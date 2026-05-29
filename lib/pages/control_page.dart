@@ -581,15 +581,11 @@ class _BikeImage extends StatelessWidget {
                       ),
                     ),
                     Positioned.fill(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(ReplicaRadii.card),
-                        child: CustomPaint(
-                          painter: _BikeModelPainter(
-                            accent: display.colors.last,
-                            isPowerOn: isPowerOn,
-                            isLocked: isLocked,
-                          ),
-                        ),
+                      child: _VehicleVisual(
+                        photoUrl: cloudVehicle?.carPhoto,
+                        accent: display.colors.last,
+                        isPowerOn: isPowerOn,
+                        isLocked: isLocked,
                       ),
                     ),
                     Positioned(
@@ -619,6 +615,66 @@ class _BikeImage extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _VehicleVisual extends StatelessWidget {
+  final String? photoUrl;
+  final Color accent;
+  final bool isPowerOn;
+  final bool isLocked;
+
+  const _VehicleVisual({
+    required this.photoUrl,
+    required this.accent,
+    required this.isPowerOn,
+    required this.isLocked,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final url = photoUrl?.trim() ?? '';
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(ReplicaRadii.card),
+      child: url.isEmpty
+          ? _PaintedBikeVisual(
+              accent: accent,
+              isPowerOn: isPowerOn,
+              isLocked: isLocked,
+            )
+          : Image.network(
+              url,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => _PaintedBikeVisual(
+                accent: accent,
+                isPowerOn: isPowerOn,
+                isLocked: isLocked,
+              ),
+            ),
+    );
+  }
+}
+
+class _PaintedBikeVisual extends StatelessWidget {
+  final Color accent;
+  final bool isPowerOn;
+  final bool isLocked;
+
+  const _PaintedBikeVisual({
+    required this.accent,
+    required this.isPowerOn,
+    required this.isLocked,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _BikeModelPainter(
+        accent: accent,
+        isPowerOn: isPowerOn,
+        isLocked: isLocked,
+      ),
     );
   }
 }

@@ -7,7 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../ble/constants.dart';
 import '../models/official_vehicle.dart';
+import '../models/vehicle_profile.dart';
 import 'log_service.dart';
+import 'vehicle_store.dart';
 
 enum OfficialControlChannel {
   automatic('自动', '优先 BLE，未连接时走官方云端'),
@@ -424,6 +426,7 @@ class OfficialCloudService {
         error: null,
       );
       _emit();
+      await _applySelectedVehicleToLocalProfile();
       _log.operation('官方车辆列表已刷新', detail: 'count=${vehicles.length}');
       unawaited(refreshBatteryInfo(silent: true));
       if (refreshReplicaDetails) {
@@ -448,6 +451,7 @@ class OfficialCloudService {
     await prefs.setString(_prefSelectedVehicle, vehicle.key);
     _state = _state.copyWith(selectedVehicleKey: vehicle.key);
     _emit();
+    await _applySelectedVehicleToLocalProfile();
   }
 
   Future<void> setControlChannel(OfficialControlChannel channel) async {
@@ -777,6 +781,53 @@ class OfficialCloudService {
     if (links.length == _state.localVehicleLinks.length) return;
     await _saveLinks(links);
     _log.operation('官方车辆失效关联已清理');
+  }
+
+  Future<void> _applySelectedVehicleToLocalProfile() async {
+    final vehicle = _state.selectedVehicle;
+    if (vehicle == null) return;
+    final store = VehicleStore();
+    await store.init();
+
+    final linkedId = _state.linkedLocalVehicleId(vehicle.key);
+    if (linkedId != null && linkedId.isNotEmpty) {
+      final hasLinkedVehicle = store.vehicles.any(
+        (local) => local.id == linkedId,
+      );
+      if (hasLinkedVehicle) {
+        await store.setDefault(linkedId);
+        return;
+      }
+    }
+
+    final bleId = vehicle.normalizedBtmac;
+    if (bleId.isEmpty) return;
+
+    final profile = await store.upsert(
+      id: bleId,
+      name: vehicle.displayName,
+      protocol: _protocolForOfficialVehicle(vehicle),
+      makeDefault: true,
+    );
+    final links = Map<String, String>.from(_state.localVehicleLinks);
+    if (links[vehicle.key] != profile.id) {
+      links[vehicle.key] = profile.id;
+      await _saveLinks(links);
+    }
+    _log.operation(
+      '官方车辆已同步到本地车库',
+      detail: '${vehicle.displayName} ${profile.id}',
+    );
+  }
+
+  VehicleProtocol _protocolForOfficialVehicle(OfficialVehicle vehicle) {
+    final name = vehicle.btname.toUpperCase();
+    if (name.startsWith('Q_BASH') ||
+        name.startsWith('QGJ') ||
+        name.startsWith('Q_')) {
+      return VehicleProtocol.qgj;
+    }
+    return VehicleProtocol.auto;
   }
 
   Future<OfficialVehicleSelfCheck> selfCheck() async {

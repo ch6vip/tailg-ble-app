@@ -33,6 +33,8 @@ void main() {
       expect(vehicle.voltage, 52.5);
       expect(vehicle.mileage, 12.5);
       expect(vehicle.commandImei, 'IMEI_GPS');
+      expect(vehicle.normalizedBtmac, 'AA:BB:CC:DD:EE:FF');
+      expect(vehicle.hasBleIdentity, isTrue);
     });
 
     test('falls back to main imei for non GPS model type', () {
@@ -43,6 +45,20 @@ void main() {
       });
 
       expect(vehicle.commandImei, 'IMEI_MAIN');
+    });
+
+    test('normalizes compact official bluetooth mac', () {
+      final vehicle = OfficialVehicle.fromJson({'btmac': 'aabbccddeeff'});
+
+      expect(vehicle.normalizedBtmac, 'AA:BB:CC:DD:EE:FF');
+      expect(vehicle.hasBleIdentity, isTrue);
+    });
+
+    test('rejects invalid official bluetooth mac', () {
+      final vehicle = OfficialVehicle.fromJson({'btmac': 'not-a-mac'});
+
+      expect(vehicle.normalizedBtmac, isEmpty);
+      expect(vehicle.hasBleIdentity, isFalse);
     });
   });
 
