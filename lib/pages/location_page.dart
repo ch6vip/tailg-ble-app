@@ -16,6 +16,8 @@ import '../widgets/app_chrome.dart';
 
 enum LocationInitialTab { map, travel, fence }
 
+const _officialPressedBg = Color(0xFFE5E5E5);
+
 class LocationPage extends StatefulWidget {
   final LocationInitialTab initialTab;
 
@@ -352,45 +354,92 @@ class _SegmentedTabs extends StatelessWidget {
           final active = index == i;
           final item = items[i];
           return Expanded(
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(ReplicaRadii.card),
-              child: InkWell(
-                onTap: () => onChanged(i),
-                borderRadius: BorderRadius.circular(ReplicaRadii.card),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: active ? AppColors.primary : Colors.transparent,
-                    borderRadius: BorderRadius.circular(ReplicaRadii.card),
+            child: _OfficialTabButton(
+              active: active,
+              onTap: () => onChanged(i),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    item.icon,
+                    size: 17,
+                    color: active ? Colors.white : AppColors.textSecondary,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        item.icon,
-                        size: 17,
-                        color: active ? Colors.white : AppColors.textSecondary,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        item.label,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: active
-                              ? Colors.white
-                              : AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(width: 5),
+                  Text(
+                    item.label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: active ? Colors.white : AppColors.textSecondary,
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           );
         }),
+      ),
+    );
+  }
+}
+
+class _OfficialTabButton extends StatefulWidget {
+  final bool active;
+  final VoidCallback onTap;
+  final Widget child;
+
+  const _OfficialTabButton({
+    required this.active,
+    required this.onTap,
+    required this.child,
+  });
+
+  @override
+  State<_OfficialTabButton> createState() => _OfficialTabButtonState();
+}
+
+class _OfficialTabButtonState extends State<_OfficialTabButton> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (!mounted || _pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.active
+        ? AppColors.primary
+        : _pressed
+        ? _officialPressedBg
+        : Colors.transparent;
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 120),
+      scale: _pressed ? 0.97 : 1,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(ReplicaRadii.card),
+        child: InkWell(
+          onTap: () {
+            _setPressed(false);
+            HapticFeedback.selectionClick();
+            widget.onTap();
+          },
+          onTapDown: (_) => _setPressed(true),
+          onTapUp: (_) => _setPressed(false),
+          onTapCancel: () => _setPressed(false),
+          borderRadius: BorderRadius.circular(ReplicaRadii.card),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            height: 38,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(ReplicaRadii.card),
+            ),
+            child: widget.child,
+          ),
+        ),
       ),
     );
   }
@@ -1181,7 +1230,7 @@ class _TravelDayCard extends StatelessWidget {
   }
 }
 
-class _TravelRecordCard extends StatelessWidget {
+class _TravelRecordCard extends StatefulWidget {
   final OfficialTravelRecord record;
   final int? pointCount;
   final bool loading;
@@ -1195,39 +1244,94 @@ class _TravelRecordCard extends StatelessWidget {
   });
 
   @override
+  State<_TravelRecordCard> createState() => _TravelRecordCardState();
+}
+
+class _TravelRecordCardState extends State<_TravelRecordCard> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (!mounted || _pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(ReplicaRadii.card),
-      child: InkWell(
-        onTap: loading ? null : onTap,
-        borderRadius: BorderRadius.circular(ReplicaRadii.card),
-        child: SizedBox(
-          height: 86,
-          child: Row(
-            children: [
-              const SizedBox(width: 12),
-              SizedBox(width: 76, child: _TrackTimeRail(record: record)),
-              Container(width: 1, height: 46, color: const Color(0xFFEFF0F5)),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      record.mileageLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: ReplicaColors.ink,
-                      ),
+    final interactive = !widget.loading;
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 120),
+      scale: _pressed ? 0.985 : 1,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        decoration: BoxDecoration(
+          color: _pressed ? _officialPressedBg : Colors.white,
+          borderRadius: BorderRadius.circular(ReplicaRadii.card),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(ReplicaRadii.card),
+          child: InkWell(
+            onTap: interactive
+                ? () {
+                    _setPressed(false);
+                    HapticFeedback.selectionClick();
+                    widget.onTap();
+                  }
+                : null,
+            onTapDown: interactive ? (_) => _setPressed(true) : null,
+            onTapUp: interactive ? (_) => _setPressed(false) : null,
+            onTapCancel: interactive ? () => _setPressed(false) : null,
+            borderRadius: BorderRadius.circular(ReplicaRadii.card),
+            child: SizedBox(
+              height: 86,
+              child: Row(
+                children: [
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 76,
+                    child: _TrackTimeRail(record: widget.record),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 46,
+                    color: const Color(0xFFEFF0F5),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.record.mileageLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: ReplicaColors.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${widget.record.averageSpeedLabel}  ·  ${widget.record.durationLabel}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: ReplicaColors.muted,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${record.averageSpeedLabel}  ·  ${record.durationLabel}',
+                  ),
+                  SizedBox(
+                    width: 72,
+                    child: Text(
+                      widget.pointCount == null
+                          ? '点击读取'
+                          : '${widget.pointCount} 点',
+                      textAlign: TextAlign.right,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -1235,30 +1339,17 @@ class _TravelRecordCard extends StatelessWidget {
                         color: ReplicaColors.muted,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              SizedBox(
-                width: 72,
-                child: Text(
-                  pointCount == null ? '点击读取' : '$pointCount 点',
-                  textAlign: TextAlign.right,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: ReplicaColors.muted,
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.textTertiary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                ],
               ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textTertiary,
-                size: 20,
-              ),
-              const SizedBox(width: 10),
-            ],
+            ),
           ),
         ),
       ),

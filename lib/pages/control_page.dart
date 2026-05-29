@@ -26,6 +26,7 @@ const _phoneControlItemBg = Color(0xFFF7F8FA);
 const _phoneControlPrimary = ReplicaColors.blue;
 const _phoneControlPrimaryPressed = Color(0x225596FF);
 const _phoneControlRadius = 8.0;
+const _officialPressedBg = Color(0xFFE5E5E5);
 const _cardDecoration = BoxDecoration(
   color: Colors.white,
   borderRadius: BorderRadius.all(Radius.circular(ReplicaRadii.card)),
@@ -275,7 +276,7 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _HeaderIconAction extends StatelessWidget {
+class _HeaderIconAction extends StatefulWidget {
   final IconData icon;
   final Color color;
   final String tooltip;
@@ -289,23 +290,49 @@ class _HeaderIconAction extends StatelessWidget {
   });
 
   @override
+  State<_HeaderIconAction> createState() => _HeaderIconActionState();
+}
+
+class _HeaderIconActionState extends State<_HeaderIconAction> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (!mounted || _pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.72),
-              shape: BoxShape.circle,
+      message: widget.tooltip,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 120),
+        scale: _pressed ? 0.96 : 1,
+        child: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: () {
+              _setPressed(false);
+              HapticFeedback.selectionClick();
+              widget.onTap();
+            },
+            onTapDown: (_) => _setPressed(true),
+            onTapUp: (_) => _setPressed(false),
+            onTapCancel: () => _setPressed(false),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: _pressed
+                    ? _officialPressedBg
+                    : Colors.white.withValues(alpha: 0.72),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(widget.icon, size: 22, color: widget.color),
             ),
-            child: Icon(icon, size: 22, color: color),
           ),
         ),
       ),
@@ -757,6 +784,12 @@ class _ManualModePill extends StatefulWidget {
 
 class _ManualModePillState extends State<_ManualModePill> {
   bool _manualMode = false;
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (!mounted || _pressed == value) return;
+    setState(() => _pressed = value);
+  }
 
   void _toggleManualMode() {
     if (!widget.enabled) return;
@@ -766,34 +799,48 @@ class _ManualModePillState extends State<_ManualModePill> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.78),
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: widget.enabled ? _toggleManualMode : null,
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 120),
+      scale: _pressed ? 0.97 : 1,
+      child: Material(
+        color: _pressed
+            ? _officialPressedBg
+            : Colors.white.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '手动模式',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: widget.enabled
-                      ? AppColors.textSecondary
-                      : AppColors.textTertiary,
-                  fontWeight: FontWeight.w700,
+        child: InkWell(
+          onTap: widget.enabled
+              ? () {
+                  _setPressed(false);
+                  _toggleManualMode();
+                }
+              : null,
+          onTapDown: widget.enabled ? (_) => _setPressed(true) : null,
+          onTapUp: widget.enabled ? (_) => _setPressed(false) : null,
+          onTapCancel: widget.enabled ? () => _setPressed(false) : null,
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '手动模式',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: widget.enabled
+                        ? AppColors.textSecondary
+                        : AppColors.textTertiary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              _ManualModeToggle(
-                enabled: widget.enabled,
-                value: _manualMode,
-                onChanged: (_) => _toggleManualMode(),
-              ),
-            ],
+                const SizedBox(width: 6),
+                _ManualModeToggle(
+                  enabled: widget.enabled,
+                  value: _manualMode,
+                  onChanged: (_) => _toggleManualMode(),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1592,65 +1639,75 @@ class _OfficialSmallControlButtonState
   Widget build(BuildContext context) {
     final interactive = widget.enabled && !widget.loading;
     final color = widget.active ? ReplicaColors.blue : ReplicaColors.muted;
+    final background = widget.active
+        ? ReplicaColors.blue.withValues(alpha: _pressed ? 0.16 : 0.1)
+        : _pressed
+        ? _officialPressedBg
+        : const Color(0xFFF0F0F5);
     return AnimatedScale(
       duration: const Duration(milliseconds: 120),
       scale: _pressed ? 0.96 : 1,
-      child: Material(
-        color: widget.active
-            ? ReplicaColors.blue.withValues(alpha: 0.1)
-            : const Color(0xFFF0F0F5),
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: widget.loading
-              ? null
-              : interactive
-              ? () {
-                  _setPressed(false);
-                  HapticFeedback.mediumImpact();
-                  widget.onTap();
-                }
-              : _showDisabledReason,
-          onTapDown: interactive ? (_) => _setPressed(true) : null,
-          onTapUp: interactive ? (_) => _setPressed(false) : null,
-          onTapCancel: interactive ? () => _setPressed(false) : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        decoration: BoxDecoration(
+          color: background,
           borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (widget.loading)
-                  const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2.2),
-                  )
-                else
-                  Icon(widget.icon, color: color, size: 26),
-                const SizedBox(height: 6),
-                Text(
-                  widget.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: widget.enabled ? ReplicaColors.muted : Colors.grey,
-                  ),
-                ),
-                if (widget.subLabel != null) ...[
-                  const SizedBox(height: 2),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          child: InkWell(
+            onTap: widget.loading
+                ? null
+                : interactive
+                ? () {
+                    _setPressed(false);
+                    HapticFeedback.mediumImpact();
+                    widget.onTap();
+                  }
+                : _showDisabledReason,
+            onTapDown: interactive ? (_) => _setPressed(true) : null,
+            onTapUp: interactive ? (_) => _setPressed(false) : null,
+            onTapCancel: interactive ? () => _setPressed(false) : null,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (widget.loading)
+                    const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2.2),
+                    )
+                  else
+                    Icon(widget.icon, color: color, size: 26),
+                  const SizedBox(height: 6),
                   Text(
-                    widget.subLabel!,
+                    widget.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: ReplicaColors.subtle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: widget.enabled ? ReplicaColors.muted : Colors.grey,
                     ),
                   ),
+                  if (widget.subLabel != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.subLabel!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: ReplicaColors.subtle,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
@@ -2049,32 +2106,56 @@ class _QuickEditOption extends StatelessWidget {
   }
 }
 
-class _QuickEditButton extends StatelessWidget {
+class _QuickEditButton extends StatefulWidget {
   final VoidCallback onTap;
 
   const _QuickEditButton({required this.onTap});
 
   @override
+  State<_QuickEditButton> createState() => _QuickEditButtonState();
+}
+
+class _QuickEditButtonState extends State<_QuickEditButton> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (!mounted || _pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Center(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-              child: SizedBox(
-                width: 28,
-                height: 28,
-                child: Icon(Icons.edit, color: Colors.white, size: 16),
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 120),
+      scale: _pressed ? 0.92 : 1,
+      child: Material(
+        color: Colors.transparent,
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: () {
+            _setPressed(false);
+            HapticFeedback.selectionClick();
+            widget.onTap();
+          },
+          onTapDown: (_) => _setPressed(true),
+          onTapUp: (_) => _setPressed(false),
+          onTapCancel: () => _setPressed(false),
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Center(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                decoration: BoxDecoration(
+                  color: _pressed ? AppColors.primaryDark : AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: Icon(Icons.edit, color: Colors.white, size: 16),
+                ),
               ),
             ),
           ),
@@ -2239,48 +2320,73 @@ class _HomeQuickItem {
   });
 }
 
-class _HomeQuickTile extends StatelessWidget {
+class _HomeQuickTile extends StatefulWidget {
   final _HomeQuickItem item;
 
   const _HomeQuickTile({required this.item});
 
   @override
+  State<_HomeQuickTile> createState() => _HomeQuickTileState();
+}
+
+class _HomeQuickTileState extends State<_HomeQuickTile> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (!mounted || _pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(ReplicaRadii.card),
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          item.onTap();
-        },
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 120),
+      scale: _pressed ? 0.96 : 1,
+      child: Material(
+        color: _pressed ? _officialPressedBg : Colors.transparent,
         borderRadius: BorderRadius.circular(ReplicaRadii.card),
-        child: SizedBox(
-          height: 92,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0F0F5),
-                  borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: () {
+            _setPressed(false);
+            HapticFeedback.mediumImpact();
+            widget.item.onTap();
+          },
+          onTapDown: (_) => _setPressed(true),
+          onTapUp: (_) => _setPressed(false),
+          onTapCancel: () => _setPressed(false),
+          borderRadius: BorderRadius.circular(ReplicaRadii.card),
+          child: SizedBox(
+            height: 92,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 120),
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: _pressed ? Colors.white : const Color(0xFFF0F0F5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    widget.item.icon,
+                    size: 23,
+                    color: widget.item.accent,
+                  ),
                 ),
-                child: Icon(item.icon, size: 23, color: item.accent),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                item.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w700,
+                const SizedBox(height: 8),
+                Text(
+                  widget.item.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
