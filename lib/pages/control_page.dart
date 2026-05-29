@@ -18,6 +18,7 @@ import 'location_page.dart';
 import 'log_page.dart';
 import 'official_cloud_page.dart';
 import 'official_replica_pages.dart';
+import 'vehicle_message_page.dart';
 import 'vehicle_settings_page.dart';
 
 const _pageBg = ReplicaColors.pageBg;
@@ -66,29 +67,62 @@ class _ControlPageState extends State<ControlPage>
       initialData: connectionManager.state,
       builder: (context, snapshot) {
         final connState = snapshot.data ?? ble.ConnectionState.disconnected;
-        return Scaffold(
-          backgroundColor: _pageBg,
-          body: SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(
-                bottom: AppNav.contentBottomPadding,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _HomeTopSection(connState: connState),
-                  const SizedBox(height: 14),
-                  _ControlArea(connState: connState),
-                  const SizedBox(height: 14),
-                  const _HomeQuickSection(),
-                  const SizedBox(height: 14),
-                  _RidingModeSelector(connState: connState),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-          ),
+        return StreamBuilder<List<VehicleProfile>>(
+          stream: vehicleStore.vehiclesStream,
+          initialData: vehicleStore.vehicles,
+          builder: (context, vehicleSnapshot) {
+            final vehicles = vehicleSnapshot.data ?? const <VehicleProfile>[];
+            return StreamBuilder<OfficialCloudState>(
+              stream: officialCloudService.stateStream,
+              initialData: officialCloudService.state,
+              builder: (context, cloudSnapshot) {
+                final cloudState =
+                    cloudSnapshot.data ?? officialCloudService.state;
+                final hasLocalVehicle =
+                    vehicles.isNotEmpty || vehicleStore.defaultVehicle != null;
+                final hasCloudVehicle =
+                    cloudState.signedIn && cloudState.selectedVehicle != null;
+                final hasTransientDevice =
+                    connectionManager.device != null ||
+                    connState != ble.ConnectionState.disconnected;
+                final showUnboundHome =
+                    !hasLocalVehicle && !hasCloudVehicle && !hasTransientDevice;
+
+                return Scaffold(
+                  backgroundColor: _pageBg,
+                  body: SafeArea(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.only(
+                        bottom: AppNav.contentBottomPadding,
+                      ),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 260),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        child: showUnboundHome
+                            ? const _UnboundVehicleHome()
+                            : Column(
+                                key: const ValueKey('bound-home'),
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _HomeTopSection(connState: connState),
+                                  const SizedBox(height: 14),
+                                  _ControlArea(connState: connState),
+                                  const SizedBox(height: 14),
+                                  const _HomeQuickSection(),
+                                  const SizedBox(height: 14),
+                                  _RidingModeSelector(connState: connState),
+                                  const SizedBox(height: 20),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -116,6 +150,474 @@ class _HomeTopSection extends StatelessWidget {
       ),
     );
   }
+}
+
+class _UnboundVehicleHome extends StatelessWidget {
+  const _UnboundVehicleHome();
+
+  void _showSnack(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const ValueKey('unbound-home'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(20, 24, 20, 0),
+          child: _UnboundLogoMark(),
+        ),
+        const SizedBox(height: 54),
+        const Text(
+          '未绑定车辆',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 36,
+            height: 1.05,
+            fontWeight: FontWeight.w800,
+            color: ReplicaColors.ink,
+          ),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          '绑定车辆后可使用蓝牙控车、定位、轨迹和电池服务',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 14,
+            height: 1.35,
+            color: ReplicaColors.secondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 22),
+        const _UnboundBanner(),
+        const SizedBox(height: 20),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Column(
+            children: [
+              _OfficialActionButton(
+                label: '绑定设备',
+                foreground: Colors.white,
+                background: const Color(0xFFF11C2C),
+                borderColor: const Color(0xFFF11C2C),
+                onTap: () => openScanTab(context),
+              ),
+              const SizedBox(height: 12),
+              _OfficialActionButton(
+                label: '虚拟体验',
+                foreground: const Color(0xFFF11C2C),
+                background: ReplicaColors.pageBg,
+                borderColor: const Color(0xFFF11C2C),
+                onTap: () => _showSnack(context, '虚拟体验页待复刻，当前可先登录官方账号查看云端车辆'),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const GaragePage()),
+                ),
+                child: const Text(
+                  '绑定说明',
+                  style: TextStyle(
+                    color: ReplicaColors.muted,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _OfficialTextLinkRow(
+                icon: Icons.cloud_done_outlined,
+                label: '已绑定官方账号？登录后自动显示车辆',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const OfficialCloudPage()),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+class _UnboundLogoMark extends StatelessWidget {
+  const _UnboundLogoMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 10,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.electric_bike,
+            size: 25,
+            color: Color(0xFFF11C2C),
+          ),
+        ),
+        const SizedBox(width: 10),
+        const Text(
+          'TAILG',
+          style: TextStyle(
+            fontSize: 21,
+            fontWeight: FontWeight.w900,
+            color: ReplicaColors.ink,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _UnboundBanner extends StatelessWidget {
+  const _UnboundBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: [
+          Container(
+            height: 230,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0A000000),
+                  blurRadius: 14,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFFF8FAFF),
+                          Color(0xFFE9F0FF),
+                          Color(0xFFFFF4F4),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: CustomPaint(painter: const _UnboundBannerPainter()),
+                ),
+                const Positioned(
+                  left: 18,
+                  top: 18,
+                  child: _UnboundBannerChip(text: '蓝牙控车'),
+                ),
+                const Positioned(
+                  right: 18,
+                  top: 18,
+                  child: _UnboundBannerChip(text: '云端车辆'),
+                ),
+                const Positioned(
+                  left: 18,
+                  right: 18,
+                  bottom: 16,
+                  child: Text(
+                    '绑定设备后同步车辆状态',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: ReplicaColors.secondary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _BannerDot(active: true),
+              SizedBox(width: 6),
+              _BannerDot(active: false),
+              SizedBox(width: 6),
+              _BannerDot(active: false),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UnboundBannerChip extends StatelessWidget {
+  final String text;
+
+  const _UnboundBannerChip({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 11,
+          color: ReplicaColors.muted,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class _BannerDot extends StatelessWidget {
+  final bool active;
+
+  const _BannerDot({required this.active});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      width: active ? 28 : 8,
+      height: 6,
+      decoration: BoxDecoration(
+        color: active ? const Color(0xFFF11C2C) : const Color(0xFFD8DAE2),
+        borderRadius: BorderRadius.circular(3),
+      ),
+    );
+  }
+}
+
+class _OfficialActionButton extends StatefulWidget {
+  final String label;
+  final Color foreground;
+  final Color background;
+  final Color borderColor;
+  final VoidCallback onTap;
+
+  const _OfficialActionButton({
+    required this.label,
+    required this.foreground,
+    required this.background,
+    required this.borderColor,
+    required this.onTap,
+  });
+
+  @override
+  State<_OfficialActionButton> createState() => _OfficialActionButtonState();
+}
+
+class _OfficialActionButtonState extends State<_OfficialActionButton> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (!mounted || _pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOutCubic,
+      scale: _pressed ? 0.97 : 1,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        height: 54,
+        decoration: BoxDecoration(
+          color: _pressed ? _officialPressedBg : widget.background,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: _pressed ? _officialPressedBg : widget.borderColor,
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(15),
+          child: InkWell(
+            onTap: () {
+              _setPressed(false);
+              HapticFeedback.mediumImpact();
+              widget.onTap();
+            },
+            onTapDown: (_) => _setPressed(true),
+            onTapUp: (_) => _setPressed(false),
+            onTapCancel: () => _setPressed(false),
+            borderRadius: BorderRadius.circular(15),
+            child: Center(
+              child: Text(
+                widget.label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: _pressed ? ReplicaColors.secondary : widget.foreground,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OfficialTextLinkRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _OfficialTextLinkRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.72),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: ReplicaColors.blue),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: ReplicaColors.secondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UnboundBannerPainter extends CustomPainter {
+  const _UnboundBannerPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final centerY = size.height * 0.55;
+    final accent = const Color(0xFF5596FF);
+    final red = const Color(0xFFF11C2C);
+    final shadow = Paint()
+      ..color = const Color(0xFFDDE3EC).withValues(alpha: 0.72);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.5, size.height * 0.78),
+        width: size.width * 0.78,
+        height: 22,
+      ),
+      shadow,
+    );
+
+    final wheelPaint = Paint()
+      ..color = const Color(0xFF252525)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10;
+    final rimPaint = Paint()
+      ..color = accent
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4;
+    final leftWheel = Offset(size.width * 0.28, centerY + 34);
+    final rightWheel = Offset(size.width * 0.72, centerY + 34);
+    final radius = math.min(size.width, size.height) * 0.12;
+    for (final wheel in [leftWheel, rightWheel]) {
+      canvas.drawCircle(wheel, radius, wheelPaint);
+      canvas.drawCircle(wheel, radius * 0.62, rimPaint);
+    }
+
+    final frame = Path()
+      ..moveTo(leftWheel.dx, leftWheel.dy)
+      ..lineTo(size.width * 0.42, centerY - 20)
+      ..lineTo(size.width * 0.57, leftWheel.dy)
+      ..lineTo(rightWheel.dx, rightWheel.dy)
+      ..moveTo(size.width * 0.42, centerY - 20)
+      ..lineTo(size.width * 0.53, centerY - 64)
+      ..lineTo(size.width * 0.66, centerY - 34);
+    final framePaint = Paint()
+      ..color = const Color(0xFF2A2D35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(frame, framePaint);
+
+    final seatPaint = Paint()
+      ..color = const Color(0xFF2A2D35)
+      ..strokeWidth = 9
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(size.width * 0.51, centerY - 64),
+      Offset(size.width * 0.41, centerY - 68),
+      seatPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.65, centerY - 35),
+      Offset(size.width * 0.78, centerY - 46),
+      seatPaint,
+    );
+
+    final batteryRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(size.width * 0.43, centerY - 2, size.width * 0.23, 34),
+      const Radius.circular(12),
+    );
+    canvas.drawRRect(batteryRect, Paint()..color = const Color(0xFF121418));
+    canvas.drawRRect(
+      batteryRect.deflate(5),
+      Paint()..color = red.withValues(alpha: 0.78),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _UnboundBannerPainter oldDelegate) => false;
 }
 
 class _Header extends StatelessWidget {
@@ -288,10 +790,12 @@ class _Header extends StatelessWidget {
                         : statusIcon == Icons.cloud_done
                         ? ReplicaColors.ink
                         : effectiveStatusColor,
-                    tooltip: '消息与连接日志',
+                    tooltip: '消息中心',
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const LogPage()),
+                      MaterialPageRoute(
+                        builder: (_) => const VehicleMessagePage(),
+                      ),
                     ),
                   ),
                 ],
@@ -1867,14 +2371,7 @@ class _OfficialSmallControlButtonState
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (widget.loading)
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.2,
-                          color: color,
-                        ),
-                      )
+                      _PulseActionIcon(icon: widget.icon, color: color)
                     else
                       Icon(widget.icon, color: color, size: 26),
                     const SizedBox(height: 6),
@@ -2367,6 +2864,16 @@ class _QuickEditButtonState extends State<_QuickEditButton> {
 class _HomeQuickSection extends StatelessWidget {
   const _HomeQuickSection();
 
+  void _open(BuildContext context, Widget page) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+  }
+
+  void _showUnavailable(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final items = [
@@ -2374,132 +2881,217 @@ class _HomeQuickSection extends StatelessWidget {
         icon: Icons.location_on_outlined,
         label: '车辆位置',
         accent: AppColors.info,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const LocationPage()),
-        ),
+        onTap: () => _open(context, const LocationPage()),
       ),
       _HomeQuickItem(
         icon: Icons.tune,
         label: '车辆设置',
         accent: _phoneControlPrimary,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const VehicleSettingsPage()),
-        ),
+        onTap: () => _open(context, const VehicleSettingsPage()),
       ),
       _HomeQuickItem(
         icon: Icons.location_searching,
         label: '电子围栏',
         accent: AppColors.success,
-        onTap: () => Navigator.push(
+        onTap: () => _open(
           context,
-          MaterialPageRoute(
-            builder: (_) =>
-                const LocationPage(initialTab: LocationInitialTab.fence),
-          ),
+          const LocationPage(initialTab: LocationInitialTab.fence),
         ),
       ),
       _HomeQuickItem(
         icon: Icons.ios_share,
         label: '分享用车',
         accent: const Color(0xFF7B61FF),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ShareBikePage()),
-        ),
+        onTap: () => _open(context, const ShareBikePage()),
       ),
       _HomeQuickItem(
         icon: Icons.graphic_eq,
         label: '音效设置',
         accent: const Color(0xFF00A896),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const QgjSoundEffectsPage()),
-        ),
+        onTap: () => _open(context, const QgjSoundEffectsPage()),
       ),
       _HomeQuickItem(
         icon: Icons.nfc,
         label: 'NFC钥匙',
         accent: const Color(0xFF7B61FF),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const NfcKeyPage()),
-        ),
+        onTap: () => _open(context, const NfcKeyPage()),
       ),
       _HomeQuickItem(
         icon: Icons.route_outlined,
         label: '骑行记录',
         accent: const Color(0xFFFF8A00),
-        onTap: () => Navigator.push(
+        onTap: () => _open(
           context,
-          MaterialPageRoute(builder: (_) => const RideRecordPage()),
+          const LocationPage(initialTab: LocationInitialTab.travel),
         ),
       ),
     ];
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(0, 14, 0, 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(ReplicaRadii.card),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 10,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                '功能设置',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: ReplicaColors.ink,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 92,
-              child: ListView.separated(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                scrollDirection: Axis.horizontal,
-                itemCount: items.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 6),
-                itemBuilder: (context, index) => SizedBox(
-                  width: 86,
-                  child: _HomeQuickTile(item: items[index]),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Center(
-              child: SizedBox(
-                width: 60,
-                height: 4,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: LinearProgressIndicator(
-                    value: 3 / items.length,
-                    backgroundColor: const Color(0xFFDFDFDF),
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Color(0xFF2C2C2C),
+
+    return StreamBuilder<List<VehicleProfile>>(
+      stream: vehicleStore.vehiclesStream,
+      initialData: vehicleStore.vehicles,
+      builder: (context, vehicleSnapshot) {
+        final localVehicle = vehicleStore.defaultVehicle;
+        return StreamBuilder<OfficialCloudState>(
+          stream: officialCloudService.stateStream,
+          initialData: officialCloudService.state,
+          builder: (context, cloudSnapshot) {
+            final cloudState = cloudSnapshot.data ?? officialCloudService.state;
+            final location = cloudState.vehicleLocation;
+            final locationText = location != null && location.hasData
+                ? (location.bleConnectAddress.isNotEmpty
+                      ? location.bleConnectAddress
+                      : '${location.bleConnectLat}, ${location.bleConnectLng}')
+                : localVehicle?.lastLocation?.coordinateText ?? '暂无车辆位置';
+            final locationTime = location?.bleConnectTime.isNotEmpty == true
+                ? location!.bleConnectTime
+                : localVehicle?.lastLocation?.recordedAt
+                          .toString()
+                          .split('.')
+                          .first ??
+                      '待读取';
+            final travelCount = cloudState.travelDays.fold<int>(
+              0,
+              (sum, day) => sum + day.records.length,
+            );
+            final totalMileage = cloudState.travelDays
+                .map((day) => day.totalMileage)
+                .firstWhere((value) => value.isNotEmpty, orElse: () => '');
+            final hasGps =
+                cloudState.selectedVehicle?.imeiGps.isNotEmpty == true;
+            final addGpsTitle = hasGps ? '智能控车' : '可添加GPS';
+            final addGpsSubtitle = hasGps ? '远程定位 防盗通知 云端控车' : '可定位 防盗通知 远程控车等';
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  _FunctionSettingsCard(items: items),
+                  const SizedBox(height: 12),
+                  _VehicleLocationServiceCard(
+                    address: locationText,
+                    time: locationTime,
+                    loading: cloudState.vehicleLocationLoading,
+                    onTap: () => _open(context, const LocationPage()),
+                  ),
+                  const SizedBox(height: 12),
+                  _OfficialServiceBannerCard(
+                    icon: Icons.route_outlined,
+                    title: '历史轨迹',
+                    subtitle: travelCount > 0
+                        ? '今日骑行记录 $travelCount 条'
+                        : totalMileage.isNotEmpty
+                        ? '累计轨迹 ${totalMileage}km'
+                        : '今日骑行记录',
+                    accent: const Color(0xFFFF8A00),
+                    onTap: () => _open(
+                      context,
+                      const LocationPage(initialTab: LocationInitialTab.travel),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  _OfficialServiceBannerCard(
+                    icon: Icons.add_location_alt_outlined,
+                    title: addGpsTitle,
+                    subtitle: addGpsSubtitle,
+                    accent: ReplicaColors.blue,
+                    onTap: () => _open(context, const OfficialCloudPage()),
+                  ),
+                  const SizedBox(height: 12),
+                  _OfficialSettingsServiceCard(
+                    onSettingsTap: () =>
+                        _open(context, const VehicleSettingsPage()),
+                    onFenceTap: () => _open(
+                      context,
+                      const LocationPage(initialTab: LocationInitialTab.fence),
+                    ),
+                    onShareTap: () => _open(context, const ShareBikePage()),
+                  ),
+                  const SizedBox(height: 12),
+                  _SoundEffectsServiceCard(
+                    onTap: () => _open(context, const QgjSoundEffectsPage()),
+                  ),
+                  const SizedBox(height: 12),
+                  _NfcServiceCard(
+                    onTap: () => _open(context, const NfcKeyPage()),
+                  ),
+                  const SizedBox(height: 12),
+                  _BleRenewalServiceCard(
+                    onTap: () =>
+                        _showUnavailable(context, '蓝牙续费涉及官方支付与服务权益，当前保持只读占位'),
+                  ),
+                  const SizedBox(height: 12),
+                  _ChargingStationServiceCard(
+                    onTap: () =>
+                        _showUnavailable(context, '台铃充电站涉及官方站点与交易接口，当前保持只读占位'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _FunctionSettingsCard extends StatelessWidget {
+  final List<_HomeQuickItem> items;
+
+  const _FunctionSettingsCard({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(0, 14, 0, 10),
+      decoration: _cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              '功能设置',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: ReplicaColors.ink,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 92,
+            child: ListView.separated(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              scrollDirection: Axis.horizontal,
+              itemCount: items.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 6),
+              itemBuilder: (context, index) => SizedBox(
+                width: 86,
+                child: _HomeQuickTile(item: items[index]),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: SizedBox(
+              width: 60,
+              height: 4,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: 3 / items.length,
+                  backgroundColor: const Color(0xFFDFDFDF),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xFF2C2C2C),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -2519,16 +3111,676 @@ class _HomeQuickItem {
   });
 }
 
-class _HomeQuickTile extends StatefulWidget {
+class _HomeQuickTile extends StatelessWidget {
   final _HomeQuickItem item;
 
   const _HomeQuickTile({required this.item});
 
   @override
-  State<_HomeQuickTile> createState() => _HomeQuickTileState();
+  Widget build(BuildContext context) {
+    return _OfficialPressable(
+      onTap: item.onTap,
+      radius: ReplicaRadii.card,
+      background: Colors.transparent,
+      pressedBackground: _officialPressedBg,
+      shadow: false,
+      child: SizedBox(
+        height: 92,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F0F5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(item.icon, size: 23, color: item.accent),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              item.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _HomeQuickTileState extends State<_HomeQuickTile> {
+class _VehicleLocationServiceCard extends StatelessWidget {
+  final String address;
+  final String time;
+  final bool loading;
+  final VoidCallback onTap;
+
+  const _VehicleLocationServiceCard({
+    required this.address,
+    required this.time,
+    required this.loading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialPressable(
+      onTap: onTap,
+      child: Container(
+        height: 200,
+        padding: const EdgeInsets.all(16),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _ServiceCardHeader(
+                  title: '车辆定位',
+                  trailing: loading ? '刷新中' : time,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  address,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: ReplicaColors.muted,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Expanded(child: _MiniMapPreview()),
+              ],
+            ),
+            if (loading)
+              const Positioned(
+                right: 0,
+                bottom: 0,
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OfficialServiceBannerCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color accent;
+  final VoidCallback onTap;
+
+  const _OfficialServiceBannerCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.accent,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialPressable(
+      onTap: onTap,
+      child: SizedBox(
+        height: 100,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: _SweepHighlight(color: accent.withValues(alpha: 0.2)),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  _ServiceIconBox(icon: icon, color: accent),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _ServiceTitle(title),
+                        const SizedBox(height: 7),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: ReplicaColors.muted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 22,
+                    color: ReplicaColors.muted,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OfficialSettingsServiceCard extends StatelessWidget {
+  final VoidCallback onSettingsTap;
+  final VoidCallback onFenceTap;
+  final VoidCallback onShareTap;
+
+  const _OfficialSettingsServiceCard({
+    required this.onSettingsTap,
+    required this.onFenceTap,
+    required this.onShareTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 158,
+      padding: const EdgeInsets.fromLTRB(16, 15, 16, 12),
+      decoration: _cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _ServiceTitle('功能设置'),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  child: _ServiceSettingButton(
+                    icon: Icons.tune,
+                    label: '车辆设置',
+                    color: ReplicaColors.blue,
+                    onTap: onSettingsTap,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _ServiceSettingButton(
+                    icon: Icons.location_searching,
+                    label: '电子围栏',
+                    color: AppColors.success,
+                    onTap: onFenceTap,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _ServiceSettingButton(
+                    icon: Icons.ios_share,
+                    label: '分享用车',
+                    color: const Color(0xFF7B61FF),
+                    onTap: onShareTap,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ServiceSettingButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ServiceSettingButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialPressable(
+      onTap: onTap,
+      radius: 10,
+      background: Colors.white,
+      pressedBackground: _officialPressedBg,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _ServiceIconBox(icon: icon, color: color, size: 42),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              color: ReplicaColors.muted,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SoundEffectsServiceCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _SoundEffectsServiceCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialPressable(
+      onTap: onTap,
+      background: const Color(0xFF20242B),
+      pressedBackground: const Color(0xFF343943),
+      child: SizedBox(
+        height: 96,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: CustomPaint(
+                painter: const _SoundWavePainter(color: Color(0xFF5596FF)),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  _ServiceIconBox(
+                    icon: Icons.graphic_eq,
+                    color: Color(0xFF5596FF),
+                    dark: true,
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '音效设置',
+                          style: TextStyle(
+                            fontSize: 17,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(height: 7),
+                        Text(
+                          'QGJ 个性化提示音',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFFB8C0CC),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, size: 22, color: Colors.white70),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NfcServiceCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _NfcServiceCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialPressable(
+      onTap: onTap,
+      child: Container(
+        height: 112,
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            const _ServiceIconBox(
+              icon: Icons.nfc,
+              color: Color(0xFF7B61FF),
+              size: 58,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _ServiceTitle('NFC钥匙'),
+                  const SizedBox(height: 6),
+                  const Text(
+                    '刷卡骑行新体验',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: ReplicaColors.muted,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: const [
+                      _MiniHelpChip('手机如何添加'),
+                      _MiniHelpChip('智能手表如何添加'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: ReplicaColors.muted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BleRenewalServiceCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _BleRenewalServiceCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialPressable(
+      onTap: onTap,
+      background: const Color(0xFFEFF6FF),
+      pressedBackground: _officialPressedBg,
+      child: Container(
+        height: 92,
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            const _ServiceIconBox(
+              icon: Icons.bluetooth_audio,
+              color: ReplicaColors.blue,
+              size: 48,
+            ),
+            const SizedBox(width: 16),
+            const Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _ServiceTitle('蓝牙续费'),
+                  SizedBox(height: 7),
+                  Text(
+                    '充值后智能控车',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: ReplicaColors.muted,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: ReplicaColors.blue,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Text(
+                '续费',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChargingStationServiceCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _ChargingStationServiceCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialPressable(
+      onTap: onTap,
+      child: Container(
+        height: 150,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _ServiceCardHeader(title: '台铃充电站', trailing: '附近站点'),
+            const SizedBox(height: 14),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7F8FA),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const _ServiceIconBox(
+                      icon: Icons.ev_station,
+                      color: Color(0xFFFF8A00),
+                      size: 58,
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '最近充电站',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: ReplicaColors.ink,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            '空闲 -- ｜ 占用 --',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: ReplicaColors.muted,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, color: Colors.grey.shade500),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ServiceCardHeader extends StatelessWidget {
+  final String title;
+  final String trailing;
+
+  const _ServiceCardHeader({required this.title, required this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: _ServiceTitle(title)),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  trailing,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFAAA9B1),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: Color(0xFFAAA9B1),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ServiceTitle extends StatelessWidget {
+  final String text;
+
+  const _ServiceTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(
+        fontSize: 17,
+        color: ReplicaColors.ink,
+        fontWeight: FontWeight.w800,
+      ),
+    );
+  }
+}
+
+class _ServiceIconBox extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final double size;
+  final bool dark;
+
+  const _ServiceIconBox({
+    required this.icon,
+    required this.color,
+    this.size = 50,
+    this.dark = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: dark
+            ? Colors.white.withValues(alpha: 0.12)
+            : color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(icon, size: size * 0.48, color: color),
+    );
+  }
+}
+
+class _MiniHelpChip extends StatelessWidget {
+  final String text;
+
+  const _MiniHelpChip(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF2FF),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 10,
+          color: Color(0xFF1F1DF1),
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _OfficialPressable extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+  final Color background;
+  final Color pressedBackground;
+  final double radius;
+  final bool shadow;
+
+  const _OfficialPressable({
+    required this.child,
+    required this.onTap,
+    this.background = Colors.white,
+    this.pressedBackground = _officialPressedBg,
+    this.radius = ReplicaRadii.card,
+    this.shadow = true,
+  });
+
+  @override
+  State<_OfficialPressable> createState() => _OfficialPressableState();
+}
+
+class _OfficialPressableState extends State<_OfficialPressable> {
   bool _pressed = false;
 
   void _setPressed(bool value) {
@@ -2540,55 +3792,322 @@ class _HomeQuickTileState extends State<_HomeQuickTile> {
   Widget build(BuildContext context) {
     return AnimatedScale(
       duration: const Duration(milliseconds: 120),
-      scale: _pressed ? 0.96 : 1,
-      child: Material(
-        color: _pressed ? _officialPressedBg : Colors.transparent,
-        borderRadius: BorderRadius.circular(ReplicaRadii.card),
-        child: InkWell(
-          onTap: () {
-            _setPressed(false);
-            HapticFeedback.mediumImpact();
-            widget.item.onTap();
-          },
-          onTapDown: (_) => _setPressed(true),
-          onTapUp: (_) => _setPressed(false),
-          onTapCancel: () => _setPressed(false),
-          borderRadius: BorderRadius.circular(ReplicaRadii.card),
-          child: SizedBox(
-            height: 92,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 120),
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: _pressed ? Colors.white : const Color(0xFFF0F0F5),
-                    borderRadius: BorderRadius.circular(8),
+      curve: Curves.easeOutCubic,
+      scale: _pressed ? 0.98 : 1,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOutCubic,
+        decoration: BoxDecoration(
+          color: _pressed ? widget.pressedBackground : widget.background,
+          borderRadius: BorderRadius.circular(widget.radius),
+          boxShadow: widget.shadow
+              ? const [
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    blurRadius: 10,
+                    offset: Offset(0, 2),
                   ),
-                  child: Icon(
-                    widget.item.icon,
-                    size: 23,
-                    color: widget.item.accent,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.item.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+                ]
+              : null,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(widget.radius),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                _setPressed(false);
+                HapticFeedback.mediumImpact();
+                widget.onTap();
+              },
+              onTapDown: (_) => _setPressed(true),
+              onTapUp: (_) => _setPressed(false),
+              onTapCancel: () => _setPressed(false),
+              child: widget.child,
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _MiniMapPreview extends StatelessWidget {
+  const _MiniMapPreview();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CustomPaint(painter: _MiniMapPainter()),
+          Center(
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF11C2C).withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.location_on,
+                  color: Color(0xFFF11C2C),
+                  size: 28,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniMapPainter extends CustomPainter {
+  const _MiniMapPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bg = Paint()..color = const Color(0xFFF0F3F8);
+    canvas.drawRect(Offset.zero & size, bg);
+
+    final park = Paint()..color = const Color(0xFFDDE7D8);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          size.width * 0.04,
+          size.height * 0.10,
+          size.width * 0.35,
+          size.height * 0.28,
+        ),
+        const Radius.circular(16),
+      ),
+      park,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          size.width * 0.62,
+          size.height * 0.56,
+          size.width * 0.28,
+          size.height * 0.32,
+        ),
+        const Radius.circular(16),
+      ),
+      park,
+    );
+
+    final road = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 18
+      ..strokeCap = StrokeCap.round;
+    final mainRoad = Path()
+      ..moveTo(-20, size.height * 0.72)
+      ..quadraticBezierTo(
+        size.width * 0.34,
+        size.height * 0.42,
+        size.width * 0.56,
+        size.height * 0.52,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.78,
+        size.height * 0.62,
+        size.width + 20,
+        size.height * 0.30,
+      );
+    canvas.drawPath(mainRoad, road);
+    canvas.drawLine(
+      Offset(size.width * 0.18, -20),
+      Offset(size.width * 0.58, size.height + 20),
+      road,
+    );
+
+    final line = Paint()
+      ..color = const Color(0xFFD9DEE8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    for (var x = 0.0; x < size.width; x += 34) {
+      canvas.drawLine(Offset(x, 0), Offset(x + 18, size.height), line);
+    }
+    for (var y = 0.0; y < size.height; y += 28) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y + 6), line);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _MiniMapPainter oldDelegate) => false;
+}
+
+class _SoundWavePainter extends CustomPainter {
+  final Color color;
+
+  const _SoundWavePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.18)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    for (var i = 0; i < 5; i++) {
+      final path = Path();
+      final y = size.height * (0.18 + i * 0.14);
+      path.moveTo(size.width * 0.46, y);
+      path.cubicTo(
+        size.width * 0.58,
+        y - 16,
+        size.width * 0.70,
+        y + 18,
+        size.width * 0.86,
+        y,
+      );
+      path.cubicTo(
+        size.width * 0.93,
+        y - 8,
+        size.width * 0.98,
+        y + 8,
+        size.width * 1.04,
+        y,
+      );
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SoundWavePainter oldDelegate) {
+    return oldDelegate.color != color;
+  }
+}
+
+class _SweepHighlight extends StatefulWidget {
+  final Color color;
+
+  const _SweepHighlight({required this.color});
+
+  @override
+  State<_SweepHighlight> createState() => _SweepHighlightState();
+}
+
+class _SweepHighlightState extends State<_SweepHighlight>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final dx = -0.35 + _controller.value * 1.7;
+        return FractionalTranslation(
+          translation: Offset(dx, 0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Transform.rotate(
+              angle: -0.35,
+              child: Container(
+                width: 34,
+                height: 160,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      widget.color,
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PulseActionIcon extends StatefulWidget {
+  final IconData icon;
+  final Color color;
+
+  const _PulseActionIcon({required this.icon, required this.color});
+
+  @override
+  State<_PulseActionIcon> createState() => _PulseActionIconState();
+}
+
+class _PulseActionIconState extends State<_PulseActionIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final value = Curves.easeInOut.transform(_controller.value);
+        return SizedBox(
+          width: 34,
+          height: 34,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 24 + value * 8,
+                height: 24 + value * 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: widget.color.withValues(alpha: 0.08 + value * 0.08),
+                ),
+              ),
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: widget.color.withValues(alpha: 0.22),
+                  ),
+                ),
+                child: Icon(widget.icon, color: widget.color, size: 16),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
