@@ -126,6 +126,7 @@ void main() {
       expect(fence.enabled, isTrue);
       expect(fence.statusLabel, '已开启');
       expect(fence.radiusLabel, '500m');
+      expect(fence.radiusMeters, 500);
       expect(fence.timeLabel, '08:00 - 22:00');
     });
 

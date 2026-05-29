@@ -1,9 +1,10 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../config/map_tile_config.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
 import '../services/location_service.dart';
@@ -426,7 +427,7 @@ class _MapTab extends StatelessWidget {
         _ReadOnlyNotice(
           title: '官方地图复刻边界',
           subtitle:
-              '已接入官方车辆状态和停车位置只读数据，并保留本地定位兜底。当前未嵌入高德地图 SDK，地图区域使用轻量预览和外部地图打开。',
+              '已接入官方车辆状态和停车位置只读数据，并用 flutter_map 显示真实瓦片地图。未配置天地图 Token 时默认使用 OSM 瓦片兜底。',
         ),
       ],
     );
@@ -587,6 +588,16 @@ class _MapPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mapPoints = _mapPoints(location, points);
+    final center = _mapCenter(location, mapPoints);
+    final cameraFit = mapPoints.length >= 2
+        ? CameraFit.bounds(
+            bounds: LatLngBounds.fromPoints(mapPoints),
+            padding: const EdgeInsets.all(48),
+            maxZoom: 17,
+          )
+        : null;
+
     return Container(
       height: compact ? 260 : 340,
       decoration: BoxDecoration(
@@ -604,68 +615,139 @@ class _MapPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         child: Stack(
           children: [
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _GridMapPainter(
-                  hasLocation: location != null,
-                  hasFence: fence?.hasData == true,
-                  pointCount: points.length,
-                ),
+            FlutterMap(
+              options: MapOptions(
+                initialCenter: center,
+                initialZoom: compact ? 15.5 : 16,
+                initialCameraFit: cameraFit,
+                minZoom: 3,
+                maxZoom: 18,
+                backgroundColor: const Color(0xFFE9EEF3),
               ),
-            ),
-            if (points.length >= 2)
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _TrackPreviewPainter(points: points),
+              children: [
+                TileLayer(
+                  urlTemplate: MapTileConfig.baseUrlTemplate,
+                  subdomains: MapTileConfig.subdomains,
+                  userAgentPackageName: 'de.tttq.tailg_ble_app',
+                  maxNativeZoom: 18,
+                  tileDisplay: const TileDisplay.instantaneous(),
                 ),
-              ),
-            if (fence?.hasData == true)
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _FencePreviewPainter(enabled: fence!.enabled),
-                ),
-              ),
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    location == null ? Icons.map_outlined : Icons.location_on,
-                    size: compact ? 48 : 58,
-                    color: location == null
-                        ? Colors.grey.shade300
-                        : AppColors.primary,
+                if (MapTileConfig.annotationUrlTemplate != null)
+                  TileLayer(
+                    urlTemplate: MapTileConfig.annotationUrlTemplate,
+                    subdomains: MapTileConfig.subdomains,
+                    userAgentPackageName: 'de.tttq.tailg_ble_app',
+                    maxNativeZoom: 18,
+                    tileDisplay: const TileDisplay.instantaneous(),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    location == null ? '等待定位数据' : location!.source,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: location == null
-                          ? AppColors.textTertiary
-                          : AppColors.textPrimary,
-                    ),
-                  ),
-                  if (location != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      location!.coordinateText,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
+                if (fence?.hasData == true && location != null)
+                  CircleLayer(
+                    circles: [
+                      CircleMarker(
+                        point: center,
+                        radius: fence!.radiusMeters ?? 300,
+                        useRadiusInMeter: true,
+                        color:
+                            (fence!.enabled
+                                    ? AppColors.success
+                                    : AppColors.warning)
+                                .withValues(alpha: 0.12),
+                        borderColor:
+                            (fence!.enabled
+                                    ? AppColors.success
+                                    : AppColors.warning)
+                                .withValues(alpha: 0.55),
+                        borderStrokeWidth: 2,
                       ),
-                    ),
+                    ],
+                  ),
+                if (mapPoints.length >= 2)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: mapPoints,
+                        strokeWidth: 5,
+                        color: AppColors.success,
+                        borderStrokeWidth: 3,
+                        borderColor: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ],
+                  ),
+                MarkerLayer(
+                  markers: [
+                    if (location != null)
+                      Marker(
+                        point: center,
+                        width: 48,
+                        height: 58,
+                        alignment: Alignment.topCenter,
+                        child: _MapMarker(
+                          color: fence?.enabled == false
+                              ? AppColors.warning
+                              : AppColors.primary,
+                        ),
+                      ),
+                    if (mapPoints.length >= 2) ...[
+                      Marker(
+                        point: mapPoints.first,
+                        width: 34,
+                        height: 34,
+                        child: const _TrackNodeMarker(
+                          label: '起',
+                          color: AppColors.success,
+                        ),
+                      ),
+                      Marker(
+                        point: mapPoints.last,
+                        width: 34,
+                        height: 34,
+                        child: const _TrackNodeMarker(
+                          label: '终',
+                          color: AppColors.warning,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              ),
+                ),
+              ],
             ),
+            if (location == null && points.isEmpty)
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.76),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.map_outlined,
+                          size: compact ? 48 : 58,
+                          color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          '等待定位数据',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             Positioned(
               left: 14,
               top: 14,
               child: _MapChip(
                 icon: Icons.layers_outlined,
-                label: points.length >= 2 ? '轨迹预览' : '位置预览',
+                label: points.length >= 2
+                    ? '${MapTileConfig.providerLabel} · 轨迹'
+                    : '${MapTileConfig.providerLabel} · 位置',
               ),
             ),
             if (fence?.hasData == true)
@@ -677,10 +759,41 @@ class _MapPanel extends StatelessWidget {
                   label: fence!.statusLabel,
                 ),
               ),
+            if (location != null)
+              Positioned(
+                left: 14,
+                right: 14,
+                bottom: 14,
+                child: _MapCaption(location: location!),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  static List<LatLng> _mapPoints(
+    _ResolvedLocation? location,
+    List<OfficialTravelPoint> points,
+  ) {
+    final result = <LatLng>[];
+    for (final point in points) {
+      final latitude = point.latitude;
+      final longitude = point.longitude;
+      if (latitude == null || longitude == null) continue;
+      if (latitude == 0 && longitude == 0) continue;
+      result.add(LatLng(latitude, longitude));
+    }
+    if (result.isEmpty && location != null) {
+      result.add(LatLng(location.latitude, location.longitude));
+    }
+    return result;
+  }
+
+  static LatLng _mapCenter(_ResolvedLocation? location, List<LatLng> points) {
+    if (location != null) return LatLng(location.latitude, location.longitude);
+    if (points.isNotEmpty) return points.first;
+    return const LatLng(39.9042, 116.4074);
   }
 }
 
@@ -1398,6 +1511,114 @@ class _MapChip extends StatelessWidget {
   }
 }
 
+class _MapMarker extends StatelessWidget {
+  final Color color;
+
+  const _MapMarker({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x26000000),
+                blurRadius: 8,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Icon(Icons.two_wheeler, color: color, size: 20),
+        ),
+        Icon(Icons.arrow_drop_down, color: color, size: 24),
+      ],
+    );
+  }
+}
+
+class _TrackNodeMarker extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _TrackNodeMarker({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x24000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
+class _MapCaption extends StatelessWidget {
+  final _ResolvedLocation location;
+
+  const _MapCaption({required this.location});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.location_on, color: AppColors.primary, size: 16),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              '${location.source} · ${location.coordinateText}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ReadOnlyNotice extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -1511,147 +1732,6 @@ class _EmptyCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _GridMapPainter extends CustomPainter {
-  final bool hasLocation;
-  final bool hasFence;
-  final int pointCount;
-
-  const _GridMapPainter({
-    required this.hasLocation,
-    required this.hasFence,
-    required this.pointCount,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bgPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: hasLocation
-            ? const [Color(0xFFE3F2FD), Color(0xFFF7FAFF)]
-            : const [Color(0xFFF7F8FA), Color(0xFFFFFFFF)],
-      ).createShader(Offset.zero & size);
-    canvas.drawRect(Offset.zero & size, bgPaint);
-
-    final linePaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.05)
-      ..strokeWidth = 1;
-    for (double x = 20; x < size.width; x += 42) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), linePaint);
-    }
-    for (double y = 20; y < size.height; y += 42) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), linePaint);
-    }
-
-    final roadPaint = Paint()
-      ..color = AppColors.primary.withValues(alpha: 0.12)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 14
-      ..strokeCap = StrokeCap.round;
-    final path = Path()
-      ..moveTo(size.width * 0.08, size.height * 0.72)
-      ..cubicTo(
-        size.width * 0.32,
-        size.height * 0.62,
-        size.width * 0.30,
-        size.height * 0.28,
-        size.width * 0.58,
-        size.height * 0.34,
-      )
-      ..cubicTo(
-        size.width * 0.78,
-        size.height * 0.38,
-        size.width * 0.72,
-        size.height * 0.70,
-        size.width * 0.94,
-        size.height * 0.62,
-      );
-    canvas.drawPath(path, roadPaint);
-
-    if (!hasLocation && pointCount == 0 && !hasFence) return;
-    final center = Offset(size.width / 2, size.height / 2 - 10);
-    final radiusPaint = Paint()
-      ..color = AppColors.primary.withValues(alpha: 0.10)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, 76, radiusPaint);
-    canvas.drawCircle(center, 42, radiusPaint);
-  }
-
-  @override
-  bool shouldRepaint(_GridMapPainter oldDelegate) =>
-      oldDelegate.hasLocation != hasLocation ||
-      oldDelegate.hasFence != hasFence ||
-      oldDelegate.pointCount != pointCount;
-}
-
-class _TrackPreviewPainter extends CustomPainter {
-  final List<OfficialTravelPoint> points;
-
-  const _TrackPreviewPainter({required this.points});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (points.length < 2) return;
-    final path = Path();
-    final count = math.min(points.length, 36);
-    for (var i = 0; i < count; i++) {
-      final t = count == 1 ? 0.0 : i / (count - 1);
-      final x = size.width * (0.12 + 0.76 * t);
-      final y =
-          size.height * (0.66 - math.sin(t * math.pi * 1.4) * 0.26 + t * 0.06);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    final shadow = Paint()
-      ..color = Colors.white.withValues(alpha: 0.9)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 9
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final line = Paint()
-      ..color = AppColors.success
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    canvas.drawPath(path, shadow);
-    canvas.drawPath(path, line);
-  }
-
-  @override
-  bool shouldRepaint(_TrackPreviewPainter oldDelegate) =>
-      oldDelegate.points.length != points.length;
-}
-
-class _FencePreviewPainter extends CustomPainter {
-  final bool enabled;
-
-  const _FencePreviewPainter({required this.enabled});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final color = enabled ? AppColors.success : AppColors.warning;
-    final center = Offset(size.width / 2, size.height / 2 - 10);
-    final fill = Paint()
-      ..color = color.withValues(alpha: 0.08)
-      ..style = PaintingStyle.fill;
-    final stroke = Paint()
-      ..color = color.withValues(alpha: 0.42)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawCircle(center, math.min(size.width, size.height) * 0.34, fill);
-    canvas.drawCircle(center, math.min(size.width, size.height) * 0.34, stroke);
-  }
-
-  @override
-  bool shouldRepaint(_FencePreviewPainter oldDelegate) =>
-      oldDelegate.enabled != enabled;
 }
 
 class _ResolvedLocation {

@@ -36,7 +36,7 @@
 | 车库/绑定 | 45% | 本地车库、默认车辆、官方车辆关联已做 | 官方扫码绑定、IMEI 绑定、门店绑定、多车系绑定规则未做 |
 | BMS/电池 | 100% | 已按官方电池信息/BMS/C39 页面完成只读复刻：顶部电量环、电池状态、预估里程、总里程、电压、电池容量、今日耗电、循环次数、当前温度、电池评分、BMS 字段列表；已接入 BLE feb3 和官方 `app/mine/batteryInfo` 只读接口，官方车辆状态可作兜底 | 100% 指“页面结构和安全只读数据链路完成”。单体电压、SOH、真实多电池详情、升级/校准/换电池仍保持待读取或禁用，等 `app/mine/bmsBatteryInfo` 的 UID/IMEI 参数和真机返回确认后再接 |
 | NFC 钥匙 | 25% | 本地列表和页面入口可用 | 官方钥匙列表、授权、加钥匙、删钥匙未接入 |
-| 地图/轨迹/围栏 | 100% | 已按官方车辆位置、历史轨迹、轨迹详情、电子围栏页面完成只读复刻；接入 `carStatus`、`app/car/extend/getByCarId`、`app/centralControl/deviceTravel`、`app/centralControl/deviceTravelDetail`、`app/device/getFenceData`；保留本地定位、外部地图打开和轨迹月份切换 | 100% 指“页面结构和安全只读数据链路完成”。未嵌入高德地图 SDK；删除轨迹、修改围栏、围栏推送配置等写操作保持禁用 |
+| 地图/轨迹/围栏 | 100% | 已按官方车辆位置、历史轨迹、轨迹详情、电子围栏页面完成只读复刻；接入 `carStatus`、`app/car/extend/getByCarId`、`app/centralControl/deviceTravel`、`app/centralControl/deviceTravelDetail`、`app/device/getFenceData`；已用 `flutter_map` 接入真实瓦片地图，支持位置 Marker、轨迹线、围栏圆、本地定位、外部地图打开和轨迹月份切换 | 100% 指“页面结构和安全只读数据链路完成”。未嵌入高德原生 SDK；默认 OSM 瓦片兜底，可用 `--dart-define=TIANDITU_TOKEN=...` 切换天地图；删除轨迹、修改围栏、围栏推送配置等写操作保持禁用 |
 | 消息中心 | 20% | 本地操作日志可模拟展示 | 官方系统消息、车辆报警、服务通知未接入 |
 | 家庭共享 | 20% | 本地成员记录和页面入口可用 | 官方分享授权、成员权限、邀请/解绑未接入 |
 | OTA/固件 | 20% | 只读检测和风险边界已记录 | 真实 OTA 下载、校验、写入、回滚未开放 |

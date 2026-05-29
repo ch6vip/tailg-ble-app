@@ -253,11 +253,16 @@ class OfficialFenceData {
   }
 
   String get radiusLabel {
-    if (fenceRadius.isEmpty) return '待读取';
-    final value = double.tryParse(fenceRadius);
-    if (value == null) return fenceRadius;
-    final meters = value * 100;
+    final meters = radiusMeters;
+    if (meters == null) return fenceRadius.isEmpty ? '待读取' : fenceRadius;
     return '${meters.toStringAsFixed(0)}m';
+  }
+
+  double? get radiusMeters {
+    if (fenceRadius.isEmpty) return null;
+    final value = double.tryParse(fenceRadius);
+    if (value == null) return null;
+    return value * 100;
   }
 
   String get timeLabel {
