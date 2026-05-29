@@ -7,7 +7,6 @@ import '../main.dart';
 import '../models/battery_snapshot.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
-import '../widgets/app_chrome.dart';
 
 class BatteryDetailsPage extends StatelessWidget {
   const BatteryDetailsPage({super.key});
@@ -33,37 +32,25 @@ class BatteryDetailsPage extends StatelessWidget {
             return Scaffold(
               backgroundColor: AppColors.pageBg,
               body: SafeArea(
-                child: Column(
-                  children: [
-                    AppPageHeader(
-                      title: '电池信息',
-                      actions: [
-                        AppHeaderAction(
-                          icon: Icons.refresh,
-                          tooltip: '刷新官方电池信息',
-                          onTap:
-                              cloudState.signedIn &&
-                                  !cloudState.batteryInfoLoading
-                              ? () => _refreshOfficialBattery(context)
-                              : null,
-                        ),
-                      ],
+                child: RefreshIndicator(
+                  onRefresh: () => _refreshOfficialBattery(context),
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: BouncingScrollPhysics(),
                     ),
-                    ConnectionStatusBanner(
-                      state: connectionManager.state,
-                      onScanTap: () => openScanTab(context),
-                    ),
-                    Expanded(
-                      child: RefreshIndicator(
-                        onRefresh: () => _refreshOfficialBattery(context),
-                        child: ListView(
-                          physics: const AlwaysScrollableScrollPhysics(
-                            parent: BouncingScrollPhysics(),
-                          ),
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    padding: const EdgeInsets.only(bottom: 24),
+                    children: [
+                      _BatteryHero(
+                        snapshot: data,
+                        cloudState: cloudState,
+                        onRefresh: cloudState.signedIn
+                            ? () => _refreshOfficialBattery(context)
+                            : null,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                        child: Column(
                           children: [
-                            _BatteryHero(snapshot: data),
-                            const SizedBox(height: 12),
                             _SourceStrip(
                               snapshot: data,
                               cloudState: cloudState,
@@ -81,8 +68,8 @@ class BatteryDetailsPage extends StatelessWidget {
                           ],
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             );
@@ -112,69 +99,193 @@ class BatteryDetailsPage extends StatelessWidget {
 
 class _BatteryHero extends StatelessWidget {
   final BatterySnapshot snapshot;
-  const _BatteryHero({required this.snapshot});
+  final OfficialCloudState cloudState;
+  final VoidCallback? onRefresh;
+
+  const _BatteryHero({
+    required this.snapshot,
+    required this.cloudState,
+    required this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {
     final percent = snapshot.percent;
     final color = _batteryColor(percent);
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-      decoration: cardDecoration,
-      child: Column(
+      height: 430,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFFFFFFF),
+            Color(0xFFE9F1FF),
+            Color(0xFFDDE9FF),
+            ReplicaColors.pageBg,
+          ],
+          stops: [0, 0.42, 0.74, 1],
+        ),
+      ),
+      child: Stack(
         children: [
-          SizedBox(
-            height: 146,
-            child: Stack(
-              alignment: Alignment.center,
+          Positioned(
+            left: -60,
+            top: 80,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.38),
+              ),
+            ),
+          ),
+          Positioned(
+            right: -74,
+            top: 142,
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary.withValues(alpha: 0.08),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 4,
+            top: 0,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: ReplicaColors.ink),
+              onPressed: () => Navigator.pop(context),
+              padding: const EdgeInsets.all(16),
+            ),
+          ),
+          const Positioned(
+            left: 0,
+            right: 0,
+            top: 14,
+            child: Center(
+              child: Text(
+                '电池信息',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: ReplicaColors.ink,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 20,
+            top: 14,
+            child: TextButton(
+              onPressed: onRefresh,
+              style: TextButton.styleFrom(
+                foregroundColor: ReplicaColors.secondary,
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+              ),
+              child: Text(
+                cloudState.batteryInfoLoading ? '刷新中' : '更正电池',
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            top: 70,
+            child: Column(
               children: [
                 SizedBox(
-                  width: 132,
-                  height: 132,
-                  child: CircularProgressIndicator(
-                    value: percent == null ? 0 : percent.clamp(0, 100) / 100,
-                    strokeWidth: 12,
-                    backgroundColor: AppColors.border,
-                    color: color,
-                    strokeCap: StrokeCap.round,
+                  height: 150,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 146,
+                        height: 146,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.56),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 126,
+                        height: 126,
+                        child: CircularProgressIndicator(
+                          value: percent == null
+                              ? 0
+                              : percent.clamp(0, 100) / 100,
+                          strokeWidth: 10,
+                          backgroundColor: Colors.white,
+                          color: color,
+                          strokeCap: StrokeCap.round,
+                        ),
+                      ),
+                      _BatteryGlyph(percent: percent, color: color),
+                    ],
                   ),
                 ),
-                _BatteryGlyph(percent: percent, color: color),
-                Positioned(
-                  bottom: 6,
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      percent == null ? '--' : '$percent',
+                      style: const TextStyle(
+                        fontSize: 88,
+                        fontWeight: FontWeight.w300,
+                        color: ReplicaColors.ink,
+                        height: 0.92,
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(top: 9),
+                      child: Text(
+                        '%',
+                        style: TextStyle(
+                          fontSize: 24,
+                          color: ReplicaColors.ink,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 15,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.62),
+                    borderRadius: BorderRadius.circular(ReplicaRadii.pill),
+                  ),
                   child: Text(
-                    snapshot.healthLabel,
-                    style: TextStyle(
+                    _vehicleName(snapshot),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: snapshot.faults.isEmpty
-                          ? AppColors.success
-                          : AppColors.danger,
+                      color: ReplicaColors.secondary,
                     ),
                   ),
                 ),
+                const SizedBox(height: 10),
+                Text(
+                  snapshot.healthLabel,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: snapshot.faults.isEmpty
+                        ? AppColors.success
+                        : AppColors.danger,
+                  ),
+                ),
               ],
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            percent == null ? '--%' : '$percent%',
-            style: const TextStyle(
-              fontSize: 40,
-              fontWeight: FontWeight.w300,
-              color: AppColors.textPrimary,
-              height: 1,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _vehicleName(snapshot),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
             ),
           ),
         ],
@@ -351,12 +462,35 @@ class _OfficialSummaryRow extends StatelessWidget {
       _Metric('电池容量', bms.batteryCapacity ?? '待读取'),
     ];
     return Container(
-      decoration: cardDecoration,
+      decoration: const BoxDecoration(
+        color: ReplicaColors.darkPanel,
+        borderRadius: BorderRadius.all(Radius.circular(ReplicaRadii.card)),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
       padding: const EdgeInsets.symmetric(vertical: 14),
-      child: Row(
-        children: items
-            .map((item) => Expanded(child: _CompactMetric(metric: item)))
-            .toList(growable: false),
+      child: IntrinsicHeight(
+        child: Row(
+          children: List.generate(items.length, (index) {
+            return Expanded(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: index == 0
+                      ? null
+                      : const Border(
+                          left: BorderSide(color: Colors.white, width: 0.5),
+                        ),
+                ),
+                child: _CompactMetric(metric: items[index]),
+              ),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -419,9 +553,7 @@ class _CompactMetric extends StatelessWidget {
           style: TextStyle(
             fontSize: metric.value.length > 8 ? 14 : 16,
             fontWeight: FontWeight.w700,
-            color: metric.value == '待读取'
-                ? AppColors.textTertiary
-                : AppColors.textPrimary,
+            color: metric.value == '待读取' ? Colors.white38 : Colors.white,
           ),
         ),
         const SizedBox(height: 4),
@@ -429,7 +561,7 @@ class _CompactMetric extends StatelessWidget {
           metric.label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+          style: const TextStyle(fontSize: 11, color: Colors.white54),
         ),
       ],
     );

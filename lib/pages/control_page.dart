@@ -20,19 +20,19 @@ import 'official_cloud_page.dart';
 import 'official_replica_pages.dart';
 import 'vehicle_settings_page.dart';
 
-const _pageBg = Color(0xFFF5F6FA);
+const _pageBg = ReplicaColors.pageBg;
 const _kmPerPercent = 0.65;
-const _phoneControlPanelBg = Color(0xFF252525);
-const _phoneControlPanelDown = Color(0xFF1E1E1E);
-const _phoneControlItemBg = Color(0x33999999);
+const _phoneControlPanelBg = ReplicaColors.darkPanel;
+const _phoneControlPanelDown = ReplicaColors.darkPanelDown;
+const _phoneControlItemBg = ReplicaColors.darkPanelItem;
 const _phoneControlItemPressed = Color(0x1A999999);
-const _phoneControlPrimary = Color(0xFF2196F3);
-const _phoneControlPrimaryPressed = Color(0x802196F3);
+const _phoneControlPrimary = ReplicaColors.blue;
+const _phoneControlPrimaryPressed = Color(0x805596FF);
 const _phoneControlGearBg = Color(0x80181818);
 const _phoneControlRadius = 8.0;
 const _cardDecoration = BoxDecoration(
   color: Colors.white,
-  borderRadius: BorderRadius.all(Radius.circular(20)),
+  borderRadius: BorderRadius.all(Radius.circular(ReplicaRadii.card)),
   boxShadow: [
     BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 2)),
   ],
@@ -74,15 +74,12 @@ class _ControlPageState extends State<ControlPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _Header(connState: connState),
-                  _StatusSection(connState: connState),
-                  const SizedBox(height: 20),
-                  _BikeImage(connState: connState),
-                  const SizedBox(height: 20),
+                  _HomeTopSection(connState: connState),
+                  const SizedBox(height: 14),
                   _ControlArea(connState: connState),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
                   const _HomeQuickSection(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
                   _RidingModeSelector(connState: connState),
                   const SizedBox(height: 20),
                 ],
@@ -91,6 +88,36 @@ class _ControlPageState extends State<ControlPage>
           ),
         );
       },
+    );
+  }
+}
+
+class _HomeTopSection extends StatelessWidget {
+  final ble.ConnectionState connState;
+
+  const _HomeTopSection({required this.connState});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFFFFFF), Color(0xFFF2F6FF), ReplicaColors.pageBg],
+          stops: [0, 0.58, 1],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Header(connState: connState),
+          _StatusSection(connState: connState),
+          const SizedBox(height: 8),
+          _BikeImage(connState: connState),
+          const SizedBox(height: 4),
+        ],
+      ),
     );
   }
 }
@@ -166,7 +193,7 @@ class _Header extends StatelessWidget {
                 : Icons.bluetooth_disabled;
 
             return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
               child: Row(
                 children: [
                   Expanded(
@@ -188,9 +215,9 @@ class _Header extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 20,
+                                fontSize: 24,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF1A1A2E),
+                                color: ReplicaColors.ink,
                               ),
                             ),
                           ),
@@ -221,48 +248,32 @@ class _Header extends StatelessWidget {
                       ),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: connState != ble.ConnectionState.disconnected
-                        ? () => connectionManager.disconnect()
-                        : null,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
+                  _HeaderIconAction(
+                    icon: Icons.article_outlined,
+                    tooltip: '车辆详情',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const VehicleSettingsPage(),
                       ),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0x0D000000),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (isConnecting)
-                            const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          else
-                            Icon(
-                              statusIcon,
-                              size: 14,
-                              color: effectiveStatusColor,
-                            ),
-                          const SizedBox(width: 6),
-                          Text(
-                            effectiveStatusText,
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                        ],
-                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _HeaderIconAction(
+                    icon: isConnecting
+                        ? Icons.sync
+                        : statusIcon == Icons.cloud_done
+                        ? Icons.notifications_none
+                        : statusIcon,
+                    color: isConnecting
+                        ? AppColors.warning
+                        : statusIcon == Icons.cloud_done
+                        ? ReplicaColors.ink
+                        : effectiveStatusColor,
+                    tooltip: '消息与连接日志',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LogPage()),
                     ),
                   ),
                 ],
@@ -271,6 +282,44 @@ class _Header extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _HeaderIconAction extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _HeaderIconAction({
+    required this.icon,
+    this.color = ReplicaColors.ink,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.72),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 22, color: color),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -309,98 +358,150 @@ class _StatusSection extends StatelessWidget {
                 : Colors.red;
 
             return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '剩余电量',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Icon(
-                              battery == null
-                                  ? Icons.battery_unknown
-                                  : battery > 80
-                                  ? Icons.battery_full
-                                  : battery > 60
-                                  ? Icons.battery_5_bar
-                                  : battery > 40
-                                  ? Icons.battery_4_bar
-                                  : battery > 20
-                                  ? Icons.battery_2_bar
-                                  : Icons.battery_1_bar,
-                              color: batteryColor,
-                              size: 32,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              battery != null ? '$battery%' : '--',
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w300,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    child: _HomeMetric(
+                      label: '剩余电量',
+                      value: battery != null ? '$battery' : '--',
+                      unit: battery != null ? '%' : '',
+                      color: batteryColor,
                     ),
                   ),
+                  const SizedBox(width: 22),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '预估里程',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              battery != null
-                                  ? '${(battery * _kmPerPercent).round()}'
-                                  : '--',
-                              style: const TextStyle(
-                                fontSize: 48,
-                                fontWeight: FontWeight.w300,
-                              ),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.only(bottom: 8),
-                              child: Text(
-                                'km',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    child: _HomeMetric(
+                      label: '预估里程',
+                      value: battery != null
+                          ? '${(battery * _kmPerPercent).round()}'
+                          : '--',
+                      unit: battery != null ? 'km' : '',
                     ),
                   ),
+                  const SizedBox(width: 14),
+                  _HomeBlePill(connState: connState),
                 ],
               ),
             );
           },
         );
       },
+    );
+  }
+}
+
+class _HomeMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final String unit;
+  final Color color;
+
+  const _HomeMetric({
+    required this.label,
+    required this.value,
+    required this.unit,
+    this.color = ReplicaColors.ink,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: ReplicaColors.muted,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Flexible(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: value.length > 3 ? 30 : 32,
+                  height: 1,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+            ),
+            if (unit.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(left: 2),
+                child: Text(
+                  unit,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: ReplicaColors.ink,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _HomeBlePill extends StatelessWidget {
+  final ble.ConnectionState connState;
+
+  const _HomeBlePill({required this.connState});
+
+  @override
+  Widget build(BuildContext context) {
+    final ready = connState == ble.ConnectionState.ready;
+    final connecting =
+        connState == ble.ConnectionState.connecting ||
+        connState == ble.ConnectionState.reconnecting;
+    final color = ready
+        ? AppColors.success
+        : connecting
+        ? AppColors.warning
+        : ReplicaColors.muted;
+    final text = ready
+        ? 'BLE'
+        : connecting
+        ? '连接中'
+        : '离线';
+    return Container(
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(ReplicaRadii.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            ready ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
+            size: 14,
+            color: color,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -438,25 +539,18 @@ class _BikeImage extends StatelessWidget {
                 ? bike.isLocked
                 : cloudVehicle?.isLocked ?? true;
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
               child: Container(
-                height: 196,
+                height: 186,
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x0A000000),
-                      blurRadius: 16,
-                      offset: Offset(0, 6),
-                    ),
-                  ],
+                  color: Colors.white.withValues(alpha: 0.34),
+                  borderRadius: BorderRadius.circular(ReplicaRadii.card),
                 ),
                 child: Stack(
                   children: [
                     Positioned.fill(
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(ReplicaRadii.card),
                         child: CustomPaint(
                           painter: _BikeModelPainter(
                             accent: display.colors.last,
@@ -1521,7 +1615,8 @@ List<_QuickControlSpec> get _quickControlSpecs => [
     id: 'fence',
     label: '电子围栏',
     icon: Icons.location_searching,
-    pageBuilder: (_) => const ElectricFencePage(),
+    pageBuilder: (_) =>
+        const LocationPage(initialTab: LocationInitialTab.fence),
   ),
   _QuickControlSpec(
     id: 'nfc',
@@ -2069,10 +2164,10 @@ class _HomeQuickSection extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(0, 16, 0, 12),
+        padding: const EdgeInsets.fromLTRB(0, 14, 0, 10),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(ReplicaRadii.card),
           boxShadow: const [
             BoxShadow(
               color: Color(0x0A000000),
@@ -2091,13 +2186,13 @@ class _HomeQuickSection extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A1A2E),
+                  color: ReplicaColors.ink,
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             SizedBox(
-              height: 92,
+              height: 86,
               child: ListView.separated(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -2105,7 +2200,7 @@ class _HomeQuickSection extends StatelessWidget {
                 itemCount: items.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 10),
                 itemBuilder: (context, index) => SizedBox(
-                  width: 82,
+                  width: 76,
                   child: _HomeQuickTile(item: items[index]),
                 ),
               ),
@@ -2156,16 +2251,16 @@ class _HomeQuickTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFFF7F8FA),
-      borderRadius: BorderRadius.circular(12),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(ReplicaRadii.card),
       child: InkWell(
         onTap: () {
           HapticFeedback.mediumImpact();
           item.onTap();
         },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(ReplicaRadii.card),
         child: SizedBox(
-          height: 92,
+          height: 86,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -2174,7 +2269,7 @@ class _HomeQuickTile extends StatelessWidget {
                 height: 38,
                 decoration: BoxDecoration(
                   color: item.accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(ReplicaRadii.card),
                 ),
                 child: Icon(item.icon, size: 22, color: item.accent),
               ),

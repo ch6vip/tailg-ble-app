@@ -216,6 +216,11 @@ class _LocationPageState extends State<LocationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final title = switch (_tabIndex) {
+      0 => '地图/轨迹/围栏',
+      1 => '历史轨迹',
+      _ => '电子围栏',
+    };
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
@@ -246,25 +251,28 @@ class _LocationPageState extends State<LocationPage> {
 
                 return Column(
                   children: [
-                    AppPageHeader(
-                      title: '地图/轨迹/围栏',
-                      actions: [
-                        AppHeaderAction(
-                          icon: Icons.refresh,
-                          tooltip: '刷新地图数据',
-                          onTap: loading
-                              ? null
-                              : () => _refreshAll(localVehicle),
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                      child: _SegmentedTabs(
-                        index: _tabIndex,
-                        onChanged: (value) => setState(() => _tabIndex = value),
+                    if (_tabIndex != LocationInitialTab.fence.index)
+                      AppPageHeader(
+                        title: title,
+                        actions: [
+                          AppHeaderAction(
+                            icon: Icons.refresh,
+                            tooltip: '刷新地图数据',
+                            onTap: loading
+                                ? null
+                                : () => _refreshAll(localVehicle),
+                          ),
+                        ],
                       ),
-                    ),
+                    if (_tabIndex != LocationInitialTab.fence.index)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                        child: _SegmentedTabs(
+                          index: _tabIndex,
+                          onChanged: (value) =>
+                              setState(() => _tabIndex = value),
+                        ),
+                      ),
                     Expanded(
                       child: IndexedStack(
                         index: _tabIndex,
@@ -296,6 +304,8 @@ class _LocationPageState extends State<LocationPage> {
                             location: location,
                             localFence: _localFence,
                             onRefresh: _refreshFenceData,
+                            onTabChanged: (value) =>
+                                setState(() => _tabIndex = value),
                           ),
                         ],
                       ),
@@ -328,7 +338,7 @@ class _SegmentedTabs extends StatelessWidget {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(ReplicaRadii.card),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0A000000),
@@ -350,7 +360,7 @@ class _SegmentedTabs extends StatelessWidget {
                 height: 38,
                 decoration: BoxDecoration(
                   color: active ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(ReplicaRadii.card),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -377,6 +387,18 @@ class _SegmentedTabs extends StatelessWidget {
         }),
       ),
     );
+  }
+}
+
+class _FloatingSegmentedTabs extends StatelessWidget {
+  final int index;
+  final ValueChanged<int> onChanged;
+
+  const _FloatingSegmentedTabs({required this.index, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return _SegmentedTabs(index: index, onChanged: onChanged);
   }
 }
 
@@ -529,46 +551,95 @@ class _FenceTab extends StatelessWidget {
   final _ResolvedLocation? location;
   final FenceConfig? localFence;
   final Future<void> Function() onRefresh;
+  final ValueChanged<int> onTabChanged;
 
   const _FenceTab({
     required this.cloudState,
     required this.location,
     required this.localFence,
     required this.onRefresh,
+    required this.onTabChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: onRefresh,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
-        children: [
-          _MapPanel(
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: _MapPanel(
             location: location,
             fence: cloudState.fenceData,
             points: const [],
-            compact: true,
+            compact: false,
+            fullBleed: true,
           ),
-          const SizedBox(height: 14),
-          _FenceStatusCard(
+        ),
+        Positioned(
+          left: 8,
+          right: 8,
+          top: 4,
+          child: SizedBox(
+            height: 48,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: ReplicaColors.ink,
+                    ),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.88),
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.88),
+                    borderRadius: BorderRadius.circular(ReplicaRadii.pill),
+                  ),
+                  child: const Text(
+                    '电子围栏',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: ReplicaColors.ink,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Positioned(
+          left: 20,
+          right: 20,
+          top: 62,
+          child: _FloatingSegmentedTabs(index: 2, onChanged: onTabChanged),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: _OfficialFenceSheet(
             fence: cloudState.fenceData,
             localFence: localFence,
             error: cloudState.fenceError,
             loading: cloudState.fenceLoading,
             signedIn: cloudState.signedIn,
+            bottomPadding: bottomPadding,
+            onRefresh: onRefresh,
           ),
-          const SizedBox(height: 14),
-          const _ReadOnlyNotice(
-            title: '围栏写入暂禁用',
-            subtitle:
-                '已复刻官方围栏开关、半径、时间段的只读展示。`updFenceData` 和 `fenceConfig` 会修改服务端配置，未做真机回滚验证前不开放。',
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -578,12 +649,14 @@ class _MapPanel extends StatelessWidget {
   final OfficialFenceData? fence;
   final List<OfficialTravelPoint> points;
   final bool compact;
+  final bool fullBleed;
 
   const _MapPanel({
     required this.location,
     required this.fence,
     required this.points,
     this.compact = false,
+    this.fullBleed = false,
   });
 
   @override
@@ -598,21 +671,24 @@ class _MapPanel extends StatelessWidget {
           )
         : null;
 
+    final radius = fullBleed ? 0.0 : ReplicaRadii.card;
     return Container(
-      height: compact ? 260 : 340,
+      height: fullBleed ? null : (compact ? 260 : 340),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 10,
-            offset: Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: fullBleed
+            ? null
+            : const [
+                BoxShadow(
+                  color: Color(0x0A000000),
+                  blurRadius: 10,
+                  offset: Offset(0, 2),
+                ),
+              ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(radius),
         child: Stack(
           children: [
             FlutterMap(
@@ -942,67 +1018,82 @@ class _TravelSummaryCard extends StatelessWidget {
       return sum + (double.tryParse(record.mileage) ?? 0);
     });
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       decoration: cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              _CircleIcon(icon: Icons.route_outlined, color: AppColors.info),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  cloudState.travelMonth.isEmpty
-                      ? '本月轨迹'
-                      : cloudState.travelMonth,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+          Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: ReplicaColors.pageBg,
+              borderRadius: BorderRadius.circular(ReplicaRadii.card),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  tooltip: '上个月',
+                  onPressed: onPreviousMonth,
+                  icon: const Icon(Icons.chevron_left, size: 20),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      cloudState.travelMonth.isEmpty
+                          ? '本月轨迹'
+                          : cloudState.travelMonth,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: ReplicaColors.ink,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              IconButton.filledTonal(
-                tooltip: '上个月',
-                onPressed: onPreviousMonth,
-                icon: const Icon(Icons.chevron_left, size: 18),
-              ),
-              const SizedBox(width: 6),
-              IconButton.filledTonal(
-                tooltip: '下个月',
-                onPressed: onNextMonth,
-                icon: const Icon(Icons.chevron_right, size: 18),
-              ),
-            ],
+                IconButton(
+                  tooltip: '下个月',
+                  onPressed: onNextMonth,
+                  icon: const Icon(Icons.chevron_right, size: 20),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _SummaryValue(
-                  label: '轨迹次数',
-                  value: '${records.length}',
-                  unit: '次',
+          Container(
+            height: 75,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F8F9),
+              borderRadius: BorderRadius.circular(ReplicaRadii.card),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _SummaryValue(
+                    label: '总次数',
+                    value: '${records.length}',
+                    unit: '次',
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _SummaryValue(
-                  label: '累计里程',
-                  value: mileage == 0 ? '--' : mileage.toStringAsFixed(1),
-                  unit: 'km',
+                const VerticalDivider(width: 1, color: Colors.white),
+                Expanded(
+                  child: _SummaryValue(
+                    label: '总里程',
+                    value: mileage == 0 ? '--' : mileage.toStringAsFixed(1),
+                    unit: 'km',
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _SummaryValue(
-                  label: '天数',
-                  value: '${cloudState.travelDays.length}',
-                  unit: '天',
+                const VerticalDivider(width: 1, color: Colors.white),
+                Expanded(
+                  child: _SummaryValue(
+                    label: '总时长',
+                    value: '${cloudState.travelDays.length}',
+                    unit: '天',
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -1027,14 +1118,14 @@ class _TravelRecordCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(ReplicaRadii.card),
       child: InkWell(
         onTap: loading ? null : onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(ReplicaRadii.card),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(ReplicaRadii.card),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x0A000000),
@@ -1052,9 +1143,9 @@ class _TravelRecordCard extends StatelessWidget {
                     child: Text(
                       record.travelDate.isEmpty ? '官方轨迹' : record.travelDate,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: ReplicaColors.muted,
                       ),
                     ),
                   ),
@@ -1201,96 +1292,304 @@ class _TravelDetailSheet extends StatelessWidget {
   }
 }
 
-class _FenceStatusCard extends StatelessWidget {
+class _OfficialFenceSheet extends StatelessWidget {
   final OfficialFenceData? fence;
   final FenceConfig? localFence;
   final String? error;
   final bool loading;
   final bool signedIn;
+  final double bottomPadding;
+  final Future<void> Function() onRefresh;
 
-  const _FenceStatusCard({
+  const _OfficialFenceSheet({
     required this.fence,
     required this.localFence,
     required this.error,
     required this.loading,
     required this.signedIn,
+    required this.bottomPadding,
+    required this.onRefresh,
   });
 
   @override
   Widget build(BuildContext context) {
+    final enabled = fence?.enabled ?? localFence?.enabled ?? false;
+    final radius = fence?.radiusMeters ?? localFence?.radiusMeters.toDouble();
+    final minRadius = _radiusMeters(fence?.fenceRadiusMin) ?? 100;
+    final maxRadius = _radiusMeters(fence?.fenceRadiusMax) ?? 10000;
+    final progress = radius == null
+        ? 0.0
+        : ((radius - minRadius) / (maxRadius - minRadius)).clamp(0.0, 1.0);
+    final time = fence?.timeLabel ?? '待读取';
+    final source = fence?.hasData == true
+        ? '官方围栏配置只读展示'
+        : signedIn
+        ? '官方围栏暂未返回配置'
+        : '登录后读取官方围栏';
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: cardDecoration,
+      padding: EdgeInsets.fromLTRB(20, 14, 20, 18 + bottomPadding),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(ReplicaRadii.sheet),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x26000000),
+            blurRadius: 18,
+            offset: Offset(0, -6),
+          ),
+        ],
+      ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              _CircleIcon(
-                icon: Icons.radar_outlined,
-                color: fence?.enabled == true
-                    ? AppColors.success
-                    : AppColors.warning,
+              const Text(
+                '围栏设置',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: ReplicaColors.ink,
+                ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.help_outline,
+                size: 18,
+                color: ReplicaColors.muted,
+              ),
+              const Spacer(),
+              IconButton(
+                tooltip: '刷新围栏',
+                onPressed: loading ? null : onRefresh,
+                icon: loading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh, size: 20),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _FenceSettingRow(
+            title: '电子围栏',
+            subtitle: source,
+            trailing: _FenceSwitchPill(enabled: enabled),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            decoration: BoxDecoration(
+              color: ReplicaColors.pageBg,
+              borderRadius: BorderRadius.circular(ReplicaRadii.card),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      fence == null ? '官方电子围栏' : fence!.statusLabel,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                    const Expanded(
+                      child: Text(
+                        '范围设置',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: ReplicaColors.ink,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 2),
                     Text(
-                      signedIn ? '官方围栏配置只读展示' : '登录后读取官方围栏',
+                      radius == null ? '待读取' : '${radius.toStringAsFixed(0)}m',
                       style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: ReplicaColors.blue,
                       ),
                     ),
                   ],
                 ),
-              ),
-              if (loading)
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(ReplicaRadii.pill),
+                  child: LinearProgressIndicator(
+                    minHeight: 6,
+                    value: progress,
+                    backgroundColor: Colors.white,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      enabled ? ReplicaColors.blue : ReplicaColors.muted,
+                    ),
+                  ),
                 ),
-            ],
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text(
+                      '${minRadius.toStringAsFixed(0)}m',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: ReplicaColors.subtle,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${maxRadius.toStringAsFixed(0)}m',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: ReplicaColors.subtle,
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24, color: ReplicaColors.line),
+                _FenceSettingRow(
+                  title: '时间设置',
+                  subtitle: time,
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: ReplicaColors.muted,
+                  ),
+                  dense: true,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 14),
-          _InfoRow('官方半径', fence?.radiusLabel ?? '待读取'),
-          _InfoRow('时间段', fence?.timeLabel ?? '待读取'),
-          _InfoRow('最小半径', _radiusValue(fence?.fenceRadiusMin)),
-          _InfoRow('最大半径', _radiusValue(fence?.fenceRadiusMax)),
-          if (localFence != null) ...[
-            const Divider(height: 24, color: AppColors.border),
-            _InfoRow('本地围栏', localFence!.enabled ? '已开启' : '已关闭'),
-            _InfoRow('本地半径', '${localFence!.radiusMeters}m'),
+          if (localFence != null && fence?.hasData != true) ...[
+            const SizedBox(height: 8),
+            Text(
+              '本地围栏：${localFence!.enabled ? '已开启' : '已关闭'} · ${localFence!.radiusMeters}m',
+              style: const TextStyle(fontSize: 12, color: ReplicaColors.muted),
+            ),
           ],
           if (error != null) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Text(
               error!,
               style: const TextStyle(fontSize: 12, color: AppColors.warning),
             ),
           ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton(
+              onPressed: null,
+              style: FilledButton.styleFrom(
+                disabledBackgroundColor: ReplicaColors.blue.withValues(
+                  alpha: 0.45,
+                ),
+                disabledForegroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(ReplicaRadii.card),
+                ),
+              ),
+              child: const Text('只读展示'),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  static String _radiusValue(String? value) {
-    if (value == null || value.isEmpty) return '待读取';
-    final parsed = double.tryParse(value);
-    if (parsed == null) return value;
-    return '${(parsed * 100).toStringAsFixed(0)}m';
+  static double? _radiusMeters(String? value) {
+    final text = value?.trim();
+    if (text == null || text.isEmpty) return null;
+    final parsed = double.tryParse(text);
+    if (parsed == null) return null;
+    return parsed * 100;
+  }
+}
+
+class _FenceSettingRow extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Widget trailing;
+  final bool dense;
+
+  const _FenceSettingRow({
+    required this.title,
+    required this.subtitle,
+    required this.trailing,
+    this.dense = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(minHeight: dense ? 44 : 56),
+      padding: EdgeInsets.symmetric(horizontal: dense ? 0 : 16),
+      decoration: dense
+          ? null
+          : BoxDecoration(
+              color: ReplicaColors.pageBg,
+              borderRadius: BorderRadius.circular(ReplicaRadii.card),
+            ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: ReplicaColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: ReplicaColors.muted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          trailing,
+        ],
+      ),
+    );
+  }
+}
+
+class _FenceSwitchPill extends StatelessWidget {
+  final bool enabled;
+
+  const _FenceSwitchPill({required this.enabled});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = enabled ? AppColors.success : ReplicaColors.muted;
+    return Container(
+      width: 52,
+      height: 28,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: enabled ? 0.22 : 0.16),
+        borderRadius: BorderRadius.circular(ReplicaRadii.pill),
+      ),
+      child: Align(
+        alignment: enabled ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+          width: 22,
+          height: 22,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+      ),
+    );
   }
 }
 
