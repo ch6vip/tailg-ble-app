@@ -352,34 +352,40 @@ class _SegmentedTabs extends StatelessWidget {
           final active = index == i;
           final item = items[i];
           return Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => onChanged(i),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                height: 38,
-                decoration: BoxDecoration(
-                  color: active ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(ReplicaRadii.card),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      item.icon,
-                      size: 17,
-                      color: active ? Colors.white : AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      item.label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(ReplicaRadii.card),
+              child: InkWell(
+                onTap: () => onChanged(i),
+                borderRadius: BorderRadius.circular(ReplicaRadii.card),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: active ? AppColors.primary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(ReplicaRadii.card),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        item.icon,
+                        size: 17,
                         color: active ? Colors.white : AppColors.textSecondary,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 5),
+                      Text(
+                        item.label,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: active
+                              ? Colors.white
+                              : AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -482,6 +488,9 @@ class _TravelTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final records = [for (final day in cloudState.travelDays) ...day.records];
+    final dateGroups = cloudState.travelDays
+        .where((day) => day.records.isNotEmpty || day.hasData)
+        .toList(growable: false);
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView(
@@ -490,9 +499,10 @@ class _TravelTab extends StatelessWidget {
         ),
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
         children: [
-          _TravelSummaryCard(
-            cloudState: cloudState,
-            records: records,
+          _TravelMonthSelector(
+            month: cloudState.travelMonth.isEmpty
+                ? '本月轨迹'
+                : cloudState.travelMonth,
             onPreviousMonth: cloudState.travelLoading
                 ? null
                 : () => onChangeMonth(-1),
@@ -522,15 +532,16 @@ class _TravelTab extends StatelessWidget {
               subtitle: '官方接口当前月份未返回骑行轨迹。',
             )
           else
-            ...records.map(
-              (record) => Padding(
+            ...dateGroups.map(
+              (day) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: _TravelRecordCard(
-                  record: record,
-                  pointCount:
-                      cloudState.travelDetails[record.deviceTravelId]?.length,
+                child: _TravelDayCard(
+                  day: day,
+                  detailPointCounts: cloudState.travelDetails.map(
+                    (key, value) => MapEntry(key, value.length),
+                  ),
                   loading: cloudState.travelDetailLoading,
-                  onTap: () => onOpenDetail(record),
+                  onOpenDetail: onOpenDetail,
                 ),
               ),
             ),
@@ -564,6 +575,7 @@ class _FenceTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final topPadding = MediaQuery.of(context).padding.top;
     return Stack(
       children: [
         Positioned.fill(
@@ -578,7 +590,7 @@ class _FenceTab extends StatelessWidget {
         Positioned(
           left: 8,
           right: 8,
-          top: 4,
+          top: 4 + topPadding * 0.2,
           child: SizedBox(
             height: 48,
             child: Stack(
@@ -622,7 +634,7 @@ class _FenceTab extends StatelessWidget {
         Positioned(
           left: 20,
           right: 20,
-          top: 62,
+          top: 62 + topPadding * 0.2,
           child: _FloatingSegmentedTabs(index: 2, onChanged: onTabChanged),
         ),
         Positioned(
@@ -999,72 +1011,107 @@ class _LocationDetailCard extends StatelessWidget {
   }
 }
 
-class _TravelSummaryCard extends StatelessWidget {
-  final OfficialCloudState cloudState;
-  final List<OfficialTravelRecord> records;
+class _TravelMonthSelector extends StatelessWidget {
+  final String month;
   final VoidCallback? onPreviousMonth;
   final VoidCallback? onNextMonth;
 
-  const _TravelSummaryCard({
-    required this.cloudState,
-    required this.records,
+  const _TravelMonthSelector({
+    required this.month,
     required this.onPreviousMonth,
     required this.onNextMonth,
   });
 
   @override
   Widget build(BuildContext context) {
-    final mileage = records.fold<double>(0, (sum, record) {
-      return sum + (double.tryParse(record.mileage) ?? 0);
-    });
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: cardDecoration,
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: '上个月',
+            onPressed: onPreviousMonth,
+            icon: const Icon(Icons.chevron_left, size: 20),
+          ),
+          Expanded(
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    month,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: ReplicaColors.ink,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: ReplicaColors.muted,
+                    size: 18,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: '下个月',
+            onPressed: onNextMonth,
+            icon: const Icon(Icons.chevron_right, size: 20),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TravelDayCard extends StatelessWidget {
+  final OfficialTravelDay day;
+  final Map<String, int> detailPointCounts;
+  final bool loading;
+  final ValueChanged<OfficialTravelRecord> onOpenDetail;
+
+  const _TravelDayCard({
+    required this.day,
+    required this.detailPointCounts,
+    required this.loading,
+    required this.onOpenDetail,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final records = day.records;
+    final mileage = day.totalMileage.isNotEmpty
+        ? day.totalMileage
+        : _sumMileage(records);
+    final duration = day.totalTime.isNotEmpty
+        ? day.totalTime
+        : _sumDuration(records);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(15, 14, 15, 12),
       decoration: cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 40,
-            decoration: BoxDecoration(
-              color: ReplicaColors.pageBg,
-              borderRadius: BorderRadius.circular(ReplicaRadii.card),
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  tooltip: '上个月',
-                  onPressed: onPreviousMonth,
-                  icon: const Icon(Icons.chevron_left, size: 20),
-                ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      cloudState.travelMonth.isEmpty
-                          ? '本月轨迹'
-                          : cloudState.travelMonth,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: ReplicaColors.ink,
-                      ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  tooltip: '下个月',
-                  onPressed: onNextMonth,
-                  icon: const Icon(Icons.chevron_right, size: 20),
-                ),
-              ],
+          Text(
+            day.travelDate.isEmpty ? '官方轨迹' : day.travelDate,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: ReplicaColors.muted,
             ),
           ),
           const SizedBox(height: 14),
           Container(
             height: 75,
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F8F9),
+              color: const Color(0xFFEFF0F5),
               borderRadius: BorderRadius.circular(ReplicaRadii.card),
             ),
             child: Row(
@@ -1080,24 +1127,57 @@ class _TravelSummaryCard extends StatelessWidget {
                 Expanded(
                   child: _SummaryValue(
                     label: '总里程',
-                    value: mileage == 0 ? '--' : mileage.toStringAsFixed(1),
-                    unit: 'km',
+                    value: mileage.isEmpty ? '--' : mileage,
+                    unit: mileage.isEmpty ? '' : 'km',
                   ),
                 ),
                 const VerticalDivider(width: 1, color: Colors.white),
                 Expanded(
                   child: _SummaryValue(
                     label: '总时长',
-                    value: '${cloudState.travelDays.length}',
-                    unit: '天',
+                    value: duration.isEmpty ? '--' : duration,
+                    unit: '',
                   ),
                 ),
               ],
             ),
           ),
+          if (records.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ...records.map(
+              (record) => _TravelRecordCard(
+                record: record,
+                pointCount: detailPointCounts[record.deviceTravelId],
+                loading: loading,
+                onTap: () => onOpenDetail(record),
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  static String _sumMileage(List<OfficialTravelRecord> records) {
+    final total = records.fold<double>(
+      0,
+      (sum, record) => sum + (double.tryParse(record.mileage) ?? 0),
+    );
+    return total == 0 ? '' : total.toStringAsFixed(1);
+  }
+
+  static String _sumDuration(List<OfficialTravelRecord> records) {
+    var seconds = 0;
+    for (final record in records) {
+      seconds += (int.tryParse(record.hours) ?? 0) * 3600;
+      seconds += (int.tryParse(record.min) ?? 0) * 60;
+      seconds += int.tryParse(record.sec) ?? 0;
+    }
+    if (seconds <= 0) return '';
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    if (hours > 0) return '${hours}h${minutes}m';
+    return '${minutes}m';
   }
 }
 
@@ -1122,63 +1202,134 @@ class _TravelRecordCard extends StatelessWidget {
       child: InkWell(
         onTap: loading ? null : onTap,
         borderRadius: BorderRadius.circular(ReplicaRadii.card),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(ReplicaRadii.card),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0A000000),
-                blurRadius: 10,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: SizedBox(
+          height: 86,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      record.travelDate.isEmpty ? '官方轨迹' : record.travelDate,
+              const SizedBox(width: 12),
+              SizedBox(width: 76, child: _TrackTimeRail(record: record)),
+              Container(width: 1, height: 46, color: const Color(0xFFEFF0F5)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      record.mileageLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: ReplicaColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${record.averageSpeedLabel}  ·  ${record.durationLabel}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
                         color: ReplicaColors.muted,
                       ),
                     ),
-                  ),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: AppColors.textTertiary,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${record.startTime.isEmpty ? '--' : record.startTime} - ${record.endTime.isEmpty ? '--' : record.endTime}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textTertiary,
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(child: _MiniMetric('里程', record.mileageLabel)),
-                  Expanded(child: _MiniMetric('均速', record.averageSpeedLabel)),
-                  Expanded(
-                    child: _MiniMetric(
-                      '轨迹点',
-                      pointCount == null ? '点击读取' : '$pointCount',
-                    ),
+              SizedBox(
+                width: 72,
+                child: Text(
+                  pointCount == null ? '点击读取' : '$pointCount 点',
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: ReplicaColors.muted,
                   ),
-                ],
+                ),
               ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.textTertiary,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TrackTimeRail extends StatelessWidget {
+  final OfficialTravelRecord record;
+
+  const _TrackTimeRail({required this.record});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const Positioned(
+          left: 7,
+          top: 29,
+          bottom: 29,
+          child: VerticalDivider(
+            width: 1,
+            thickness: 1,
+            color: Color(0xFFEFF0F5),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          top: 20,
+          child: _TimelineDot(color: AppColors.success),
+        ),
+        Positioned(
+          left: 0,
+          bottom: 20,
+          child: _TimelineDot(color: AppColors.warning),
+        ),
+        Positioned(
+          left: 20,
+          top: 15,
+          child: Text(
+            record.startTime.isEmpty ? '--' : record.startTime,
+            style: const TextStyle(fontSize: 12, color: ReplicaColors.muted),
+          ),
+        ),
+        Positioned(
+          left: 20,
+          bottom: 15,
+          child: Text(
+            record.endTime.isEmpty ? '--' : record.endTime,
+            style: const TextStyle(fontSize: 12, color: ReplicaColors.muted),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TimelineDot extends StatelessWidget {
+  final Color color;
+
+  const _TimelineDot({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 14,
+      height: 14,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
       ),
     );
   }
@@ -1197,6 +1348,7 @@ class _TravelDetailSheet extends StatelessWidget {
       builder: (context, snapshot) {
         final state = snapshot.data ?? OfficialCloudService().state;
         final points = state.travelDetails[record.deviceTravelId] ?? const [];
+        final firstPoint = _firstResolvedPoint(points);
         return Container(
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.82,
@@ -1242,33 +1394,21 @@ class _TravelDetailSheet extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                   children: [
                     _MapPanel(
-                      location: points.isEmpty
-                          ? null
-                          : _ResolvedLocation(
-                              latitude: points.first.latitude!,
-                              longitude: points.first.longitude!,
-                              accuracy: 0,
-                              timeLabel: points.first.reportTime,
-                              address: '',
-                              source: '轨迹起点',
-                            ),
+                      location: firstPoint,
                       fence: null,
                       points: points,
                       compact: true,
                     ),
                     const SizedBox(height: 14),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: cardDecoration,
-                      child: Column(
-                        children: [
-                          _InfoRow('轨迹点', '${points.length}'),
-                          _InfoRow('里程', record.mileageLabel),
-                          _InfoRow('均速', record.averageSpeedLabel),
-                          _InfoRow('最高速度', record.maxSpeedLabel),
-                          _InfoRow('用时', record.durationLabel),
-                        ],
-                      ),
+                    _TrackDetailStats(
+                      record: record,
+                      pointCount: points.length,
+                    ),
+                    const SizedBox(height: 14),
+                    _TrackStartEndCard(
+                      record: record,
+                      firstPoint: firstPoint,
+                      lastPoint: _lastResolvedPoint(points),
                     ),
                     const SizedBox(height: 14),
                     if (points.isEmpty)
@@ -1288,6 +1428,206 @@ class _TravelDetailSheet extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  static _ResolvedLocation? _firstResolvedPoint(
+    List<OfficialTravelPoint> points,
+  ) {
+    for (final point in points) {
+      final latitude = point.latitude;
+      final longitude = point.longitude;
+      if (latitude == null || longitude == null) continue;
+      if (latitude == 0 && longitude == 0) continue;
+      return _ResolvedLocation(
+        latitude: latitude,
+        longitude: longitude,
+        accuracy: 0,
+        timeLabel: point.reportTime,
+        address: '',
+        source: '轨迹起点',
+      );
+    }
+    return null;
+  }
+
+  static _ResolvedLocation? _lastResolvedPoint(
+    List<OfficialTravelPoint> points,
+  ) {
+    for (final point in points.reversed) {
+      final latitude = point.latitude;
+      final longitude = point.longitude;
+      if (latitude == null || longitude == null) continue;
+      if (latitude == 0 && longitude == 0) continue;
+      return _ResolvedLocation(
+        latitude: latitude,
+        longitude: longitude,
+        accuracy: 0,
+        timeLabel: point.reportTime,
+        address: '',
+        source: '轨迹终点',
+      );
+    }
+    return null;
+  }
+}
+
+class _TrackDetailStats extends StatelessWidget {
+  final OfficialTravelRecord record;
+  final int pointCount;
+
+  const _TrackDetailStats({required this.record, required this.pointCount});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
+      decoration: cardDecoration,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _DetailMetric(label: '里程', value: record.mileageLabel),
+              ),
+              Expanded(
+                child: _DetailMetric(label: '时长', value: record.durationLabel),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _DetailMetric(label: '极速', value: record.maxSpeedLabel),
+              ),
+              Expanded(
+                child: _DetailMetric(
+                  label: '均速',
+                  value: record.averageSpeedLabel,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          _InfoRow('轨迹点', '$pointCount'),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailMetric extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DetailMetric({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: ReplicaColors.muted),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: ReplicaColors.ink,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TrackStartEndCard extends StatelessWidget {
+  final OfficialTravelRecord record;
+  final _ResolvedLocation? firstPoint;
+  final _ResolvedLocation? lastPoint;
+
+  const _TrackStartEndCard({
+    required this.record,
+    required this.firstPoint,
+    required this.lastPoint,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      decoration: cardDecoration,
+      child: Column(
+        children: [
+          _TrackEndpointRow(
+            color: AppColors.success,
+            title: _endpointTitle(firstPoint, '起点'),
+            time: record.startTime.isEmpty ? '--' : record.startTime,
+          ),
+          Container(
+            height: 42,
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.only(left: 7),
+            child: Container(width: 1, color: const Color(0xFFEFF0F5)),
+          ),
+          _TrackEndpointRow(
+            color: AppColors.warning,
+            title: _endpointTitle(lastPoint, '终点'),
+            time: record.endTime.isEmpty ? '--' : record.endTime,
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _endpointTitle(_ResolvedLocation? location, String fallback) {
+    if (location == null) return fallback;
+    return location.coordinateText;
+  }
+}
+
+class _TrackEndpointRow extends StatelessWidget {
+  final Color color;
+  final String title;
+  final String time;
+
+  const _TrackEndpointRow({
+    required this.color,
+    required this.title,
+    required this.time,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _TimelineDot(color: color),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: ReplicaColors.ink,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          time,
+          style: const TextStyle(fontSize: 12, color: ReplicaColors.muted),
+        ),
+      ],
     );
   }
 }
@@ -1328,9 +1668,9 @@ class _OfficialFenceSheet extends StatelessWidget {
         : '登录后读取官方围栏';
 
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 14, 20, 18 + bottomPadding),
+      padding: EdgeInsets.fromLTRB(20, 18, 20, 18 + bottomPadding),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: Color(0xFFF7F7F7),
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(ReplicaRadii.sheet),
         ),
@@ -1363,16 +1703,20 @@ class _OfficialFenceSheet extends StatelessWidget {
                 color: ReplicaColors.muted,
               ),
               const Spacer(),
-              IconButton(
-                tooltip: '刷新围栏',
-                onPressed: loading ? null : onRefresh,
-                icon: loading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.refresh, size: 20),
+              Material(
+                color: Colors.white,
+                shape: const CircleBorder(),
+                child: IconButton(
+                  tooltip: '刷新围栏',
+                  onPressed: loading ? null : onRefresh,
+                  icon: loading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.refresh, size: 20),
+                ),
               ),
             ],
           ),
@@ -1384,9 +1728,9 @@ class _OfficialFenceSheet extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
             decoration: BoxDecoration(
-              color: ReplicaColors.pageBg,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(ReplicaRadii.card),
             ),
             child: Column(
@@ -1477,18 +1821,21 @@ class _OfficialFenceSheet extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             height: 48,
-            child: FilledButton(
-              onPressed: null,
-              style: FilledButton.styleFrom(
-                disabledBackgroundColor: ReplicaColors.blue.withValues(
-                  alpha: 0.45,
-                ),
-                disabledForegroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(ReplicaRadii.card),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: ReplicaColors.blue.withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(ReplicaRadii.card),
+              ),
+              child: const Center(
+                child: Text(
+                  '保存',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-              child: const Text('只读展示'),
             ),
           ),
         ],
@@ -1526,7 +1873,7 @@ class _FenceSettingRow extends StatelessWidget {
       decoration: dense
           ? null
           : BoxDecoration(
-              color: ReplicaColors.pageBg,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(ReplicaRadii.card),
             ),
       child: Row(
@@ -1630,37 +1977,6 @@ class _InfoRow extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _MiniMetric extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _MiniMetric(this.label, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
-        ),
-      ],
     );
   }
 }

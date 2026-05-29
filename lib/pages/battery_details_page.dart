@@ -203,24 +203,11 @@ class _BatteryHero extends StatelessWidget {
                     alignment: Alignment.center,
                     children: [
                       Container(
-                        width: 146,
-                        height: 146,
+                        width: 188,
+                        height: 104,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(28),
                           color: Colors.white.withValues(alpha: 0.56),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 126,
-                        height: 126,
-                        child: CircularProgressIndicator(
-                          value: percent == null
-                              ? 0
-                              : percent.clamp(0, 100) / 100,
-                          strokeWidth: 10,
-                          backgroundColor: Colors.white,
-                          color: color,
-                          strokeCap: StrokeCap.round,
                         ),
                       ),
                       _BatteryGlyph(percent: percent, color: color),
@@ -319,52 +306,87 @@ class _BatteryGlyph extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final value = percent == null ? 0.0 : percent!.clamp(0, 100) / 100;
-    return Container(
-      width: 74,
-      height: 42,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: color, width: 2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            right: -7,
-            top: 12,
-            child: Container(
-              width: 5,
-              height: 16,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: const BorderRadius.horizontal(
-                  right: Radius.circular(3),
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: FractionallySizedBox(
-                  widthFactor: value,
-                  heightFactor: 1,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.82),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+    return CustomPaint(
+      size: const Size(148, 74),
+      painter: _BatteryReplicaPainter(value: value, color: color),
     );
+  }
+}
+
+class _BatteryReplicaPainter extends CustomPainter {
+  final double value;
+  final Color color;
+
+  const _BatteryReplicaPainter({required this.value, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final shell = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 8, size.width - 12, size.height - 16),
+      const Radius.circular(18),
+    );
+    final cap = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        size.width - 12,
+        size.height * 0.34,
+        12,
+        size.height * 0.32,
+      ),
+      const Radius.circular(6),
+    );
+    canvas.drawRRect(
+      shell.shift(const Offset(0, 4)),
+      Paint()
+        ..color = const Color(0x22000000)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+    canvas.drawRRect(
+      shell,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.white, Color(0xFFEFF3FA)],
+        ).createShader(shell.outerRect),
+    );
+    canvas.drawRRect(
+      shell,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = Colors.white,
+    );
+    canvas.drawRRect(cap, Paint()..color = Colors.white.withValues(alpha: 0.9));
+
+    final inner = shell.deflate(10);
+    const segments = 5;
+    const gap = 5.0;
+    final segmentWidth = (inner.width - gap * (segments - 1)) / segments;
+    final activeSegments = (value * segments).ceil();
+    for (var i = 0; i < segments; i++) {
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          inner.left + i * (segmentWidth + gap),
+          inner.top,
+          segmentWidth,
+          inner.height,
+        ),
+        const Radius.circular(8),
+      );
+      final active = i < activeSegments && value > 0;
+      canvas.drawRRect(
+        rect,
+        Paint()
+          ..color = active
+              ? color.withValues(alpha: i == activeSegments - 1 ? 0.78 : 0.94)
+              : const Color(0xFFE1E5EC),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BatteryReplicaPainter oldDelegate) {
+    return oldDelegate.value != value || oldDelegate.color != color;
   }
 }
 

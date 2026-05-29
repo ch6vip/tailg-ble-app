@@ -22,10 +22,7 @@ import 'vehicle_settings_page.dart';
 
 const _pageBg = ReplicaColors.pageBg;
 const _kmPerPercent = 0.65;
-const _phoneControlPanelBg = Colors.white;
-const _phoneControlPanelDown = Color(0xFFF3F5F8);
 const _phoneControlItemBg = Color(0xFFF7F8FA);
-const _phoneControlItemPressed = Color(0xFFEAF0F8);
 const _phoneControlPrimary = ReplicaColors.blue;
 const _phoneControlPrimaryPressed = Color(0x225596FF);
 const _phoneControlRadius = 8.0;
@@ -99,14 +96,7 @@ class _HomeTopSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFFFFF), Color(0xFFF2F6FF), ReplicaColors.pageBg],
-          stops: [0, 0.58, 1],
-        ),
-      ),
+      decoration: const BoxDecoration(color: ReplicaColors.pageBg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -538,15 +528,31 @@ class _BikeImage extends StatelessWidget {
                 ? bike.isLocked
                 : cloudVehicle?.isLocked ?? true;
             return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
               child: Container(
-                height: 186,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.34),
-                  borderRadius: BorderRadius.circular(ReplicaRadii.card),
-                ),
+                height: 200,
+                decoration: const BoxDecoration(color: Colors.transparent),
                 child: Stack(
                   children: [
+                    Positioned(
+                      left: -18,
+                      right: -18,
+                      top: 10,
+                      bottom: 8,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.52),
+                              const Color(0xFFE7EAF1).withValues(alpha: 0.0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                     Positioned.fill(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(ReplicaRadii.card),
@@ -809,39 +815,46 @@ class _BikeModelPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final centerY = size.height * 0.56;
-    final front = Offset(size.width * 0.72, centerY + 28);
-    final rear = Offset(size.width * 0.30, centerY + 28);
+    final front = Offset(size.width * 0.75, centerY + 34);
+    final rear = Offset(size.width * 0.27, centerY + 34);
     final bodyPaint = Paint()
-      ..color = const Color(0xFF2C3038)
+      ..color = const Color(0xFF2A2D35)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 10
+      ..strokeWidth = 12
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     final accentPaint = Paint()
       ..color = accent.withValues(alpha: isPowerOn ? 0.88 : 0.42)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 7
+      ..strokeWidth = 8
       ..strokeCap = StrokeCap.round;
     final softPaint = Paint()
-      ..color = accent.withValues(alpha: 0.08)
+      ..color = const Color(0xFFDDE3EC).withValues(alpha: 0.35)
       ..style = PaintingStyle.fill;
 
-    canvas.drawCircle(Offset(size.width * 0.50, centerY + 12), 96, softPaint);
-    _drawWheel(canvas, rear, 34, isLocked);
-    _drawWheel(canvas, front, 34, isLocked);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.50, centerY + 52),
+        width: size.width * 0.82,
+        height: 32,
+      ),
+      softPaint,
+    );
+    _drawWheel(canvas, rear, 38, isLocked);
+    _drawWheel(canvas, front, 38, isLocked);
 
     final frame = Path()
       ..moveTo(rear.dx, rear.dy)
-      ..lineTo(size.width * 0.43, centerY - 12)
-      ..lineTo(size.width * 0.58, centerY + 28)
+      ..lineTo(size.width * 0.42, centerY - 16)
+      ..lineTo(size.width * 0.59, centerY + 32)
       ..lineTo(front.dx, front.dy)
-      ..moveTo(size.width * 0.43, centerY - 12)
-      ..lineTo(size.width * 0.54, centerY - 46)
-      ..lineTo(size.width * 0.66, centerY - 18);
+      ..moveTo(size.width * 0.42, centerY - 16)
+      ..lineTo(size.width * 0.54, centerY - 52)
+      ..lineTo(size.width * 0.67, centerY - 22);
     canvas.drawPath(frame, bodyPaint);
 
     final battery = RRect.fromRectAndRadius(
-      Rect.fromLTWH(size.width * 0.43, centerY - 4, size.width * 0.18, 32),
+      Rect.fromLTWH(size.width * 0.42, centerY - 2, size.width * 0.20, 34),
       const Radius.circular(12),
     );
     canvas.drawRRect(battery, Paint()..color = const Color(0xFF121418));
@@ -1143,138 +1156,81 @@ class _ControlAreaState extends State<_ControlArea> {
 
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: _phoneControlPanelBg,
-                  borderRadius: BorderRadius.circular(_phoneControlRadius),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x0C000000),
-                      blurRadius: 12,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _ControlPanelHeader(
-                      enabled: enabled,
-                      isLocked: isLocked,
-                      isPowerOn: isPowerOn,
-                    ),
-                    const SizedBox(height: 12),
-                    _ControlChannelBar(
-                      channel: cloudState.controlChannel,
-                      canUseBle: canUseBle,
-                      canUseCloud: canUseCloud,
-                      vehicleName: cloudVehicle?.displayName,
-                      disabledReason: enabled ? null : disabledReason,
-                    ),
-                    const SizedBox(height: 10),
-                    _CurrentGearStrip(enabled: enabled),
-                    const SizedBox(height: 14),
-                    Row(
+              child: Column(
+                children: [
+                  _ControlTipBar(
+                    enabled: enabled,
+                    isLocked: isLocked,
+                    isPowerOn: isPowerOn,
+                    channel: cloudState.controlChannel,
+                    canUseBle: canUseBle,
+                    canUseCloud: canUseCloud,
+                    vehicleName: cloudVehicle?.displayName,
+                    disabledReason: enabled ? null : disabledReason,
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 204,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(
-                          child: _ControlTile(
-                            icon: isLocked
-                                ? Icons.lock_open
-                                : Icons.lock_outline,
-                            label: lockLabel,
+                        SizedBox(
+                          width: 90,
+                          child: _OfficialQuickControlCard(
+                            firstQuick: firstQuick,
+                            secondQuick: secondQuick,
+                            firstActive: firstQuickActive,
+                            secondActive: secondQuickActive,
                             enabled: enabled,
-                            active: _activeControlId == 'fixedLock',
-                            loading: _activeControlId == 'fixedLock',
                             disabledReason: disabledReason,
-                            statusText: isLocked ? '当前设防' : '当前解锁',
-                            onTap: () => _send(
-                              isLocked ? CommandCode.unlock : CommandCode.lock,
-                              actionId: 'fixedLock',
-                            ),
+                            onFirstTap: () =>
+                                _runQuickAction(firstQuick, enabled),
+                            onSecondTap: () =>
+                                _runQuickAction(secondQuick, enabled),
+                            onEditTap: _editQuickControls,
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: _ControlTile(
-                            icon: Icons.volume_up_outlined,
-                            label: '寻车',
+                          child: _OfficialMainControlCard(
+                            powerLabel: powerLabel,
+                            powerHint: isPowerOn ? '左滑关闭' : '右滑启动',
+                            powerIcon: isPowerOn
+                                ? Icons.power_off
+                                : Icons.power_settings_new,
+                            reverseSlide: isPowerOn,
+                            powerLoading: _activeControlId == 'slidePower',
+                            powerLoadingLabel: isPowerOn ? '正在断电' : '正在通电',
+                            powerColor: primaryPowerColor,
                             enabled: enabled,
-                            active: _activeControlId == 'fixedFind',
-                            loading: _activeControlId == 'fixedFind',
                             disabledReason: disabledReason,
-                            statusText: '鸣笛定位',
-                            onTap: () =>
+                            onDisabledTap: () =>
+                                _showUnavailableSnack(disabledReason),
+                            onPowerSlideComplete: () => _send(
+                              isPowerOn
+                                  ? CommandCode.powerOff
+                                  : CommandCode.powerOn,
+                              actionId: 'slidePower',
+                            ),
+                            lockIcon: isLocked
+                                ? Icons.lock_open
+                                : Icons.lock_outline,
+                            lockLabel: lockLabel,
+                            lockStatus: isLocked ? '当前设防' : '当前解锁',
+                            lockActive: _activeControlId == 'fixedLock',
+                            onLockTap: () => _send(
+                              isLocked ? CommandCode.unlock : CommandCode.lock,
+                              actionId: 'fixedLock',
+                            ),
+                            findActive: _activeControlId == 'fixedFind',
+                            onFindTap: () =>
                                 _send(CommandCode.find, actionId: 'fixedFind'),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    _PrimaryPowerControl(
-                      label: powerLabel,
-                      hint: isPowerOn ? '左滑关闭车辆电源' : '右滑开启车辆电源',
-                      icon: isPowerOn
-                          ? Icons.power_off
-                          : Icons.power_settings_new,
-                      reverseSlide: isPowerOn,
-                      loading: _activeControlId == 'slidePower',
-                      loadingLabel: isPowerOn ? '正在断电' : '正在通电',
-                      color: primaryPowerColor,
-                      enabled: enabled,
-                      onDisabledTap: () =>
-                          _showUnavailableSnack(disabledReason),
-                      onSlideComplete: () => _send(
-                        isPowerOn ? CommandCode.powerOff : CommandCode.powerOn,
-                        actionId: 'slidePower',
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _ControlTile(
-                            icon: firstQuick.icon,
-                            label: firstQuick.label,
-                            enabled: firstQuick.command == null || enabled,
-                            active: firstQuickActive,
-                            loading: firstQuickActive,
-                            disabledReason: disabledReason,
-                            compact: true,
-                            onTap: () => _runQuickAction(firstQuick, enabled),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Stack(
-                            children: [
-                              _ControlTile(
-                                icon: secondQuick.icon,
-                                label: secondQuick.label,
-                                enabled: secondQuick.command == null || enabled,
-                                active: secondQuickActive,
-                                loading: secondQuickActive,
-                                disabledReason: disabledReason,
-                                compact: true,
-                                onTap: () =>
-                                    _runQuickAction(secondQuick, enabled),
-                              ),
-                              Positioned(
-                                right: 4,
-                                bottom: 4,
-                                child: _QuickEditButton(
-                                  onTap: _editQuickControls,
-                                  dark: true,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },
@@ -1284,14 +1240,20 @@ class _ControlAreaState extends State<_ControlArea> {
   }
 }
 
-class _ControlChannelBar extends StatelessWidget {
+class _ControlTipBar extends StatelessWidget {
+  final bool enabled;
+  final bool isLocked;
+  final bool isPowerOn;
   final OfficialControlChannel channel;
   final bool canUseBle;
   final bool canUseCloud;
   final String? vehicleName;
   final String? disabledReason;
 
-  const _ControlChannelBar({
+  const _ControlTipBar({
+    required this.enabled,
+    required this.isLocked,
+    required this.isPowerOn,
     required this.channel,
     required this.canUseBle,
     required this.canUseCloud,
@@ -1303,135 +1265,396 @@ class _ControlChannelBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final effective = switch (channel) {
       OfficialControlChannel.ble => 'BLE',
-      OfficialControlChannel.officialCloud => '官方云端',
+      OfficialControlChannel.officialCloud => '云端',
       OfficialControlChannel.automatic =>
         canUseBle
-            ? '自动：BLE'
+            ? 'BLE'
             : canUseCloud
-            ? '自动：官方云端'
-            : '自动：待连接',
+            ? '云端'
+            : '待连接',
     };
-    final color = canUseBle || canUseCloud
-        ? AppColors.primary
-        : AppColors.textTertiary;
-    final subtitle = disabledReason != null
-        ? disabledReason!
-        : canUseCloud
-        ? vehicleName ?? '官方车辆已选择'
-        : canUseBle
-        ? '本地蓝牙已就绪'
-        : '连接 BLE 或登录官方账号后可控车';
-
-    return Material(
-      color: color.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const OfficialCloudPage()),
-        ),
-        borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              Icon(Icons.cloud_sync_outlined, color: color, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '控车通道 · $effective',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: color,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textTertiary,
-                size: 18,
+    final status = enabled
+        ? '${isLocked ? '设防' : '解锁'} · ${isPowerOn ? '已通电' : '未通电'}'
+        : disabledReason ?? '请连接车辆后控车';
+    return Row(
+      children: [
+        Container(
+          width: 42,
+          height: 42,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 10,
+                offset: Offset(0, 2),
               ),
             ],
           ),
+          child: const Icon(
+            Icons.smart_toy_outlined,
+            size: 22,
+            color: ReplicaColors.blue,
+          ),
         ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(30),
+            child: InkWell(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const OfficialCloudPage()),
+              ),
+              borderRadius: BorderRadius.circular(30),
+              child: Container(
+                height: 38,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '$status · $effective',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: ReplicaColors.muted,
+                        ),
+                      ),
+                    ),
+                    if (vehicleName != null && canUseCloud) ...[
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          vehicleName!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: ReplicaColors.subtle,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Container(
+          width: 42,
+          height: 42,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            enabled ? Icons.touch_app_outlined : Icons.link_off,
+            size: 21,
+            color: enabled ? ReplicaColors.blue : ReplicaColors.muted,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OfficialQuickControlCard extends StatelessWidget {
+  final _QuickControlSpec firstQuick;
+  final _QuickControlSpec secondQuick;
+  final bool firstActive;
+  final bool secondActive;
+  final bool enabled;
+  final String disabledReason;
+  final VoidCallback onFirstTap;
+  final VoidCallback onSecondTap;
+  final VoidCallback onEditTap;
+
+  const _OfficialQuickControlCard({
+    required this.firstQuick,
+    required this.secondQuick,
+    required this.firstActive,
+    required this.secondActive,
+    required this.enabled,
+    required this.disabledReason,
+    required this.onFirstTap,
+    required this.onSecondTap,
+    required this.onEditTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: _officialControlCardDecoration,
+      child: Column(
+        children: [
+          Expanded(
+            child: _OfficialSmallControlButton(
+              icon: firstQuick.icon,
+              label: firstQuick.label,
+              enabled: firstQuick.command == null || enabled,
+              active: firstActive,
+              loading: firstActive,
+              disabledReason: disabledReason,
+              onTap: onFirstTap,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: _OfficialSmallControlButton(
+                    icon: secondQuick.icon,
+                    label: secondQuick.label,
+                    enabled: secondQuick.command == null || enabled,
+                    active: secondActive,
+                    loading: secondActive,
+                    disabledReason: disabledReason,
+                    onTap: onSecondTap,
+                  ),
+                ),
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: _QuickEditButton(onTap: onEditTap),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _ControlPanelHeader extends StatelessWidget {
+class _OfficialMainControlCard extends StatelessWidget {
+  final String powerLabel;
+  final String powerHint;
+  final IconData powerIcon;
+  final bool reverseSlide;
+  final bool powerLoading;
+  final String powerLoadingLabel;
+  final Color powerColor;
   final bool enabled;
-  final bool isLocked;
-  final bool isPowerOn;
+  final String disabledReason;
+  final VoidCallback onDisabledTap;
+  final VoidCallback onPowerSlideComplete;
+  final IconData lockIcon;
+  final String lockLabel;
+  final String lockStatus;
+  final bool lockActive;
+  final VoidCallback onLockTap;
+  final bool findActive;
+  final VoidCallback onFindTap;
 
-  const _ControlPanelHeader({
+  const _OfficialMainControlCard({
+    required this.powerLabel,
+    required this.powerHint,
+    required this.powerIcon,
+    required this.reverseSlide,
+    required this.powerLoading,
+    required this.powerLoadingLabel,
+    required this.powerColor,
     required this.enabled,
-    required this.isLocked,
-    required this.isPowerOn,
+    required this.disabledReason,
+    required this.onDisabledTap,
+    required this.onPowerSlideComplete,
+    required this.lockIcon,
+    required this.lockLabel,
+    required this.lockStatus,
+    required this.lockActive,
+    required this.onLockTap,
+    required this.findActive,
+    required this.onFindTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final stateText = enabled
-        ? [isLocked ? '已设防' : '已解锁', isPowerOn ? '已通电' : '未通电'].join(' · ')
-        : '待连接';
-    return Row(
-      children: [
-        const Text(
-          '手机控车',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            color: ReplicaColors.ink,
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: _officialControlCardDecoration,
+      child: Column(
+        children: [
+          _PrimaryPowerControl(
+            label: powerLabel,
+            hint: powerHint,
+            icon: powerIcon,
+            reverseSlide: reverseSlide,
+            loading: powerLoading,
+            loadingLabel: powerLoadingLabel,
+            color: powerColor,
+            enabled: enabled,
+            onDisabledTap: onDisabledTap,
+            onSlideComplete: onPowerSlideComplete,
           ),
-        ),
-        const Spacer(),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(_phoneControlRadius),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+          const SizedBox(height: 10),
+          Row(
             children: [
-              Icon(
-                enabled ? Icons.radio_button_checked : Icons.radio_button_off,
-                size: 12,
-                color: enabled ? _phoneControlPrimary : ReplicaColors.muted,
+              Expanded(
+                child: _OfficialSmallControlButton(
+                  icon: Icons.volume_up_outlined,
+                  label: '寻车',
+                  subLabel: '鸣笛定位',
+                  enabled: enabled,
+                  active: findActive,
+                  loading: findActive,
+                  disabledReason: disabledReason,
+                  onTap: onFindTap,
+                ),
               ),
-              const SizedBox(width: 6),
-              Text(
-                stateText,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: enabled
-                      ? ReplicaColors.secondary
-                      : ReplicaColors.muted,
+              const SizedBox(width: 10),
+              Expanded(
+                child: _OfficialSmallControlButton(
+                  icon: lockIcon,
+                  label: lockLabel,
+                  subLabel: lockStatus,
+                  enabled: enabled,
+                  active: lockActive,
+                  loading: lockActive,
+                  disabledReason: disabledReason,
+                  onTap: onLockTap,
                 ),
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+BoxDecoration get _officialControlCardDecoration => BoxDecoration(
+  color: Colors.white,
+  borderRadius: BorderRadius.circular(_phoneControlRadius),
+  border: Border.all(color: Colors.white),
+  boxShadow: const [
+    BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 2)),
+  ],
+);
+
+class _OfficialSmallControlButton extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final String? subLabel;
+  final bool enabled;
+  final bool active;
+  final bool loading;
+  final String disabledReason;
+  final VoidCallback onTap;
+
+  const _OfficialSmallControlButton({
+    required this.icon,
+    required this.label,
+    this.subLabel,
+    required this.enabled,
+    required this.active,
+    required this.loading,
+    required this.disabledReason,
+    required this.onTap,
+  });
+
+  @override
+  State<_OfficialSmallControlButton> createState() =>
+      _OfficialSmallControlButtonState();
+}
+
+class _OfficialSmallControlButtonState
+    extends State<_OfficialSmallControlButton> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (!mounted || _pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  void _showDisabledReason() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(widget.disabledReason),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final interactive = widget.enabled && !widget.loading;
+    final color = widget.active ? ReplicaColors.blue : ReplicaColors.muted;
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 120),
+      scale: _pressed ? 0.96 : 1,
+      child: Material(
+        color: widget.active
+            ? ReplicaColors.blue.withValues(alpha: 0.1)
+            : const Color(0xFFF0F0F5),
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: widget.loading
+              ? null
+              : interactive
+              ? () {
+                  _setPressed(false);
+                  HapticFeedback.mediumImpact();
+                  widget.onTap();
+                }
+              : _showDisabledReason,
+          onTapDown: interactive ? (_) => _setPressed(true) : null,
+          onTapUp: interactive ? (_) => _setPressed(false) : null,
+          onTapCancel: interactive ? () => _setPressed(false) : null,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (widget.loading)
+                  const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2.2),
+                  )
+                else
+                  Icon(widget.icon, color: color, size: 26),
+                const SizedBox(height: 6),
+                Text(
+                  widget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: widget.enabled ? ReplicaColors.muted : Colors.grey,
+                  ),
+                ),
+                if (widget.subLabel != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.subLabel!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: ReplicaColors.subtle,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -1475,23 +1698,24 @@ class _PrimaryPowerControl extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 58,
-            height: 58,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               color: enabled ? color : _phoneControlPrimaryPressed,
               borderRadius: BorderRadius.circular(_phoneControlRadius),
             ),
-            child: Icon(icon, color: Colors.white, size: 28),
+            child: Icon(icon, color: Colors.white, size: 25),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.w800,
                     color: ReplicaColors.ink,
                   ),
@@ -1509,9 +1733,9 @@ class _PrimaryPowerControl extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 144,
+          const SizedBox(width: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 104, maxWidth: 132),
             child: SlideToAction(
               label: reverseSlide ? '左滑' : '右滑',
               icon: icon,
@@ -1526,68 +1750,6 @@ class _PrimaryPowerControl extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _CurrentGearStrip extends StatelessWidget {
-  final bool enabled;
-
-  const _CurrentGearStrip({required this.enabled});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<RidingMode>(
-      stream: connectionManager.ridingModeStream,
-      initialData: connectionManager.ridingMode,
-      builder: (context, snapshot) {
-        final mode = snapshot.data ?? RidingMode.standard;
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF7F8FA),
-            borderRadius: BorderRadius.circular(_phoneControlRadius),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              const Text(
-                '当前档位',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: ReplicaColors.muted,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: LinearProgressIndicator(
-                    minHeight: 4,
-                    value: enabled
-                        ? (mode.index + 1) / RidingMode.values.length
-                        : 0,
-                    backgroundColor: const Color(0xFFE5E5E5),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      enabled ? _phoneControlPrimary : Colors.white24,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                enabled ? mode.label : '未连接',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: enabled ? ReplicaColors.ink : ReplicaColors.muted,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
@@ -1887,192 +2049,13 @@ class _QuickEditOption extends StatelessWidget {
   }
 }
 
-class _ControlTile extends StatefulWidget {
-  final IconData icon;
-  final String label;
-  final bool enabled;
-  final bool active;
-  final bool loading;
-  final bool compact;
-  final String? statusText;
-  final String? disabledReason;
-  final VoidCallback onTap;
-
-  const _ControlTile({
-    required this.icon,
-    required this.label,
-    required this.enabled,
-    this.active = false,
-    required this.loading,
-    this.compact = false,
-    this.statusText,
-    this.disabledReason,
-    required this.onTap,
-  });
-
-  @override
-  State<_ControlTile> createState() => _ControlTileState();
-}
-
-class _ControlTileState extends State<_ControlTile> {
-  bool _pressed = false;
-
-  void _setPressed(bool value) {
-    if (!mounted || _pressed == value) return;
-    setState(() => _pressed = value);
-  }
-
-  void _showDisabledReason() {
-    final reason = widget.disabledReason;
-    if (reason == null || reason.isEmpty) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(reason), duration: const Duration(seconds: 2)),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final interactive = widget.enabled && !widget.loading;
-    final iconColor = widget.enabled
-        ? (widget.active ? _phoneControlPrimary : ReplicaColors.secondary)
-        : ReplicaColors.muted;
-    final background = widget.active
-        ? _phoneControlPrimary.withValues(alpha: 0.14)
-        : _pressed
-        ? _phoneControlItemPressed
-        : widget.enabled
-        ? _phoneControlItemBg
-        : _phoneControlPanelDown;
-    final radius = BorderRadius.circular(_phoneControlRadius);
-    return AnimatedScale(
-      duration: const Duration(milliseconds: 120),
-      curve: Curves.easeOut,
-      scale: _pressed ? 0.96 : 1,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOut,
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: radius,
-          border: Border.all(
-            color: widget.active
-                ? _phoneControlPrimary.withValues(alpha: 0.28)
-                : AppColors.border,
-            width: 1,
-          ),
-          boxShadow: widget.active
-              ? [
-                  BoxShadow(
-                    color: _phoneControlPrimary.withValues(alpha: 0.12),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: radius,
-          child: InkWell(
-            onTap: widget.loading
-                ? null
-                : interactive
-                ? () {
-                    _setPressed(false);
-                    HapticFeedback.mediumImpact();
-                    widget.onTap();
-                  }
-                : _showDisabledReason,
-            onTapDown: interactive ? (_) => _setPressed(true) : null,
-            onTapCancel: interactive ? () => _setPressed(false) : null,
-            onTapUp: interactive ? (_) => _setPressed(false) : null,
-            borderRadius: radius,
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: widget.compact ? 10 : 12,
-                vertical: widget.compact ? 12 : 14,
-              ),
-              child: Row(
-                children: [
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
-                    child: widget.loading
-                        ? SizedBox(
-                            key: const ValueKey('loading'),
-                            width: widget.compact ? 20 : 24,
-                            height: widget.compact ? 20 : 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.4,
-                              color: _phoneControlPrimary,
-                            ),
-                          )
-                        : Icon(
-                            widget.icon,
-                            key: ValueKey(widget.icon),
-                            color: iconColor,
-                            size: widget.compact ? 22 : 26,
-                          ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: widget.compact ? 13 : 15,
-                            height: 1.1,
-                            color: widget.enabled
-                                ? (widget.active
-                                      ? _phoneControlPrimary
-                                      : ReplicaColors.ink)
-                                : ReplicaColors.muted,
-                            fontWeight: widget.active
-                                ? FontWeight.w800
-                                : FontWeight.w700,
-                          ),
-                        ),
-                        if (widget.statusText != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            widget.statusText!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: widget.enabled
-                                  ? ReplicaColors.muted
-                                  : AppColors.textTertiary,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _QuickEditButton extends StatelessWidget {
   final VoidCallback onTap;
-  final bool dark;
 
-  const _QuickEditButton({required this.onTap, this.dark = false});
+  const _QuickEditButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final background = dark ? Colors.white24 : AppColors.primary;
-    final foreground = dark ? Colors.white : Colors.white;
     return Material(
       color: Colors.transparent,
       shape: const CircleBorder(),
@@ -2085,13 +2068,13 @@ class _QuickEditButton extends StatelessWidget {
           child: Center(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: background,
+                color: AppColors.primary,
                 shape: BoxShape.circle,
               ),
               child: SizedBox(
                 width: 28,
                 height: 28,
-                child: Icon(Icons.edit, color: foreground, size: 16),
+                child: Icon(Icons.edit, color: Colors.white, size: 16),
               ),
             ),
           ),
@@ -2195,7 +2178,7 @@ class _HomeQuickSection extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                '快捷功能',
+                '功能设置',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
@@ -2205,15 +2188,15 @@ class _HomeQuickSection extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             SizedBox(
-              height: 86,
+              height: 92,
               child: ListView.separated(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
                 itemCount: items.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                separatorBuilder: (_, __) => const SizedBox(width: 6),
                 itemBuilder: (context, index) => SizedBox(
-                  width: 76,
+                  width: 86,
                   child: _HomeQuickTile(item: items[index]),
                 ),
               ),
@@ -2273,18 +2256,18 @@ class _HomeQuickTile extends StatelessWidget {
         },
         borderRadius: BorderRadius.circular(ReplicaRadii.card),
         child: SizedBox(
-          height: 86,
+          height: 92,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
-                  color: item.accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(ReplicaRadii.card),
+                  color: const Color(0xFFF0F0F5),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(item.icon, size: 22, color: item.accent),
+                child: Icon(item.icon, size: 23, color: item.accent),
               ),
               const SizedBox(height: 8),
               Text(
