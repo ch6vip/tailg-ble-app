@@ -13,6 +13,9 @@ abstract final class AppColors {
   static const danger = Color(0xFFFF5252);
   static const info = Color(0xFF2196F3);
   static const navInactive = Color(0xFFBDBDBD);
+
+  /// 官方品牌红，仅复刻保真场景使用。
+  static const brandRed = Color(0xFFF11C2C);
 }
 
 abstract final class ReplicaColors {
@@ -37,10 +40,28 @@ abstract final class ReplicaRadii {
 }
 
 abstract final class AppRadii {
+  static const xs = 6.0;
   static const sm = 10.0;
   static const md = 14.0;
   static const lg = 20.0;
-  static const pill = 28.0;
+  static const card = 12.0;
+  static const tile = 8.0;
+  static const sheet = 18.0;
+  static const pill = 999.0;
+}
+
+abstract final class AppShadows {
+  static const card = Color(0x0A000000);
+  static const cardBlur = 10.0;
+  static const cardOffsetY = 2.0;
+
+  static const List<BoxShadow> cardShadow = [
+    BoxShadow(
+      color: card,
+      blurRadius: cardBlur,
+      offset: Offset(0, cardOffsetY),
+    ),
+  ];
 }
 
 abstract final class AppSpacing {
@@ -76,7 +97,5 @@ abstract final class AppTextStyles {
 const cardDecoration = BoxDecoration(
   color: Colors.white,
   borderRadius: BorderRadius.all(Radius.circular(ReplicaRadii.card)),
-  boxShadow: [
-    BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 2)),
-  ],
+  boxShadow: AppShadows.cardShadow,
 );
