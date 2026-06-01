@@ -6,9 +6,6 @@ import '../ble/connection_manager.dart' as ble;
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
-const _textPrimary = Color(0xFF1A1A2E);
-const _textTertiary = Color(0xFF999999);
-
 class CloudTokenPage extends StatefulWidget {
   const CloudTokenPage({super.key});
 
@@ -92,7 +89,10 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                 children: [
                   const Text(
                     '当前连接 Token',
-                    style: TextStyle(fontSize: 13, color: _textTertiary),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textTertiary,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -105,7 +105,9 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                           style: TextStyle(
                             fontSize: 13,
                             fontFamily: 'monospace',
-                            color: isConnected ? _textPrimary : _textTertiary,
+                            color: isConnected
+                                ? AppColors.textPrimary
+                                : AppColors.textTertiary,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -124,6 +126,7 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                             minWidth: 32,
                             minHeight: 32,
                           ),
+                          tooltip: '复制',
                         ),
                     ],
                   ),
@@ -137,12 +140,18 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                 children: [
                   const Text(
                     '共享 Token',
-                    style: TextStyle(fontSize: 13, color: _textTertiary),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textTertiary,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   const Text(
                     '输入 Web 端的 Token 可直接使用',
-                    style: TextStyle(fontSize: 12, color: _textTertiary),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textTertiary,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -153,7 +162,7 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                     ),
                     decoration: InputDecoration(
                       hintText: '粘贴 Token...',
-                      hintStyle: const TextStyle(color: _textTertiary),
+                      hintStyle: const TextStyle(color: AppColors.textTertiary),
                       filled: true,
                       fillColor: const Color(0xFFF5F5F5),
                       border: OutlineInputBorder(

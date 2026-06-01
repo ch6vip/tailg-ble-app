@@ -650,6 +650,7 @@ class _FenceTab extends StatelessWidget {
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.white.withValues(alpha: 0.88),
                     ),
+                    tooltip: '返回',
                   ),
                 ),
                 Container(
@@ -1462,6 +1463,7 @@ class _TravelDetailSheet extends StatelessWidget {
                     IconButton(
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(Icons.close),
+                      tooltip: '关闭',
                     ),
                   ],
                 ),

@@ -96,7 +96,7 @@ class _QgjAdvancedSettingsPageState extends State<QgjAdvancedSettingsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: success ? null : Colors.red.shade400,
+        backgroundColor: success ? null : AppColors.danger,
         duration: const Duration(seconds: 2),
       ),
     );

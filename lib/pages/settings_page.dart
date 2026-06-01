@@ -14,9 +14,6 @@ import 'device_info_page.dart';
 import 'ota_precheck_page.dart';
 import 'vehicle_message_page.dart';
 
-const _textPrimary = Color(0xFF1A1A2E);
-const _textTertiary = Color(0xFF999999);
-
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
@@ -49,7 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: _textPrimary,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
@@ -281,7 +278,7 @@ class _SettingsPageState extends State<SettingsPage> {
             SizedBox(
               width: 28,
               height: 28,
-              child: Icon(icon, size: 22, color: _textPrimary),
+              child: Icon(icon, size: 22, color: AppColors.textPrimary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -293,7 +290,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: _textPrimary,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -302,7 +299,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       subtitle,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: _textTertiary,
+                        color: AppColors.textTertiary,
                       ),
                     ),
                   ],
@@ -380,12 +377,12 @@ class _SettingsPageState extends State<SettingsPage> {
     return ListTile(
       leading: Icon(
         selected ? Icons.radio_button_checked : Icons.radio_button_off,
-        color: selected ? AppColors.primary : _textTertiary,
+        color: selected ? AppColors.primary : AppColors.textTertiary,
       ),
       title: Text(title, style: const TextStyle(fontSize: 15)),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(fontSize: 12, color: _textTertiary),
+        style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
       ),
       onTap: () => Navigator.pop(context),
     );

@@ -9,9 +9,6 @@ import '../services/permission_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_snack.dart';
 
-const _textPrimary = Color(0xFF1A1A2E);
-const _textTertiary = Color(0xFF999999);
-
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
 
@@ -160,7 +157,7 @@ class _ScanPageState extends State<ScanPage>
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w700,
-                                color: _textPrimary,
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ],
@@ -189,7 +186,7 @@ class _ScanPageState extends State<ScanPage>
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: _textPrimary,
+                                color: AppColors.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -197,7 +194,7 @@ class _ScanPageState extends State<ScanPage>
                               '请确保蓝牙已开启且靠近车辆',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: _textTertiary,
+                                color: AppColors.textTertiary,
                               ),
                             ),
                           ],
@@ -274,13 +271,16 @@ class _ScanHintCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: _textPrimary,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 12, color: _textTertiary),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
               ],
             ),
@@ -502,7 +502,7 @@ class _DeviceCardState extends State<_DeviceCard> {
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: _textPrimary,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -510,7 +510,7 @@ class _DeviceCardState extends State<_DeviceCard> {
                       widget.result.device.remoteId.toString(),
                       style: const TextStyle(
                         fontSize: 12,
-                        color: _textTertiary,
+                        color: AppColors.textTertiary,
                         fontFamily: 'monospace',
                       ),
                     ),
@@ -529,7 +529,10 @@ class _DeviceCardState extends State<_DeviceCard> {
                     SizedBox(height: 6),
                     Text(
                       '连接中',
-                      style: TextStyle(fontSize: 11, color: _textTertiary),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
+                      ),
                     ),
                   ],
                 )
@@ -543,7 +546,7 @@ class _DeviceCardState extends State<_DeviceCard> {
                       widget.disabled ? '等待' : '连接绑定',
                       style: const TextStyle(
                         fontSize: 11,
-                        color: _textTertiary,
+                        color: AppColors.textTertiary,
                       ),
                     ),
                   ],

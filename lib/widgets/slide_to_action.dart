@@ -43,11 +43,11 @@ class _SlideToActionState extends State<SlideToAction>
     super.initState();
     _resetController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 200),
     );
     _successController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 200),
     );
   }
 
@@ -180,38 +180,45 @@ class _SlideToActionState extends State<SlideToAction>
                           ),
                         );
                       }
+                      final progressAlpha = (1 - progress * 1.8).clamp(
+                        0.0,
+                        1.0,
+                      );
                       return Center(
-                        child: Opacity(
-                          opacity: (1 - progress * 1.8).clamp(0.0, 1.0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.chevron_right,
-                                textDirection: widget.reverseSlide
-                                    ? TextDirection.rtl
-                                    : TextDirection.ltr,
-                                color: Colors.white.withValues(alpha: 0.5),
-                                size: 18,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.chevron_right,
+                              textDirection: widget.reverseSlide
+                                  ? TextDirection.rtl
+                                  : TextDirection.ltr,
+                              color: Colors.white.withValues(
+                                alpha: 0.5 * progressAlpha,
                               ),
-                              Icon(
-                                Icons.chevron_right,
-                                textDirection: widget.reverseSlide
-                                    ? TextDirection.rtl
-                                    : TextDirection.ltr,
-                                color: Colors.white.withValues(alpha: 0.5),
-                                size: 18,
+                              size: 18,
+                            ),
+                            Icon(
+                              Icons.chevron_right,
+                              textDirection: widget.reverseSlide
+                                  ? TextDirection.rtl
+                                  : TextDirection.ltr,
+                              color: Colors.white.withValues(
+                                alpha: 0.5 * progressAlpha,
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                widget.label,
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.6),
-                                  fontSize: 14,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.label,
+                              style: TextStyle(
+                                color: Colors.white.withValues(
+                                  alpha: 0.6 * progressAlpha,
                                 ),
+                                fontSize: 14,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       );
                     },

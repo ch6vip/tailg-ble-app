@@ -214,7 +214,7 @@ class _HomeChannelPill extends StatelessWidget {
     final text = ready
         ? 'BLE'
         : connecting
-        ? '连接中'
+        ? connState.label
         : cloudReady
         ? '云端'
         : '离线';

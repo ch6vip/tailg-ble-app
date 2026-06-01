@@ -160,6 +160,7 @@ class _BatteryHero extends StatelessWidget {
               icon: const Icon(Icons.arrow_back, color: ReplicaColors.ink),
               onPressed: () => Navigator.pop(context),
               padding: const EdgeInsets.all(16),
+              tooltip: '返回',
             ),
           ),
           const Positioned(

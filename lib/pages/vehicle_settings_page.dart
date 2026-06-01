@@ -146,7 +146,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(result.message),
-        backgroundColor: result.success ? null : Colors.red.shade400,
+        backgroundColor: result.success ? null : AppColors.danger,
         duration: const Duration(seconds: 2),
       ),
     );
@@ -1185,7 +1185,7 @@ void _showSnack(BuildContext context, _SettingsActionResult result) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(result.message),
-      backgroundColor: result.success ? null : Colors.red.shade400,
+      backgroundColor: result.success ? null : AppColors.danger,
       duration: const Duration(seconds: 2),
     ),
   );

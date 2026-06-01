@@ -7,9 +7,6 @@ import '../services/vehicle_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
-const _textPrimary = Color(0xFF1A1A2E);
-const _textTertiary = Color(0xFF999999);
-
 class LogPage extends StatefulWidget {
   const LogPage({super.key});
 
@@ -164,7 +161,9 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: active ? AppColors.primary : _textTertiary,
+                        color: active
+                            ? AppColors.primary
+                            : AppColors.textTertiary,
                       ),
                     ),
                   ),
@@ -195,7 +194,7 @@ class _LogList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (entries.isEmpty) {
       return const Center(
-        child: Text('暂无日志', style: TextStyle(color: _textTertiary)),
+        child: Text('暂无日志', style: TextStyle(color: AppColors.textTertiary)),
       );
     }
     return ListView.builder(
@@ -259,7 +258,7 @@ class _LogTile extends StatelessWidget {
                   entry.message,
                   style: const TextStyle(
                     fontSize: 13,
-                    color: _textPrimary,
+                    color: AppColors.textPrimary,
                     height: 1.4,
                   ),
                 ),

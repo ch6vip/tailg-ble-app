@@ -7,9 +7,6 @@ import '../services/vehicle_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
-const _textPrimary = Color(0xFF1A1A2E);
-const _textTertiary = Color(0xFF999999);
-
 class GaragePage extends StatelessWidget {
   const GaragePage({super.key});
 
@@ -90,14 +87,14 @@ class _EmptyGarage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: _textPrimary,
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 6),
             const Text(
               '扫描附近蓝牙设备，连接成功后会自动加入车库。',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: _textTertiary),
+              style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
@@ -159,7 +156,7 @@ class _VehicleCard extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: _textPrimary,
+                              color: AppColors.textPrimary,
                             ),
                           ),
                         ),
@@ -192,7 +189,7 @@ class _VehicleCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: _textTertiary,
+                        color: AppColors.textTertiary,
                         fontFamily: 'monospace',
                       ),
                     ),
@@ -274,7 +271,7 @@ class _VehicleCard extends StatelessWidget {
           children: [
             const Text(
               '官方 ECU 登录使用车辆密码和账号 UID。留空则使用默认 0。',
-              style: TextStyle(fontSize: 13, color: _textTertiary),
+              style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -444,14 +441,17 @@ class _InfoPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: _textTertiary),
+          Icon(icon, size: 14, color: AppColors.textTertiary),
           const SizedBox(width: 5),
           Flexible(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12, color: _textTertiary),
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textTertiary,
+              ),
             ),
           ),
         ],

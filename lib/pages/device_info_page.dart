@@ -323,13 +323,7 @@ class _BleDeviceCard extends StatelessWidget {
   }
 
   String _stateLabel(ble.ConnectionState state) {
-    return switch (state) {
-      ble.ConnectionState.disconnected => '未连接',
-      ble.ConnectionState.connecting => '连接中',
-      ble.ConnectionState.connected => '已连接，等待协议',
-      ble.ConnectionState.ready => '已就绪',
-      ble.ConnectionState.reconnecting => '重连中',
-    };
+    return state.label;
   }
 }
 

@@ -17,6 +17,17 @@ enum ConnectionState {
   ready,
 }
 
+/// 中文文案扩展：把 ConnectionState 枚举映射成统一的连接状态文案。
+extension ConnectionStateLabel on ConnectionState {
+  String get label => switch (this) {
+    ConnectionState.disconnected => '未连接',
+    ConnectionState.connecting => '连接中',
+    ConnectionState.connected => '已连接',
+    ConnectionState.ready => '已连接',
+    ConnectionState.reconnecting => '正在重连',
+  };
+}
+
 class ConnectionManager {
   final _log = LogService();
   BluetoothDevice? _device;

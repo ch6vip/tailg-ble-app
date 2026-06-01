@@ -6,13 +6,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusText = switch (connState) {
-      ble.ConnectionState.disconnected => '离线',
-      ble.ConnectionState.connecting => '连接中',
-      ble.ConnectionState.reconnecting => '重连中',
-      ble.ConnectionState.connected => '已连接',
-      ble.ConnectionState.ready => '在线',
-    };
+    final statusText = connState.label;
     final statusColor = switch (connState) {
       ble.ConnectionState.ready => Colors.green,
       ble.ConnectionState.reconnecting => Colors.orange,

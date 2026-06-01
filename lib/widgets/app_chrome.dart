@@ -25,7 +25,8 @@ class AppPageHeader extends StatelessWidget {
               icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
               onPressed: () => Navigator.pop(context),
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              tooltip: '返回',
             ),
             const SizedBox(width: 8),
           ],
@@ -131,13 +132,7 @@ class ConnectionStatusBanner extends StatelessWidget {
         : connecting
         ? AppColors.warning
         : AppColors.textTertiary;
-    final title = switch (state) {
-      ble.ConnectionState.ready => '车辆已连接',
-      ble.ConnectionState.connecting => '正在连接车辆',
-      ble.ConnectionState.reconnecting => '正在重连车辆',
-      ble.ConnectionState.connected => '已连接，等待协议就绪',
-      ble.ConnectionState.disconnected => '车辆未连接',
-    };
+    final title = state.label;
     final subtitle = ready
         ? '可以读取状态并写入车辆设置'
         : connecting

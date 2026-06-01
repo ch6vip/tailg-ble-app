@@ -370,7 +370,7 @@ class _ControlAreaState extends State<_ControlArea> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red.shade400,
+        backgroundColor: AppColors.danger,
         duration: const Duration(seconds: 3),
         action: SnackBarAction(
           label: '查看日志',
