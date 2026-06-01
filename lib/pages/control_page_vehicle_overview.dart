@@ -373,47 +373,49 @@ class _ManualModePillState extends State<_ManualModePill> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedScale(
-      duration: const Duration(milliseconds: 120),
-      scale: _pressed ? 0.97 : 1,
-      child: Material(
-        color: _pressed
-            ? _officialPressedBg
-            : Colors.white.withValues(alpha: 0.78),
-        borderRadius: BorderRadius.circular(18),
-        child: InkWell(
-          onTap: widget.enabled
-              ? () {
-                  _setPressed(false);
-                  _toggleManualMode();
-                }
-              : null,
-          onTapDown: widget.enabled ? (_) => _setPressed(true) : null,
-          onTapUp: widget.enabled ? (_) => _setPressed(false) : null,
-          onTapCancel: widget.enabled ? () => _setPressed(false) : null,
+    return Tooltip(
+      message: widget.enabled
+          ? _manualMode
+                ? '已开启手动模式，点按关闭'
+                : '开启手动模式：禁用自动控车'
+          : '请先连接车辆',
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 120),
+        scale: _pressed ? 0.97 : 1,
+        child: Material(
+          color: _pressed
+              ? _officialPressedBg
+              : Colors.white.withValues(alpha: 0.78),
           borderRadius: BorderRadius.circular(18),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '手动模式',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: widget.enabled
-                        ? AppColors.textSecondary
-                        : AppColors.textTertiary,
-                    fontWeight: FontWeight.w700,
+          child: InkWell(
+            onTap: widget.enabled ? _toggleManualMode : null,
+            onTapDown: widget.enabled ? (_) => _setPressed(true) : null,
+            onTapUp: widget.enabled ? (_) => _setPressed(false) : null,
+            onTapCancel: widget.enabled ? () => _setPressed(false) : null,
+            borderRadius: BorderRadius.circular(18),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '手动模式',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: widget.enabled
+                          ? AppColors.textSecondary
+                          : AppColors.textTertiary,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                _ManualModeToggle(
-                  enabled: widget.enabled,
-                  value: _manualMode,
-                  onChanged: (_) => _toggleManualMode(),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  _ManualModeToggle(
+                    enabled: widget.enabled,
+                    value: _manualMode,
+                    onChanged: (_) => _toggleManualMode(),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

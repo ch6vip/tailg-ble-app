@@ -327,7 +327,7 @@ class _SettingsPageState extends State<SettingsPage> {
         width: 44,
         height: 26,
         decoration: BoxDecoration(
-          color: value ? AppColors.primary : const Color(0xFFE0E0E0),
+          color: value ? AppColors.primary : AppColors.border,
           borderRadius: BorderRadius.circular(13),
         ),
         child: AnimatedAlign(

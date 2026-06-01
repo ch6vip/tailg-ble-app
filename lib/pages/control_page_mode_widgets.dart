@@ -147,7 +147,7 @@ class _ManualModeToggleState extends State<_ManualModeToggle> {
         width: 44,
         height: 26,
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : const Color(0xFFE0E0E0),
+          color: selected ? AppColors.primary : AppColors.border,
           borderRadius: BorderRadius.circular(13),
         ),
         child: AnimatedAlign(

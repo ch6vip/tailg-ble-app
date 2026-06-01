@@ -583,7 +583,7 @@ class _SignalBars extends StatelessWidget {
           height: heights[i],
           margin: EdgeInsets.only(left: i > 0 ? 2 : 0),
           decoration: BoxDecoration(
-            color: i < activeCount ? activeColor : const Color(0xFFE0E0E0),
+            color: i < activeCount ? activeColor : AppColors.border,
             borderRadius: BorderRadius.circular(1),
           ),
         );

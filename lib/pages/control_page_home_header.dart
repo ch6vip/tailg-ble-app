@@ -72,7 +72,7 @@ class _Header extends StatelessWidget {
             final subtitle = cloudVehicle != null
                 ? '${cloudVehicle.defenceLabel} · ${cloudVehicle.powerLabel}'
                 : hasDeviceName
-                ? 'BLE $deviceName'
+                ? '蓝牙：$deviceName'
                 : defaultVehicle?.id ?? '点按选择或绑定车辆';
 
             return Padding(

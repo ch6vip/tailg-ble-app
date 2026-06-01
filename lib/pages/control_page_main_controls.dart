@@ -184,7 +184,6 @@ class _OfficialSmallControlButtonState
                   ? null
                   : interactive
                   ? () {
-                      _setPressed(false);
                       HapticFeedback.mediumImpact();
                       widget.onTap();
                     }
