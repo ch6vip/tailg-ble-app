@@ -9,7 +9,7 @@ class _UnboundBannerPainter extends CustomPainter {
     final accent = const Color(0xFF5596FF);
     final red = AppColors.brandRed;
     final shadow = Paint()
-      ..color = const Color(0xFFDDE3EC).withValues(alpha: 0.72);
+      ..color = ReplicaBikeColors.shadow.withValues(alpha: 0.72);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(size.width * 0.5, size.height * 0.78),
@@ -20,7 +20,7 @@ class _UnboundBannerPainter extends CustomPainter {
     );
 
     final wheelPaint = Paint()
-      ..color = const Color(0xFF252525)
+      ..color = ReplicaBikeColors.rim
       ..style = PaintingStyle.stroke
       ..strokeWidth = 10;
     final rimPaint = Paint()
@@ -44,7 +44,7 @@ class _UnboundBannerPainter extends CustomPainter {
       ..lineTo(size.width * 0.53, centerY - 64)
       ..lineTo(size.width * 0.66, centerY - 34);
     final framePaint = Paint()
-      ..color = const Color(0xFF2A2D35)
+      ..color = ReplicaBikeColors.frame
       ..style = PaintingStyle.stroke
       ..strokeWidth = 12
       ..strokeCap = StrokeCap.round
@@ -52,7 +52,7 @@ class _UnboundBannerPainter extends CustomPainter {
     canvas.drawPath(frame, framePaint);
 
     final seatPaint = Paint()
-      ..color = const Color(0xFF2A2D35)
+      ..color = ReplicaBikeColors.frame
       ..strokeWidth = 9
       ..strokeCap = StrokeCap.round;
     canvas.drawLine(
@@ -70,7 +70,7 @@ class _UnboundBannerPainter extends CustomPainter {
       Rect.fromLTWH(size.width * 0.43, centerY - 2, size.width * 0.23, 34),
       const Radius.circular(12),
     );
-    canvas.drawRRect(batteryRect, Paint()..color = const Color(0xFF121418));
+    canvas.drawRRect(batteryRect, Paint()..color = ReplicaBikeColors.battery);
     canvas.drawRRect(
       batteryRect.deflate(5),
       Paint()..color = red.withValues(alpha: 0.78),
@@ -98,7 +98,7 @@ class _BikeModelPainter extends CustomPainter {
     final front = Offset(size.width * 0.75, centerY + 34);
     final rear = Offset(size.width * 0.27, centerY + 34);
     final bodyPaint = Paint()
-      ..color = const Color(0xFF2A2D35)
+      ..color = ReplicaBikeColors.frame
       ..style = PaintingStyle.stroke
       ..strokeWidth = 12
       ..strokeCap = StrokeCap.round
@@ -109,7 +109,7 @@ class _BikeModelPainter extends CustomPainter {
       ..strokeWidth = 8
       ..strokeCap = StrokeCap.round;
     final softPaint = Paint()
-      ..color = const Color(0xFFDDE3EC).withValues(alpha: 0.35)
+      ..color = ReplicaBikeColors.shadow.withValues(alpha: 0.35)
       ..style = PaintingStyle.fill;
 
     canvas.drawOval(
@@ -137,7 +137,7 @@ class _BikeModelPainter extends CustomPainter {
       Rect.fromLTWH(size.width * 0.42, centerY - 2, size.width * 0.20, 34),
       const Radius.circular(12),
     );
-    canvas.drawRRect(battery, Paint()..color = const Color(0xFF121418));
+    canvas.drawRRect(battery, Paint()..color = ReplicaBikeColors.battery);
     canvas.drawRRect(
       battery.deflate(5),
       Paint()..color = accent.withValues(alpha: isPowerOn ? 0.78 : 0.22),
@@ -177,7 +177,7 @@ class _BikeModelPainter extends CustomPainter {
 
   void _drawWheel(Canvas canvas, Offset center, double radius, bool locked) {
     final wheelPaint = Paint()
-      ..color = const Color(0xFF252525)
+      ..color = ReplicaBikeColors.rim
       ..style = PaintingStyle.stroke
       ..strokeWidth = 9;
     final rimPaint = Paint()
@@ -209,10 +209,10 @@ class _MiniMapPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final bg = Paint()..color = const Color(0xFFF0F3F8);
+    final bg = Paint()..color = ReplicaBikeColors.surface;
     canvas.drawRect(Offset.zero & size, bg);
 
-    final park = Paint()..color = const Color(0xFFDDE7D8);
+    final park = Paint()..color = ReplicaBikeColors.parking;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(
@@ -265,7 +265,7 @@ class _MiniMapPainter extends CustomPainter {
     );
 
     final line = Paint()
-      ..color = const Color(0xFFD9DEE8)
+      ..color = ReplicaBikeColors.handle
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
     for (var x = 0.0; x < size.width; x += 34) {

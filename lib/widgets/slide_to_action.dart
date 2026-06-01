@@ -95,6 +95,15 @@ class _SlideToActionState extends State<SlideToAction>
     _resetController.forward();
   }
 
+  /// 根据 backgroundColor 亮度自适应 thumb 颜色：
+  /// 浅色背景用半透明深色，深色背景用半透明白色。
+  /// 保证 thumb 在白底/深底上都能看到。
+  Color _resolvedThumbColor(BuildContext context) {
+    final isDarkBg = widget.backgroundColor.computeLuminance() < 0.5;
+    if (isDarkBg) return widget.thumbColor;
+    return Colors.black.withValues(alpha: 0.18);
+  }
+
   @override
   Widget build(BuildContext context) {
     final enabled =
@@ -248,8 +257,10 @@ class _SlideToActionState extends State<SlideToAction>
                         height: 48,
                         decoration: BoxDecoration(
                           color: enabled
-                              ? widget.thumbColor
-                              : Colors.white.withValues(alpha: 0.1),
+                              ? _resolvedThumbColor(context)
+                              : _resolvedThumbColor(
+                                  context,
+                                ).withValues(alpha: 0.4),
                           shape: BoxShape.circle,
                         ),
                         child: widget.loading

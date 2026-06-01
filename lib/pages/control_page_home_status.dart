@@ -146,36 +146,44 @@ class _HomeMetric extends StatelessWidget {
             ),
           )
         else
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Flexible(
-                child: Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: value.length > 3 ? 30 : 32,
-                    height: 1,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
-                ),
-              ),
-              if (unit.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(left: 2),
-                  child: Text(
-                    unit,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: ReplicaColors.ink,
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0, end: _animatedMetricValue(value)),
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeOut,
+            builder: (context, animated, _) {
+              final display = _formatAnimated(value, animated);
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Flexible(
+                    child: Text(
+                      display,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: display.length > 3 ? 30 : 32,
+                        height: 1,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
                     ),
                   ),
-                ),
-            ],
+                  if (unit.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 2),
+                      child: Text(
+                        unit,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: ReplicaColors.ink,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
       ],
     );
@@ -240,4 +248,21 @@ class _HomeChannelPill extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 把当前的 metric 字符串解析成 double，用于 TweenAnimationBuilder 的目标值。
+/// 不是数字的（如预留字符串）直接返回 0，避免动画跳到随机数。
+double _animatedMetricValue(String value) {
+  final parsed = num.tryParse(value);
+  return parsed?.toDouble() ?? 0;
+}
+
+/// 用动画进度 0..1 把目标值渲染成最终展示字符串。
+/// 整数 metric 保持整数显示；带小数的 metric 保留 1 位小数。
+String _formatAnimated(String target, double progress) {
+  final parsed = num.tryParse(target);
+  if (parsed == null) return target;
+  final v = parsed.toDouble() * progress;
+  if ((v - v.roundToDouble()).abs() < 0.05) return v.round().toString();
+  return v.toStringAsFixed(1);
 }

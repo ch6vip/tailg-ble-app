@@ -33,6 +33,30 @@ abstract final class ReplicaColors {
   static const darkPanelItem = Color(0x33999999);
 }
 
+/// 车体 painter 专用灰阶 token（replica 复刻保真）。
+abstract final class ReplicaBikeColors {
+  /// 车架主色（深炭）
+  static const frame = Color(0xFF2A2D35);
+
+  /// 轮圈细描边
+  static const rim = Color(0xFF252525);
+
+  /// 电池深色底块
+  static const battery = Color(0xFF121418);
+
+  /// 阴影/反射浅灰
+  static const shadow = Color(0xFFDDE3EC);
+
+  /// 场景浅底
+  static const surface = Color(0xFFF0F3F8);
+
+  /// 通用浅灰（车把等小部件）
+  static const handle = Color(0xFFD9DEE8);
+
+  /// 停车场场景绿地
+  static const parking = Color(0xFFDDE7D8);
+}
+
 abstract final class ReplicaRadii {
   static const card = 8.0;
   static const sheet = 18.0;
