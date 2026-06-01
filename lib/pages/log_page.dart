@@ -145,7 +145,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1)),
+        border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
       ),
       child: Row(
         children: List.generate(3, (i) {

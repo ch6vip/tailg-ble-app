@@ -35,7 +35,7 @@ class _BikeImage extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
               child: Container(
-                height: 200,
+                height: MediaQuery.of(context).size.height * 0.22,
                 decoration: const BoxDecoration(color: Colors.transparent),
                 child: Stack(
                   children: [
@@ -67,8 +67,8 @@ class _BikeImage extends StatelessWidget {
                       ),
                     ),
                     Positioned(
-                      left: 18,
-                      top: 16,
+                      left: 14,
+                      top: 10,
                       child: _VehicleStateChip(display: display),
                     ),
                     Positioned(
@@ -125,6 +125,7 @@ class _VehicleVisual extends StatelessWidget {
           : Image.network(
               url,
               fit: BoxFit.contain,
+              cacheWidth: 800,
               frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
                 if (wasSynchronouslyLoaded) return child;
                 return AnimatedOpacity(
@@ -277,7 +278,9 @@ class _VehicleStateChip extends StatelessWidget {
       duration: const Duration(milliseconds: 220),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: display.colors),
+        gradient: LinearGradient(
+          colors: display.colors.map((c) => c.withValues(alpha: 0.85)).toList(),
+        ),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(

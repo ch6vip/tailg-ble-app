@@ -121,6 +121,7 @@ class _HomeMetric extends StatelessWidget {
         if (isPlaceholder)
           Semantics(
             label: '$label，$placeholderHint',
+            hint: '前往爱车页连接车辆',
             excludeSemantics: true,
             child: Row(
               children: [

@@ -357,7 +357,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _divider() {
     return const Padding(
       padding: EdgeInsets.symmetric(horizontal: 16),
-      child: Divider(height: 1, color: Color(0xFFEEEEEE)),
+      child: Divider(height: 1, color: AppColors.border),
     );
   }
 
