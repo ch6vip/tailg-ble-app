@@ -781,7 +781,7 @@ void main() {
       );
 
       expect(bleResult.success, isFalse);
-      expect(bleResult.failureMessage, '断电失败');
+      expect(bleResult.failureMessage, '熄火失败');
       expect(cloudResult.success, isFalse);
       expect(cloudResult.failureMessage, '官方错误');
     });
