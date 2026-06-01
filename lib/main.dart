@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'ble/connection_manager.dart' as ble;
 import 'models/vehicle_profile.dart';
 import 'services/proximity_service.dart';
@@ -104,6 +105,12 @@ class _TailgBleAppState extends State<TailgBleApp> {
         ),
         useMaterial3: true,
       ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
       home: const HomePage(),
       builder: (context, child) {
         return MediaQuery(
