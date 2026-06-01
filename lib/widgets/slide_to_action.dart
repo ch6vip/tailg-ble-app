@@ -79,17 +79,20 @@ class _SlideToActionState extends State<SlideToAction>
 
   void _resetThumb() {
     final startVal = _dragNotifier.value;
+    if (startVal <= 0) {
+      _dragNotifier.value = 0;
+      return;
+    }
+    _resetController.stop();
     _resetController.reset();
-    _resetController.removeListener(_onResetTick);
-    _onResetTick = () {
-      final t = Curves.elasticOut.transform(_resetController.value);
-      _dragNotifier.value = startVal * (1 - t);
-    };
-    _resetController.addListener(_onResetTick);
+    final anim = Tween<double>(begin: startVal, end: 0.0).animate(
+      CurvedAnimation(parent: _resetController, curve: Curves.elasticOut),
+    );
+    anim.addListener(() {
+      _dragNotifier.value = anim.value;
+    });
     _resetController.forward();
   }
-
-  late VoidCallback _onResetTick = () {};
 
   @override
   Widget build(BuildContext context) {
