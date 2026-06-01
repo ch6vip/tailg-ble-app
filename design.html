@@ -588,37 +588,44 @@
       position: absolute;
       left: 0;
       top: 0;
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      background: #2D2D2D;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: var(--blue);
       display: grid;
       place-items: center;
       color: #fff;
-      transition: left .36s cubic-bezier(.2, .8, .2, 1);
+      box-shadow:
+        0 3px 8px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      transition: left 0.36s cubic-bezier(0.2, 0.8, 0.2, 1);
+      z-index: 1;
     }
 
-    .slide-new .thumb svg { width: 24px; height: 24px; }
+    .slide-new .thumb svg { width: 22px; height: 22px; }
 
     .slide-new .chevs {
       position: absolute;
-      left: 56px;
+      left: 52px;
       top: 0;
       bottom: 0;
       display: flex;
       align-items: center;
       gap: 2px;
-      color: rgba(255,255,255,.6);
+      color: rgba(255, 255, 255, 0.7);
     }
 
     .slide-new .chevs svg { width: 18px; height: 18px; }
 
     .slide-new .label {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
       font-size: 14px;
       font-weight: 600;
       color: #fff;
-      margin-left: auto;
-      padding-right: 2px;
+      pointer-events: none;
     }
 
     .sub-controls {
@@ -1693,7 +1700,7 @@
                   </div>
                   <div class="power-text">
                     <strong>启动</strong>
-                    <span>右滑启动</span>
+                    <span>滑动以启动</span>
                   </div>
                   <div class="slide-new" id="slide-demo">
                     <div class="thumb">
