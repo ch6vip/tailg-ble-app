@@ -80,102 +80,130 @@ class _Header extends StatelessWidget {
               child: Row(
                 children: [
                   Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => usesCloudIdentity
-                              ? const OfficialCloudPage()
-                              : const GaragePage(),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => usesCloudIdentity
+                                    ? const OfficialCloudPage()
+                                    : const GaragePage(),
+                              ),
+                            ),
+                            child: Row(
                               children: [
-                                Text(
-                                  displayName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 23,
-                                    fontWeight: FontWeight.w800,
-                                    color: ReplicaColors.ink,
+                                Flexible(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        displayName,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 23,
+                                          fontWeight: FontWeight.w800,
+                                          color: ReplicaColors.ink,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        subtitle,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: ReplicaColors.subtle,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  subtitle,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: ReplicaColors.subtle,
-                                    fontWeight: FontWeight.w600,
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.keyboard_arrow_down,
+                                  size: 18,
+                                  color: ReplicaColors.subtle,
+                                ),
+                                const SizedBox(width: 8),
+                                Semantics(
+                                  label: '车辆连接状态：$effectiveStatusText',
+                                  liveRegion: true,
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 150),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: effectiveStatusColor.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          statusIcon,
+                                          size: 12,
+                                          color: effectiveStatusColor,
+                                        ),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          effectiveStatusText,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: effectiveStatusColor,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.keyboard_arrow_down, size: 20),
-                          const SizedBox(width: 8),
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: effectiveStatusColor.withValues(
-                                alpha: 0.15,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              effectiveStatusText,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: effectiveStatusColor,
-                              ),
+                        ),
+                        const SizedBox(width: 8),
+                        _HeaderIconAction(
+                          icon: Icons.article_outlined,
+                          tooltip: '车辆详情',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const VehicleSettingsPage(),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  _HeaderIconAction(
-                    icon: Icons.article_outlined,
-                    tooltip: '车辆详情',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const VehicleSettingsPage(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  _HeaderIconAction(
-                    icon: isConnecting
-                        ? Icons.sync
-                        : statusIcon == Icons.cloud_done
-                        ? Icons.notifications_none
-                        : statusIcon,
-                    color: isConnecting
-                        ? AppColors.warning
-                        : statusIcon == Icons.cloud_done
-                        ? ReplicaColors.ink
-                        : effectiveStatusColor,
-                    tooltip: '消息中心',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const VehicleMessagePage(),
-                      ),
+                        ),
+                        const SizedBox(width: 8),
+                        _HeaderIconAction(
+                          icon: isConnecting
+                              ? Icons.sync
+                              : statusIcon == Icons.cloud_done
+                              ? Icons.notifications_none
+                              : statusIcon,
+                          color: isConnecting
+                              ? AppColors.warning
+                              : statusIcon == Icons.cloud_done
+                              ? ReplicaColors.ink
+                              : effectiveStatusColor,
+                          tooltip: '消息中心',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const VehicleMessagePage(),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
