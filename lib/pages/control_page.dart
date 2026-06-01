@@ -473,6 +473,10 @@ class _ControlAreaState extends State<_ControlArea> {
               cloudState: cloudState,
               bike: snapshot.data,
             );
+            final textScale = MediaQuery.textScalerOf(context).scale(1);
+            final extraHeight = ((textScale - 1.0).clamp(0.0, 0.3) * 80)
+                .toDouble();
+            final compactWidth = MediaQuery.sizeOf(context).width < 360;
 
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -490,12 +494,12 @@ class _ControlAreaState extends State<_ControlArea> {
                   ),
                   const SizedBox(height: 10),
                   SizedBox(
-                    height: 204,
+                    height: 204 + extraHeight,
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         SizedBox(
-                          width: 90,
+                          width: compactWidth ? 82 : 90,
                           child: _OfficialQuickControlCard(
                             firstQuick: model.firstQuick,
                             secondQuick: model.secondQuick,

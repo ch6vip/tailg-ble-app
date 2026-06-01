@@ -147,9 +147,9 @@ class OfficialVehicle {
   bool get isLocked => defenceStatus == 1;
   bool get isPowerOn => acc == 1;
 
-  String get onlineLabel => online ? '在线' : '离线';
+  String get onlineLabel => online ? '车辆在线' : '车辆离线';
   String get defenceLabel => isLocked ? '已设防' : '已解防';
-  String get powerLabel => isPowerOn ? '已上电' : '已断电';
+  String get powerLabel => isPowerOn ? '车辆已启动' : '车辆未启动';
 
   static String _string(Object? value) => value?.toString().trim() ?? '';
 

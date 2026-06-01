@@ -25,7 +25,10 @@ class SlideToAction extends StatefulWidget {
   final Color? disabledBackgroundColor;
   final Color? disabledThumbColor;
   final Color? disabledIconColor;
+  final Color? thumbIconColor;
   final double? loadingFontSize;
+  final double completionThreshold;
+  final bool fadeLabelOnSlide;
 
   const SlideToAction({
     super.key,
@@ -51,7 +54,10 @@ class SlideToAction extends StatefulWidget {
     this.disabledBackgroundColor,
     this.disabledThumbColor,
     this.disabledIconColor,
+    this.thumbIconColor,
     this.loadingFontSize,
+    this.completionThreshold = 0.75,
+    this.fadeLabelOnSlide = false,
   });
 
   @override
@@ -148,6 +154,7 @@ class _SlideToActionState extends State<SlideToAction>
                 ? Colors.white
                 : AppColors.textPrimary);
         final centerChevronSize = (widget.labelFontSize + 2).clamp(22.0, 30.0);
+        final completionThreshold = widget.completionThreshold.clamp(0.0, 1.0);
 
         return Semantics(
           slider: true,
@@ -206,6 +213,9 @@ class _SlideToActionState extends State<SlideToAction>
                           0.0,
                           1.0,
                         );
+                        final labelAlpha = widget.fadeLabelOnSlide
+                            ? (1 - progress).clamp(0.0, 1.0)
+                            : 1.0;
                         return Positioned.fill(
                           left: widget.thumbSize + widget.trackInset + 16,
                           right: 18,
@@ -242,7 +252,9 @@ class _SlideToActionState extends State<SlideToAction>
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: enabled
-                                        ? labelColor
+                                        ? labelColor.withValues(
+                                            alpha: labelAlpha,
+                                          )
                                         : labelColor.withValues(alpha: 0.5),
                                     fontSize: widget.labelFontSize,
                                     fontWeight: FontWeight.w700,
@@ -360,7 +372,8 @@ class _SlideToActionState extends State<SlideToAction>
                             : null,
                         onHorizontalDragEnd: enabled
                             ? (details) {
-                                if (_dragNotifier.value > maxDrag * 0.75) {
+                                if (_dragNotifier.value >=
+                                    maxDrag * completionThreshold) {
                                   _onSlideSuccess(maxDrag);
                                 } else {
                                   _resetThumb();
@@ -438,7 +451,7 @@ class _SlideToActionState extends State<SlideToAction>
           : Icon(
               widget.icon,
               color: enabled
-                  ? Colors.white
+                  ? widget.thumbIconColor ?? Colors.white
                   : widget.disabledIconColor ??
                         Colors.white.withValues(alpha: 0.68),
               size: widget.iconSize,

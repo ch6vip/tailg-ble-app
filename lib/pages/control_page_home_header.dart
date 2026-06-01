@@ -48,8 +48,8 @@ class _Header extends StatelessWidget {
                               : '当前车辆'));
             final effectiveStatusText = useCloudStatus
                 ? cloudVehicle.online
-                      ? '云端在线'
-                      : '云端离线'
+                      ? '车辆在线'
+                      : '车辆离线'
                 : statusText;
             final effectiveStatusColor = useCloudStatus
                 ? cloudVehicle.online

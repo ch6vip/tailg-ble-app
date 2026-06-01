@@ -317,37 +317,14 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildToggle(bool value, ValueChanged<bool> onChanged) {
-    return GestureDetector(
-      onTap: () => onChanged(!value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 44,
-        height: 26,
-        decoration: BoxDecoration(
-          color: value ? AppColors.primary : AppColors.border,
-          borderRadius: BorderRadius.circular(13),
-        ),
-        child: AnimatedAlign(
-          duration: const Duration(milliseconds: 200),
-          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            width: 22,
-            height: 22,
-            margin: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 3,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return Switch(
+      value: value,
+      onChanged: onChanged,
+      activeColor: Colors.white,
+      activeTrackColor: AppColors.primary,
+      inactiveThumbColor: Colors.white,
+      inactiveTrackColor: AppColors.border,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 

@@ -244,24 +244,24 @@ _VehicleStateDisplay _vehicleStateDisplay({
 
 _VehicleStateDisplay _cloudVehicleStateDisplay(OfficialVehicle vehicle) {
   if (!vehicle.online) {
-    return _VehicleStateDisplay('云端离线', Icons.cloud_off, [
+    return _VehicleStateDisplay('车辆离线', Icons.cloud_off, [
       Colors.grey.shade300,
       Colors.grey.shade400,
     ]);
   }
   if (vehicle.isPowerOn) {
-    return _VehicleStateDisplay('云端已启动', Icons.power, [
+    return _VehicleStateDisplay('车辆已启动', Icons.power, [
       Colors.green.shade300,
       Colors.teal.shade300,
     ]);
   }
   if (vehicle.isLocked) {
-    return _VehicleStateDisplay('云端已设防', Icons.lock_outline, [
+    return _VehicleStateDisplay('车辆已设防', Icons.lock_outline, [
       Colors.purple.shade200,
       Colors.blue.shade200,
     ]);
   }
-  return _VehicleStateDisplay('云端已解锁', Icons.lock_open, [
+  return _VehicleStateDisplay('车辆已解锁', Icons.lock_open, [
     Colors.orange.shade200,
     Colors.amber.shade300,
   ]);
@@ -320,7 +320,7 @@ class _VehicleModelMeta extends StatelessWidget {
     final usesCloud =
         connState != ble.ConnectionState.ready && cloudVehicle != null;
     final state = connState == ble.ConnectionState.ready
-        ? '${isPowerOn ? '电源开启' : '电源关闭'} · ${isLocked ? '防盗中' : '可骑行'}'
+        ? '${isPowerOn ? '车辆已启动' : '车辆未启动'} · ${isLocked ? '防盗中' : '可骑行'}'
         : usesCloud
         ? '${cloudVehicle!.onlineLabel} · ${cloudVehicle!.defenceLabel} · ${cloudVehicle!.powerLabel}'
         : '连接车辆后显示实时状态';

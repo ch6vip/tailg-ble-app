@@ -42,41 +42,48 @@ class _StatusSection extends StatelessWidget {
 
             return Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: _HomeMetric(
-                      label: '剩余电量',
-                      value: battery != null ? '$battery' : '--',
-                      unit: battery != null ? '%' : '',
-                      color: batteryColor,
-                      placeholderHint: isBleReady ? '等待数据' : '连接后查看',
-                      placeholderIcon: isBleReady
-                          ? Icons.hourglass_empty
-                          : Icons.bluetooth_searching,
-                    ),
-                  ),
-                  const SizedBox(width: 22),
-                  Expanded(
-                    child: _HomeMetric(
-                      label: rangeLabel,
-                      value: rangeText,
-                      unit: rangeText == '--' ? '' : 'km',
-                      placeholderHint: mileage != null
-                          ? null
-                          : isBleReady
-                          ? '等待数据'
-                          : '连接后查看',
-                      placeholderIcon: Icons.hourglass_empty,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  _HomeChannelPill(
-                    connState: connState,
-                    cloudVehicle: cloudVehicle,
-                  ),
-                ],
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 330;
+                  final metricGap = compact ? 14.0 : 22.0;
+                  final channelGap = compact ? 8.0 : 14.0;
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _HomeMetric(
+                          label: '剩余电量',
+                          value: battery != null ? '$battery' : '--',
+                          unit: battery != null ? '%' : '',
+                          color: batteryColor,
+                          placeholderHint: isBleReady ? '等待数据' : '连接后查看',
+                          placeholderIcon: isBleReady
+                              ? Icons.hourglass_empty
+                              : Icons.bluetooth_searching,
+                        ),
+                      ),
+                      SizedBox(width: metricGap),
+                      Expanded(
+                        child: _HomeMetric(
+                          label: rangeLabel,
+                          value: rangeText,
+                          unit: rangeText == '--' ? '' : 'km',
+                          placeholderHint: mileage != null
+                              ? null
+                              : isBleReady
+                              ? '等待数据'
+                              : '连接后查看',
+                          placeholderIcon: Icons.hourglass_empty,
+                        ),
+                      ),
+                      SizedBox(width: channelGap),
+                      _HomeChannelPill(
+                        connState: connState,
+                        cloudVehicle: cloudVehicle,
+                      ),
+                    ],
+                  );
+                },
               ),
             );
           },
@@ -106,24 +113,25 @@ class _HomeMetric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPlaceholder = value == '--' && placeholderHint != null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: ReplicaColors.muted,
+    return Semantics(
+      label: '$label${isPlaceholder ? '，$placeholderHint' : '，$value$unit'}',
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: ReplicaColors.muted,
+            ),
           ),
-        ),
-        const SizedBox(height: 6),
-        if (isPlaceholder)
-          Semantics(
-            label: '$label，$placeholderHint',
-            hint: '前往爱车页连接车辆',
-            excludeSemantics: true,
-            child: Row(
+          const SizedBox(height: 6),
+          if (isPlaceholder)
+            Row(
               children: [
                 Icon(
                   placeholderIcon ?? Icons.hourglass_empty,
@@ -144,49 +152,54 @@ class _HomeMetric extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-          )
-        else
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0, end: _animatedMetricValue(value)),
-            duration: const Duration(milliseconds: 600),
-            curve: Curves.easeOut,
-            builder: (context, animated, _) {
-              final display = _formatAnimated(value, animated);
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Flexible(
-                    child: Text(
-                      display,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: display.length > 3 ? 30 : 32,
-                        height: 1,
-                        fontWeight: FontWeight.w700,
-                        color: color,
-                      ),
-                    ),
-                  ),
-                  if (unit.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 2),
+            )
+          else
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0, end: _animatedMetricValue(value)),
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeOut,
+              builder: (context, animated, _) {
+                final display = _formatAnimated(value, animated);
+                final fontSize = display.length > 4
+                    ? 26.0
+                    : display.length > 3
+                    ? 30.0
+                    : 32.0;
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Flexible(
                       child: Text(
-                        unit,
-                        style: const TextStyle(
-                          fontSize: 13,
+                        display,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          height: 1,
                           fontWeight: FontWeight.w700,
-                          color: ReplicaColors.ink,
+                          color: color,
                         ),
                       ),
                     ),
-                ],
-              );
-            },
-          ),
-      ],
+                    if (unit.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 2),
+                        child: Text(
+                          unit,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: ReplicaColors.ink,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+        ],
+      ),
     );
   }
 }
@@ -258,12 +271,13 @@ double _animatedMetricValue(String value) {
   return parsed?.toDouble() ?? 0;
 }
 
-/// 用动画进度 0..1 把目标值渲染成最终展示字符串。
-/// 整数 metric 保持整数显示；带小数的 metric 保留 1 位小数。
-String _formatAnimated(String target, double progress) {
+/// 根据 TweenAnimationBuilder 传入的当前动画值渲染最终展示字符串。
+/// 整数 metric 始终保持整数显示；带小数的 metric 保留 1 位小数。
+String _formatAnimated(String target, double animatedValue) {
   final parsed = num.tryParse(target);
   if (parsed == null) return target;
-  final v = parsed.toDouble() * progress;
-  if ((v - v.roundToDouble()).abs() < 0.05) return v.round().toString();
-  return v.toStringAsFixed(1);
+  if (!_hasFraction(target)) return animatedValue.round().toString();
+  return animatedValue.toStringAsFixed(1);
 }
+
+bool _hasFraction(String value) => value.contains('.');

@@ -801,7 +801,7 @@ class OfficialVehicleDetailPage extends StatelessWidget {
                   ),
                   _DetailLine('在线状态', vehicle.onlineLabel),
                   _DetailLine('设防状态', vehicle.defenceLabel),
-                  _DetailLine('ACC 状态', vehicle.powerLabel),
+                  _DetailLine('启动状态', vehicle.powerLabel),
                   _DetailLine(
                     '电量',
                     vehicle.electricQuantity == null

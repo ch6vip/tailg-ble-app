@@ -7,12 +7,6 @@ class _HomeQuickSection extends StatelessWidget {
     Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
-  void _showUnavailable(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final items = [
@@ -155,15 +149,9 @@ class _HomeQuickSection extends StatelessWidget {
                     onTap: () => _open(context, const NfcKeyPage()),
                   ),
                   const SizedBox(height: 12),
-                  _BleRenewalServiceCard(
-                    onTap: () =>
-                        _showUnavailable(context, '蓝牙续费暂未开放，当前不接入官方支付与服务权益'),
-                  ),
+                  const _BleRenewalServiceCard(),
                   const SizedBox(height: 12),
-                  _ChargingStationServiceCard(
-                    onTap: () =>
-                        _showUnavailable(context, '台铃充电站暂未开放，当前不接入官方站点与交易接口'),
-                  ),
+                  const _ChargingStationServiceCard(),
                 ],
               ),
             );
@@ -701,14 +689,13 @@ class _NfcServiceCard extends StatelessWidget {
 }
 
 class _BleRenewalServiceCard extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _BleRenewalServiceCard({required this.onTap});
+  const _BleRenewalServiceCard();
 
   @override
   Widget build(BuildContext context) {
     return _OfficialPressable(
-      onTap: onTap,
+      enabled: false,
+      onTap: () {},
       background: const Color(0xFFF4F5F7),
       pressedBackground: _officialPressedBg,
       child: Container(
@@ -763,14 +750,13 @@ class _BleRenewalServiceCard extends StatelessWidget {
 }
 
 class _ChargingStationServiceCard extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _ChargingStationServiceCard({required this.onTap});
+  const _ChargingStationServiceCard();
 
   @override
   Widget build(BuildContext context) {
     return _OfficialPressable(
-      onTap: onTap,
+      enabled: false,
+      onTap: () {},
       background: const Color(0xFFF7F8FA),
       child: Container(
         height: 150,
@@ -778,7 +764,11 @@ class _ChargingStationServiceCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _ServiceCardHeader(title: '台铃充电站', trailing: '暂未开放'),
+            const _ServiceCardHeader(
+              title: '台铃充电站',
+              trailing: '暂未开放',
+              showChevron: false,
+            ),
             const SizedBox(height: 14),
             Expanded(
               child: Container(
@@ -822,7 +812,7 @@ class _ChargingStationServiceCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right, color: Colors.grey.shade400),
+                    const _UnavailableBadge(),
                   ],
                 ),
               ),
@@ -837,8 +827,13 @@ class _ChargingStationServiceCard extends StatelessWidget {
 class _ServiceCardHeader extends StatelessWidget {
   final String title;
   final String trailing;
+  final bool showChevron;
 
-  const _ServiceCardHeader({required this.title, required this.trailing});
+  const _ServiceCardHeader({
+    required this.title,
+    required this.trailing,
+    this.showChevron = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -865,11 +860,12 @@ class _ServiceCardHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: Color(0xFFAAA9B1),
-              ),
+              if (showChevron)
+                const Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: Color(0xFFAAA9B1),
+                ),
             ],
           ),
         ),
@@ -955,6 +951,7 @@ class _MiniHelpChip extends StatelessWidget {
 class _OfficialPressable extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
+  final bool enabled;
   final Color background;
   final Color pressedBackground;
   final double radius;
@@ -963,6 +960,7 @@ class _OfficialPressable extends StatefulWidget {
   const _OfficialPressable({
     required this.child,
     required this.onTap,
+    this.enabled = true,
     this.background = Colors.white,
     this.pressedBackground = _officialPressedBg,
     this.radius = ReplicaRadii.card,
@@ -983,34 +981,65 @@ class _OfficialPressableState extends State<_OfficialPressable> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedScale(
-      duration: const Duration(milliseconds: 120),
-      curve: Curves.easeOutCubic,
-      scale: _pressed ? 0.98 : 1,
-      child: AnimatedContainer(
+    return Semantics(
+      button: widget.enabled,
+      enabled: widget.enabled,
+      child: AnimatedScale(
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOutCubic,
-        decoration: BoxDecoration(
-          color: _pressed ? widget.pressedBackground : widget.background,
-          borderRadius: BorderRadius.circular(widget.radius),
-          boxShadow: widget.shadow ? AppShadows.cardShadow : null,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(widget.radius),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {
-                _setPressed(false);
-                HapticFeedback.mediumImpact();
-                widget.onTap();
-              },
-              onTapDown: (_) => _setPressed(true),
-              onTapUp: (_) => _setPressed(false),
-              onTapCancel: () => _setPressed(false),
-              child: widget.child,
+        scale: widget.enabled && _pressed ? 0.98 : 1,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            color: widget.enabled && _pressed
+                ? widget.pressedBackground
+                : widget.background,
+            borderRadius: BorderRadius.circular(widget.radius),
+            boxShadow: widget.shadow ? AppShadows.cardShadow : null,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(widget.radius),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: widget.enabled
+                    ? () {
+                        _setPressed(false);
+                        HapticFeedback.mediumImpact();
+                        widget.onTap();
+                      }
+                    : null,
+                onTapDown: widget.enabled ? (_) => _setPressed(true) : null,
+                onTapUp: widget.enabled ? (_) => _setPressed(false) : null,
+                onTapCancel: widget.enabled ? () => _setPressed(false) : null,
+                child: widget.child,
+              ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UnavailableBadge extends StatelessWidget {
+  const _UnavailableBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE3E6EC),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Text(
+        '筹备中',
+        style: TextStyle(
+          fontSize: 12,
+          color: ReplicaColors.muted,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );

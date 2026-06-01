@@ -237,7 +237,6 @@ class _HomePageState extends State<HomePage>
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
     return Scaffold(
       body: FadeTransition(
         opacity: _fadeAnim,
@@ -254,7 +253,6 @@ class _HomePageState extends State<HomePage>
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            height: AppNav.barBaseHeight + bottomInset,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.92),
               border: Border(
@@ -264,77 +262,35 @@ class _HomePageState extends State<HomePage>
                 ),
               ),
             ),
-            padding: EdgeInsets.only(top: 8, bottom: bottomInset),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _NavItem(
-                  icon: Icons.search,
-                  label: '扫描',
-                  active: _currentIndex == 0,
-                  onTap: () => _switchTab(0),
-                ),
-                _NavItem(
-                  icon: Icons.directions_car_outlined,
-                  label: '爱车',
-                  active: _currentIndex == 1,
-                  onTap: () => _switchTab(1),
-                ),
-                _NavItem(
-                  icon: Icons.settings_outlined,
-                  label: '设置',
-                  active: _currentIndex == 2,
-                  onTap: () => _switchTab(2),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? AppColors.primary : AppColors.navInactive;
-    return Semantics(
-      button: true,
-      selected: active,
-      label: active ? '$label，已选中' : label,
-      excludeSemantics: true,
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 24, color: color),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: color,
-                ),
+            child: SafeArea(
+              top: false,
+              child: NavigationBar(
+                height: AppNav.barBaseHeight,
+                selectedIndex: _currentIndex,
+                onDestinationSelected: _switchTab,
+                backgroundColor: Colors.white.withValues(alpha: 0.92),
+                surfaceTintColor: Colors.transparent,
+                indicatorColor: AppColors.primary.withValues(alpha: 0.12),
+                labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.search),
+                    selectedIcon: Icon(Icons.search),
+                    label: '扫描',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.directions_car_outlined),
+                    selectedIcon: Icon(Icons.directions_car),
+                    label: '爱车',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.settings_outlined),
+                    selectedIcon: Icon(Icons.settings),
+                    label: '设置',
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
