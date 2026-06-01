@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../theme/app_colors.dart';
 
 class SlideToAction extends StatefulWidget {
   final VoidCallback? onSlideComplete;
@@ -118,9 +119,9 @@ class _SlideToActionState extends State<SlideToAction>
                 boxShadow: glowOpacity > 0
                     ? [
                         BoxShadow(
-                          color: const Color(
-                            0xFF4CAF50,
-                          ).withValues(alpha: glowOpacity * 0.4),
+                          color: AppColors.success.withValues(
+                            alpha: glowOpacity * 0.4,
+                          ),
                           blurRadius: 16,
                           spreadRadius: 2,
                         ),
