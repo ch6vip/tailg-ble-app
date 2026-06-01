@@ -189,8 +189,10 @@ class _OfficialSmallControlButtonState
           color: background,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Opacity(
+        child: AnimatedOpacity(
           opacity: widget.enabled || widget.loading ? 1 : 0.54,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
           child: Material(
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(8),

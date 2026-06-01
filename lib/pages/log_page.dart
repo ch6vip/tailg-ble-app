@@ -112,6 +112,10 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
                 AppHeaderAction(
                   icon: Icons.refresh,
                   tooltip: '刷新',
+                  // Full-page rebuild is intentional: LogService exposes no
+                  // stream/notifier, so only setState forces a re-read of its
+                  // synchronous getters. Scoping to the list would require
+                  // adding a stream to LogService (out of scope here).
                   onTap: () => setState(() {}),
                 ),
                 AppHeaderAction(

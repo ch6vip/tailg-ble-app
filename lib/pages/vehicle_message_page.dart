@@ -294,6 +294,10 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
                 ),
                 IconButton(
                   tooltip: '刷新',
+                  // Full-page rebuild is intentional: messages are derived
+                  // synchronously from LogService which exposes no
+                  // stream/notifier. Scoping to the list would require adding
+                  // a stream to LogService (out of scope here).
                   onPressed: () => setState(() {}),
                   icon: const Icon(Icons.refresh),
                 ),
