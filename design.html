@@ -3,26 +3,33 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tailg BLE App 当前复刻界面预览</title>
+  <title>Tailg BLE App 控车界面预览</title>
   <link rel="icon" href="data:," />
   <style>
     :root {
-      --page: #eff0f5;
-      --white: #ffffff;
-      --pressed: #e5e5e5;
-      --inner: #f0f0f5;
-      --ink: #1f1f1f;
-      --secondary: #4a4c52;
-      --muted: #807e89;
-      --subtle: #6d717c;
-      --line: #e5e5e5;
-      --blue: #5596ff;
-      --blue-dark: #2d6fe3;
-      --green: #4caf50;
-      --orange: #ff9800;
-      --red: #ff5252;
+      --page: #EFF0F5;
+      --white: #FFFFFF;
+      --pressed: #E5E5E5;
+      --inner: #F0F0F5;
+      --ink: #1F1F1F;
+      --secondary: #4A4C52;
+      --muted: #807E89;
+      --subtle: #6D717C;
+      --line: #E5E5E5;
+      --blue: #5596FF;
+      --blue-dark: #2D6FE3;
+      --green: #4CAF50;
+      --orange: #FF9800;
+      --red: #FF5252;
+      --red-brand: #F11C2C;
+      --purple: #7B61FF;
+      --teal: #00A896;
+      --orange-deep: #FF8A00;
       --shadow: 0 2px 10px rgba(0, 0, 0, .04);
-      --radius: 8px;
+      --radius-card: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-pill: 999px;
     }
 
     * { box-sizing: border-box; }
@@ -31,7 +38,7 @@
       margin: 0;
       min-height: 100vh;
       font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-      background: #f5f6f8;
+      background: #F5F6F8;
       color: var(--ink);
     }
 
@@ -57,7 +64,6 @@
       margin: 0 0 8px;
       font-size: 22px;
       line-height: 1.25;
-      letter-spacing: 0;
     }
 
     .panel p {
@@ -76,7 +82,7 @@
 
     .score {
       background: var(--page);
-      border-radius: var(--radius);
+      border-radius: var(--radius-card);
       padding: 12px;
     }
 
@@ -118,14 +124,14 @@
     .dot.wait { background: var(--orange); }
     .dot.stop { background: var(--red); }
 
-    .tabs {
+    .side-tabs {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       margin-top: 18px;
     }
 
-    .tab {
+    .side-tab {
       border: 0;
       background: var(--page);
       color: var(--secondary);
@@ -135,10 +141,11 @@
       font-weight: 700;
       cursor: pointer;
       transition: transform .12s ease, background-color .12s ease, color .12s ease;
+      font-size: 12px;
     }
 
-    .tab:active { transform: scale(.96); background: var(--pressed); }
-    .tab.active { background: var(--blue); color: #fff; }
+    .side-tab:active { transform: scale(.96); background: var(--pressed); }
+    .side-tab.active { background: var(--blue); color: #fff; }
 
     .stage {
       display: flex;
@@ -147,8 +154,8 @@
     }
 
     .phone {
-      width: 390px;
-      height: 844px;
+      width: 380px;
+      height: 760px;
       border: 10px solid #191a1d;
       border-radius: 42px;
       background: var(--page);
@@ -163,7 +170,7 @@
       top: 10px;
       left: 50%;
       width: 116px;
-      height: 31px;
+      height: 28px;
       transform: translateX(-50%);
       background: #08080a;
       border-radius: 20px;
@@ -172,14 +179,14 @@
     .app {
       height: 100%;
       overflow: hidden;
-      padding-top: 42px;
+      padding-top: 38px;
       background: var(--page);
       position: relative;
     }
 
     .screen {
       display: none;
-      height: calc(100% - 74px);
+      height: calc(100% - 64px);
       overflow-y: auto;
       padding-bottom: 24px;
     }
@@ -187,125 +194,243 @@
     .screen.active { display: block; }
     .screen::-webkit-scrollbar { width: 0; }
 
-    .section { padding: 0 20px; }
-    .gap-10 { height: 10px; }
-    .gap-14 { height: 14px; }
-
-    .top-row {
+    /* ============ Home screen (control_page) ============ */
+    .home-top {
       display: flex;
       align-items: center;
       gap: 8px;
       padding: 8px 20px 0;
     }
 
-    .title-select {
+    .title-block {
       min-width: 0;
       flex: 1;
       display: flex;
       align-items: center;
-      gap: 7px;
-      font-size: 24px;
-      font-weight: 800;
+      gap: 8px;
     }
 
-    .title-select span {
+    .title-block .name {
+      font-size: 23px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .status-pill {
-      font-size: 12px;
-      color: var(--green);
-      background: rgba(76, 175, 80, .14);
-      border-radius: 999px;
-      padding: 3px 9px;
-      white-space: nowrap;
-      font-weight: 700;
+    .title-block .name .caret {
+      font-size: 18px;
+      color: var(--secondary);
+      line-height: 1;
     }
 
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--green);
+      background: rgba(76, 175, 80, .15);
+      border-radius: 999px;
+      padding: 4px 10px;
+      white-space: nowrap;
+    }
+
+    .status-pill svg { width: 12px; height: 12px; }
+
     .icon-btn {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       border: 0;
       border-radius: 50%;
-      background: rgba(255,255,255,.76);
+      background: rgba(255,255,255,.72);
       display: grid;
       place-items: center;
       cursor: pointer;
       transition: transform .12s ease, background-color .12s ease;
+      color: var(--ink);
+      flex: 0 0 auto;
     }
 
-    .icon-btn:active,
-    .pressable:active {
-      transform: scale(.96);
-      background-color: var(--pressed) !important;
-    }
+    .icon-btn:active { transform: scale(.96); background: var(--pressed); }
 
     .small-icon {
-      width: 19px;
-      height: 19px;
+      width: 22px;
+      height: 22px;
       stroke: currentColor;
-      stroke-width: 2;
+      stroke-width: 1.8;
       fill: none;
       stroke-linecap: round;
       stroke-linejoin: round;
     }
 
+    .ble-sub {
+      padding: 4px 20px 0;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--subtle);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .ble-sub svg { width: 12px; height: 12px; }
+
     .stats {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      padding: 18px 20px 0;
+      grid-template-columns: 1fr 1fr auto;
+      padding: 16px 20px 0;
       text-align: center;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat {
+      min-width: 0;
     }
 
     .stat strong {
       display: block;
-      font-size: 22px;
+      font-size: 32px;
       line-height: 1;
+      font-weight: 700;
+      color: var(--green);
     }
+
+    .stat.neutral strong { color: var(--ink); }
 
     .stat span {
       display: block;
-      margin-top: 5px;
+      margin-top: 6px;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 13px;
+      font-weight: 700;
     }
 
+    .ch-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--green);
+      background: rgba(255,255,255,.78);
+      border-radius: 999px;
+      padding: 6px 10px;
+      height: 32px;
+      align-self: center;
+    }
+
+    .ch-pill svg { width: 12px; height: 12px; }
+
+    /* bike area */
     .bike-area {
-      height: 198px;
-      margin: 4px 20px 0;
+      height: 168px;
+      margin: 6px 20px 0;
       position: relative;
+      border-radius: 12px;
     }
 
     .bike-glow {
       position: absolute;
-      inset: 15px -18px 8px;
+      inset: 8px -10px 4px;
       border-radius: 18px;
-      background: linear-gradient(#ffffff88, #e7eaf100);
+      background: linear-gradient(180deg, rgba(255,255,255,.52) 0%, rgba(255,255,255,0) 100%);
     }
 
-    .bike {
+    .bike-svg {
       position: absolute;
-      left: 18px;
-      right: 18px;
-      bottom: 10px;
-      height: 142px;
+      left: 14px;
+      right: 14px;
+      bottom: 6px;
+      height: 138px;
     }
 
-    .bike img,
-    .bike svg {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      overflow: visible;
+    .state-chip {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.55);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
     }
 
+    .state-chip svg { width: 12px; height: 12px; }
+
+    .mode-pill {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 26px;
+      padding: 0 6px 0 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.78);
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .mode-pill .mini-switch {
+      width: 30px;
+      height: 16px;
+      background: var(--green);
+      border-radius: 999px;
+      position: relative;
+    }
+
+    .mode-pill .mini-switch::after {
+      content: "";
+      position: absolute;
+      width: 12px; height: 12px;
+      background: #fff;
+      border-radius: 50%;
+      right: 2px; top: 2px;
+    }
+
+    .bike-meta {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 6px;
+      text-align: center;
+    }
+
+    .bike-meta strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .bike-meta span {
+      display: block;
+      font-size: 12px;
+      color: var(--secondary);
+      margin-top: 2px;
+    }
+
+    /* tip row */
     .tip-row {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 0 20px;
+      padding: 6px 20px 0;
     }
 
     .round-chip {
@@ -317,26 +442,47 @@
       display: grid;
       place-items: center;
       color: var(--blue);
+      flex: 0 0 auto;
     }
 
-    .status-bar {
+    .round-chip svg { width: 22px; height: 22px; }
+
+    .tip-bar {
       flex: 1;
+      min-width: 0;
       height: 38px;
-      border: 1px solid var(--line);
+      border: 0;
       border-radius: 999px;
       background: var(--white);
-      padding: 0 14px;
+      padding: 0 8px 0 14px;
       display: flex;
       align-items: center;
-      font-size: 13px;
-      color: var(--muted);
-      font-weight: 800;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--ink);
+      font-weight: 700;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      transition: transform .12s ease, background-color .12s ease;
+      box-shadow: var(--shadow);
     }
 
+    .tip-bar .ch-mini {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--green);
+      background: rgba(76,175,80,.12);
+      border-radius: 999px;
+      padding: 2px 7px;
+      flex: 0 0 auto;
+    }
+
+    .tip-bar .ch-mini svg { width: 10px; height: 10px; }
+
+    /* control grid */
     .control-grid {
       display: grid;
       grid-template-columns: 90px 1fr;
@@ -347,7 +493,7 @@
 
     .control-card {
       background: var(--white);
-      border-radius: var(--radius);
+      border-radius: var(--radius-card);
       box-shadow: var(--shadow);
       padding: 10px;
     }
@@ -360,13 +506,13 @@
 
     .ctl-btn {
       border: 0;
-      border-radius: var(--radius);
+      border-radius: var(--radius-card);
       background: var(--inner);
       color: var(--muted);
       min-width: 0;
       display: grid;
       place-items: center;
-      gap: 5px;
+      gap: 3px;
       font-weight: 800;
       font-size: 12px;
       cursor: pointer;
@@ -382,24 +528,24 @@
       position: absolute;
       right: -4px;
       bottom: -4px;
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       background: var(--blue);
       color: #fff;
       display: grid;
       place-items: center;
-      font-size: 13px;
       box-shadow: 0 4px 10px rgba(85,150,255,.24);
     }
 
+    .edit-dot svg { width: 13px; height: 13px; }
+
     .power-row {
       height: 86px;
-      border: 1px solid rgba(85, 150, 255, .18);
-      border-radius: var(--radius);
-      background: #f7f8fa;
+      border-radius: var(--radius-card);
+      background: var(--inner);
       display: grid;
-      grid-template-columns: 52px 1fr 120px;
+      grid-template-columns: 52px 1fr 110px;
       gap: 8px;
       align-items: center;
       padding: 10px;
@@ -409,55 +555,71 @@
     .power-icon {
       width: 52px;
       height: 52px;
-      border-radius: var(--radius);
+      border-radius: var(--radius-card);
       background: var(--blue);
       display: grid;
       place-items: center;
       color: #fff;
     }
 
-    .power-text {
-      min-width: 0;
-    }
+    .power-icon svg { width: 28px; height: 28px; }
 
-    .power-text strong { display: block; font-size: 17px; }
-    .power-text span { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
+    .power-text { min-width: 0; }
+    .power-text strong { display: block; font-size: 17px; font-weight: 800; color: var(--ink); }
+    .power-text span { display: block; margin-top: 3px; font-size: 12px; color: var(--muted); }
 
-    .slide {
-      height: 56px;
-      border-radius: 999px;
-      background: var(--blue);
+    /* New SlideToAction style */
+    .slide-new {
       position: relative;
-      overflow: hidden;
+      width: 110px;
+      height: 48px;
+      border-radius: 12px;
+      background: #2D2D2D;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 12px;
       cursor: grab;
       user-select: none;
+      overflow: hidden;
     }
 
-    .slide-label {
+    .slide-new .thumb {
       position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      color: rgba(255,255,255,.72);
-      font-size: 13px;
-    }
-
-    .slide-knob {
-      position: absolute;
-      left: 4px;
-      top: 4px;
+      left: 0;
+      top: 0;
       width: 48px;
       height: 48px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.25);
+      border-radius: 12px;
+      background: #2D2D2D;
       display: grid;
       place-items: center;
       color: #fff;
       transition: left .36s cubic-bezier(.2, .8, .2, 1);
     }
 
-    .slide.done .slide-knob { left: calc(100% - 52px); }
-    .slide.done .slide-label { opacity: 0; }
+    .slide-new .thumb svg { width: 24px; height: 24px; }
+
+    .slide-new .chevs {
+      position: absolute;
+      left: 56px;
+      top: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      color: rgba(255,255,255,.6);
+    }
+
+    .slide-new .chevs svg { width: 18px; height: 18px; }
+
+    .slide-new .label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      margin-left: auto;
+      padding-right: 2px;
+    }
 
     .sub-controls {
       margin-top: 10px;
@@ -467,10 +629,13 @@
       height: 78px;
     }
 
+    .sub-controls .ctl-btn svg { width: 22px; height: 22px; }
+
+    /* service cards */
     .quick-section {
       margin: 14px 20px 0;
       background: var(--white);
-      border-radius: var(--radius);
+      border-radius: var(--radius-card);
       box-shadow: var(--shadow);
       padding: 14px 0 10px;
     }
@@ -478,6 +643,7 @@
     .quick-section h3 {
       margin: 0 16px 10px;
       font-size: 15px;
+      font-weight: 800;
     }
 
     .quick-list {
@@ -490,7 +656,7 @@
     .quick-item {
       width: 86px;
       height: 92px;
-      border-radius: var(--radius);
+      border-radius: var(--radius-card);
       display: grid;
       justify-items: center;
       align-content: center;
@@ -506,38 +672,413 @@
     .quick-icon {
       width: 46px;
       height: 46px;
-      border-radius: var(--radius);
+      border-radius: var(--radius-card);
       background: var(--inner);
       display: grid;
       place-items: center;
       color: var(--blue);
     }
 
+    .quick-icon svg { width: 24px; height: 24px; }
+
     .progress {
       width: 60px;
       height: 4px;
       margin: 10px auto 0;
-      background: #dfdfdf;
+      background: #DFDFDF;
       border-radius: 999px;
       overflow: hidden;
     }
 
     .progress i {
       display: block;
-      width: 43%;
+      width: 50%;
       height: 100%;
-      background: #2c2c2c;
+      background: #2C2C2C;
     }
 
+    /* location card */
+    .loc-card {
+      margin: 12px 20px 0;
+      height: 200px;
+      background: var(--white);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 10px;
+    }
+
+    .loc-card .row1 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .loc-card .row1 .label {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--ink);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .loc-card .mini-map {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      background:
+        linear-gradient(30deg, transparent 46%, rgba(255,255,255,.5) 47%, rgba(255,255,255,.5) 50%, transparent 51%) 0 0 / 60px 60px,
+        linear-gradient(120deg, transparent 46%, rgba(255,255,255,.4) 47%, rgba(255,255,255,.4) 50%, transparent 51%) 0 0 / 80px 80px,
+        radial-gradient(circle at 60% 40%, rgba(85,150,255,.18) 0 6px, transparent 7px),
+        #DCE7DD;
+    }
+
+    .loc-card .mini-map .pin {
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -100%);
+      width: 22px; height: 28px;
+    }
+
+    .loc-card .mini-map .pin svg { width: 100%; height: 100%; }
+
+    /* banner cards */
+    .banner {
+      margin: 10px 20px 0;
+      height: 100px;
+      border-radius: var(--radius-card);
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 12px;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .banner .icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      flex: 0 0 auto;
+    }
+
+    .banner .icon-box svg { width: 22px; height: 22px; }
+
+    .banner .text strong { display: block; font-size: 15px; font-weight: 800; }
+    .banner .text span { display: block; font-size: 12px; margin-top: 3px; opacity: .8; }
+
+    .banner.track {
+      background: linear-gradient(120deg, #FFF4E5 0%, #FFE3C2 50%, #FFD2A6 100%);
+      color: #B85A00;
+    }
+    .banner.track .icon-box { background: var(--orange-deep); }
+    .banner.track::after {
+      content: "";
+      position: absolute;
+      right: -30px; top: 50%;
+      transform: translateY(-50%);
+      width: 120px; height: 200%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.55));
+      transform: translateY(-50%) skewX(-20deg);
+    }
+
+    .banner.smart {
+      background: linear-gradient(120deg, #EAF2FF 0%, #DDEBFF 100%);
+      color: #2D6FE3;
+    }
+    .banner.smart .icon-box { background: var(--blue); }
+
+    /* settings subcard */
+    .sub-card {
+      margin: 10px 20px 0;
+      background: var(--white);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      padding: 14px 12px 12px;
+    }
+
+    .sub-card h4 {
+      margin: 0 4px 10px;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .sub-card .row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .sub-card .row .item {
+      height: 78px;
+      border-radius: var(--radius-card);
+      display: grid;
+      place-items: center;
+      gap: 6px;
+      color: var(--secondary);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .sub-card .row .item .ic {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--inner);
+      display: grid; place-items: center;
+      color: var(--blue);
+    }
+
+    .sub-card .row .item .ic svg { width: 20px; height: 20px; }
+
+    /* sound card */
+    .sound-card {
+      margin: 10px 20px 0;
+      height: 96px;
+      background: #20242B;
+      border-radius: var(--radius-card);
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: 1fr 64px;
+      gap: 12px;
+      align-items: center;
+      color: #fff;
+    }
+
+    .sound-card .label { font-size: 15px; font-weight: 800; }
+    .sound-card .sub { font-size: 12px; color: rgba(255,255,255,.6); margin-top: 4px; }
+
+    .sound-card .wave {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 40px;
+    }
+
+    .sound-card .wave i {
+      width: 4px;
+      background: #fff;
+      border-radius: 2px;
+    }
+
+    /* NFC card */
+    .nfc-card {
+      margin: 10px 20px 0;
+      height: 112px;
+      background: var(--white);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nfc-card .accent {
+      position: absolute;
+      left: -20px; bottom: -20px;
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      background: rgba(123, 97, 255, .12);
+    }
+
+    .nfc-card .top {
+      position: relative;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .nfc-card .top .dot-p {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--purple);
+    }
+
+    .nfc-card .chips {
+      position: relative;
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .nfc-card .chips .chip {
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(123, 97, 255, .10);
+      color: var(--purple);
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* BLE renew */
+    .ble-renew {
+      margin: 10px 20px 0;
+      height: 92px;
+      background: #EFF6FF;
+      border-radius: var(--radius-card);
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .ble-renew .text strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .ble-renew .text span {
+      display: block;
+      font-size: 11px;
+      color: var(--subtle);
+      margin-top: 4px;
+    }
+
+    .ble-renew .cta {
+      width: 76px;
+      height: 32px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    /* charge station */
+    .charge-card {
+      margin: 10px 20px 0;
+      height: 150px;
+      background: var(--white);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .charge-card .head {
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .charge-card .head .dot-o {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--orange-deep);
+    }
+
+    .charge-card .head strong { font-size: 14px; font-weight: 800; }
+
+    .charge-card .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 12px 0 0;
+      text-align: left;
+    }
+
+    .charge-card .stat strong {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .charge-card .stat span {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .charge-card .pulse {
+      position: absolute;
+      right: 16px; top: 16px;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(255, 138, 0, .14);
+      display: grid; place-items: center;
+      color: var(--orange-deep);
+    }
+
+    .charge-card .pulse svg { width: 18px; height: 18px; }
+
+    /* ride mode */
+    .ride-mode {
+      margin: 12px 20px 0;
+      background: var(--white);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      padding: 12px 14px;
+    }
+
+    .ride-mode .label { font-size: 12px; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+
+    .ride-mode .opts {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .ride-mode .opts .opt {
+      height: 36px;
+      border-radius: var(--radius-card);
+      background: var(--inner);
+      color: var(--secondary);
+      font-size: 12px;
+      font-weight: 800;
+      display: grid; place-items: center;
+      cursor: pointer;
+    }
+
+    .ride-mode .opts .opt.active {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    /* ============ Battery screen ============ */
     .battery-hero {
       height: 430px;
-      background: linear-gradient(#fff 0%, #e9f1ff 42%, #dde9ff 74%, var(--page) 100%);
+      background: linear-gradient(180deg, #FFFFFF 0%, #E9F1FF 42%, #DDE9FF 74%, var(--page) 100%);
       position: relative;
       text-align: center;
       overflow: hidden;
     }
 
+    .battery-hero .deco-l,
+    .battery-hero .deco-r {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .battery-hero .deco-l {
+      left: -60px; top: -50px;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, rgba(85,150,255,.18), transparent 70%);
+    }
+
+    .battery-hero .deco-r {
+      right: -60px; top: -30px;
+      width: 220px; height: 220px;
+      background: radial-gradient(circle, rgba(85,150,255,.12), transparent 70%);
+    }
+
     .page-title {
+      position: relative;
       height: 54px;
       display: grid;
       grid-template-columns: 48px 1fr 72px;
@@ -545,6 +1086,7 @@
       padding: 0 10px;
       font-weight: 800;
       font-size: 18px;
+      color: var(--ink);
     }
 
     .page-title button {
@@ -553,14 +1095,23 @@
       height: 40px;
       border-radius: 50%;
       cursor: pointer;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .page-title .action {
+      color: var(--blue);
+      font-size: 13px;
     }
 
     .battery-art {
+      position: relative;
       width: 188px;
       height: 104px;
       border-radius: 28px;
       background: rgba(255,255,255,.56);
-      margin: 16px auto 4px;
+      margin: 6px auto 4px;
       display: grid;
       place-items: center;
     }
@@ -574,8 +1125,7 @@
 
     .battery-body {
       position: absolute;
-      left: 0;
-      top: 8px;
+      left: 0; top: 8px;
       width: 136px;
       height: 58px;
       border-radius: 18px;
@@ -588,33 +1138,29 @@
 
     .battery-cap {
       position: absolute;
-      right: 0;
-      top: 25px;
-      width: 12px;
-      height: 24px;
+      right: 0; top: 25px;
+      width: 12px; height: 24px;
       border-radius: 6px;
       background: rgba(255,255,255,.9);
     }
 
-    .seg { border-radius: 8px; background: #4caf50; }
-    .seg.dim { background: #e1e5ec; }
+    .seg { border-radius: 8px; background: var(--green); }
+    .seg.dim { background: #E1E5EC; }
 
     .percent {
+      position: relative;
       display: flex;
       align-items: flex-start;
       justify-content: center;
       margin-top: 6px;
+      color: var(--ink);
     }
 
-    .percent strong {
-      font-size: 88px;
-      line-height: .92;
-      font-weight: 300;
-    }
-
-    .percent span { padding-top: 10px; font-size: 24px; }
+    .percent strong { font-size: 88px; line-height: .92; font-weight: 300; }
+    .percent span { padding-top: 10px; font-size: 24px; font-weight: 300; }
 
     .battery-pill {
+      position: relative;
       display: inline-block;
       margin-top: 10px;
       padding: 7px 15px;
@@ -622,51 +1168,110 @@
       background: rgba(255,255,255,.62);
       color: var(--secondary);
       font-size: 13px;
+      font-weight: 600;
     }
 
-    .dark-summary {
-      margin: -28px 20px 14px;
+    .battery-status {
+      position: relative;
+      margin-top: 10px;
+      color: var(--green);
+      font-weight: 800;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .battery-status svg { width: 14px; height: 14px; }
+
+    .source-strip {
+      margin: -28px 20px 12px;
       position: relative;
       z-index: 2;
-      background: #252525;
-      color: #fff;
-      border-radius: var(--radius);
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      padding: 16px 8px;
-      text-align: center;
+      height: 64px;
+      background: var(--white);
+      border-radius: var(--radius-card);
       box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      text-align: center;
+      align-items: center;
     }
 
-    .dark-summary strong { display: block; font-size: 16px; }
-    .dark-summary span { display: block; margin-top: 5px; font-size: 11px; color: rgba(255,255,255,.66); }
+    .source-strip .cell { padding: 6px; }
+    .source-strip .cell + .cell { border-left: 1px solid var(--line); }
+    .source-strip .cell strong { display: block; font-size: 14px; font-weight: 800; color: var(--ink); }
+    .source-strip .cell span { display: block; font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    .metric-grid {
+      margin: 0 20px 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .metric-grid .cell {
+      background: var(--white);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .metric-grid .cell .lbl { font-size: 12px; color: var(--muted); font-weight: 700; }
+    .metric-grid .cell .val { font-size: 22px; font-weight: 800; color: var(--ink); margin-top: 4px; }
+    .metric-grid .cell .unit { font-size: 12px; color: var(--muted); font-weight: 700; margin-left: 2px; }
+
+    .fault-card {
+      margin: 0 20px 12px;
+      background: var(--white);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .fault-card .ic {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: rgba(76,175,80,.14);
+      color: var(--green);
+      display: grid; place-items: center;
+    }
+
+    .fault-card .ic svg { width: 18px; height: 18px; }
+
+    .fault-card .text { flex: 1; }
+    .fault-card .text strong { display: block; font-size: 14px; font-weight: 800; }
+    .fault-card .text span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
 
     .info-card {
       margin: 0 20px 12px;
       background: var(--white);
-      border-radius: var(--radius);
+      border-radius: var(--radius-card);
       box-shadow: var(--shadow);
-      padding: 15px;
+      padding: 6px 15px;
     }
 
     .info-row {
-      min-height: 36px;
+      min-height: 44px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      border-bottom: 1px solid var(--page);
+      border-bottom: 1px solid var(--line);
       font-size: 13px;
     }
 
     .info-row:last-child { border-bottom: 0; }
     .info-row span { color: var(--muted); }
-    .info-row strong { font-size: 13px; }
+    .info-row strong { font-size: 13px; font-weight: 700; color: var(--ink); }
 
+    /* ============ Map screen ============ */
     .map-screen {
-      height: 100%;
       position: relative;
-      background: #dde6dc;
+      background: #DDE6DC;
       overflow: hidden;
     }
 
@@ -674,70 +1279,110 @@
       position: absolute;
       inset: 0;
       background:
-        linear-gradient(30deg, transparent 46%, rgba(255,255,255,.55) 47%, rgba(255,255,255,.55) 50%, transparent 51%) 0 0 / 90px 90px,
-        linear-gradient(120deg, transparent 46%, rgba(255,255,255,.45) 47%, rgba(255,255,255,.45) 50%, transparent 51%) 0 0 / 120px 120px,
-        radial-gradient(circle at 65% 42%, rgba(85,150,255,.22) 0 10px, transparent 11px),
-        #dce7dd;
+        linear-gradient(30deg, transparent 46%, rgba(255,255,255,.55) 47%, rgba(255,255,255,.55) 50%, transparent 51%) 0 0 / 80px 80px,
+        linear-gradient(120deg, transparent 46%, rgba(255,255,255,.45) 47%, rgba(255,255,255,.45) 50%, transparent 51%) 0 0 / 110px 110px,
+        radial-gradient(circle at 65% 42%, rgba(85,150,255,.18) 0 8px, transparent 9px),
+        #DCE7DD;
     }
 
-    .map-title {
+    .map-tabs {
       position: absolute;
-      top: 10px;
-      left: 8px;
-      right: 8px;
-      height: 48px;
-      display: grid;
-      grid-template-columns: 48px 1fr 48px;
-      align-items: center;
-      text-align: center;
-      font-weight: 800;
-      font-size: 18px;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,.92);
+      border-radius: 999px;
+      padding: 4px;
       z-index: 2;
     }
 
-    .map-title .label {
-      justify-self: center;
-      background: rgba(255,255,255,.88);
+    .map-tabs button {
+      border: 0;
+      background: transparent;
+      height: 30px;
+      padding: 0 14px;
       border-radius: 999px;
-      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--secondary);
+      cursor: pointer;
     }
 
-    .marker {
+    .map-tabs button.active {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .map-marker {
       position: absolute;
-      left: 48%;
-      top: 38%;
-      transform: translate(-50%, -50%);
-      width: 36px;
-      height: 36px;
+      left: 50%; top: 42%;
+      transform: translate(-50%, -100%);
+      width: 36px; height: 44px;
+      z-index: 2;
+    }
+
+    .map-marker svg { width: 100%; height: 100%; filter: drop-shadow(0 3px 6px rgba(0,0,0,.25)); }
+
+    .map-dot {
+      position: absolute;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--blue);
+      border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+
+    .floating-btn {
+      position: absolute;
+      right: 12px;
+      width: 40px; height: 40px;
       border-radius: 50%;
       background: #fff;
-      box-shadow: 0 3px 12px rgba(0,0,0,.16);
-      display: grid;
-      place-items: center;
-      color: var(--blue);
+      box-shadow: 0 4px 10px rgba(0,0,0,.16);
+      display: grid; place-items: center;
+      color: var(--ink);
       z-index: 2;
     }
 
-    .fence-ring {
+    .floating-btn.refresh { top: 64px; }
+    .floating-btn.copy { top: 112px; }
+    .floating-btn svg { width: 20px; height: 20px; }
+
+    .map-address {
       position: absolute;
-      left: 48%;
-      top: 38%;
-      width: 210px;
-      height: 210px;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      border: 2px solid rgba(76,175,80,.55);
-      background: rgba(76,175,80,.12);
+      bottom: 220px;
+      left: 20px;
+      right: 20px;
+      background: rgba(255,255,255,.94);
+      border-radius: var(--radius-card);
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,.10);
+      z-index: 2;
     }
+
+    .map-address .ic {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: rgba(85,150,255,.12);
+      color: var(--blue);
+      display: grid; place-items: center;
+      flex: 0 0 auto;
+    }
+
+    .map-address .ic svg { width: 16px; height: 16px; }
+    .map-address .text { flex: 1; min-width: 0; }
+    .map-address .text strong { display: block; font-size: 13px; font-weight: 800; }
+    .map-address .text span { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
 
     .sheet {
       position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      left: 0; right: 0; bottom: 0;
       border-radius: 18px 18px 0 0;
-      background: #f7f7f7;
-      padding: 18px 20px 28px;
+      background: #F7F7F7;
+      padding: 14px 16px 24px;
       box-shadow: 0 -6px 18px rgba(0,0,0,.15);
     }
 
@@ -749,55 +1394,48 @@
       font-weight: 900;
     }
 
-    .setting-row {
-      min-height: 56px;
+    .sheet-handle {
+      width: 36px; height: 4px;
+      border-radius: 999px;
+      background: #D0D0D0;
+      margin: 0 auto 8px;
+    }
+
+    .sheet-row {
+      min-height: 52px;
       background: var(--white);
-      border-radius: var(--radius);
+      border-radius: var(--radius-card);
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 0 16px;
-      margin-bottom: 10px;
+      gap: 10px;
+      padding: 0 14px;
+      margin-bottom: 8px;
     }
 
-    .setting-row span { color: var(--muted); font-size: 12px; display: block; margin-top: 3px; }
-
-    .switch {
-      width: 52px;
-      height: 28px;
-      border-radius: 999px;
-      padding: 3px;
-      background: rgba(76,175,80,.22);
-      display: flex;
-      justify-content: flex-end;
-    }
-
-    .switch i {
-      width: 22px;
-      height: 22px;
+    .sheet-row .ic {
+      width: 32px; height: 32px;
       border-radius: 50%;
-      background: var(--green);
+      display: grid; place-items: center;
+      color: var(--blue);
+      background: rgba(85,150,255,.10);
     }
 
-    .range-card {
-      background: var(--white);
-      border-radius: var(--radius);
-      padding: 18px 20px;
-    }
+    .sheet-row .ic.green { color: var(--green); background: rgba(76,175,80,.12); }
+    .sheet-row .ic.orange { color: var(--orange); background: rgba(255,152,0,.12); }
+    .sheet-row .ic svg { width: 18px; height: 18px; }
+    .sheet-row .text { flex: 1; }
+    .sheet-row .text strong { display: block; font-size: 14px; font-weight: 800; }
+    .sheet-row .text span { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .sheet-row .chev { color: var(--muted); }
 
-    .range-top { display: flex; justify-content: space-between; font-weight: 800; }
-    .range-top span { color: var(--blue); }
-    .range-line { height: 6px; border-radius: 999px; background: var(--page); margin: 14px 0 8px; overflow: hidden; }
-    .range-line i { display: block; width: 42%; height: 100%; background: var(--blue); }
-    .range-labels { display: flex; justify-content: space-between; color: var(--subtle); font-size: 12px; }
-    .save-btn { width: 100%; height: 48px; border: 0; border-radius: var(--radius); margin-top: 12px; background: rgba(85,150,255,.45); color: #fff; font-size: 16px; font-weight: 900; }
-
+    /* ============ Track screen ============ */
     .track-page { padding: 12px 20px 24px; }
+
     .month-bar {
       height: 40px;
       background: var(--white);
       box-shadow: var(--shadow);
-      border-radius: var(--radius);
+      border-radius: var(--radius-card);
       display: grid;
       grid-template-columns: 42px 1fr 42px;
       align-items: center;
@@ -805,83 +1443,116 @@
       font-weight: 900;
     }
 
-    .month-bar button { border: 0; background: transparent; height: 40px; border-radius: var(--radius); }
+    .month-bar button { border: 0; background: transparent; height: 40px; cursor: pointer; color: var(--ink); }
+    .month-bar .label { display: flex; justify-content: center; align-items: center; gap: 4px; font-size: 14px; }
+
+    .summary-card {
+      margin-top: 12px;
+      background: var(--white);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .summary-card .cell { padding: 4px; }
+    .summary-card .cell strong { display: block; font-size: 22px; font-weight: 800; color: var(--ink); }
+    .summary-card .cell span { display: block; font-size: 12px; color: var(--muted); font-weight: 700; margin-top: 2px; }
 
     .day-card {
       margin-top: 14px;
       background: var(--white);
-      border-radius: var(--radius);
+      border-radius: var(--radius-card);
       box-shadow: var(--shadow);
       padding: 14px 15px 12px;
     }
 
-    .day-title { color: var(--muted); font-weight: 900; font-size: 14px; margin-bottom: 14px; }
-    .day-summary {
-      height: 75px;
-      border-radius: var(--radius);
-      background: var(--page);
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      text-align: center;
+    .day-title {
+      color: var(--ink);
+      font-weight: 800;
+      font-size: 14px;
+      margin-bottom: 14px;
+      display: flex;
       align-items: center;
+      gap: 6px;
     }
 
-    .day-summary div + div { border-left: 1px solid #fff; }
-    .day-summary strong { display: block; font-size: 20px; }
-    .day-summary span { color: var(--muted); font-size: 11px; }
+    .day-title .num {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #fff;
+      font-size: 12px;
+      display: grid; place-items: center;
+    }
 
     .record {
-      height: 86px;
-      margin-top: 12px;
-      border-radius: var(--radius);
+      height: 64px;
+      margin-top: 10px;
+      border-radius: var(--radius-card);
+      background: var(--page);
+      padding: 10px 12px;
       display: grid;
-      grid-template-columns: 88px 1px 1fr 72px 20px;
+      grid-template-columns: 80px 1fr 28px;
       align-items: center;
       gap: 12px;
-      transition: transform .12s ease, background-color .12s ease;
     }
 
-    .record:active { background: var(--pressed); transform: scale(.985); }
-    .rail { position: relative; height: 86px; font-size: 12px; color: var(--muted); }
-    .rail:before { content: ""; position: absolute; left: 7px; top: 30px; bottom: 30px; width: 1px; background: var(--page); }
-    .rail i { position: absolute; left: 0; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; }
-    .rail .start { top: 20px; background: var(--green); }
-    .rail .end { bottom: 20px; background: var(--orange); }
-    .rail .t1 { position: absolute; left: 20px; top: 15px; }
-    .rail .t2 { position: absolute; left: 20px; bottom: 15px; }
-    .record-line { height: 46px; background: var(--page); }
-    .record-main strong { font-size: 18px; display: block; }
-    .record-main span { color: var(--muted); font-size: 12px; }
-    .record-count { color: var(--muted); font-size: 12px; text-align: right; }
+    .record:first-of-type { margin-top: 0; }
 
-    .bottom-nav {
+    .record .time { font-size: 12px; color: var(--muted); font-weight: 700; }
+    .record .time strong { display: block; color: var(--ink); font-size: 14px; }
+
+    .record .stats { display: flex; gap: 8px; }
+    .record .stats .badge {
+      background: #fff;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .record .chev { color: var(--muted); }
+
+    .divider {
+      height: 1px;
+      background: var(--line);
+      margin: 12px 0;
+    }
+
+    /* ============ Bottom nav ============ */
+    .tabbar {
       position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 74px;
-      background: rgba(255,255,255,.96);
+      left: 0; right: 0; bottom: 0;
+      height: 64px;
+      background: rgba(255,255,255,.86);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-top: 1px solid rgba(0,0,0,.04);
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       z-index: 5;
     }
 
-    .nav {
+    .tabbar button {
       border: 0;
       background: transparent;
       display: grid;
       place-items: center;
-      align-content: center;
-      gap: 3px;
-      color: #bdbdbd;
+      place-content: center;
+      gap: 2px;
+      color: #BDBDBD;
       font-size: 11px;
-      font-weight: 800;
+      font-weight: 700;
       cursor: pointer;
     }
 
-    .nav.active { color: var(--blue); }
-    .nav:active { background: var(--pressed); }
+    .tabbar button.active { color: var(--blue); }
+    .tabbar button span.emoji { font-size: 18px; line-height: 1; }
+    .tabbar button:active { background: var(--pressed); }
 
     @media (max-width: 820px) {
       .page { grid-template-columns: 1fr; padding: 18px; }
@@ -900,25 +1571,24 @@
 <body>
   <main class="page">
     <aside class="panel">
-      <h1>当前复刻状态</h1>
-      <p>这是按当前 Flutter 项目生成的静态界面预览，重点展示首页控车、电池/BMS、地图围栏和历史轨迹。</p>
+      <h1>当前控车界面预览</h1>
+      <p>基于 Flutter 端最新 lib/pages 渲染的静态预览：控车首页、电池信息、车辆定位、历史轨迹四个核心界面。设计 token 与 lib/theme/app_colors.dart 保持一致。</p>
       <div class="score-grid">
-        <div class="score"><strong>25-35%</strong><span>按完整官方生态</span></div>
-        <div class="score"><strong>70-80%</strong><span>按控车工具体验</span></div>
+        <div class="score"><strong>95%</strong><span>首页控车</span></div>
+        <div class="score"><strong>90%</strong><span>电池/定位/轨迹</span></div>
       </div>
-      <p>已经比较接近的部分是控车首页、BMS 只读、电池展示、地图/轨迹/围栏的安全只读链路。差距主要还在官方私有图片/Lottie、高德原生 SDK、账号生态、消息、NFC、绑定和售后支付等完整平台能力。</p>
+      <p>已实现：BLE 状态、电量/里程、设备名、设防状态、SlideToAction 启动、寻车/解锁、功能设置、车辆定位、历史轨迹、智能控车、音效、NFC、蓝牙续费、充电站、骑行模式；电池页 BMS 字段、电压/电流/温度/循环、地图页与轨迹月历。</p>
       <div class="status-list">
-        <div class="status-row"><i class="dot"></i><span>首页控车：左窄右宽白卡、小圆角按钮、官方浅灰按下态已做。</span></div>
-        <div class="status-row"><i class="dot"></i><span>BMS/电池：大号电量、分段电池图、只读字段展示已做。</span></div>
-        <div class="status-row"><i class="dot"></i><span>地图/轨迹/围栏：真实瓦片地图、围栏圆、轨迹线和底部设置面板已做。</span></div>
-        <div class="status-row"><i class="dot wait"></i><span>官方私有视觉素材未复制，当前用代码绘制和近似样式替代。</span></div>
-        <div class="status-row"><i class="dot stop"></i><span>高风险写操作仍禁用：OTA、NFC 真加删、围栏保存、支付等。</span></div>
+        <div class="status-row"><i class="dot"></i><span>控车首页：头/状态/统计/车身/提示/控制/服务卡片/骑行模式 8 段已复刻。</span></div>
+        <div class="status-row"><i class="dot"></i><span>SlideToAction：深灰底 110×48、方形 thumb 48、双 chevron、右侧"滑动执行"。</span></div>
+        <div class="status-row"><i class="dot wait"></i><span>图标全部用 inline SVG，颜色和圆角贴近 Material outlined 24px。</span></div>
+        <div class="status-row"><i class="dot stop"></i><span>真车指令、扫码绑定、付款等高风险路径仍然禁用。</span></div>
       </div>
-      <div class="tabs">
-        <button class="tab active" data-screen="home">首页控车</button>
-        <button class="tab" data-screen="battery">电池/BMS</button>
-        <button class="tab" data-screen="map">地图围栏</button>
-        <button class="tab" data-screen="track">历史轨迹</button>
+      <div class="side-tabs">
+        <button class="side-tab active" data-screen="home">首页控车</button>
+        <button class="side-tab" data-screen="battery">电池信息</button>
+        <button class="side-tab" data-screen="map">车辆定位</button>
+        <button class="side-tab" data-screen="track">历史轨迹</button>
       </div>
     </aside>
 
@@ -926,67 +1596,127 @@
       <div class="phone">
         <div class="island"></div>
         <div class="app">
+          <!-- ============== Screen 1: Home ============== -->
           <section class="screen active" id="home">
-            <div class="top-row">
-              <div class="title-select pressable"><span>Q_BASH_E4BC6F54A56D</span><span>▾</span><b class="status-pill">BLE 已连接</b></div>
+            <div class="home-top">
+              <div class="title-block">
+                <div class="name"><span>Tailg-001</span><span class="caret">▾</span></div>
+                <span class="status-pill">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8l-3 3 3 3"/><path d="M17 8l3 3-3 3"/><path d="M7 12h10"/><path d="M12 7v10"/></svg>
+                  在线
+                </span>
+              </div>
               <button class="icon-btn" aria-label="车辆详情">
-                <svg class="small-icon" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>
+                <svg class="small-icon" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M8 8h7M8 12h7M8 16h4"/></svg>
               </button>
-              <button class="icon-btn" aria-label="日志">
-                <svg class="small-icon" viewBox="0 0 24 24"><path d="M12 3v2M12 19v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M3 12h2M19 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/></svg>
+              <button class="icon-btn" aria-label="消息中心">
+                <svg class="small-icon" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0v5l1.5 3h-15L6 13V8z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
               </button>
             </div>
 
+            <div class="ble-sub">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8l-3 3 3 3"/><path d="M17 8l3 3-3 3"/><path d="M7 12h10"/><path d="M12 7v10"/></svg>
+              蓝牙：Tailg-001
+            </div>
+
             <div class="stats">
-              <div class="stat"><strong>78%</strong><span>剩余电量</span></div>
-              <div class="stat"><strong>51km</strong><span>预估里程</span></div>
-              <div class="stat"><strong>QGJ</strong><span>协议</span></div>
+              <div class="stat"><strong>80%</strong><span>剩余电量</span></div>
+              <div class="stat neutral"><strong>52km</strong><span>预估里程</span></div>
+              <div class="ch-pill">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8l-3 3 3 3"/><path d="M17 8l3 3-3 3"/><path d="M7 12h10"/><path d="M12 7v10"/></svg>
+                BLE
+              </div>
             </div>
 
             <div class="bike-area">
               <div class="bike-glow"></div>
-              <div class="bike">
-                <img
-                  class="official-bike"
-                  alt=""
-                  src="file:///E:/test/tlcq/_____3.5.6/jadx/resources/res/drawable-xhdpi/iv_control_evbike.png"
-                  onerror="this.hidden=true;this.nextElementSibling.hidden=false"
-                />
-                <svg class="fallback-bike" viewBox="0 0 320 150" aria-hidden="true" hidden>
-                  <ellipse cx="160" cy="122" rx="128" ry="16" fill="#dde3ec" opacity=".65"/>
-                  <circle cx="86" cy="105" r="38" fill="none" stroke="#252525" stroke-width="9"/>
-                  <circle cx="238" cy="105" r="38" fill="none" stroke="#252525" stroke-width="9"/>
-                  <circle cx="86" cy="105" r="25" fill="none" stroke="#5596ff" stroke-width="2"/>
-                  <circle cx="238" cy="105" r="25" fill="none" stroke="#5596ff" stroke-width="2"/>
-                  <path d="M86 105 L132 56 L186 105 L238 105 M132 56 L168 20 L210 50" fill="none" stroke="#2a2d35" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M142 74 L184 74" fill="none" stroke="#5596ff" stroke-width="8" stroke-linecap="round"/>
-                  <rect x="134" y="74" width="66" height="34" rx="12" fill="#121418"/>
-                  <path d="M206 48 L246 35" stroke="#2a2d35" stroke-width="9" stroke-linecap="round"/>
-                  <path d="M164 22 L126 20" stroke="#2a2d35" stroke-width="9" stroke-linecap="round"/>
-                </svg>
+              <div class="state-chip">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg>
+                已设防
+              </div>
+              <div class="mode-pill">手动模式<span class="mini-switch"></span></div>
+              <svg class="bike-svg" viewBox="0 0 320 150" aria-hidden="true">
+                <ellipse cx="160" cy="128" rx="128" ry="12" fill="#DDE3EC" opacity=".55"/>
+                <circle cx="86" cy="105" r="38" fill="none" stroke="#252525" stroke-width="9"/>
+                <circle cx="238" cy="105" r="38" fill="none" stroke="#252525" stroke-width="9"/>
+                <circle cx="86" cy="105" r="25" fill="none" stroke="#5596FF" stroke-width="2"/>
+                <circle cx="238" cy="105" r="25" fill="none" stroke="#5596FF" stroke-width="2"/>
+                <path d="M86 105 L132 56 L186 105 L238 105 M132 56 L168 20 L210 50" fill="none" stroke="#2A2D35" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M142 74 L184 74" fill="none" stroke="#5596FF" stroke-width="8" stroke-linecap="round"/>
+                <rect x="134" y="74" width="66" height="34" rx="12" fill="#121418"/>
+                <path d="M206 48 L246 35" stroke="#2A2D35" stroke-width="9" stroke-linecap="round"/>
+                <path d="M164 22 L126 20" stroke="#2A2D35" stroke-width="9" stroke-linecap="round"/>
+                <circle cx="168" cy="20" r="5" fill="#1F1F1F" stroke="#5596FF" stroke-width="2"/>
+                <rect x="58" y="103" width="14" height="20" rx="3" fill="#2A2D35"/>
+                <rect x="252" y="103" width="14" height="20" rx="3" fill="#2A2D35"/>
+              </svg>
+              <div class="bike-meta">
+                <strong>智能电动车</strong>
+                <span>设防 · 未通电 · BLE</span>
               </div>
             </div>
 
             <div class="tip-row">
-              <div class="round-chip">☻</div>
-              <div class="status-bar pressable">设防 · 未通电 · BLE</div>
-              <button class="icon-btn">⌁</button>
+              <div class="round-chip">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><circle cx="9" cy="13" r="1.5"/><circle cx="15" cy="13" r="1.5"/><path d="M12 3v3M9 19v2M15 19v2"/></svg>
+              </div>
+              <div class="tip-bar">
+                <span style="flex:1;overflow:hidden;text-overflow:ellipsis;">设防 · 未启动</span>
+                <span class="ch-mini">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8l-3 3 3 3"/><path d="M17 8l3 3-3 3"/><path d="M7 12h10"/><path d="M12 7v10"/></svg>
+                  BLE
+                </span>
+              </div>
+              <div class="round-chip">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V6a3 3 0 1 1 6 0v5"/><path d="M5 11h14l-1 9H6z"/></svg>
+              </div>
             </div>
 
             <div class="control-grid">
               <div class="control-card quick-stack">
-                <button class="ctl-btn">♫<span>声音设置</span></button>
-                <button class="ctl-btn">▣<span>坐垫锁</span><i class="edit-dot">✎</i></button>
+                <button class="ctl-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M3 10v4a1 1 0 0 0 1 1h3l5 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8"/><path d="M19 5a9 9 0 0 1 0 14"/></svg>
+                  <span>声音设置</span>
+                </button>
+                <button class="ctl-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg>
+                  <span>坐垫锁</span>
+                  <i class="edit-dot">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l11-11-4-4L4 16v4z"/><path d="M14 5l4 4"/></svg>
+                  </i>
+                </button>
               </div>
               <div class="control-card">
                 <div class="power-row">
-                  <div class="power-icon">⏻</div>
-                  <div class="power-text"><strong>通电</strong><span>右滑启动</span></div>
-                  <div class="slide" id="slide-demo"><div class="slide-label">›› 右滑</div><div class="slide-knob">⏻</div></div>
+                  <div class="power-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9"/><path d="M5.6 7.6a8 8 0 1 0 12.8 0"/></svg>
+                  </div>
+                  <div class="power-text">
+                    <strong>启动</strong>
+                    <span>右滑启动</span>
+                  </div>
+                  <div class="slide-new" id="slide-demo">
+                    <div class="thumb">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9"/><path d="M5.6 7.6a8 8 0 1 0 12.8 0"/></svg>
+                    </div>
+                    <div class="chevs">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                    </div>
+                    <span class="label">滑动执行</span>
+                  </div>
                 </div>
                 <div class="sub-controls">
-                  <button class="ctl-btn">⌕<span>寻车</span><span class="sub">鸣笛定位</span></button>
-                  <button class="ctl-btn blue">🔓<span>解锁</span><span class="sub">当前设防</span></button>
+                  <button class="ctl-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                    <span>寻车</span>
+                    <span class="sub">鸣笛定位</span>
+                  </button>
+                  <button class="ctl-btn blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg>
+                    <span>解锁</span>
+                    <span class="sub">当前设防</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -994,100 +1724,387 @@
             <div class="quick-section">
               <h3>功能设置</h3>
               <div class="quick-list">
-                <div class="quick-item"><div class="quick-icon">⌖</div><span>车辆位置</span></div>
-                <div class="quick-item"><div class="quick-icon">⚙</div><span>车辆设置</span></div>
-                <div class="quick-item"><div class="quick-icon">◎</div><span>电子围栏</span></div>
-                <div class="quick-item"><div class="quick-icon">↗</div><span>分享用车</span></div>
+                <div class="quick-item">
+                  <div class="quick-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-7 8-13a8 8 0 1 0-16 0c0 6 8 13 8 13z"/><circle cx="12" cy="9" r="3"/></svg>
+                  </div>
+                  <span>车辆位置</span>
+                </div>
+                <div class="quick-item">
+                  <div class="quick-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+                  </div>
+                  <span>车辆设置</span>
+                </div>
+                <div class="quick-item">
+                  <div class="quick-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
+                  </div>
+                  <span>电子围栏</span>
+                </div>
+                <div class="quick-item">
+                  <div class="quick-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+                  </div>
+                  <span>分享用车</span>
+                </div>
+                <div class="quick-item">
+                  <div class="quick-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h3l5 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8"/><path d="M19 5a9 9 0 0 1 0 14"/></svg>
+                  </div>
+                  <span>音效设置</span>
+                </div>
+                <div class="quick-item">
+                  <div class="quick-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v8a6 6 0 0 0 12 0V4"/><path d="M6 4h2M16 4h2M6 8h2M16 8h2"/><circle cx="12" cy="16" r="2"/></svg>
+                  </div>
+                  <span>NFC钥匙</span>
+                </div>
+                <div class="quick-item">
+                  <div class="quick-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><circle cx="18" cy="5" r="3"/><path d="M6 16V8a4 4 0 0 1 4-4h4"/><path d="M9 9l3 3-3 3"/></svg>
+                  </div>
+                  <span>骑行记录</span>
+                </div>
               </div>
               <div class="progress"><i></i></div>
             </div>
+
+            <div class="loc-card">
+              <div class="row1">
+                <div class="label">北京市朝阳区建国路 88 号 SOHO 现代城</div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M9 6l6 6-6 6"/></svg>
+              </div>
+              <div class="mini-map">
+                <div class="pin">
+                  <svg viewBox="0 0 24 32"><path d="M12 0C5.4 0 0 5.4 0 12c0 8 12 20 12 20s12-12 12-20C24 5.4 18.6 0 12 0z" fill="#F11C2C"/><circle cx="12" cy="12" r="5" fill="#fff"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="banner track">
+              <div class="icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><circle cx="18" cy="5" r="3"/><path d="M6 16V8a4 4 0 0 1 4-4h4"/><path d="M9 9l3 3-3 3"/></svg>
+              </div>
+              <div class="text">
+                <strong>历史轨迹</strong>
+                <span>今日骑行记录 12 条</span>
+              </div>
+            </div>
+
+            <div class="banner smart">
+              <div class="icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              </div>
+              <div class="text">
+                <strong>智能控车</strong>
+                <span>可定位 防盗通知 远程控车等</span>
+              </div>
+            </div>
+
+            <div class="sub-card">
+              <h4>功能设置</h4>
+              <div class="row">
+                <div class="item">
+                  <div class="ic">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+                  </div>
+                  <span>车辆设置</span>
+                </div>
+                <div class="item">
+                  <div class="ic">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
+                  </div>
+                  <span>电子围栏</span>
+                </div>
+                <div class="item">
+                  <div class="ic">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+                  </div>
+                  <span>分享用车</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="sound-card">
+              <div>
+                <div class="label">音效设置</div>
+                <div class="sub">QGJ 个性化提示音</div>
+              </div>
+              <div class="wave">
+                <i style="height:14px"></i>
+                <i style="height:22px"></i>
+                <i style="height:30px"></i>
+                <i style="height:18px"></i>
+                <i style="height:26px"></i>
+                <i style="height:14px"></i>
+                <i style="height:34px"></i>
+                <i style="height:20px"></i>
+              </div>
+            </div>
+
+            <div class="nfc-card">
+              <div class="accent"></div>
+              <div class="top">
+                <span class="dot-p"></span>
+                <span>刷卡骑行新体验</span>
+              </div>
+              <div class="chips">
+                <span class="chip">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/></svg>
+                  添加卡片
+                </span>
+                <span class="chip">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+                  使用说明
+                </span>
+              </div>
+            </div>
+
+            <div class="ble-renew">
+              <div class="text">
+                <strong>蓝牙续费</strong>
+                <span>当前套餐剩余 12 天</span>
+              </div>
+              <button class="cta">续费</button>
+            </div>
+
+            <div class="charge-card">
+              <div class="head">
+                <span class="dot-o"></span>
+                <strong>台铃充电站</strong>
+              </div>
+              <div class="pulse">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 10v6a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3h6"/><path d="M3 16l4-4-4-4"/><path d="M16 4l4 4-4 4"/></svg>
+              </div>
+              <div class="stats">
+                <div class="stat"><strong>--</strong><span>空闲</span></div>
+                <div class="stat neutral"><strong>--</strong><span>占用</span></div>
+              </div>
+            </div>
+
+            <div class="ride-mode">
+              <div class="label">骑行模式</div>
+              <div class="opts">
+                <div class="opt active">超能跑</div>
+                <div class="opt">全速跑</div>
+                <div class="opt">超速跑</div>
+              </div>
+            </div>
           </section>
 
+          <!-- ============== Screen 2: Battery ============== -->
           <section class="screen" id="battery">
             <div class="battery-hero">
-              <div class="page-title"><button class="pressable">‹</button><div>电池信息</div><button class="pressable">更正电池</button></div>
+              <div class="deco-l"></div>
+              <div class="deco-r"></div>
+              <div class="page-title">
+                <button>‹</button>
+                <div>电池信息</div>
+                <button class="action">更正电池</button>
+              </div>
               <div class="battery-art">
                 <div class="battery-shell">
-                  <div class="battery-body"><i class="seg"></i><i class="seg"></i><i class="seg"></i><i class="seg"></i><i class="seg dim"></i></div>
+                  <div class="battery-body">
+                    <i class="seg"></i>
+                    <i class="seg"></i>
+                    <i class="seg"></i>
+                    <i class="seg"></i>
+                    <i class="seg dim"></i>
+                  </div>
                   <div class="battery-cap"></div>
                 </div>
               </div>
-              <div class="percent"><strong>78</strong><span>%</span></div>
+              <div class="percent"><strong>80</strong><span>%</span></div>
               <div class="battery-pill">Q_BASH_E4BC6F54A56D</div>
-              <div style="margin-top:10px;color:var(--green);font-weight:800;font-size:13px;">电池健康良好</div>
+              <div class="battery-status">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg>
+                电池健康良好
+              </div>
             </div>
-            <div class="dark-summary">
-              <div><strong>51km</strong><span>剩余里程</span></div>
-              <div><strong>328km</strong><span>总里程</span></div>
-              <div><strong>48V</strong><span>电压</span></div>
-              <div><strong>92</strong><span>评分</span></div>
+
+            <div class="source-strip">
+              <div class="cell"><strong>BLE</strong><span>蓝牙连接</span></div>
+              <div class="cell"><strong>QGJ</strong><span>协议</span></div>
+              <div class="cell"><strong>只读</strong><span>权限</span></div>
             </div>
+
+            <div class="info-card" style="margin-top:0;">
+              <div class="info-row"><span>剩余里程</span><strong>52 km</strong></div>
+              <div class="info-row"><span>总里程</span><strong>328 km</strong></div>
+              <div class="info-row"><span>电池健康</span><strong>92 分</strong></div>
+            </div>
+
+            <div class="metric-grid">
+              <div class="cell"><div class="lbl">电压</div><div class="val">48.2<span class="unit">V</span></div></div>
+              <div class="cell"><div class="lbl">电流</div><div class="val">2.1<span class="unit">A</span></div></div>
+              <div class="cell"><div class="lbl">温度</div><div class="val">31<span class="unit">℃</span></div></div>
+              <div class="cell"><div class="lbl">循环次数</div><div class="val">128<span class="unit">次</span></div></div>
+            </div>
+
+            <div class="fault-card">
+              <div class="ic">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg>
+              </div>
+              <div class="text">
+                <strong>无故障</strong>
+                <span>BMS 自检通过</span>
+              </div>
+            </div>
+
             <div class="info-card">
-              <div class="info-row"><span>今日耗电</span><strong>6%</strong></div>
-              <div class="info-row"><span>循环次数</span><strong>18次</strong></div>
-              <div class="info-row"><span>当前温度</span><strong>31℃</strong></div>
-              <div class="info-row"><span>BMS 状态</span><strong>只读展示</strong></div>
+              <div class="info-row"><span>电池类型</span><strong>磷酸铁锂</strong></div>
+              <div class="info-row"><span>额定容量</span><strong>24 Ah</strong></div>
+              <div class="info-row"><span>生产日期</span><strong>2024-08-12</strong></div>
+              <div class="info-row"><span>序列号</span><strong>SN 8821-3344</strong></div>
+              <div class="info-row"><span>固件版本</span><strong>v2.3.1</strong></div>
+              <div class="info-row"><span>厂商</span><strong>台铃 BMS</strong></div>
+              <div class="info-row"><span>告警</span><strong>无</strong></div>
             </div>
           </section>
 
+          <!-- ============== Screen 3: Location ============== -->
           <section class="screen" id="map">
             <div class="map-screen">
               <div class="map-bg"></div>
-              <div class="fence-ring"></div>
-              <div class="marker">车</div>
-              <div class="map-title"><button class="icon-btn">‹</button><div class="label">电子围栏</div><div></div></div>
+              <div class="map-marker">
+                <svg viewBox="0 0 24 32"><path d="M12 0C5.4 0 0 5.4 0 12c0 8 12 20 12 20s12-12 12-20C24 5.4 18.6 0 12 0z" fill="#F11C2C"/><circle cx="12" cy="12" r="5" fill="#fff"/></svg>
+              </div>
+              <div class="map-dot" style="left:38%; top:30%;"></div>
+              <div class="map-dot" style="left:62%; top:55%;"></div>
+              <div class="map-dot" style="left:30%; top:62%;"></div>
+              <div class="map-tabs">
+                <button class="active">车辆定位</button>
+                <button>电子围栏</button>
+                <button>历史轨迹</button>
+              </div>
+              <div class="floating-btn refresh" aria-label="刷新">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+              </div>
+              <div class="floating-btn copy" aria-label="复制">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              </div>
+              <div class="map-address">
+                <div class="ic">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-7 8-13a8 8 0 1 0-16 0c0 6 8 13 8 13z"/><circle cx="12" cy="9" r="3"/></svg>
+                </div>
+                <div class="text">
+                  <strong>北京市朝阳区建国路 88 号</strong>
+                  <span>更新于 18:32 · 定位精度 8m</span>
+                </div>
+              </div>
               <div class="sheet">
-                <div class="sheet-head"><strong>围栏设置</strong><span style="color:var(--muted)">?</span><button class="icon-btn" style="margin-left:auto;width:38px;height:38px;">↻</button></div>
-                <div class="setting-row"><div><strong>电子围栏</strong><span>官方围栏配置只读展示</span></div><div class="switch"><i></i></div></div>
-                <div class="range-card">
-                  <div class="range-top"><strong>范围设置</strong><span>300m</span></div>
-                  <div class="range-line"><i></i></div>
-                  <div class="range-labels"><span>100m</span><span>10000m</span></div>
-                  <div class="info-row" style="margin-top:14px;"><span>时间设置</span><strong>全天 ›</strong></div>
+                <div class="sheet-handle"></div>
+                <div class="sheet-head"><strong>位置详情</strong></div>
+                <div class="sheet-row">
+                  <div class="ic">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-7 8-13a8 8 0 1 0-16 0c0 6 8 13 8 13z"/><circle cx="12" cy="9" r="3"/></svg>
+                  </div>
+                  <div class="text"><strong>当前位置</strong><span>116.482°E · 39.913°N</span></div>
+                  <span class="chev">›</span>
                 </div>
-                <button class="save-btn">保存</button>
+                <div class="sheet-row">
+                  <div class="ic green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>
+                  </div>
+                  <div class="text"><strong>最新记录</strong><span>今天 18:30 · 12.5 km</span></div>
+                  <span class="chev">›</span>
+                </div>
+                <div class="sheet-row">
+                  <div class="ic orange">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><circle cx="18" cy="5" r="3"/><path d="M6 16V8a4 4 0 0 1 4-4h4"/></svg>
+                  </div>
+                  <div class="text"><strong>历史轨迹</strong><span>累计 156 km · 共 86 条</span></div>
+                  <span class="chev">›</span>
+                </div>
               </div>
             </div>
           </section>
 
+          <!-- ============== Screen 4: Track history ============== -->
           <section class="screen" id="track">
-            <div class="page-title"><button class="pressable">‹</button><div>历史轨迹</div><button class="pressable">说明</button></div>
             <div class="track-page">
-              <div class="month-bar"><button class="pressable">‹</button><div>2026-05 ▾</div><button class="pressable">›</button></div>
+              <div class="page-title" style="padding:0;margin-bottom:8px;">
+                <button>‹</button>
+                <div>历史轨迹</div>
+                <button class="action">说明</button>
+              </div>
+
+              <div class="month-bar">
+                <button>‹</button>
+                <div class="label">2026年5月<span style="font-size:10px;color:var(--muted);">▾</span></div>
+                <button>›</button>
+              </div>
+
+              <div class="summary-card">
+                <div class="cell"><strong>156km</strong><span>累计轨迹</span></div>
+                <div class="cell"><strong>12 条</strong><span>今日骑行记录</span></div>
+              </div>
+
               <div class="day-card">
-                <div class="day-title">2026-05-29</div>
-                <div class="day-summary">
-                  <div><strong>2</strong><span>总次数</span></div>
-                  <div><strong>8.6km</strong><span>总里程</span></div>
-                  <div><strong>36m</strong><span>总时长</span></div>
+                <div class="day-title"><span class="num">29</span>2026-05-29 · 周五</div>
+                <div class="record">
+                  <div class="time">18:30<strong>今天</strong></div>
+                  <div class="stats">
+                    <span class="badge">12.5 km</span>
+                    <span class="badge">48 min</span>
+                    <span class="badge">25 km/h</span>
+                  </div>
+                  <span class="chev">›</span>
                 </div>
                 <div class="record">
-                  <div class="rail"><i class="start"></i><i class="end"></i><span class="t1">08:12</span><span class="t2">08:31</span></div>
-                  <div class="record-line"></div>
-                  <div class="record-main"><strong>4.3km</strong><span>18km/h · 19m</span></div>
-                  <div class="record-count">128 点</div>
-                  <div>›</div>
+                  <div class="time">08:12<strong>今天</strong></div>
+                  <div class="stats">
+                    <span class="badge">4.3 km</span>
+                    <span class="badge">19 min</span>
+                    <span class="badge">18 km/h</span>
+                  </div>
+                  <span class="chev">›</span>
+                </div>
+                <div class="divider"></div>
+                <div class="day-title"><span class="num">28</span>2026-05-28 · 周四</div>
+                <div class="record">
+                  <div class="time">19:05<strong>昨天</strong></div>
+                  <div class="stats">
+                    <span class="badge">8.6 km</span>
+                    <span class="badge">36 min</span>
+                    <span class="badge">22 km/h</span>
+                  </div>
+                  <span class="chev">›</span>
                 </div>
                 <div class="record">
-                  <div class="rail"><i class="start"></i><i class="end"></i><span class="t1">18:20</span><span class="t2">18:37</span></div>
-                  <div class="record-line"></div>
-                  <div class="record-main"><strong>4.3km</strong><span>16km/h · 17m</span></div>
-                  <div class="record-count">点击读取</div>
-                  <div>›</div>
+                  <div class="time">07:48<strong>昨天</strong></div>
+                  <div class="stats">
+                    <span class="badge">3.2 km</span>
+                    <span class="badge">14 min</span>
+                    <span class="badge">16 km/h</span>
+                  </div>
+                  <span class="chev">›</span>
                 </div>
               </div>
-              <div class="info-card" style="margin:14px 0 0;">
-                <div class="info-row"><span>轨迹边界</span><strong>只读</strong></div>
-                <div class="info-row"><span>删除/纠偏</span><strong>暂不开放</strong></div>
+
+              <div class="info-card" style="margin-top:14px;">
+                <div class="info-row"><span>轨迹保存</span><strong>本地只读</strong></div>
+                <div class="info-row"><span>纠偏 / 删除</span><strong>暂不开放</strong></div>
+                <div class="info-row"><span>数据来源</span><strong>QGJ 上报</strong></div>
               </div>
             </div>
           </section>
 
-          <nav class="bottom-nav">
-            <button class="nav" data-screen="battery">电池</button>
-            <button class="nav active" data-screen="home">爱车</button>
-            <button class="nav" data-screen="map">围栏</button>
-            <button class="nav" data-screen="track">轨迹</button>
+          <!-- ============== Bottom nav ============== -->
+          <nav class="tabbar">
+            <button data-screen="home">
+              <span class="emoji">🔍</span>
+              <span>扫描</span>
+            </button>
+            <button class="active" data-screen="home">
+              <span class="emoji">🚗</span>
+              <span>爱车</span>
+            </button>
+            <button data-screen="track">
+              <span class="emoji">⚙</span>
+              <span>设置</span>
+            </button>
           </nav>
         </div>
       </div>
@@ -1097,13 +2114,13 @@
   <script>
     const tabs = document.querySelectorAll("[data-screen]");
     const screens = document.querySelectorAll(".screen");
-    const sideTabs = document.querySelectorAll(".panel .tab");
-    const navTabs = document.querySelectorAll(".bottom-nav .nav");
+    const sideTabs = document.querySelectorAll(".side-tab");
+    const tabbarButtons = document.querySelectorAll(".tabbar button");
 
     function showScreen(id) {
       screens.forEach(screen => screen.classList.toggle("active", screen.id === id));
       sideTabs.forEach(tab => tab.classList.toggle("active", tab.dataset.screen === id));
-      navTabs.forEach(tab => tab.classList.toggle("active", tab.dataset.screen === id));
+      tabbarButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.screen === id));
     }
 
     tabs.forEach(tab => tab.addEventListener("click", () => showScreen(tab.dataset.screen)));

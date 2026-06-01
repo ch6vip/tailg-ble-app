@@ -12,6 +12,10 @@
 .swiftpm/
 migrate_working_dir/
 
+# Local backup files
+*.bak
+design.html.bak
+
 # IntelliJ related
 *.iml
 *.ipr
