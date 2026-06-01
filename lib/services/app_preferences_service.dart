@@ -63,8 +63,7 @@ class AppPreferencesService {
       _languageController.stream;
   Stream<DistanceUnitPreference> get distanceUnitStream =>
       _distanceUnitController.stream;
-  Stream<bool> get respectTextScaleStream =>
-      _respectTextScaleController.stream;
+  Stream<bool> get respectTextScaleStream => _respectTextScaleController.stream;
 
   Future<void> init() async {
     if (_initialized) return;

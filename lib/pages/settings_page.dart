@@ -127,9 +127,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 return _settingItem(
                   icon: Icons.text_fields,
                   title: '跟随系统字号',
-                  subtitle: enabled
-                      ? '允许系统字号设置生效（限 0.9-1.3 倍）'
-                      : '关闭后忽略系统字号',
+                  subtitle: enabled ? '允许系统字号设置生效（限 0.9-1.3 倍）' : '关闭后忽略系统字号',
                   trailing: _buildToggle(enabled, (v) {
                     _preferences.setRespectSystemTextScale(v);
                   }),

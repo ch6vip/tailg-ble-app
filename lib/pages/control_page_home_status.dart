@@ -51,9 +51,7 @@ class _StatusSection extends StatelessWidget {
                       value: battery != null ? '$battery' : '--',
                       unit: battery != null ? '%' : '',
                       color: batteryColor,
-                      placeholderHint: isBleReady
-                          ? '等待数据'
-                          : '连接后查看',
+                      placeholderHint: isBleReady ? '等待数据' : '连接后查看',
                       placeholderIcon: isBleReady
                           ? Icons.hourglass_empty
                           : Icons.bluetooth_searching,

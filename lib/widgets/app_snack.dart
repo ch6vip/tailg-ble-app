@@ -11,7 +11,12 @@ abstract final class AppSnack {
   static const _infoDuration = Duration(seconds: 2);
 
   /// 错误提示：红色背景，长时间停留 3s。
-  static void error(BuildContext context, String message, {String? actionLabel, VoidCallback? onAction}) {
+  static void error(
+    BuildContext context,
+    String message, {
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
     _show(
       context,
       message: message,

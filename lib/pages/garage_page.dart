@@ -139,7 +139,10 @@ class _VehicleCard extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.electric_bike, color: AppColors.primary),
+                child: const Icon(
+                  Icons.electric_bike,
+                  color: AppColors.primary,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -173,7 +176,10 @@ class _VehicleCard extends StatelessWidget {
                             ),
                             child: const Text(
                               '默认',
-                              style: TextStyle(fontSize: 11, color: AppColors.primary),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.primary,
+                              ),
                             ),
                           ),
                         ],
