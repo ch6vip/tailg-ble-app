@@ -51,6 +51,12 @@ class _StatusSection extends StatelessWidget {
                       value: battery != null ? '$battery' : '--',
                       unit: battery != null ? '%' : '',
                       color: batteryColor,
+                      placeholderHint: isBleReady
+                          ? '等待数据'
+                          : '连接后查看',
+                      placeholderIcon: isBleReady
+                          ? Icons.hourglass_empty
+                          : Icons.bluetooth_searching,
                     ),
                   ),
                   const SizedBox(width: 22),
@@ -59,6 +65,12 @@ class _StatusSection extends StatelessWidget {
                       label: rangeLabel,
                       value: rangeText,
                       unit: rangeText == '--' ? '' : 'km',
+                      placeholderHint: mileage != null
+                          ? null
+                          : isBleReady
+                          ? '等待数据'
+                          : '连接后查看',
+                      placeholderIcon: Icons.hourglass_empty,
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -81,16 +93,21 @@ class _HomeMetric extends StatelessWidget {
   final String value;
   final String unit;
   final Color color;
+  final String? placeholderHint;
+  final IconData? placeholderIcon;
 
   const _HomeMetric({
     required this.label,
     required this.value,
     required this.unit,
     this.color = ReplicaColors.ink,
+    this.placeholderHint,
+    this.placeholderIcon,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isPlaceholder = value == '--' && placeholderHint != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -103,37 +120,65 @@ class _HomeMetric extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Flexible(
-              child: Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: value.length > 3 ? 30 : 32,
-                  height: 1,
-                  fontWeight: FontWeight.w700,
-                  color: color,
+        if (isPlaceholder)
+          Semantics(
+            label: '$label，$placeholderHint',
+            excludeSemantics: true,
+            child: Row(
+              children: [
+                Icon(
+                  placeholderIcon ?? Icons.hourglass_empty,
+                  size: 16,
+                  color: ReplicaColors.muted,
                 ),
-              ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    placeholderHint!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: ReplicaColors.muted,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            if (unit.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(left: 2),
+          )
+        else
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Flexible(
                 child: Text(
-                  unit,
-                  style: const TextStyle(
-                    fontSize: 13,
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: value.length > 3 ? 30 : 32,
+                    height: 1,
                     fontWeight: FontWeight.w700,
-                    color: ReplicaColors.ink,
+                    color: color,
                   ),
                 ),
               ),
-          ],
-        ),
+              if (unit.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(left: 2),
+                  child: Text(
+                    unit,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: ReplicaColors.ink,
+                    ),
+                  ),
+                ),
+            ],
+          ),
       ],
     );
   }
