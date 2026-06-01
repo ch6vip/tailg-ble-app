@@ -4,10 +4,9 @@ import 'package:flutter/services.dart';
 import '../main.dart';
 import '../models/vehicle_profile.dart';
 import '../services/vehicle_store.dart';
+import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
-const _pageBg = Color(0xFFF5F6FA);
-const _primary = Color(0xFF1E88E5);
 const _textPrimary = Color(0xFF1A1A2E);
 const _textTertiary = Color(0xFF999999);
 
@@ -17,7 +16,7 @@ class GaragePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: AppColors.pageBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -126,13 +125,7 @@ class _VehicleCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 10,
-            offset: Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppShadows.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,10 +136,10 @@ class _VehicleCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: _primary.withValues(alpha: 0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.electric_bike, color: _primary),
+                child: const Icon(Icons.electric_bike, color: AppColors.primary),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -175,12 +168,12 @@ class _VehicleCard extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: _primary.withValues(alpha: 0.1),
+                              color: AppColors.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Text(
                               '默认',
-                              style: TextStyle(fontSize: 11, color: _primary),
+                              style: TextStyle(fontSize: 11, color: AppColors.primary),
                             ),
                           ),
                         ],

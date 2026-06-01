@@ -34,7 +34,7 @@ class _ControlTipBar extends StatelessWidget {
             : '待连接',
     };
     final status = enabled
-        ? '${isLocked ? '设防' : '解锁'} · ${isPowerOn ? '已通电' : '未通电'}'
+        ? '${isLocked ? '设防' : '解锁'} · ${isPowerOn ? '已启动' : '未启动'}'
         : disabledReason ?? '请连接车辆后控车';
     final effectiveColor = switch (effective) {
       'BLE' => AppColors.success,
@@ -54,13 +54,7 @@ class _ControlTipBar extends StatelessWidget {
           decoration: const BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Color(0x0A000000),
-                blurRadius: 10,
-                offset: Offset(0, 2),
-              ),
-            ],
+            boxShadow: AppShadows.cardShadow,
           ),
           child: const Icon(
             Icons.smart_toy_outlined,

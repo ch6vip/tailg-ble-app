@@ -7,7 +7,7 @@ class _UnboundBannerPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final centerY = size.height * 0.55;
     final accent = const Color(0xFF5596FF);
-    final red = const Color(0xFFF11C2C);
+    final red = AppColors.brandRed;
     final shadow = Paint()
       ..color = const Color(0xFFDDE3EC).withValues(alpha: 0.72);
     canvas.drawOval(

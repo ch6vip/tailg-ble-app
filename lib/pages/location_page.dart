@@ -341,13 +341,7 @@ class _SegmentedTabs extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(ReplicaRadii.card),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 10,
-            offset: Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppShadows.cardShadow,
       ),
       child: Row(
         children: List.generate(items.length, (i) {
@@ -738,15 +732,7 @@ class _MapPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(radius),
-        boxShadow: fullBleed
-            ? null
-            : const [
-                BoxShadow(
-                  color: Color(0x0A000000),
-                  blurRadius: 10,
-                  offset: Offset(0, 2),
-                ),
-              ],
+        boxShadow: fullBleed ? null : AppShadows.cardShadow,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius),

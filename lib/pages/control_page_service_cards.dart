@@ -939,15 +939,7 @@ class _OfficialPressableState extends State<_OfficialPressable> {
         decoration: BoxDecoration(
           color: _pressed ? widget.pressedBackground : widget.background,
           borderRadius: BorderRadius.circular(widget.radius),
-          boxShadow: widget.shadow
-              ? const [
-                  BoxShadow(
-                    color: Color(0x0A000000),
-                    blurRadius: 10,
-                    offset: Offset(0, 2),
-                  ),
-                ]
-              : null,
+          boxShadow: widget.shadow ? AppShadows.cardShadow : null,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(widget.radius),
@@ -987,13 +979,13 @@ class _MiniMapPreview extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: const Color(0xFFF11C2C).withValues(alpha: 0.12),
+                color: AppColors.brandRed.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: const Center(
                 child: Icon(
                   Icons.location_on,
-                  color: Color(0xFFF11C2C),
+                  color: AppColors.brandRed,
                   size: 28,
                 ),
               ),

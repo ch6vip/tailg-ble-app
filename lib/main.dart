@@ -9,6 +9,7 @@ import 'services/location_service.dart';
 import 'services/log_service.dart';
 import 'services/official_cloud_service.dart';
 import 'services/vehicle_store.dart';
+import 'services/app_preferences_service.dart';
 import 'pages/scan_page.dart';
 import 'pages/control_page.dart';
 import 'pages/settings_page.dart';
@@ -57,8 +58,32 @@ void main() async {
   runApp(const TailgBleApp());
 }
 
-class TailgBleApp extends StatelessWidget {
+class TailgBleApp extends StatefulWidget {
   const TailgBleApp({super.key});
+
+  @override
+  State<TailgBleApp> createState() => _TailgBleAppState();
+}
+
+class _TailgBleAppState extends State<TailgBleApp> {
+  final _preferences = AppPreferencesService();
+  bool _respectTextScale = true;
+  StreamSubscription<bool>? _textScaleSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _respectTextScale = _preferences.respectSystemTextScale;
+    _textScaleSub = _preferences.respectTextScaleStream.listen((value) {
+      if (mounted) setState(() => _respectTextScale = value);
+    });
+  }
+
+  @override
+  void dispose() {
+    _textScaleSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,14 +92,14 @@ class TailgBleApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E88E5),
+          seedColor: AppColors.primary,
           brightness: Brightness.light,
         ),
         useMaterial3: true,
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E88E5),
+          seedColor: AppColors.primary,
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
@@ -82,9 +107,14 @@ class TailgBleApp extends StatelessWidget {
       home: const HomePage(),
       builder: (context, child) {
         return MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(boldText: false, textScaler: TextScaler.noScaling),
+          data: MediaQuery.of(context).copyWith(
+            boldText: false,
+            textScaler: _respectTextScale
+                ? TextScaler.linear(
+                    MediaQuery.textScalerOf(context).scale(1.0).clamp(0.9, 1.3),
+                  )
+                : TextScaler.noScaling,
+          ),
           child: child!,
         );
       },
@@ -273,26 +303,32 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? const Color(0xFF1E88E5) : const Color(0xFFBDBDBD);
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 24, color: color),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: color,
+    final color = active ? AppColors.primary : AppColors.navInactive;
+    return Semantics(
+      button: true,
+      selected: active,
+      label: active ? '$label，已选中' : label,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 24, color: color),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: color,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

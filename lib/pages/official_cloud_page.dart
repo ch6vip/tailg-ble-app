@@ -10,8 +10,6 @@ import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
-const _pageBg = Color(0xFFF5F6FA);
-
 class OfficialCloudPage extends StatefulWidget {
   const OfficialCloudPage({super.key});
 
@@ -115,7 +113,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: AppColors.pageBg,
       body: SafeArea(
         child: StreamBuilder<OfficialCloudState>(
           stream: officialCloudService.stateStream,
@@ -762,7 +760,7 @@ class OfficialVehicleDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: AppColors.pageBg,
       body: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
@@ -897,7 +895,7 @@ class _OfficialVehicleSelfCheckPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: AppColors.pageBg,
       body: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
@@ -1054,7 +1052,7 @@ class OfficialVehicleLinkPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: AppColors.pageBg,
       body: SafeArea(
         child: StreamBuilder<OfficialCloudState>(
           stream: officialCloudService.stateStream,

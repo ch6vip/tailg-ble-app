@@ -4,10 +4,9 @@ import '../main.dart';
 import '../services/diagnostic_export_service.dart';
 import '../services/log_service.dart';
 import '../services/vehicle_store.dart';
+import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
-const _pageBg = Color(0xFFF5F6FA);
-const _primary = Color(0xFF1E88E5);
 const _textPrimary = Color(0xFF1A1A2E);
 const _textTertiary = Color(0xFF999999);
 
@@ -101,7 +100,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: AppColors.pageBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -165,7 +164,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: active ? _primary : _textTertiary,
+                        color: active ? AppColors.primary : _textTertiary,
                       ),
                     ),
                   ),
@@ -174,7 +173,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
                     height: 2,
                     margin: const EdgeInsets.symmetric(horizontal: 20),
                     decoration: BoxDecoration(
-                      color: active ? _primary : Colors.transparent,
+                      color: active ? AppColors.primary : Colors.transparent,
                       borderRadius: BorderRadius.circular(1),
                     ),
                   ),

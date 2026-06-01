@@ -3,10 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
+import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
-const _pageBg = Color(0xFFF5F6FA);
-const _primary = Color(0xFF1E88E5);
 const _textPrimary = Color(0xFF1A1A2E);
 const _textTertiary = Color(0xFF999999);
 
@@ -80,7 +79,7 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
     final isConnected = connectionManager.state == ble.ConnectionState.ready;
 
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: AppColors.pageBg,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,8 +174,8 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                           child: OutlinedButton(
                             onPressed: _useCurrentToken,
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: _primary,
-                              side: const BorderSide(color: _primary),
+                              foregroundColor: AppColors.primary,
+                              side: const BorderSide(color: AppColors.primary),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -189,7 +188,7 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                         child: FilledButton(
                           onPressed: _saveToken,
                           style: FilledButton.styleFrom(
-                            backgroundColor: _primary,
+                            backgroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),

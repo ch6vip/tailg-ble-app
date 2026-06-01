@@ -14,8 +14,6 @@ import 'device_info_page.dart';
 import 'ota_precheck_page.dart';
 import 'vehicle_message_page.dart';
 
-const _pageBg = Color(0xFFF5F6FA);
-const _primary = Color(0xFF1E88E5);
 const _textPrimary = Color(0xFF1A1A2E);
 const _textTertiary = Color(0xFF999999);
 
@@ -38,7 +36,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: AppColors.pageBg,
       body: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
@@ -118,6 +116,23 @@ class _SettingsPageState extends State<SettingsPage> {
                     context,
                     MaterialPageRoute(builder: (_) => const UnitSettingsPage()),
                   ),
+                );
+              },
+            ),
+            StreamBuilder<bool>(
+              stream: _preferences.respectTextScaleStream,
+              initialData: _preferences.respectSystemTextScale,
+              builder: (context, snapshot) {
+                final enabled = snapshot.data ?? true;
+                return _settingItem(
+                  icon: Icons.text_fields,
+                  title: '跟随系统字号',
+                  subtitle: enabled
+                      ? '允许系统字号设置生效（限 0.9-1.3 倍）'
+                      : '关闭后忽略系统字号',
+                  trailing: _buildToggle(enabled, (v) {
+                    _preferences.setRespectSystemTextScale(v);
+                  }),
                 );
               },
             ),
@@ -245,7 +260,7 @@ class _SettingsPageState extends State<SettingsPage> {
         style: const TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
-          color: _primary,
+          color: AppColors.primary,
         ),
       ),
     );
@@ -314,7 +329,7 @@ class _SettingsPageState extends State<SettingsPage> {
         width: 44,
         height: 26,
         decoration: BoxDecoration(
-          color: value ? _primary : const Color(0xFFE0E0E0),
+          color: value ? AppColors.primary : const Color(0xFFE0E0E0),
           borderRadius: BorderRadius.circular(13),
         ),
         child: AnimatedAlign(
@@ -367,7 +382,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return ListTile(
       leading: Icon(
         selected ? Icons.radio_button_checked : Icons.radio_button_off,
-        color: selected ? _primary : _textTertiary,
+        color: selected ? AppColors.primary : _textTertiary,
       ),
       title: Text(title, style: const TextStyle(fontSize: 15)),
       subtitle: Text(

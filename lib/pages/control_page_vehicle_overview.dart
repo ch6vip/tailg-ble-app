@@ -212,7 +212,7 @@ _VehicleStateDisplay _vehicleStateDisplay({
       ]);
     }
     if (!bike.isLocked && bike.isPowerOn) {
-      return _VehicleStateDisplay('已通电', Icons.power, [
+      return _VehicleStateDisplay('已启动', Icons.power, [
         Colors.green.shade300,
         Colors.teal.shade300,
       ]);
@@ -249,7 +249,7 @@ _VehicleStateDisplay _cloudVehicleStateDisplay(OfficialVehicle vehicle) {
     ]);
   }
   if (vehicle.isPowerOn) {
-    return _VehicleStateDisplay('云端已通电', Icons.power, [
+    return _VehicleStateDisplay('云端已启动', Icons.power, [
       Colors.green.shade300,
       Colors.teal.shade300,
     ]);

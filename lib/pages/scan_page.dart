@@ -7,10 +7,8 @@ import '../main.dart';
 import '../models/vehicle_profile.dart';
 import '../services/permission_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/app_snack.dart';
 
-const _pageBg = Color(0xFFF5F6FA);
-const _primary = Color(0xFF1E88E5);
-const _primaryDark = Color(0xFF1565C0);
 const _textPrimary = Color(0xFF1A1A2E);
 const _textTertiary = Color(0xFF999999);
 
@@ -71,9 +69,7 @@ class _ScanPageState extends State<ScanPage>
   Future<bool> _requestPermissions() async {
     final result = await AppPermissionService().requestBleScanPermissions();
     if (!result.granted && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message ?? '请授予蓝牙和定位权限后再扫描')),
-      );
+      AppSnack.error(context, result.message ?? '请授予蓝牙和定位权限后再扫描');
     }
     return result.granted;
   }
@@ -101,12 +97,7 @@ class _ScanPageState extends State<ScanPage>
     setState(() => _connectingRemoteId = device.remoteId.toString());
     _stopScan();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('正在连接 ${device.platformName}...'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    AppSnack.info(context, '正在连接 ${device.platformName}...');
     try {
       VehicleProfile? existingProfile;
       for (final vehicle in vehicleStore.vehicles) {
@@ -127,15 +118,11 @@ class _ScanPageState extends State<ScanPage>
       applyVehicleBleCredentials(profile);
       unawaited(locationService.recordVehicleLocation(profile.id));
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('连接成功，已绑定为默认车辆')));
+        AppSnack.success(context, '连接成功，已绑定为默认车辆');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('连接失败: $e')));
+        AppSnack.error(context, '连接失败: $e');
       }
     } finally {
       if (mounted) {
@@ -153,7 +140,7 @@ class _ScanPageState extends State<ScanPage>
       builder: (context, adapterSnapshot) {
         final bluetoothOn = adapterSnapshot.data == BluetoothAdapterState.on;
         return Scaffold(
-          backgroundColor: _pageBg,
+          backgroundColor: AppColors.pageBg,
           body: SafeArea(
             child: Stack(
               children: [
@@ -264,13 +251,7 @@ class _ScanHintCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 10,
-            offset: Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppShadows.cardShadow,
       ),
       child: Row(
         children: [
@@ -278,10 +259,10 @@ class _ScanHintCard extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: _primary.withValues(alpha: 0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: _primary, size: 20),
+            child: Icon(icon, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -335,12 +316,12 @@ class _RadarWidget extends StatelessWidget {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [_primary, _primaryDark],
+                colors: [AppColors.primary, AppColors.primaryDark],
               ),
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: _primary.withValues(alpha: 0.35),
+                  color: AppColors.primary.withValues(alpha: 0.35),
                   blurRadius: 20,
                   offset: const Offset(0, 4),
                 ),
@@ -366,7 +347,7 @@ class _RadarPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final ringPaint = Paint()
-      ..color = _primary.withValues(alpha: 0.12)
+      ..color = AppColors.primary.withValues(alpha: 0.12)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 
@@ -378,7 +359,7 @@ class _RadarPainter extends CustomPainter {
       ..shader = SweepGradient(
         startAngle: sweepAngle - 1.05,
         endAngle: sweepAngle,
-        colors: [Colors.transparent, _primary.withValues(alpha: 0.15)],
+        colors: [Colors.transparent, AppColors.primary.withValues(alpha: 0.15)],
         transform: GradientRotation(sweepAngle - 1.05),
       ).createShader(Rect.fromCircle(center: center, radius: 80));
 
@@ -508,7 +489,7 @@ class _DeviceCardState extends State<_DeviceCard> {
                 child: Icon(
                   isTailg ? Icons.electric_bike : Icons.bluetooth,
                   size: 22,
-                  color: isTailg ? _primary : const Color(0xFF9E9E9E),
+                  color: isTailg ? AppColors.primary : const Color(0xFF9E9E9E),
                 ),
               ),
               const SizedBox(width: 12),
@@ -633,7 +614,7 @@ class _ScanFab extends StatelessWidget {
               ? const Color(0xFFBDBDBD)
               : scanning
               ? const Color(0xFF757575)
-              : _primary,
+              : AppColors.primary,
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
@@ -641,7 +622,7 @@ class _ScanFab extends StatelessWidget {
                   ? Colors.black.withValues(alpha: 0.08)
                   : scanning
                   ? Colors.black.withValues(alpha: 0.15)
-                  : _primary.withValues(alpha: 0.35),
+                  : AppColors.primary.withValues(alpha: 0.35),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),

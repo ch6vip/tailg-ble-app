@@ -51,16 +51,16 @@ class _UnboundVehicleHome extends StatelessWidget {
               _OfficialActionButton(
                 label: '绑定设备',
                 foreground: Colors.white,
-                background: const Color(0xFFF11C2C),
-                borderColor: const Color(0xFFF11C2C),
+                background: AppColors.brandRed,
+                borderColor: AppColors.brandRed,
                 onTap: () => openScanTab(context),
               ),
               const SizedBox(height: 12),
               _OfficialActionButton(
                 label: '虚拟体验',
-                foreground: const Color(0xFFF11C2C),
+                foreground: AppColors.brandRed,
                 background: ReplicaColors.pageBg,
-                borderColor: const Color(0xFFF11C2C),
+                borderColor: AppColors.brandRed,
                 onTap: () => _showSnack(context, '虚拟体验页待复刻，当前可先登录官方账号查看云端车辆'),
               ),
               const SizedBox(height: 8),
@@ -108,18 +108,12 @@ class _UnboundLogoMark extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0A000000),
-                blurRadius: 10,
-                offset: Offset(0, 2),
-              ),
-            ],
+            boxShadow: AppShadows.cardShadow,
           ),
           child: const Icon(
             Icons.electric_bike,
             size: 25,
-            color: Color(0xFFF11C2C),
+            color: AppColors.brandRed,
           ),
         ),
         const SizedBox(width: 10),
@@ -261,7 +255,7 @@ class _BannerDot extends StatelessWidget {
       width: active ? 28 : 8,
       height: 6,
       decoration: BoxDecoration(
-        color: active ? const Color(0xFFF11C2C) : const Color(0xFFD8DAE2),
+        color: active ? AppColors.brandRed : const Color(0xFFD8DAE2),
         borderRadius: BorderRadius.circular(3),
       ),
     );

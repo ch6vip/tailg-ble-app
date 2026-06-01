@@ -47,9 +47,7 @@ const _officialPressedBg = Color(0xFFE5E5E5);
 const _cardDecoration = BoxDecoration(
   color: Colors.white,
   borderRadius: BorderRadius.all(Radius.circular(ReplicaRadii.card)),
-  boxShadow: [
-    BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 2)),
-  ],
+  boxShadow: AppShadows.cardShadow,
 );
 
 int? _normalizePercent(int? value) {
@@ -219,11 +217,11 @@ class _ControlAreaViewModel {
     return commandDisabledReason(command);
   }
 
-  String get powerLabel => isPowerOn ? '断电' : '通电';
+  String get powerLabel => isPowerOn ? '熄火' : '启动';
 
   String get powerHint => isPowerOn ? '左滑关闭' : '右滑启动';
 
-  String get powerLoadingLabel => isPowerOn ? '正在断电' : '正在通电';
+  String get powerLoadingLabel => isPowerOn ? '正在熄火' : '正在启动';
 
   IconData get powerIcon =>
       isPowerOn ? Icons.power_off : Icons.power_settings_new;

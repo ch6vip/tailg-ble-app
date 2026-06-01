@@ -487,13 +487,7 @@ class _OfficialSummaryRow extends StatelessWidget {
       decoration: const BoxDecoration(
         color: ReplicaColors.darkPanel,
         borderRadius: BorderRadius.all(Radius.circular(ReplicaRadii.card)),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 10,
-            offset: Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppShadows.cardShadow,
       ),
       padding: const EdgeInsets.symmetric(vertical: 14),
       child: IntrinsicHeight(

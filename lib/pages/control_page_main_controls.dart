@@ -107,9 +107,7 @@ BoxDecoration get _officialControlCardDecoration => BoxDecoration(
   color: Colors.white,
   borderRadius: BorderRadius.circular(_phoneControlRadius),
   border: Border.all(color: Colors.white),
-  boxShadow: const [
-    BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 2)),
-  ],
+  boxShadow: AppShadows.cardShadow,
 );
 
 class _OfficialSmallControlButton extends StatefulWidget {
@@ -323,7 +321,7 @@ class _PrimaryPowerControl extends StatelessWidget {
           ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 104, maxWidth: 132),
             child: SlideToAction(
-              label: reverseSlide ? '左滑' : '右滑',
+              label: reverseSlide ? '左滑关闭' : '右滑启动',
               icon: icon,
               reverseSlide: reverseSlide,
               loading: loading,
