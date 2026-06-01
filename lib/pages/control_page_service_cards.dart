@@ -157,12 +157,12 @@ class _HomeQuickSection extends StatelessWidget {
                   const SizedBox(height: 12),
                   _BleRenewalServiceCard(
                     onTap: () =>
-                        _showUnavailable(context, '蓝牙续费涉及官方支付与服务权益，当前保持只读占位'),
+                        _showUnavailable(context, '蓝牙续费暂未开放，当前不接入官方支付与服务权益'),
                   ),
                   const SizedBox(height: 12),
                   _ChargingStationServiceCard(
                     onTap: () =>
-                        _showUnavailable(context, '台铃充电站涉及官方站点与交易接口，当前保持只读占位'),
+                        _showUnavailable(context, '台铃充电站暂未开放，当前不接入官方站点与交易接口'),
                   ),
                 ],
               ),
@@ -174,10 +174,30 @@ class _HomeQuickSection extends StatelessWidget {
   }
 }
 
-class _FunctionSettingsCard extends StatelessWidget {
+class _FunctionSettingsCard extends StatefulWidget {
   final List<_HomeQuickItem> items;
 
   const _FunctionSettingsCard({required this.items});
+
+  @override
+  State<_FunctionSettingsCard> createState() => _FunctionSettingsCardState();
+}
+
+class _FunctionSettingsCardState extends State<_FunctionSettingsCard> {
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  double _scrollProgress() {
+    if (!_scrollController.hasClients) return 0;
+    final maxExtent = _scrollController.position.maxScrollExtent;
+    if (maxExtent <= 0) return 0;
+    return (_scrollController.offset / maxExtent).clamp(0.0, 1.0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +210,7 @@ class _FunctionSettingsCard extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              '功能设置',
+              '快捷功能',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
@@ -202,35 +222,68 @@ class _FunctionSettingsCard extends StatelessWidget {
           SizedBox(
             height: 92,
             child: ListView.separated(
+              controller: _scrollController,
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 16),
               scrollDirection: Axis.horizontal,
-              itemCount: items.length,
+              itemCount: widget.items.length,
               separatorBuilder: (_, __) => const SizedBox(width: 6),
               itemBuilder: (context, index) => SizedBox(
                 width: 86,
-                child: _HomeQuickTile(item: items[index]),
+                child: _HomeQuickTile(item: widget.items[index]),
               ),
             ),
           ),
           const SizedBox(height: 10),
-          Center(
-            child: SizedBox(
-              width: 60,
-              height: 4,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: LinearProgressIndicator(
-                  value: 3 / items.length,
-                  backgroundColor: const Color(0xFFDFDFDF),
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    Color(0xFF2C2C2C),
-                  ),
+          AnimatedBuilder(
+            animation: _scrollController,
+            builder: (context, _) {
+              return Center(
+                child: SizedBox(
+                  width: 60,
+                  height: 4,
+                  child: _ScrollPositionIndicator(progress: _scrollProgress()),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScrollPositionIndicator extends StatelessWidget {
+  final double progress;
+
+  const _ScrollPositionIndicator({required this.progress});
+
+  @override
+  Widget build(BuildContext context) {
+    const trackWidth = 60.0;
+    const thumbWidth = 30.0;
+    final left = (trackWidth - thumbWidth) * progress;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(2),
+      child: ColoredBox(
+        color: const Color(0xFFDFDFDF),
+        child: Stack(
+          children: [
+            Positioned(
+              left: left,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                width: thumbWidth,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2C2C2C),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -443,7 +496,7 @@ class _OfficialSettingsServiceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _ServiceTitle('功能设置'),
+          const _ServiceTitle('常用服务'),
           const SizedBox(height: 12),
           Expanded(
             child: Row(
@@ -656,7 +709,7 @@ class _BleRenewalServiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return _OfficialPressable(
       onTap: onTap,
-      background: const Color(0xFFEFF6FF),
+      background: const Color(0xFFF4F5F7),
       pressedBackground: _officialPressedBg,
       child: Container(
         height: 92,
@@ -665,7 +718,7 @@ class _BleRenewalServiceCard extends StatelessWidget {
           children: [
             const _ServiceIconBox(
               icon: Icons.bluetooth_audio,
-              color: ReplicaColors.blue,
+              color: ReplicaColors.muted,
               size: 48,
             ),
             const SizedBox(width: 16),
@@ -677,7 +730,7 @@ class _BleRenewalServiceCard extends StatelessWidget {
                   _ServiceTitle('蓝牙续费'),
                   SizedBox(height: 7),
                   Text(
-                    '充值后智能控车',
+                    '官方权益服务暂未开放',
                     style: TextStyle(
                       fontSize: 13,
                       color: ReplicaColors.muted,
@@ -688,16 +741,16 @@ class _BleRenewalServiceCard extends StatelessWidget {
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
-                color: ReplicaColors.blue,
+                color: const Color(0xFFE3E6EC),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Text(
-                '续费',
+                '暂未开放',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white,
+                  color: ReplicaColors.muted,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -718,13 +771,14 @@ class _ChargingStationServiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return _OfficialPressable(
       onTap: onTap,
+      background: const Color(0xFFF7F8FA),
       child: Container(
         height: 150,
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _ServiceCardHeader(title: '台铃充电站', trailing: '附近站点'),
+            const _ServiceCardHeader(title: '台铃充电站', trailing: '暂未开放'),
             const SizedBox(height: 14),
             Expanded(
               child: Container(
@@ -737,7 +791,7 @@ class _ChargingStationServiceCard extends StatelessWidget {
                   children: [
                     const _ServiceIconBox(
                       icon: Icons.ev_station,
-                      color: Color(0xFFFF8A00),
+                      color: ReplicaColors.muted,
                       size: 58,
                     ),
                     const SizedBox(width: 14),
@@ -758,7 +812,7 @@ class _ChargingStationServiceCard extends StatelessWidget {
                           ),
                           SizedBox(height: 8),
                           Text(
-                            '空闲 -- ｜ 占用 --',
+                            '官方站点与交易接口暂未接入',
                             style: TextStyle(
                               fontSize: 13,
                               color: ReplicaColors.muted,
@@ -768,7 +822,7 @@ class _ChargingStationServiceCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right, color: Colors.grey.shade500),
+                    Icon(Icons.chevron_right, color: Colors.grey.shade400),
                   ],
                 ),
               ),

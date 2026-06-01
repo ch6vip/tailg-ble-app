@@ -65,52 +65,57 @@ class _OfficialMainControlCard extends StatelessWidget {
       decoration: _officialControlCardDecoration,
       child: Column(
         children: [
-          _PrimaryPowerControl(
-            label: powerLabel,
-            hint: powerHint,
-            icon: powerIcon,
-            reverseSlide: reverseSlide,
-            loading: powerLoading,
-            loadingLabel: powerLoadingLabel,
-            color: powerColor,
-            enabled: enabled,
-            disabledReason: disabledReason,
-            onDisabledTap: onDisabledTap,
-            onSlideComplete: onPowerSlideComplete,
+          SizedBox(
+            height: 88,
+            child: _PrimaryPowerControl(
+              label: powerLabel,
+              hint: powerHint,
+              icon: powerIcon,
+              reverseSlide: reverseSlide,
+              loading: powerLoading,
+              loadingLabel: powerLoadingLabel,
+              color: powerColor,
+              enabled: enabled,
+              disabledReason: disabledReason,
+              onDisabledTap: onDisabledTap,
+              onSlideComplete: onPowerSlideComplete,
+            ),
           ),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _OfficialSmallControlButton(
-                  icon: Icons.volume_up_outlined,
-                  label: '寻车',
-                  subLabel: '鸣笛定位',
-                  loadingLabel: ControlLoadingLabel.find.text,
-                  enabled: findEnabled,
-                  active: findActive,
-                  loading: findActive,
-                  disabledReason: findDisabledReason,
-                  onTap: onFindTap,
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  child: _OfficialSmallControlButton(
+                    icon: Icons.volume_up_outlined,
+                    label: '寻车',
+                    loadingLabel: ControlLoadingLabel.find.text,
+                    large: true,
+                    enabled: findEnabled,
+                    active: findActive,
+                    loading: findActive,
+                    disabledReason: findDisabledReason,
+                    onTap: onFindTap,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _OfficialSmallControlButton(
-                  icon: lockIcon,
-                  label: lockLabel,
-                  subLabel: lockStatus,
-                  loadingLabel: lockLabel == '解锁'
-                      ? ControlLoadingLabel.unlock.text
-                      : ControlLoadingLabel.lock.text,
-                  enabled: enabled,
-                  active: lockActive,
-                  loading: lockActive,
-                  disabledReason: disabledReason,
-                  onTap: onLockTap,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _OfficialSmallControlButton(
+                    icon: lockIcon,
+                    label: lockLabel,
+                    loadingLabel: lockLabel == '解锁'
+                        ? ControlLoadingLabel.unlock.text
+                        : ControlLoadingLabel.lock.text,
+                    large: true,
+                    enabled: enabled,
+                    active: lockActive,
+                    loading: lockActive,
+                    disabledReason: disabledReason,
+                    onTap: onLockTap,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -128,19 +133,19 @@ BoxDecoration get _officialControlCardDecoration => BoxDecoration(
 class _OfficialSmallControlButton extends StatefulWidget {
   final IconData icon;
   final String label;
-  final String? subLabel;
   final String loadingLabel;
   final bool enabled;
   final bool active;
   final bool loading;
   final String disabledReason;
   final VoidCallback onTap;
+  final bool large;
 
   const _OfficialSmallControlButton({
     required this.icon,
     required this.label,
-    this.subLabel,
     this.loadingLabel = '执行中',
+    this.large = false,
     required this.enabled,
     required this.active,
     required this.loading,
@@ -163,6 +168,7 @@ class _OfficialSmallControlButtonState
   }
 
   void _showDisabledReason() {
+    HapticFeedback.selectionClick();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(widget.disabledReason),
@@ -178,8 +184,16 @@ class _OfficialSmallControlButtonState
     final background = widget.active
         ? ReplicaColors.blue.withValues(alpha: _pressed ? 0.16 : 0.1)
         : _pressed
-        ? _officialPressedBg
-        : const Color(0xFFF0F0F5);
+        ? const Color(0xFFE4E6EB)
+        : const Color(0xFFF3F3F7);
+    final borderColor = widget.active
+        ? ReplicaColors.blue.withValues(alpha: _pressed ? 0.24 : 0.14)
+        : _pressed
+        ? const Color(0xFFD7D9DE)
+        : const Color(0xFFEDEFF3);
+    final iconSize = widget.large ? 34.0 : 26.0;
+    final fontSize = widget.large ? 18.0 : 12.0;
+    final iconGap = widget.large ? 5.0 : 6.0;
     return AnimatedScale(
       duration: const Duration(milliseconds: 120),
       scale: _pressed ? 0.96 : 1,
@@ -188,6 +202,7 @@ class _OfficialSmallControlButtonState
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: borderColor),
         ),
         child: AnimatedOpacity(
           opacity: widget.enabled || widget.loading ? 1 : 0.54,
@@ -210,42 +225,27 @@ class _OfficialSmallControlButtonState
               onTapCancel: interactive ? () => _setPressed(false) : null,
               borderRadius: BorderRadius.circular(8),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 10,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (widget.loading)
                       _PulseActionIcon(icon: widget.icon, color: color)
                     else
-                      Icon(widget.icon, color: color, size: 26),
-                    const SizedBox(height: 6),
+                      Icon(widget.icon, color: color, size: iconSize),
+                    SizedBox(height: iconGap),
                     Text(
                       widget.loading ? widget.loadingLabel : widget.label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: fontSize,
                         fontWeight: FontWeight.w700,
                         color: widget.enabled
                             ? ReplicaColors.muted
                             : Colors.grey,
                       ),
                     ),
-                    if (widget.subLabel != null && !widget.loading) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        widget.subLabel!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: ReplicaColors.subtle,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -286,70 +286,32 @@ class _PrimaryPowerControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: _phoneControlItemBg,
-        borderRadius: BorderRadius.circular(_phoneControlRadius),
-        border: Border.all(
-          color: enabled ? color.withValues(alpha: 0.18) : AppColors.border,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: enabled ? color : _phoneControlPrimaryPressed,
-              borderRadius: BorderRadius.circular(_phoneControlRadius),
-            ),
-            child: Icon(icon, color: Colors.white, size: 25),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: ReplicaColors.ink,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  enabled ? hint : disabledReason,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: enabled ? ReplicaColors.muted : AppColors.warning,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 104, maxWidth: 132),
-            child: SlideToAction(
-              label: reverseSlide ? '左滑关闭' : '右滑启动',
-              icon: icon,
-              reverseSlide: reverseSlide,
-              loading: loading,
-              loadingLabel: loadingLabel,
-              backgroundColor: color,
-              enabled: enabled,
-              onDisabledTap: onDisabledTap,
-              onSlideComplete: onSlideComplete,
-            ),
-          ),
-        ],
-      ),
+    return SlideToAction(
+      label: enabled ? (reverseSlide ? '左滑关闭' : '右滑启动') : '请连接车辆',
+      icon: icon,
+      reverseSlide: reverseSlide,
+      loading: loading,
+      loadingLabel: loadingLabel,
+      backgroundColor: _phoneControlItemBg,
+      thumbColor: enabled
+          ? const Color(0xFF505158)
+          : _phoneControlPrimaryPressed,
+      enabled: enabled,
+      height: 88,
+      thumbSize: 76,
+      thumbRadius: 8,
+      trackInset: 6,
+      iconSize: 38,
+      labelFontSize: 24,
+      loadingFontSize: 21,
+      centerLabel: true,
+      labelColor: enabled ? ReplicaColors.muted : AppColors.warning,
+      chevronColor: ReplicaColors.subtle,
+      disabledBackgroundColor: _phoneControlItemBg,
+      disabledThumbColor: const Color(0xFFE3E6EC),
+      disabledIconColor: ReplicaColors.subtle,
+      onDisabledTap: onDisabledTap,
+      onSlideComplete: onSlideComplete,
     );
   }
 }

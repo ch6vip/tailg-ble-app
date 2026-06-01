@@ -32,43 +32,41 @@ class _OfficialQuickControlCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: _officialControlCardDecoration,
-      child: Column(
+      child: Stack(
         children: [
-          Expanded(
-            child: _OfficialSmallControlButton(
-              icon: firstQuick.icon,
-              label: firstQuick.label,
-              loadingLabel: ControlLoadingLabel.execute.text,
-              enabled: firstEnabled,
-              active: firstActive,
-              loading: firstActive,
-              disabledReason: firstDisabledReason,
-              onTap: onFirstTap,
-            ),
+          Column(
+            children: [
+              Expanded(
+                child: _OfficialSmallControlButton(
+                  icon: firstQuick.icon,
+                  label: firstQuick.label,
+                  loadingLabel: ControlLoadingLabel.execute.text,
+                  enabled: firstEnabled,
+                  active: firstActive,
+                  loading: firstActive,
+                  disabledReason: firstDisabledReason,
+                  onTap: onFirstTap,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: _OfficialSmallControlButton(
+                  icon: secondQuick.icon,
+                  label: secondQuick.label,
+                  loadingLabel: ControlLoadingLabel.execute.text,
+                  enabled: secondEnabled,
+                  active: secondActive,
+                  loading: secondActive,
+                  disabledReason: secondDisabledReason,
+                  onTap: onSecondTap,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: _OfficialSmallControlButton(
-                    icon: secondQuick.icon,
-                    label: secondQuick.label,
-                    loadingLabel: ControlLoadingLabel.execute.text,
-                    enabled: secondEnabled,
-                    active: secondActive,
-                    loading: secondActive,
-                    disabledReason: secondDisabledReason,
-                    onTap: onSecondTap,
-                  ),
-                ),
-                Positioned(
-                  right: -2,
-                  bottom: -2,
-                  child: _QuickEditButton(onTap: onEditTap),
-                ),
-              ],
-            ),
+          Positioned(
+            right: -2,
+            top: -2,
+            child: _QuickEditButton(onTap: onEditTap),
           ),
         ],
       ),
@@ -173,7 +171,7 @@ class _QuickControlEditPageState extends State<QuickControlEditPage> {
         child: Column(
           children: [
             AppPageHeader(
-              title: '添加快捷键',
+              title: '快捷功能设置',
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(
@@ -390,36 +388,47 @@ class _QuickEditButtonState extends State<_QuickEditButton> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedScale(
-      duration: const Duration(milliseconds: 120),
-      scale: _pressed ? 0.92 : 1,
-      child: Material(
-        color: Colors.transparent,
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: () {
-            _setPressed(false);
-            HapticFeedback.selectionClick();
-            widget.onTap();
-          },
-          onTapDown: (_) => _setPressed(true),
-          onTapUp: (_) => _setPressed(false),
-          onTapCancel: () => _setPressed(false),
-          child: SizedBox(
-            width: 44,
-            height: 44,
-            child: Center(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
-                decoration: BoxDecoration(
-                  color: _pressed ? AppColors.primaryDark : AppColors.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: const SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: Icon(Icons.edit, color: Colors.white, size: 16),
+    return Tooltip(
+      message: '编辑快捷功能',
+      child: Semantics(
+        button: true,
+        label: '编辑快捷功能',
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 120),
+          scale: _pressed ? 0.92 : 1,
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () {
+                _setPressed(false);
+                HapticFeedback.selectionClick();
+                widget.onTap();
+              },
+              onTapDown: (_) => _setPressed(true),
+              onTapUp: (_) => _setPressed(false),
+              onTapCancel: () => _setPressed(false),
+              child: SizedBox(
+                width: 44,
+                height: 44,
+                child: Center(
+                  child: AnimatedContainer(
+                    width: 28,
+                    height: 28,
+                    duration: const Duration(milliseconds: 120),
+                    decoration: BoxDecoration(
+                      color: _pressed
+                          ? const Color(0xFFD8DAE0)
+                          : const Color(0xFFE9EBF0),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.edit_outlined,
+                      color: ReplicaColors.muted,
+                      size: 16,
+                    ),
+                  ),
                 ),
               ),
             ),
