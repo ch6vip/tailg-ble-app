@@ -43,22 +43,28 @@ class AppPreferencesService {
 
   static const _prefLanguage = 'app_language_preference';
   static const _prefDistanceUnit = 'app_distance_unit_preference';
+  static const _prefRespectTextScale = 'app_respect_text_scale';
 
   final _languageController =
       StreamController<AppLanguagePreference>.broadcast();
   final _distanceUnitController =
       StreamController<DistanceUnitPreference>.broadcast();
+  final _respectTextScaleController = StreamController<bool>.broadcast();
 
   AppLanguagePreference _language = AppLanguagePreference.system;
   DistanceUnitPreference _distanceUnit = DistanceUnitPreference.metric;
+  bool _respectTextScale = true;
   bool _initialized = false;
 
   AppLanguagePreference get language => _language;
   DistanceUnitPreference get distanceUnit => _distanceUnit;
+  bool get respectSystemTextScale => _respectTextScale;
   Stream<AppLanguagePreference> get languageStream =>
       _languageController.stream;
   Stream<DistanceUnitPreference> get distanceUnitStream =>
       _distanceUnitController.stream;
+  Stream<bool> get respectTextScaleStream =>
+      _respectTextScaleController.stream;
 
   Future<void> init() async {
     if (_initialized) return;
@@ -67,6 +73,7 @@ class AppPreferencesService {
     _distanceUnit = DistanceUnitPreference.fromValue(
       prefs.getString(_prefDistanceUnit),
     );
+    _respectTextScale = prefs.getBool(_prefRespectTextScale) ?? true;
     _initialized = true;
     _emit();
   }
@@ -87,8 +94,23 @@ class AppPreferencesService {
     _emit();
   }
 
+  Future<void> setRespectSystemTextScale(bool value) async {
+    await init();
+    _respectTextScale = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefRespectTextScale, value);
+    _emitRespectTextScale();
+  }
+
   void _emit() {
     _languageController.add(_language);
     _distanceUnitController.add(_distanceUnit);
+    _emitRespectTextScale();
+  }
+
+  void _emitRespectTextScale() {
+    if (!_respectTextScaleController.isClosed) {
+      _respectTextScaleController.add(_respectTextScale);
+    }
   }
 }
