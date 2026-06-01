@@ -66,6 +66,22 @@ void main() {
       expect(vehicle.normalizedBtmac, isEmpty);
       expect(vehicle.hasBleIdentity, isFalse);
     });
+
+    test('applies successful control commands optimistically', () {
+      final vehicle = OfficialVehicle.fromJson({
+        'carId': 'official-1',
+        'defenceStatus': 1,
+        'acc': 0,
+        'electricQuantity': 68,
+      });
+
+      expect(vehicle.applyCommand(CommandCode.powerOn).isPowerOn, isTrue);
+      expect(vehicle.applyCommand(CommandCode.powerOff).isPowerOn, isFalse);
+      expect(vehicle.applyCommand(CommandCode.unlock).isLocked, isFalse);
+      expect(vehicle.applyCommand(CommandCode.lock).isLocked, isTrue);
+      expect(vehicle.applyCommand(CommandCode.find), same(vehicle));
+      expect(vehicle.applyCommand(CommandCode.powerOn).electricQuantity, 68);
+    });
   });
 
   group('OfficialCloudCommand', () {

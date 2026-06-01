@@ -358,10 +358,11 @@ class OfficialCloudService {
   Future<void> refreshVehicles({
     bool silent = false,
     bool refreshReplicaDetails = true,
+    bool force = false,
   }) async {
     if (_state.token.isEmpty) return;
     const refreshKey = 'vehicles';
-    if (silent && _shouldUseRecentRefresh(refreshKey)) {
+    if (!force && silent && _shouldUseRecentRefresh(refreshKey)) {
       _refreshVehicleDependents(refreshReplicaDetails: refreshReplicaDetails);
       return;
     }
@@ -962,6 +963,7 @@ class OfficialCloudService {
       _ensureSuccess(response.body, fallback: '${command.label}失败');
       final message = response.body['msg']?.toString();
       _log.operation('官方云端指令已返回: ${command.label}');
+      _applyCommandToSelectedVehicle(command);
       _refreshVehiclesAfterCommand(command);
       return message == null || message.isEmpty ? 'success' : message;
     } catch (e) {
@@ -972,9 +974,20 @@ class OfficialCloudService {
 
   void _refreshVehiclesAfterCommand(CommandCode command) {
     _runSilentRefresh(
-      refreshVehicles(silent: true),
+      refreshVehicles(silent: true, force: true),
       failureMessage: '官方云端指令后刷新状态失败: ${command.label}',
     );
+  }
+
+  void _applyCommandToSelectedVehicle(CommandCode command) {
+    final selectedKey = _state.selectedVehicle?.key;
+    if (selectedKey == null) return;
+    final vehicles = [
+      for (final vehicle in _state.vehicles)
+        vehicle.key == selectedKey ? vehicle.applyCommand(command) : vehicle,
+    ];
+    _state = _state.copyWith(vehicles: vehicles);
+    _emit();
   }
 
   void _refreshVehicleDependents({required bool refreshReplicaDetails}) {

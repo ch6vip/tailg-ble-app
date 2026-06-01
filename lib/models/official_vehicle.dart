@@ -108,6 +108,58 @@ class OfficialVehicle {
     'mileage': mileage,
   };
 
+  OfficialVehicle copyWith({
+    String? imei,
+    String? imeiGps,
+    String? carId,
+    String? carName,
+    String? carNickName,
+    String? carPhoto,
+    String? frame,
+    int? defenceStatus,
+    int? acc,
+    int? electricQuantity,
+    double? voltage,
+    bool? online,
+    String? btname,
+    String? btmac,
+    String? longitude,
+    String? latitude,
+    int? modelType,
+    double? mileage,
+  }) {
+    return OfficialVehicle(
+      imei: imei ?? this.imei,
+      imeiGps: imeiGps ?? this.imeiGps,
+      carId: carId ?? this.carId,
+      carName: carName ?? this.carName,
+      carNickName: carNickName ?? this.carNickName,
+      carPhoto: carPhoto ?? this.carPhoto,
+      frame: frame ?? this.frame,
+      defenceStatus: defenceStatus ?? this.defenceStatus,
+      acc: acc ?? this.acc,
+      electricQuantity: electricQuantity ?? this.electricQuantity,
+      voltage: voltage ?? this.voltage,
+      online: online ?? this.online,
+      btname: btname ?? this.btname,
+      btmac: btmac ?? this.btmac,
+      longitude: longitude ?? this.longitude,
+      latitude: latitude ?? this.latitude,
+      modelType: modelType ?? this.modelType,
+      mileage: mileage ?? this.mileage,
+    );
+  }
+
+  OfficialVehicle applyCommand(CommandCode command) {
+    return switch (command) {
+      CommandCode.lock => copyWith(defenceStatus: 1),
+      CommandCode.unlock => copyWith(defenceStatus: 0),
+      CommandCode.powerOn => copyWith(acc: 1),
+      CommandCode.powerOff => copyWith(acc: 0),
+      _ => this,
+    };
+  }
+
   String get key {
     if (carId.isNotEmpty) return carId;
     if (imei.isNotEmpty) return imei;
