@@ -38,7 +38,7 @@ class _OfficialQuickControlCard extends StatelessWidget {
             child: _OfficialSmallControlButton(
               icon: firstQuick.icon,
               label: firstQuick.label,
-              loadingLabel: '执行中',
+              loadingLabel: ControlLoadingLabel.execute.text,
               enabled: firstEnabled,
               active: firstActive,
               loading: firstActive,
@@ -54,7 +54,7 @@ class _OfficialQuickControlCard extends StatelessWidget {
                   child: _OfficialSmallControlButton(
                     icon: secondQuick.icon,
                     label: secondQuick.label,
-                    loadingLabel: '执行中',
+                    loadingLabel: ControlLoadingLabel.execute.text,
                     enabled: secondEnabled,
                     active: secondActive,
                     loading: secondActive,

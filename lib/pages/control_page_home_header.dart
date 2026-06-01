@@ -73,7 +73,7 @@ class _Header extends StatelessWidget {
                 ? '${cloudVehicle.defenceLabel} · ${cloudVehicle.powerLabel}'
                 : hasDeviceName
                 ? '蓝牙：$deviceName'
-                : defaultVehicle?.id ?? '点按选择或绑定车辆';
+                : '点按选择或绑定车辆';
 
             return Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),

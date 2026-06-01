@@ -1,5 +1,18 @@
 part of 'control_page.dart';
 
+/// 控车动作进行中的固定文案，避免散落硬编码字符串。
+enum ControlLoadingLabel {
+  unlock('解锁中'),
+  lock('设防中'),
+  find('寻车中'),
+  start('启动中'),
+  stop('熄火中'),
+  execute('执行中');
+
+  final String text;
+  const ControlLoadingLabel(this.text);
+}
+
 class _OfficialMainControlCard extends StatelessWidget {
   final String powerLabel;
   final String powerHint;
@@ -73,7 +86,7 @@ class _OfficialMainControlCard extends StatelessWidget {
                   icon: Icons.volume_up_outlined,
                   label: '寻车',
                   subLabel: '鸣笛定位',
-                  loadingLabel: '寻车中',
+                  loadingLabel: ControlLoadingLabel.find.text,
                   enabled: findEnabled,
                   active: findActive,
                   loading: findActive,
@@ -87,7 +100,9 @@ class _OfficialMainControlCard extends StatelessWidget {
                   icon: lockIcon,
                   label: lockLabel,
                   subLabel: lockStatus,
-                  loadingLabel: lockLabel == '解锁' ? '解锁中' : '设防中',
+                  loadingLabel: lockLabel == '解锁'
+                      ? ControlLoadingLabel.unlock.text
+                      : ControlLoadingLabel.lock.text,
                   enabled: enabled,
                   active: lockActive,
                   loading: lockActive,
