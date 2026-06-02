@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -20,8 +21,8 @@ class OfficialCloudPage extends StatefulWidget {
 class _OfficialCloudPageState extends State<OfficialCloudPage> {
   final _phoneController = TextEditingController();
   final _smsController = TextEditingController();
+  final _smsCountdown = ValueNotifier<int>(0);
   Timer? _smsTimer;
-  int _smsCountdown = 0;
 
   @override
   void initState() {
@@ -33,13 +34,14 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
   @override
   void dispose() {
     _smsTimer?.cancel();
+    _smsCountdown.dispose();
     _phoneController.dispose();
     _smsController.dispose();
     super.dispose();
   }
 
   Future<void> _requestCode() async {
-    if (_smsCountdown > 0) return;
+    if (_smsCountdown.value > 0) return;
     try {
       await officialCloudService.requestSmsCode(_normalizedPhone);
       if (!mounted) return;
@@ -53,17 +55,17 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
 
   void _startSmsCountdown() {
     _smsTimer?.cancel();
-    setState(() => _smsCountdown = 60);
+    _smsCountdown.value = 60;
     _smsTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
       }
-      if (_smsCountdown <= 1) {
+      if (_smsCountdown.value <= 1) {
         timer.cancel();
-        setState(() => _smsCountdown = 0);
+        _smsCountdown.value = 0;
       } else {
-        setState(() => _smsCountdown--);
+        _smsCountdown.value--;
       }
     });
   }
@@ -191,7 +193,7 @@ class _LoginCard extends StatefulWidget {
   final TextEditingController phoneController;
   final TextEditingController smsController;
   final bool loading;
-  final int smsCountdown;
+  final ValueListenable<int> smsCountdown;
   final VoidCallback onRequestCode;
   final VoidCallback onLogin;
 
@@ -254,8 +256,7 @@ class _LoginCardState extends State<_LoginCard> {
     final showPhoneError =
         widget.phoneController.text.isNotEmpty && !_validPhone;
     final showSmsError = widget.smsController.text.isNotEmpty && !_validSms;
-    final canRequestCode =
-        !widget.loading && widget.smsCountdown == 0 && _validPhone;
+    final canRequestCode = !widget.loading && _validPhone;
     final canLogin = !widget.loading && _validPhone && _validSms;
     return AppCard(
       child: Column(
@@ -304,11 +305,16 @@ class _LoginCardState extends State<_LoginCard> {
               const SizedBox(width: 10),
               SizedBox(
                 height: 48,
-                child: OutlinedButton(
-                  onPressed: canRequestCode ? widget.onRequestCode : null,
-                  child: Text(
-                    widget.smsCountdown > 0 ? '${widget.smsCountdown}s' : '获取',
-                  ),
+                child: ValueListenableBuilder<int>(
+                  valueListenable: widget.smsCountdown,
+                  builder: (context, smsCountdown, _) {
+                    return OutlinedButton(
+                      onPressed: canRequestCode && smsCountdown == 0
+                          ? widget.onRequestCode
+                          : null,
+                      child: Text(smsCountdown > 0 ? '${smsCountdown}s' : '获取'),
+                    );
+                  },
                 ),
               ),
             ],
