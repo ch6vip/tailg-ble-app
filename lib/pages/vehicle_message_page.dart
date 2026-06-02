@@ -41,16 +41,27 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
     super.dispose();
   }
 
-  List<_VehicleMessage> _messagesForTab(int tabIndex) {
-    final all = _buildMessages()
+  List<_VehicleMessage> _visibleMessages() {
+    return _buildMessages()
         .where((message) => !_hiddenIds.contains(message.id))
-        .toList();
+        .toList(growable: false);
+  }
+
+  List<_VehicleMessage> _messagesForTab(
+    int tabIndex, [
+    List<_VehicleMessage>? visibleMessages,
+  ]) {
+    final all = visibleMessages ?? _visibleMessages();
     return switch (tabIndex) {
       0 => all,
       1 =>
-        all.where((m) => m.category == _VehicleMessageCategory.system).toList(),
+        all
+            .where((m) => m.category == _VehicleMessageCategory.system)
+            .toList(growable: false),
       2 =>
-        all.where((m) => m.category == _VehicleMessageCategory.device).toList(),
+        all
+            .where((m) => m.category == _VehicleMessageCategory.device)
+            .toList(growable: false),
       _ => all,
     };
   }
@@ -241,7 +252,14 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
 
   @override
   Widget build(BuildContext context) {
-    final all = _messagesForTab(0);
+    final visibleMessages = _visibleMessages();
+    final tabMessages = List.generate(
+      3,
+      (index) => _messagesForTab(index, visibleMessages),
+      growable: false,
+    );
+    final all = tabMessages[0];
+    final currentMessages = tabMessages[_tabController.index];
     final unreadCount = all
         .where((message) => !_readIds.contains(message.id))
         .length;
@@ -287,7 +305,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
                 ),
                 IconButton(
                   tooltip: '清空当前分组',
-                  onPressed: _messagesForTab(_tabController.index).isEmpty
+                  onPressed: currentMessages.isEmpty
                       ? null
                       : _clearCurrentMessages,
                   icon: const Icon(Icons.delete_sweep_outlined),
@@ -307,14 +325,14 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: List.generate(
-                  3,
-                  (index) => _MessageList(
-                    messages: _messagesForTab(index),
-                    readIds: _readIds,
-                    onOpen: _openMessage,
-                  ),
-                ),
+                children: [
+                  for (final messages in tabMessages)
+                    _MessageList(
+                      messages: messages,
+                      readIds: _readIds,
+                      onOpen: _openMessage,
+                    ),
+                ],
               ),
             ),
           ],
@@ -396,74 +414,76 @@ class _MessageList extends StatelessWidget {
       itemBuilder: (context, index) {
         final message = messages[index];
         final read = readIds.contains(message.id);
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-          child: InkWell(
-            onTap: () => onOpen(message),
-            borderRadius: BorderRadius.circular(AppRadii.lg),
-            child: AppCard(
-              margin: EdgeInsets.zero,
-              color: read
-                  ? Colors.white
-                  : message.severity.color.withValues(alpha: 0.06),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _MessageIcon(message: message, read: read),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                message.title,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
+        return RepaintBoundary(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+            child: InkWell(
+              onTap: () => onOpen(message),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              child: AppCard(
+                margin: EdgeInsets.zero,
+                color: read
+                    ? Colors.white
+                    : message.severity.color.withValues(alpha: 0.06),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _MessageIcon(message: message, read: read),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  message.title,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textPrimary,
+                                  ),
                                 ),
                               ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _formatTime(message.time),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textTertiary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            message.subtitle,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                              height: 1.4,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _formatTime(message.time),
-                              style: const TextStyle(
-                                fontSize: 11,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              _Tag(text: message.category.label),
+                              const SizedBox(width: 8),
+                              _Tag(text: read ? '已读' : '未读'),
+                              const Spacer(),
+                              const Icon(
+                                Icons.chevron_right,
+                                size: 18,
                                 color: AppColors.textTertiary,
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          message.subtitle,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                            height: 1.4,
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            _Tag(text: message.category.label),
-                            const SizedBox(width: 8),
-                            _Tag(text: read ? '已读' : '未读'),
-                            const Spacer(),
-                            const Icon(
-                              Icons.chevron_right,
-                              size: 18,
-                              color: AppColors.textTertiary,
-                            ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

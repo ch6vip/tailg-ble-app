@@ -96,6 +96,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final tabEntries = List.generate(3, _getEntries, growable: false);
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
@@ -129,10 +130,9 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: List.generate(
-                  3,
-                  (i) => _LogList(entries: _getEntries(i)),
-                ),
+                children: [
+                  for (final entries in tabEntries) _LogList(entries: entries),
+                ],
               ),
             ),
           ],
@@ -230,58 +230,60 @@ class _LogTile extends StatelessWidget {
       LogLevel.error => const Color(0xFFFF5252),
     };
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            timeStr,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFF9E9E9E),
-              fontFamily: 'monospace',
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              timeStr,
+              style: const TextStyle(
+                fontSize: 11,
+                color: Color(0xFF9E9E9E),
+                fontFamily: 'monospace',
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            width: 6,
-            height: 6,
-            margin: const EdgeInsets.only(top: 6),
-            decoration: BoxDecoration(
-              color: levelColor,
-              shape: BoxShape.circle,
+            const SizedBox(width: 8),
+            Container(
+              width: 6,
+              height: 6,
+              margin: const EdgeInsets.only(top: 6),
+              decoration: BoxDecoration(
+                color: levelColor,
+                shape: BoxShape.circle,
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  entry.message,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textPrimary,
-                    height: 1.4,
-                  ),
-                ),
-                if (entry.detail != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Text(
-                      entry.detail!,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF757575),
-                        fontFamily: 'monospace',
-                      ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.message,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                      height: 1.4,
                     ),
                   ),
-              ],
+                  if (entry.detail != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        entry.detail!,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF757575),
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
