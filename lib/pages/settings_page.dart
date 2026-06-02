@@ -51,86 +51,13 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             _sectionLabel('连接'),
-            StreamBuilder<bool>(
-              stream: AutoConnectService().enabledStream,
-              initialData: AutoConnectService().enabled,
-              builder: (context, snapshot) {
-                final enabled = snapshot.data ?? false;
-                return _settingItem(
-                  icon: Icons.bluetooth,
-                  title: '自动连接',
-                  subtitle: enabled ? '打开 app 时自动连接上次的设备' : '关闭',
-                  trailing: _buildToggle(enabled, (v) {
-                    AutoConnectService().setEnabled(v);
-                  }),
-                );
-              },
-            ),
-            StreamBuilder<bool>(
-              stream: ProximityService().enabledStream,
-              initialData: ProximityService().enabled,
-              builder: (context, snapshot) {
-                final enabled = snapshot.data ?? false;
-                return _settingItem(
-                  icon: Icons.sensors,
-                  title: '感应解锁',
-                  subtitle: enabled ? '靠近车辆时自动解锁（RSSI > -75dBm）' : '关闭',
-                  trailing: _buildToggle(enabled, (v) {
-                    ProximityService().setEnabled(v);
-                  }),
-                );
-              },
-            ),
+            const _AutoConnectSettingTile(),
+            const _ProximityUnlockSettingTile(),
             _divider(),
             _sectionLabel('通用'),
-            StreamBuilder<AppLanguagePreference>(
-              stream: _preferences.languageStream,
-              initialData: _preferences.language,
-              builder: (context, snapshot) {
-                return _settingItem(
-                  icon: Icons.language,
-                  title: '语言设置',
-                  subtitle: snapshot.data?.label ?? '跟随系统',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const LanguageSettingsPage(),
-                    ),
-                  ),
-                );
-              },
-            ),
-            StreamBuilder<DistanceUnitPreference>(
-              stream: _preferences.distanceUnitStream,
-              initialData: _preferences.distanceUnit,
-              builder: (context, snapshot) {
-                final unit = snapshot.data ?? DistanceUnitPreference.metric;
-                return _settingItem(
-                  icon: Icons.straighten,
-                  title: '单位设置',
-                  subtitle: '${unit.label} · ${unit.hint}',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const UnitSettingsPage()),
-                  ),
-                );
-              },
-            ),
-            StreamBuilder<bool>(
-              stream: _preferences.respectTextScaleStream,
-              initialData: _preferences.respectSystemTextScale,
-              builder: (context, snapshot) {
-                final enabled = snapshot.data ?? true;
-                return _settingItem(
-                  icon: Icons.text_fields,
-                  title: '跟随系统字号',
-                  subtitle: enabled ? '允许系统字号设置生效（限 0.9-1.3 倍）' : '关闭后忽略系统字号',
-                  trailing: _buildToggle(enabled, (v) {
-                    _preferences.setRespectSystemTextScale(v);
-                  }),
-                );
-              },
-            ),
+            const _LanguageSettingTile(),
+            const _DistanceUnitSettingTile(),
+            const _RespectTextScaleSettingTile(),
             _divider(),
             _sectionLabel('车辆'),
             _settingItem(
@@ -261,73 +188,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _settingItem({
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    Widget? trailing,
-    VoidCallback? onTap,
-    bool showChevron = true,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 28,
-              height: 28,
-              child: Icon(icon, size: 22, color: AppColors.textPrimary),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 1),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            if (trailing != null)
-              trailing
-            else if (showChevron)
-              Icon(Icons.chevron_right, size: 20, color: Colors.grey.shade400),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildToggle(bool value, ValueChanged<bool> onChanged) {
-    return Switch(
-      value: value,
-      onChanged: onChanged,
-      activeColor: Colors.white,
-      activeTrackColor: AppColors.primary,
-      inactiveThumbColor: Colors.white,
-      inactiveTrackColor: AppColors.border,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    );
-  }
-
   Widget _divider() {
     return const Padding(
       padding: EdgeInsets.symmetric(horizontal: 16),
@@ -362,6 +222,189 @@ class _SettingsPageState extends State<SettingsPage> {
         style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
       ),
       onTap: () => Navigator.pop(context),
+    );
+  }
+}
+
+Widget _settingItem({
+  required IconData icon,
+  required String title,
+  String? subtitle,
+  Widget? trailing,
+  VoidCallback? onTap,
+  bool showChevron = true,
+}) {
+  return InkWell(
+    onTap: onTap,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 28,
+            height: 28,
+            child: Icon(icon, size: 22, color: AppColors.textPrimary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (trailing != null)
+            trailing
+          else if (showChevron)
+            Icon(Icons.chevron_right, size: 20, color: Colors.grey.shade400),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _buildToggle(bool value, ValueChanged<bool> onChanged) {
+  return Switch(
+    value: value,
+    onChanged: onChanged,
+    activeColor: Colors.white,
+    activeTrackColor: AppColors.primary,
+    inactiveThumbColor: Colors.white,
+    inactiveTrackColor: AppColors.border,
+    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  );
+}
+
+class _AutoConnectSettingTile extends StatelessWidget {
+  const _AutoConnectSettingTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final service = AutoConnectService();
+    return StreamBuilder<bool>(
+      stream: service.enabledStream,
+      initialData: service.enabled,
+      builder: (context, snapshot) {
+        final enabled = snapshot.data ?? false;
+        return _settingItem(
+          icon: Icons.bluetooth,
+          title: '自动连接',
+          subtitle: enabled ? '打开 app 时自动连接上次的设备' : '关闭',
+          trailing: _buildToggle(enabled, service.setEnabled),
+        );
+      },
+    );
+  }
+}
+
+class _ProximityUnlockSettingTile extends StatelessWidget {
+  const _ProximityUnlockSettingTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final service = ProximityService();
+    return StreamBuilder<bool>(
+      stream: service.enabledStream,
+      initialData: service.enabled,
+      builder: (context, snapshot) {
+        final enabled = snapshot.data ?? false;
+        return _settingItem(
+          icon: Icons.sensors,
+          title: '感应解锁',
+          subtitle: enabled ? '靠近车辆时自动解锁（RSSI > -75dBm）' : '关闭',
+          trailing: _buildToggle(enabled, service.setEnabled),
+        );
+      },
+    );
+  }
+}
+
+class _LanguageSettingTile extends StatelessWidget {
+  const _LanguageSettingTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final prefs = AppPreferencesService();
+    return StreamBuilder<AppLanguagePreference>(
+      stream: prefs.languageStream,
+      initialData: prefs.language,
+      builder: (context, snapshot) {
+        return _settingItem(
+          icon: Icons.language,
+          title: '语言设置',
+          subtitle: snapshot.data?.label ?? '跟随系统',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LanguageSettingsPage()),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DistanceUnitSettingTile extends StatelessWidget {
+  const _DistanceUnitSettingTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final prefs = AppPreferencesService();
+    return StreamBuilder<DistanceUnitPreference>(
+      stream: prefs.distanceUnitStream,
+      initialData: prefs.distanceUnit,
+      builder: (context, snapshot) {
+        final unit = snapshot.data ?? DistanceUnitPreference.metric;
+        return _settingItem(
+          icon: Icons.straighten,
+          title: '单位设置',
+          subtitle: '${unit.label} · ${unit.hint}',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const UnitSettingsPage()),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _RespectTextScaleSettingTile extends StatelessWidget {
+  const _RespectTextScaleSettingTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final prefs = AppPreferencesService();
+    return StreamBuilder<bool>(
+      stream: prefs.respectTextScaleStream,
+      initialData: prefs.respectSystemTextScale,
+      builder: (context, snapshot) {
+        final enabled = snapshot.data ?? true;
+        return _settingItem(
+          icon: Icons.text_fields,
+          title: '跟随系统字号',
+          subtitle:
+              enabled ? '允许系统字号设置生效（限 0.9-1.3 倍）' : '关闭后忽略系统字号',
+          trailing: _buildToggle(enabled, prefs.setRespectSystemTextScale),
+        );
+      },
     );
   }
 }
