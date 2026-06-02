@@ -255,6 +255,12 @@ class _ControlAreaState extends State<_ControlArea> {
     sendCloudCommand: officialCloudService.sendCommand,
   );
   QuickControlConfig _quickConfig = const QuickControlConfig();
+  _QuickControlSpec _firstQuick = _quickControlSpec(
+    const QuickControlConfig().firstActionId,
+  );
+  _QuickControlSpec _secondQuick = _quickControlSpec(
+    const QuickControlConfig().secondActionId,
+  );
   bool _busy = false;
   String? _activeControlId;
 
@@ -267,7 +273,13 @@ class _ControlAreaState extends State<_ControlArea> {
   Future<void> _loadQuickConfig() async {
     final config = await _replicaStore.loadQuickControlConfig();
     if (!mounted) return;
-    setState(() => _quickConfig = config);
+    setState(() => _applyQuickConfig(config));
+  }
+
+  void _applyQuickConfig(QuickControlConfig config) {
+    _quickConfig = config;
+    _firstQuick = _quickControlSpec(config.firstActionId);
+    _secondQuick = _quickControlSpec(config.secondActionId);
   }
 
   Future<void> _send(CommandCode cmd, {required String actionId}) async {
@@ -533,7 +545,7 @@ class _ControlAreaState extends State<_ControlArea> {
     if (next == null) return;
     await _replicaStore.saveQuickControlConfig(next);
     if (!mounted) return;
-    setState(() => _quickConfig = next);
+    setState(() => _applyQuickConfig(next));
   }
 
   _ControlAreaViewModel _createViewModel({
@@ -551,8 +563,8 @@ class _ControlAreaState extends State<_ControlArea> {
     final isPowerOn = useBleState
         ? bike?.isPowerOn ?? false
         : cloudVehicle?.isPowerOn ?? false;
-    final firstQuick = _quickControlSpec(_quickConfig.firstActionId);
-    final secondQuick = _quickControlSpec(_quickConfig.secondActionId);
+    final firstQuick = _firstQuick;
+    final secondQuick = _secondQuick;
 
     return _ControlAreaViewModel(
       channel: availability.channel,
@@ -616,26 +628,30 @@ class _ControlAreaState extends State<_ControlArea> {
                       children: [
                         SizedBox(
                           width: compactWidth ? 82 : 90,
-                          child: _OfficialQuickControlCard(
-                            firstQuick: model.firstQuick,
-                            secondQuick: model.secondQuick,
-                            firstActive: model.firstQuickActive,
-                            secondActive: model.secondQuickActive,
-                            firstEnabled: model.quickEnabled(model.firstQuick),
-                            firstDisabledReason: model.quickDisabledReason(
-                              model.firstQuick,
+                          child: RepaintBoundary(
+                            child: _OfficialQuickControlCard(
+                              firstQuick: model.firstQuick,
+                              secondQuick: model.secondQuick,
+                              firstActive: model.firstQuickActive,
+                              secondActive: model.secondQuickActive,
+                              firstEnabled: model.quickEnabled(
+                                model.firstQuick,
+                              ),
+                              firstDisabledReason: model.quickDisabledReason(
+                                model.firstQuick,
+                              ),
+                              secondEnabled: model.quickEnabled(
+                                model.secondQuick,
+                              ),
+                              secondDisabledReason: model.quickDisabledReason(
+                                model.secondQuick,
+                              ),
+                              onFirstTap: () =>
+                                  _runQuickAction(model.firstQuick, model),
+                              onSecondTap: () =>
+                                  _runQuickAction(model.secondQuick, model),
+                              onEditTap: _editQuickControls,
                             ),
-                            secondEnabled: model.quickEnabled(
-                              model.secondQuick,
-                            ),
-                            secondDisabledReason: model.quickDisabledReason(
-                              model.secondQuick,
-                            ),
-                            onFirstTap: () =>
-                                _runQuickAction(model.firstQuick, model),
-                            onSecondTap: () =>
-                                _runQuickAction(model.secondQuick, model),
-                            onEditTap: _editQuickControls,
                           ),
                         ),
                         const SizedBox(width: 10),
