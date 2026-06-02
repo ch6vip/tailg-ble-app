@@ -216,9 +216,14 @@ class _SlideToActionState extends State<SlideToAction>
                         final labelAlpha = widget.fadeLabelOnSlide
                             ? (1 - progress).clamp(0.0, 1.0)
                             : 1.0;
+                        final reservedThumbSpace =
+                            widget.thumbSize + widget.trackInset + 16;
+                        final chevronIcon = widget.reverseSlide
+                            ? Icons.chevron_left
+                            : Icons.chevron_right;
                         return Positioned.fill(
-                          left: widget.thumbSize + widget.trackInset + 16,
-                          right: 18,
+                          left: widget.reverseSlide ? 18 : reservedThumbSpace,
+                          right: widget.reverseSlide ? reservedThumbSpace : 18,
                           child: IgnorePointer(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -229,7 +234,7 @@ class _SlideToActionState extends State<SlideToAction>
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(
-                                        Icons.chevron_right,
+                                        chevronIcon,
                                         size: centerChevronSize,
                                         color: chevronTextColor.withValues(
                                           alpha: chevronAlpha,
@@ -237,7 +242,7 @@ class _SlideToActionState extends State<SlideToAction>
                                       ),
                                       const SizedBox(width: 2),
                                       Icon(
-                                        Icons.chevron_right,
+                                        chevronIcon,
                                         size: centerChevronSize,
                                         color: chevronTextColor.withValues(
                                           alpha: chevronAlpha,
