@@ -351,33 +351,36 @@ class _SweepHighlightState extends State<_SweepHighlight>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final dx = -0.35 + _controller.value * 1.7;
-        return FractionalTranslation(
-          translation: Offset(dx, 0),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Transform.rotate(
-              angle: -0.35,
-              child: Container(
-                width: 34,
-                height: 160,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.transparent,
-                      widget.color,
-                      Colors.transparent,
-                    ],
-                  ),
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _controller,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Transform.rotate(
+            angle: -0.35,
+            child: Container(
+              width: 34,
+              height: 160,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    widget.color,
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
           ),
-        );
-      },
+        ),
+        builder: (context, child) {
+          final dx = -0.35 + _controller.value * 1.7;
+          return FractionalTranslation(
+            translation: Offset(dx, 0),
+            child: child,
+          );
+        },
+      ),
     );
   }
 }
@@ -413,39 +416,40 @@ class _PulseActionIconState extends State<_PulseActionIcon>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final value = Curves.easeInOut.transform(_controller.value);
-        return SizedBox(
-          width: 34,
-          height: 34,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 24 + value * 8,
-                height: 24 + value * 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: widget.color.withValues(alpha: 0.08 + value * 0.08),
-                ),
-              ),
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: widget.color.withValues(alpha: 0.22),
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _controller,
+        child: Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: widget.color.withValues(alpha: 0.22)),
+          ),
+          child: Icon(widget.icon, color: widget.color, size: 16),
+        ),
+        builder: (context, child) {
+          final value = Curves.easeInOut.transform(_controller.value);
+          return SizedBox(
+            width: 34,
+            height: 34,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 24 + value * 8,
+                  height: 24 + value * 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: widget.color.withValues(alpha: 0.08 + value * 0.08),
                   ),
                 ),
-                child: Icon(widget.icon, color: widget.color, size: 16),
-              ),
-            ],
-          ),
-        );
-      },
+                child!,
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

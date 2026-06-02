@@ -580,9 +580,11 @@ class _SoundEffectsServiceCard extends StatelessWidget {
         height: 96,
         child: Stack(
           children: [
-            Positioned.fill(
-              child: CustomPaint(
-                painter: const _SoundWavePainter(color: Color(0xFF5596FF)),
+            const Positioned.fill(
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  painter: _SoundWavePainter(color: Color(0xFF5596FF)),
+                ),
               ),
             ),
             const Padding(
@@ -1056,7 +1058,7 @@ class _MiniMapPreview extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const CustomPaint(painter: _MiniMapPainter()),
+          const RepaintBoundary(child: CustomPaint(painter: _MiniMapPainter())),
           Center(
             child: Container(
               width: 40,

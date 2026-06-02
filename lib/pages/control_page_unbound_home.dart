@@ -172,7 +172,9 @@ class _UnboundBanner extends StatelessWidget {
                   ),
                 ),
                 Positioned.fill(
-                  child: CustomPaint(painter: const _UnboundBannerPainter()),
+                  child: RepaintBoundary(
+                    child: CustomPaint(painter: const _UnboundBannerPainter()),
+                  ),
                 ),
                 const Positioned(
                   left: 18,

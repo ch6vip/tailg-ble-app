@@ -185,11 +185,13 @@ class _PaintedBikeVisual extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _BikeModelPainter(
-        accent: accent,
-        isPowerOn: isPowerOn,
-        isLocked: isLocked,
+    return RepaintBoundary(
+      child: CustomPaint(
+        painter: _BikeModelPainter(
+          accent: accent,
+          isPowerOn: isPowerOn,
+          isLocked: isLocked,
+        ),
       ),
     );
   }
