@@ -66,7 +66,6 @@ void main() {
       expect(vehicle.normalizedBtmac, isEmpty);
       expect(vehicle.hasBleIdentity, isFalse);
     });
-
   });
 
   group('OfficialCloudCommand', () {
