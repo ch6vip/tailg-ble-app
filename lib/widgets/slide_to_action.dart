@@ -71,14 +71,19 @@ class _SlideToActionState extends State<SlideToAction>
   final _dragNotifier = ValueNotifier<double>(0);
   late AnimationController _resetController;
   late AnimationController _successController;
+  double _resetStartValue = 0;
 
   @override
   void initState() {
     super.initState();
-    _resetController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 220),
-    );
+    _resetController =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 220),
+        )..addListener(() {
+          final eased = Curves.easeOutCubic.transform(_resetController.value);
+          _dragNotifier.value = _resetStartValue * (1 - eased);
+        });
     _successController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 220),
@@ -91,6 +96,8 @@ class _SlideToActionState extends State<SlideToAction>
     if (oldWidget.label != widget.label ||
         oldWidget.reverseSlide != widget.reverseSlide ||
         oldWidget.loading != widget.loading) {
+      _resetController.stop();
+      _resetStartValue = 0;
       _dragNotifier.value = 0;
     }
   }
@@ -115,17 +122,14 @@ class _SlideToActionState extends State<SlideToAction>
   void _resetThumb() {
     final startVal = _dragNotifier.value;
     if (startVal <= 0) {
+      _resetController.stop();
+      _resetStartValue = 0;
       _dragNotifier.value = 0;
       return;
     }
     _resetController.stop();
     _resetController.reset();
-    final anim = Tween<double>(begin: startVal, end: 0.0).animate(
-      CurvedAnimation(parent: _resetController, curve: Curves.easeOutCubic),
-    );
-    anim.addListener(() {
-      _dragNotifier.value = anim.value;
-    });
+    _resetStartValue = startVal;
     _resetController.forward();
   }
 

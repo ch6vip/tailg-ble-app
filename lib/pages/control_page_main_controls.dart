@@ -286,35 +286,37 @@ class _PrimaryPowerControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SlideToAction(
-      label: enabled ? (reverseSlide ? '左滑关闭' : '右滑启动') : '请连接车辆',
-      icon: reverseSlide
-          ? Icons.keyboard_double_arrow_left
-          : Icons.keyboard_double_arrow_right,
-      reverseSlide: reverseSlide,
-      loading: loading,
-      loadingLabel: loadingLabel,
-      backgroundColor: _phoneControlItemBg,
-      thumbColor: enabled ? _phoneControlItemBg : _phoneControlPrimaryPressed,
-      enabled: enabled,
-      height: 76,
-      thumbSize: 64,
-      thumbRadius: 8,
-      trackInset: 6,
-      iconSize: 30,
-      labelFontSize: 13,
-      loadingFontSize: 17,
-      centerLabel: true,
-      labelColor: enabled ? ReplicaColors.muted : AppColors.warning,
-      chevronColor: ReplicaColors.subtle,
-      thumbIconColor: ReplicaColors.muted,
-      disabledBackgroundColor: _phoneControlItemBg,
-      disabledThumbColor: const Color(0xFFE3E6EC),
-      disabledIconColor: ReplicaColors.subtle,
-      completionThreshold: 0.99,
-      fadeLabelOnSlide: true,
-      onDisabledTap: onDisabledTap,
-      onSlideComplete: onSlideComplete,
+    return RepaintBoundary(
+      child: SlideToAction(
+        label: enabled ? (reverseSlide ? '左滑关闭' : '右滑启动') : '请连接车辆',
+        icon: reverseSlide
+            ? Icons.keyboard_double_arrow_left
+            : Icons.keyboard_double_arrow_right,
+        reverseSlide: reverseSlide,
+        loading: loading,
+        loadingLabel: loadingLabel,
+        backgroundColor: _phoneControlItemBg,
+        thumbColor: enabled ? _phoneControlItemBg : _phoneControlPrimaryPressed,
+        enabled: enabled,
+        height: 76,
+        thumbSize: 64,
+        thumbRadius: 8,
+        trackInset: 6,
+        iconSize: 30,
+        labelFontSize: 13,
+        loadingFontSize: 17,
+        centerLabel: true,
+        labelColor: enabled ? ReplicaColors.muted : AppColors.warning,
+        chevronColor: ReplicaColors.subtle,
+        thumbIconColor: ReplicaColors.muted,
+        disabledBackgroundColor: _phoneControlItemBg,
+        disabledThumbColor: const Color(0xFFE3E6EC),
+        disabledIconColor: ReplicaColors.subtle,
+        completionThreshold: 0.99,
+        fadeLabelOnSlide: true,
+        onDisabledTap: onDisabledTap,
+        onSlideComplete: onSlideComplete,
+      ),
     );
   }
 }
