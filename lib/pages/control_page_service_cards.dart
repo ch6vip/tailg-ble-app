@@ -354,7 +354,7 @@ class _VehicleLocationServiceCard extends StatelessWidget {
     return _OfficialPressable(
       onTap: onTap,
       child: Container(
-        height: 200,
+        height: 180,
         padding: const EdgeInsets.all(16),
         child: Stack(
           children: [
@@ -417,7 +417,7 @@ class _OfficialServiceBannerCard extends StatelessWidget {
     return _OfficialPressable(
       onTap: onTap,
       child: SizedBox(
-        height: 100,
+        height: 92,
         child: Stack(
           children: [
             Positioned.fill(

@@ -66,7 +66,7 @@ class _OfficialMainControlCard extends StatelessWidget {
       child: Column(
         children: [
           SizedBox(
-            height: 88,
+            height: 76,
             child: _PrimaryPowerControl(
               label: powerLabel,
               hint: powerHint,
@@ -297,11 +297,11 @@ class _PrimaryPowerControl extends StatelessWidget {
       backgroundColor: _phoneControlItemBg,
       thumbColor: enabled ? _phoneControlItemBg : _phoneControlPrimaryPressed,
       enabled: enabled,
-      height: 88,
-      thumbSize: 76,
+      height: 76,
+      thumbSize: 64,
       thumbRadius: 8,
       trackInset: 6,
-      iconSize: 34,
+      iconSize: 30,
       labelFontSize: 13,
       loadingFontSize: 17,
       centerLabel: true,

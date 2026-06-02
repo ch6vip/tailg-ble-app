@@ -34,7 +34,7 @@ class _ControlTipBar extends StatelessWidget {
             : '待连接',
     };
     final status = enabled
-        ? '${isLocked ? '设防' : '解锁'} · ${isPowerOn ? '已启动' : '未启动'}'
+        ? '${isPowerOn ? '已启动' : '未启动'} · ${isLocked ? '已设防' : '未设防'}'
         : disabledReason ?? '请连接车辆后控车';
     final effectiveColor = switch (effective) {
       'BLE' => AppColors.success,
@@ -139,23 +139,7 @@ class _ControlTipBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        Container(
-          width: 42,
-          height: 42,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-          ),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 160),
-            child: Icon(
-              enabled ? Icons.touch_app_outlined : Icons.link_off,
-              key: ValueKey(enabled),
-              size: 21,
-              color: enabled ? ReplicaColors.blue : ReplicaColors.muted,
-            ),
-          ),
-        ),
+        _ManualModePill(enabled: enabled),
       ],
     );
   }

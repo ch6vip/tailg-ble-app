@@ -34,61 +34,65 @@ class _BikeImage extends StatelessWidget {
                 : cloudVehicle?.isLocked ?? true;
             return Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-              child: Container(
-                height: MediaQuery.of(context).size.height * 0.22,
-                decoration: const BoxDecoration(color: Colors.transparent),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      left: -18,
-                      right: -18,
-                      top: 10,
-                      bottom: 8,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(18),
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.white.withValues(alpha: 0.52),
-                              const Color(0xFFE7EAF1).withValues(alpha: 0.0),
-                            ],
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final screenHeight = MediaQuery.sizeOf(context).height;
+                  final visualHeight = (screenHeight * 0.22)
+                      .clamp(172.0, 226.0)
+                      .toDouble();
+                  return SizedBox(
+                    height: visualHeight,
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          left: -18,
+                          right: -18,
+                          top: 10,
+                          bottom: 8,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(18),
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.52),
+                                  const Color(
+                                    0xFFE7EAF1,
+                                  ).withValues(alpha: 0.0),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        Positioned.fill(
+                          child: _VehicleVisual(
+                            photoUrl: cloudVehicle?.carPhoto,
+                            accent: display.colors.last,
+                            isPowerOn: isPowerOn,
+                            isLocked: isLocked,
+                          ),
+                        ),
+                        Positioned(
+                          left: 14,
+                          top: 10,
+                          child: _VehicleStateChip(display: display),
+                        ),
+                        Positioned(
+                          left: 18,
+                          right: 18,
+                          bottom: 14,
+                          child: _VehicleModelMeta(
+                            connState: connState,
+                            cloudVehicle: cloudVehicle,
+                            isPowerOn: isPowerOn,
+                            isLocked: isLocked,
+                          ),
+                        ),
+                      ],
                     ),
-                    Positioned.fill(
-                      child: _VehicleVisual(
-                        photoUrl: cloudVehicle?.carPhoto,
-                        accent: display.colors.last,
-                        isPowerOn: isPowerOn,
-                        isLocked: isLocked,
-                      ),
-                    ),
-                    Positioned(
-                      left: 14,
-                      top: 10,
-                      child: _VehicleStateChip(display: display),
-                    ),
-                    Positioned(
-                      right: 16,
-                      top: 14,
-                      child: _ManualModePill(enabled: isConnected),
-                    ),
-                    Positioned(
-                      left: 18,
-                      right: 18,
-                      bottom: 14,
-                      child: _VehicleModelMeta(
-                        connState: connState,
-                        cloudVehicle: cloudVehicle,
-                        isPowerOn: isPowerOn,
-                        isLocked: isLocked,
-                      ),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
             );
           },
@@ -319,28 +323,41 @@ class _VehicleModelMeta extends StatelessWidget {
         ? '${cloudVehicle!.onlineLabel} · ${cloudVehicle!.defenceLabel} · ${cloudVehicle!.powerLabel}'
         : '连接车辆后显示实时状态';
     final title = cloudVehicle?.displayName ?? '智能电动车';
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 330;
+        final titleText = Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
           ),
-        ),
-        const SizedBox(width: 12),
-        Text(
+        );
+        final stateText = Text(
           state,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
+          textAlign: compact ? TextAlign.left : TextAlign.right,
           style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-        ),
-      ],
+        );
+        if (compact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [titleText, const SizedBox(height: 3), stateText],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(flex: 5, child: titleText),
+            const SizedBox(width: 12),
+            Flexible(flex: 6, child: stateText),
+          ],
+        );
+      },
     );
   }
 }

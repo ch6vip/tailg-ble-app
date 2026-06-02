@@ -610,7 +610,7 @@ class _ControlAreaState extends State<_ControlArea> {
                   ),
                   const SizedBox(height: 10),
                   SizedBox(
-                    height: 204 + extraHeight,
+                    height: 188 + extraHeight,
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
