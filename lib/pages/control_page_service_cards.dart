@@ -60,104 +60,114 @@ class _HomeQuickSection extends StatelessWidget {
       ),
     ];
 
-    return StreamBuilder<List<VehicleProfile>>(
-      stream: vehicleStore.vehiclesStream,
-      initialData: vehicleStore.vehicles,
-      builder: (context, vehicleSnapshot) {
-        final localVehicle = vehicleStore.defaultVehicle;
-        return StreamBuilder<OfficialCloudState>(
-          stream: officialCloudService.stateStream,
-          initialData: officialCloudService.state,
-          builder: (context, cloudSnapshot) {
-            final cloudState = cloudSnapshot.data ?? officialCloudService.state;
-            final location = cloudState.vehicleLocation;
-            final locationText = location != null && location.hasData
-                ? (location.bleConnectAddress.isNotEmpty
-                      ? location.bleConnectAddress
-                      : '${location.bleConnectLat}, ${location.bleConnectLng}')
-                : localVehicle?.lastLocation?.coordinateText ?? '暂无车辆位置';
-            final locationTime = location?.bleConnectTime.isNotEmpty == true
-                ? location!.bleConnectTime
-                : localVehicle?.lastLocation?.recordedAt
-                          .toString()
-                          .split('.')
-                          .first ??
-                      '待读取';
-            final travelCount = cloudState.travelDays.fold<int>(
-              0,
-              (sum, day) => sum + day.records.length,
-            );
-            final totalMileage = cloudState.travelDays
-                .map((day) => day.totalMileage)
-                .firstWhere((value) => value.isNotEmpty, orElse: () => '');
-            final hasGps =
-                cloudState.selectedVehicle?.imeiGps.isNotEmpty == true;
-            final addGpsTitle = hasGps ? '智能控车' : '可添加GPS';
-            final addGpsSubtitle = hasGps ? '远程定位 防盗通知 云端控车' : '可定位 防盗通知 远程控车等';
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: [
+          _FunctionSettingsCard(items: items),
+          const SizedBox(height: 12),
+          StreamBuilder<List<VehicleProfile>>(
+            stream: vehicleStore.vehiclesStream,
+            initialData: vehicleStore.vehicles,
+            builder: (context, vehicleSnapshot) {
+              final localVehicle = vehicleStore.defaultVehicle;
+              return StreamBuilder<OfficialCloudState>(
+                stream: officialCloudService.stateStream,
+                initialData: officialCloudService.state,
+                builder: (context, cloudSnapshot) {
+                  final cloudState =
+                      cloudSnapshot.data ?? officialCloudService.state;
+                  final location = cloudState.vehicleLocation;
+                  final locationText = location != null && location.hasData
+                      ? (location.bleConnectAddress.isNotEmpty
+                            ? location.bleConnectAddress
+                            : '${location.bleConnectLat}, ${location.bleConnectLng}')
+                      : localVehicle?.lastLocation?.coordinateText ?? '暂无车辆位置';
+                  final locationTime =
+                      location?.bleConnectTime.isNotEmpty == true
+                      ? location!.bleConnectTime
+                      : localVehicle?.lastLocation?.recordedAt
+                                .toString()
+                                .split('.')
+                                .first ??
+                            '待读取';
+                  final travelCount = cloudState.travelDays.fold<int>(
+                    0,
+                    (sum, day) => sum + day.records.length,
+                  );
+                  final totalMileage = cloudState.travelDays
+                      .map((day) => day.totalMileage)
+                      .firstWhere(
+                        (value) => value.isNotEmpty,
+                        orElse: () => '',
+                      );
+                  final hasGps =
+                      cloudState.selectedVehicle?.imeiGps.isNotEmpty == true;
+                  final addGpsTitle = hasGps ? '智能控车' : '可添加GPS';
+                  final addGpsSubtitle = hasGps
+                      ? '远程定位 防盗通知 云端控车'
+                      : '可定位 防盗通知 远程控车等';
 
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  _FunctionSettingsCard(items: items),
-                  const SizedBox(height: 12),
-                  _VehicleLocationServiceCard(
-                    address: locationText,
-                    time: locationTime,
-                    loading: cloudState.vehicleLocationLoading,
-                    onTap: () => _open(context, const LocationPage()),
-                  ),
-                  const SizedBox(height: 12),
-                  _OfficialServiceBannerCard(
-                    icon: Icons.route_outlined,
-                    title: '历史轨迹',
-                    subtitle: travelCount > 0
-                        ? '今日骑行记录 $travelCount 条'
-                        : totalMileage.isNotEmpty
-                        ? '累计轨迹 ${totalMileage}km'
-                        : '今日骑行记录',
-                    accent: const Color(0xFFFF8A00),
-                    onTap: () => _open(
-                      context,
-                      const LocationPage(initialTab: LocationInitialTab.travel),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _OfficialServiceBannerCard(
-                    icon: Icons.add_location_alt_outlined,
-                    title: addGpsTitle,
-                    subtitle: addGpsSubtitle,
-                    accent: ReplicaColors.blue,
-                    onTap: () => _open(context, const OfficialCloudPage()),
-                  ),
-                  const SizedBox(height: 12),
-                  _OfficialSettingsServiceCard(
-                    onSettingsTap: () =>
-                        _open(context, const VehicleSettingsPage()),
-                    onFenceTap: () => _open(
-                      context,
-                      const LocationPage(initialTab: LocationInitialTab.fence),
-                    ),
-                    onShareTap: () => _open(context, const ShareBikePage()),
-                  ),
-                  const SizedBox(height: 12),
-                  _SoundEffectsServiceCard(
-                    onTap: () => _open(context, const QgjSoundEffectsPage()),
-                  ),
-                  const SizedBox(height: 12),
-                  _NfcServiceCard(
-                    onTap: () => _open(context, const NfcKeyPage()),
-                  ),
-                  const SizedBox(height: 12),
-                  const _BleRenewalServiceCard(),
-                  const SizedBox(height: 12),
-                  const _ChargingStationServiceCard(),
-                ],
-              ),
-            );
-          },
-        );
-      },
+                  return Column(
+                    children: [
+                      _VehicleLocationServiceCard(
+                        address: locationText,
+                        time: locationTime,
+                        loading: cloudState.vehicleLocationLoading,
+                        onTap: () => _open(context, const LocationPage()),
+                      ),
+                      const SizedBox(height: 12),
+                      _OfficialServiceBannerCard(
+                        icon: Icons.route_outlined,
+                        title: '历史轨迹',
+                        subtitle: travelCount > 0
+                            ? '今日骑行记录 $travelCount 条'
+                            : totalMileage.isNotEmpty
+                            ? '累计轨迹 ${totalMileage}km'
+                            : '今日骑行记录',
+                        accent: const Color(0xFFFF8A00),
+                        onTap: () => _open(
+                          context,
+                          const LocationPage(
+                            initialTab: LocationInitialTab.travel,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _OfficialServiceBannerCard(
+                        icon: Icons.add_location_alt_outlined,
+                        title: addGpsTitle,
+                        subtitle: addGpsSubtitle,
+                        accent: ReplicaColors.blue,
+                        onTap: () => _open(context, const OfficialCloudPage()),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _OfficialSettingsServiceCard(
+            onSettingsTap: () => _open(context, const VehicleSettingsPage()),
+            onFenceTap: () => _open(
+              context,
+              const LocationPage(initialTab: LocationInitialTab.fence),
+            ),
+            onShareTap: () => _open(context, const ShareBikePage()),
+          ),
+          const SizedBox(height: 12),
+          _SoundEffectsServiceCard(
+            onTap: () => _open(context, const QgjSoundEffectsPage()),
+          ),
+          const SizedBox(height: 12),
+          _NfcServiceCard(onTap: () => _open(context, const NfcKeyPage())),
+          const SizedBox(height: 12),
+          const _BleRenewalServiceCard(),
+          const SizedBox(height: 12),
+          const _ChargingStationServiceCard(),
+        ],
+      ),
     );
   }
 }
