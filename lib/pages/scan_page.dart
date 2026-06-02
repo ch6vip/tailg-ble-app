@@ -18,12 +18,13 @@ class ScanPage extends StatefulWidget {
 
 class _ScanPageState extends State<ScanPage>
     with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
-  List<ScanResult> _results = [];
+  final _resultsNotifier = ValueNotifier<List<ScanResult>>(<ScanResult>[]);
   bool _scanning = false;
   String? _connectingRemoteId;
   StreamSubscription? _scanResultsSub;
   StreamSubscription? _isScanSub;
   Timer? _throttle;
+  List<ScanResult>? _pendingResults;
   late AnimationController _radarController;
 
   @override
@@ -38,9 +39,15 @@ class _ScanPageState extends State<ScanPage>
     );
     _scanResultsSub = FlutterBluePlus.scanResults.listen((results) {
       if (!mounted) return;
+      _pendingResults = results;
       if (_throttle?.isActive ?? false) return;
       _throttle = Timer(const Duration(milliseconds: 300), () {
-        if (mounted) setState(() => _results = results);
+        if (!mounted) return;
+        final next = _pendingResults;
+        _pendingResults = null;
+        if (next != null) {
+          _resultsNotifier.value = next;
+        }
       });
     });
     _isScanSub = FlutterBluePlus.isScanning.listen((scanning) {
@@ -58,6 +65,7 @@ class _ScanPageState extends State<ScanPage>
   void dispose() {
     _radarController.dispose();
     _throttle?.cancel();
+    _resultsNotifier.dispose();
     _scanResultsSub?.cancel();
     _isScanSub?.cancel();
     super.dispose();
@@ -200,10 +208,15 @@ class _ScanPageState extends State<ScanPage>
                           ],
                         ),
                       ),
-                      _DeviceList(
-                        results: _results,
-                        connectingRemoteId: _connectingRemoteId,
-                        onTap: _connectDevice,
+                      ValueListenableBuilder<List<ScanResult>>(
+                        valueListenable: _resultsNotifier,
+                        builder: (context, results, _) {
+                          return _DeviceList(
+                            results: results,
+                            connectingRemoteId: _connectingRemoteId,
+                            onTap: _connectDevice,
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -297,40 +310,42 @@ class _RadarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 180,
-      height: 180,
-      child: AnimatedBuilder(
-        animation: animation,
-        builder: (context, child) {
-          return CustomPaint(
-            painter: _RadarPainter(sweepAngle: animation.value * 2 * pi),
-            child: child,
-          );
-        },
-        child: Center(
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.primary, AppColors.primaryDark],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.35),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
+    return RepaintBoundary(
+      child: SizedBox(
+        width: 180,
+        height: 180,
+        child: AnimatedBuilder(
+          animation: animation,
+          builder: (context, child) {
+            return CustomPaint(
+              painter: _RadarPainter(sweepAngle: animation.value * 2 * pi),
+              child: child,
+            );
+          },
+          child: Center(
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.primary, AppColors.primaryDark],
                 ),
-              ],
-            ),
-            child: const Icon(
-              Icons.bluetooth_searching,
-              color: Colors.white,
-              size: 22,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.35),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.bluetooth_searching,
+                color: Colors.white,
+                size: 22,
+              ),
             ),
           ),
         ),
