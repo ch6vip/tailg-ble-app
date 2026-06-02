@@ -248,19 +248,12 @@ class AboutAppPage extends StatelessWidget {
                         const SizedBox(height: 14),
                         const Text(
                           'Tailg BLE',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
+                          style: AppTextStyles.dialogTitle,
                         ),
                         const SizedBox(height: 4),
                         const Text(
                           '台铃 BLE 本地控制工具',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
+                          style: AppTextStyles.smallText,
                         ),
                       ],
                     ),
@@ -318,13 +311,7 @@ class AboutAppPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   const Center(
-                    child: Text(
-                      'Copyright 2026',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
+                    child: Text('Copyright 2026', style: AppTextStyles.caption),
                   ),
                 ],
               ),
@@ -363,23 +350,10 @@ class _OptionRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
+                    Text(title, style: AppTextStyles.itemTitle),
                     if (subtitle != null) ...[
                       const SizedBox(height: 4),
-                      Text(
-                        subtitle!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
+                      Text(subtitle!, style: AppTextStyles.smallText),
                     ],
                   ],
                 ),
@@ -425,22 +399,9 @@ class _ActionRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
+                    Text(title, style: AppTextStyles.itemTitle),
                     const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
+                    Text(subtitle, style: AppTextStyles.smallText),
                   ],
                 ),
               ),
@@ -469,25 +430,13 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 13, 16, 13),
       child: Row(
         children: [
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
+          Expanded(child: Text(label, style: AppTextStyles.bodyMedium)),
           const SizedBox(width: 12),
           Flexible(
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+              style: AppTextStyles.valueText,
             ),
           ),
         ],

@@ -116,6 +116,36 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w600,
     color: AppColors.primary,
   );
+
+  static const dialogTitle = TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  static const itemTitle = TextStyle(
+    fontSize: 15,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  static const bodyMedium = TextStyle(
+    fontSize: 13,
+    color: AppColors.textSecondary,
+  );
+
+  static const valueText = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
+
+  static const smallText = TextStyle(
+    fontSize: 12,
+    color: AppColors.textSecondary,
+  );
+
+  static const caption = TextStyle(fontSize: 12, color: AppColors.textTertiary);
 }
 
 const cardDecoration = BoxDecoration(
