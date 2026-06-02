@@ -34,7 +34,7 @@ class _HomeQuickSection extends StatelessWidget {
       _HomeQuickItem(
         icon: Icons.ios_share,
         label: '分享用车',
-        accent: const Color(0xFF7B61FF),
+        accent: _serviceAccentViolet,
         onTap: () => _open(context, const ShareBikePage()),
       ),
       _HomeQuickItem(
@@ -46,13 +46,13 @@ class _HomeQuickSection extends StatelessWidget {
       _HomeQuickItem(
         icon: Icons.nfc,
         label: 'NFC钥匙',
-        accent: const Color(0xFF7B61FF),
+        accent: _serviceAccentViolet,
         onTap: () => _open(context, const NfcKeyPage()),
       ),
       _HomeQuickItem(
         icon: Icons.route_outlined,
         label: '骑行记录',
-        accent: const Color(0xFFFF8A00),
+        accent: _serviceAccentAmber,
         onTap: () => _open(
           context,
           const LocationPage(initialTab: LocationInitialTab.travel),
@@ -125,7 +125,7 @@ class _HomeQuickSection extends StatelessWidget {
                             : totalMileage.isNotEmpty
                             ? '累计轨迹 ${totalMileage}km'
                             : '今日骑行记录',
-                        accent: const Color(0xFFFF8A00),
+                        accent: _serviceAccentAmber,
                         onTap: () => _open(
                           context,
                           const LocationPage(
@@ -521,7 +521,7 @@ class _OfficialSettingsServiceCard extends StatelessWidget {
                   child: _ServiceSettingButton(
                     icon: Icons.ios_share,
                     label: '分享用车',
-                    color: const Color(0xFF7B61FF),
+                    color: _serviceAccentViolet,
                     onTap: onShareTap,
                   ),
                 ),
@@ -593,7 +593,7 @@ class _SoundEffectsServiceCard extends StatelessWidget {
             const Positioned.fill(
               child: RepaintBoundary(
                 child: CustomPaint(
-                  painter: _SoundWavePainter(color: Color(0xFF5596FF)),
+                  painter: _SoundWavePainter(color: AppColors.primary),
                 ),
               ),
             ),
@@ -603,7 +603,7 @@ class _SoundEffectsServiceCard extends StatelessWidget {
                 children: [
                   _ServiceIconBox(
                     icon: Icons.graphic_eq,
-                    color: Color(0xFF5596FF),
+                    color: AppColors.primary,
                     dark: true,
                   ),
                   SizedBox(width: 16),
@@ -661,7 +661,7 @@ class _NfcServiceCard extends StatelessWidget {
           children: [
             const _ServiceIconBox(
               icon: Icons.nfc,
-              color: Color(0xFF7B61FF),
+              color: _serviceAccentViolet,
               size: 58,
             ),
             const SizedBox(width: 16),
@@ -742,7 +742,7 @@ class _BleRenewalServiceCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
-                color: const Color(0xFFE3E6EC),
+                color: _serviceCardBorder,
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Text(
@@ -769,7 +769,7 @@ class _ChargingStationServiceCard extends StatelessWidget {
     return _OfficialPressable(
       enabled: false,
       onTap: () {},
-      background: const Color(0xFFF7F8FA),
+      background: _phoneControlItemBg,
       child: Container(
         height: 150,
         padding: const EdgeInsets.all(16),
@@ -786,7 +786,7 @@ class _ChargingStationServiceCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF7F8FA),
+                  color: _phoneControlItemBg,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -866,7 +866,7 @@ class _ServiceCardHeader extends StatelessWidget {
                   textAlign: TextAlign.right,
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Color(0xFFAAA9B1),
+                    color: _serviceMutedText,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -876,7 +876,7 @@ class _ServiceCardHeader extends StatelessWidget {
                 const Icon(
                   Icons.chevron_right,
                   size: 18,
-                  color: Color(0xFFAAA9B1),
+                  color: _serviceMutedText,
                 ),
             ],
           ),
@@ -1043,7 +1043,7 @@ class _UnavailableBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFE3E6EC),
+        color: _serviceCardBorder,
         borderRadius: BorderRadius.circular(16),
       ),
       child: const Text(

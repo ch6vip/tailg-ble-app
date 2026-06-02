@@ -45,6 +45,12 @@ const _phoneControlPrimary = ReplicaColors.blue;
 const _phoneControlPrimaryPressed = Color(0x225596FF);
 const _phoneControlRadius = 8.0;
 const _officialPressedBg = Color(0xFFE5E5E5);
+
+// 服务卡片强调色（control_page_service_cards.dart 复用）
+const _serviceAccentViolet = Color(0xFF7B61FF);
+const _serviceAccentAmber = Color(0xFFFF8A00);
+const _serviceMutedText = Color(0xFFAAA9B1);
+const _serviceCardBorder = Color(0xFFE3E6EC);
 const _controlConfirmTimeout = Duration(seconds: 8);
 const _controlConfirmPollDelay = Duration(milliseconds: 800);
 const _cardDecoration = BoxDecoration(
