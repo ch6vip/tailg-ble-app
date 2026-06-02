@@ -254,44 +254,6 @@ class BikeState {
     );
   }
 
-  BikeState applyCommand(CommandCode command) {
-    return switch (command) {
-      CommandCode.lock => copyWith(isLocked: true),
-      CommandCode.unlock => copyWith(isLocked: false),
-      CommandCode.powerOn => copyWith(isPowerOn: true),
-      CommandCode.powerOff => copyWith(isPowerOn: false),
-      _ => this,
-    };
-  }
-
-  BikeState copyWith({
-    bool? isLocked,
-    bool? isPowerOn,
-    bool? isMuted,
-    double? voltage,
-    double? temperature,
-    int? batteryPercent,
-    int? signalStrength,
-    bool? faultMotor,
-    bool? faultController,
-    bool? faultBrake,
-    bool? faultLowVoltage,
-  }) {
-    return BikeState(
-      isLocked: isLocked ?? this.isLocked,
-      isPowerOn: isPowerOn ?? this.isPowerOn,
-      isMuted: isMuted ?? this.isMuted,
-      voltage: voltage ?? this.voltage,
-      temperature: temperature ?? this.temperature,
-      batteryPercent: batteryPercent ?? this.batteryPercent,
-      signalStrength: signalStrength ?? this.signalStrength,
-      faultMotor: faultMotor ?? this.faultMotor,
-      faultController: faultController ?? this.faultController,
-      faultBrake: faultBrake ?? this.faultBrake,
-      faultLowVoltage: faultLowVoltage ?? this.faultLowVoltage,
-    );
-  }
-
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

@@ -146,22 +146,6 @@ void main() {
     expect(first.hashCode, second.hashCode);
   });
 
-  test('BikeState applies successful control commands optimistically', () {
-    const state = BikeState(
-      isLocked: true,
-      isPowerOn: false,
-      voltage: 48.5,
-      batteryPercent: 80,
-    );
-
-    expect(state.applyCommand(CommandCode.powerOn).isPowerOn, isTrue);
-    expect(state.applyCommand(CommandCode.powerOff).isPowerOn, isFalse);
-    expect(state.applyCommand(CommandCode.unlock).isLocked, isFalse);
-    expect(state.applyCommand(CommandCode.lock).isLocked, isTrue);
-    expect(state.applyCommand(CommandCode.find), state);
-    expect(state.applyCommand(CommandCode.powerOn).batteryPercent, 80);
-  });
-
   test('BikeState parses feb3 fault bits as active high', () {
     final normal = BikeState.fromFeb3([
       0x00,

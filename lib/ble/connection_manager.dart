@@ -505,7 +505,6 @@ class ConnectionManager {
       await runGattOperation(
         () => _writeChar!.write(frame.toList(), withoutResponse: false),
       );
-      _applyCommandToLatestBikeState(cmd);
       return true;
     } else if (_protocol == ProtocolType.qgj) {
       if (_feb1Char == null) return false;
@@ -528,19 +527,12 @@ class ConnectionManager {
 
       if (success) {
         _log.operation('指令确认: ${cmd.label}', level: LogLevel.info);
-        _applyCommandToLatestBikeState(cmd);
       } else {
         _log.operation('指令失败: ${cmd.label}', level: LogLevel.warning);
       }
       return success;
     }
     return false;
-  }
-
-  void _applyCommandToLatestBikeState(CommandCode cmd) {
-    final latest = _latestBikeState;
-    if (latest == null) return;
-    _publishBikeState(latest.applyCommand(cmd));
   }
 
   Future<QgjResponse?> sendQgjCommand(

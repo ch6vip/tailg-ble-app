@@ -11,6 +11,7 @@ import '../models/vehicle_profile.dart';
 import '../services/control_channel_resolver.dart';
 import '../services/control_command_executor.dart';
 import '../services/control_command_policy.dart';
+import '../services/control_command_result.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../services/replica_feature_store.dart';
@@ -44,6 +45,8 @@ const _phoneControlPrimary = ReplicaColors.blue;
 const _phoneControlPrimaryPressed = Color(0x225596FF);
 const _phoneControlRadius = 8.0;
 const _officialPressedBg = Color(0xFFE5E5E5);
+const _controlConfirmTimeout = Duration(seconds: 8);
+const _controlConfirmPollDelay = Duration(milliseconds: 800);
 const _cardDecoration = BoxDecoration(
   color: Colors.white,
   borderRadius: BorderRadius.all(Radius.circular(ReplicaRadii.card)),
@@ -294,13 +297,13 @@ class _ControlAreaState extends State<_ControlArea> {
           locationService.recordDefaultVehicleLocation(),
           failureMessage: '控车后记录车辆位置失败',
         );
-        if (result.shouldRefreshBikeState) {
-          _runBackgroundTask(
-            connectionManager.refreshBikeState(),
-            failureMessage: '控车后刷新车辆状态失败',
-          );
-        }
-        if (mounted && result.successMessage != null) {
+        final confirmed = await _waitForCommandConfirmation(
+          cmd,
+          result.transport,
+        );
+        if (!confirmed && mounted) {
+          _showFailureSnack(_unconfirmedMessage(cmd));
+        } else if (mounted && result.successMessage != null) {
           _showSuccessSnack(result.successMessage!);
         }
       }
@@ -325,6 +328,119 @@ class _ControlAreaState extends State<_ControlArea> {
     return useBleState
         ? connectionManager.latestBikeState?.isPowerOn ?? false
         : cloudState.selectedVehicle?.isPowerOn ?? false;
+  }
+
+  Future<bool> _waitForCommandConfirmation(
+    CommandCode command,
+    ControlCommandTransport transport,
+  ) async {
+    if (!_needsStateConfirmation(command)) return true;
+
+    final deadline = DateTime.now().add(_controlConfirmTimeout);
+    while (mounted) {
+      if (_isCommandConfirmed(command, transport)) return true;
+      if (DateTime.now().isAfter(deadline)) return false;
+
+      await _refreshStateForConfirmation(command, transport);
+      if (_isCommandConfirmed(command, transport)) return true;
+      if (DateTime.now().isAfter(deadline)) return false;
+
+      await Future<void>.delayed(_controlConfirmPollDelay);
+    }
+    return false;
+  }
+
+  bool _needsStateConfirmation(CommandCode command) {
+    return switch (command) {
+      CommandCode.lock ||
+      CommandCode.unlock ||
+      CommandCode.powerOn ||
+      CommandCode.powerOff => true,
+      _ => false,
+    };
+  }
+
+  bool _isCommandConfirmed(
+    CommandCode command,
+    ControlCommandTransport transport,
+  ) {
+    return switch (transport) {
+      ControlCommandTransport.ble => _isBleCommandConfirmed(command),
+      ControlCommandTransport.officialCloud => _isCloudCommandConfirmed(
+        command,
+      ),
+      ControlCommandTransport.unavailable => false,
+    };
+  }
+
+  bool _isBleCommandConfirmed(CommandCode command) {
+    final state = connectionManager.latestBikeState;
+    if (state == null) return false;
+    return _matchesTargetState(
+      command: command,
+      isLocked: state.isLocked,
+      isPowerOn: state.isPowerOn,
+    );
+  }
+
+  bool _isCloudCommandConfirmed(CommandCode command) {
+    final vehicle = officialCloudService.state.selectedVehicle;
+    if (vehicle == null) return false;
+    return _matchesTargetState(
+      command: command,
+      isLocked: vehicle.isLocked,
+      isPowerOn: vehicle.isPowerOn,
+    );
+  }
+
+  bool _matchesTargetState({
+    required CommandCode command,
+    required bool isLocked,
+    required bool isPowerOn,
+  }) {
+    return switch (command) {
+      CommandCode.lock => isLocked,
+      CommandCode.unlock => !isLocked,
+      CommandCode.powerOn => isPowerOn,
+      CommandCode.powerOff => !isPowerOn,
+      _ => true,
+    };
+  }
+
+  Future<void> _refreshStateForConfirmation(
+    CommandCode command,
+    ControlCommandTransport transport,
+  ) async {
+    try {
+      switch (transport) {
+        case ControlCommandTransport.ble:
+          await connectionManager.refreshBikeState();
+        case ControlCommandTransport.officialCloud:
+          await officialCloudService.refreshVehicles(
+            silent: true,
+            refreshReplicaDetails: false,
+            force: true,
+          );
+        case ControlCommandTransport.unavailable:
+          return;
+      }
+    } catch (e) {
+      logService.operation(
+        '控车后确认车辆状态失败: ${command.label}',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
+    }
+  }
+
+  String _unconfirmedMessage(CommandCode command) {
+    return switch (command) {
+      CommandCode.powerOn => '已发送启动指令，但车辆未确认启动',
+      CommandCode.powerOff => '已发送熄火指令，但车辆未确认关闭',
+      CommandCode.lock => '已发送设防指令，但车辆未确认设防',
+      CommandCode.unlock => '已发送解锁指令，但车辆未确认解锁',
+      _ => '${command.label}已发送，但车辆状态未确认',
+    };
   }
 
   void _runBackgroundTask(
