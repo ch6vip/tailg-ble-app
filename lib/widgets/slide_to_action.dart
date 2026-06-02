@@ -218,16 +218,16 @@ class _SlideToActionState extends State<SlideToAction>
                           1.0,
                         );
                         final labelAlpha = widget.fadeLabelOnSlide
-                            ? (1 - progress).clamp(0.0, 1.0)
+                            ? (1 - progress * 2).clamp(0.0, 1.0)
                             : 1.0;
                         final reservedThumbSpace =
-                            widget.thumbSize + widget.trackInset + 16;
+                            widget.thumbSize + widget.trackInset + 14;
                         final chevronIcon = widget.reverseSlide
                             ? Icons.chevron_left
                             : Icons.chevron_right;
                         return Positioned.fill(
-                          left: widget.reverseSlide ? 18 : reservedThumbSpace,
-                          right: widget.reverseSlide ? reservedThumbSpace : 18,
+                          left: reservedThumbSpace,
+                          right: reservedThumbSpace,
                           child: IgnorePointer(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -255,19 +255,21 @@ class _SlideToActionState extends State<SlideToAction>
                                     ],
                                   ),
                                 ),
-                                Text(
-                                  widget.label,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: enabled
-                                        ? labelColor.withValues(
-                                            alpha: labelAlpha,
-                                          )
-                                        : labelColor.withValues(alpha: 0.5),
-                                    fontSize: widget.labelFontSize,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.05,
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    widget.label,
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                      color: enabled
+                                          ? labelColor.withValues(
+                                              alpha: labelAlpha,
+                                            )
+                                          : labelColor.withValues(alpha: 0.5),
+                                      fontSize: widget.labelFontSize,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.05,
+                                    ),
                                   ),
                                 ),
                               ],

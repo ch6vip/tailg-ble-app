@@ -539,17 +539,26 @@ class _OfficialMetricGrid extends StatelessWidget {
         icon: Icons.speed_outlined,
       ),
     ];
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: items.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisExtent: 94,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-      ),
-      itemBuilder: (context, index) => _MetricTile(metric: items[index]),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 10.0;
+        final compact = constraints.maxWidth < 330;
+        final tileWidth = compact
+            ? constraints.maxWidth
+            : (constraints.maxWidth - gap) / 2;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final item in items)
+              SizedBox(
+                width: tileWidth,
+                height: 96,
+                child: _MetricTile(metric: item),
+              ),
+          ],
+        );
+      },
     );
   }
 }
