@@ -12,6 +12,7 @@ class GaragePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final store = VehicleStore();
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
@@ -29,24 +30,26 @@ class GaragePage extends StatelessWidget {
             ),
             Expanded(
               child: StreamBuilder<List<VehicleProfile>>(
-                stream: VehicleStore().vehiclesStream,
-                initialData: VehicleStore().vehicles,
+                stream: store.vehiclesStream,
+                initialData: store.vehicles,
                 builder: (context, snapshot) {
                   final vehicles = snapshot.data ?? const <VehicleProfile>[];
                   if (vehicles.isEmpty) {
                     return _EmptyGarage(onScan: () => _openScan(context));
                   }
+                  final defaultVehicleId =
+                      store.defaultVehicleId ?? store.defaultVehicle?.id;
                   return ListView.builder(
                     physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                     itemCount: vehicles.length,
                     itemBuilder: (context, index) {
                       final vehicle = vehicles[index];
-                      return _VehicleCard(
-                        vehicle: vehicle,
-                        isDefault:
-                            vehicle.id == VehicleStore().defaultVehicleId ||
-                            VehicleStore().defaultVehicle?.id == vehicle.id,
+                      return RepaintBoundary(
+                        child: _VehicleCard(
+                          vehicle: vehicle,
+                          isDefault: vehicle.id == defaultVehicleId,
+                        ),
                       );
                     },
                   );
