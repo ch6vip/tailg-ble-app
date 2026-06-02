@@ -206,27 +206,21 @@ _VehicleStateDisplay _vehicleStateDisplay({
 }) {
   final isConnected = connState == ble.ConnectionState.ready;
   if (isConnected && bike != null) {
-    if (bike.isLocked && !bike.isPowerOn) {
-      return _VehicleStateDisplay('已设防', Icons.lock_outline, [
-        Colors.purple.shade200,
-        Colors.blue.shade200,
-      ]);
-    }
-    if (!bike.isLocked && bike.isPowerOn) {
+    if (bike.isPowerOn) {
       return _VehicleStateDisplay('已启动', Icons.power, [
         Colors.green.shade300,
         Colors.teal.shade300,
       ]);
     }
-    if (!bike.isLocked) {
-      return _VehicleStateDisplay('已解锁', Icons.lock_open, [
-        Colors.orange.shade200,
-        Colors.amber.shade300,
+    if (bike.isLocked) {
+      return _VehicleStateDisplay('已设防', Icons.lock_outline, [
+        Colors.purple.shade200,
+        Colors.blue.shade200,
       ]);
     }
-    return _VehicleStateDisplay('已上锁', Icons.lock_outline, [
-      Colors.purple.shade200,
-      Colors.blue.shade200,
+    return _VehicleStateDisplay('未启动', Icons.power_settings_new, [
+      Colors.orange.shade200,
+      Colors.amber.shade300,
     ]);
   }
   if (cloudVehicle != null) return _cloudVehicleStateDisplay(cloudVehicle);
@@ -261,7 +255,7 @@ _VehicleStateDisplay _cloudVehicleStateDisplay(OfficialVehicle vehicle) {
       Colors.blue.shade200,
     ]);
   }
-  return _VehicleStateDisplay('车辆已解锁', Icons.lock_open, [
+  return _VehicleStateDisplay('车辆未启动', Icons.power_settings_new, [
     Colors.orange.shade200,
     Colors.amber.shade300,
   ]);
