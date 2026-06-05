@@ -959,7 +959,7 @@ class _NavSettingRow extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           child: Row(
             children: [
               _RowIcon(icon, enabled: enabled),
@@ -1037,7 +1037,7 @@ class _SwitchSettingRow extends StatelessWidget {
       child: InkWell(
         onTap: enabled ? null : () => _showInfoSnack(context, disabledReason),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 10, 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: Row(
             children: [
               _RowIcon(icon, enabled: enabled),

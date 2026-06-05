@@ -608,7 +608,7 @@ class _MetricTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasValue = metric.value != '待读取';
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: cardDecoration,
       child: Row(
         children: [
