@@ -94,10 +94,12 @@ class _TailgBleAppState extends State<TailgBleApp> {
       title: 'Tailg BLE',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        // 以黑色主操作色作种子，并显式钉死 primary 为纯黑、onPrimary 为白，
+        // 避免 Material3 从近黑种子推导出低饱和的灰青主色（FilledButton 等会跑色）。
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
           brightness: Brightness.light,
-        ),
+        ).copyWith(primary: AppColors.primary, onPrimary: Colors.white),
         scaffoldBackgroundColor: AppColors.pageBg,
         useMaterial3: true,
       ),

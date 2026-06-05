@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppColors {
-  static const primary = Color(0xFF5596FF);
-  static const primaryDark = Color(0xFF2D6FE3);
+  // 极简高端主操作色：黑。原亮蓝 #5596FF 已统一为黑色主操作。
+  static const primary = Color(0xFF1A1A1A);
+  static const primaryDark = Color(0xFF000000);
   static const pageBg = Color(0xFFFAFAF8);
   static const textPrimary = Color(0xFF1A1A1A);
   static const textSecondary = Color(0xFF666666);
@@ -35,7 +36,7 @@ abstract final class ReplicaColors {
   static const muted = Color(0xFFBBBBBB);
   static const subtle = Color(0xFF999999);
   static const line = Color(0xFFF0F0F0);
-  static const blue = Color(0xFF5596FF);
+  static const blue = Color(0xFF1A1A1A);
   static const darkPanel = Color(0xFF1A1A1A);
   static const darkPanelDown = Color(0xFF111111);
   static const darkPanelItem = Color(0x33999999);
