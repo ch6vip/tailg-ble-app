@@ -5,6 +5,7 @@ import '../ble/constants.dart';
 import '../ble/connection_manager.dart';
 import '../models/vehicle_profile.dart';
 import 'log_service.dart';
+import 'manual_mode_service.dart';
 import 'vehicle_store.dart';
 
 class AutoConnectService {
@@ -76,6 +77,10 @@ class AutoConnectService {
   Future<void> tryAutoConnect() async {
     await VehicleStore().init();
     _refreshTarget();
+    if (ManualModeService().enabled) {
+      _log.operation('自动连接: 已开启手动模式，跳过', level: LogLevel.info);
+      return;
+    }
     if (!_enabled || _lastDeviceId == null || _connectionManager == null) {
       return;
     }

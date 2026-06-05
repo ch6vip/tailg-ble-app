@@ -139,7 +139,7 @@ class _ControlTipBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        _ManualModePill(enabled: enabled),
+        const _ManualModePill(),
       ],
     );
   }

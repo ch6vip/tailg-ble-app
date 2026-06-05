@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../ble/connection_manager.dart';
 import '../ble/constants.dart';
 import 'log_service.dart';
+import 'manual_mode_service.dart';
 import 'vehicle_store.dart';
 
 class ProximityService {
@@ -54,6 +55,7 @@ class ProximityService {
 
   void start() {
     if (!_enabled || _targetDeviceId == null || _scanning) return;
+    if (ManualModeService().enabled) return;
     if (_connectionManager?.state == ConnectionState.ready) return;
 
     _unlockSent = false;
