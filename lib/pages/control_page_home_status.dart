@@ -114,16 +114,33 @@ class _HeroBattery extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (!hasData)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                hint,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: ReplicaColors.muted,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: const [
+                Text(
+                  '--',
+                  style: TextStyle(
+                    fontSize: 50,
+                    height: 1,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -2,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
-              ),
+                Padding(
+                  padding: EdgeInsets.only(left: 2, bottom: 6),
+                  child: Text(
+                    '%',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ),
+              ],
             )
           else
             TweenAnimationBuilder<double>(
@@ -163,9 +180,9 @@ class _HeroBattery extends StatelessWidget {
               },
             ),
           const SizedBox(height: 6),
-          const Text(
-            '剩余电量',
-            style: TextStyle(
+          Text(
+            hasData ? '剩余电量' : hint,
+            style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
               color: AppColors.textTertiary,
