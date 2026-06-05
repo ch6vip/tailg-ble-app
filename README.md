@@ -1,65 +1,124 @@
-# tailg-ble-app
+# Tailg BLE App
 
-Flutter BLE 控制客户端，用于台铃电动车蓝牙解锁/上锁/开座桶等操作。对应 Web 端项目：[tailg-ble-web](../tailg-ble-web/)。
+台铃电动车的非官方 Flutter 客户端：通过 **蓝牙（BLE）** 直连车辆进行解锁、设防、寻车、开座桶等控制，并可桥接 **官方云端** 完成账号登录、车辆列表/详情和远程控车。配套设计语言为「极简高端」（暖白底 + 黑色主操作 + teal 强调）。
 
-## 开发环境
+> 仅供学习与个人车辆管理使用。高级写入（QGJ 设置、密码解锁、NFC 加钥匙、OTA）需真机验证后再逐步开放。
 
-| 组件 | 版本 | 路径 |
-|------|------|------|
-| Flutter | 3.32.1 (stable) | `E:\flutter\` |
-| Dart | 3.8.1 | Flutter 自带 |
-| Android SDK | 34 | `E:\Android\` |
-| Build Tools | 34.0.0 | `E:\Android\build-tools\34.0.0\` |
-| JDK | Temurin 17.0.19 | 系统 PATH |
-| ADB | 37.0.0 | `C:\platform-tools\adb.exe` |
+## 功能特性
 
-环境变量：
-- `ANDROID_HOME` = `E:\Android`
-- PATH 需包含 `E:\flutter\bin`
+- **本地 BLE 控车**：解锁、设防、寻车、开座桶、通电、断电。
+- **QGJ（Q_BASH）协议**：登录、心跳、重连、骑行模式、光感、声音、震动灵敏度，以及一组高级只读状态（自动锁车、感应距离、电子龙头锁、边撑、坐垫、侧翻检测等）。
+- **官方云端**：短信验证码登录、官方车辆列表/详情、BLE / 云端 / 自动三态控车通道、基础云端控车。
+- **车辆管理**：本地车库、默认车辆、多车切换、自动连接、感应解锁（基于 RSSI 邻近）。
+- **信息与诊断**：电池 / BMS 详情、设备信息、OTA 前置检测、故障诊断、运行日志与诊断报告。
+- **地图与轨迹**：基于 `flutter_map` 的位置 / 轨迹 / 电子围栏（OSM 兜底，可配置天地图 Token）。
+
+完整能力与官方版本差距见 [FEATURES.md](FEATURES.md)。
+
+## 技术栈
+
+| 类别 | 选型 |
+|------|------|
+| 框架 | Flutter 3.32.1 (stable) · Dart 3.8.1 |
+| BLE | `flutter_blue_plus` |
+| 存储 | `shared_preferences`（普通配置）· `flutter_secure_storage`（凭据） |
+| 地图 / 定位 | `flutter_map` · `latlong2` · `geolocator` |
+| 加密 | `encrypt`（标准协议 AES） |
+| 其他 | `permission_handler` · `url_launcher` · `intl` |
+
+## 项目结构
+
+```
+lib/
+  ble/        BLE 协议解析、GATT 常量、连接管理（串行队列防竞争）
+  services/   云端 API、持久化、控车通道路由、邻近解锁等业务逻辑
+  models/     车辆状态与云端遥测数据结构
+  pages/      各页面 UI（控车主页 / 扫描 / 地图 / 设置 / 车库 / 诊断 …）
+  widgets/    可复用组件（滑动点火、统一外框等）
+  theme/      设计 token（颜色 / 圆角 / 间距 / 文本样式）
+test/         云服务与协议路由的单元测试
+docs/         规划、验证、构建等技术文档（见下文「文档」）
+```
 
 ## 快速开始
 
-```powershell
+### 前置条件
+
+- Flutter `3.32.1`（stable，含 Dart `3.8.1`），`flutter doctor` 全绿
+- Android SDK 34 + Build Tools 34.0.0，JDK 17
+- 一台开启 USB 调试的 Android 设备或模拟器（BLE 功能需真机，建议 Android 6.0 / API 23+）
+
+### 运行
+
+```bash
+# 安装依赖
+flutter pub get
+
 # 检查环境
 flutter doctor
 
-# 真机调试（手机开启 USB 调试后连接）
+# 连接设备后运行（debug）
 flutter run
+```
 
-# 构建 release APK
+## 构建
+
+```bash
+# Debug APK
+flutter build apk --debug
+
+# Release APK（本地需配置签名，见下）
 flutter build apk --release
 ```
 
-## 支持的 BLE 协议
+签名：CI 通过 `android/key.properties` + `release.keystore` 完成签名（密钥经 GitHub Secrets 注入，不入库）。本地发布需自行准备 `key.properties`：
 
-- 标准 fee5/AES 协议（KKS/BB/AX/JD/HJ/JW/XL/YY 车型）
-- QGJ (Q_BASH) 3通道 kuyi 协议（feb0/fcc0 服务）
+```properties
+storePassword=<your-store-password>
+keyPassword=<your-key-password>
+keyAlias=<your-key-alias>
+storeFile=../../release.keystore
+```
 
-## 当前能力摘要
+## 测试与质量门禁
 
-- 本地 BLE 控车：解锁、设防、寻车、开座桶、通电、断电
-- QGJ 控车与设置：登录、心跳、重连、骑行模式、光感、声音、震动灵敏度
-- QGJ 高级只读：自动锁车、上电自动锁车、感应状态/距离、HID、电子龙头锁、安全锁、边撑、坐垫、侧翻检测
-- 车辆管理：本地车库、默认车辆、QGJ 登录参数、自动连接、感应解锁
-- 官方云端：短信验证码登录、官方车辆列表/详情、BLE/官方云端/自动控车通道、官方云端基础控车
-- 信息与诊断：电池/BMS 详情、设备信息、OTA 前置检测、故障诊断、日志和诊断报告
+提交前请保持以下三项全绿（与 CI 一致）：
 
-官方云端登录、车辆列表/详情/状态和基础云端控车已通过真实官方账号和车辆真机验证（2026-06-05）；高级 QGJ 写入、密码解锁、NFC 真加钥匙和 OTA 仍需真机验证后再开放。
+```bash
+dart format --output=none --set-exit-if-changed .   # 格式
+flutter analyze                                       # 静态分析
+flutter test                                          # 单元测试
+```
+
+CI（[.github/workflows/build.yml](.github/workflows/build.yml)）：`format → analyze → test`，`master` / PR 触发；推送 `v*` tag 时额外签名构建并发布 Release。
+
+## BLE 协议概览
+
+| 协议 | 服务 | 说明 |
+|------|------|------|
+| 标准协议 | `fee5` | AES 加密，覆盖 KKS/BB/AX/JD/HJ/JW/XL/YY 等车型 |
+| QGJ (Q_BASH) | `feb0` / `fcc0` | 3 通道 kuyi 协议；`feb3` 为实时遥测心跳通道 |
+
+解析层对畸形帧做长度 / 魔数校验，不会崩溃；GATT 读写经串行队列执行以避免竞争。
+
+## 控车通道路由
+
+控车请求按「BLE / 官方云端 / 自动」三态路由（纯函数实现，已被单测覆盖）：BLE 直连优先，必要时回退云端，自动模式按连接状态择优。
+
+## 文档
+
+| 文档 | 用途 |
+|------|------|
+| [docs/README.md](docs/README.md) | 文档索引与阅读顺序 |
+| [FEATURES.md](FEATURES.md) | 已实现能力、官方 3.5.6 差距、工程结构 |
+| [docs/official_3_5_6_deep_comparison.md](docs/official_3_5_6_deep_comparison.md) | 官方版本复刻度对比简报 |
+| [docs/cloud_architecture_plan.md](docs/cloud_architecture_plan.md) | 官方账号 / 云控车 / BLE 兜底规划 |
+| [docs/first_batch_verification.md](docs/first_batch_verification.md) | 真机验证清单 |
+| [docs/android_build_notes.md](docs/android_build_notes.md) | Android 构建 warning 与处理 |
+| [docs/legacy_readme.md](docs/legacy_readme.md) | 旧版 README 归档（含特定开发机路径） |
 
 ## 项目信息
 
 - 包名：`de.tttq.tailg_ble_app`
-- 最低 Android 版本：待定（建议 API 23+，BLE 需要）
-- 部署：GitHub Actions 编译 release APK
-
-## 文档
-
-完整导航见 [项目文档索引](docs/README.md)。
-
-| 文档 | 用途 |
-|------|------|
-| [功能清单](FEATURES.md) | 已实现能力、官方 3.5.6 差距、工程结构 |
-| [官方 3.5.6 复刻对比简报](docs/official_3_5_6_deep_comparison.md) | 当前复刻度、主要差距、下一步建议 |
-| [第一批功能真机验证清单](docs/first_batch_verification.md) | 暂不执行但后续必须验证的真机测试项 |
-| [官方云端复刻方案](docs/cloud_architecture_plan.md) | 官方账号、官方云控车、BLE 兜底和服务生态规划 |
-| [Android 构建说明](docs/android_build_notes.md) | Android 构建 warning 和处理建议 |
+- 最低 Android：建议 API 23+（BLE 需要）
+- 仅发布到内部 / 侧载，未上架 pub.dev（`publish_to: none`）
