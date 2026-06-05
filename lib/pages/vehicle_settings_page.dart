@@ -638,7 +638,7 @@ class _QgjRideSettingsPage extends StatelessWidget {
                                         mode == controller.ridingMode;
                                     final color = switch (mode) {
                                       RidingMode.eco => AppColors.success,
-                                      RidingMode.standard => AppColors.info,
+                                      RidingMode.standard => AppColors.dark,
                                       RidingMode.sport => AppColors.warning,
                                     };
                                     return Expanded(

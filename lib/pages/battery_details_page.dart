@@ -811,7 +811,7 @@ class _BmsFieldRow extends StatelessWidget {
     return switch (field.source) {
       BatteryDataSource.ble => const _SourceChip(
         'BLE feb3 已确认',
-        AppColors.info,
+        AppColors.textSecondary,
       ),
       BatteryDataSource.officialVehicle => const _SourceChip(
         '官方车辆状态',
