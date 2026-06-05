@@ -182,7 +182,7 @@ class _BatteryHero extends StatelessWidget {
             right: 20,
             top: 14,
             child: TextButton(
-              onPressed: onRefresh,
+              onPressed: cloudState.batteryInfoLoading ? null : onRefresh,
               style: TextButton.styleFrom(
                 foregroundColor: ReplicaColors.secondary,
                 visualDensity: VisualDensity.compact,

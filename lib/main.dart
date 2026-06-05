@@ -6,6 +6,7 @@ import 'ble/connection_manager.dart' as ble;
 import 'models/vehicle_profile.dart';
 import 'services/proximity_service.dart';
 import 'services/auto_connect_service.dart';
+import 'services/manual_mode_service.dart';
 import 'services/location_service.dart';
 import 'services/log_service.dart';
 import 'services/official_cloud_service.dart';
@@ -19,6 +20,7 @@ import 'theme/app_colors.dart';
 final connectionManager = ble.ConnectionManager();
 final proximityService = ProximityService();
 final autoConnectService = AutoConnectService();
+final manualModeService = ManualModeService();
 final locationService = LocationService();
 final logService = LogService();
 final vehicleStore = VehicleStore();
@@ -56,6 +58,7 @@ void main() async {
   }
   await proximityService.init(connectionManager);
   await autoConnectService.init(connectionManager);
+  await manualModeService.init();
   runApp(const TailgBleApp());
 }
 
@@ -141,6 +144,7 @@ class _HomePageState extends State<HomePage>
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
   StreamSubscription? _stateSub;
+  StreamSubscription? _manualModeSub;
 
   @override
   void initState() {
@@ -161,6 +165,11 @@ class _HomePageState extends State<HomePage>
 
     homeTabIndex.addListener(_onExternalTabChanged);
     WidgetsBinding.instance.addObserver(this);
+    // Manual mode promises to disable automatic control: stop any in-flight
+    // proximity scan the moment it is switched on.
+    _manualModeSub = manualModeService.enabledStream.listen((enabled) {
+      if (enabled) proximityService.stop();
+    });
     _stateSub = connectionManager.stateStream.listen((state) {
       if (state == ble.ConnectionState.ready) {
         proximityService.onConnected();
@@ -204,6 +213,7 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     _stateSub?.cancel();
+    _manualModeSub?.cancel();
     homeTabIndex.removeListener(_onExternalTabChanged);
     _pageAnimController.dispose();
     WidgetsBinding.instance.removeObserver(this);
