@@ -13,6 +13,7 @@ enum ControlLoadingLabel {
   const ControlLoadingLabel(this.text);
 }
 
+/// 首页主控区：整条全宽黑色滑块 + 等宽控制按钮一排（寻车 / 设防 / 两个快捷）。
 class _OfficialMainControlCard extends StatelessWidget {
   final String powerLabel;
   final String powerHint;
@@ -27,13 +28,23 @@ class _OfficialMainControlCard extends StatelessWidget {
   final VoidCallback onPowerSlideComplete;
   final IconData lockIcon;
   final String lockLabel;
-  final String lockStatus;
   final bool lockActive;
   final VoidCallback onLockTap;
   final bool findActive;
   final bool findEnabled;
   final String findDisabledReason;
   final VoidCallback onFindTap;
+  final _QuickControlSpec firstQuick;
+  final _QuickControlSpec secondQuick;
+  final bool firstQuickActive;
+  final bool secondQuickActive;
+  final bool firstQuickEnabled;
+  final String firstQuickDisabledReason;
+  final bool secondQuickEnabled;
+  final String secondQuickDisabledReason;
+  final VoidCallback onFirstQuickTap;
+  final VoidCallback onSecondQuickTap;
+  final VoidCallback onEditQuickTap;
 
   const _OfficialMainControlCard({
     required this.powerLabel,
@@ -49,85 +60,112 @@ class _OfficialMainControlCard extends StatelessWidget {
     required this.onPowerSlideComplete,
     required this.lockIcon,
     required this.lockLabel,
-    required this.lockStatus,
     required this.lockActive,
     required this.onLockTap,
     required this.findActive,
     required this.findEnabled,
     required this.findDisabledReason,
     required this.onFindTap,
+    required this.firstQuick,
+    required this.secondQuick,
+    required this.firstQuickActive,
+    required this.secondQuickActive,
+    required this.firstQuickEnabled,
+    required this.firstQuickDisabledReason,
+    required this.secondQuickEnabled,
+    required this.secondQuickDisabledReason,
+    required this.onFirstQuickTap,
+    required this.onSecondQuickTap,
+    required this.onEditQuickTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: _officialControlCardDecoration,
-      child: Column(
-        children: [
-          SizedBox(
-            height: 76,
-            child: _PrimaryPowerControl(
-              label: powerLabel,
-              hint: powerHint,
-              icon: powerIcon,
-              reverseSlide: reverseSlide,
-              loading: powerLoading,
-              loadingLabel: powerLoadingLabel,
-              color: powerColor,
-              enabled: enabled,
-              disabledReason: disabledReason,
-              onDisabledTap: onDisabledTap,
-              onSlideComplete: onPowerSlideComplete,
-            ),
+    return Column(
+      children: [
+        SizedBox(
+          height: 60,
+          child: _PrimaryPowerControl(
+            label: powerLabel,
+            hint: powerHint,
+            icon: powerIcon,
+            reverseSlide: reverseSlide,
+            loading: powerLoading,
+            loadingLabel: powerLoadingLabel,
+            color: powerColor,
+            enabled: enabled,
+            disabledReason: disabledReason,
+            onDisabledTap: onDisabledTap,
+            onSlideComplete: onPowerSlideComplete,
           ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  child: _OfficialSmallControlButton(
-                    icon: Icons.volume_up_outlined,
-                    label: '寻车',
-                    loadingLabel: ControlLoadingLabel.find.text,
-                    large: true,
-                    enabled: findEnabled,
-                    active: findActive,
-                    loading: findActive,
-                    disabledReason: findDisabledReason,
-                    onTap: onFindTap,
-                  ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 84,
+          child: Row(
+            children: [
+              Expanded(
+                child: _OfficialSmallControlButton(
+                  icon: Icons.volume_up_outlined,
+                  label: '寻车',
+                  loadingLabel: ControlLoadingLabel.find.text,
+                  enabled: findEnabled,
+                  active: findActive,
+                  loading: findActive,
+                  disabledReason: findDisabledReason,
+                  onTap: onFindTap,
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _OfficialSmallControlButton(
-                    icon: lockIcon,
-                    label: lockLabel,
-                    loadingLabel: lockLabel == '解锁'
-                        ? ControlLoadingLabel.unlock.text
-                        : ControlLoadingLabel.lock.text,
-                    large: true,
-                    enabled: enabled,
-                    active: lockActive,
-                    loading: lockActive,
-                    disabledReason: disabledReason,
-                    onTap: onLockTap,
-                  ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _OfficialSmallControlButton(
+                  icon: lockIcon,
+                  label: lockLabel,
+                  loadingLabel: lockLabel == '解锁'
+                      ? ControlLoadingLabel.unlock.text
+                      : ControlLoadingLabel.lock.text,
+                  enabled: enabled,
+                  active: lockActive,
+                  loading: lockActive,
+                  disabledReason: disabledReason,
+                  onTap: onLockTap,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _OfficialSmallControlButton(
+                  icon: firstQuick.icon,
+                  label: firstQuick.label,
+                  loadingLabel: ControlLoadingLabel.execute.text,
+                  enabled: firstQuickEnabled,
+                  active: firstQuickActive,
+                  loading: firstQuickActive,
+                  disabledReason: firstQuickDisabledReason,
+                  onTap: onFirstQuickTap,
+                  onLongPress: onEditQuickTap,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _OfficialSmallControlButton(
+                  icon: secondQuick.icon,
+                  label: secondQuick.label,
+                  loadingLabel: ControlLoadingLabel.execute.text,
+                  enabled: secondQuickEnabled,
+                  active: secondQuickActive,
+                  loading: secondQuickActive,
+                  disabledReason: secondQuickDisabledReason,
+                  onTap: onSecondQuickTap,
+                  onLongPress: onEditQuickTap,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
-
-BoxDecoration get _officialControlCardDecoration => BoxDecoration(
-  color: Colors.white,
-  borderRadius: BorderRadius.circular(_phoneControlRadius),
-  border: Border.all(color: AppColors.border),
-);
 
 class _OfficialSmallControlButton extends StatefulWidget {
   final IconData icon;
@@ -138,18 +176,18 @@ class _OfficialSmallControlButton extends StatefulWidget {
   final bool loading;
   final String disabledReason;
   final VoidCallback onTap;
-  final bool large;
+  final VoidCallback? onLongPress;
 
   const _OfficialSmallControlButton({
     required this.icon,
     required this.label,
     this.loadingLabel = '执行中',
-    this.large = false,
     required this.enabled,
     required this.active,
     required this.loading,
     required this.disabledReason,
     required this.onTap,
+    this.onLongPress,
   });
 
   @override
@@ -190,9 +228,9 @@ class _OfficialSmallControlButtonState
         : _pressed
         ? const Color(0xFFE0E0DD)
         : AppColors.border;
-    final iconSize = widget.large ? 34.0 : 26.0;
-    final fontSize = widget.large ? 18.0 : 12.0;
-    final iconGap = widget.large ? 5.0 : 6.0;
+    const iconSize = 26.0;
+    const fontSize = 12.0;
+    const iconGap = 6.0;
     return AnimatedScale(
       duration: const Duration(milliseconds: 120),
       scale: _pressed ? 0.96 : 1,
@@ -219,6 +257,12 @@ class _OfficialSmallControlButtonState
                       widget.onTap();
                     }
                   : _showDisabledReason,
+              onLongPress: widget.onLongPress == null
+                  ? null
+                  : () {
+                      HapticFeedback.selectionClick();
+                      widget.onLongPress!();
+                    },
               onTapDown: interactive ? (_) => _setPressed(true) : null,
               onTapUp: interactive ? (_) => _setPressed(false) : null,
               onTapCancel: interactive ? () => _setPressed(false) : null,
@@ -299,13 +343,13 @@ class _PrimaryPowerControl extends StatelessWidget {
         backgroundColor: enabled ? AppColors.dark : const Color(0xFFE8E8E5),
         thumbColor: Colors.white,
         enabled: enabled,
-        height: 76,
-        thumbSize: 64,
-        thumbRadius: 16,
+        height: 60,
+        thumbSize: 48,
+        thumbRadius: 14,
         trackInset: 6,
-        iconSize: 30,
-        labelFontSize: 13,
-        loadingFontSize: 17,
+        iconSize: 24,
+        labelFontSize: 14,
+        loadingFontSize: 16,
         centerLabel: true,
         // The thumb already carries a double-arrow icon; a second pair of
         // direction chevrons next to the label is redundant.

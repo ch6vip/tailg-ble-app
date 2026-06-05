@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
-import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
 import '../services/control_channel_resolver.dart';
 import '../services/control_command_executor.dart';
@@ -240,8 +239,6 @@ class _ControlAreaViewModel {
       isPowerOn ? CommandCode.powerOff : CommandCode.powerOn;
 
   String get lockLabel => isLocked ? '解锁' : '设防';
-
-  String get lockStatus => isLocked ? '当前设防' : '当前解锁';
 
   IconData get lockIcon => isLocked ? Icons.lock_open : Icons.lock_outline;
 
@@ -606,11 +603,6 @@ class _ControlAreaState extends State<_ControlArea> {
               cloudState: cloudState,
               bike: snapshot.data,
             );
-            final textScale = MediaQuery.textScalerOf(context).scale(1);
-            final extraHeight = ((textScale - 1.0).clamp(0.0, 0.3) * 80)
-                .toDouble();
-            final compactWidth = MediaQuery.sizeOf(context).width < 360;
-
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
@@ -625,73 +617,48 @@ class _ControlAreaState extends State<_ControlArea> {
                     vehicleName: model.vehicleName,
                     disabledReason: model.visibleDisabledReason,
                   ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    height: 188 + extraHeight,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SizedBox(
-                          width: compactWidth ? 82 : 90,
-                          child: RepaintBoundary(
-                            child: _OfficialQuickControlCard(
-                              firstQuick: model.firstQuick,
-                              secondQuick: model.secondQuick,
-                              firstActive: model.firstQuickActive,
-                              secondActive: model.secondQuickActive,
-                              firstEnabled: model.quickEnabled(
-                                model.firstQuick,
-                              ),
-                              firstDisabledReason: model.quickDisabledReason(
-                                model.firstQuick,
-                              ),
-                              secondEnabled: model.quickEnabled(
-                                model.secondQuick,
-                              ),
-                              secondDisabledReason: model.quickDisabledReason(
-                                model.secondQuick,
-                              ),
-                              onFirstTap: () =>
-                                  _runQuickAction(model.firstQuick, model),
-                              onSecondTap: () =>
-                                  _runQuickAction(model.secondQuick, model),
-                              onEditTap: _editQuickControls,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _OfficialMainControlCard(
-                            powerLabel: model.powerLabel,
-                            powerHint: model.powerHint,
-                            powerIcon: model.powerIcon,
-                            reverseSlide: model.isPowerOn,
-                            powerLoading: model.powerLoading,
-                            powerLoadingLabel: model.powerLoadingLabel,
-                            powerColor: model.powerColor,
-                            enabled: model.enabled,
-                            disabledReason: model.disabledReason,
-                            onDisabledTap: () =>
-                                _showUnavailableSnack(model.disabledReason),
-                            onPowerSlideComplete: () => _send(
-                              model.powerCommand,
-                              actionId: 'slidePower',
-                            ),
-                            lockIcon: model.lockIcon,
-                            lockLabel: model.lockLabel,
-                            lockStatus: model.lockStatus,
-                            lockActive: model.lockActive,
-                            onLockTap: () =>
-                                _send(model.lockCommand, actionId: 'fixedLock'),
-                            findActive: model.findActive,
-                            findEnabled: model.findEnabled,
-                            findDisabledReason: model.findDisabledReason,
-                            onFindTap: () =>
-                                _send(CommandCode.find, actionId: 'fixedFind'),
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 12),
+                  _OfficialMainControlCard(
+                    powerLabel: model.powerLabel,
+                    powerHint: model.powerHint,
+                    powerIcon: model.powerIcon,
+                    reverseSlide: model.isPowerOn,
+                    powerLoading: model.powerLoading,
+                    powerLoadingLabel: model.powerLoadingLabel,
+                    powerColor: model.powerColor,
+                    enabled: model.enabled,
+                    disabledReason: model.disabledReason,
+                    onDisabledTap: () =>
+                        _showUnavailableSnack(model.disabledReason),
+                    onPowerSlideComplete: () =>
+                        _send(model.powerCommand, actionId: 'slidePower'),
+                    lockIcon: model.lockIcon,
+                    lockLabel: model.lockLabel,
+                    lockActive: model.lockActive,
+                    onLockTap: () =>
+                        _send(model.lockCommand, actionId: 'fixedLock'),
+                    findActive: model.findActive,
+                    findEnabled: model.findEnabled,
+                    findDisabledReason: model.findDisabledReason,
+                    onFindTap: () =>
+                        _send(CommandCode.find, actionId: 'fixedFind'),
+                    firstQuick: model.firstQuick,
+                    secondQuick: model.secondQuick,
+                    firstQuickActive: model.firstQuickActive,
+                    secondQuickActive: model.secondQuickActive,
+                    firstQuickEnabled: model.quickEnabled(model.firstQuick),
+                    firstQuickDisabledReason: model.quickDisabledReason(
+                      model.firstQuick,
                     ),
+                    secondQuickEnabled: model.quickEnabled(model.secondQuick),
+                    secondQuickDisabledReason: model.quickDisabledReason(
+                      model.secondQuick,
+                    ),
+                    onFirstQuickTap: () =>
+                        _runQuickAction(model.firstQuick, model),
+                    onSecondQuickTap: () =>
+                        _runQuickAction(model.secondQuick, model),
+                    onEditQuickTap: _editQuickControls,
                   ),
                 ],
               ),
