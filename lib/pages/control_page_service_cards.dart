@@ -140,7 +140,7 @@ class _HomeQuickSection extends StatelessWidget {
                         icon: Icons.add_location_alt_outlined,
                         title: addGpsTitle,
                         subtitle: addGpsSubtitle,
-                        accent: ReplicaColors.blue,
+                        accent: AppColors.accentTeal,
                         onTap: () => _open(context, const OfficialCloudPage()),
                       ),
                     ],

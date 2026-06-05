@@ -185,9 +185,6 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.primary,
                               side: const BorderSide(color: AppColors.primary),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
                             ),
                             child: const Text('使用当前'),
                           ),
@@ -198,9 +195,6 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                           onPressed: _saveToken,
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
                           ),
                           child: const Text('保存'),
                         ),
