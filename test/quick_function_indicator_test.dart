@@ -44,4 +44,19 @@ void main() {
     await _pumpControlPage(tester, const Size(430, 2600));
     expect(find.byKey(_indicator), findsOneWidget);
   });
+
+  // The SHORTCUTS section exposes an inline edit entry that opens the
+  // customization page where shortcuts can be reordered / shown / hidden.
+  testWidgets('edit entry opens the shortcuts customization page', (
+    tester,
+  ) async {
+    await _pumpControlPage(tester, const Size(430, 2600));
+    expect(find.text('编辑'), findsOneWidget);
+
+    await tester.tap(find.text('编辑'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('快捷功能设置'), findsOneWidget);
+    expect(find.byType(Switch), findsWidgets);
+  });
 }

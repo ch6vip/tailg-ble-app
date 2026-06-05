@@ -1,72 +1,159 @@
 part of 'control_page.dart';
 
-class _HomeQuickSection extends StatelessWidget {
+/// A single home-screen shortcut definition. [id] is stable and persisted; the
+/// rest (icon/label/accent/page) lives here so the catalog can evolve without a
+/// storage migration. Every entry maps to an existing page route only — no
+/// BLE/control commands are involved.
+class _QuickShortcutSpec {
+  final String id;
+  final IconData icon;
+  final String label;
+  final Color accent;
+  final WidgetBuilder page;
+
+  const _QuickShortcutSpec({
+    required this.id,
+    required this.icon,
+    required this.label,
+    required this.accent,
+    required this.page,
+  });
+}
+
+/// Full catalog of home shortcuts in default order (first 4 match the 方案C
+/// mockup; the rest live on the second page of the scroller).
+List<_QuickShortcutSpec> get _quickShortcutCatalog => [
+  _QuickShortcutSpec(
+    id: 'location',
+    icon: Icons.location_on,
+    label: '位置',
+    accent: AppColors.danger,
+    page: (_) => const LocationPage(),
+  ),
+  _QuickShortcutSpec(
+    id: 'settings',
+    icon: Icons.settings,
+    label: '设置',
+    accent: AppColors.accentTeal,
+    page: (_) => const VehicleSettingsPage(),
+  ),
+  _QuickShortcutSpec(
+    id: 'fence',
+    icon: Icons.fence,
+    label: '围栏',
+    accent: _serviceAccentViolet,
+    page: (_) => const LocationPage(initialTab: LocationInitialTab.fence),
+  ),
+  _QuickShortcutSpec(
+    id: 'sound',
+    icon: Icons.music_note,
+    label: '音效',
+    accent: _serviceAccentAmber,
+    page: (_) => const QgjSoundEffectsPage(),
+  ),
+  _QuickShortcutSpec(
+    id: 'share',
+    icon: Icons.ios_share,
+    label: '分享用车',
+    accent: _serviceAccentViolet,
+    page: (_) => const ShareBikePage(),
+  ),
+  _QuickShortcutSpec(
+    id: 'nfc',
+    icon: Icons.nfc,
+    label: 'NFC钥匙',
+    accent: AppColors.accentTeal,
+    page: (_) => const NfcKeyPage(),
+  ),
+  _QuickShortcutSpec(
+    id: 'travel',
+    icon: Icons.route,
+    label: '骑行记录',
+    accent: _serviceAccentAmber,
+    page: (_) => const LocationPage(initialTab: LocationInitialTab.travel),
+  ),
+];
+
+class _HomeQuickSection extends StatefulWidget {
   const _HomeQuickSection();
+
+  @override
+  State<_HomeQuickSection> createState() => _HomeQuickSectionState();
+}
+
+class _HomeQuickSectionState extends State<_HomeQuickSection> {
+  QuickShortcutsConfig _config = const QuickShortcutsConfig();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConfig();
+  }
+
+  Future<void> _loadConfig() async {
+    final cfg = await ReplicaFeatureStore().loadQuickShortcutsConfig();
+    if (!mounted) return;
+    setState(() => _config = cfg);
+  }
 
   void _open(BuildContext context, Widget page) {
     Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
+  /// Catalog entries ordered per saved config, with any catalog ids missing
+  /// from the saved order appended (in catalog order) so newly added shortcuts
+  /// still surface after an app update.
+  List<_QuickShortcutSpec> _orderedSpecs() {
+    final byId = {for (final s in _quickShortcutCatalog) s.id: s};
+    final result = <_QuickShortcutSpec>[];
+    for (final id in _config.order) {
+      final spec = byId.remove(id);
+      if (spec != null) result.add(spec);
+    }
+    for (final s in _quickShortcutCatalog) {
+      if (byId.containsKey(s.id)) result.add(s);
+    }
+    return result;
+  }
+
+  Future<void> _editShortcuts(BuildContext context) async {
+    final updated = await Navigator.push<QuickShortcutsConfig>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _QuickShortcutsEditPage(
+          specs: _orderedSpecs(),
+          hidden: _config.hidden,
+        ),
+      ),
+    );
+    if (updated == null || !mounted) return;
+    setState(() => _config = updated);
+    await ReplicaFeatureStore().saveQuickShortcutsConfig(updated);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final visible = _orderedSpecs()
+        .where((spec) => !_config.hidden.contains(spec.id))
+        .toList(growable: false);
     final items = [
-      // 第一屏 4 个快捷——匹配「方案C 极简高端」效果图
-      _HomeQuickItem(
-        icon: Icons.location_on,
-        label: '位置',
-        accent: AppColors.danger,
-        onTap: () => _open(context, const LocationPage()),
-      ),
-      _HomeQuickItem(
-        icon: Icons.settings,
-        label: '设置',
-        accent: AppColors.accentTeal,
-        onTap: () => _open(context, const VehicleSettingsPage()),
-      ),
-      _HomeQuickItem(
-        icon: Icons.fence,
-        label: '围栏',
-        accent: _serviceAccentViolet,
-        onTap: () => _open(
-          context,
-          const LocationPage(initialTab: LocationInitialTab.fence),
+      for (final spec in visible)
+        _HomeQuickItem(
+          icon: spec.icon,
+          label: spec.label,
+          accent: spec.accent,
+          onTap: () => _open(context, spec.page(context)),
         ),
-      ),
-      _HomeQuickItem(
-        icon: Icons.music_note,
-        label: '音效',
-        accent: _serviceAccentAmber,
-        onTap: () => _open(context, const QgjSoundEffectsPage()),
-      ),
-      // 第二屏
-      _HomeQuickItem(
-        icon: Icons.ios_share,
-        label: '分享用车',
-        accent: _serviceAccentViolet,
-        onTap: () => _open(context, const ShareBikePage()),
-      ),
-      _HomeQuickItem(
-        icon: Icons.nfc,
-        label: 'NFC钥匙',
-        accent: AppColors.accentTeal,
-        onTap: () => _open(context, const NfcKeyPage()),
-      ),
-      _HomeQuickItem(
-        icon: Icons.route,
-        label: '骑行记录',
-        accent: _serviceAccentAmber,
-        onTap: () => _open(
-          context,
-          const LocationPage(initialTab: LocationInitialTab.travel),
-        ),
-      ),
     ];
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
-          _FunctionSettingsCard(items: items),
+          _FunctionSettingsCard(
+            items: items,
+            onLongPress: () => _editShortcuts(context),
+          ),
           const SizedBox(height: 12),
           StreamBuilder<List<VehicleProfile>>(
             stream: vehicleStore.vehiclesStream,
@@ -176,8 +263,9 @@ class _HomeQuickSection extends StatelessWidget {
 
 class _FunctionSettingsCard extends StatefulWidget {
   final List<_HomeQuickItem> items;
+  final VoidCallback? onLongPress;
 
-  const _FunctionSettingsCard({required this.items});
+  const _FunctionSettingsCard({required this.items, this.onLongPress});
 
   @override
   State<_FunctionSettingsCard> createState() => _FunctionSettingsCardState();
@@ -218,16 +306,47 @@ class _FunctionSettingsCardState extends State<_FunctionSettingsCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              'SHORTCUTS',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 2,
-                color: AppColors.textTertiary,
-              ),
+          Padding(
+            padding: const EdgeInsets.only(left: 16, right: 8),
+            child: Row(
+              children: [
+                const Text(
+                  'SHORTCUTS',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 2,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+                const Spacer(),
+                if (widget.onLongPress != null)
+                  InkWell(
+                    onTap: widget.onLongPress,
+                    borderRadius: BorderRadius.circular(8),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.tune,
+                            size: 14,
+                            color: AppColors.textTertiary,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            '编辑',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 10),
@@ -250,7 +369,10 @@ class _FunctionSettingsCardState extends State<_FunctionSettingsCard> {
                 separatorBuilder: (_, __) => const SizedBox(width: 6),
                 itemBuilder: (context, index) => SizedBox(
                   width: 86,
-                  child: _HomeQuickTile(item: widget.items[index]),
+                  child: _HomeQuickTile(
+                    item: widget.items[index],
+                    onLongPress: widget.onLongPress,
+                  ),
                 ),
               ),
             ),
@@ -337,13 +459,15 @@ class _HomeQuickItem {
 
 class _HomeQuickTile extends StatelessWidget {
   final _HomeQuickItem item;
+  final VoidCallback? onLongPress;
 
-  const _HomeQuickTile({required this.item});
+  const _HomeQuickTile({required this.item, this.onLongPress});
 
   @override
   Widget build(BuildContext context) {
     return _OfficialPressable(
       onTap: item.onTap,
+      onLongPress: onLongPress,
       radius: ReplicaRadii.card,
       background: Colors.transparent,
       pressedBackground: _officialPressedBg,
@@ -371,6 +495,159 @@ class _HomeQuickTile extends StatelessWidget {
                 fontSize: 12,
                 color: AppColors.textSecondary,
                 fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Edit page for the home "SHORTCUTS" grid: drag to reorder, toggle to show or
+/// hide each shortcut. Returns the updated [QuickShortcutsConfig] (or null when
+/// dismissed). No control/BLE logic — only which navigation shortcuts appear.
+class _QuickShortcutsEditPage extends StatefulWidget {
+  final List<_QuickShortcutSpec> specs;
+  final Set<String> hidden;
+
+  const _QuickShortcutsEditPage({required this.specs, required this.hidden});
+
+  @override
+  State<_QuickShortcutsEditPage> createState() =>
+      _QuickShortcutsEditPageState();
+}
+
+class _QuickShortcutsEditPageState extends State<_QuickShortcutsEditPage> {
+  late List<_QuickShortcutSpec> _order;
+  late Set<String> _hidden;
+
+  @override
+  void initState() {
+    super.initState();
+    _order = List.of(widget.specs);
+    _hidden = Set.of(widget.hidden);
+  }
+
+  int get _visibleCount =>
+      _order.where((spec) => !_hidden.contains(spec.id)).length;
+
+  void _save() {
+    Navigator.pop(
+      context,
+      QuickShortcutsConfig(
+        order: _order.map((spec) => spec.id).toList(),
+        hidden: _hidden,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            AppPageHeader(
+              title: '快捷功能设置',
+              actions: [TextButton(onPressed: _save, child: const Text('保存'))],
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 4, 20, 12),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '拖动排序，开关控制是否在首页显示（至少保留 1 个）',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: ReorderableListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                physics: const BouncingScrollPhysics(),
+                itemCount: _order.length,
+                onReorder: (oldIndex, newIndex) {
+                  setState(() {
+                    if (newIndex > oldIndex) newIndex -= 1;
+                    final item = _order.removeAt(oldIndex);
+                    _order.insert(newIndex, item);
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final spec = _order[index];
+                  final visible = !_hidden.contains(spec.id);
+                  // Don't let the user hide the last visible shortcut, so the
+                  // home grid (and its edit entry) never becomes empty.
+                  final lockOff = visible && _visibleCount <= 1;
+                  return Padding(
+                    key: ValueKey(spec.id),
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: _cardDecoration,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: spec.accent.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              spec.icon,
+                              size: 20,
+                              color: spec.accent,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              spec.label,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          Switch(
+                            value: visible,
+                            onChanged: lockOff
+                                ? null
+                                : (value) {
+                                    setState(() {
+                                      if (value) {
+                                        _hidden.remove(spec.id);
+                                      } else {
+                                        _hidden.add(spec.id);
+                                      }
+                                    });
+                                  },
+                          ),
+                          ReorderableDragStartListener(
+                            index: index,
+                            child: const Padding(
+                              padding: EdgeInsets.only(left: 6),
+                              child: Icon(
+                                Icons.drag_handle,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -997,6 +1274,7 @@ class _MiniHelpChip extends StatelessWidget {
 class _OfficialPressable extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final bool enabled;
   final Color background;
   final Color pressedBackground;
@@ -1006,6 +1284,7 @@ class _OfficialPressable extends StatefulWidget {
   const _OfficialPressable({
     required this.child,
     required this.onTap,
+    this.onLongPress,
     this.enabled = true,
     this.background = Colors.white,
     this.pressedBackground = _officialPressedBg,
@@ -1056,6 +1335,13 @@ class _OfficialPressableState extends State<_OfficialPressable> {
                         _setPressed(false);
                         HapticFeedback.mediumImpact();
                         widget.onTap();
+                      }
+                    : null,
+                onLongPress: widget.enabled && widget.onLongPress != null
+                    ? () {
+                        _setPressed(false);
+                        HapticFeedback.mediumImpact();
+                        widget.onLongPress!();
                       }
                     : null,
                 onTapDown: widget.enabled ? (_) => _setPressed(true) : null,
