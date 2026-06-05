@@ -74,39 +74,22 @@ class _EmptyGarage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.electric_bike_outlined,
-              size: 64,
-              color: Colors.grey.shade300,
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              '还没有绑定车辆',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              '扫描附近蓝牙设备，连接成功后会自动加入车库。',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
-            ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: onScan,
-              icon: const Icon(Icons.bluetooth_searching, size: 18),
-              label: const Text('扫描绑定'),
-            ),
-          ],
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const AppEmptyState(
+            icon: Icons.electric_bike_outlined,
+            title: '还没有绑定车辆',
+            subtitle: '扫描附近蓝牙设备，连接成功后会自动加入车库。',
+            padding: EdgeInsets.symmetric(horizontal: 40, vertical: 0),
+          ),
+          const SizedBox(height: 20),
+          FilledButton.icon(
+            onPressed: onScan,
+            icon: const Icon(Icons.bluetooth_searching, size: 18),
+            label: const Text('扫描绑定'),
+          ),
+        ],
       ),
     );
   }

@@ -189,3 +189,118 @@ class ConnectionStatusBanner extends StatelessWidget {
     );
   }
 }
+
+/// 极简骨架占位：浅灰圆角条配上呼吸式高光，用于数据加载/待读取态，
+/// 替代静态的「等待数据 / 待读取」文字，给出更高级的加载反馈。
+class AppSkeleton extends StatefulWidget {
+  final double width;
+  final double height;
+  final BorderRadius? borderRadius;
+
+  const AppSkeleton({
+    super.key,
+    required this.width,
+    this.height = 12,
+    this.borderRadius,
+  });
+
+  @override
+  State<AppSkeleton> createState() => _AppSkeletonState();
+}
+
+class _AppSkeletonState extends State<AppSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final radius =
+        widget.borderRadius ?? BorderRadius.circular(widget.height / 2);
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final t = Curves.easeInOut.transform(_controller.value);
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            color: Color.lerp(
+              const Color(0xFFEDEDEA),
+              const Color(0xFFF7F7F4),
+              t,
+            ),
+            borderRadius: radius,
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 极简空状态：圆形浅底图标 + 标题 + 副标题，统一各页面的空白区表达。
+class AppEmptyState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final EdgeInsetsGeometry padding;
+
+  const AppEmptyState({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.padding = const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: padding,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: const BoxDecoration(
+              color: Color(0xFFF2F2EF),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 28, color: AppColors.textTertiary),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              subtitle!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12,
+                height: 1.5,
+                color: AppColors.textTertiary,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
