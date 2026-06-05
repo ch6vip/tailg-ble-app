@@ -192,9 +192,15 @@ class _FunctionSettingsCardState extends State<_FunctionSettingsCard> {
 
   double _scrollProgress() {
     if (!_scrollController.hasClients) return 0;
-    final maxExtent = _scrollController.position.maxScrollExtent;
+    final position = _scrollController.position;
+    // The controller can be attached but not yet laid out (e.g. the very first
+    // build of the AnimatedBuilder below), at which point maxScrollExtent /
+    // pixels are still unset and reading them throws. Bail out until the
+    // horizontal list has real content dimensions.
+    if (!position.hasContentDimensions || !position.hasPixels) return 0;
+    final maxExtent = position.maxScrollExtent;
     if (maxExtent <= 0) return 0;
-    return (_scrollController.offset / maxExtent).clamp(0.0, 1.0);
+    return (position.pixels / maxExtent).clamp(0.0, 1.0);
   }
 
   @override

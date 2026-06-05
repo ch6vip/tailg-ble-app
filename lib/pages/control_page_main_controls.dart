@@ -234,16 +234,18 @@ class _OfficialSmallControlButtonState
                     else
                       Icon(widget.icon, color: color, size: iconSize),
                     SizedBox(height: iconGap),
-                    Text(
-                      widget.loading ? widget.loadingLabel : widget.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.w700,
-                        color: widget.enabled
-                            ? ReplicaColors.muted
-                            : Colors.grey,
+                    Flexible(
+                      child: Text(
+                        widget.loading ? widget.loadingLabel : widget.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.w700,
+                          color: widget.enabled
+                              ? ReplicaColors.muted
+                              : Colors.grey,
+                        ),
                       ),
                     ),
                   ],
