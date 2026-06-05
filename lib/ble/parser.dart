@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'aes.dart';
 import 'constants.dart';
+import 'hex.dart';
 
 sealed class ParsedResponse {
   final String raw;
@@ -43,7 +44,21 @@ const _tokenPrefix = '78000000';
 const _voltagePrefix = '780EB310';
 
 ParsedResponse parseResponse(String keyHex, Uint8List raw) {
+  try {
+    return _parseResponse(keyHex, raw);
+  } catch (_) {
+    // Malformed/garbled frames (wrong length, undecryptable, too short to slice)
+    // must never throw out of the notification listener and crash the app.
+    return UnknownResponse(bytesToHex(raw));
+  }
+}
+
+ParsedResponse _parseResponse(String keyHex, Uint8List raw) {
   final hex = aesEcbDecrypt(keyHex, raw);
+
+  if (hex.length < 10) {
+    return UnknownResponse(hex);
+  }
 
   if (hex.startsWith(_tokenPrefix)) {
     final token = hex.substring(8, 16);
