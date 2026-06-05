@@ -146,7 +146,12 @@ class _OfficialCloudStorage {
           (key, value) => MapEntry(key.toString(), value.toString()),
         );
       }
-    } catch (_) {
+    } catch (e) {
+      _log.operation(
+        '官云本地车辆关联数据损坏，已忽略',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
       return {};
     }
     return {};

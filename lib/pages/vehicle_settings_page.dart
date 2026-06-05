@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
+import '../services/log_service.dart';
 import '../services/vehicle_settings_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
@@ -790,7 +791,12 @@ class _VehicleSettingsController extends ChangeNotifier {
       return const _SettingsActionResult.success('设置状态已刷新');
     } on VehicleSettingsException catch (e) {
       return _SettingsActionResult.failure(e.message);
-    } catch (_) {
+    } catch (e) {
+      logService.operation(
+        '车辆设置读取异常',
+        detail: e.toString(),
+        level: LogLevel.error,
+      );
       return const _SettingsActionResult.failure('设置读取失败');
     } finally {
       _setSending(false);
@@ -873,7 +879,12 @@ class _VehicleSettingsController extends ChangeNotifier {
       return _SettingsActionResult.success(successMessage);
     } on VehicleSettingsException catch (e) {
       return _SettingsActionResult.failure(e.message);
-    } catch (_) {
+    } catch (e) {
+      logService.operation(
+        '车辆设置写入异常',
+        detail: e.toString(),
+        level: LogLevel.error,
+      );
       return const _SettingsActionResult.failure('设置失败');
     } finally {
       _setSending(false);

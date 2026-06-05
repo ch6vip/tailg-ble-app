@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../ble/constants.dart';
 import '../main.dart';
 import '../models/battery_snapshot.dart';
+import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
@@ -90,6 +91,11 @@ class BatteryDetailsPage extends StatelessWidget {
     try {
       await officialCloudService.refreshBatteryInfo();
     } catch (e) {
+      logService.operation(
+        '官方电池信息刷新失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
       if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,

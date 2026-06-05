@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../main.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
+import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
@@ -48,6 +49,11 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
       _startSmsCountdown();
       _showSnack('验证码已发送');
     } catch (e) {
+      logService.operation(
+        '官云验证码发送失败',
+        detail: _errorMessage(e),
+        level: LogLevel.warning,
+      );
       if (!mounted) return;
       _showSnack(_errorMessage(e), error: true);
     }
@@ -79,6 +85,11 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
       if (!mounted) return;
       _showSnack('官方账号登录成功');
     } catch (e) {
+      logService.operation(
+        '官云登录失败',
+        detail: _errorMessage(e),
+        level: LogLevel.warning,
+      );
       if (!mounted) return;
       _showSnack(_errorMessage(e), error: true);
     }
@@ -93,6 +104,11 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
       if (!mounted) return;
       _showSnack('官方车辆已刷新');
     } catch (e) {
+      logService.operation(
+        '官云车辆刷新失败',
+        detail: _errorMessage(e),
+        level: LogLevel.warning,
+      );
       if (!mounted) return;
       _showSnack(_errorMessage(e), error: true);
     }
@@ -886,6 +902,11 @@ class _OfficialVehicleSelfCheckPageState
       if (!mounted) return;
       setState(() => _result = result);
     } catch (e) {
+      logService.operation(
+        '官云自检失败',
+        detail: _errorMessage(e),
+        level: LogLevel.warning,
+      );
       if (!mounted) return;
       setState(() => _error = _errorMessage(e));
     } finally {
