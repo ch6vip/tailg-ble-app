@@ -64,8 +64,8 @@ class _OfficialQuickControlCard extends StatelessWidget {
             ],
           ),
           Positioned(
-            right: -2,
-            top: -2,
+            right: -4,
+            top: -4,
             child: _QuickEditButton(onTap: onEditTap),
           ),
         ],
@@ -414,8 +414,8 @@ class _QuickEditButtonState extends State<_QuickEditButton> {
                 height: 44,
                 child: Center(
                   child: AnimatedContainer(
-                    width: 28,
-                    height: 28,
+                    width: 24,
+                    height: 24,
                     duration: const Duration(milliseconds: 120),
                     decoration: BoxDecoration(
                       color: _pressed
@@ -426,7 +426,7 @@ class _QuickEditButtonState extends State<_QuickEditButton> {
                     child: const Icon(
                       Icons.edit_outlined,
                       color: ReplicaColors.muted,
-                      size: 16,
+                      size: 13,
                     ),
                   ),
                 ),

@@ -308,6 +308,9 @@ class _PrimaryPowerControl extends StatelessWidget {
         labelFontSize: 13,
         loadingFontSize: 17,
         centerLabel: true,
+        // The thumb already carries a double-arrow icon; a second pair of
+        // direction chevrons next to the label is redundant.
+        showCenterChevron: false,
         labelColor: enabled ? ReplicaColors.muted : AppColors.warning,
         chevronColor: ReplicaColors.subtle,
         thumbIconColor: ReplicaColors.muted,
