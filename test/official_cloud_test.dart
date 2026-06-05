@@ -867,6 +867,24 @@ void main() {
       expect(point.latitude, 25.1);
       expect(point.longitude, 104.1);
     });
+
+    test('rounds raw float trip speeds/mileage for display', () {
+      final day = OfficialTravelDay.fromJson({
+        'travelDate': '2026-06-01',
+        'deviceTravelDtoList': [
+          {
+            'deviceTravelId': 'travel-2',
+            'mileage': '604.0',
+            'averageSpeed': '20.133333333333333',
+            'maxSpeed': '45.6789',
+          },
+        ],
+      });
+      final record = day.records.first;
+      expect(record.averageSpeedLabel, '20.1km/h');
+      expect(record.maxSpeedLabel, '45.7km/h');
+      expect(record.mileageLabel, '604km');
+    });
   });
 }
 
