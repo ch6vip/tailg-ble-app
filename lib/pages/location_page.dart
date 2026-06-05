@@ -341,7 +341,7 @@ class _SegmentedTabs extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(ReplicaRadii.card),
-        boxShadow: AppShadows.cardShadow,
+        border: Border.all(color: AppColors.border, width: 1),
       ),
       child: Row(
         children: List.generate(items.length, (i) {

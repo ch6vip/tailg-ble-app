@@ -354,8 +354,8 @@ class _HomeQuickTile extends StatelessWidget {
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                color: const Color(0xFFF0F0F5),
-                borderRadius: BorderRadius.circular(8),
+                color: item.accent.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(item.icon, size: 23, color: item.accent),
             ),
@@ -959,7 +959,7 @@ class _ServiceIconBox extends StatelessWidget {
         color: dark
             ? Colors.white.withValues(alpha: 0.12)
             : color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Icon(icon, size: size * 0.48, color: color),
     );
@@ -1039,7 +1039,9 @@ class _OfficialPressableState extends State<_OfficialPressable> {
                 ? widget.pressedBackground
                 : widget.background,
             borderRadius: BorderRadius.circular(widget.radius),
-            boxShadow: widget.shadow ? AppShadows.cardShadow : null,
+            border: widget.shadow
+                ? Border.all(color: AppColors.border, width: 1)
+                : null,
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(widget.radius),
