@@ -1828,7 +1828,7 @@ class _OfficialFenceSheet extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      radius == null ? '待读取' : '${radius.toStringAsFixed(0)}m',
+                      radius == null ? '待读取' : _formatDistance(radius),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
@@ -1853,7 +1853,7 @@ class _OfficialFenceSheet extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      '${minRadius.toStringAsFixed(0)}m',
+                      _formatDistance(minRadius),
                       style: const TextStyle(
                         fontSize: 12,
                         color: ReplicaColors.subtle,
@@ -1861,7 +1861,7 @@ class _OfficialFenceSheet extends StatelessWidget {
                     ),
                     const Spacer(),
                     Text(
-                      '${maxRadius.toStringAsFixed(0)}m',
+                      _formatDistance(maxRadius),
                       style: const TextStyle(
                         fontSize: 12,
                         color: ReplicaColors.subtle,
@@ -1928,6 +1928,20 @@ class _OfficialFenceSheet extends StatelessWidget {
     final parsed = double.tryParse(text);
     if (parsed == null) return null;
     return parsed * 100;
+  }
+
+  // Show large fence radii in km (e.g. 10000m -> 10km) so the range labels
+  // stay readable; keep metres below 1km.
+  static String _formatDistance(double meters) {
+    if (meters >= 1000) {
+      final km = meters / 1000;
+      final fixed = km.toStringAsFixed(1);
+      final trimmed = fixed.endsWith('.0')
+          ? fixed.substring(0, fixed.length - 2)
+          : fixed;
+      return '${trimmed}km';
+    }
+    return '${meters.toStringAsFixed(0)}m';
   }
 }
 

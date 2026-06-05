@@ -412,10 +412,21 @@ class OfficialTravelRecord {
     return '待读取';
   }
 
-  String get mileageLabel => mileage.isEmpty ? '待读取' : '${mileage}km';
+  String get mileageLabel => mileage.isEmpty ? '待读取' : '${_round1(mileage)}km';
   String get averageSpeedLabel =>
-      averageSpeed.isEmpty ? '待读取' : '${averageSpeed}km/h';
-  String get maxSpeedLabel => maxSpeed.isEmpty ? '待读取' : '${maxSpeed}km/h';
+      averageSpeed.isEmpty ? '待读取' : '${_round1(averageSpeed)}km/h';
+  String get maxSpeedLabel =>
+      maxSpeed.isEmpty ? '待读取' : '${_round1(maxSpeed)}km/h';
+
+  // Official trip values can come back as long raw doubles
+  // (e.g. "20.133333333"). Round to one decimal and drop a trailing ".0"
+  // so the list stays readable; fall back to the raw text if it isn't numeric.
+  static String _round1(String value) {
+    final parsed = double.tryParse(value);
+    if (parsed == null) return value;
+    final fixed = parsed.toStringAsFixed(1);
+    return fixed.endsWith('.0') ? fixed.substring(0, fixed.length - 2) : fixed;
+  }
 }
 
 class OfficialTravelPoint {
