@@ -82,8 +82,8 @@ class _ControlPageState extends State<ControlPage>
 
   /// Pull-to-refresh: re-sync cloud vehicle data when signed in, otherwise just
   /// settle briefly so the indicator animation feels intentional.
-  Future<void> _handleRefresh(OfficialCloudState cloudState) async {
-    if (cloudState.signedIn) {
+  Future<void> _handleRefresh() async {
+    if (officialCloudService.state.signedIn) {
       try {
         await officialCloudService.refreshVehicles(force: true);
       } catch (e) {
@@ -97,6 +97,33 @@ class _ControlPageState extends State<ControlPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    // 静态外壳只构建一次；仅随数据变化的内容下沉到 [_HomeBody]，
+    // 避免每次连接态/车辆/云态事件都重建 Scaffold/RefreshIndicator/滚动容器。
+    return Scaffold(
+      backgroundColor: _pageBg,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _handleRefresh,
+          color: AppColors.primary,
+          backgroundColor: Colors.white,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
+            child: const _HomeBody(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeBody extends StatelessWidget {
+  const _HomeBody();
+
+  @override
+  Widget build(BuildContext context) {
     return StreamBuilder<ble.ConnectionState>(
       stream: connectionManager.stateStream,
       initialData: connectionManager.state,
@@ -123,44 +150,26 @@ class _ControlPageState extends State<ControlPage>
                 final showUnboundHome =
                     !hasLocalVehicle && !hasCloudVehicle && !hasTransientDevice;
 
-                return Scaffold(
-                  backgroundColor: _pageBg,
-                  body: SafeArea(
-                    child: RefreshIndicator(
-                      onRefresh: () => _handleRefresh(cloudState),
-                      color: AppColors.primary,
-                      backgroundColor: Colors.white,
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(
-                          parent: BouncingScrollPhysics(),
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 260),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  child: showUnboundHome
+                      ? const _UnboundVehicleHome()
+                      : Column(
+                          key: const ValueKey('bound-home'),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _HomeTopSection(connState: connState),
+                            const SizedBox(height: 14),
+                            _ControlArea(connState: connState),
+                            const SizedBox(height: 14),
+                            const _HomeQuickSection(),
+                            const SizedBox(height: 14),
+                            _RidingModeSelector(connState: connState),
+                            const SizedBox(height: 20),
+                          ],
                         ),
-                        padding: const EdgeInsets.only(
-                          bottom: AppNav.contentBottomPadding,
-                        ),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 260),
-                          switchInCurve: Curves.easeOutCubic,
-                          switchOutCurve: Curves.easeInCubic,
-                          child: showUnboundHome
-                              ? const _UnboundVehicleHome()
-                              : Column(
-                                  key: const ValueKey('bound-home'),
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _HomeTopSection(connState: connState),
-                                    const SizedBox(height: 14),
-                                    _ControlArea(connState: connState),
-                                    const SizedBox(height: 14),
-                                    const _HomeQuickSection(),
-                                    const SizedBox(height: 14),
-                                    _RidingModeSelector(connState: connState),
-                                    const SizedBox(height: 20),
-                                  ],
-                                ),
-                        ),
-                      ),
-                    ),
-                  ),
                 );
               },
             );

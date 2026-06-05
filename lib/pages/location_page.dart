@@ -14,6 +14,7 @@ import '../services/replica_feature_store.dart';
 import '../services/vehicle_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/cached_tile_provider.dart';
 
 enum LocationInitialTab { map, travel, fence }
 
@@ -780,6 +781,7 @@ class _MapPanel extends StatelessWidget {
                   subdomains: MapTileConfig.subdomains,
                   userAgentPackageName: 'de.tttq.tailg_ble_app',
                   maxNativeZoom: 18,
+                  tileProvider: CachedTileProvider(),
                   tileDisplay: const TileDisplay.instantaneous(),
                 ),
                 if (MapTileConfig.annotationUrlTemplate != null)
@@ -788,6 +790,7 @@ class _MapPanel extends StatelessWidget {
                     subdomains: MapTileConfig.subdomains,
                     userAgentPackageName: 'de.tttq.tailg_ble_app',
                     maxNativeZoom: 18,
+                    tileProvider: CachedTileProvider(),
                     tileDisplay: const TileDisplay.instantaneous(),
                   ),
                 if (fence?.hasData == true && location != null)

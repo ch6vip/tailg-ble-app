@@ -100,10 +100,27 @@ class _OfficialCloudApiClient {
   final LogService _log;
   OfficialCloudRequestSummary? _lastRequest;
 
+  // 复用单个 HttpClient 以启用 keep-alive / 连接池，避免每次请求
+  // 重做 TCP+TLS 握手。服务为单例、生命周期与 App 一致。
+  HttpClient? _client;
+
   _OfficialCloudApiClient({required this.config, required LogService log})
     : _log = log;
 
   OfficialCloudRequestSummary? get lastRequest => _lastRequest;
+
+  HttpClient get _sharedClient {
+    final existing = _client;
+    if (existing != null) return existing;
+    final created = HttpClient()..connectionTimeout = config.connectTimeout;
+    _client = created;
+    return created;
+  }
+
+  void dispose() {
+    _client?.close(force: true);
+    _client = null;
+  }
 
   Future<_OfficialApiResponse> request(
     String path, {
@@ -111,8 +128,7 @@ class _OfficialCloudApiClient {
     String? token,
     Map<String, dynamic>? body,
   }) async {
-    final client = HttpClient();
-    client.connectionTimeout = config.connectTimeout;
+    final client = _sharedClient;
     final startedAt = DateTime.now();
     try {
       final uri = config.resolve(path);
@@ -132,7 +148,7 @@ class _OfficialCloudApiClient {
         onTimeout: () => throw const OfficialCloudApiException('请求超时，请检查网络'),
       );
       final text = await response.transform(utf8.decoder).join();
-      final decoded = _decodeBody(text);
+      final decoded = await _decodeBody(text);
       _recordRequest(
         path: path,
         method: method,
@@ -180,8 +196,6 @@ class _OfficialCloudApiClient {
         statusCode: e.statusCode,
       );
       rethrow;
-    } finally {
-      client.close(force: true);
     }
   }
 
@@ -248,10 +262,16 @@ class _OfficialCloudApiClient {
     return normalized.substring(0, 80);
   }
 
-  Map<String, dynamic> _decodeBody(String text) {
+  // 超过该阈值的响应体丢到后台 isolate 解析，避免大 JSON 阻塞 UI 线程；
+  // 小负载继续在主 isolate 解析（省去 spawn isolate 的开销）。
+  static const int _isolateDecodeThreshold = 32 * 1024;
+
+  Future<Map<String, dynamic>> _decodeBody(String text) async {
     if (text.trim().isEmpty) return <String, dynamic>{};
     try {
-      final decoded = jsonDecode(text);
+      final decoded = text.length > _isolateDecodeThreshold
+          ? await compute<String, Object?>(jsonDecode, text)
+          : jsonDecode(text);
       if (decoded is Map) return Map<String, dynamic>.from(decoded);
     } catch (_) {
       final end = text.length < 80 ? text.length : 80;
