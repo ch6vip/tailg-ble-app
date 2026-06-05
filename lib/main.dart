@@ -98,13 +98,11 @@ class _TailgBleAppState extends State<TailgBleApp> {
         ),
         useMaterial3: true,
       ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
+      // The app is intentionally light-only: every page is built on the fixed
+      // light palette in AppColors. Pin themeMode to light so framework
+      // surfaces (dialogs, sheets, menus) don't render dark under system dark
+      // mode while the custom pages stay light.
+      themeMode: ThemeMode.light,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

@@ -3,6 +3,7 @@ import '../services/proximity_service.dart';
 import '../services/auto_connect_service.dart';
 import '../services/app_preferences_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/app_chrome.dart';
 import 'app_preferences_pages.dart';
 import 'log_page.dart';
 import 'vehicle_settings_page.dart';
@@ -50,148 +51,136 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
             ),
-            _sectionLabel('连接'),
-            const _AutoConnectSettingTile(),
-            const _ProximityUnlockSettingTile(),
-            _divider(),
-            _sectionLabel('通用'),
-            const _LanguageSettingTile(),
-            const _DistanceUnitSettingTile(),
-            const _RespectTextScaleSettingTile(),
-            _divider(),
-            _sectionLabel('车辆'),
-            _settingItem(
-              icon: Icons.garage_outlined,
-              title: '我的车库',
-              subtitle: '绑定车辆、默认车辆、多车管理',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const GaragePage()),
+            const AppSectionLabel('连接'),
+            _group(const [
+              _AutoConnectSettingTile(),
+              _ProximityUnlockSettingTile(),
+            ]),
+            const AppSectionLabel('通用'),
+            _group(const [
+              _LanguageSettingTile(),
+              _DistanceUnitSettingTile(),
+              _RespectTextScaleSettingTile(),
+            ]),
+            const AppSectionLabel('车辆'),
+            _group([
+              _settingItem(
+                icon: Icons.garage_outlined,
+                title: '我的车库',
+                subtitle: '绑定车辆、默认车辆、多车管理',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const GaragePage()),
+                ),
               ),
-            ),
-            _settingItem(
-              icon: Icons.tune,
-              title: '车辆设置',
-              subtitle: '声音、灵敏度、车辆功能、骑行设置',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const VehicleSettingsPage()),
+              _settingItem(
+                icon: Icons.tune,
+                title: '车辆设置',
+                subtitle: '声音、灵敏度、车辆功能、骑行设置',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const VehicleSettingsPage(),
+                  ),
+                ),
               ),
-            ),
-            _settingItem(
-              icon: Icons.directions_bike_outlined,
-              title: '车辆信息',
-              subtitle: '车辆档案、蓝牙设备、服务和固件信息',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const DeviceInfoPage()),
+              _settingItem(
+                icon: Icons.directions_bike_outlined,
+                title: '车辆信息',
+                subtitle: '车辆档案、蓝牙设备、服务和固件信息',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DeviceInfoPage()),
+                ),
               ),
-            ),
-            _settingItem(
-              icon: Icons.mark_email_unread_outlined,
-              title: '消息中心',
-              subtitle: '系统消息、设备消息和安全提醒',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const VehicleMessagePage()),
+              _settingItem(
+                icon: Icons.mark_email_unread_outlined,
+                title: '消息中心',
+                subtitle: '系统消息、设备消息和安全提醒',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const VehicleMessagePage()),
+                ),
               ),
-            ),
-            _settingItem(
-              icon: Icons.battery_charging_full,
-              title: '电池/BMS',
-              subtitle: '电量、电压、温度、故障和预留 BMS 数据',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const BatteryDetailsPage()),
+              _settingItem(
+                icon: Icons.battery_charging_full,
+                title: '电池/BMS',
+                subtitle: '电量、电压、温度、故障和预留 BMS 数据',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BatteryDetailsPage()),
+                ),
               ),
-            ),
-            _divider(),
-            _sectionLabel('高级'),
-            _settingItem(
-              icon: Icons.system_update_alt,
-              title: 'OTA 前置检测',
-              subtitle: '协议、设备信息、固件版本和升级风险检查',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const OtaPrecheckPage()),
+            ]),
+            const AppSectionLabel('高级'),
+            _group([
+              _settingItem(
+                icon: Icons.system_update_alt,
+                title: 'OTA 前置检测',
+                subtitle: '协议、设备信息、固件版本和升级风险检查',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const OtaPrecheckPage()),
+                ),
               ),
-            ),
-            _settingItem(
-              icon: Icons.swap_horiz,
-              title: '协议类型',
-              subtitle: '自动识别',
-              onTap: () => _showProtocolDialog(),
-            ),
-            _settingItem(
-              icon: Icons.cloud_outlined,
-              title: '官方账号',
-              subtitle: '登录官方账号、车辆列表、云端控车',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const OfficialCloudPage()),
+              _settingItem(
+                icon: Icons.swap_horiz,
+                title: '协议类型',
+                subtitle: '自动识别',
+                onTap: () => _showProtocolDialog(),
               ),
-            ),
-            _divider(),
-            _sectionLabel('调试'),
-            _settingItem(
-              icon: Icons.health_and_safety,
-              title: '故障诊断',
-              subtitle: '读取车辆错误码',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const DiagnosticPage()),
+              _settingItem(
+                icon: Icons.cloud_outlined,
+                title: '官方账号',
+                subtitle: '登录官方账号、车辆列表、云端控车',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const OfficialCloudPage()),
+                ),
               ),
-            ),
-            _settingItem(
-              icon: Icons.article_outlined,
-              title: '日志',
-              subtitle: '查看 BLE 通信和操作记录',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const LogPage()),
+            ]),
+            const AppSectionLabel('调试'),
+            _group([
+              _settingItem(
+                icon: Icons.health_and_safety,
+                title: '故障诊断',
+                subtitle: '读取车辆错误码',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DiagnosticPage()),
+                ),
               ),
-            ),
-            _divider(),
-            _sectionLabel('关于'),
-            _settingItem(
-              icon: Icons.info_outline,
-              title: '关于 Tailg BLE',
-              subtitle: '版本、开源依赖、诊断导出',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AboutAppPage()),
+              _settingItem(
+                icon: Icons.article_outlined,
+                title: '日志',
+                subtitle: '查看 BLE 通信和操作记录',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LogPage()),
+                ),
               ),
-            ),
-            _settingItem(
-              icon: Icons.code,
-              title: 'GitHub',
-              subtitle: 'ch6vip/tailg-ble-app',
-              showChevron: false,
-            ),
+            ]),
+            const AppSectionLabel('关于'),
+            _group([
+              _settingItem(
+                icon: Icons.info_outline,
+                title: '关于 Tailg BLE',
+                subtitle: '版本、开源依赖、诊断导出',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AboutAppPage()),
+                ),
+              ),
+              _settingItem(
+                icon: Icons.code,
+                title: 'GitHub',
+                subtitle: 'ch6vip/tailg-ble-app',
+                showChevron: false,
+              ),
+            ]),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _sectionLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: AppColors.primary,
-        ),
-      ),
-    );
-  }
-
-  Widget _divider() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16),
-      child: Divider(height: 1, color: AppColors.border),
     );
   }
 
@@ -226,6 +215,27 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 }
 
+Widget _group(List<Widget> rows) {
+  final children = <Widget>[];
+  for (var i = 0; i < rows.length; i++) {
+    if (i > 0) children.add(_insetDivider());
+    children.add(rows[i]);
+  }
+  return AppCard(
+    padding: EdgeInsets.zero,
+    child: Column(children: children),
+  );
+}
+
+Widget _insetDivider() {
+  return const Divider(
+    height: 1,
+    thickness: 1,
+    indent: 66,
+    color: AppColors.border,
+  );
+}
+
 Widget _settingItem({
   required IconData icon,
   required String title,
@@ -234,48 +244,59 @@ Widget _settingItem({
   VoidCallback? onTap,
   bool showChevron = true,
 }) {
-  return InkWell(
-    onTap: onTap,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 28,
-            height: 28,
-            child: Icon(icon, size: 22, color: AppColors.textPrimary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 1),
+  return Material(
+    color: Colors.transparent,
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 20, color: AppColors.primary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    subtitle,
+                    title,
                     style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textTertiary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
                     ),
                   ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          if (trailing != null)
-            trailing
-          else if (showChevron)
-            Icon(Icons.chevron_right, size: 20, color: Colors.grey.shade400),
-        ],
+            if (trailing != null)
+              trailing
+            else if (showChevron)
+              const Icon(
+                Icons.chevron_right,
+                size: 22,
+                color: AppColors.textTertiary,
+              ),
+          ],
+        ),
       ),
     ),
   );
