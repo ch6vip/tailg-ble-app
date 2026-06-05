@@ -61,6 +61,11 @@ void main() async {
   runApp(const TailgBleApp());
 }
 
+/// 全 App 统一的按钮圆角矩形形状（替代 Material3 默认胶囊形）。
+const _buttonShape = RoundedRectangleBorder(
+  borderRadius: BorderRadius.all(Radius.circular(AppRadii.md)),
+);
+
 class TailgBleApp extends StatefulWidget {
   const TailgBleApp({super.key});
 
@@ -102,6 +107,21 @@ class _TailgBleAppState extends State<TailgBleApp> {
         ).copyWith(primary: AppColors.primary, onPrimary: Colors.white),
         scaffoldBackgroundColor: AppColors.pageBg,
         useMaterial3: true,
+        // 统一所有 Material 按钮形状：Material3 默认是全圆角胶囊（StadiumBorder），
+        // 与全 App 的极简圆角矩形风格（卡片/控车按钮 R12-16）不一致。这里把
+        // Filled/Elevated/Outlined/Text 按钮统一为 R14 圆角矩形。
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(shape: _buttonShape),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(shape: _buttonShape),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(shape: _buttonShape),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(shape: _buttonShape),
+        ),
       ),
       // The app is intentionally light-only: every page is built on the fixed
       // light palette in AppColors. Pin themeMode to light so framework
