@@ -203,10 +203,8 @@ class _HeroMiniStat extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Flexible(
-                child: Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: _AnimatedMetricText(
+                  value: value,
                   style: const TextStyle(
                     fontSize: 20,
                     height: 1,
@@ -334,6 +332,38 @@ class _HomeStatusLine extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+/// 数字型 metric 文本：更新时用 TweenAnimationBuilder 平滑滚动到新值，
+/// 非数字（如 `--` 占位）则直接静态显示。与首页大号电量动画一致。
+class _AnimatedMetricText extends StatelessWidget {
+  final String value;
+  final TextStyle style;
+
+  const _AnimatedMetricText({required this.value, required this.style});
+
+  @override
+  Widget build(BuildContext context) {
+    if (num.tryParse(value) == null) {
+      return Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: style,
+      );
+    }
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: _animatedMetricValue(value)),
+      duration: const Duration(milliseconds: 700),
+      curve: Curves.easeOutCubic,
+      builder: (context, animated, _) => Text(
+        _formatAnimated(value, animated),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: style,
+      ),
     );
   }
 }

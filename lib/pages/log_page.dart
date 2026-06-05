@@ -198,7 +198,11 @@ class _LogList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (entries.isEmpty) {
       return const Center(
-        child: Text('暂无日志', style: TextStyle(color: AppColors.textTertiary)),
+        child: AppEmptyState(
+          icon: Icons.receipt_long_outlined,
+          title: '暂无日志',
+          subtitle: '蓝牙连接、控车与诊断操作的运行日志会显示在这里。',
+        ),
       );
     }
     return ListView.builder(

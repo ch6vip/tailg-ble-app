@@ -607,34 +607,11 @@ class _EmptyMessageState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(
-              Icons.mark_email_unread_outlined,
-              size: 48,
-              color: AppColors.textTertiary,
-            ),
-            SizedBox(height: 12),
-            Text(
-              '暂无消息',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 6),
-            Text(
-              '车辆断连、重连、故障诊断、控车失败等事件会在这里汇总。',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-            ),
-          ],
-        ),
+    return const Center(
+      child: AppEmptyState(
+        icon: Icons.mark_email_unread_outlined,
+        title: '暂无消息',
+        subtitle: '车辆断连、重连、故障诊断、控车失败等事件会在这里汇总。',
       ),
     );
   }

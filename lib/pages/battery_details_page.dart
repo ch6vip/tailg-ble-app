@@ -7,6 +7,7 @@ import '../main.dart';
 import '../models/battery_snapshot.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/app_chrome.dart';
 
 class BatteryDetailsPage extends StatelessWidget {
   const BatteryDetailsPage({super.key});
@@ -635,18 +636,22 @@ class _MetricTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 5),
-                Text(
-                  metric.value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: hasValue
-                        ? AppColors.textPrimary
-                        : AppColors.textTertiary,
+                if (hasValue)
+                  Text(
+                    metric.value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  )
+                else
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 4),
+                    child: AppSkeleton(width: 56, height: 16),
                   ),
-                ),
               ],
             ),
           ),
