@@ -20,6 +20,7 @@ class SlideToAction extends StatefulWidget {
   final double labelFontSize;
   final double iconSize;
   final bool centerLabel;
+  final bool showCenterChevron;
   final Color? labelColor;
   final Color? chevronColor;
   final Color? disabledBackgroundColor;
@@ -49,6 +50,7 @@ class SlideToAction extends StatefulWidget {
     this.labelFontSize = 14.0,
     this.iconSize = 24.0,
     this.centerLabel = false,
+    this.showCenterChevron = true,
     this.labelColor,
     this.chevronColor,
     this.disabledBackgroundColor,
@@ -232,29 +234,30 @@ class _SlideToActionState extends State<SlideToAction>
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Transform.translate(
-                                  offset: const Offset(0, 2),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        chevronIcon,
-                                        size: centerChevronSize,
-                                        color: chevronTextColor.withValues(
-                                          alpha: chevronAlpha,
+                                if (widget.showCenterChevron)
+                                  Transform.translate(
+                                    offset: const Offset(0, 2),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          chevronIcon,
+                                          size: centerChevronSize,
+                                          color: chevronTextColor.withValues(
+                                            alpha: chevronAlpha,
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 2),
-                                      Icon(
-                                        chevronIcon,
-                                        size: centerChevronSize,
-                                        color: chevronTextColor.withValues(
-                                          alpha: chevronAlpha,
+                                        const SizedBox(width: 2),
+                                        Icon(
+                                          chevronIcon,
+                                          size: centerChevronSize,
+                                          color: chevronTextColor.withValues(
+                                            alpha: chevronAlpha,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
                                 FittedBox(
                                   fit: BoxFit.scaleDown,
                                   child: Text(

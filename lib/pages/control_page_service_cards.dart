@@ -183,10 +183,15 @@ class _FunctionSettingsCard extends StatefulWidget {
 
 class _FunctionSettingsCardState extends State<_FunctionSettingsCard> {
   final _scrollController = ScrollController();
+  // Whether the quick-function row actually overflows. When it fits (few items
+  // / wide screen) the position indicator is meaningless, so hide it instead of
+  // leaving a stationary dark pill on a grey track.
+  final _scrollable = ValueNotifier<bool>(false);
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _scrollable.dispose();
     super.dispose();
   }
 
@@ -225,28 +230,48 @@ class _FunctionSettingsCardState extends State<_FunctionSettingsCard> {
           const SizedBox(height: 10),
           SizedBox(
             height: 92,
-            child: ListView.separated(
-              controller: _scrollController,
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              scrollDirection: Axis.horizontal,
-              itemCount: widget.items.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 6),
-              itemBuilder: (context, index) => SizedBox(
-                width: 86,
-                child: _HomeQuickTile(item: widget.items[index]),
+            child: NotificationListener<ScrollMetricsNotification>(
+              onNotification: (notification) {
+                final canScroll = notification.metrics.maxScrollExtent > 0;
+                if (_scrollable.value != canScroll) {
+                  _scrollable.value = canScroll;
+                }
+                return false;
+              },
+              child: ListView.separated(
+                controller: _scrollController,
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                scrollDirection: Axis.horizontal,
+                itemCount: widget.items.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 6),
+                itemBuilder: (context, index) => SizedBox(
+                  width: 86,
+                  child: _HomeQuickTile(item: widget.items[index]),
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          AnimatedBuilder(
-            animation: _scrollController,
-            builder: (context, _) {
-              return Center(
-                child: SizedBox(
-                  width: 60,
-                  height: 4,
-                  child: _ScrollPositionIndicator(progress: _scrollProgress()),
+          ValueListenableBuilder<bool>(
+            valueListenable: _scrollable,
+            builder: (context, scrollable, _) {
+              if (!scrollable) return const SizedBox(height: 10);
+              return Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: AnimatedBuilder(
+                  animation: _scrollController,
+                  builder: (context, _) {
+                    return Center(
+                      child: SizedBox(
+                        key: const Key('quickFunctionScrollIndicator'),
+                        width: 60,
+                        height: 4,
+                        child: _ScrollPositionIndicator(
+                          progress: _scrollProgress(),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               );
             },
