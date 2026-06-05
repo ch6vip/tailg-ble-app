@@ -19,7 +19,7 @@ class _HomeQuickSection extends StatelessWidget {
       _HomeQuickItem(
         icon: Icons.tune,
         label: '车辆设置',
-        accent: _phoneControlPrimary,
+        accent: _serviceAccentAmber,
         onTap: () => _open(context, const VehicleSettingsPage()),
       ),
       _HomeQuickItem(
@@ -138,7 +138,7 @@ class _HomeQuickSection extends StatelessWidget {
                         icon: Icons.add_location_alt_outlined,
                         title: addGpsTitle,
                         subtitle: addGpsSubtitle,
-                        accent: ReplicaColors.blue,
+                        accent: AppColors.accentTeal,
                         onTap: () => _open(context, const OfficialCloudPage()),
                       ),
                     ],
