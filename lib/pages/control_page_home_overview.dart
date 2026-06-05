@@ -14,8 +14,8 @@ class _HomeTopSection extends StatelessWidget {
         children: [
           _Header(connState: connState),
           _StatusSection(connState: connState),
-          const SizedBox(height: 8),
-          _BikeImage(connState: connState),
+          const SizedBox(height: 16),
+          _HomeStatusLine(connState: connState),
           const SizedBox(height: 4),
         ],
       ),

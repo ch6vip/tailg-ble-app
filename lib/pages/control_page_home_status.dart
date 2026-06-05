@@ -1,5 +1,6 @@
 part of 'control_page.dart';
 
+/// 首页电量主视觉：居中超大电量数字 + 竖向分隔线 + 右侧堆叠里程/电压。
 class _StatusSection extends StatelessWidget {
   final ble.ConnectionState connState;
   const _StatusSection({required this.connState});
@@ -39,51 +40,48 @@ class _StatusSection extends StatelessWidget {
                 ? '${(battery * _kmPerPercent).round()}'
                 : '--';
             final rangeLabel = mileage != null ? '累计里程' : '预估里程';
+            final voltage = isBleReady ? bike?.voltage : null;
+            final voltageText = voltage != null
+                ? _formatMetricNumber(voltage)
+                : '--';
 
             return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final compact = constraints.maxWidth < 330;
-                  final metricGap = compact ? 14.0 : 22.0;
-                  final channelGap = compact ? 8.0 : 14.0;
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _HomeMetric(
-                          label: '剩余电量',
-                          value: battery != null ? '$battery' : '--',
-                          unit: battery != null ? '%' : '',
-                          color: batteryColor,
-                          placeholderHint: isBleReady ? '等待数据' : '连接后查看',
-                          placeholderIcon: isBleReady
-                              ? Icons.hourglass_empty
-                              : Icons.bluetooth_searching,
-                        ),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: _HeroBattery(
+                        value: battery != null ? '$battery' : '--',
+                        color: batteryColor,
+                        hasData: battery != null,
+                        hint: isBleReady ? '等待数据' : '连接后查看',
                       ),
-                      SizedBox(width: metricGap),
-                      Expanded(
-                        child: _HomeMetric(
+                    ),
+                  ),
+                  Container(width: 1, height: 56, color: AppColors.border),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _HeroMiniStat(
                           label: rangeLabel,
                           value: rangeText,
                           unit: rangeText == '--' ? '' : 'km',
-                          placeholderHint: mileage != null
-                              ? null
-                              : isBleReady
-                              ? '等待数据'
-                              : '连接后查看',
-                          placeholderIcon: Icons.hourglass_empty,
                         ),
-                      ),
-                      SizedBox(width: channelGap),
-                      _HomeChannelPill(
-                        connState: connState,
-                        cloudVehicle: cloudVehicle,
-                      ),
-                    ],
-                  );
-                },
+                        const SizedBox(height: 16),
+                        _HeroMiniStat(
+                          label: '电压',
+                          value: voltageText,
+                          unit: voltageText == '--' ? '' : 'V',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             );
           },
@@ -93,176 +91,249 @@ class _StatusSection extends StatelessWidget {
   }
 }
 
-class _HomeMetric extends StatelessWidget {
-  final String label;
+class _HeroBattery extends StatelessWidget {
   final String value;
-  final String unit;
   final Color color;
-  final String? placeholderHint;
-  final IconData? placeholderIcon;
+  final bool hasData;
+  final String hint;
 
-  const _HomeMetric({
-    required this.label,
+  const _HeroBattery({
     required this.value,
-    required this.unit,
-    this.color = ReplicaColors.ink,
-    this.placeholderHint,
-    this.placeholderIcon,
+    required this.color,
+    required this.hasData,
+    required this.hint,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isPlaceholder = value == '--' && placeholderHint != null;
     return Semantics(
-      label: '$label${isPlaceholder ? '，$placeholderHint' : '，$value$unit'}',
+      label: hasData ? '剩余电量，$value%' : '剩余电量，$hint',
       excludeSemantics: true,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textTertiary,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (isPlaceholder)
-            Row(
-              children: [
-                Icon(
-                  placeholderIcon ?? Icons.hourglass_empty,
-                  size: 16,
+          if (!hasData)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                hint,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
                   color: ReplicaColors.muted,
                 ),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    placeholderHint!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: ReplicaColors.muted,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             )
           else
             TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: 0, end: _animatedMetricValue(value)),
-              duration: const Duration(milliseconds: 600),
-              curve: Curves.easeOut,
+              duration: const Duration(milliseconds: 700),
+              curve: Curves.easeOutCubic,
               builder: (context, animated, _) {
                 final display = _formatAnimated(value, animated);
-                final fontSize = display.length > 4
-                    ? 30.0
-                    : display.length > 3
-                    ? 36.0
-                    : 42.0;
                 return Row(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Flexible(
+                    Text(
+                      display,
+                      style: TextStyle(
+                        fontSize: 50,
+                        height: 1,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -2,
+                        color: color,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 2, bottom: 6),
                       child: Text(
-                        display,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        '%',
                         style: TextStyle(
-                          fontSize: fontSize,
-                          height: 1,
+                          fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: -1,
                           color: color,
                         ),
                       ),
                     ),
-                    if (unit.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 2),
-                        child: Text(
-                          unit,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                      ),
                   ],
                 );
               },
             ),
+          const SizedBox(height: 6),
+          const Text(
+            '剩余电量',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textTertiary,
+              letterSpacing: 2,
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _HomeChannelPill extends StatelessWidget {
-  final ble.ConnectionState connState;
-  final OfficialVehicle? cloudVehicle;
+class _HeroMiniStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final String unit;
 
-  const _HomeChannelPill({required this.connState, required this.cloudVehicle});
+  const _HeroMiniStat({
+    required this.label,
+    required this.value,
+    required this.unit,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final ready = connState == ble.ConnectionState.ready;
-    final connecting =
-        connState == ble.ConnectionState.connecting ||
-        connState == ble.ConnectionState.reconnecting;
-    final cloudReady = cloudVehicle != null;
-    final color = ready
-        ? AppColors.success
-        : connecting
-        ? AppColors.warning
-        : cloudReady
-        ? ReplicaColors.blue
-        : ReplicaColors.muted;
-    final text = ready
-        ? 'BLE'
-        : connecting
-        ? connState.label
-        : cloudReady
-        ? '云端'
-        : '离线';
-    final icon = ready
-        ? Icons.bluetooth_connected
-        : connecting
-        ? Icons.sync
-        : cloudReady
-        ? Icons.cloud_done_outlined
-        : Icons.bluetooth_disabled;
-    return Container(
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(ReplicaRadii.pill),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
+    return Semantics(
+      label: '$label，$value$unit',
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 5),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    height: 1,
+                    fontWeight: FontWeight.w800,
+                    color: ReplicaColors.ink,
+                  ),
+                ),
+              ),
+              if (unit.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(left: 3),
+                  child: Text(
+                    unit,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 3),
           Text(
-            text,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: color,
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textTertiary,
+              letterSpacing: 1,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// mockup 中的状态条：teal 圆点 + 设防/通电/健康文案 + 连接通道。
+class _HomeStatusLine extends StatelessWidget {
+  final ble.ConnectionState connState;
+  const _HomeStatusLine({required this.connState});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<BikeState?>(
+      stream: connectionManager.bikeStateStream,
+      initialData: connectionManager.latestBikeState,
+      builder: (context, snapshot) {
+        final bike = snapshot.data;
+        return StreamBuilder<OfficialCloudState>(
+          stream: officialCloudService.stateStream,
+          initialData: officialCloudService.state,
+          builder: (context, cloudSnapshot) {
+            final cloudState = cloudSnapshot.data ?? officialCloudService.state;
+            final cloudVehicle = cloudState.signedIn
+                ? cloudState.selectedVehicle
+                : null;
+            final isBleReady = connState == ble.ConnectionState.ready;
+            final hasBikeState = isBleReady && bike != null;
+            final hasState = hasBikeState || cloudVehicle != null;
+            final isLocked = hasBikeState
+                ? bike.isLocked
+                : cloudVehicle?.isLocked ?? true;
+            final isPowerOn = hasBikeState
+                ? bike.isPowerOn
+                : cloudVehicle?.isPowerOn ?? false;
+            final hasFault =
+                hasBikeState &&
+                (bike.faultMotor ||
+                    bike.faultController ||
+                    bike.faultBrake ||
+                    bike.faultLowVoltage);
+            final statusText = !hasState
+                ? '等待车辆数据'
+                : '${isLocked ? '已设防' : '已解锁'} · '
+                      '${isPowerOn ? '已通电' : '未通电'} · '
+                      '${hasFault ? '检测到异常' : '系统正常'}';
+            final dotColor = !hasState
+                ? AppColors.textTertiary
+                : hasFault
+                ? AppColors.danger
+                : AppColors.success;
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 11,
+                ),
+                decoration: BoxDecoration(
+                  color: dotColor.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: dotColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        statusText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
