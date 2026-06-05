@@ -13,7 +13,69 @@ enum ControlLoadingLabel {
   const ControlLoadingLabel(this.text);
 }
 
-/// 首页主控区：整条全宽黑色滑块 + 3 个固定控制按钮（寻车 / 设防 / 座桶）。
+/// Runtime descriptor for a single main-control button.
+class _MainControlButtonData {
+  final String id;
+  final IconData icon;
+  final String label;
+  final Color accent;
+  final String loadingLabel;
+  final bool enabled;
+  final bool active;
+  final String disabledReason;
+  final VoidCallback onTap;
+
+  const _MainControlButtonData({
+    required this.id,
+    required this.icon,
+    required this.label,
+    required this.accent,
+    required this.loadingLabel,
+    required this.enabled,
+    required this.active,
+    required this.disabledReason,
+    required this.onTap,
+  });
+}
+
+/// Static display info for the edit page (independent of vehicle state).
+class _MainControlCatalogEntry {
+  final String id;
+  final IconData icon;
+  final String label;
+  final Color accent;
+
+  const _MainControlCatalogEntry({
+    required this.id,
+    required this.icon,
+    required this.label,
+    required this.accent,
+  });
+}
+
+const _mainControlCatalog = [
+  _MainControlCatalogEntry(
+    id: 'find',
+    icon: Icons.volume_up,
+    label: '寻车',
+    accent: AppColors.accentTeal,
+  ),
+  _MainControlCatalogEntry(
+    id: 'lock',
+    icon: Icons.lock_outline,
+    label: '设防 / 解锁',
+    accent: _serviceAccentAmber,
+  ),
+  _MainControlCatalogEntry(
+    id: 'seat',
+    icon: Icons.inventory_2,
+    label: '座桶',
+    accent: Color(0xFF8D6E63),
+  ),
+];
+
+/// 首页主控区：整条全宽黑色滑块 + 可排序控制按钮（默认寻车 / 设防 / 座桶）。
+/// 长按按钮行打开编辑页。
 class _OfficialMainControlCard extends StatelessWidget {
   final String powerLabel;
   final String powerHint;
@@ -26,18 +88,8 @@ class _OfficialMainControlCard extends StatelessWidget {
   final String disabledReason;
   final VoidCallback onDisabledTap;
   final VoidCallback onPowerSlideComplete;
-  final IconData lockIcon;
-  final String lockLabel;
-  final bool lockActive;
-  final VoidCallback onLockTap;
-  final bool findActive;
-  final bool findEnabled;
-  final String findDisabledReason;
-  final VoidCallback onFindTap;
-  final bool seatActive;
-  final bool seatEnabled;
-  final String seatDisabledReason;
-  final VoidCallback onSeatTap;
+  final List<_MainControlButtonData> buttons;
+  final VoidCallback onEditButtons;
 
   const _OfficialMainControlCard({
     required this.powerLabel,
@@ -51,18 +103,8 @@ class _OfficialMainControlCard extends StatelessWidget {
     required this.disabledReason,
     required this.onDisabledTap,
     required this.onPowerSlideComplete,
-    required this.lockIcon,
-    required this.lockLabel,
-    required this.lockActive,
-    required this.onLockTap,
-    required this.findActive,
-    required this.findEnabled,
-    required this.findDisabledReason,
-    required this.onFindTap,
-    required this.seatActive,
-    required this.seatEnabled,
-    required this.seatDisabledReason,
-    required this.onSeatTap,
+    required this.buttons,
+    required this.onEditButtons,
   });
 
   @override
@@ -90,49 +132,23 @@ class _OfficialMainControlCard extends StatelessWidget {
           height: 84,
           child: Row(
             children: [
-              Expanded(
-                child: _OfficialSmallControlButton(
-                  icon: Icons.volume_up,
-                  label: '寻车',
-                  accentColor: AppColors.accentTeal,
-                  loadingLabel: ControlLoadingLabel.find.text,
-                  enabled: findEnabled,
-                  active: findActive,
-                  loading: findActive,
-                  disabledReason: findDisabledReason,
-                  onTap: onFindTap,
+              for (var i = 0; i < buttons.length; i++) ...[
+                if (i > 0) const SizedBox(width: 10),
+                Expanded(
+                  child: _OfficialSmallControlButton(
+                    icon: buttons[i].icon,
+                    label: buttons[i].label,
+                    accentColor: buttons[i].accent,
+                    loadingLabel: buttons[i].loadingLabel,
+                    enabled: buttons[i].enabled,
+                    active: buttons[i].active,
+                    loading: buttons[i].active,
+                    disabledReason: buttons[i].disabledReason,
+                    onTap: buttons[i].onTap,
+                    onLongPress: onEditButtons,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _OfficialSmallControlButton(
-                  icon: lockIcon,
-                  label: lockLabel,
-                  accentColor: _serviceAccentAmber,
-                  loadingLabel: lockLabel == '解锁'
-                      ? ControlLoadingLabel.unlock.text
-                      : ControlLoadingLabel.lock.text,
-                  enabled: enabled,
-                  active: lockActive,
-                  loading: lockActive,
-                  disabledReason: disabledReason,
-                  onTap: onLockTap,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _OfficialSmallControlButton(
-                  icon: Icons.inventory_2,
-                  label: '座桶',
-                  accentColor: const Color(0xFF8D6E63),
-                  loadingLabel: ControlLoadingLabel.execute.text,
-                  enabled: seatEnabled,
-                  active: seatActive,
-                  loading: seatActive,
-                  disabledReason: seatDisabledReason,
-                  onTap: onSeatTap,
-                ),
-              ),
+              ],
             ],
           ),
         ),
@@ -151,6 +167,7 @@ class _OfficialSmallControlButton extends StatefulWidget {
   final bool loading;
   final String disabledReason;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   const _OfficialSmallControlButton({
     required this.icon,
@@ -162,6 +179,7 @@ class _OfficialSmallControlButton extends StatefulWidget {
     required this.loading,
     required this.disabledReason,
     required this.onTap,
+    this.onLongPress,
   });
 
   @override
@@ -232,7 +250,7 @@ class _OfficialSmallControlButtonState
                       widget.onTap();
                     }
                   : _showDisabledReason,
-
+              onLongPress: widget.onLongPress,
               onTapDown: interactive ? (_) => _setPressed(true) : null,
               onTapUp: interactive ? (_) => _setPressed(false) : null,
               onTapCancel: interactive ? () => _setPressed(false) : null,
@@ -336,6 +354,159 @@ class _PrimaryPowerControl extends StatelessWidget {
         fadeLabelOnSlide: true,
         onDisabledTap: onDisabledTap,
         onSlideComplete: onSlideComplete,
+      ),
+    );
+  }
+}
+
+/// Edit page for the main control buttons: drag to reorder, toggle to show or
+/// hide each control. Returns the updated [MainControlConfig] (or null when
+/// dismissed). No BLE/control logic — only which buttons appear on home.
+class _MainControlEditPage extends StatefulWidget {
+  final List<_MainControlCatalogEntry> entries;
+  final Set<String> hidden;
+
+  const _MainControlEditPage({required this.entries, required this.hidden});
+
+  @override
+  State<_MainControlEditPage> createState() => _MainControlEditPageState();
+}
+
+class _MainControlEditPageState extends State<_MainControlEditPage> {
+  late List<_MainControlCatalogEntry> _order;
+  late Set<String> _hidden;
+
+  @override
+  void initState() {
+    super.initState();
+    _order = List.of(widget.entries);
+    _hidden = Set.of(widget.hidden);
+  }
+
+  int get _visibleCount => _order.where((e) => !_hidden.contains(e.id)).length;
+
+  void _save() {
+    Navigator.pop(
+      context,
+      MainControlConfig(
+        order: _order.map((e) => e.id).toList(),
+        hidden: _hidden,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            AppPageHeader(
+              title: '主控按钮设置',
+              actions: [TextButton(onPressed: _save, child: const Text('保存'))],
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 4, 20, 12),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '拖动排序，开关控制是否在首页显示（至少保留 1 个）',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: ReorderableListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                physics: const BouncingScrollPhysics(),
+                itemCount: _order.length,
+                onReorder: (oldIndex, newIndex) {
+                  setState(() {
+                    if (newIndex > oldIndex) newIndex -= 1;
+                    final item = _order.removeAt(oldIndex);
+                    _order.insert(newIndex, item);
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final entry = _order[index];
+                  final visible = !_hidden.contains(entry.id);
+                  final lockOff = visible && _visibleCount <= 1;
+                  return Padding(
+                    key: ValueKey(entry.id),
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(ReplicaRadii.card),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: entry.accent.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              entry.icon,
+                              size: 20,
+                              color: entry.accent,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              entry.label,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          Switch(
+                            value: visible,
+                            onChanged: lockOff
+                                ? null
+                                : (value) {
+                                    setState(() {
+                                      if (value) {
+                                        _hidden.remove(entry.id);
+                                      } else {
+                                        _hidden.add(entry.id);
+                                      }
+                                    });
+                                  },
+                          ),
+                          ReorderableDragStartListener(
+                            index: index,
+                            child: const Padding(
+                              padding: EdgeInsets.only(left: 6),
+                              child: Icon(
+                                Icons.drag_handle,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
