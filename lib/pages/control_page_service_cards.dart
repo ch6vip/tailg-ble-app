@@ -10,27 +10,35 @@ class _HomeQuickSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
+      // 第一屏 4 个快捷——匹配「方案C 极简高端」效果图
       _HomeQuickItem(
-        icon: Icons.location_on_outlined,
-        label: '车辆位置',
-        accent: AppColors.info,
+        icon: Icons.location_on,
+        label: '位置',
+        accent: AppColors.danger,
         onTap: () => _open(context, const LocationPage()),
       ),
       _HomeQuickItem(
-        icon: Icons.tune,
-        label: '车辆设置',
-        accent: _phoneControlPrimary,
+        icon: Icons.settings,
+        label: '设置',
+        accent: AppColors.accentTeal,
         onTap: () => _open(context, const VehicleSettingsPage()),
       ),
       _HomeQuickItem(
-        icon: Icons.location_searching,
-        label: '电子围栏',
-        accent: AppColors.success,
+        icon: Icons.fence,
+        label: '围栏',
+        accent: _serviceAccentViolet,
         onTap: () => _open(
           context,
           const LocationPage(initialTab: LocationInitialTab.fence),
         ),
       ),
+      _HomeQuickItem(
+        icon: Icons.music_note,
+        label: '音效',
+        accent: _serviceAccentAmber,
+        onTap: () => _open(context, const QgjSoundEffectsPage()),
+      ),
+      // 第二屏
       _HomeQuickItem(
         icon: Icons.ios_share,
         label: '分享用车',
@@ -38,19 +46,13 @@ class _HomeQuickSection extends StatelessWidget {
         onTap: () => _open(context, const ShareBikePage()),
       ),
       _HomeQuickItem(
-        icon: Icons.graphic_eq,
-        label: '音效设置',
-        accent: const Color(0xFF00A896),
-        onTap: () => _open(context, const QgjSoundEffectsPage()),
-      ),
-      _HomeQuickItem(
         icon: Icons.nfc,
         label: 'NFC钥匙',
-        accent: _serviceAccentViolet,
+        accent: AppColors.accentTeal,
         onTap: () => _open(context, const NfcKeyPage()),
       ),
       _HomeQuickItem(
-        icon: Icons.route_outlined,
+        icon: Icons.route,
         label: '骑行记录',
         accent: _serviceAccentAmber,
         onTap: () => _open(
@@ -219,11 +221,12 @@ class _FunctionSettingsCardState extends State<_FunctionSettingsCard> {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              '快捷功能',
+              'SHORTCUTS',
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: ReplicaColors.ink,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 2,
+                color: AppColors.textTertiary,
               ),
             ),
           ),

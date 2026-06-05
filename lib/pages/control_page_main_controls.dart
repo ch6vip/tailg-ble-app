@@ -13,7 +13,7 @@ enum ControlLoadingLabel {
   const ControlLoadingLabel(this.text);
 }
 
-/// 首页主控区：整条全宽黑色滑块 + 等宽控制按钮一排（寻车 / 设防 / 两个快捷）。
+/// 首页主控区：整条全宽黑色滑块 + 3 个固定控制按钮（寻车 / 设防 / 座桶）。
 class _OfficialMainControlCard extends StatelessWidget {
   final String powerLabel;
   final String powerHint;
@@ -34,17 +34,10 @@ class _OfficialMainControlCard extends StatelessWidget {
   final bool findEnabled;
   final String findDisabledReason;
   final VoidCallback onFindTap;
-  final _QuickControlSpec firstQuick;
-  final _QuickControlSpec secondQuick;
-  final bool firstQuickActive;
-  final bool secondQuickActive;
-  final bool firstQuickEnabled;
-  final String firstQuickDisabledReason;
-  final bool secondQuickEnabled;
-  final String secondQuickDisabledReason;
-  final VoidCallback onFirstQuickTap;
-  final VoidCallback onSecondQuickTap;
-  final VoidCallback onEditQuickTap;
+  final bool seatActive;
+  final bool seatEnabled;
+  final String seatDisabledReason;
+  final VoidCallback onSeatTap;
 
   const _OfficialMainControlCard({
     required this.powerLabel,
@@ -66,17 +59,10 @@ class _OfficialMainControlCard extends StatelessWidget {
     required this.findEnabled,
     required this.findDisabledReason,
     required this.onFindTap,
-    required this.firstQuick,
-    required this.secondQuick,
-    required this.firstQuickActive,
-    required this.secondQuickActive,
-    required this.firstQuickEnabled,
-    required this.firstQuickDisabledReason,
-    required this.secondQuickEnabled,
-    required this.secondQuickDisabledReason,
-    required this.onFirstQuickTap,
-    required this.onSecondQuickTap,
-    required this.onEditQuickTap,
+    required this.seatActive,
+    required this.seatEnabled,
+    required this.seatDisabledReason,
+    required this.onSeatTap,
   });
 
   @override
@@ -106,8 +92,9 @@ class _OfficialMainControlCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _OfficialSmallControlButton(
-                  icon: Icons.volume_up_outlined,
+                  icon: Icons.volume_up,
                   label: '寻车',
+                  accentColor: AppColors.accentTeal,
                   loadingLabel: ControlLoadingLabel.find.text,
                   enabled: findEnabled,
                   active: findActive,
@@ -121,6 +108,7 @@ class _OfficialMainControlCard extends StatelessWidget {
                 child: _OfficialSmallControlButton(
                   icon: lockIcon,
                   label: lockLabel,
+                  accentColor: _serviceAccentAmber,
                   loadingLabel: lockLabel == '解锁'
                       ? ControlLoadingLabel.unlock.text
                       : ControlLoadingLabel.lock.text,
@@ -134,29 +122,15 @@ class _OfficialMainControlCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _OfficialSmallControlButton(
-                  icon: firstQuick.icon,
-                  label: firstQuick.label,
+                  icon: Icons.inventory_2,
+                  label: '座桶',
+                  accentColor: const Color(0xFF8D6E63),
                   loadingLabel: ControlLoadingLabel.execute.text,
-                  enabled: firstQuickEnabled,
-                  active: firstQuickActive,
-                  loading: firstQuickActive,
-                  disabledReason: firstQuickDisabledReason,
-                  onTap: onFirstQuickTap,
-                  onLongPress: onEditQuickTap,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _OfficialSmallControlButton(
-                  icon: secondQuick.icon,
-                  label: secondQuick.label,
-                  loadingLabel: ControlLoadingLabel.execute.text,
-                  enabled: secondQuickEnabled,
-                  active: secondQuickActive,
-                  loading: secondQuickActive,
-                  disabledReason: secondQuickDisabledReason,
-                  onTap: onSecondQuickTap,
-                  onLongPress: onEditQuickTap,
+                  enabled: seatEnabled,
+                  active: seatActive,
+                  loading: seatActive,
+                  disabledReason: seatDisabledReason,
+                  onTap: onSeatTap,
                 ),
               ),
             ],
@@ -170,24 +144,24 @@ class _OfficialMainControlCard extends StatelessWidget {
 class _OfficialSmallControlButton extends StatefulWidget {
   final IconData icon;
   final String label;
+  final Color? accentColor;
   final String loadingLabel;
   final bool enabled;
   final bool active;
   final bool loading;
   final String disabledReason;
   final VoidCallback onTap;
-  final VoidCallback? onLongPress;
 
   const _OfficialSmallControlButton({
     required this.icon,
     required this.label,
+    this.accentColor,
     this.loadingLabel = '执行中',
     required this.enabled,
     required this.active,
     required this.loading,
     required this.disabledReason,
     required this.onTap,
-    this.onLongPress,
   });
 
   @override
@@ -217,14 +191,15 @@ class _OfficialSmallControlButtonState
   @override
   Widget build(BuildContext context) {
     final interactive = widget.enabled && !widget.loading;
-    final color = widget.active ? ReplicaColors.blue : AppColors.dark;
+    final accent = widget.accentColor ?? AppColors.dark;
+    final color = widget.active ? accent : accent;
     final background = widget.active
-        ? ReplicaColors.blue.withValues(alpha: _pressed ? 0.16 : 0.1)
+        ? accent.withValues(alpha: _pressed ? 0.16 : 0.1)
         : _pressed
         ? const Color(0xFFF2F2F0)
         : Colors.white;
     final borderColor = widget.active
-        ? ReplicaColors.blue.withValues(alpha: _pressed ? 0.24 : 0.14)
+        ? accent.withValues(alpha: _pressed ? 0.24 : 0.14)
         : _pressed
         ? const Color(0xFFE0E0DD)
         : AppColors.border;
@@ -257,12 +232,7 @@ class _OfficialSmallControlButtonState
                       widget.onTap();
                     }
                   : _showDisabledReason,
-              onLongPress: widget.onLongPress == null
-                  ? null
-                  : () {
-                      HapticFeedback.selectionClick();
-                      widget.onLongPress!();
-                    },
+
               onTapDown: interactive ? (_) => _setPressed(true) : null,
               onTapUp: interactive ? (_) => _setPressed(false) : null,
               onTapCancel: interactive ? () => _setPressed(false) : null,

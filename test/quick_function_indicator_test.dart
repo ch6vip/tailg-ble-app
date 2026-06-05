@@ -25,7 +25,7 @@ Future<void> _pumpControlPage(WidgetTester tester, Size size) async {
   await tester.pumpWidget(const MaterialApp(home: ControlPage()));
   await tester.pump(const Duration(milliseconds: 50));
   expect(tester.takeException(), isNull);
-  expect(find.text('快捷功能'), findsOneWidget);
+  expect(find.text('SHORTCUTS'), findsOneWidget);
 }
 
 void main() {

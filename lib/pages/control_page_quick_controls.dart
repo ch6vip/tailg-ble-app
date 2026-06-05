@@ -62,13 +62,6 @@ List<_QuickControlSpec> get _quickControlSpecs => [
   ),
 ];
 
-_QuickControlSpec _quickControlSpec(String id) {
-  return _quickControlSpecs.firstWhere(
-    (spec) => spec.id == id,
-    orElse: () => _quickControlSpecs.first,
-  );
-}
-
 class QuickControlEditPage extends StatefulWidget {
   final QuickControlConfig initialConfig;
 
