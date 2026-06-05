@@ -149,6 +149,30 @@ class QuickControlConfig {
   }
 }
 
+/// Home-screen "SHORTCUTS" customization: which quick shortcuts show on the
+/// home grid and in what order. Only the [order]/[hidden] of known shortcut ids
+/// is persisted; the catalog (icon/label/target) lives in the UI layer so new
+/// shortcuts can be added without a migration.
+class QuickShortcutsConfig {
+  /// Display order of shortcut ids. Ids not present here are appended in
+  /// catalog order so newly added shortcuts still surface.
+  final List<String> order;
+
+  /// Ids hidden from the home grid (still reachable via the edit page).
+  final Set<String> hidden;
+
+  const QuickShortcutsConfig({this.order = const [], this.hidden = const {}});
+
+  Map<String, dynamic> toJson() => {'order': order, 'hidden': hidden.toList()};
+
+  factory QuickShortcutsConfig.fromJson(Map<String, dynamic> json) {
+    final order = (json['order'] as List?)?.whereType<String>().toList() ?? [];
+    final hidden =
+        (json['hidden'] as List?)?.whereType<String>().toSet() ?? <String>{};
+    return QuickShortcutsConfig(order: order, hidden: hidden);
+  }
+}
+
 class ReplicaFeatureStore {
   static final ReplicaFeatureStore _instance = ReplicaFeatureStore._();
   factory ReplicaFeatureStore() => _instance;
@@ -158,6 +182,7 @@ class ReplicaFeatureStore {
   static const _prefFenceConfig = 'replica_fence_config';
   static const _prefShareMembers = 'replica_share_members';
   static const _prefQuickControlConfig = 'replica_quick_control_config';
+  static const _prefQuickShortcutsConfig = 'replica_quick_shortcuts_config';
 
   Future<List<NfcKeyRecord>> loadNfcKeys() async {
     final raw = (await SharedPreferences.getInstance()).getString(_prefNfcKeys);
@@ -210,6 +235,24 @@ class ReplicaFeatureStore {
   Future<void> saveQuickControlConfig(QuickControlConfig config) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefQuickControlConfig, jsonEncode(config.toJson()));
+  }
+
+  Future<QuickShortcutsConfig> loadQuickShortcutsConfig() async {
+    final raw = (await SharedPreferences.getInstance()).getString(
+      _prefQuickShortcutsConfig,
+    );
+    if (raw == null || raw.isEmpty) return const QuickShortcutsConfig();
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map) return const QuickShortcutsConfig();
+    return QuickShortcutsConfig.fromJson(Map<String, dynamic>.from(decoded));
+  }
+
+  Future<void> saveQuickShortcutsConfig(QuickShortcutsConfig config) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _prefQuickShortcutsConfig,
+      jsonEncode(config.toJson()),
+    );
   }
 
   String makeId() => DateTime.now().microsecondsSinceEpoch.toString();
