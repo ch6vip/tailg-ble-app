@@ -211,7 +211,7 @@ class _FunctionSettingsCardState extends State<_FunctionSettingsCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(0, 14, 0, 10),
+      padding: const EdgeInsets.fromLTRB(0, 16, 0, 12),
       decoration: _cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,7 +520,7 @@ class _OfficialSettingsServiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 158,
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       decoration: _cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

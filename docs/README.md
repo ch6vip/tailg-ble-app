@@ -21,6 +21,7 @@
 | 真机验证 | [first_batch_verification](first_batch_verification.md) | 记录暂不执行但后续必须跑的真机测试清单 |
 | 云端方案 | [cloud_architecture_plan](cloud_architecture_plan.md) | 记录官方 App 复刻优先、官方云桥接、BLE 兜底和服务生态路线 |
 | 构建说明 | [android_build_notes](android_build_notes.md) | 记录 Android 构建 warning 和本地处理顺序 |
+| 历史归档 | [legacy_readme](legacy_readme.md) | 旧版根 README 原文（含特定开发机 Windows 路径），仅作参考 |
 
 ## 维护规则
 
