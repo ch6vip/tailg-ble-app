@@ -12,7 +12,9 @@ abstract final class AppColors {
   static const success = Color(0xFF00A896);
   static const warning = Color(0xFFFF9800);
   static const danger = Color(0xFFFF5252);
-  static const info = Color(0xFF2196F3);
+  // 信息提示色统一为极简高端 teal（原 #2196F3 蓝已下线）。类别色冲突处
+  // （骑行模式 standard、电池 BLE 来源 chip）已就地改用其它 token 以保持区分。
+  static const info = Color(0xFF00A896);
   static const navInactive = Color(0xFFCCCCCC);
 
   /// 官方品牌红，仅复刻保真场景使用。
