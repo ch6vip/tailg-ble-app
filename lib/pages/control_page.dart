@@ -42,8 +42,7 @@ const _pageBg = ReplicaColors.pageBg;
 const _kmPerPercent = 0.65;
 const _phoneControlItemBg = Color(0xFFF7F8FA);
 const _phoneControlPrimary = ReplicaColors.blue;
-const _phoneControlPrimaryPressed = Color(0x225596FF);
-const _phoneControlRadius = 8.0;
+const _phoneControlRadius = 16.0;
 const _officialPressedBg = Color(0xFFE5E5E5);
 
 // 服务卡片强调色（control_page_service_cards.dart 复用）
@@ -56,7 +55,7 @@ const _controlConfirmPollDelay = Duration(milliseconds: 800);
 const _cardDecoration = BoxDecoration(
   color: Colors.white,
   borderRadius: BorderRadius.all(Radius.circular(ReplicaRadii.card)),
-  boxShadow: AppShadows.cardShadow,
+  border: Border.fromBorderSide(BorderSide(color: AppColors.border, width: 1)),
 );
 
 int? _normalizePercent(int? value) {

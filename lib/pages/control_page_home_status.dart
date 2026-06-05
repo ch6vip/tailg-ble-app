@@ -26,12 +26,12 @@ class _StatusSection extends StatelessWidget {
                   : cloudVehicle?.electricQuantity,
             );
             final batteryColor = battery == null
-                ? Colors.grey
+                ? AppColors.textTertiary
                 : battery > 60
-                ? Colors.green
+                ? AppColors.success
                 : battery > 20
-                ? Colors.orange
-                : Colors.red;
+                ? AppColors.warning
+                : AppColors.danger;
             final mileage = cloudVehicle?.mileage;
             final rangeText = mileage != null
                 ? _formatMetricNumber(mileage)
@@ -124,12 +124,13 @@ class _HomeMetric extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: ReplicaColors.muted,
+              color: AppColors.textTertiary,
+              letterSpacing: 1.2,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           if (isPlaceholder)
             Row(
               children: [
@@ -161,10 +162,10 @@ class _HomeMetric extends StatelessWidget {
               builder: (context, animated, _) {
                 final display = _formatAnimated(value, animated);
                 final fontSize = display.length > 4
-                    ? 26.0
-                    : display.length > 3
                     ? 30.0
-                    : 32.0;
+                    : display.length > 3
+                    ? 36.0
+                    : 42.0;
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
@@ -177,7 +178,8 @@ class _HomeMetric extends StatelessWidget {
                         style: TextStyle(
                           fontSize: fontSize,
                           height: 1,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -1,
                           color: color,
                         ),
                       ),
@@ -190,7 +192,7 @@ class _HomeMetric extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: ReplicaColors.ink,
+                            color: AppColors.textTertiary,
                           ),
                         ),
                       ),
@@ -242,8 +244,9 @@ class _HomeChannelPill extends StatelessWidget {
       height: 32,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.78),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(ReplicaRadii.pill),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

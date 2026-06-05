@@ -8,9 +8,9 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusText = connState.label;
     final statusColor = switch (connState) {
-      ble.ConnectionState.ready => Colors.green,
-      ble.ConnectionState.reconnecting => Colors.orange,
-      _ => Colors.grey,
+      ble.ConnectionState.ready => AppColors.success,
+      ble.ConnectionState.reconnecting => AppColors.warning,
+      _ => AppColors.textTertiary,
     };
     final isConnecting =
         connState == ble.ConnectionState.connecting ||
@@ -53,8 +53,8 @@ class _Header extends StatelessWidget {
                 : statusText;
             final effectiveStatusColor = useCloudStatus
                 ? cloudVehicle.online
-                      ? Colors.green
-                      : Colors.grey
+                      ? AppColors.success
+                      : AppColors.textTertiary
                 : statusColor;
             final statusIcon = useCloudStatus
                 ? cloudVehicle.online

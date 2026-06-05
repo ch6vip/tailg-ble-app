@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'ble/connection_manager.dart' as ble;
@@ -99,6 +98,7 @@ class _TailgBleAppState extends State<TailgBleApp> {
           seedColor: AppColors.primary,
           brightness: Brightness.light,
         ),
+        scaffoldBackgroundColor: AppColors.pageBg,
         useMaterial3: true,
       ),
       // The app is intentionally light-only: every page is built on the fixed
@@ -267,43 +267,61 @@ class _HomePageState extends State<HomePage>
         ),
       ),
       extendBody: true,
-      bottomNavigationBar: ClipRRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.92),
-              border: Border(
-                top: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  width: 0.5,
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.pageBg,
+          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+            ),
+            child: NavigationBarTheme(
+              data: NavigationBarThemeData(
+                iconTheme: WidgetStateProperty.resolveWith(
+                  (states) => IconThemeData(
+                    size: 24,
+                    color: states.contains(WidgetState.selected)
+                        ? AppColors.dark
+                        : AppColors.navInactive,
+                  ),
+                ),
+                labelTextStyle: WidgetStateProperty.resolveWith(
+                  (states) => TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: states.contains(WidgetState.selected)
+                        ? AppColors.dark
+                        : AppColors.navInactive,
+                  ),
                 ),
               ),
-            ),
-            child: SafeArea(
-              top: false,
               child: NavigationBar(
                 height: AppNav.barBaseHeight,
                 selectedIndex: _currentIndex,
                 onDestinationSelected: _switchTab,
-                backgroundColor: Colors.white.withValues(alpha: 0.92),
+                backgroundColor: AppColors.pageBg,
                 surfaceTintColor: Colors.transparent,
-                indicatorColor: AppColors.primary.withValues(alpha: 0.12),
+                indicatorColor: Colors.transparent,
+                overlayColor: WidgetStateProperty.all(Colors.transparent),
                 labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
                 destinations: const [
                   NavigationDestination(
                     icon: Icon(Icons.search),
-                    selectedIcon: Icon(Icons.search),
+                    selectedIcon: _NavDotIcon(Icons.search),
                     label: '扫描',
                   ),
                   NavigationDestination(
                     icon: Icon(Icons.directions_car_outlined),
-                    selectedIcon: Icon(Icons.directions_car),
+                    selectedIcon: _NavDotIcon(Icons.directions_car),
                     label: '爱车',
                   ),
                   NavigationDestination(
                     icon: Icon(Icons.settings_outlined),
-                    selectedIcon: Icon(Icons.settings),
+                    selectedIcon: _NavDotIcon(Icons.settings),
                     label: '设置',
                   ),
                 ],
@@ -312,6 +330,31 @@ class _HomePageState extends State<HomePage>
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 极简高端底部导航选中态：图标上方一个小黑点指示器。
+class _NavDotIcon extends StatelessWidget {
+  final IconData icon;
+  const _NavDotIcon(this.icon);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 4,
+          height: 4,
+          margin: const EdgeInsets.only(bottom: 4),
+          decoration: const BoxDecoration(
+            color: AppColors.dark,
+            shape: BoxShape.circle,
+          ),
+        ),
+        Icon(icon, color: AppColors.dark),
+      ],
     );
   }
 }

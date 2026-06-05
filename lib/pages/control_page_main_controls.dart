@@ -126,8 +126,7 @@ class _OfficialMainControlCard extends StatelessWidget {
 BoxDecoration get _officialControlCardDecoration => BoxDecoration(
   color: Colors.white,
   borderRadius: BorderRadius.circular(_phoneControlRadius),
-  border: Border.all(color: Colors.white),
-  boxShadow: AppShadows.cardShadow,
+  border: Border.all(color: AppColors.border),
 );
 
 class _OfficialSmallControlButton extends StatefulWidget {
@@ -180,17 +179,17 @@ class _OfficialSmallControlButtonState
   @override
   Widget build(BuildContext context) {
     final interactive = widget.enabled && !widget.loading;
-    final color = widget.active ? ReplicaColors.blue : ReplicaColors.muted;
+    final color = widget.active ? ReplicaColors.blue : AppColors.dark;
     final background = widget.active
         ? ReplicaColors.blue.withValues(alpha: _pressed ? 0.16 : 0.1)
         : _pressed
-        ? const Color(0xFFE4E6EB)
-        : const Color(0xFFF3F3F7);
+        ? const Color(0xFFF2F2F0)
+        : Colors.white;
     final borderColor = widget.active
         ? ReplicaColors.blue.withValues(alpha: _pressed ? 0.24 : 0.14)
         : _pressed
-        ? const Color(0xFFD7D9DE)
-        : const Color(0xFFEDEFF3);
+        ? const Color(0xFFE0E0DD)
+        : AppColors.border;
     final iconSize = widget.large ? 34.0 : 26.0;
     final fontSize = widget.large ? 18.0 : 12.0;
     final iconGap = widget.large ? 5.0 : 6.0;
@@ -201,7 +200,7 @@ class _OfficialSmallControlButtonState
         duration: const Duration(milliseconds: 120),
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: borderColor),
         ),
         child: AnimatedOpacity(
@@ -210,7 +209,7 @@ class _OfficialSmallControlButtonState
           curve: Curves.easeOut,
           child: Material(
             color: Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(16),
             child: InkWell(
               onTap: widget.loading
                   ? null
@@ -223,7 +222,7 @@ class _OfficialSmallControlButtonState
               onTapDown: interactive ? (_) => _setPressed(true) : null,
               onTapUp: interactive ? (_) => _setPressed(false) : null,
               onTapCancel: interactive ? () => _setPressed(false) : null,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: Column(
@@ -241,10 +240,10 @@ class _OfficialSmallControlButtonState
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: fontSize,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           color: widget.enabled
-                              ? ReplicaColors.muted
-                              : Colors.grey,
+                              ? AppColors.textSecondary
+                              : AppColors.textTertiary,
                         ),
                       ),
                     ),
@@ -297,12 +296,12 @@ class _PrimaryPowerControl extends StatelessWidget {
         reverseSlide: reverseSlide,
         loading: loading,
         loadingLabel: loadingLabel,
-        backgroundColor: _phoneControlItemBg,
-        thumbColor: enabled ? _phoneControlItemBg : _phoneControlPrimaryPressed,
+        backgroundColor: enabled ? AppColors.dark : const Color(0xFFE8E8E5),
+        thumbColor: Colors.white,
         enabled: enabled,
         height: 76,
         thumbSize: 64,
-        thumbRadius: 8,
+        thumbRadius: 16,
         trackInset: 6,
         iconSize: 30,
         labelFontSize: 13,
@@ -311,12 +310,14 @@ class _PrimaryPowerControl extends StatelessWidget {
         // The thumb already carries a double-arrow icon; a second pair of
         // direction chevrons next to the label is redundant.
         showCenterChevron: false,
-        labelColor: enabled ? ReplicaColors.muted : AppColors.warning,
-        chevronColor: ReplicaColors.subtle,
-        thumbIconColor: ReplicaColors.muted,
-        disabledBackgroundColor: _phoneControlItemBg,
-        disabledThumbColor: const Color(0xFFE3E6EC),
-        disabledIconColor: ReplicaColors.subtle,
+        labelColor: enabled
+            ? Colors.white.withValues(alpha: 0.85)
+            : AppColors.textTertiary,
+        chevronColor: Colors.white.withValues(alpha: 0.5),
+        thumbIconColor: AppColors.dark,
+        disabledBackgroundColor: const Color(0xFFE8E8E5),
+        disabledThumbColor: Colors.white,
+        disabledIconColor: AppColors.textTertiary,
         completionThreshold: 0.99,
         fadeLabelOnSlide: true,
         onDisabledTap: onDisabledTap,
