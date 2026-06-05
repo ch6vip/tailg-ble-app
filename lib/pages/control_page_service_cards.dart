@@ -686,7 +686,7 @@ class _NfcServiceCard extends StatelessWidget {
     return _OfficialPressable(
       onTap: onTap,
       child: Container(
-        height: 112,
+        constraints: const BoxConstraints(minHeight: 112),
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
