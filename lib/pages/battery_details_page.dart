@@ -218,24 +218,30 @@ class _BatteryHero extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: percent == null
+                      ? CrossAxisAlignment.center
+                      : CrossAxisAlignment.start,
                   children: [
                     Text(
                       percent == null ? '--' : '$percent',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 88,
                         fontWeight: FontWeight.w300,
-                        color: ReplicaColors.ink,
+                        color: percent == null
+                            ? AppColors.textTertiary
+                            : ReplicaColors.ink,
                         height: 0.92,
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.only(top: 9),
+                    Padding(
+                      padding: EdgeInsets.only(top: percent == null ? 0 : 9),
                       child: Text(
                         '%',
                         style: TextStyle(
                           fontSize: 24,
-                          color: ReplicaColors.ink,
+                          color: percent == null
+                              ? AppColors.textTertiary
+                              : ReplicaColors.ink,
                           fontWeight: FontWeight.w400,
                         ),
                       ),

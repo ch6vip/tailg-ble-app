@@ -51,17 +51,18 @@ class _UnboundVehicleHome extends StatelessWidget {
               _OfficialActionButton(
                 label: '绑定设备',
                 foreground: Colors.white,
-                background: AppColors.brandRed,
-                borderColor: AppColors.brandRed,
+                background: AppColors.primary,
+                borderColor: AppColors.primary,
                 onTap: () => openScanTab(context),
               ),
               const SizedBox(height: 12),
               _OfficialActionButton(
-                label: '虚拟体验',
-                foreground: AppColors.brandRed,
-                background: ReplicaColors.pageBg,
-                borderColor: AppColors.brandRed,
-                onTap: () => _showSnack(context, '虚拟体验页待复刻，当前可先登录官方账号查看云端车辆'),
+                label: '虚拟体验（演示）',
+                foreground: ReplicaColors.secondary,
+                background: Colors.white,
+                borderColor: AppColors.border,
+                onTap: () =>
+                    _showSnack(context, '虚拟体验功能开发中，可先「绑定设备」或登录官方账号查看车辆'),
               ),
               const SizedBox(height: 8),
               TextButton(
@@ -171,9 +172,13 @@ class _UnboundBanner extends StatelessWidget {
                     ),
                   ),
                 ),
-                Positioned.fill(
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 40,
                   child: RepaintBoundary(
-                    child: CustomPaint(painter: const _UnboundBannerPainter()),
+                    child: CustomPaint(painter: _UnboundBannerPainter()),
                   ),
                 ),
                 const Positioned(
@@ -257,7 +262,7 @@ class _BannerDot extends StatelessWidget {
       width: active ? 28 : 8,
       height: 6,
       decoration: BoxDecoration(
-        color: active ? AppColors.brandRed : const Color(0xFFD8DAE2),
+        color: active ? AppColors.primary : const Color(0xFFD8DAE2),
         borderRadius: BorderRadius.circular(3),
       ),
     );
