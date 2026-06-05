@@ -237,15 +237,6 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
             },
           ),
           const SizedBox(height: 12),
-          _OfficialSettingsServiceCard(
-            onSettingsTap: () => _open(context, const VehicleSettingsPage()),
-            onFenceTap: () => _open(
-              context,
-              const LocationPage(initialTab: LocationInitialTab.fence),
-            ),
-            onShareTap: () => _open(context, const ShareBikePage()),
-          ),
-          const SizedBox(height: 12),
           _SoundEffectsServiceCard(
             onTap: () => _open(context, const QgjSoundEffectsPage()),
           ),
@@ -785,107 +776,6 @@ class _OfficialServiceBannerCard extends StatelessWidget {
   }
 }
 
-class _OfficialSettingsServiceCard extends StatelessWidget {
-  final VoidCallback onSettingsTap;
-  final VoidCallback onFenceTap;
-  final VoidCallback onShareTap;
-
-  const _OfficialSettingsServiceCard({
-    required this.onSettingsTap,
-    required this.onFenceTap,
-    required this.onShareTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 158,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-      decoration: _cardDecoration,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _ServiceTitle('常用服务'),
-          const SizedBox(height: 12),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  child: _ServiceSettingButton(
-                    icon: Icons.tune,
-                    label: '车辆设置',
-                    color: ReplicaColors.blue,
-                    onTap: onSettingsTap,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _ServiceSettingButton(
-                    icon: Icons.location_searching,
-                    label: '电子围栏',
-                    color: AppColors.success,
-                    onTap: onFenceTap,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _ServiceSettingButton(
-                    icon: Icons.ios_share,
-                    label: '分享用车',
-                    color: _serviceAccentViolet,
-                    onTap: onShareTap,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ServiceSettingButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _ServiceSettingButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _OfficialPressable(
-      onTap: onTap,
-      radius: 10,
-      background: Colors.white,
-      pressedBackground: _officialPressedBg,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _ServiceIconBox(icon: icon, color: color, size: 42),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 12,
-              color: ReplicaColors.muted,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _SoundEffectsServiceCard extends StatelessWidget {
   final VoidCallback onTap;
 
@@ -895,16 +785,14 @@ class _SoundEffectsServiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return _OfficialPressable(
       onTap: onTap,
-      background: const Color(0xFF20242B),
-      pressedBackground: const Color(0xFF343943),
       child: SizedBox(
-        height: 96,
+        height: 92,
         child: Stack(
           children: [
             const Positioned.fill(
               child: RepaintBoundary(
                 child: CustomPaint(
-                  painter: _SoundWavePainter(color: AppColors.primary),
+                  painter: _SoundWavePainter(color: _serviceAccentAmber),
                 ),
               ),
             ),
@@ -914,8 +802,7 @@ class _SoundEffectsServiceCard extends StatelessWidget {
                 children: [
                   _ServiceIconBox(
                     icon: Icons.graphic_eq,
-                    color: AppColors.primary,
-                    dark: true,
+                    color: _serviceAccentAmber,
                   ),
                   SizedBox(width: 16),
                   Expanded(
@@ -923,14 +810,7 @@ class _SoundEffectsServiceCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '音效设置',
-                          style: TextStyle(
-                            fontSize: 17,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+                        _ServiceTitle('音效设置'),
                         SizedBox(height: 7),
                         Text(
                           'QGJ 个性化提示音',
@@ -938,14 +818,18 @@ class _SoundEffectsServiceCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFFB8C0CC),
+                            color: ReplicaColors.muted,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Icon(Icons.chevron_right, size: 22, color: Colors.white70),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 22,
+                    color: ReplicaColors.muted,
+                  ),
                 ],
               ),
             ),
@@ -1221,13 +1105,11 @@ class _ServiceIconBox extends StatelessWidget {
   final IconData icon;
   final Color color;
   final double size;
-  final bool dark;
 
   const _ServiceIconBox({
     required this.icon,
     required this.color,
     this.size = 50,
-    this.dark = false,
   });
 
   @override
@@ -1236,9 +1118,7 @@ class _ServiceIconBox extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: dark
-            ? Colors.white.withValues(alpha: 0.12)
-            : color.withValues(alpha: 0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Icon(icon, size: size * 0.48, color: color),
