@@ -244,14 +244,24 @@ class _HomePageState extends State<HomePage>
           position: _slideAnim,
           child: IndexedStack(
             index: _currentIndex,
-            children: const [ScanPage(), ControlPage(), SettingsPage()],
+            children: [
+              TickerMode(enabled: _currentIndex == 0, child: const ScanPage()),
+              TickerMode(
+                enabled: _currentIndex == 1,
+                child: const ControlPage(),
+              ),
+              TickerMode(
+                enabled: _currentIndex == 2,
+                child: const SettingsPage(),
+              ),
+            ],
           ),
         ),
       ),
       extendBody: true,
       bottomNavigationBar: ClipRRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.92),

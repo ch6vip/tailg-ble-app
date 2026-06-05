@@ -340,7 +340,7 @@ class _SweepHighlightState extends State<_SweepHighlight>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
-    )..repeat();
+    )..forward();
   }
 
   @override
