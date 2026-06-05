@@ -75,6 +75,36 @@ const _buttonShape = RoundedRectangleBorder(
   borderRadius: BorderRadius.all(Radius.circular(AppRadii.md)),
 );
 
+/// 统一的页面转场：新页面淡入并轻微上滑，呼应 App 内列表/卡片的入场动画。
+class _FadeUpPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _FadeUpPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    return FadeTransition(
+      opacity: curved,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.035),
+          end: Offset.zero,
+        ).animate(curved),
+        child: child,
+      ),
+    );
+  }
+}
+
 class TailgBleApp extends StatefulWidget {
   const TailgBleApp({super.key});
 
@@ -130,6 +160,15 @@ class _TailgBleAppState extends State<TailgBleApp> {
         ),
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(shape: _buttonShape),
+        ),
+        // 统一页面转场：所有平台用同一套淡入 + 轻微上滑的转场，呼应 App 内
+        // 列表项/卡片的入场微交互，比各平台默认转场更顺滑一致。
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: _FadeUpPageTransitionsBuilder(),
+            TargetPlatform.iOS: _FadeUpPageTransitionsBuilder(),
+            TargetPlatform.fuchsia: _FadeUpPageTransitionsBuilder(),
+          },
         ),
       ),
       // The app is intentionally light-only: every page is built on the fixed

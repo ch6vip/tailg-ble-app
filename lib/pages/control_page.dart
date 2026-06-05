@@ -80,6 +80,20 @@ class _ControlPageState extends State<ControlPage>
   @override
   bool get wantKeepAlive => true;
 
+  /// Pull-to-refresh: re-sync cloud vehicle data when signed in, otherwise just
+  /// settle briefly so the indicator animation feels intentional.
+  Future<void> _handleRefresh(OfficialCloudState cloudState) async {
+    if (cloudState.signedIn) {
+      try {
+        await officialCloudService.refreshVehicles(force: true);
+      } catch (e) {
+        logService.operation('首页下拉刷新失败', detail: '$e', level: LogLevel.warning);
+      }
+    } else {
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -112,31 +126,38 @@ class _ControlPageState extends State<ControlPage>
                 return Scaffold(
                   backgroundColor: _pageBg,
                   body: SafeArea(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.only(
-                        bottom: AppNav.contentBottomPadding,
-                      ),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 260),
-                        switchInCurve: Curves.easeOutCubic,
-                        switchOutCurve: Curves.easeInCubic,
-                        child: showUnboundHome
-                            ? const _UnboundVehicleHome()
-                            : Column(
-                                key: const ValueKey('bound-home'),
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _HomeTopSection(connState: connState),
-                                  const SizedBox(height: 14),
-                                  _ControlArea(connState: connState),
-                                  const SizedBox(height: 14),
-                                  const _HomeQuickSection(),
-                                  const SizedBox(height: 14),
-                                  _RidingModeSelector(connState: connState),
-                                  const SizedBox(height: 20),
-                                ],
-                              ),
+                    child: RefreshIndicator(
+                      onRefresh: () => _handleRefresh(cloudState),
+                      color: AppColors.primary,
+                      backgroundColor: Colors.white,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        padding: const EdgeInsets.only(
+                          bottom: AppNav.contentBottomPadding,
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 260),
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          child: showUnboundHome
+                              ? const _UnboundVehicleHome()
+                              : Column(
+                                  key: const ValueKey('bound-home'),
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _HomeTopSection(connState: connState),
+                                    const SizedBox(height: 14),
+                                    _ControlArea(connState: connState),
+                                    const SizedBox(height: 14),
+                                    const _HomeQuickSection(),
+                                    const SizedBox(height: 14),
+                                    _RidingModeSelector(connState: connState),
+                                    const SizedBox(height: 20),
+                                  ],
+                                ),
+                        ),
                       ),
                     ),
                   ),

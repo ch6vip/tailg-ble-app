@@ -418,15 +418,65 @@ class _DeviceList extends StatelessWidget {
         final connecting = connectingRemoteId == remoteId;
         final disabled = connectingRemoteId != null && !connecting;
         return Padding(
+          key: ValueKey(remoteId),
           padding: const EdgeInsets.only(bottom: 10),
-          child: _DeviceCard(
-            result: r,
-            connecting: connecting,
-            disabled: disabled,
-            onTap: () => onTap(r.device),
+          child: _DeviceEntrance(
+            child: _DeviceCard(
+              result: r,
+              connecting: connecting,
+              disabled: disabled,
+              onTap: () => onTap(r.device),
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+/// Plays a one-shot fade + slide-up animation when a device card first appears
+/// in the list. Keyed by the device id upstream so each newly discovered device
+/// animates in once and existing cards stay put on subsequent scan updates.
+class _DeviceEntrance extends StatefulWidget {
+  final Widget child;
+  const _DeviceEntrance({required this.child});
+
+  @override
+  State<_DeviceEntrance> createState() => _DeviceEntranceState();
+}
+
+class _DeviceEntranceState extends State<_DeviceEntrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 320),
+      vsync: this,
+    );
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.12),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
     );
   }
 }
