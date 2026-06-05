@@ -8,6 +8,7 @@ import '../config/map_tile_config.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
 import '../services/location_service.dart';
+import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../services/replica_feature_store.dart';
 import '../services/vehicle_store.dart';
@@ -62,6 +63,11 @@ class _LocationPageState extends State<LocationPage> {
       );
       _showSnack('本地位置已更新');
     } catch (e) {
+      LogService().operation(
+        '本地车辆位置刷新失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
       if (mounted) setState(() => _localError = _errorMessage(e));
     } finally {
       if (mounted) setState(() => _localLoading = false);
@@ -83,6 +89,11 @@ class _LocationPageState extends State<LocationPage> {
       ]);
       if (!silent) _showSnack('官方地图数据已刷新');
     } catch (e) {
+      LogService().operation(
+        '官云地图数据刷新失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
       if (!silent && mounted) setState(() => _localError = _errorMessage(e));
     }
   }
@@ -91,6 +102,11 @@ class _LocationPageState extends State<LocationPage> {
     try {
       await OfficialCloudService().refreshTravelHistory(month: month);
     } catch (e) {
+      LogService().operation(
+        '官云行程历史刷新失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
       if (mounted) _showSnack(_errorMessage(e));
     }
   }
@@ -106,6 +122,11 @@ class _LocationPageState extends State<LocationPage> {
     try {
       await OfficialCloudService().refreshFenceData();
     } catch (e) {
+      LogService().operation(
+        '官云电子围栏刷新失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
       if (mounted) _showSnack(_errorMessage(e));
     }
   }
@@ -149,6 +170,11 @@ class _LocationPageState extends State<LocationPage> {
         builder: (_) => _TravelDetailSheet(record: record),
       );
     } catch (e) {
+      LogService().operation(
+        '官云行程详情加载失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
       if (mounted) _showSnack(_errorMessage(e));
     }
   }

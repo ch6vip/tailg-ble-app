@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import '../ble/constants.dart';
 import '../main.dart';
 import '../models/vehicle_profile.dart';
+import '../services/log_service.dart';
 import '../services/permission_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_snack.dart';
@@ -126,6 +127,7 @@ class _ScanPageState extends State<ScanPage>
         AppSnack.success(context, '连接成功，已绑定为默认车辆');
       }
     } catch (e) {
+      logService.ble('连接绑定设备失败', detail: e.toString(), level: LogLevel.error);
       if (mounted) {
         AppSnack.error(context, '连接失败: $e');
       }

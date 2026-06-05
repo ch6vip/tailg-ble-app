@@ -10,20 +10,29 @@ import 'services/location_service.dart';
 import 'services/log_service.dart';
 import 'services/official_cloud_service.dart';
 import 'services/vehicle_store.dart';
+import 'services/service_locator.dart';
 import 'services/app_preferences_service.dart';
 import 'pages/scan_page.dart';
 import 'pages/control_page.dart';
 import 'pages/settings_page.dart';
 import 'theme/app_colors.dart';
 
-final connectionManager = ble.ConnectionManager();
-final proximityService = ProximityService();
-final autoConnectService = AutoConnectService();
-final manualModeService = ManualModeService();
-final locationService = LocationService();
-final logService = LogService();
-final vehicleStore = VehicleStore();
-final officialCloudService = OfficialCloudService();
+// App-wide services now live in the [AppServices] container (see
+// service_locator.dart). These top-level getters preserve the existing call
+// sites while routing every lookup through the single injectable graph, so
+// tests can override the whole set via [AppServices.override].
+ble.ConnectionManager get connectionManager =>
+    AppServices.instance.connectionManager;
+ProximityService get proximityService => AppServices.instance.proximityService;
+AutoConnectService get autoConnectService =>
+    AppServices.instance.autoConnectService;
+ManualModeService get manualModeService =>
+    AppServices.instance.manualModeService;
+LocationService get locationService => AppServices.instance.locationService;
+LogService get logService => AppServices.instance.logService;
+VehicleStore get vehicleStore => AppServices.instance.vehicleStore;
+OfficialCloudService get officialCloudService =>
+    AppServices.instance.officialCloudService;
 final homeTabIndex = ValueNotifier<int>(1);
 
 void applyVehicleBleCredentials(VehicleProfile? vehicle) {

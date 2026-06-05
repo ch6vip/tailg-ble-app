@@ -281,8 +281,16 @@ class _ControlAreaState extends State<_ControlArea> {
           _showSuccessSnack(result.successMessage!);
         }
       }
-      if (!result.success && mounted) {
-        _showFailureSnack(result.failureMessage ?? '${cmd.label}失败');
+      if (!result.success) {
+        logService.operation(
+          '控车失败: ${cmd.label}',
+          detail:
+              '渠道=${result.transport.name} 原因=${result.failureMessage ?? '未知'}',
+          level: LogLevel.error,
+        );
+        if (mounted) {
+          _showFailureSnack(result.failureMessage ?? '${cmd.label}失败');
+        }
       }
     } finally {
       if (mounted) {

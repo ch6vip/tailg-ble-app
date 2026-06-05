@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
 import '../main.dart';
+import '../services/log_service.dart';
 import '../services/vehicle_settings_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
@@ -40,7 +41,12 @@ class _QgjAdvancedSettingsPageState extends State<QgjAdvancedSettingsPage> {
     } on VehicleSettingsException catch (e) {
       if (!mounted) return;
       _showSnack(e.message, false);
-    } catch (_) {
+    } catch (e) {
+      logService.operation(
+        'QGJ 高级设置读取异常',
+        detail: e.toString(),
+        level: LogLevel.error,
+      );
       if (!mounted) return;
       _showSnack('高级设置读取失败', false);
     } finally {
