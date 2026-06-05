@@ -167,10 +167,7 @@ class _ControlAreaViewModel {
   final String? vehicleName;
   final bool isLocked;
   final bool isPowerOn;
-  final _QuickControlSpec firstQuick;
-  final _QuickControlSpec secondQuick;
-  final bool firstQuickActive;
-  final bool secondQuickActive;
+  final bool seatActive;
   final bool powerLoading;
   final bool lockActive;
   final bool findActive;
@@ -184,10 +181,7 @@ class _ControlAreaViewModel {
     required this.vehicleName,
     required this.isLocked,
     required this.isPowerOn,
-    required this.firstQuick,
-    required this.secondQuick,
-    required this.firstQuickActive,
-    required this.secondQuickActive,
+    required this.seatActive,
     required this.powerLoading,
     required this.lockActive,
     required this.findActive,
@@ -212,17 +206,9 @@ class _ControlAreaViewModel {
         disabledReason;
   }
 
-  bool quickEnabled(_QuickControlSpec spec) {
-    final command = spec.command;
-    if (command == null) return true;
-    return commandEnabled(command);
-  }
+  bool get seatEnabled => commandEnabled(CommandCode.openSeat);
 
-  String quickDisabledReason(_QuickControlSpec spec) {
-    final command = spec.command;
-    if (command == null) return disabledReason;
-    return commandDisabledReason(command);
-  }
+  String get seatDisabledReason => commandDisabledReason(CommandCode.openSeat);
 
   String get powerLabel => isPowerOn ? '熄火' : '启动';
 
@@ -251,38 +237,12 @@ class _ControlAreaViewModel {
 }
 
 class _ControlAreaState extends State<_ControlArea> {
-  final _replicaStore = ReplicaFeatureStore();
   final _commandExecutor = ControlCommandExecutor(
     sendBleCommand: connectionManager.sendCommand,
     sendCloudCommand: officialCloudService.sendCommand,
   );
-  QuickControlConfig _quickConfig = const QuickControlConfig();
-  _QuickControlSpec _firstQuick = _quickControlSpec(
-    const QuickControlConfig().firstActionId,
-  );
-  _QuickControlSpec _secondQuick = _quickControlSpec(
-    const QuickControlConfig().secondActionId,
-  );
   bool _busy = false;
   String? _activeControlId;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadQuickConfig();
-  }
-
-  Future<void> _loadQuickConfig() async {
-    final config = await _replicaStore.loadQuickControlConfig();
-    if (!mounted) return;
-    setState(() => _applyQuickConfig(config));
-  }
-
-  void _applyQuickConfig(QuickControlConfig config) {
-    _quickConfig = config;
-    _firstQuick = _quickControlSpec(config.firstActionId);
-    _secondQuick = _quickControlSpec(config.secondActionId);
-  }
 
   Future<void> _send(CommandCode cmd, {required String actionId}) async {
     if (_busy) return;
@@ -514,42 +474,6 @@ class _ControlAreaState extends State<_ControlArea> {
     );
   }
 
-  Future<void> _runQuickAction(
-    _QuickControlSpec spec,
-    _ControlAreaViewModel model,
-  ) async {
-    if (spec.command != null) {
-      final disabledReason = model.quickEnabled(spec)
-          ? null
-          : model.quickDisabledReason(spec);
-      if (disabledReason != null) {
-        _showUnavailableSnack(disabledReason);
-        return;
-      }
-      await _send(spec.command!, actionId: 'quick:${spec.id}');
-      return;
-    }
-    HapticFeedback.mediumImpact();
-    if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => spec.pageBuilder!(context)),
-    );
-  }
-
-  Future<void> _editQuickControls() async {
-    final next = await Navigator.push<QuickControlConfig>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => QuickControlEditPage(initialConfig: _quickConfig),
-      ),
-    );
-    if (next == null) return;
-    await _replicaStore.saveQuickControlConfig(next);
-    if (!mounted) return;
-    setState(() => _applyQuickConfig(next));
-  }
-
   _ControlAreaViewModel _createViewModel({
     required OfficialCloudState cloudState,
     required BikeState? bike,
@@ -565,9 +489,6 @@ class _ControlAreaState extends State<_ControlArea> {
     final isPowerOn = useBleState
         ? bike?.isPowerOn ?? false
         : cloudVehicle?.isPowerOn ?? false;
-    final firstQuick = _firstQuick;
-    final secondQuick = _secondQuick;
-
     return _ControlAreaViewModel(
       channel: availability.channel,
       canUseBle: availability.canUseBle,
@@ -577,10 +498,7 @@ class _ControlAreaState extends State<_ControlArea> {
       vehicleName: cloudVehicle?.displayName,
       isLocked: isLocked,
       isPowerOn: isPowerOn,
-      firstQuick: firstQuick,
-      secondQuick: secondQuick,
-      firstQuickActive: _activeControlId == 'quick:${firstQuick.id}',
-      secondQuickActive: _activeControlId == 'quick:${secondQuick.id}',
+      seatActive: _activeControlId == 'fixedSeat',
       powerLoading: _activeControlId == 'slidePower',
       lockActive: _activeControlId == 'fixedLock',
       findActive: _activeControlId == 'fixedFind',
@@ -642,23 +560,11 @@ class _ControlAreaState extends State<_ControlArea> {
                     findDisabledReason: model.findDisabledReason,
                     onFindTap: () =>
                         _send(CommandCode.find, actionId: 'fixedFind'),
-                    firstQuick: model.firstQuick,
-                    secondQuick: model.secondQuick,
-                    firstQuickActive: model.firstQuickActive,
-                    secondQuickActive: model.secondQuickActive,
-                    firstQuickEnabled: model.quickEnabled(model.firstQuick),
-                    firstQuickDisabledReason: model.quickDisabledReason(
-                      model.firstQuick,
-                    ),
-                    secondQuickEnabled: model.quickEnabled(model.secondQuick),
-                    secondQuickDisabledReason: model.quickDisabledReason(
-                      model.secondQuick,
-                    ),
-                    onFirstQuickTap: () =>
-                        _runQuickAction(model.firstQuick, model),
-                    onSecondQuickTap: () =>
-                        _runQuickAction(model.secondQuick, model),
-                    onEditQuickTap: _editQuickControls,
+                    seatActive: model.seatActive,
+                    seatEnabled: model.seatEnabled,
+                    seatDisabledReason: model.seatDisabledReason,
+                    onSeatTap: () =>
+                        _send(CommandCode.openSeat, actionId: 'fixedSeat'),
                   ),
                 ],
               ),

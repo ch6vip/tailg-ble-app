@@ -10,7 +10,7 @@ void main() {
   // "Null check operator used on a null value" on first build, because the
   // quick-function card's scroll-progress indicator read maxScrollExtent before
   // the horizontal list had laid out. In release that surfaced as a large grey
-  // ErrorWidget filling the screen below 快捷功能.
+  // ErrorWidget filling the screen below the SHORTCUTS section.
   testWidgets('bound control home builds without throwing', (tester) async {
     SharedPreferences.setMockInitialValues({});
     VehicleStore().resetForTest();
@@ -26,6 +26,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(tester.takeException(), isNull);
-    expect(find.text('快捷功能'), findsOneWidget);
+    expect(find.text('SHORTCUTS'), findsOneWidget);
   });
 }
