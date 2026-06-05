@@ -243,6 +243,96 @@ class _ControlAreaState extends State<_ControlArea> {
   );
   bool _busy = false;
   String? _activeControlId;
+  MainControlConfig _mainControlConfig = const MainControlConfig();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMainControlConfig();
+  }
+
+  Future<void> _loadMainControlConfig() async {
+    final cfg = await ReplicaFeatureStore().loadMainControlConfig();
+    if (!mounted) return;
+    setState(() => _mainControlConfig = cfg);
+  }
+
+  /// Catalog entries ordered per saved config, with any catalog ids missing
+  /// from the saved order appended so newly added controls still surface.
+  List<_MainControlCatalogEntry> _orderedCatalog() {
+    final byId = {for (final e in _mainControlCatalog) e.id: e};
+    final result = <_MainControlCatalogEntry>[];
+    for (final id in _mainControlConfig.order) {
+      final entry = byId.remove(id);
+      if (entry != null) result.add(entry);
+    }
+    for (final e in _mainControlCatalog) {
+      if (byId.containsKey(e.id)) result.add(e);
+    }
+    return result;
+  }
+
+  List<_MainControlButtonData> _buildButtons(_ControlAreaViewModel model) {
+    final catalog = _orderedCatalog();
+    final buttonMap = <String, _MainControlButtonData>{
+      'find': _MainControlButtonData(
+        id: 'find',
+        icon: Icons.volume_up,
+        label: '寻车',
+        accent: AppColors.accentTeal,
+        loadingLabel: ControlLoadingLabel.find.text,
+        enabled: model.findEnabled,
+        active: model.findActive,
+        disabledReason: model.findDisabledReason,
+        onTap: () => _send(CommandCode.find, actionId: 'fixedFind'),
+      ),
+      'lock': _MainControlButtonData(
+        id: 'lock',
+        icon: model.lockIcon,
+        label: model.lockLabel,
+        accent: _serviceAccentAmber,
+        loadingLabel: model.lockLabel == '解锁'
+            ? ControlLoadingLabel.unlock.text
+            : ControlLoadingLabel.lock.text,
+        enabled: model.enabled,
+        active: model.lockActive,
+        disabledReason: model.disabledReason,
+        onTap: () => _send(model.lockCommand, actionId: 'fixedLock'),
+      ),
+      'seat': _MainControlButtonData(
+        id: 'seat',
+        icon: Icons.inventory_2,
+        label: '座桶',
+        accent: const Color(0xFF8D6E63),
+        loadingLabel: ControlLoadingLabel.execute.text,
+        enabled: model.seatEnabled,
+        active: model.seatActive,
+        disabledReason: model.seatDisabledReason,
+        onTap: () => _send(CommandCode.openSeat, actionId: 'fixedSeat'),
+      ),
+    };
+    return [
+      for (final entry in catalog)
+        if (!_mainControlConfig.hidden.contains(entry.id) &&
+            buttonMap.containsKey(entry.id))
+          buttonMap[entry.id]!,
+    ];
+  }
+
+  Future<void> _editMainControls() async {
+    final updated = await Navigator.push<MainControlConfig>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _MainControlEditPage(
+          entries: _orderedCatalog(),
+          hidden: _mainControlConfig.hidden,
+        ),
+      ),
+    );
+    if (updated == null || !mounted) return;
+    setState(() => _mainControlConfig = updated);
+    await ReplicaFeatureStore().saveMainControlConfig(updated);
+  }
 
   Future<void> _send(CommandCode cmd, {required String actionId}) async {
     if (_busy) return;
@@ -550,21 +640,8 @@ class _ControlAreaState extends State<_ControlArea> {
                         _showUnavailableSnack(model.disabledReason),
                     onPowerSlideComplete: () =>
                         _send(model.powerCommand, actionId: 'slidePower'),
-                    lockIcon: model.lockIcon,
-                    lockLabel: model.lockLabel,
-                    lockActive: model.lockActive,
-                    onLockTap: () =>
-                        _send(model.lockCommand, actionId: 'fixedLock'),
-                    findActive: model.findActive,
-                    findEnabled: model.findEnabled,
-                    findDisabledReason: model.findDisabledReason,
-                    onFindTap: () =>
-                        _send(CommandCode.find, actionId: 'fixedFind'),
-                    seatActive: model.seatActive,
-                    seatEnabled: model.seatEnabled,
-                    seatDisabledReason: model.seatDisabledReason,
-                    onSeatTap: () =>
-                        _send(CommandCode.openSeat, actionId: 'fixedSeat'),
+                    buttons: _buildButtons(model),
+                    onEditButtons: _editMainControls,
                   ),
                 ],
               ),

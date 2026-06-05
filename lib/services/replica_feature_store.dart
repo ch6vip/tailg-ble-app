@@ -173,6 +173,32 @@ class QuickShortcutsConfig {
   }
 }
 
+/// Home-screen main-control buttons customization (寻车 / 设防·解锁 / 座桶):
+/// which control buttons show in the main control card and in what order.
+/// Only the [order]/[hidden] of known control ids is persisted; the catalog
+/// (icon/label/accent/command) lives in the UI layer. No control command is
+/// stored here — selection only reorders/shows existing, already-verified
+/// control actions.
+class MainControlConfig {
+  /// Display order of control ids. Ids not present here are appended in catalog
+  /// order so newly added controls still surface.
+  final List<String> order;
+
+  /// Ids hidden from the main control card (still reachable via the edit page).
+  final Set<String> hidden;
+
+  const MainControlConfig({this.order = const [], this.hidden = const {}});
+
+  Map<String, dynamic> toJson() => {'order': order, 'hidden': hidden.toList()};
+
+  factory MainControlConfig.fromJson(Map<String, dynamic> json) {
+    final order = (json['order'] as List?)?.whereType<String>().toList() ?? [];
+    final hidden =
+        (json['hidden'] as List?)?.whereType<String>().toSet() ?? <String>{};
+    return MainControlConfig(order: order, hidden: hidden);
+  }
+}
+
 class ReplicaFeatureStore {
   static final ReplicaFeatureStore _instance = ReplicaFeatureStore._();
   factory ReplicaFeatureStore() => _instance;
@@ -183,6 +209,7 @@ class ReplicaFeatureStore {
   static const _prefShareMembers = 'replica_share_members';
   static const _prefQuickControlConfig = 'replica_quick_control_config';
   static const _prefQuickShortcutsConfig = 'replica_quick_shortcuts_config';
+  static const _prefMainControlConfig = 'replica_main_control_config';
 
   Future<List<NfcKeyRecord>> loadNfcKeys() async {
     final raw = (await SharedPreferences.getInstance()).getString(_prefNfcKeys);
@@ -253,6 +280,21 @@ class ReplicaFeatureStore {
       _prefQuickShortcutsConfig,
       jsonEncode(config.toJson()),
     );
+  }
+
+  Future<MainControlConfig> loadMainControlConfig() async {
+    final raw = (await SharedPreferences.getInstance()).getString(
+      _prefMainControlConfig,
+    );
+    if (raw == null || raw.isEmpty) return const MainControlConfig();
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map) return const MainControlConfig();
+    return MainControlConfig.fromJson(Map<String, dynamic>.from(decoded));
+  }
+
+  Future<void> saveMainControlConfig(MainControlConfig config) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefMainControlConfig, jsonEncode(config.toJson()));
   }
 
   String makeId() => DateTime.now().microsecondsSinceEpoch.toString();
