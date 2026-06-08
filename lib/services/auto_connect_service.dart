@@ -9,12 +9,33 @@ import 'log_service.dart';
 import 'manual_mode_service.dart';
 import 'vehicle_store.dart';
 
+class AutoConnectRunGate {
+  Future<void>? _running;
+
+  bool get isRunning => _running != null;
+
+  Future<void> run(Future<void> Function() operation) {
+    final running = _running;
+    if (running != null) return running;
+
+    late final Future<void> current;
+    current = Future.sync(operation).whenComplete(() {
+      if (identical(_running, current)) {
+        _running = null;
+      }
+    });
+    _running = current;
+    return current;
+  }
+}
+
 class AutoConnectService {
   static final AutoConnectService _instance = AutoConnectService._();
   factory AutoConnectService() => _instance;
   AutoConnectService._();
 
   final _log = LogService();
+  final _runGate = AutoConnectRunGate();
   final _connectionSnapshotGuard = const BleConnectionSnapshotGuard();
   ConnectionManager? _connectionManager;
 
@@ -77,6 +98,10 @@ class AutoConnectService {
   }
 
   Future<void> tryAutoConnect() async {
+    await _runGate.run(_tryAutoConnectOnce);
+  }
+
+  Future<void> _tryAutoConnectOnce() async {
     await VehicleStore().init();
     _refreshTarget();
     if (ManualModeService().enabled) {
