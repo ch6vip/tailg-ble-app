@@ -8,6 +8,7 @@ import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
 import '../models/vehicle_profile.dart';
 import '../services/control_channel_resolver.dart';
+import '../services/control_command_confirmation.dart';
 import '../services/control_command_executor.dart';
 import '../services/control_command_policy.dart';
 import '../services/control_command_result.dart';
@@ -271,6 +272,7 @@ class _ControlAreaState extends State<_ControlArea> {
     sendBleCommand: connectionManager.sendCommand,
     sendCloudCommand: officialCloudService.sendCommand,
   );
+  final _confirmationGuard = const ControlCommandConfirmationGuard();
   bool _busy = false;
   String? _activeControlId;
   MainControlConfig _mainControlConfig = const MainControlConfig();
@@ -382,6 +384,9 @@ class _ControlAreaState extends State<_ControlArea> {
     HapticFeedback.mediumImpact();
     try {
       final availability = _controlAvailability(cloudState);
+      final pendingConfirmationContext = _captureConfirmationContext(
+        cloudState,
+      );
       final result = await _commandExecutor.send(
         command: cmd,
         availability: availability,
@@ -393,7 +398,7 @@ class _ControlAreaState extends State<_ControlArea> {
         );
         final confirmed = await _waitForCommandConfirmation(
           cmd,
-          result.transport,
+          pendingConfirmationContext.forTransport(result.transport),
         );
         if (!confirmed && mounted) {
           _showFailureSnack(_unconfirmedMessage(cmd));
@@ -434,17 +439,19 @@ class _ControlAreaState extends State<_ControlArea> {
 
   Future<bool> _waitForCommandConfirmation(
     CommandCode command,
-    ControlCommandTransport transport,
+    ControlCommandConfirmationContext context,
   ) async {
     if (!_needsStateConfirmation(command)) return true;
 
     final deadline = DateTime.now().add(_controlConfirmTimeout);
     while (mounted) {
-      if (_isCommandConfirmed(command, transport)) return true;
+      if (!_isConfirmationTargetActive(context)) return false;
+      if (_isCommandConfirmed(command, context)) return true;
       if (DateTime.now().isAfter(deadline)) return false;
 
-      await _refreshStateForConfirmation(command, transport);
-      if (_isCommandConfirmed(command, transport)) return true;
+      await _refreshStateForConfirmation(command, context);
+      if (!_isConfirmationTargetActive(context)) return false;
+      if (_isCommandConfirmed(command, context)) return true;
       if (DateTime.now().isAfter(deadline)) return false;
 
       await Future<void>.delayed(_controlConfirmPollDelay);
@@ -464,9 +471,10 @@ class _ControlAreaState extends State<_ControlArea> {
 
   bool _isCommandConfirmed(
     CommandCode command,
-    ControlCommandTransport transport,
+    ControlCommandConfirmationContext context,
   ) {
-    return switch (transport) {
+    if (!_isConfirmationTargetActive(context)) return false;
+    return switch (context.transport) {
       ControlCommandTransport.ble => _isBleCommandConfirmed(command),
       ControlCommandTransport.officialCloud => _isCloudCommandConfirmed(
         command,
@@ -511,10 +519,11 @@ class _ControlAreaState extends State<_ControlArea> {
 
   Future<void> _refreshStateForConfirmation(
     CommandCode command,
-    ControlCommandTransport transport,
+    ControlCommandConfirmationContext context,
   ) async {
     try {
-      switch (transport) {
+      if (!_isConfirmationTargetActive(context)) return;
+      switch (context.transport) {
         case ControlCommandTransport.ble:
           await connectionManager.refreshBikeState();
         case ControlCommandTransport.officialCloud:
@@ -533,6 +542,26 @@ class _ControlAreaState extends State<_ControlArea> {
         level: LogLevel.warning,
       );
     }
+  }
+
+  PendingControlCommandConfirmationContext _captureConfirmationContext(
+    OfficialCloudState cloudState,
+  ) {
+    return PendingControlCommandConfirmationContext(
+      defaultVehicleId: vehicleStore.defaultVehicleId,
+      bleDeviceId: connectionManager.device?.remoteId.toString(),
+      officialVehicleKey: cloudState.selectedVehicle?.key,
+    );
+  }
+
+  bool _isConfirmationTargetActive(ControlCommandConfirmationContext context) {
+    return _confirmationGuard.allows(
+      context: context,
+      currentDefaultVehicleId: vehicleStore.defaultVehicleId,
+      currentBleDeviceId: connectionManager.device?.remoteId.toString(),
+      currentOfficialVehicleKey:
+          officialCloudService.state.selectedVehicle?.key,
+    );
   }
 
   String _unconfirmedMessage(CommandCode command) {

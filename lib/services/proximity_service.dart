@@ -3,6 +3,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../ble/connection_manager.dart';
 import '../ble/constants.dart';
+import 'ble_connection_snapshot_guard.dart';
 import 'log_service.dart';
 import 'manual_mode_service.dart';
 import 'vehicle_store.dart';
@@ -13,6 +14,7 @@ class ProximityService {
   ProximityService._();
 
   final _log = LogService();
+  final _connectionSnapshotGuard = const BleConnectionSnapshotGuard();
   ConnectionManager? _connectionManager;
   StreamSubscription? _scanSub;
   bool _scanning = false;
@@ -121,17 +123,23 @@ class ProximityService {
   }
 
   Future<void> _connectAndUnlock(BluetoothDevice device) async {
-    if (_connectionManager == null) return;
+    final manager = _connectionManager;
+    if (manager == null) return;
+    final deviceId = device.remoteId.toString();
     try {
       final vehicle = VehicleStore().defaultVehicle;
-      _connectionManager!.setQgjCredentials(
+      manager.setQgjCredentials(
         password: vehicle?.qgjLoginPassword,
         userId: vehicle?.qgjUserId,
       );
-      await _connectionManager!.connect(device);
+      await manager.connect(device);
       await Future.delayed(BleTimings.serviceSetupDelay);
-      if (_connectionManager!.state == ConnectionState.ready) {
-        await _connectionManager!.sendCommand(CommandCode.unlock);
+      if (_canUnlockConnectedTarget(
+        manager: manager,
+        device: device,
+        deviceId: deviceId,
+      )) {
+        await manager.sendCommand(CommandCode.unlock);
         _log.operation('感应解锁: 解锁成功', level: LogLevel.info);
       }
     } catch (e) {
@@ -141,6 +149,24 @@ class ProximityService {
         level: LogLevel.warning,
       );
     }
+  }
+
+  bool _canUnlockConnectedTarget({
+    required ConnectionManager manager,
+    required BluetoothDevice device,
+    required String deviceId,
+  }) {
+    return _enabled &&
+        _targetDeviceId == deviceId &&
+        _connectionSnapshotGuard.allowsReadyTarget(
+          startManager: manager,
+          currentManager: _connectionManager,
+          startDevice: device,
+          currentDevice: manager.device,
+          currentDeviceId: manager.device?.remoteId.toString(),
+          expectedDeviceId: deviceId,
+          currentState: manager.state,
+        );
   }
 
   void dispose() {

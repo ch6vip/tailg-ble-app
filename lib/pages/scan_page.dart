@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import '../ble/constants.dart';
 import '../main.dart';
+import '../services/ble_connection_snapshot_guard.dart';
 import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
 import '../services/permission_service.dart';
@@ -20,6 +21,7 @@ class ScanPage extends StatefulWidget {
 class _ScanPageState extends State<ScanPage>
     with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   final _resultsNotifier = ValueNotifier<List<ScanResult>>(<ScanResult>[]);
+  final _connectionSnapshotGuard = const BleConnectionSnapshotGuard();
   bool _scanning = false;
   String? _connectingRemoteId;
   StreamSubscription? _scanResultsSub;
@@ -100,7 +102,9 @@ class _ScanPageState extends State<ScanPage>
 
   Future<void> _connectDevice(BluetoothDevice device) async {
     if (_connectingRemoteId != null) return;
-    setState(() => _connectingRemoteId = device.remoteId.toString());
+    final manager = connectionManager;
+    final deviceId = device.remoteId.toString();
+    setState(() => _connectingRemoteId = deviceId);
     _stopScan();
     if (!mounted) return;
     AppSnack.info(context, '正在连接 ${device.platformName}...');
@@ -113,11 +117,27 @@ class _ScanPageState extends State<ScanPage>
         }
       }
       applyVehicleBleCredentials(existingProfile);
-      await connectionManager.connect(device);
+      await manager.connect(device);
+      if (!_connectionSnapshotGuard.allowsReadyTarget(
+        startManager: manager,
+        currentManager: connectionManager,
+        startDevice: device,
+        currentDevice: manager.device,
+        currentDeviceId: manager.device?.remoteId.toString(),
+        expectedDeviceId: deviceId,
+        currentState: manager.state,
+      )) {
+        logService.ble(
+          '连接绑定设备跳过',
+          detail: '目标设备已变化 device=$deviceId',
+          level: LogLevel.warning,
+        );
+        return;
+      }
       final profile = await vehicleStore.upsert(
-        id: device.remoteId.toString(),
+        id: deviceId,
         name: device.platformName,
-        protocol: vehicleProtocolFromBle(connectionManager.protocol),
+        protocol: vehicleProtocolFromBle(manager.protocol),
         makeDefault: true,
         lastConnectedAt: DateTime.now(),
       );

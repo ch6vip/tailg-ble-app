@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../ble/constants.dart';
 import '../ble/connection_manager.dart';
 import '../models/vehicle_profile.dart';
+import 'ble_connection_snapshot_guard.dart';
 import 'log_service.dart';
 import 'manual_mode_service.dart';
 import 'vehicle_store.dart';
@@ -14,6 +15,7 @@ class AutoConnectService {
   AutoConnectService._();
 
   final _log = LogService();
+  final _connectionSnapshotGuard = const BleConnectionSnapshotGuard();
   ConnectionManager? _connectionManager;
 
   static const _prefEnabled = 'auto_connect_enabled';
@@ -125,16 +127,43 @@ class AutoConnectService {
   }
 
   Future<void> _doConnect(BluetoothDevice device) async {
+    final manager = _connectionManager;
+    if (manager == null) return;
+    final deviceId = device.remoteId.toString();
     try {
       final vehicle = VehicleStore().defaultVehicle;
-      _connectionManager!.setQgjCredentials(
+      manager.setQgjCredentials(
         password: vehicle?.qgjLoginPassword,
         userId: vehicle?.qgjUserId,
       );
-      await _connectionManager!.connect(device);
-      _log.operation('自动连接: 成功');
+      await manager.connect(device);
+      if (_isConnectedAutoTarget(
+        manager: manager,
+        device: device,
+        deviceId: deviceId,
+      )) {
+        _log.operation('自动连接: 成功');
+      }
     } catch (e) {
       _log.operation('自动连接: 失败', detail: e.toString(), level: LogLevel.warning);
     }
+  }
+
+  bool _isConnectedAutoTarget({
+    required ConnectionManager manager,
+    required BluetoothDevice device,
+    required String deviceId,
+  }) {
+    return _enabled &&
+        VehicleStore().defaultVehicle?.id == deviceId &&
+        _connectionSnapshotGuard.allowsReadyTarget(
+          startManager: manager,
+          currentManager: _connectionManager,
+          startDevice: device,
+          currentDevice: manager.device,
+          currentDeviceId: manager.device?.remoteId.toString(),
+          expectedDeviceId: deviceId,
+          currentState: manager.state,
+        );
   }
 }
