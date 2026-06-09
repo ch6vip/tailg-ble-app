@@ -76,7 +76,8 @@ class _ScanPageState extends State<ScanPage>
 
   Future<bool> _requestPermissions() async {
     final result = await AppPermissionService().requestBleScanPermissions();
-    if (!result.granted && mounted) {
+    if (!mounted) return false;
+    if (!result.granted) {
       AppSnack.error(context, result.message ?? '请授予蓝牙和定位权限后再扫描');
     }
     return result.granted;
@@ -84,7 +85,9 @@ class _ScanPageState extends State<ScanPage>
 
   Future<void> _startScan() async {
     if (!await _requestPermissions()) return;
+    if (!mounted) return;
     final adapterState = await FlutterBluePlus.adapterState.first;
+    if (!mounted) return;
     if (adapterState != BluetoothAdapterState.on) {
       if (mounted) {
         ScaffoldMessenger.of(
