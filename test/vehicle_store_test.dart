@@ -84,6 +84,44 @@ void main() {
     expect(reloadedStore.defaultVehicle?.protocol, VehicleProtocol.standard);
   });
 
+  test('VehicleStore tolerates corrupt persisted vehicle data', () async {
+    SharedPreferences.setMockInitialValues({
+      'vehicle_profiles': 'not-json',
+      'vehicle_default_id': 'missing',
+    });
+    VehicleStore().resetForTest();
+
+    final store = VehicleStore();
+    await store.init();
+
+    expect(store.vehicles, isEmpty);
+    expect(store.defaultVehicle, isNull);
+    expect(store.defaultVehicleId, isNull);
+  });
+
+  test(
+    'VehicleStore skips malformed entries and normalizes default id',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'vehicle_profiles':
+            '[{"id":"","name":"空 ID"},'
+            '{"id":"AA:BB:CC:DD:EE:FF","name":"有效车辆","protocol":"qgj"},'
+            '42]',
+        'vehicle_default_id': 'missing',
+      });
+      VehicleStore().resetForTest();
+
+      final store = VehicleStore();
+      await Future.wait([store.init(), store.init()]);
+
+      expect(store.vehicles, hasLength(1));
+      expect(store.defaultVehicle?.id, 'AA:BB:CC:DD:EE:FF');
+      expect(store.defaultVehicle?.displayName, '有效车辆');
+      expect(store.defaultVehicle?.protocol, VehicleProtocol.qgj);
+      expect(store.defaultVehicleId, 'AA:BB:CC:DD:EE:FF');
+    },
+  );
+
   test('ReplicaFeatureStore saves quick control config', () async {
     final store = ReplicaFeatureStore();
 

@@ -18,6 +18,7 @@ class VehicleStore {
   final List<VehicleProfile> _vehicles = [];
   String? _defaultVehicleId;
   bool _initialized = false;
+  Future<void>? _initializing;
 
   Stream<List<VehicleProfile>> get vehiclesStream => _vehiclesController.stream;
   List<VehicleProfile> get vehicles => List.unmodifiable(_vehicles);
@@ -33,33 +34,68 @@ class VehicleStore {
 
   Future<void> init() async {
     if (_initialized) return;
+    final initializing = _initializing;
+    if (initializing != null) return initializing;
+    _initializing = _load();
+    return _initializing!;
+  }
+
+  Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    _defaultVehicleId = prefs.getString(_prefDefaultVehicleId);
-    final raw = prefs.getString(_prefVehicles);
-    if (raw != null && raw.isNotEmpty) {
-      final decoded = jsonDecode(raw);
-      if (decoded is List) {
-        _vehicles
-          ..clear()
-          ..addAll(
-            decoded
-                .whereType<Map>()
-                .map(
-                  (json) =>
-                      VehicleProfile.fromJson(Map<String, dynamic>.from(json)),
-                )
-                .where((vehicle) => vehicle.id.isNotEmpty),
-          );
-      }
+    try {
+      _defaultVehicleId = prefs.getString(_prefDefaultVehicleId);
+      _vehicles
+        ..clear()
+        ..addAll(_decodeVehicles(prefs.getString(_prefVehicles)));
+      _normalizeDefaultVehicleId();
+      _initialized = true;
+      _emit();
+    } finally {
+      _initializing = null;
     }
-    _initialized = true;
-    _emit();
   }
 
   void resetForTest() {
     _vehicles.clear();
     _defaultVehicleId = null;
     _initialized = false;
+    _initializing = null;
+  }
+
+  List<VehicleProfile> _decodeVehicles(String? raw) {
+    if (raw == null || raw.isEmpty) return const [];
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } catch (_) {
+      return const [];
+    }
+    if (decoded is! List) return const [];
+
+    final vehicles = <VehicleProfile>[];
+    for (final item in decoded) {
+      if (item is! Map) continue;
+      try {
+        final vehicle = VehicleProfile.fromJson(
+          Map<String, dynamic>.from(item),
+        );
+        if (vehicle.id.isNotEmpty) vehicles.add(vehicle);
+      } catch (_) {
+        continue;
+      }
+    }
+    return vehicles;
+  }
+
+  void _normalizeDefaultVehicleId() {
+    if (_vehicles.isEmpty) {
+      _defaultVehicleId = null;
+      return;
+    }
+    if (_defaultVehicleId == null ||
+        !_vehicles.any((vehicle) => vehicle.id == _defaultVehicleId)) {
+      _defaultVehicleId = _vehicles.first.id;
+    }
   }
 
   Future<VehicleProfile> upsert({
