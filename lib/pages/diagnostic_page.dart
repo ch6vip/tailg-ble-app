@@ -42,11 +42,20 @@ class DiagnosticRecord {
 
   factory DiagnosticRecord.fromJson(Map<String, dynamic> json) =>
       DiagnosticRecord(
-        time:
-            DateTime.tryParse(json['time'] as String? ?? '') ?? DateTime.now(),
-        rawByte: (json['raw'] as num?)?.toInt() ?? 0,
+        time: _parseTime(json['time']),
+        rawByte: _parseRawByte(json['raw']),
         faults: (json['faults'] as List?)?.whereType<String>().toList() ?? [],
       );
+
+  static DateTime _parseTime(Object? value) {
+    return DateTime.tryParse(value?.toString() ?? '') ?? DateTime.now();
+  }
+
+  static int _parseRawByte(Object? value) {
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value.trim()) ?? 0;
+    return 0;
+  }
 
   static DiagnosticRecord? tryParse(String raw) {
     try {
