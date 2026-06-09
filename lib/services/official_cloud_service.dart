@@ -344,6 +344,7 @@ class OfficialCloudService {
       token: '',
       phone: '',
       userId: '',
+      loading: false,
       vehicles: const [],
       selectedVehicleKey: null,
       error: null,
@@ -373,7 +374,8 @@ class OfficialCloudService {
     bool refreshReplicaDetails = true,
     bool force = false,
   }) async {
-    if (_state.token.isEmpty) return;
+    final token = _state.token;
+    if (token.isEmpty) return;
     const refreshKey = 'vehicles';
     if (!force && silent && _shouldUseRecentRefresh(refreshKey)) {
       _refreshVehicleDependents(refreshReplicaDetails: refreshReplicaDetails);
@@ -387,6 +389,7 @@ class OfficialCloudService {
       silent: silent,
       refreshReplicaDetails: refreshReplicaDetails,
       refreshKey: refreshKey,
+      token: token,
     );
     _inFlightRefreshes[refreshKey] = refresh;
     try {
@@ -402,16 +405,18 @@ class OfficialCloudService {
     required bool silent,
     required bool refreshReplicaDetails,
     required String refreshKey,
+    required String token,
   }) async {
     if (!silent) _setLoading(true);
     try {
       final response = await _apiClient.request(
         'app/centralControl/carStatus',
         method: 'POST',
-        token: _state.token,
+        token: token,
         body: {'phoneMode': _apiClient.config.phoneMode},
       );
       _ensureSuccess(response.body, fallback: '获取官方车辆失败');
+      if (!_isCurrentSession(token)) return;
       final vehicles = OfficialCloudDataParser.vehicles(response.body['data']);
       var selected = _state.selectedVehicleKey;
       if (vehicles.isEmpty) {
@@ -432,6 +437,7 @@ class OfficialCloudService {
       _refreshVehicleDependents(refreshReplicaDetails: refreshReplicaDetails);
       _markRefreshSuccess(refreshKey);
     } catch (e) {
+      if (!_isCurrentSession(token)) return;
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
         final message = _errorMessage(e);
@@ -440,7 +446,7 @@ class OfficialCloudService {
       }
       rethrow;
     } finally {
-      if (!silent) _setLoading(false);
+      if (!silent && _isCurrentSession(token)) _setLoading(false);
     }
   }
 
@@ -458,14 +464,19 @@ class OfficialCloudService {
   }
 
   Future<void> refreshBatteryInfo({bool silent = false}) async {
-    if (_state.token.isEmpty) return;
+    final token = _state.token;
+    if (token.isEmpty) return;
     const refreshKey = 'batteryInfo';
     if (silent && _shouldUseRecentRefresh(refreshKey)) return;
     final inFlight = _inFlightRefreshes[refreshKey];
     if (silent && inFlight != null) return inFlight;
 
     late Future<void> refresh;
-    refresh = _refreshBatteryInfoNow(silent: silent, refreshKey: refreshKey);
+    refresh = _refreshBatteryInfoNow(
+      silent: silent,
+      refreshKey: refreshKey,
+      token: token,
+    );
     _inFlightRefreshes[refreshKey] = refresh;
     try {
       await refresh;
@@ -479,6 +490,7 @@ class OfficialCloudService {
   Future<void> _refreshBatteryInfoNow({
     required bool silent,
     required String refreshKey,
+    required String token,
   }) async {
     if (!silent) {
       _state = _state.copyWith(
@@ -491,9 +503,10 @@ class OfficialCloudService {
       final response = await _apiClient.request(
         'app/mine/batteryInfo',
         method: 'POST',
-        token: _state.token,
+        token: token,
       );
       _ensureSuccess(response.body, fallback: '获取官方电池信息失败');
+      if (!_isCurrentSession(token)) return;
       final info = OfficialCloudDataParser.batteryInfo(response.body['data']);
       _state = _state.copyWith(
         batteryInfo: info.hasData ? info : null,
@@ -507,6 +520,7 @@ class OfficialCloudService {
       );
       _markRefreshSuccess(refreshKey);
     } catch (e) {
+      if (!_isCurrentSession(token)) return;
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
         final message = _errorMessage(e);
@@ -523,7 +537,7 @@ class OfficialCloudService {
         level: LogLevel.warning,
       );
     } finally {
-      if (!silent && _state.batteryInfoLoading) {
+      if (!silent && _isCurrentSession(token) && _state.batteryInfoLoading) {
         _state = _state.copyWith(batteryInfoLoading: false);
         _emit();
       }
@@ -531,8 +545,9 @@ class OfficialCloudService {
   }
 
   Future<void> refreshVehicleLocation({bool silent = false}) async {
+    final token = _state.token;
     final vehicle = _state.selectedVehicle;
-    if (_state.token.isEmpty || vehicle == null || vehicle.carId.isEmpty) {
+    if (token.isEmpty || vehicle == null || vehicle.carId.isEmpty) {
       return;
     }
     final refreshKey = 'vehicleLocation:${vehicle.key}';
@@ -545,6 +560,7 @@ class OfficialCloudService {
       silent: silent,
       refreshKey: refreshKey,
       vehicle: vehicle,
+      token: token,
     );
     _inFlightRefreshes[refreshKey] = refresh;
     try {
@@ -560,6 +576,7 @@ class OfficialCloudService {
     required bool silent,
     required String refreshKey,
     required OfficialVehicle vehicle,
+    required String token,
   }) async {
     if (!silent) {
       _state = _state.copyWith(
@@ -572,10 +589,11 @@ class OfficialCloudService {
       final response = await _apiClient.request(
         'app/car/extend/getByCarId',
         method: 'POST',
-        token: _state.token,
+        token: token,
         body: {'carId': vehicle.carId},
       );
       _ensureSuccess(response.body, fallback: '获取官方停车位置失败');
+      if (!_isCurrentSession(token)) return;
       final location = OfficialCloudDataParser.vehicleLocation(
         response.body['data'],
       );
@@ -591,6 +609,7 @@ class OfficialCloudService {
       );
       _markRefreshSuccess(refreshKey);
     } catch (e) {
+      if (!_isCurrentSession(token)) return;
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
         _state = _state.copyWith(
@@ -606,7 +625,9 @@ class OfficialCloudService {
         level: LogLevel.warning,
       );
     } finally {
-      if (!silent && _state.vehicleLocationLoading) {
+      if (!silent &&
+          _isCurrentSession(token) &&
+          _state.vehicleLocationLoading) {
         _state = _state.copyWith(vehicleLocationLoading: false);
         _emit();
       }
@@ -614,8 +635,9 @@ class OfficialCloudService {
   }
 
   Future<void> refreshFenceData({bool silent = false}) async {
+    final token = _state.token;
     final vehicle = _state.selectedVehicle;
-    if (_state.token.isEmpty || vehicle == null || vehicle.carId.isEmpty) {
+    if (token.isEmpty || vehicle == null || vehicle.carId.isEmpty) {
       return;
     }
     final refreshKey = 'fence:${vehicle.key}';
@@ -628,6 +650,7 @@ class OfficialCloudService {
       silent: silent,
       refreshKey: refreshKey,
       vehicle: vehicle,
+      token: token,
     );
     _inFlightRefreshes[refreshKey] = refresh;
     try {
@@ -643,6 +666,7 @@ class OfficialCloudService {
     required bool silent,
     required String refreshKey,
     required OfficialVehicle vehicle,
+    required String token,
   }) async {
     if (!silent) {
       _state = _state.copyWith(fenceLoading: true, fenceError: null);
@@ -652,10 +676,11 @@ class OfficialCloudService {
       final response = await _apiClient.request(
         'app/device/getFenceData',
         method: 'POST',
-        token: _state.token,
+        token: token,
         body: {'carId': vehicle.carId},
       );
       _ensureSuccess(response.body, fallback: '获取官方围栏失败');
+      if (!_isCurrentSession(token)) return;
       final fence = OfficialCloudDataParser.fenceData(response.body['data']);
       _state = _state.copyWith(
         fenceData: fence.hasData ? fence : null,
@@ -669,6 +694,7 @@ class OfficialCloudService {
       );
       _markRefreshSuccess(refreshKey);
     } catch (e) {
+      if (!_isCurrentSession(token)) return;
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
         _state = _state.copyWith(
@@ -684,7 +710,7 @@ class OfficialCloudService {
         level: LogLevel.warning,
       );
     } finally {
-      if (!silent && _state.fenceLoading) {
+      if (!silent && _isCurrentSession(token) && _state.fenceLoading) {
         _state = _state.copyWith(fenceLoading: false);
         _emit();
       }
@@ -695,8 +721,9 @@ class OfficialCloudService {
     String? month,
     bool silent = false,
   }) async {
+    final token = _state.token;
     final vehicle = _state.selectedVehicle;
-    if (_state.token.isEmpty || vehicle == null) return;
+    if (token.isEmpty || vehicle == null) return;
     final userId = _state.userId.trim();
     if (userId.isEmpty) {
       _state = _state.copyWith(
@@ -724,6 +751,7 @@ class OfficialCloudService {
       vehicle: vehicle,
       queryMonth: queryMonth,
       userId: userId,
+      token: token,
     );
     _inFlightRefreshes[refreshKey] = refresh;
     try {
@@ -741,6 +769,7 @@ class OfficialCloudService {
     required OfficialVehicle vehicle,
     required String queryMonth,
     required String userId,
+    required String token,
   }) async {
     if (!silent) {
       _state = _state.copyWith(
@@ -754,10 +783,11 @@ class OfficialCloudService {
       final response = await _apiClient.request(
         'app/centralControl/deviceTravel',
         method: 'POST',
-        token: _state.token,
+        token: token,
         body: {'queryMonth': queryMonth, 'frame': vehicle.frame, 'uid': userId},
       );
       _ensureSuccess(response.body, fallback: '获取官方历史轨迹失败');
+      if (!_isCurrentSession(token)) return;
       final days = OfficialCloudDataParser.travelDays(response.body['data']);
       _state = _state.copyWith(
         travelDays: days,
@@ -769,6 +799,7 @@ class OfficialCloudService {
       _log.operation('官方历史轨迹已刷新', detail: 'days=${days.length}');
       _markRefreshSuccess(refreshKey);
     } catch (e) {
+      if (!_isCurrentSession(token)) return;
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
         _state = _state.copyWith(
@@ -784,7 +815,7 @@ class OfficialCloudService {
         level: LogLevel.warning,
       );
     } finally {
-      if (!silent && _state.travelLoading) {
+      if (!silent && _isCurrentSession(token) && _state.travelLoading) {
         _state = _state.copyWith(travelLoading: false);
         _emit();
       }
@@ -792,7 +823,8 @@ class OfficialCloudService {
   }
 
   Future<void> refreshTravelDetail(String travelId) async {
-    if (_state.token.isEmpty || travelId.trim().isEmpty) return;
+    final token = _state.token;
+    if (token.isEmpty || travelId.trim().isEmpty) return;
     _state = _state.copyWith(
       travelDetailLoading: true,
       travelDetailError: null,
@@ -802,10 +834,11 @@ class OfficialCloudService {
       final response = await _apiClient.request(
         'app/centralControl/deviceTravelDetail',
         method: 'POST',
-        token: _state.token,
+        token: token,
         body: {'deviceTravelId': travelId},
       );
       _ensureSuccess(response.body, fallback: '获取官方轨迹详情失败');
+      if (!_isCurrentSession(token)) return;
       final points = OfficialCloudDataParser.travelPoints(
         response.body['data'],
       );
@@ -821,6 +854,7 @@ class OfficialCloudService {
       _emit();
       _log.operation('官方轨迹详情已刷新', detail: 'points=${points.length}');
     } catch (e) {
+      if (!_isCurrentSession(token)) return;
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
         _state = _state.copyWith(
@@ -831,7 +865,7 @@ class OfficialCloudService {
       }
       rethrow;
     } finally {
-      if (_state.travelDetailLoading) {
+      if (_isCurrentSession(token) && _state.travelDetailLoading) {
         _state = _state.copyWith(travelDetailLoading: false);
         _emit();
       }
@@ -1028,6 +1062,10 @@ class OfficialCloudService {
     await logout();
     _state = _state.copyWith(error: '官方登录已失效，请重新登录');
     _emit();
+  }
+
+  bool _isCurrentSession(String token) {
+    return token.isNotEmpty && _state.token == token;
   }
 
   void _ensureSuccess(Map<String, dynamic> body, {required String fallback}) {
