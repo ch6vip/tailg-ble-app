@@ -34,7 +34,10 @@ class _OtaPrecheckPageState extends State<OtaPrecheckPage> {
     try {
       final device = connectionManager.device;
       final services = device?.servicesList ?? const <BluetoothService>[];
-      final info = await _readDeviceInformation(services);
+      final info = await connectionManager.runGattOperation(
+        () => _readDeviceInformation(services),
+      );
+      if (!mounted) return;
       setState(() {
         _services = services.map((s) => s.serviceUuid.toString()).toList();
         _modelName = info.modelName;
@@ -60,9 +63,13 @@ class _OtaPrecheckPageState extends State<OtaPrecheckPage> {
         if (characteristic.characteristicUuid.toString().toLowerCase().contains(
           uuid,
         )) {
-          final data = await characteristic.read();
-          if (data.isEmpty) return null;
-          return utf8.decode(data, allowMalformed: true).trim();
+          try {
+            final data = await characteristic.read();
+            if (data.isEmpty) return null;
+            return utf8.decode(data, allowMalformed: true).trim();
+          } catch (_) {
+            return null;
+          }
         }
       }
       return null;
