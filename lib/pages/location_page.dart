@@ -62,6 +62,7 @@ class _LocationPageState extends State<LocationPage> {
         vehicle.id,
         requestPermission: true,
       );
+      if (!mounted) return;
       _showSnack('本地位置已更新');
     } catch (e) {
       LogService().operation(
@@ -88,7 +89,7 @@ class _LocationPageState extends State<LocationPage> {
         service.refreshFenceData(silent: silent),
         service.refreshTravelHistory(silent: silent),
       ]);
-      if (!silent) _showSnack('官方地图数据已刷新');
+      if (!silent && mounted) _showSnack('官方地图数据已刷新');
     } catch (e) {
       LogService().operation(
         '官云地图数据刷新失败',
