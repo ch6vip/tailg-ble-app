@@ -75,6 +75,8 @@ class QgjResponse {
 
 QgjResponse? parseQgjResponse(Uint8List data) {
   if (data.length < 6 || data[0] != 0xA7) return null;
+  final length = (data[2] << 8) | data[3];
+  if (length != data.length - 4) return null;
   final cmdId = (data[4] << 8) | data[5];
   final payload = data.sublist(6);
   final statusNibble = (data[1] >> 4) & 0x0F;

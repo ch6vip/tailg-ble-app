@@ -66,6 +66,21 @@ void main() {
     );
   });
 
+  test('QGJ response parser rejects frames with invalid declared length', () {
+    expect(
+      parseQgjResponse(
+        Uint8List.fromList([0xA7, 0x00, 0x00, 0x03, 0x24, 0x11]),
+      ),
+      isNull,
+    );
+    expect(
+      parseQgjResponse(
+        Uint8List.fromList([0xA7, 0x00, 0x00, 0x02, 0x24, 0x11, 0x01]),
+      ),
+      isNull,
+    );
+  });
+
   test('QGJ advanced command ids match official V3 registry', () {
     expect(QgjCommandIds.autoLockGet, 0x2000);
     expect(QgjCommandIds.autoLockSet, 0x2001);
