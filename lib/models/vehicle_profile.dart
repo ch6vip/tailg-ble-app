@@ -40,13 +40,22 @@ class VehicleLocation {
 
   factory VehicleLocation.fromJson(Map<String, dynamic> json) {
     return VehicleLocation(
-      latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
-      longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
-      accuracy: (json['accuracy'] as num?)?.toDouble() ?? 0,
-      recordedAt:
-          DateTime.tryParse(json['recordedAt'] as String? ?? '') ??
-          DateTime.now(),
+      latitude: _doubleValue(json['latitude']),
+      longitude: _doubleValue(json['longitude']),
+      accuracy: _doubleValue(json['accuracy']),
+      recordedAt: _dateValue(json['recordedAt']) ?? DateTime.now(),
     );
+  }
+
+  static double _doubleValue(Object? value) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value.trim()) ?? 0;
+    return 0;
+  }
+
+  static DateTime? _dateValue(Object? value) {
+    if (value == null) return null;
+    return DateTime.tryParse(value.toString());
   }
 }
 
@@ -117,19 +126,32 @@ class VehicleProfile {
     final now = DateTime.now();
     final locationJson = json['lastLocation'];
     return VehicleProfile(
-      id: json['id'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      protocol: VehicleProtocol.fromValue(json['protocol'] as String?),
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? now,
-      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? now,
-      lastConnectedAt: DateTime.tryParse(
-        json['lastConnectedAt'] as String? ?? '',
-      ),
+      id: _stringValue(json['id']),
+      name: _stringValue(json['name']),
+      protocol: VehicleProtocol.fromValue(_stringValue(json['protocol'])),
+      createdAt: _dateValue(json['createdAt']) ?? now,
+      updatedAt: _dateValue(json['updatedAt']) ?? now,
+      lastConnectedAt: _dateValue(json['lastConnectedAt']),
       lastLocation: locationJson is Map
           ? VehicleLocation.fromJson(Map<String, dynamic>.from(locationJson))
           : null,
-      qgjLoginPassword: (json['qgjLoginPassword'] as num?)?.toInt(),
-      qgjUserId: (json['qgjUserId'] as num?)?.toInt(),
+      qgjLoginPassword: _intValue(json['qgjLoginPassword']),
+      qgjUserId: _intValue(json['qgjUserId']),
     );
+  }
+
+  static String _stringValue(Object? value) {
+    return value?.toString().trim() ?? '';
+  }
+
+  static DateTime? _dateValue(Object? value) {
+    if (value == null) return null;
+    return DateTime.tryParse(value.toString());
+  }
+
+  static int? _intValue(Object? value) {
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value.trim());
+    return null;
   }
 }

@@ -122,6 +122,38 @@ void main() {
     },
   );
 
+  test('VehicleStore keeps recoverable profiles with malformed fields', () async {
+    SharedPreferences.setMockInitialValues({
+      'vehicle_profiles':
+          '[{"id":"AA:BB:CC:DD:EE:FF",'
+          '"name":123,'
+          '"protocol":456,'
+          '"createdAt":789,'
+          '"updatedAt":"bad-date",'
+          '"lastConnectedAt":"2026-06-09T10:30:00.000",'
+          '"qgjLoginPassword":"123456",'
+          '"qgjUserId":"789",'
+          '"lastLocation":{"latitude":"31.2304","longitude":"121.4737","accuracy":"12"}}]',
+      'vehicle_default_id': 'AA:BB:CC:DD:EE:FF',
+    });
+    VehicleStore().resetForTest();
+
+    final store = VehicleStore();
+    await store.init();
+
+    expect(store.vehicles, hasLength(1));
+    expect(store.defaultVehicle?.displayName, '123');
+    expect(store.defaultVehicle?.protocol, VehicleProtocol.auto);
+    expect(store.defaultVehicle?.lastConnectedAt, DateTime(2026, 6, 9, 10, 30));
+    expect(
+      store.defaultVehicle?.lastLocation?.coordinateText,
+      '31.230400, 121.473700',
+    );
+    expect(store.defaultVehicle?.lastLocation?.accuracy, 12);
+    expect(store.defaultVehicle?.qgjLoginPassword, 123456);
+    expect(store.defaultVehicle?.qgjUserId, 789);
+  });
+
   test('ReplicaFeatureStore saves quick control config', () async {
     final store = ReplicaFeatureStore();
 
