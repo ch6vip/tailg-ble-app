@@ -55,6 +55,7 @@ class AppPreferencesService {
   DistanceUnitPreference _distanceUnit = DistanceUnitPreference.metric;
   bool _respectTextScale = true;
   bool _initialized = false;
+  Future<void>? _initializing;
 
   AppLanguagePreference get language => _language;
   DistanceUnitPreference get distanceUnit => _distanceUnit;
@@ -67,14 +68,35 @@ class AppPreferencesService {
 
   Future<void> init() async {
     if (_initialized) return;
+    final initializing = _initializing;
+    if (initializing != null) return initializing;
+    _initializing = _load();
+    return _initializing!;
+  }
+
+  Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    _language = AppLanguagePreference.fromValue(prefs.getString(_prefLanguage));
-    _distanceUnit = DistanceUnitPreference.fromValue(
-      prefs.getString(_prefDistanceUnit),
-    );
-    _respectTextScale = prefs.getBool(_prefRespectTextScale) ?? true;
-    _initialized = true;
-    _emit();
+    try {
+      _language = AppLanguagePreference.fromValue(
+        prefs.getString(_prefLanguage),
+      );
+      _distanceUnit = DistanceUnitPreference.fromValue(
+        prefs.getString(_prefDistanceUnit),
+      );
+      _respectTextScale = prefs.getBool(_prefRespectTextScale) ?? true;
+      _initialized = true;
+      _emit();
+    } finally {
+      _initializing = null;
+    }
+  }
+
+  void resetForTest() {
+    _language = AppLanguagePreference.system;
+    _distanceUnit = DistanceUnitPreference.metric;
+    _respectTextScale = true;
+    _initialized = false;
+    _initializing = null;
   }
 
   Future<void> setLanguage(AppLanguagePreference preference) async {

@@ -57,6 +57,7 @@ void openScanTab(BuildContext context) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppPreferencesService().init();
   await vehicleStore.init();
   await officialCloudService.init();
   final defaultVehicle = vehicleStore.defaultVehicle;
