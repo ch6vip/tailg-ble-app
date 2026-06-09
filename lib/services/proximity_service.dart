@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../ble/connection_manager.dart';
@@ -21,6 +22,8 @@ class ProximityService {
   bool _unlockSent = false;
   String? _targetDeviceId;
   DateTime? _lastUnlockTime;
+  bool _initialized = false;
+  Future<void>? _initializing;
 
   static const _rssiThreshold = -75;
   static const _cooldownSeconds = 30;
@@ -28,15 +31,30 @@ class ProximityService {
 
   bool _enabled = false;
   bool get enabled => _enabled;
+  @visibleForTesting
+  String? get targetDeviceId => _targetDeviceId;
 
   final _enabledController = StreamController<bool>.broadcast();
   Stream<bool> get enabledStream => _enabledController.stream;
 
   Future<void> init(ConnectionManager manager) async {
     _connectionManager = manager;
-    final prefs = await SharedPreferences.getInstance();
-    _enabled = prefs.getBool(_prefKey) ?? false;
-    _enabledController.add(_enabled);
+    if (_initialized) return;
+    final initializing = _initializing;
+    if (initializing != null) return initializing;
+    _initializing = _load();
+    return _initializing!;
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _enabled = prefs.getBool(_prefKey) ?? false;
+      _initialized = true;
+      _enabledController.add(_enabled);
+    } finally {
+      _initializing = null;
+    }
   }
 
   Future<void> setEnabled(bool value) async {
@@ -45,17 +63,18 @@ class ProximityService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefKey, value);
     if (value) {
-      start();
+      await start();
     } else {
       stop();
     }
   }
 
   void setTargetDevice(String deviceId) {
-    _targetDeviceId = deviceId;
+    final trimmed = deviceId.trim();
+    _targetDeviceId = trimmed.isEmpty ? null : trimmed;
   }
 
-  void start() {
+  Future<void> start() async {
     if (!_enabled || _targetDeviceId == null || _scanning) return;
     if (ManualModeService().enabled) return;
     if (_connectionManager?.state == ConnectionState.ready) return;
@@ -73,10 +92,21 @@ class ProximityService {
       }
     });
 
-    FlutterBluePlus.startScan(
-      timeout: BleTimings.proximityScanTimeout,
-      continuousUpdates: true,
-    );
+    try {
+      await FlutterBluePlus.startScan(
+        timeout: BleTimings.proximityScanTimeout,
+        continuousUpdates: true,
+      );
+    } catch (e) {
+      _scanning = false;
+      await _scanSub?.cancel();
+      _scanSub = null;
+      _log.operation(
+        '感应解锁: 扫描启动失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
+    }
   }
 
   void stop() {
@@ -90,7 +120,7 @@ class ProximityService {
   void onAppResumed() {
     if (_enabled && _targetDeviceId != null) {
       if (_connectionManager?.state != ConnectionState.ready) {
-        start();
+        unawaited(start());
       }
     }
   }
@@ -172,5 +202,17 @@ class ProximityService {
   void dispose() {
     stop();
     _enabledController.close();
+  }
+
+  void resetForTest() {
+    _connectionManager = null;
+    _scanSub = null;
+    _scanning = false;
+    _unlockSent = false;
+    _targetDeviceId = null;
+    _lastUnlockTime = null;
+    _enabled = false;
+    _initialized = false;
+    _initializing = null;
   }
 }
