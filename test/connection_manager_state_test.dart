@@ -65,4 +65,19 @@ void main() {
     await expectLater(commandAck, completion(isFalse));
     await responseExpectation;
   });
+
+  test('dispose is idempotent and ignores later state publications', () {
+    final manager = ConnectionManager();
+
+    manager.dispose();
+
+    expect(manager.dispose, returnsNormally);
+    expect(
+      () => manager.publishBikeStateForTest(
+        const BikeState(isLocked: true, isPowerOn: true),
+      ),
+      returnsNormally,
+    );
+    expect(manager.resetCharacteristicsForTest, returnsNormally);
+  });
 }

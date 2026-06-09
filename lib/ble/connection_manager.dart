@@ -40,6 +40,7 @@ class ConnectionManager {
   int _qgjUserId = 0;
   BikeState? _latestBikeState;
   BikeState? _lastPublishedBikeState;
+  bool _disposed = false;
 
   BluetoothCharacteristic? _writeChar;
   BluetoothCharacteristic? _notifyChar;
@@ -118,6 +119,9 @@ class ConnectionManager {
   }
 
   Future<void> connect(BluetoothDevice device) async {
+    if (_disposed) {
+      throw StateError('ConnectionManager disposed');
+    }
     _userDisconnected = false;
     _reconnecting = false;
     _reconnectAttempt = 0;
@@ -390,13 +394,14 @@ class ConnectionManager {
   }
 
   void _onStandardNotify(List<int> value) {
+    if (_disposed) return;
     final data = Uint8List.fromList(value);
     _log.ble(
       '← 收到数据',
       detail: data.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' '),
     );
     final response = parseResponse(_model.aesKey, data);
-    _responseController.add(response);
+    _addResponse(response);
 
     if (response is TokenResponse) {
       _token = response.token;
@@ -407,6 +412,7 @@ class ConnectionManager {
   }
 
   void _onQgjNotify(List<int> value) {
+    if (_disposed) return;
     final data = Uint8List.fromList(value);
     _log.ble(
       '← QGJ 响应',
@@ -432,6 +438,7 @@ class ConnectionManager {
   }
 
   void _onQgjGpsNotify(List<int> value) {
+    if (_disposed) return;
     if (value.isEmpty) return;
     _log.ble(
       '← QGJ GPS 通知',
@@ -492,14 +499,18 @@ class ConnectionManager {
     if (state == _lastPublishedBikeState) return;
     _latestBikeState = state;
     _lastPublishedBikeState = state;
-    _bikeStateController.add(state);
+    if (!_disposed) {
+      _bikeStateController.add(state);
+    }
   }
 
   void _clearBikeState() {
     if (_latestBikeState == null && _lastPublishedBikeState == null) return;
     _latestBikeState = null;
     _lastPublishedBikeState = null;
-    _bikeStateController.add(null);
+    if (!_disposed) {
+      _bikeStateController.add(null);
+    }
   }
 
   @visibleForTesting
@@ -622,7 +633,7 @@ class ConnectionManager {
       });
       _ridingMode = parseQgjRidingMode(response) ?? mode;
 
-      _ridingModeController.add(_ridingMode);
+      _addRidingMode(_ridingMode);
       _log.operation('模式已切换: ${_ridingMode.label}', level: LogLevel.info);
       return true;
     } catch (e) {
@@ -644,6 +655,7 @@ class ConnectionManager {
   }
 
   void _onDisconnected() {
+    if (_disposed) return;
     _log.ble('设备断开连接', level: LogLevel.warning);
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
@@ -795,16 +807,32 @@ class ConnectionManager {
 
   void _reset() {
     _state = ConnectionState.disconnected;
-    _stateController.add(_state);
+    if (!_disposed) {
+      _stateController.add(_state);
+    }
     _resetCharacteristics();
   }
 
   void _setState(ConnectionState s) {
     _state = s;
-    _stateController.add(s);
+    if (!_disposed) {
+      _stateController.add(s);
+    }
+  }
+
+  void _addResponse(ParsedResponse response) {
+    if (_disposed) return;
+    _responseController.add(response);
+  }
+
+  void _addRidingMode(RidingMode mode) {
+    if (_disposed) return;
+    _ridingModeController.add(mode);
   }
 
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
     _completePendingOperations(StateError('ConnectionManager disposed'));
