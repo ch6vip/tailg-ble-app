@@ -118,7 +118,9 @@ class LocationService {
   Future<VehicleLocation?> recordDefaultVehicleLocation({
     bool requestPermission = false,
   }) async {
-    final vehicle = VehicleStore().defaultVehicle;
+    final store = VehicleStore();
+    await store.init();
+    final vehicle = store.defaultVehicle;
     if (vehicle == null) return null;
     return recordVehicleLocation(
       vehicle.id,
