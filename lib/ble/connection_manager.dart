@@ -494,6 +494,19 @@ class ConnectionManager {
     _bikeStateController.add(state);
   }
 
+  void _clearBikeState() {
+    if (_latestBikeState == null && _lastPublishedBikeState == null) return;
+    _latestBikeState = null;
+    _lastPublishedBikeState = null;
+    _bikeStateController.add(null);
+  }
+
+  @visibleForTesting
+  void publishBikeStateForTest(BikeState? state) => _publishBikeState(state);
+
+  @visibleForTesting
+  void resetCharacteristicsForTest() => _resetCharacteristics();
+
   Future<bool> sendCommand(CommandCode cmd) async {
     if (_state != ConnectionState.ready) return false;
 
@@ -702,7 +715,7 @@ class ConnectionManager {
     _fcc2Char = null;
     _fbb1Char = null;
     _fbb2Char = null;
-    _lastPublishedBikeState = null;
+    _clearBikeState();
   }
 
   Future<void> _clearRuntimeResources({required bool disconnectDevice}) async {
