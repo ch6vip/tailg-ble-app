@@ -227,6 +227,7 @@ class OfficialCloudService {
   final Map<String, DateTime> _lastSuccessfulRefresh = {};
   final Map<String, Future<void>> _inFlightRefreshes = {};
   bool _initialized = false;
+  Future<void>? _initializing;
 
   OfficialCloudService._();
 
@@ -236,23 +237,34 @@ class OfficialCloudService {
 
   Future<void> init() async {
     if (_initialized) return;
-    final stored = await _storage.loadSession();
-    _state = _state.copyWith(
-      initialized: true,
-      token: stored.token,
-      phone: stored.phone,
-      userId: stored.userId,
-      selectedVehicleKey: stored.selectedVehicleKey,
-      controlChannel: stored.controlChannel,
-      localVehicleLinks: stored.localVehicleLinks,
-    );
-    _initialized = true;
-    _emit();
-    if (_state.token.isNotEmpty) {
-      _runSilentRefresh(
-        refreshVehicles(silent: true),
-        failureMessage: '官方车辆静默刷新失败',
+    final initializing = _initializing;
+    if (initializing != null) return initializing;
+    _initializing = _loadInitialSession();
+    return _initializing!;
+  }
+
+  Future<void> _loadInitialSession() async {
+    try {
+      final stored = await _storage.loadSession();
+      _state = _state.copyWith(
+        initialized: true,
+        token: stored.token,
+        phone: stored.phone,
+        userId: stored.userId,
+        selectedVehicleKey: stored.selectedVehicleKey,
+        controlChannel: stored.controlChannel,
+        localVehicleLinks: stored.localVehicleLinks,
       );
+      _initialized = true;
+      _emit();
+      if (_state.token.isNotEmpty) {
+        _runSilentRefresh(
+          refreshVehicles(silent: true),
+          failureMessage: '官方车辆静默刷新失败',
+        );
+      }
+    } finally {
+      _initializing = null;
     }
   }
 
