@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
+
+import 'helpers/test_app.dart';
 
 void main() {
   // Regression: the bound (vehicle-present) control home used to throw
@@ -22,7 +23,7 @@ void main() {
       makeDefault: true,
     );
 
-    await tester.pumpWidget(const MaterialApp(home: ControlPage()));
+    await tester.pumpWidget(const TestApp(home: ControlPage()));
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(tester.takeException(), isNull);

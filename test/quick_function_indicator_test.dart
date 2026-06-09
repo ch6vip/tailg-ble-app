@@ -5,6 +5,8 @@ import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 
+import 'helpers/test_app.dart';
+
 const _indicator = Key('quickFunctionScrollIndicator');
 
 Future<void> _pumpControlPage(WidgetTester tester, Size size) async {
@@ -22,7 +24,7 @@ Future<void> _pumpControlPage(WidgetTester tester, Size size) async {
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
 
-  await tester.pumpWidget(const MaterialApp(home: ControlPage()));
+  await tester.pumpWidget(const TestApp(home: ControlPage()));
   await tester.pump(const Duration(milliseconds: 50));
   expect(tester.takeException(), isNull);
   expect(find.text('SHORTCUTS'), findsOneWidget);
