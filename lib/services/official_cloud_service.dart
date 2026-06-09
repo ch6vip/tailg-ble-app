@@ -951,8 +951,9 @@ class OfficialCloudService {
   }
 
   Future<OfficialVehicleSelfCheck> selfCheck() async {
+    final token = _state.token;
     final vehicle = _state.selectedVehicle;
-    if (_state.token.isEmpty || vehicle == null) {
+    if (token.isEmpty || vehicle == null) {
       throw const OfficialCloudApiException('请先登录官方账号并选择车辆');
     }
     if (vehicle.commandImei.isEmpty) {
@@ -964,10 +965,11 @@ class OfficialCloudService {
       final response = await _apiClient.request(
         'app/device/cmd/status',
         method: 'POST',
-        token: _state.token,
+        token: token,
         body: {'imei': vehicle.commandImei},
       );
       _ensureSuccess(response.body, fallback: '云端自检失败');
+      _ensureCurrentSession(token);
       final result = OfficialVehicleSelfCheck.fromResponse(response.body);
       _log.operation(
         '官方云端自检已返回',
@@ -976,6 +978,7 @@ class OfficialCloudService {
       );
       return result;
     } catch (e) {
+      _ensureCurrentSession(token);
       await _handleAuthFailureIfNeeded(e);
       _log.operation(
         '官方云端自检失败',
@@ -991,8 +994,9 @@ class OfficialCloudService {
     if (cloudCommand == null) {
       throw OfficialCloudApiException('官方云端不支持${command.label}');
     }
+    final token = _state.token;
     final vehicle = _state.selectedVehicle;
-    if (_state.token.isEmpty || vehicle == null) {
+    if (token.isEmpty || vehicle == null) {
       throw const OfficialCloudApiException('请先登录官方账号并选择车辆');
     }
     if (vehicle.commandImei.isEmpty) {
@@ -1004,15 +1008,17 @@ class OfficialCloudService {
       final response = await _apiClient.request(
         'app/device/cmd/${cloudCommand.apiName}',
         method: 'POST',
-        token: _state.token,
+        token: token,
         body: {'imei': vehicle.commandImei},
       );
       _ensureSuccess(response.body, fallback: '${command.label}失败');
+      _ensureCurrentSession(token);
       final message = response.body['msg']?.toString();
       _log.operation('官方云端指令已返回: ${command.label}');
       _refreshVehiclesAfterCommand(command);
       return message == null || message.isEmpty ? 'success' : message;
     } catch (e) {
+      _ensureCurrentSession(token);
       await _handleAuthFailureIfNeeded(e);
       rethrow;
     }
@@ -1066,6 +1072,12 @@ class OfficialCloudService {
 
   bool _isCurrentSession(String token) {
     return token.isNotEmpty && _state.token == token;
+  }
+
+  void _ensureCurrentSession(String token) {
+    if (!_isCurrentSession(token)) {
+      throw const OfficialCloudApiException('官方登录状态已变化，请重试');
+    }
   }
 
   void _ensureSuccess(Map<String, dynamic> body, {required String fallback}) {
