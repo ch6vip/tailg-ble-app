@@ -42,10 +42,21 @@ class DiagnosticRecord {
 
   factory DiagnosticRecord.fromJson(Map<String, dynamic> json) =>
       DiagnosticRecord(
-        time: DateTime.parse(json['time']),
-        rawByte: json['raw'],
-        faults: List<String>.from(json['faults']),
+        time:
+            DateTime.tryParse(json['time'] as String? ?? '') ?? DateTime.now(),
+        rawByte: (json['raw'] as num?)?.toInt() ?? 0,
+        faults: (json['faults'] as List?)?.whereType<String>().toList() ?? [],
       );
+
+  static DiagnosticRecord? tryParse(String raw) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      return DiagnosticRecord.fromJson(Map<String, dynamic>.from(decoded));
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 class DiagnosticPage extends StatefulWidget {
@@ -71,9 +82,11 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
   Future<void> _loadHistory() async {
     final prefs = await SharedPreferences.getInstance();
     final data = prefs.getStringList('diagnostic_history') ?? [];
+    if (!mounted) return;
     setState(() {
       _history = data
-          .map((s) => DiagnosticRecord.fromJson(jsonDecode(s)))
+          .map(DiagnosticRecord.tryParse)
+          .whereType<DiagnosticRecord>()
           .toList()
           .reversed
           .toList();
@@ -177,7 +190,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
         ).showSnackBar(SnackBar(content: Text('诊断失败: $e')));
       }
     } finally {
-      setState(() => _scanning = false);
+      if (mounted) setState(() => _scanning = false);
     }
   }
 
