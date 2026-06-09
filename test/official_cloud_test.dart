@@ -188,8 +188,20 @@ void main() {
           OfficialCloudAuthParser.looksLikeAuthError('token 已过期，请重新登录'),
           isTrue,
         );
+        expect(
+          OfficialCloudAuthParser.looksLikeAuthError('TOKEN expired'),
+          isTrue,
+        );
+        expect(
+          OfficialCloudAuthParser.looksLikeAuthError('Unauthorized request'),
+          isTrue,
+        );
         expect(OfficialCloudAuthParser.looksLikeAuthError('HTTP 403'), isTrue);
         expect(OfficialCloudAuthParser.looksLikeAuthError('网络不可用'), isFalse);
+        expect(
+          OfficialCloudAuthParser.looksLikeAuthError('server timeout'),
+          isFalse,
+        );
       },
     );
   });

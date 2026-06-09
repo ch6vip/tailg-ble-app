@@ -4,14 +4,18 @@ class OfficialCloudAuthParser {
   const OfficialCloudAuthParser._();
 
   static bool looksLikeAuthError(String message) {
-    return message.contains('token') ||
-        message.contains('登录') ||
-        message.contains('认证') ||
-        message.contains('授权') ||
-        message.contains('401') ||
-        message.contains('403') ||
-        message.contains('过期') ||
-        message.contains('失效');
+    final normalized = message.trim().toLowerCase();
+    return normalized.contains('token') ||
+        normalized.contains('unauthorized') ||
+        normalized.contains('forbidden') ||
+        normalized.contains('expired') ||
+        normalized.contains('登录') ||
+        normalized.contains('认证') ||
+        normalized.contains('授权') ||
+        normalized.contains('401') ||
+        normalized.contains('403') ||
+        normalized.contains('过期') ||
+        normalized.contains('失效');
   }
 
   static String extractUserId(Map<String, dynamic> body) {
