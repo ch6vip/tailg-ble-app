@@ -3,8 +3,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/services/manual_mode_service.dart';
 
 void main() {
-  test('ManualModeService defaults to off and persists toggles', () async {
+  setUp(() {
+    ManualModeService().resetForTest();
     SharedPreferences.setMockInitialValues({});
+  });
+
+  test('ManualModeService defaults to off and persists toggles', () async {
     final service = ManualModeService();
     await service.init();
     expect(service.enabled, isFalse);
@@ -28,5 +32,15 @@ void main() {
     await sub.cancel();
     expect(events, contains(true));
     expect(events, contains(false));
+  });
+
+  test('ManualModeService coalesces concurrent init calls', () async {
+    SharedPreferences.setMockInitialValues({'manual_mode_enabled': true});
+    ManualModeService().resetForTest();
+
+    final service = ManualModeService();
+    await Future.wait([service.init(), service.init()]);
+
+    expect(service.enabled, isTrue);
   });
 }

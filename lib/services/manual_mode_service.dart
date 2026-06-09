@@ -16,15 +16,36 @@ class ManualModeService {
   static const _prefKey = 'manual_mode_enabled';
 
   bool _enabled = false;
+  bool _initialized = false;
+  Future<void>? _initializing;
   bool get enabled => _enabled;
 
   final _enabledController = StreamController<bool>.broadcast();
   Stream<bool> get enabledStream => _enabledController.stream;
 
   Future<void> init() async {
+    if (_initialized) return;
+    final initializing = _initializing;
+    if (initializing != null) return initializing;
+    _initializing = _load();
+    return _initializing!;
+  }
+
+  Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    _enabled = prefs.getBool(_prefKey) ?? false;
-    _enabledController.add(_enabled);
+    try {
+      _enabled = prefs.getBool(_prefKey) ?? false;
+      _initialized = true;
+      _enabledController.add(_enabled);
+    } finally {
+      _initializing = null;
+    }
+  }
+
+  void resetForTest() {
+    _enabled = false;
+    _initialized = false;
+    _initializing = null;
   }
 
   Future<void> setEnabled(bool value) async {
