@@ -53,12 +53,14 @@ class LocationService {
     String vehicleId, {
     bool requestPermission = false,
   }) async {
+    final normalizedId = vehicleId.trim();
+    if (normalizedId.isEmpty) return null;
     final store = VehicleStore();
     try {
       await store.init();
       final throttledLocation = _throttledLocation(
         store,
-        vehicleId,
+        normalizedId,
         requestPermission: requestPermission,
       );
       if (throttledLocation != null) return throttledLocation;
@@ -66,13 +68,13 @@ class LocationService {
       final location = await captureCurrentLocation(
         requestPermission: requestPermission,
       );
-      await store.updateLastLocation(vehicleId, location);
+      await store.updateLastLocation(normalizedId, location);
       if (!requestPermission) {
-        _lastSilentCaptures[vehicleId] = location.recordedAt;
+        _lastSilentCaptures[normalizedId] = location.recordedAt;
       }
       _log.operation(
         '记录车辆位置',
-        detail: '$vehicleId ${location.coordinateText}',
+        detail: '$normalizedId ${location.coordinateText}',
         level: LogLevel.info,
       );
       return location;
