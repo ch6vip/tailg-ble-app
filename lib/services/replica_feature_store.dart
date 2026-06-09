@@ -224,10 +224,9 @@ class ReplicaFeatureStore {
     final raw = (await SharedPreferences.getInstance()).getString(
       _prefFenceConfig,
     );
-    if (raw == null || raw.isEmpty) return null;
-    final decoded = jsonDecode(raw);
-    if (decoded is! Map) return null;
-    return FenceConfig.fromJson(Map<String, dynamic>.from(decoded));
+    final decoded = _decodeMap(raw);
+    if (decoded == null) return null;
+    return FenceConfig.fromJson(decoded);
   }
 
   Future<void> saveFenceConfig(FenceConfig config) async {
@@ -253,10 +252,9 @@ class ReplicaFeatureStore {
     final raw = (await SharedPreferences.getInstance()).getString(
       _prefQuickControlConfig,
     );
-    if (raw == null || raw.isEmpty) return const QuickControlConfig();
-    final decoded = jsonDecode(raw);
-    if (decoded is! Map) return const QuickControlConfig();
-    return QuickControlConfig.fromJson(Map<String, dynamic>.from(decoded));
+    final decoded = _decodeMap(raw);
+    if (decoded == null) return const QuickControlConfig();
+    return QuickControlConfig.fromJson(decoded);
   }
 
   Future<void> saveQuickControlConfig(QuickControlConfig config) async {
@@ -268,10 +266,9 @@ class ReplicaFeatureStore {
     final raw = (await SharedPreferences.getInstance()).getString(
       _prefQuickShortcutsConfig,
     );
-    if (raw == null || raw.isEmpty) return const QuickShortcutsConfig();
-    final decoded = jsonDecode(raw);
-    if (decoded is! Map) return const QuickShortcutsConfig();
-    return QuickShortcutsConfig.fromJson(Map<String, dynamic>.from(decoded));
+    final decoded = _decodeMap(raw);
+    if (decoded == null) return const QuickShortcutsConfig();
+    return QuickShortcutsConfig.fromJson(decoded);
   }
 
   Future<void> saveQuickShortcutsConfig(QuickShortcutsConfig config) async {
@@ -286,10 +283,9 @@ class ReplicaFeatureStore {
     final raw = (await SharedPreferences.getInstance()).getString(
       _prefMainControlConfig,
     );
-    if (raw == null || raw.isEmpty) return const MainControlConfig();
-    final decoded = jsonDecode(raw);
-    if (decoded is! Map) return const MainControlConfig();
-    return MainControlConfig.fromJson(Map<String, dynamic>.from(decoded));
+    final decoded = _decodeMap(raw);
+    if (decoded == null) return const MainControlConfig();
+    return MainControlConfig.fromJson(decoded);
   }
 
   Future<void> saveMainControlConfig(MainControlConfig config) async {
@@ -301,12 +297,34 @@ class ReplicaFeatureStore {
 
   List<T> _decodeList<T>(String? raw, T Function(Map<String, dynamic>) decode) {
     if (raw == null || raw.isEmpty) return [];
-    final decoded = jsonDecode(raw);
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } catch (_) {
+      return [];
+    }
     if (decoded is! List) return [];
-    return decoded
-        .whereType<Map>()
-        .map((item) => decode(Map<String, dynamic>.from(item)))
-        .toList(growable: false);
+    final records = <T>[];
+    for (final item in decoded) {
+      if (item is! Map) continue;
+      try {
+        records.add(decode(Map<String, dynamic>.from(item)));
+      } catch (_) {
+        continue;
+      }
+    }
+    return records;
+  }
+
+  Map<String, dynamic>? _decodeMap(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    } catch (_) {
+      return null;
+    }
+    return null;
   }
 
   Future<void> _saveList(

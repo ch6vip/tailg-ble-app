@@ -137,4 +137,33 @@ void main() {
     expect(saved.firstActionId, 'fence');
     expect(saved.secondActionId, 'find');
   });
+
+  test('ReplicaFeatureStore tolerates corrupt persisted config', () async {
+    SharedPreferences.setMockInitialValues({
+      'replica_nfc_keys': 'not-json',
+      'replica_fence_config': '[',
+      'replica_share_members': '{"not":"a-list"}',
+      'replica_quick_control_config': 'bad',
+      'replica_quick_shortcuts_config': '42',
+      'replica_main_control_config': 'null',
+    });
+
+    final store = ReplicaFeatureStore();
+
+    expect(await store.loadNfcKeys(), isEmpty);
+    expect(await store.loadFenceConfig(), isNull);
+    expect(await store.loadShareMembers(), isEmpty);
+    expect(
+      await store.loadQuickControlConfig(),
+      isA<QuickControlConfig>()
+          .having(
+            (config) => config.firstActionId,
+            'firstActionId',
+            'soundEffects',
+          )
+          .having((config) => config.secondActionId, 'secondActionId', 'seat'),
+    );
+    expect(await store.loadQuickShortcutsConfig(), isA<QuickShortcutsConfig>());
+    expect(await store.loadMainControlConfig(), isA<MainControlConfig>());
+  });
 }
