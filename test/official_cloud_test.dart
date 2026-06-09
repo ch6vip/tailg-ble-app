@@ -308,11 +308,42 @@ void main() {
           'official-1': 'local-1',
           'official-2': 'local-2',
           'official-3': 'local-3',
+          '': 'local-1',
+          'official-empty': '',
         },
-        {'local-1', 'local-3'},
+        {'local-1', ' local-3 ', ''},
       );
 
       expect(pruned, {'official-1': 'local-1', 'official-3': 'local-3'});
+    });
+
+    test('normalizes invalid local link writes', () {
+      final original = {'official-1': 'local-1'};
+
+      expect(
+        OfficialCloudVehicleLinks.link(
+          original,
+          officialVehicleKey: '',
+          localVehicleId: 'local-2',
+        ),
+        original,
+      );
+      expect(
+        OfficialCloudVehicleLinks.link(
+          original,
+          officialVehicleKey: 'official-1',
+          localVehicleId: '',
+        ),
+        isEmpty,
+      );
+      expect(
+        OfficialCloudVehicleLinks.link(
+          original,
+          officialVehicleKey: ' official-2 ',
+          localVehicleId: ' local-2 ',
+        ),
+        {'official-1': 'local-1', 'official-2': 'local-2'},
+      );
     });
 
     test('checks whether official vehicle already links to local vehicle', () {
@@ -321,8 +352,8 @@ void main() {
       expect(
         OfficialCloudVehicleLinks.isLinkedTo(
           links,
-          officialVehicleKey: 'official-1',
-          localVehicleId: 'local-1',
+          officialVehicleKey: ' official-1 ',
+          localVehicleId: ' local-1 ',
         ),
         isTrue,
       );
