@@ -161,6 +161,7 @@ class ConnectionManager {
     _reconnectAttempt = 0;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    _completePendingOperations(StateError('QGJ disconnected'));
     _notifySub?.cancel();
     _gpsNotifySub?.cancel();
     _connectionSub?.cancel();
@@ -507,6 +508,20 @@ class ConnectionManager {
   @visibleForTesting
   void resetCharacteristicsForTest() => _resetCharacteristics();
 
+  @visibleForTesting
+  Future<bool> createPendingCommandAckForTest() {
+    final completer = Completer<bool>();
+    _cmdAckCompleter = completer;
+    return completer.future;
+  }
+
+  @visibleForTesting
+  Future<QgjResponse?> createPendingQgjResponseForTest(int cmdId) {
+    final completer = Completer<QgjResponse?>();
+    _qgjResponseCompleters[cmdId] = completer;
+    return completer.future;
+  }
+
   Future<bool> sendCommand(CommandCode cmd) async {
     if (_state != ConnectionState.ready) return false;
 
@@ -791,6 +806,8 @@ class ConnectionManager {
 
   void dispose() {
     _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    _completePendingOperations(StateError('ConnectionManager disposed'));
     _notifySub?.cancel();
     _gpsNotifySub?.cancel();
     _connectionSub?.cancel();

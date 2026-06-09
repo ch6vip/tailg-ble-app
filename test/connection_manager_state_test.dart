@@ -28,4 +28,41 @@ void main() {
       expect(events, [state, null]);
     },
   );
+
+  test('disconnect completes pending QGJ operations immediately', () async {
+    final manager = ConnectionManager();
+    addTearDown(manager.dispose);
+
+    final commandAck = manager.createPendingCommandAckForTest();
+    final response = manager.createPendingQgjResponseForTest(
+      QgjCommandIds.lightSensorGet,
+    );
+    final responseExpectation = expectLater(
+      response,
+      throwsA(isA<StateError>()),
+    );
+
+    await manager.disconnect();
+
+    await expectLater(commandAck, completion(isFalse));
+    await responseExpectation;
+  });
+
+  test('dispose completes pending QGJ operations immediately', () async {
+    final manager = ConnectionManager();
+
+    final commandAck = manager.createPendingCommandAckForTest();
+    final response = manager.createPendingQgjResponseForTest(
+      QgjCommandIds.lightSensorGet,
+    );
+    final responseExpectation = expectLater(
+      response,
+      throwsA(isA<StateError>()),
+    );
+
+    manager.dispose();
+
+    await expectLater(commandAck, completion(isFalse));
+    await responseExpectation;
+  });
 }
