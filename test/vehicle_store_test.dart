@@ -154,6 +154,70 @@ void main() {
     expect(store.defaultVehicle?.qgjUserId, 789);
   });
 
+  test('VehicleStore normalizes ids at write and lookup boundaries', () async {
+    final store = VehicleStore();
+    await store.init();
+
+    final created = await store.upsert(
+      id: '  AA:BB:CC:DD:EE:FF  ',
+      name: '测试车辆',
+      makeDefault: true,
+    );
+    final updated = await store.upsert(
+      id: 'AA:BB:CC:DD:EE:FF',
+      name: '更新车辆',
+      protocol: VehicleProtocol.qgj,
+    );
+
+    expect(created.id, 'AA:BB:CC:DD:EE:FF');
+    expect(updated.id, 'AA:BB:CC:DD:EE:FF');
+    expect(store.vehicles, hasLength(1));
+    expect(store.defaultVehicleId, 'AA:BB:CC:DD:EE:FF');
+    expect(store.defaultVehicle?.displayName, '更新车辆');
+    expect(store.defaultVehicle?.protocol, VehicleProtocol.qgj);
+
+    await store.rename('  AA:BB:CC:DD:EE:FF  ', '重命名车辆');
+    await store.setDefault(' AA:BB:CC:DD:EE:FF ');
+
+    expect(store.defaultVehicle?.displayName, '重命名车辆');
+
+    await store.remove(' AA:BB:CC:DD:EE:FF ');
+
+    expect(store.vehicles, isEmpty);
+    expect(store.defaultVehicleId, isNull);
+  });
+
+  test(
+    'VehicleStore rejects blank ids instead of persisting invalid profiles',
+    () async {
+      final store = VehicleStore();
+      await store.init();
+
+      await expectLater(
+        store.upsert(id: '   ', name: '空白车辆'),
+        throwsArgumentError,
+      );
+
+      expect(store.vehicles, isEmpty);
+      expect(store.defaultVehicleId, isNull);
+    },
+  );
+
+  test('VehicleStore normalizes persisted default id whitespace', () async {
+    SharedPreferences.setMockInitialValues({
+      'vehicle_profiles':
+          '[{"id":"AA:BB:CC:DD:EE:FF","name":"有效车辆","protocol":"qgj"}]',
+      'vehicle_default_id': '  AA:BB:CC:DD:EE:FF  ',
+    });
+    VehicleStore().resetForTest();
+
+    final store = VehicleStore();
+    await store.init();
+
+    expect(store.defaultVehicleId, 'AA:BB:CC:DD:EE:FF');
+    expect(store.defaultVehicle?.displayName, '有效车辆');
+  });
+
   test('ReplicaFeatureStore saves quick control config', () async {
     final store = ReplicaFeatureStore();
 

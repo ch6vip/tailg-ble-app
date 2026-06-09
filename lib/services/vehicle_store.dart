@@ -43,7 +43,7 @@ class VehicleStore {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     try {
-      _defaultVehicleId = prefs.getString(_prefDefaultVehicleId);
+      _defaultVehicleId = _normalizeId(prefs.getString(_prefDefaultVehicleId));
       _vehicles
         ..clear()
         ..addAll(_decodeVehicles(prefs.getString(_prefVehicles)));
@@ -106,8 +106,12 @@ class VehicleStore {
     DateTime? lastConnectedAt,
   }) async {
     await init();
+    final normalizedId = _normalizeId(id);
+    if (normalizedId == null) {
+      throw ArgumentError.value(id, 'id', 'Vehicle id must not be blank');
+    }
     final now = DateTime.now();
-    final index = _vehicles.indexWhere((vehicle) => vehicle.id == id);
+    final index = _vehicles.indexWhere((vehicle) => vehicle.id == normalizedId);
     late VehicleProfile profile;
     if (index >= 0) {
       final current = _vehicles[index];
@@ -120,7 +124,7 @@ class VehicleStore {
       _vehicles[index] = profile;
     } else {
       profile = VehicleProfile(
-        id: id,
+        id: normalizedId,
         name: name.trim().isEmpty ? '未命名车辆' : name.trim(),
         protocol: protocol,
         createdAt: now,
@@ -131,7 +135,7 @@ class VehicleStore {
     }
 
     if (makeDefault || _defaultVehicleId == null || _vehicles.length == 1) {
-      _defaultVehicleId = id;
+      _defaultVehicleId = normalizedId;
     }
 
     await _save();
@@ -140,9 +144,11 @@ class VehicleStore {
 
   Future<void> rename(String id, String name) async {
     await init();
+    final normalizedId = _normalizeId(id);
+    if (normalizedId == null) return;
     final trimmed = name.trim();
     if (trimmed.isEmpty) return;
-    final index = _vehicles.indexWhere((vehicle) => vehicle.id == id);
+    final index = _vehicles.indexWhere((vehicle) => vehicle.id == normalizedId);
     if (index < 0) return;
     _vehicles[index] = _vehicles[index].copyWith(
       name: trimmed,
@@ -153,7 +159,9 @@ class VehicleStore {
 
   Future<void> updateLastLocation(String id, VehicleLocation location) async {
     await init();
-    final index = _vehicles.indexWhere((vehicle) => vehicle.id == id);
+    final normalizedId = _normalizeId(id);
+    if (normalizedId == null) return;
+    final index = _vehicles.indexWhere((vehicle) => vehicle.id == normalizedId);
     if (index < 0) return;
     _vehicles[index] = _vehicles[index].copyWith(
       lastLocation: location,
@@ -169,7 +177,9 @@ class VehicleStore {
     bool clear = false,
   }) async {
     await init();
-    final index = _vehicles.indexWhere((vehicle) => vehicle.id == id);
+    final normalizedId = _normalizeId(id);
+    if (normalizedId == null) return;
+    final index = _vehicles.indexWhere((vehicle) => vehicle.id == normalizedId);
     if (index < 0) return;
     final current = _vehicles[index];
     _vehicles[index] = VehicleProfile(
@@ -188,18 +198,27 @@ class VehicleStore {
 
   Future<void> setDefault(String id) async {
     await init();
-    if (!_vehicles.any((vehicle) => vehicle.id == id)) return;
-    _defaultVehicleId = id;
+    final normalizedId = _normalizeId(id);
+    if (normalizedId == null) return;
+    if (!_vehicles.any((vehicle) => vehicle.id == normalizedId)) return;
+    _defaultVehicleId = normalizedId;
     await _save();
   }
 
   Future<void> remove(String id) async {
     await init();
-    _vehicles.removeWhere((vehicle) => vehicle.id == id);
-    if (_defaultVehicleId == id) {
+    final normalizedId = _normalizeId(id);
+    if (normalizedId == null) return;
+    _vehicles.removeWhere((vehicle) => vehicle.id == normalizedId);
+    if (_defaultVehicleId == normalizedId) {
       _defaultVehicleId = _vehicles.isEmpty ? null : _vehicles.first.id;
     }
     await _save();
+  }
+
+  String? _normalizeId(String? id) {
+    final trimmed = id?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
 
   Future<void> _save() async {
