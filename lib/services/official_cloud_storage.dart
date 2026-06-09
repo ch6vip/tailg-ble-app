@@ -142,8 +142,10 @@ class _OfficialCloudStorage {
     try {
       final decoded = jsonDecode(raw);
       if (decoded is Map) {
-        return decoded.map(
-          (key, value) => MapEntry(key.toString(), value.toString()),
+        return OfficialCloudVehicleLinks.normalize(
+          decoded.map(
+            (key, value) => MapEntry(key.toString(), value.toString()),
+          ),
         );
       }
     } catch (e) {

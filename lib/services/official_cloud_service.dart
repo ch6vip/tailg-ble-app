@@ -129,7 +129,8 @@ class OfficialCloudState {
   }
 
   String? linkedLocalVehicleId(String officialVehicleKey) =>
-      localVehicleLinks[officialVehicleKey];
+      OfficialCloudVehicleLinks.normalize(localVehicleLinks)[officialVehicleKey
+          .trim()];
 
   OfficialCloudState copyWith({
     bool? initialized,
@@ -1098,8 +1099,9 @@ class OfficialCloudService {
   }
 
   Future<void> _saveLinks(Map<String, String> links) async {
-    await _storage.saveLinks(links);
-    _state = _state.copyWith(localVehicleLinks: links);
+    final normalized = OfficialCloudVehicleLinks.normalize(links);
+    await _storage.saveLinks(normalized);
+    _state = _state.copyWith(localVehicleLinks: normalized);
     _emit();
   }
 

@@ -300,6 +300,18 @@ void main() {
   });
 
   group('OfficialCloudVehicleLinks', () {
+    test('normalizes stored links from persistence boundaries', () {
+      expect(
+        OfficialCloudVehicleLinks.normalize({
+          ' official-1 ': ' local-1 ',
+          '': 'local-empty-key',
+          'official-empty-value': ' ',
+          'official-2': 'local-2',
+        }),
+        {'official-1': 'local-1', 'official-2': 'local-2'},
+      );
+    });
+
     test('links and unlinks official vehicles without mutating source map', () {
       final original = {'official-1': 'local-1'};
       final linked = OfficialCloudVehicleLinks.link(
@@ -355,7 +367,7 @@ void main() {
       );
       expect(
         OfficialCloudVehicleLinks.link(
-          original,
+          {' official-1 ': ' local-1 '},
           officialVehicleKey: ' official-2 ',
           localVehicleId: ' local-2 ',
         ),
@@ -368,7 +380,7 @@ void main() {
 
       expect(
         OfficialCloudVehicleLinks.isLinkedTo(
-          links,
+          {' official-1 ': ' local-1 '},
           officialVehicleKey: ' official-1 ',
           localVehicleId: ' local-1 ',
         ),
