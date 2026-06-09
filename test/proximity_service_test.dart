@@ -1,6 +1,8 @@
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart';
+import 'package:tailg_ble_app/services/ble_connection_snapshot_guard.dart';
 import 'package:tailg_ble_app/services/proximity_service.dart';
 
 void main() {
@@ -30,4 +32,63 @@ void main() {
 
     expect(service.targetDeviceId, isNull);
   });
+
+  test('ProximityUnlockGuard blocks unlock when manual mode is enabled', () {
+    const guard = ProximityUnlockGuard();
+    final manager = ConnectionManager();
+    final device = BluetoothDevice(remoteId: const DeviceIdentifier('bike-1'));
+    addTearDown(manager.dispose);
+
+    expect(
+      guard.allowsUnlock(
+        proximityEnabled: true,
+        manualModeEnabled: true,
+        targetDeviceId: 'bike-1',
+        deviceId: 'bike-1',
+        manager: manager,
+        device: device,
+        currentManager: manager,
+        snapshotGuard: const BleConnectionSnapshotGuard(),
+      ),
+      isFalse,
+    );
+  });
+
+  test('ProximityUnlockGuard allows unlock when manual mode is disabled', () {
+    const guard = ProximityUnlockGuard();
+    final manager = ConnectionManager();
+    final device = BluetoothDevice(remoteId: const DeviceIdentifier('bike-1'));
+    addTearDown(manager.dispose);
+
+    expect(
+      guard.allowsUnlock(
+        proximityEnabled: true,
+        manualModeEnabled: false,
+        targetDeviceId: 'bike-1',
+        deviceId: 'bike-1',
+        manager: manager,
+        device: device,
+        currentManager: manager,
+        snapshotGuard: const _AllowingSnapshotGuard(),
+      ),
+      isTrue,
+    );
+  });
+}
+
+class _AllowingSnapshotGuard implements BleConnectionSnapshotGuard {
+  const _AllowingSnapshotGuard();
+
+  @override
+  bool allowsReadyTarget({
+    required Object? startManager,
+    required Object? currentManager,
+    required Object? startDevice,
+    required Object? currentDevice,
+    required String? currentDeviceId,
+    required String expectedDeviceId,
+    required ConnectionState currentState,
+  }) {
+    return true;
+  }
 }

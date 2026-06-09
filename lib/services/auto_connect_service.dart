@@ -29,6 +29,34 @@ class AutoConnectRunGate {
   }
 }
 
+class AutoConnectTargetGuard {
+  const AutoConnectTargetGuard();
+
+  bool allowsConnectedTarget({
+    required bool autoConnectEnabled,
+    required bool manualModeEnabled,
+    required String? defaultVehicleId,
+    required String deviceId,
+    required ConnectionManager manager,
+    required BluetoothDevice device,
+    required ConnectionManager? currentManager,
+    required BleConnectionSnapshotGuard snapshotGuard,
+  }) {
+    return autoConnectEnabled &&
+        !manualModeEnabled &&
+        defaultVehicleId == deviceId &&
+        snapshotGuard.allowsReadyTarget(
+          startManager: manager,
+          currentManager: currentManager,
+          startDevice: device,
+          currentDevice: manager.device,
+          currentDeviceId: manager.device?.remoteId.toString(),
+          expectedDeviceId: deviceId,
+          currentState: manager.state,
+        );
+  }
+}
+
 class AutoConnectService {
   static final AutoConnectService _instance = AutoConnectService._();
   factory AutoConnectService() => _instance;
@@ -37,6 +65,7 @@ class AutoConnectService {
   final _log = LogService();
   final _runGate = AutoConnectRunGate();
   final _connectionSnapshotGuard = const BleConnectionSnapshotGuard();
+  final _targetGuard = const AutoConnectTargetGuard();
   ConnectionManager? _connectionManager;
 
   static const _prefEnabled = 'auto_connect_enabled';
@@ -206,16 +235,15 @@ class AutoConnectService {
     required BluetoothDevice device,
     required String deviceId,
   }) {
-    return _enabled &&
-        VehicleStore().defaultVehicle?.id == deviceId &&
-        _connectionSnapshotGuard.allowsReadyTarget(
-          startManager: manager,
-          currentManager: _connectionManager,
-          startDevice: device,
-          currentDevice: manager.device,
-          currentDeviceId: manager.device?.remoteId.toString(),
-          expectedDeviceId: deviceId,
-          currentState: manager.state,
-        );
+    return _targetGuard.allowsConnectedTarget(
+      autoConnectEnabled: _enabled,
+      manualModeEnabled: ManualModeService().enabled,
+      defaultVehicleId: VehicleStore().defaultVehicle?.id,
+      deviceId: deviceId,
+      manager: manager,
+      device: device,
+      currentManager: _connectionManager,
+      snapshotGuard: _connectionSnapshotGuard,
+    );
   }
 }

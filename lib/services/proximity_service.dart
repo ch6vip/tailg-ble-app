@@ -9,6 +9,34 @@ import 'log_service.dart';
 import 'manual_mode_service.dart';
 import 'vehicle_store.dart';
 
+class ProximityUnlockGuard {
+  const ProximityUnlockGuard();
+
+  bool allowsUnlock({
+    required bool proximityEnabled,
+    required bool manualModeEnabled,
+    required String? targetDeviceId,
+    required String deviceId,
+    required ConnectionManager manager,
+    required BluetoothDevice device,
+    required ConnectionManager? currentManager,
+    required BleConnectionSnapshotGuard snapshotGuard,
+  }) {
+    return proximityEnabled &&
+        !manualModeEnabled &&
+        targetDeviceId == deviceId &&
+        snapshotGuard.allowsReadyTarget(
+          startManager: manager,
+          currentManager: currentManager,
+          startDevice: device,
+          currentDevice: manager.device,
+          currentDeviceId: manager.device?.remoteId.toString(),
+          expectedDeviceId: deviceId,
+          currentState: manager.state,
+        );
+  }
+}
+
 class ProximityService {
   static final ProximityService _instance = ProximityService._();
   factory ProximityService() => _instance;
@@ -16,6 +44,7 @@ class ProximityService {
 
   final _log = LogService();
   final _connectionSnapshotGuard = const BleConnectionSnapshotGuard();
+  final _unlockGuard = const ProximityUnlockGuard();
   ConnectionManager? _connectionManager;
   StreamSubscription? _scanSub;
   bool _scanning = false;
@@ -186,17 +215,16 @@ class ProximityService {
     required BluetoothDevice device,
     required String deviceId,
   }) {
-    return _enabled &&
-        _targetDeviceId == deviceId &&
-        _connectionSnapshotGuard.allowsReadyTarget(
-          startManager: manager,
-          currentManager: _connectionManager,
-          startDevice: device,
-          currentDevice: manager.device,
-          currentDeviceId: manager.device?.remoteId.toString(),
-          expectedDeviceId: deviceId,
-          currentState: manager.state,
-        );
+    return _unlockGuard.allowsUnlock(
+      proximityEnabled: _enabled,
+      manualModeEnabled: ManualModeService().enabled,
+      targetDeviceId: _targetDeviceId,
+      deviceId: deviceId,
+      manager: manager,
+      device: device,
+      currentManager: _connectionManager,
+      snapshotGuard: _connectionSnapshotGuard,
+    );
   }
 
   void dispose() {

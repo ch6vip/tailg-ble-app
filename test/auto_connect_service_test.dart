@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart';
+import 'package:tailg_ble_app/services/ble_connection_snapshot_guard.dart';
 import 'package:tailg_ble_app/services/auto_connect_service.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 
@@ -82,4 +84,69 @@ void main() {
       expect(VehicleStore().defaultVehicle?.id, 'AA:BB:CC:DD:EE:FF');
     });
   });
+
+  group('AutoConnectTargetGuard', () {
+    test('blocks connected auto targets when manual mode is enabled', () {
+      const guard = AutoConnectTargetGuard();
+      final manager = ConnectionManager();
+      final device = BluetoothDevice(
+        remoteId: const DeviceIdentifier('bike-1'),
+      );
+      addTearDown(manager.dispose);
+
+      expect(
+        guard.allowsConnectedTarget(
+          autoConnectEnabled: true,
+          manualModeEnabled: true,
+          defaultVehicleId: 'bike-1',
+          deviceId: 'bike-1',
+          manager: manager,
+          device: device,
+          currentManager: manager,
+          snapshotGuard: const BleConnectionSnapshotGuard(),
+        ),
+        isFalse,
+      );
+    });
+
+    test('allows connected auto targets when manual mode is disabled', () {
+      const guard = AutoConnectTargetGuard();
+      final manager = ConnectionManager();
+      final device = BluetoothDevice(
+        remoteId: const DeviceIdentifier('bike-1'),
+      );
+      addTearDown(manager.dispose);
+
+      expect(
+        guard.allowsConnectedTarget(
+          autoConnectEnabled: true,
+          manualModeEnabled: false,
+          defaultVehicleId: 'bike-1',
+          deviceId: 'bike-1',
+          manager: manager,
+          device: device,
+          currentManager: manager,
+          snapshotGuard: const _AllowingSnapshotGuard(),
+        ),
+        isTrue,
+      );
+    });
+  });
+}
+
+class _AllowingSnapshotGuard implements BleConnectionSnapshotGuard {
+  const _AllowingSnapshotGuard();
+
+  @override
+  bool allowsReadyTarget({
+    required Object? startManager,
+    required Object? currentManager,
+    required Object? startDevice,
+    required Object? currentDevice,
+    required String? currentDeviceId,
+    required String expectedDeviceId,
+    required ConnectionState currentState,
+  }) {
+    return true;
+  }
 }
