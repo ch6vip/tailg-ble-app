@@ -320,13 +320,18 @@ void main() {
           'official-1': 'local-1',
           'official-2': 'local-2',
           'official-3': 'local-3',
+          ' official-4 ': ' local-4 ',
           '': 'local-1',
           'official-empty': '',
         },
-        {'local-1', ' local-3 ', ''},
+        {'local-1', ' local-3 ', 'local-4', ''},
       );
 
-      expect(pruned, {'official-1': 'local-1', 'official-3': 'local-3'});
+      expect(pruned, {
+        'official-1': 'local-1',
+        'official-3': 'local-3',
+        'official-4': 'local-4',
+      });
     });
 
     test('normalizes invalid local link writes', () {

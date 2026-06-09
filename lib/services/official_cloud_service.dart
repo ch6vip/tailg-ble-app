@@ -899,7 +899,7 @@ class OfficialCloudService {
       _state.localVehicleLinks,
       validLocalVehicleIds,
     );
-    if (links.length == _state.localVehicleLinks.length) return;
+    if (mapEquals(links, _state.localVehicleLinks)) return;
     await _saveLinks(links);
     _log.operation('官方车辆失效关联已清理');
   }

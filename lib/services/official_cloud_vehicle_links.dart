@@ -31,11 +31,15 @@ class OfficialCloudVehicleLinks {
         .map((id) => id.trim())
         .where((id) => id.isNotEmpty)
         .toSet();
-    return Map<String, String>.from(links)..removeWhere((officialKey, localId) {
-      return officialKey.trim().isEmpty ||
-          localId.trim().isEmpty ||
-          !validIds.contains(localId.trim());
-    });
+    final next = <String, String>{};
+    for (final entry in links.entries) {
+      final officialKey = entry.key.trim();
+      final localId = entry.value.trim();
+      if (officialKey.isEmpty || localId.isEmpty) continue;
+      if (!validIds.contains(localId)) continue;
+      next[officialKey] = localId;
+    }
+    return next;
   }
 
   static bool isLinkedTo(
