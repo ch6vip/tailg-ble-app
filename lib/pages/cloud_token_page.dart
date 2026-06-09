@@ -32,6 +32,7 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
 
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _savedToken = prefs.getString(_prefKey);
       if (_savedToken != null) _controller.text = _savedToken!;
@@ -43,21 +44,21 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
     if (token.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefKey, token);
+    if (!mounted) return;
     setState(() => _savedToken = token);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Token 已保存'),
-          duration: Duration(seconds: 1),
-        ),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Token 已保存'),
+        duration: Duration(seconds: 1),
+      ),
+    );
   }
 
-  void _copyToken() {
+  Future<void> _copyToken() async {
     final token = _savedToken ?? connectionManager.token;
     if (token == null || token.isEmpty) return;
-    Clipboard.setData(ClipboardData(text: token));
+    await Clipboard.setData(ClipboardData(text: token));
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('已复制到剪贴板'), duration: Duration(seconds: 1)),
     );
