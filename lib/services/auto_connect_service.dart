@@ -44,6 +44,8 @@ class AutoConnectService {
   static const _prefDeviceName = 'auto_connect_device_name';
 
   bool _enabled = false;
+  bool _initialized = false;
+  Future<void>? _initializing;
   bool get enabled => _enabled;
   String? _lastDeviceId;
   String? _lastDeviceName;
@@ -54,23 +56,48 @@ class AutoConnectService {
 
   Future<void> init(ConnectionManager manager) async {
     _connectionManager = manager;
-    await VehicleStore().init();
-    final prefs = await SharedPreferences.getInstance();
-    _enabled = prefs.getBool(_prefEnabled) ?? false;
-    final defaultVehicle = VehicleStore().defaultVehicle;
-    if (defaultVehicle == null) {
-      final legacyId = prefs.getString(_prefDeviceId);
-      if (legacyId != null) {
-        await VehicleStore().upsert(
-          id: legacyId,
-          name: prefs.getString(_prefDeviceName) ?? '未命名车辆',
-          protocol: VehicleProtocol.auto,
-          makeDefault: true,
-        );
-      }
+    if (_initialized) {
+      _refreshTarget();
+      return;
     }
-    _refreshTarget();
-    _enabledController.add(_enabled);
+    final initializing = _initializing;
+    if (initializing != null) return initializing;
+    _initializing = _load();
+    return _initializing!;
+  }
+
+  Future<void> _load() async {
+    await VehicleStore().init();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _enabled = prefs.getBool(_prefEnabled) ?? false;
+      final defaultVehicle = VehicleStore().defaultVehicle;
+      if (defaultVehicle == null) {
+        final legacyId = prefs.getString(_prefDeviceId);
+        if (legacyId != null) {
+          await VehicleStore().upsert(
+            id: legacyId,
+            name: prefs.getString(_prefDeviceName) ?? '未命名车辆',
+            protocol: VehicleProtocol.auto,
+            makeDefault: true,
+          );
+        }
+      }
+      _refreshTarget();
+      _initialized = true;
+      _enabledController.add(_enabled);
+    } finally {
+      _initializing = null;
+    }
+  }
+
+  void resetForTest() {
+    _connectionManager = null;
+    _enabled = false;
+    _lastDeviceId = null;
+    _lastDeviceName = null;
+    _initialized = false;
+    _initializing = null;
   }
 
   Future<void> setEnabled(bool value) async {
