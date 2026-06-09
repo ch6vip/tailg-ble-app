@@ -198,4 +198,42 @@ void main() {
     expect(await store.loadQuickShortcutsConfig(), isA<QuickShortcutsConfig>());
     expect(await store.loadMainControlConfig(), isA<MainControlConfig>());
   });
+
+  test('ReplicaFeatureStore keeps recoverable malformed records', () async {
+    SharedPreferences.setMockInitialValues({
+      'replica_nfc_keys':
+          '[{"id":123,"name":456,"type":789,"createdAt":"bad-date"}]',
+      'replica_share_members':
+          '[{"id":123,"name":456,"phone":18800001111,"createdAt":"bad-date"}]',
+      'replica_fence_config':
+          '{"enabled":"true","latitude":"31.2304","longitude":"121.4737","radiusMeters":"800","updatedAt":"bad-date"}',
+      'replica_quick_control_config':
+          '{"firstActionId":123,"secondActionId":""}',
+    });
+
+    final store = ReplicaFeatureStore();
+
+    final nfcKeys = await store.loadNfcKeys();
+    expect(nfcKeys, hasLength(1));
+    expect(nfcKeys.first.id, '123');
+    expect(nfcKeys.first.name, '456');
+    expect(nfcKeys.first.type, '789');
+
+    final members = await store.loadShareMembers();
+    expect(members, hasLength(1));
+    expect(members.first.id, '123');
+    expect(members.first.name, '456');
+    expect(members.first.phone, '18800001111');
+
+    final fence = await store.loadFenceConfig();
+    expect(fence, isNotNull);
+    expect(fence!.enabled, isTrue);
+    expect(fence.latitude, 31.2304);
+    expect(fence.longitude, 121.4737);
+    expect(fence.radiusMeters, 800);
+
+    final quickControl = await store.loadQuickControlConfig();
+    expect(quickControl.firstActionId, '123');
+    expect(quickControl.secondActionId, 'seat');
+  });
 }

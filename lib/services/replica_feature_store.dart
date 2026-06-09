@@ -24,12 +24,10 @@ class NfcKeyRecord {
 
   factory NfcKeyRecord.fromJson(Map<String, dynamic> json) {
     return NfcKeyRecord(
-      id: json['id'] as String? ?? '',
-      name: json['name'] as String? ?? '未命名钥匙',
-      type: json['type'] as String? ?? '手机',
-      createdAt:
-          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
-          DateTime.now(),
+      id: _stringValue(json['id']),
+      name: _stringValue(json['name']).ifEmpty('未命名钥匙'),
+      type: _stringValue(json['type']).ifEmpty('手机'),
+      createdAt: _dateValue(json['createdAt']) ?? DateTime.now(),
     );
   }
 
@@ -68,13 +66,11 @@ class FenceConfig {
 
   factory FenceConfig.fromJson(Map<String, dynamic> json) {
     return FenceConfig(
-      enabled: json['enabled'] as bool? ?? false,
-      latitude: (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['longitude'] as num?)?.toDouble(),
-      radiusMeters: (json['radiusMeters'] as num?)?.toInt() ?? 500,
-      updatedAt:
-          DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
-          DateTime.now(),
+      enabled: _boolValue(json['enabled']),
+      latitude: _doubleValue(json['latitude']),
+      longitude: _doubleValue(json['longitude']),
+      radiusMeters: _intValue(json['radiusMeters']) ?? 500,
+      updatedAt: _dateValue(json['updatedAt']) ?? DateTime.now(),
     );
   }
 }
@@ -101,12 +97,10 @@ class ShareMemberRecord {
 
   factory ShareMemberRecord.fromJson(Map<String, dynamic> json) {
     return ShareMemberRecord(
-      id: json['id'] as String? ?? '',
-      name: json['name'] as String? ?? '未命名成员',
-      phone: json['phone'] as String? ?? '',
-      createdAt:
-          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
-          DateTime.now(),
+      id: _stringValue(json['id']),
+      name: _stringValue(json['name']).ifEmpty('未命名成员'),
+      phone: _stringValue(json['phone']),
+      createdAt: _dateValue(json['createdAt']) ?? DateTime.now(),
     );
   }
 
@@ -136,8 +130,10 @@ class QuickControlConfig {
 
   factory QuickControlConfig.fromJson(Map<String, dynamic> json) {
     return QuickControlConfig(
-      firstActionId: json['firstActionId'] as String? ?? 'soundEffects',
-      secondActionId: json['secondActionId'] as String? ?? 'seat',
+      firstActionId: _stringValue(
+        json['firstActionId'],
+      ).ifEmpty('soundEffects'),
+      secondActionId: _stringValue(json['secondActionId']).ifEmpty('seat'),
     );
   }
 
@@ -334,4 +330,39 @@ class ReplicaFeatureStore {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(key, jsonEncode(records.toList()));
   }
+}
+
+String _stringValue(Object? value) {
+  return value?.toString().trim() ?? '';
+}
+
+bool _boolValue(Object? value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  if (value is String) {
+    final normalized = value.trim().toLowerCase();
+    return normalized == 'true' || normalized == '1' || normalized == 'yes';
+  }
+  return false;
+}
+
+double? _doubleValue(Object? value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value.trim());
+  return null;
+}
+
+int? _intValue(Object? value) {
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value.trim());
+  return null;
+}
+
+DateTime? _dateValue(Object? value) {
+  if (value == null) return null;
+  return DateTime.tryParse(value.toString());
+}
+
+extension _EmptyStringFallback on String {
+  String ifEmpty(String fallback) => isEmpty ? fallback : this;
 }
