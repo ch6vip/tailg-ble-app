@@ -45,7 +45,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
     };
   }
 
-  void _copyAll() {
+  Future<void> _copyAll() async {
     final entries = _getEntries(_tabController.index);
     if (entries.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -62,7 +62,8 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
       vehicleStore: VehicleStore(),
       officialCloudService: officialCloudService,
     ).buildReport(entries);
-    Clipboard.setData(ClipboardData(text: report));
+    await Clipboard.setData(ClipboardData(text: report));
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('已复制诊断报告（${entries.length} 条日志）'),
@@ -91,6 +92,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
     );
     if (confirmed != true) return;
     _log.clear();
+    if (!mounted) return;
     setState(() {});
   }
 
