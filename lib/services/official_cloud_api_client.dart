@@ -12,7 +12,7 @@ class OfficialCloudApiException implements Exception {
 
 class OfficialCloudRedactor {
   static final RegExp _sensitiveQueryPattern = RegExp(
-    r'(?<=\b(?:phone|token|authorization|imei|carId|uid|frame)=)[^&\s]+',
+    r'(?<=\b(?:phone|token|authorization|imei|carId|uid|frame|btmac)=)[^&\s]+',
     caseSensitive: false,
   );
   static final RegExp _phonePattern = RegExp(r'\b1\d{10}\b');
@@ -20,6 +20,7 @@ class OfficialCloudRedactor {
   static final RegExp _macPattern = RegExp(
     r'\b(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b',
   );
+  static final RegExp _compactMacPattern = RegExp(r'\b[0-9A-Fa-f]{12}\b');
 
   const OfficialCloudRedactor._();
 
@@ -33,7 +34,11 @@ class OfficialCloudRedactor {
     return value
         .replaceAllMapped(_phonePattern, (match) => _mask(match.group(0)!))
         .replaceAllMapped(_imeiPattern, (match) => _mask(match.group(0)!))
-        .replaceAllMapped(_macPattern, (match) => _mask(match.group(0)!));
+        .replaceAllMapped(_macPattern, (match) => _mask(match.group(0)!))
+        .replaceAllMapped(
+          _compactMacPattern,
+          (match) => _mask(match.group(0)!),
+        );
   }
 
   static String _mask(String value) {

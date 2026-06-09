@@ -144,15 +144,15 @@ void main() {
     test('masks sensitive request path values and diagnostic text', () {
       expect(
         OfficialCloudRedactor.requestPath(
-          'app/getCode?phone=18886120851&imei=860123456789377',
+          'app/getCode?phone=18886120851&imei=860123456789377&btmac=aabbccddeeff',
         ),
-        'app/getCode?phone=188***851&imei=860***377',
+        'app/getCode?phone=188***851&imei=860***377&btmac=aab***eff',
       );
       expect(
         OfficialCloudRedactor.text(
-          'phone=18886120851 imei=860123456789377 mac=AA:BB:CC:DD:EE:FF',
+          'phone=18886120851 imei=860123456789377 mac=AA:BB:CC:DD:EE:FF compact=aabbccddeeff',
         ),
-        'phone=188***851 imei=860***377 mac=AA:***:FF',
+        'phone=188***851 imei=860***377 mac=AA:***:FF compact=aab***eff',
       );
     });
   });
