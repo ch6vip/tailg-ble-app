@@ -228,6 +228,9 @@ class _HeaderIconAction extends StatefulWidget {
 }
 
 class _HeaderIconActionState extends State<_HeaderIconAction> {
+  static const _motionDuration = Duration(milliseconds: 150);
+  static const _motionCurve = Curves.easeOutCubic;
+
   bool _pressed = false;
 
   void _setPressed(bool value) {
@@ -240,8 +243,9 @@ class _HeaderIconActionState extends State<_HeaderIconAction> {
     return Tooltip(
       message: widget.tooltip,
       child: AnimatedScale(
-        duration: const Duration(milliseconds: 120),
-        scale: _pressed ? 0.96 : 1,
+        duration: _motionDuration,
+        curve: _motionCurve,
+        scale: _pressed ? 0.93 : 1,
         child: Material(
           color: Colors.transparent,
           shape: const CircleBorder(),
@@ -256,16 +260,28 @@ class _HeaderIconActionState extends State<_HeaderIconAction> {
             onTapUp: (_) => _setPressed(false),
             onTapCancel: () => _setPressed(false),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 120),
+              duration: _motionDuration,
+              curve: _motionCurve,
               width: 44,
               height: 44,
               decoration: BoxDecoration(
                 color: _pressed
-                    ? _officialPressedBg
-                    : Colors.white.withValues(alpha: 0.72),
+                    ? AppColors.surfaceContainerHigh
+                    : Colors.white,
                 shape: BoxShape.circle,
+                boxShadow: AppShadows.elevation1,
               ),
-              child: Icon(widget.icon, size: 22, color: widget.color),
+              child: AnimatedSwitcher(
+                duration: _motionDuration,
+                switchInCurve: _motionCurve,
+                switchOutCurve: Curves.easeInCubic,
+                child: Icon(
+                  widget.icon,
+                  key: ValueKey(widget.icon),
+                  size: 22,
+                  color: widget.color,
+                ),
+              ),
             ),
           ),
         ),

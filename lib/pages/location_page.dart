@@ -422,6 +422,9 @@ class _OfficialTabButton extends StatefulWidget {
 }
 
 class _OfficialTabButtonState extends State<_OfficialTabButton> {
+  static const _motionDuration = Duration(milliseconds: 150);
+  static const _motionCurve = Curves.easeOutCubic;
+
   bool _pressed = false;
 
   void _setPressed(bool value) {
@@ -437,12 +440,16 @@ class _OfficialTabButtonState extends State<_OfficialTabButton> {
         ? _officialPressedBg
         : Colors.transparent;
     return AnimatedScale(
-      duration: const Duration(milliseconds: 120),
+      duration: _motionDuration,
+      curve: _motionCurve,
       scale: _pressed ? 0.97 : 1,
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(ReplicaRadii.card),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
+          splashColor: AppColors.primary.withValues(alpha: 0.08),
+          highlightColor: AppColors.primary.withValues(alpha: 0.05),
           onTap: () {
             _setPressed(false);
             HapticFeedback.selectionClick();
@@ -453,7 +460,8 @@ class _OfficialTabButtonState extends State<_OfficialTabButton> {
           onTapCancel: () => _setPressed(false),
           borderRadius: BorderRadius.circular(ReplicaRadii.card),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
+            duration: _motionDuration,
+            curve: _motionCurve,
             height: 38,
             decoration: BoxDecoration(
               color: color,
@@ -1265,6 +1273,9 @@ class _TravelRecordCard extends StatefulWidget {
 }
 
 class _TravelRecordCardState extends State<_TravelRecordCard> {
+  static const _motionDuration = Duration(milliseconds: 150);
+  static const _motionCurve = Curves.easeOutCubic;
+
   bool _pressed = false;
 
   void _setPressed(bool value) {
@@ -1276,10 +1287,12 @@ class _TravelRecordCardState extends State<_TravelRecordCard> {
   Widget build(BuildContext context) {
     final interactive = !widget.loading;
     return AnimatedScale(
-      duration: const Duration(milliseconds: 120),
+      duration: _motionDuration,
+      curve: _motionCurve,
       scale: _pressed ? 0.985 : 1,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
+        duration: _motionDuration,
+        curve: _motionCurve,
         decoration: BoxDecoration(
           color: _pressed ? _officialPressedBg : Colors.white,
           borderRadius: BorderRadius.circular(ReplicaRadii.card),
@@ -1287,7 +1300,10 @@ class _TravelRecordCardState extends State<_TravelRecordCard> {
         child: Material(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(ReplicaRadii.card),
+          clipBehavior: Clip.antiAlias,
           child: InkWell(
+            splashColor: AppColors.primary.withValues(alpha: 0.06),
+            highlightColor: Colors.black.withValues(alpha: 0.025),
             onTap: interactive
                 ? () {
                     _setPressed(false);

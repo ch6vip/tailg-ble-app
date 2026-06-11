@@ -286,7 +286,7 @@ class _ScanHintCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(color: AppColors.border, width: 1),
+        boxShadow: AppShadows.elevation1,
       ),
       child: Row(
         children: [
@@ -548,19 +548,15 @@ class _DeviceCardState extends State<_DeviceCard> {
       child: AnimatedScale(
         scale: _pressed ? 0.98 : 1.0,
         duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOutCubic,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             color: widget.disabled ? const Color(0xFFF8F8F8) : Colors.white,
             borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0x0A000000),
-                blurRadius: _pressed ? 4 : 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            boxShadow: widget.disabled ? AppShadows.elevation1 : AppShadows.elevation1,
           ),
           child: Row(
             children: [
@@ -589,6 +585,8 @@ class _DeviceCardState extends State<_DeviceCard> {
                   children: [
                     Text(
                       name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -598,6 +596,8 @@ class _DeviceCardState extends State<_DeviceCard> {
                     const SizedBox(height: 2),
                     Text(
                       widget.result.device.remoteId.toString(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textTertiary,
@@ -701,7 +701,7 @@ class _ScanFab extends StatelessWidget {
       onTap: enabled ? onTap : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
         decoration: BoxDecoration(
           color: !enabled
               ? const Color(0xFFBDBDBD)
@@ -709,17 +709,17 @@ class _ScanFab extends StatelessWidget {
               ? const Color(0xFF757575)
               : AppColors.primary,
           borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: !enabled
-                  ? Colors.black.withValues(alpha: 0.08)
-                  : scanning
-                  ? Colors.black.withValues(alpha: 0.15)
-                  : AppColors.primary.withValues(alpha: 0.35),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: !enabled
+              ? AppShadows.elevation1
+              : scanning
+              ? AppShadows.elevation2
+              : [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

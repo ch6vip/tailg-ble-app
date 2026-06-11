@@ -125,7 +125,6 @@ class _HeroBattery extends StatelessWidget {
                     fontSize: 50,
                     height: 1,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: -2,
                     color: AppColors.textTertiary,
                   ),
                 ),
@@ -160,7 +159,6 @@ class _HeroBattery extends StatelessWidget {
                         fontSize: 50,
                         height: 1,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: -2,
                         color: color,
                       ),
                     ),
@@ -318,6 +316,13 @@ class _HomeStatusLine extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: dotColor.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: dotColor.withValues(alpha: 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [

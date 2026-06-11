@@ -75,7 +75,7 @@ class _ControlTipBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(30),
               child: Container(
                 height: 38,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(color: AppColors.border),
@@ -84,7 +84,7 @@ class _ControlTipBar extends StatelessWidget {
                   children: [
                     Container(
                       height: 24,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
                       decoration: BoxDecoration(
                         color: effectiveColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
@@ -93,9 +93,11 @@ class _ControlTipBar extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(effectiveIcon, size: 13, color: effectiveColor),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 3),
                           Text(
                             effective,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
@@ -105,7 +107,7 @@ class _ControlTipBar extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         status,

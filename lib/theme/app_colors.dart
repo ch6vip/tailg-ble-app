@@ -4,18 +4,18 @@ abstract final class AppColors {
   // 极简高端主操作色：黑。原亮蓝 #5596FF 已统一为黑色主操作。
   static const primary = Color(0xFF1A1A1A);
   static const primaryDark = Color(0xFF000000);
-  static const pageBg = Color(0xFFFAFAF8);
+  static const pageBg = Color(0xFFF5F5F7); // M3: slightly cooler, more modern
   static const textPrimary = Color(0xFF1A1A1A);
   static const textSecondary = Color(0xFF666666);
   static const textTertiary = Color(0xFFBBBBBB);
-  static const border = Color(0xFFF0F0F0);
+  static const border = Color(0xFFEBEBEB);
   static const success = Color(0xFF00A896);
   static const warning = Color(0xFFFF9800);
   static const danger = Color(0xFFFF5252);
   // 信息提示色统一为极简高端 teal（原 #2196F3 蓝已下线）。类别色冲突处
   // （骑行模式 standard、电池 BLE 来源 chip）已就地改用其它 token 以保持区分。
   static const info = Color(0xFF00A896);
-  static const navInactive = Color(0xFFCCCCCC);
+  static const navInactive = Color(0xFFC0C0C0);
 
   /// 官方品牌红，仅复刻保真场景使用。
   static const brandRed = Color(0xFFF11C2C);
@@ -27,6 +27,16 @@ abstract final class AppColors {
   static const accentPurple = Color(0xFF7B61FF);
   static const accentTeal = Color(0xFF00A896);
   static const accentOrange = Color(0xFFFF8A00);
+
+  // ── Material 3 surface tokens ──────────────────────────────────────────
+  /// Card / elevated surface (pure white on light theme).
+  static const surface = Color(0xFFFFFFFF);
+  /// Subtle tinted background for nested containers.
+  static const surfaceContainerLow = Color(0xFFF8F8FA);
+  /// Slightly stronger tint for pressed / hovered states.
+  static const surfaceContainerHigh = Color(0xFFF0F0F4);
+  /// Outline variant: lighter than [border], for dividers and hairlines.
+  static const outlineVariant = Color(0xFFE8E8EC);
 }
 
 abstract final class ReplicaColors {
@@ -97,11 +107,32 @@ abstract final class AppShadows {
       offset: Offset(0, cardOffsetY),
     ),
   ];
+
+  // ── Material 3 elevation system ────────────────────────────────────────
+  /// Level 1: subtle lift for cards resting on page background.
+  static const List<BoxShadow> elevation1 = [
+    BoxShadow(color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2)),
+    BoxShadow(color: Color(0x04000000), blurRadius: 2, offset: Offset(0, 1)),
+  ];
+  /// Level 2: medium lift for floating panels and active cards.
+  static const List<BoxShadow> elevation2 = [
+    BoxShadow(color: Color(0x0A000000), blurRadius: 16, offset: Offset(0, 4)),
+    BoxShadow(color: Color(0x05000000), blurRadius: 4, offset: Offset(0, 2)),
+  ];
+  /// Level 3: strong lift for FABs, dialogs, and overlays.
+  static const List<BoxShadow> elevation3 = [
+    BoxShadow(color: Color(0x0D000000), blurRadius: 24, offset: Offset(0, 8)),
+    BoxShadow(color: Color(0x06000000), blurRadius: 6, offset: Offset(0, 3)),
+  ];
 }
 
 abstract final class AppSpacing {
   static const screenX = 20.0;
   static const sectionGap = 20.0;
+  // M3: tighter card padding for more content density
+  static const cardPadding = 16.0;
+  static const cardGap = 12.0;
+  static const sectionTop = 16.0;
 }
 
 abstract final class AppNav {
@@ -160,8 +191,9 @@ abstract final class AppTextStyles {
   static const caption = TextStyle(fontSize: 12, color: AppColors.textTertiary);
 }
 
+/// Default card decoration: M3 elevated surface (no border, soft shadow).
 const cardDecoration = BoxDecoration(
   color: Colors.white,
   borderRadius: BorderRadius.all(Radius.circular(AppRadii.card)),
-  border: Border.fromBorderSide(BorderSide(color: AppColors.border, width: 1)),
+  boxShadow: AppShadows.elevation1,
 );

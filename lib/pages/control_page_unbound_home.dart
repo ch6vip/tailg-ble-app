@@ -289,6 +289,9 @@ class _OfficialActionButton extends StatefulWidget {
 }
 
 class _OfficialActionButtonState extends State<_OfficialActionButton> {
+  static const _motionDuration = Duration(milliseconds: 150);
+  static const _motionCurve = Curves.easeOutCubic;
+
   bool _pressed = false;
 
   void _setPressed(bool value) {
@@ -299,11 +302,12 @@ class _OfficialActionButtonState extends State<_OfficialActionButton> {
   @override
   Widget build(BuildContext context) {
     return AnimatedScale(
-      duration: const Duration(milliseconds: 120),
-      curve: Curves.easeOutCubic,
+      duration: _motionDuration,
+      curve: _motionCurve,
       scale: _pressed ? 0.97 : 1,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
+        duration: _motionDuration,
+        curve: _motionCurve,
         height: 54,
         decoration: BoxDecoration(
           color: _pressed ? _officialPressedBg : widget.background,
@@ -315,7 +319,10 @@ class _OfficialActionButtonState extends State<_OfficialActionButton> {
         child: Material(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(15),
+          clipBehavior: Clip.antiAlias,
           child: InkWell(
+            splashColor: widget.foreground.withValues(alpha: 0.08),
+            highlightColor: widget.foreground.withValues(alpha: 0.05),
             onTap: () {
               _setPressed(false);
               HapticFeedback.mediumImpact();
@@ -326,12 +333,19 @@ class _OfficialActionButtonState extends State<_OfficialActionButton> {
             onTapCancel: () => _setPressed(false),
             borderRadius: BorderRadius.circular(15),
             child: Center(
-              child: Text(
-                widget.label,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: _pressed ? ReplicaColors.secondary : widget.foreground,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  widget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: _pressed
+                        ? ReplicaColors.secondary
+                        : widget.foreground,
+                  ),
                 ),
               ),
             ),
@@ -358,9 +372,12 @@ class _OfficialTextLinkRow extends StatelessWidget {
     return Material(
       color: Colors.white.withValues(alpha: 0.72),
       borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
+        splashColor: ReplicaColors.blue.withValues(alpha: 0.08),
+        highlightColor: ReplicaColors.blue.withValues(alpha: 0.05),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           child: Row(

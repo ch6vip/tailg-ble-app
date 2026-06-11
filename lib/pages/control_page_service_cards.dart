@@ -578,64 +578,22 @@ class _QuickShortcutsEditPageState extends State<_QuickShortcutsEditPage> {
                   return Padding(
                     key: ValueKey(spec.id),
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      decoration: _cardDecoration,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: spec.accent.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              spec.icon,
-                              size: 20,
-                              color: spec.accent,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              spec.label,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          Switch(
-                            value: visible,
-                            onChanged: lockOff
-                                ? null
-                                : (value) {
-                                    setState(() {
-                                      if (value) {
-                                        _hidden.remove(spec.id);
-                                      } else {
-                                        _hidden.add(spec.id);
-                                      }
-                                    });
-                                  },
-                          ),
-                          ReorderableDragStartListener(
-                            index: index,
-                            child: const Padding(
-                              padding: EdgeInsets.only(left: 6),
-                              child: Icon(
-                                Icons.drag_handle,
-                                color: AppColors.textTertiary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: _EditableListRow(
+                      icon: spec.icon,
+                      label: spec.label,
+                      accent: spec.accent,
+                      visible: visible,
+                      lockOff: lockOff,
+                      dragIndex: index,
+                      onVisibleChanged: (value) {
+                        setState(() {
+                          if (value) {
+                            _hidden.remove(spec.id);
+                          } else {
+                            _hidden.add(spec.id);
+                          }
+                        });
+                      },
                     ),
                   );
                 },
@@ -643,6 +601,87 @@ class _QuickShortcutsEditPageState extends State<_QuickShortcutsEditPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _EditableListRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color accent;
+  final bool visible;
+  final bool lockOff;
+  final int dragIndex;
+  final ValueChanged<bool> onVisibleChanged;
+
+  const _EditableListRow({
+    required this.icon,
+    required this.label,
+    required this.accent,
+    required this.visible,
+    required this.lockOff,
+    required this.dragIndex,
+    required this.onVisibleChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const duration = Duration(milliseconds: 150);
+    const curve = Curves.easeOutCubic;
+    final effectiveOpacity = visible ? 1.0 : 0.52;
+    return AnimatedContainer(
+      duration: duration,
+      curve: curve,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: visible ? Colors.white : const Color(0xFFF7F7F5),
+        borderRadius: BorderRadius.circular(ReplicaRadii.card),
+        border: Border.all(
+          color: visible
+              ? AppColors.border
+              : AppColors.border.withValues(alpha: 0.7),
+        ),
+      ),
+      child: Row(
+        children: [
+          AnimatedOpacity(
+            opacity: effectiveOpacity,
+            duration: duration,
+            curve: curve,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: visible ? 0.1 : 0.06),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 20, color: accent),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: AnimatedDefaultTextStyle(
+              duration: duration,
+              curve: curve,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: visible ? AppColors.textPrimary : AppColors.textTertiary,
+              ),
+              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
+          ),
+          Switch(value: visible, onChanged: lockOff ? null : onVisibleChanged),
+          ReorderableDragStartListener(
+            index: dragIndex,
+            child: const SizedBox(
+              width: 34,
+              height: 40,
+              child: Icon(Icons.drag_handle, color: AppColors.textTertiary),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -925,6 +964,8 @@ class _BleRenewalServiceCard extends StatelessWidget {
                   SizedBox(height: 7),
                   Text(
                     '官方权益服务暂未开放',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 13,
                       color: ReplicaColors.muted,
@@ -1010,6 +1051,8 @@ class _ChargingStationServiceCard extends StatelessWidget {
                           SizedBox(height: 8),
                           Text(
                             '官方站点与交易接口暂未接入',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 13,
                               color: ReplicaColors.muted,
@@ -1177,6 +1220,9 @@ class _OfficialPressable extends StatefulWidget {
 }
 
 class _OfficialPressableState extends State<_OfficialPressable> {
+  static const _motionDuration = Duration(milliseconds: 150);
+  static const _motionCurve = Curves.easeOutCubic;
+
   bool _pressed = false;
 
   void _setPressed(bool value) {
@@ -1190,45 +1236,44 @@ class _OfficialPressableState extends State<_OfficialPressable> {
       button: widget.enabled,
       enabled: widget.enabled,
       child: AnimatedScale(
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOutCubic,
+        duration: _motionDuration,
+        curve: _motionCurve,
         scale: widget.enabled && _pressed ? 0.98 : 1,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          curve: Curves.easeOutCubic,
+          duration: _motionDuration,
+          curve: _motionCurve,
           decoration: BoxDecoration(
             color: widget.enabled && _pressed
                 ? widget.pressedBackground
                 : widget.background,
             borderRadius: BorderRadius.circular(widget.radius),
-            border: widget.shadow
-                ? Border.all(color: AppColors.border, width: 1)
-                : null,
+            boxShadow: widget.shadow ? AppShadows.elevation1 : null,
           ),
-          child: ClipRRect(
+          child: Material(
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(widget.radius),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: widget.enabled
-                    ? () {
-                        _setPressed(false);
-                        HapticFeedback.mediumImpact();
-                        widget.onTap();
-                      }
-                    : null,
-                onLongPress: widget.enabled && widget.onLongPress != null
-                    ? () {
-                        _setPressed(false);
-                        HapticFeedback.mediumImpact();
-                        widget.onLongPress!();
-                      }
-                    : null,
-                onTapDown: widget.enabled ? (_) => _setPressed(true) : null,
-                onTapUp: widget.enabled ? (_) => _setPressed(false) : null,
-                onTapCancel: widget.enabled ? () => _setPressed(false) : null,
-                child: widget.child,
-              ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              splashColor: ReplicaColors.blue.withValues(alpha: 0.06),
+              highlightColor: Colors.black.withValues(alpha: 0.025),
+              onTap: widget.enabled
+                  ? () {
+                      _setPressed(false);
+                      HapticFeedback.mediumImpact();
+                      widget.onTap();
+                    }
+                  : null,
+              onLongPress: widget.enabled && widget.onLongPress != null
+                  ? () {
+                      _setPressed(false);
+                      HapticFeedback.mediumImpact();
+                      widget.onLongPress!();
+                    }
+                  : null,
+              onTapDown: widget.enabled ? (_) => _setPressed(true) : null,
+              onTapUp: widget.enabled ? (_) => _setPressed(false) : null,
+              onTapCancel: widget.enabled ? () => _setPressed(false) : null,
+              child: widget.child,
             ),
           ),
         ),

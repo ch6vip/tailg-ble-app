@@ -52,55 +52,18 @@ class _RidingModeSelector extends StatelessWidget {
                     return Expanded(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Material(
-                          color: selected
-                              ? color.withValues(alpha: 0.15)
-                              : Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(
-                            _phoneControlRadius,
-                          ),
-                          child: InkWell(
-                            onTap: enabled && !selected
-                                ? () async {
-                                    HapticFeedback.mediumImpact();
-                                    await connectionManager.setRidingMode(mode);
-                                  }
-                                : null,
-                            borderRadius: BorderRadius.circular(
-                              _phoneControlRadius,
-                            ),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    icon,
-                                    color: selected
-                                        ? color
-                                        : enabled
-                                        ? Colors.grey.shade500
-                                        : Colors.grey.shade400,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    mode.label,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: selected
-                                          ? color
-                                          : enabled
-                                          ? Colors.grey.shade600
-                                          : Colors.grey.shade400,
-                                      fontWeight: selected
-                                          ? FontWeight.w600
-                                          : FontWeight.normal,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                        child: _RidingModeOption(
+                          mode: mode,
+                          icon: icon,
+                          color: color,
+                          selected: selected,
+                          enabled: enabled,
+                          onTap: enabled && !selected
+                              ? () async {
+                                  HapticFeedback.mediumImpact();
+                                  await connectionManager.setRidingMode(mode);
+                                }
+                              : null,
                         ),
                       ),
                     );
@@ -111,6 +74,147 @@ class _RidingModeSelector extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _RidingModeOption extends StatefulWidget {
+  final RidingMode mode;
+  final IconData icon;
+  final Color color;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback? onTap;
+
+  const _RidingModeOption({
+    required this.mode,
+    required this.icon,
+    required this.color,
+    required this.selected,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  @override
+  State<_RidingModeOption> createState() => _RidingModeOptionState();
+}
+
+class _RidingModeOptionState extends State<_RidingModeOption> {
+  static const _motionDuration = Duration(milliseconds: 150);
+  static const _motionCurve = Curves.easeOutCubic;
+
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (!mounted || _pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final iconColor = widget.selected
+        ? widget.color
+        : widget.enabled
+        ? Colors.grey.shade500
+        : Colors.grey.shade400;
+    final textColor = widget.selected
+        ? widget.color
+        : widget.enabled
+        ? Colors.grey.shade600
+        : Colors.grey.shade400;
+    final backgroundColor = widget.selected
+        ? widget.color.withValues(alpha: _pressed ? 0.19 : 0.15)
+        : _pressed
+        ? const Color(0xFFEAEAE8)
+        : Colors.grey.shade100;
+
+    return AnimatedScale(
+      duration: _motionDuration,
+      curve: _motionCurve,
+      scale: widget.enabled && _pressed ? 0.97 : 1,
+      child: SizedBox(
+        height: 72,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            AnimatedContainer(
+              duration: _motionDuration,
+              curve: _motionCurve,
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: BorderRadius.circular(_phoneControlRadius),
+                border: Border.all(
+                  color: widget.selected
+                      ? widget.color.withValues(alpha: 0.18)
+                      : Colors.transparent,
+                ),
+              ),
+            ),
+            Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(_phoneControlRadius),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: widget.onTap,
+                onTapDown: widget.onTap != null
+                    ? (_) => _setPressed(true)
+                    : null,
+                onTapUp: widget.onTap != null
+                    ? (_) => _setPressed(false)
+                    : null,
+                onTapCancel: widget.onTap != null
+                    ? () => _setPressed(false)
+                    : null,
+                splashColor: widget.color.withValues(alpha: 0.08),
+                highlightColor: widget.color.withValues(alpha: 0.05),
+              ),
+            ),
+            IgnorePointer(
+              child: Center(
+                child: AnimatedDefaultTextStyle(
+                  duration: _motionDuration,
+                  curve: _motionCurve,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: textColor,
+                    fontWeight: widget.selected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TweenAnimationBuilder<double>(
+                        tween: Tween<double>(
+                          begin: 0,
+                          end: widget.selected ? 1 : 0,
+                        ),
+                        duration: _motionDuration,
+                        curve: _motionCurve,
+                        builder: (context, value, child) {
+                          return Transform.translate(
+                            offset: Offset(0, -2 * value),
+                            child: IconTheme(
+                              data: IconThemeData(
+                                color: iconColor,
+                                size: 24 + value,
+                              ),
+                              child: child!,
+                            ),
+                          );
+                        },
+                        child: Icon(widget.icon),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(widget.mode.label, maxLines: 1),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

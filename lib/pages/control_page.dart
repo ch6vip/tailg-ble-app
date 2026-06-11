@@ -38,7 +38,7 @@ part 'control_page_control_widgets.dart';
 part 'control_page_main_controls.dart';
 part 'control_page_mode_widgets.dart';
 
-const _pageBg = ReplicaColors.pageBg;
+const _pageBg = AppColors.pageBg;
 const _kmPerPercent = 0.65;
 const _phoneControlItemBg = Color(0xFFF7F8FA);
 const _phoneControlPrimary = ReplicaColors.blue;
@@ -52,10 +52,11 @@ const _serviceMutedText = Color(0xFFAAA9B1);
 const _serviceCardBorder = Color(0xFFE3E6EC);
 const _controlConfirmTimeout = Duration(seconds: 8);
 const _controlConfirmPollDelay = Duration(milliseconds: 800);
+// M3: elevated card without border, soft dual-layer shadow
 const _cardDecoration = BoxDecoration(
   color: Colors.white,
   borderRadius: BorderRadius.all(Radius.circular(ReplicaRadii.card)),
-  border: Border.fromBorderSide(BorderSide(color: AppColors.border, width: 1)),
+  boxShadow: AppShadows.elevation1,
 );
 
 int? _normalizePercent(int? value) {
@@ -155,6 +156,23 @@ class _HomeBody extends StatelessWidget {
                   duration: const Duration(milliseconds: 260),
                   switchInCurve: Curves.easeOutCubic,
                   switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) {
+                    final curved = CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                      reverseCurve: Curves.easeInCubic,
+                    );
+                    return FadeTransition(
+                      opacity: curved,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.018),
+                          end: Offset.zero,
+                        ).animate(curved),
+                        child: child,
+                      ),
+                    );
+                  },
                   child: showUnboundHome
                       ? const _UnboundVehicleHome()
                       : Column(

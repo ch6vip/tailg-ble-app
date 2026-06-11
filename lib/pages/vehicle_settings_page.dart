@@ -967,8 +967,11 @@ class _NavSettingRow extends StatelessWidget {
     final enabled = onTap != null;
     return Material(
       color: Colors.transparent,
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        splashColor: AppColors.primary.withValues(alpha: 0.06),
+        highlightColor: Colors.black.withValues(alpha: 0.025),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           child: Row(
@@ -981,6 +984,8 @@ class _NavSettingRow extends StatelessWidget {
                   children: [
                     Text(
                       title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -992,6 +997,8 @@ class _NavSettingRow extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -1001,11 +1008,16 @@ class _NavSettingRow extends StatelessWidget {
                 ),
               ),
               if (trailingText != null) ...[
-                Text(
-                  trailingText!,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
+                Flexible(
+                  child: Text(
+                    trailingText!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -1045,8 +1057,11 @@ class _SwitchSettingRow extends StatelessWidget {
     final enabled = onChanged != null;
     return Material(
       color: Colors.transparent,
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: enabled ? null : () => _showInfoSnack(context, disabledReason),
+        splashColor: AppColors.primary.withValues(alpha: 0.06),
+        highlightColor: Colors.black.withValues(alpha: 0.025),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: Row(
@@ -1059,6 +1074,8 @@ class _SwitchSettingRow extends StatelessWidget {
                   children: [
                     Text(
                       title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -1071,6 +1088,8 @@ class _SwitchSettingRow extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         subtitle!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -1104,8 +1123,11 @@ class _DisabledInfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => _showInfoSnack(context, _pendingCommandMessage),
+        splashColor: AppColors.primary.withValues(alpha: 0.06),
+        highlightColor: Colors.black.withValues(alpha: 0.025),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           child: Row(
@@ -1118,6 +1140,8 @@ class _DisabledInfoRow extends StatelessWidget {
                   children: [
                     Text(
                       title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -1127,6 +1151,8 @@ class _DisabledInfoRow extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,

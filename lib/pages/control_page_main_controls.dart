@@ -189,6 +189,9 @@ class _OfficialSmallControlButton extends StatefulWidget {
 
 class _OfficialSmallControlButtonState
     extends State<_OfficialSmallControlButton> {
+  static const _motionDuration = Duration(milliseconds: 150);
+  static const _motionCurve = Curves.easeOutCubic;
+
   bool _pressed = false;
 
   void _setPressed(bool value) {
@@ -216,32 +219,37 @@ class _OfficialSmallControlButtonState
         : _pressed
         ? const Color(0xFFF2F2F0)
         : Colors.white;
-    final borderColor = widget.active
-        ? accent.withValues(alpha: _pressed ? 0.24 : 0.14)
+    final shadow = widget.active
+        ? [BoxShadow(color: accent.withValues(alpha: 0.12), blurRadius: 10, offset: const Offset(0, 3))]
         : _pressed
-        ? const Color(0xFFE0E0DD)
-        : AppColors.border;
+        ? [BoxShadow(color: const Color(0x06000000), blurRadius: 4, offset: const Offset(0, 1))]
+        : AppShadows.elevation1;
     const iconSize = 26.0;
     const fontSize = 12.0;
     const iconGap = 6.0;
     return AnimatedScale(
-      duration: const Duration(milliseconds: 120),
+      duration: _motionDuration,
+      curve: _motionCurve,
       scale: _pressed ? 0.96 : 1,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
+        duration: _motionDuration,
+        curve: _motionCurve,
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor),
+          boxShadow: shadow,
         ),
         child: AnimatedOpacity(
           opacity: widget.enabled || widget.loading ? 1 : 0.54,
-          duration: const Duration(milliseconds: 120),
-          curve: Curves.easeOut,
+          duration: _motionDuration,
+          curve: _motionCurve,
           child: Material(
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
             child: InkWell(
+              splashColor: accent.withValues(alpha: 0.08),
+              highlightColor: accent.withValues(alpha: 0.05),
               onTap: widget.loading
                   ? null
                   : interactive
@@ -260,22 +268,43 @@ class _OfficialSmallControlButtonState
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (widget.loading)
-                      _PulseActionIcon(icon: widget.icon, color: color)
-                    else
-                      Icon(widget.icon, color: color, size: iconSize),
-                    SizedBox(height: iconGap),
+                    AnimatedSwitcher(
+                      duration: _motionDuration,
+                      switchInCurve: _motionCurve,
+                      switchOutCurve: Curves.easeInCubic,
+                      child: widget.loading
+                          ? _PulseActionIcon(
+                              key: const ValueKey('loading-icon'),
+                              icon: widget.icon,
+                              color: color,
+                            )
+                          : Icon(
+                              widget.icon,
+                              key: const ValueKey('idle-icon'),
+                              color: color,
+                              size: iconSize,
+                            ),
+                    ),
+                    const SizedBox(height: iconGap),
                     Flexible(
-                      child: Text(
-                        widget.loading ? widget.loadingLabel : widget.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: fontSize,
-                          fontWeight: FontWeight.w600,
-                          color: widget.enabled
-                              ? AppColors.textSecondary
-                              : AppColors.textTertiary,
+                      child: AnimatedSwitcher(
+                        duration: _motionDuration,
+                        switchInCurve: _motionCurve,
+                        switchOutCurve: Curves.easeInCubic,
+                        child: Text(
+                          widget.loading ? widget.loadingLabel : widget.label,
+                          key: ValueKey(
+                            widget.loading ? widget.loadingLabel : widget.label,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.w600,
+                            color: widget.enabled
+                                ? AppColors.textSecondary
+                                : AppColors.textTertiary,
+                          ),
                         ),
                       ),
                     ),
@@ -350,7 +379,7 @@ class _PrimaryPowerControl extends StatelessWidget {
         disabledBackgroundColor: const Color(0xFFE8E8E5),
         disabledThumbColor: Colors.white,
         disabledIconColor: AppColors.textTertiary,
-        completionThreshold: 0.99,
+        completionThreshold: 0.94,
         fadeLabelOnSlide: true,
         onDisabledTap: onDisabledTap,
         onSlideComplete: onSlideComplete,
@@ -438,68 +467,22 @@ class _MainControlEditPageState extends State<_MainControlEditPage> {
                   return Padding(
                     key: ValueKey(entry.id),
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(ReplicaRadii.card),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: entry.accent.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              entry.icon,
-                              size: 20,
-                              color: entry.accent,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              entry.label,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          Switch(
-                            value: visible,
-                            onChanged: lockOff
-                                ? null
-                                : (value) {
-                                    setState(() {
-                                      if (value) {
-                                        _hidden.remove(entry.id);
-                                      } else {
-                                        _hidden.add(entry.id);
-                                      }
-                                    });
-                                  },
-                          ),
-                          ReorderableDragStartListener(
-                            index: index,
-                            child: const Padding(
-                              padding: EdgeInsets.only(left: 6),
-                              child: Icon(
-                                Icons.drag_handle,
-                                color: AppColors.textTertiary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: _EditableListRow(
+                      icon: entry.icon,
+                      label: entry.label,
+                      accent: entry.accent,
+                      visible: visible,
+                      lockOff: lockOff,
+                      dragIndex: index,
+                      onVisibleChanged: (value) {
+                        setState(() {
+                          if (value) {
+                            _hidden.remove(entry.id);
+                          } else {
+                            _hidden.add(entry.id);
+                          }
+                        });
+                      },
                     ),
                   );
                 },

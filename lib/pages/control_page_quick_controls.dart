@@ -234,53 +234,87 @@ class _QuickEditOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const duration = Duration(milliseconds: 150);
+    const curve = Curves.easeOutCubic;
     final color = selected ? AppColors.primary : AppColors.textSecondary;
-    return Material(
-      color: selected ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
+    return AnimatedContainer(
+      duration: duration,
+      curve: curve,
+      decoration: BoxDecoration(
+        color: selected
+            ? AppColors.primary.withValues(alpha: 0.1)
+            : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: selected
-                  ? AppColors.primary.withValues(alpha: 0.45)
-                  : Colors.transparent,
-              width: 1.5,
-            ),
-          ),
-          child: Stack(
-            children: [
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(spec.icon, color: color, size: 24),
-                    const SizedBox(width: 10),
-                    Text(
-                      spec.label,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: color,
-                      ),
-                    ),
-                  ],
-                ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          splashColor: AppColors.primary.withValues(alpha: 0.08),
+          highlightColor: AppColors.primary.withValues(alpha: 0.05),
+          child: AnimatedContainer(
+            duration: duration,
+            curve: curve,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: selected
+                    ? AppColors.primary.withValues(alpha: 0.45)
+                    : Colors.transparent,
+                width: 1.5,
               ),
-              if (selected)
-                const Positioned(
-                  right: 8,
-                  bottom: 8,
-                  child: Icon(
-                    Icons.check_circle,
-                    color: AppColors.primary,
-                    size: 20,
+            ),
+            child: Stack(
+              children: [
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(spec.icon, color: color, size: 24),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: AnimatedDefaultTextStyle(
+                          duration: duration,
+                          curve: curve,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: color,
+                          ),
+                          child: Text(
+                            spec.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-            ],
+                Positioned(
+                  right: 8,
+                  bottom: 8,
+                  child: AnimatedScale(
+                    duration: duration,
+                    curve: curve,
+                    scale: selected ? 1 : 0.6,
+                    child: AnimatedOpacity(
+                      duration: duration,
+                      curve: curve,
+                      opacity: selected ? 1 : 0,
+                      child: const Icon(
+                        Icons.check_circle,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

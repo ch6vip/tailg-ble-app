@@ -69,6 +69,8 @@ class SlideToAction extends StatefulWidget {
 class _SlideToActionState extends State<SlideToAction>
     with TickerProviderStateMixin {
   static const _thumbGap = 8.0;
+  static const _resetDuration = Duration(milliseconds: 200);
+  static const _successDuration = Duration(milliseconds: 240);
 
   final _dragNotifier = ValueNotifier<double>(0);
   late AnimationController _resetController;
@@ -79,28 +81,28 @@ class _SlideToActionState extends State<SlideToAction>
   void initState() {
     super.initState();
     _resetController =
-        AnimationController(
-          vsync: this,
-          duration: const Duration(milliseconds: 220),
-        )..addListener(() {
-          final eased = Curves.easeOutCubic.transform(_resetController.value);
-          _dragNotifier.value = _resetStartValue * (1 - eased);
-        });
+        AnimationController(vsync: this, duration: _resetDuration)
+          ..addListener(() {
+            final eased = Curves.easeOutCubic.transform(_resetController.value);
+            _dragNotifier.value = _resetStartValue * (1 - eased);
+          });
     _successController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 220),
+      duration: _successDuration,
     );
   }
 
   @override
   void didUpdateWidget(SlideToAction oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.loading != widget.loading) {
+      _jumpThumbToRest();
+      return;
+    }
     if (oldWidget.label != widget.label ||
         oldWidget.reverseSlide != widget.reverseSlide ||
-        oldWidget.loading != widget.loading) {
-      _resetController.stop();
-      _resetStartValue = 0;
-      _dragNotifier.value = 0;
+        oldWidget.enabled != widget.enabled) {
+      _resetThumb();
     }
   }
 
@@ -116,9 +118,17 @@ class _SlideToActionState extends State<SlideToAction>
     HapticFeedback.heavyImpact();
     _dragNotifier.value = maxDrag;
     _successController.forward(from: 0).then((_) {
+      if (!mounted) return;
       _resetThumb();
     });
     widget.onSlideComplete?.call();
+  }
+
+  void _jumpThumbToRest() {
+    _resetController.stop();
+    _successController.stop();
+    _resetStartValue = 0;
+    _dragNotifier.value = 0;
   }
 
   void _resetThumb() {
@@ -367,6 +377,12 @@ class _SlideToActionState extends State<SlideToAction>
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: enabled ? null : widget.onDisabledTap,
+                        onHorizontalDragStart: enabled
+                            ? (_) {
+                                _resetController.stop();
+                                _successController.stop();
+                              }
+                            : null,
                         onHorizontalDragUpdate: enabled
                             ? (details) {
                                 final prev = _dragNotifier.value;

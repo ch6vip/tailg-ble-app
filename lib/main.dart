@@ -139,17 +139,23 @@ class _TailgBleAppState extends State<TailgBleApp> {
       title: 'Tailg BLE',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // 以黑色主操作色作种子，并显式钉死 primary 为纯黑、onPrimary 为白，
-        // 避免 Material3 从近黑种子推导出低饱和的灰青主色（FilledButton 等会跑色）。
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
           brightness: Brightness.light,
-        ).copyWith(primary: AppColors.primary, onPrimary: Colors.white),
+        ).copyWith(
+          primary: AppColors.primary,
+          onPrimary: Colors.white,
+          secondary: AppColors.accentTeal,
+          onSecondary: Colors.white,
+          surface: AppColors.surface,
+          onSurface: AppColors.textPrimary,
+          surfaceContainerLow: AppColors.surfaceContainerLow,
+          surfaceContainerHigh: AppColors.surfaceContainerHigh,
+          outline: AppColors.border,
+          outlineVariant: AppColors.outlineVariant,
+        ),
         scaffoldBackgroundColor: AppColors.pageBg,
         useMaterial3: true,
-        // 统一所有 Material 按钮形状：Material3 默认是全圆角胶囊（StadiumBorder），
-        // 与全 App 的极简圆角矩形风格（卡片/控车按钮 R12-16）不一致。这里把
-        // Filled/Elevated/Outlined/Text 按钮统一为 R14 圆角矩形。
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(shape: _buttonShape),
         ),
@@ -162,8 +168,35 @@ class _TailgBleAppState extends State<TailgBleApp> {
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(shape: _buttonShape),
         ),
-        // 统一页面转场：所有平台用同一套淡入 + 轻微上滑的转场，呼应 App 内
-        // 列表项/卡片的入场微交互，比各平台默认转场更顺滑一致。
+        // M3 Card theme: elevated surface, no border
+        cardTheme: CardThemeData(
+          color: AppColors.surface,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.card),
+          ),
+          clipBehavior: Clip.antiAlias,
+        ),
+        // M3 Switch with teal accent
+        switchTheme: SwitchThemeData(
+          thumbColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) return Colors.white;
+            return Colors.white;
+          }),
+          trackColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) return AppColors.accentTeal;
+            return AppColors.border;
+          }),
+          trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+        ),
+        // M3 SnackBar
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.sm),
+          ),
+        ),
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
             TargetPlatform.android: _FadeUpPageTransitionsBuilder(),
@@ -172,10 +205,6 @@ class _TailgBleAppState extends State<TailgBleApp> {
           },
         ),
       ),
-      // The app is intentionally light-only: every page is built on the fixed
-      // light palette in AppColors. Pin themeMode to light so framework
-      // surfaces (dialogs, sheets, menus) don't render dark under system dark
-      // mode while the custom pages stay light.
       themeMode: ThemeMode.light,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -339,64 +368,44 @@ class _HomePageState extends State<HomePage>
       ),
       extendBody: true,
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.pageBg,
-          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 20,
+              offset: const Offset(0, -2),
+            ),
+          ],
         ),
         child: SafeArea(
           top: false,
-          child: Theme(
-            data: Theme.of(context).copyWith(
-              splashColor: Colors.transparent,
-              highlightColor: Colors.transparent,
-            ),
-            child: NavigationBarTheme(
-              data: NavigationBarThemeData(
-                iconTheme: WidgetStateProperty.resolveWith(
-                  (states) => IconThemeData(
-                    size: 24,
-                    color: states.contains(WidgetState.selected)
-                        ? AppColors.dark
-                        : AppColors.navInactive,
-                  ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _NavItem(
+                  icon: Icons.search,
+                  label: '扫描',
+                  selected: _currentIndex == 0,
+                  onTap: () => _switchTab(0),
                 ),
-                labelTextStyle: WidgetStateProperty.resolveWith(
-                  (states) => TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: states.contains(WidgetState.selected)
-                        ? AppColors.dark
-                        : AppColors.navInactive,
-                  ),
+                _NavItem(
+                  icon: Icons.directions_car_outlined,
+                  selectedIcon: Icons.directions_car,
+                  label: '爱车',
+                  selected: _currentIndex == 1,
+                  onTap: () => _switchTab(1),
                 ),
-              ),
-              child: NavigationBar(
-                height: AppNav.barBaseHeight,
-                selectedIndex: _currentIndex,
-                onDestinationSelected: _switchTab,
-                backgroundColor: AppColors.pageBg,
-                surfaceTintColor: Colors.transparent,
-                indicatorColor: Colors.transparent,
-                overlayColor: WidgetStateProperty.all(Colors.transparent),
-                labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.search),
-                    selectedIcon: _NavDotIcon(Icons.search),
-                    label: '扫描',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.directions_car_outlined),
-                    selectedIcon: _NavDotIcon(Icons.directions_car),
-                    label: '爱车',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.settings_outlined),
-                    selectedIcon: _NavDotIcon(Icons.settings),
-                    label: '设置',
-                  ),
-                ],
-              ),
+                _NavItem(
+                  icon: Icons.settings_outlined,
+                  selectedIcon: Icons.settings,
+                  label: '设置',
+                  selected: _currentIndex == 2,
+                  onTap: () => _switchTab(2),
+                ),
+              ],
             ),
           ),
         ),
@@ -405,27 +414,88 @@ class _HomePageState extends State<HomePage>
   }
 }
 
-/// 极简高端底部导航选中态：图标上方一个小黑点指示器。
-class _NavDotIcon extends StatelessWidget {
+/// Material 3 风格底部导航项：选中态使用 pill 背景高亮。
+class _NavItem extends StatefulWidget {
   final IconData icon;
-  const _NavDotIcon(this.icon);
+  final IconData? selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  State<_NavItem> createState() => _NavItemState();
+}
+
+class _NavItemState extends State<_NavItem> {
+  static const _duration = Duration(milliseconds: 200);
+  static const _curve = Curves.easeOutCubic;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 4,
-          height: 4,
-          margin: const EdgeInsets.only(bottom: 4),
-          decoration: const BoxDecoration(
-            color: AppColors.dark,
-            shape: BoxShape.circle,
-          ),
+    final icon = widget.selected
+        ? (widget.selectedIcon ?? widget.icon)
+        : widget.icon;
+    final color = widget.selected ? AppColors.dark : AppColors.navInactive;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: _duration,
+        curve: _curve,
+        padding: EdgeInsets.symmetric(
+          horizontal: widget.selected ? 20 : 16,
+          vertical: 8,
         ),
-        Icon(icon, color: AppColors.dark),
-      ],
+        decoration: BoxDecoration(
+          color: widget.selected
+              ? AppColors.dark.withValues(alpha: 0.06)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedSwitcher(
+              duration: _duration,
+              switchInCurve: _curve,
+              switchOutCurve: Curves.easeInCubic,
+              child: Icon(
+                icon,
+                key: ValueKey(icon),
+                size: widget.selected ? 24 : 22,
+                color: color,
+              ),
+            ),
+            AnimatedCrossFade(
+              firstChild: const SizedBox(width: 0),
+              secondChild: Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+              ),
+              crossFadeState: widget.selected
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: _duration,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
