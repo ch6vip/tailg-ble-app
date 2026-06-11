@@ -376,7 +376,7 @@ class _PrimaryPowerControl extends StatelessWidget {
         thumbSize: 48,
         thumbRadius: 14,
         trackInset: 6,
-        iconSize: 24,
+        iconSize: AppIconSizes.lg,
         labelFontSize: 14,
         loadingFontSize: 16,
         centerLabel: true,

@@ -122,7 +122,7 @@ class _Header extends StatelessWidget {
                                 const SizedBox(width: 4),
                                 const Icon(
                                   Icons.keyboard_arrow_down,
-                                  size: 18,
+                                  size: AppIconSizes.md,
                                   color: ReplicaColors.subtle,
                                 ),
                                 const SizedBox(width: 8),
@@ -276,7 +276,7 @@ class _HeaderIconActionState extends State<_HeaderIconAction> {
                 child: Icon(
                   widget.icon,
                   key: ValueKey(widget.icon),
-                  size: 22,
+                  size: AppIconSizes.md,
                   color: widget.color,
                 ),
               ),

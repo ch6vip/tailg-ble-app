@@ -387,7 +387,11 @@ class _SessionCard extends StatelessWidget {
               color: AppColors.success.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.verified_user, color: AppColors.success),
+            child: const Icon(
+              Icons.verified_user_outlined,
+              color: AppColors.success,
+              size: AppIconSizes.md,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -561,9 +565,9 @@ class _OfficialVehicleCard extends StatelessWidget {
                 if (selected) ...[
                   const SizedBox(width: 6),
                   const Icon(
-                    Icons.check_circle,
+                    Icons.check_circle_outline,
                     color: AppColors.primary,
-                    size: 18,
+                    size: AppIconSizes.sm,
                   ),
                 ],
               ],
@@ -617,7 +621,7 @@ class _OfficialVehicleCard extends StatelessWidget {
                             OfficialVehicleDetailPage(vehicle: vehicle),
                       ),
                     ),
-                    icon: const Icon(Icons.info_outline, size: 18),
+                    icon: const Icon(Icons.info_outline, size: AppIconSizes.sm),
                     label: const Text('详情'),
                   ),
                 ),
@@ -635,13 +639,13 @@ class _OfficialVehicleCard extends StatelessWidget {
                       if (linked) {
                         return OutlinedButton.icon(
                           onPressed: openLinkPage,
-                          icon: const Icon(Icons.link, size: 18),
+                          icon: const Icon(Icons.link, size: AppIconSizes.sm),
                           label: Text(linkLabel),
                         );
                       }
                       return FilledButton.icon(
                         onPressed: openLinkPage,
-                        icon: const Icon(Icons.link, size: 18),
+                        icon: const Icon(Icons.link, size: AppIconSizes.sm),
                         label: Text(linkLabel),
                       );
                     },
@@ -655,7 +659,7 @@ class _OfficialVehicleCard extends StatelessWidget {
                 children: [
                   const Icon(
                     Icons.check_circle_outline,
-                    size: 16,
+                    size: AppIconSizes.sm,
                     color: AppColors.success,
                   ),
                   const SizedBox(width: 6),
@@ -698,7 +702,7 @@ class _MissingBleIdentityNotice extends StatelessWidget {
           children: [
             const Icon(
               Icons.bluetooth_searching,
-              size: 16,
+              size: AppIconSizes.sm,
               color: AppColors.info,
             ),
             const SizedBox(width: 6),
@@ -758,7 +762,11 @@ class _StaleLinkNotice extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: Row(
             children: [
-              Icon(Icons.link_off, size: 16, color: AppColors.warning),
+              Icon(
+                Icons.link_off,
+                size: AppIconSizes.sm,
+                color: AppColors.warning,
+              ),
               SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -802,7 +810,9 @@ class OfficialVehicleDetailPage extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => const SizedBox(
                       height: 120,
-                      child: Center(child: Icon(Icons.electric_bike, size: 56)),
+                      child: Center(
+                        child: Icon(Icons.electric_bike, size: AppIconSizes.xl),
+                      ),
                     ),
                   ),
                 ),
@@ -1171,7 +1181,10 @@ class OfficialVehicleLinkPage extends StatelessWidget {
                                 );
                               }
                             },
-                            icon: const Icon(Icons.link_off),
+                            icon: const Icon(
+                              Icons.link_off,
+                              size: AppIconSizes.md,
+                            ),
                             label: const Text('取消关联'),
                           ),
                         ),

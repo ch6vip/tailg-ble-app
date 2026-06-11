@@ -242,7 +242,7 @@ class AboutAppPage extends StatelessWidget {
                           child: const Icon(
                             Icons.electric_moped,
                             color: AppColors.primary,
-                            size: 40,
+                            size: AppIconSizes.xl,
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -359,7 +359,9 @@ class _OptionRow extends StatelessWidget {
                 ),
               ),
               Icon(
-                selected ? Icons.check_circle : Icons.radio_button_unchecked,
+                selected
+                    ? Icons.check_circle_outline
+                    : Icons.radio_button_unchecked,
                 color: selected ? AppColors.primary : AppColors.textTertiary,
               ),
             ],
@@ -408,7 +410,7 @@ class _ActionRow extends StatelessWidget {
               const Icon(
                 Icons.chevron_right,
                 color: AppColors.textTertiary,
-                size: 22,
+                size: AppIconSizes.md,
               ),
             ],
           ),
@@ -459,7 +461,7 @@ class _RowIcon extends StatelessWidget {
         color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(icon, color: AppColors.primary, size: 20),
+      child: Icon(icon, color: AppColors.primary, size: AppIconSizes.md),
     );
   }
 }

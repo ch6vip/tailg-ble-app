@@ -32,7 +32,7 @@ List<_QuickShortcutSpec> get _quickShortcutCatalog => [
   ),
   _QuickShortcutSpec(
     id: 'settings',
-    icon: Icons.settings,
+    icon: Icons.settings_outlined,
     label: '设置',
     accent: AppColors.accentTeal,
     page: (_) => const VehicleSettingsPage(),
@@ -67,7 +67,7 @@ List<_QuickShortcutSpec> get _quickShortcutCatalog => [
   ),
   _QuickShortcutSpec(
     id: 'travel',
-    icon: Icons.route,
+    icon: Icons.route_outlined,
     label: '骑行记录',
     accent: _serviceAccentAmber,
     page: (_) => const LocationPage(initialTab: LocationInitialTab.travel),
@@ -475,7 +475,7 @@ class _HomeQuickTile extends StatelessWidget {
                 color: item.accent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(item.icon, size: 23, color: item.accent),
+              child: Icon(item.icon, size: AppIconSizes.lg, color: item.accent),
             ),
             const SizedBox(height: 8),
             Text(
@@ -652,7 +652,7 @@ class _EditableListRow extends StatelessWidget {
                 color: accent.withValues(alpha: visible ? 0.1 : 0.06),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, size: 20, color: accent),
+              child: Icon(icon, size: AppIconSizes.md, color: accent),
             ),
           ),
           const SizedBox(width: 12),
@@ -798,7 +798,7 @@ class _OfficialServiceBannerCard extends StatelessWidget {
                   ),
                   const Icon(
                     Icons.chevron_right,
-                    size: 22,
+                    size: AppIconSizes.md,
                     color: AppColors.textTertiary,
                   ),
                 ],
@@ -862,7 +862,7 @@ class _SoundEffectsServiceCard extends StatelessWidget {
                   ),
                   Icon(
                     Icons.chevron_right,
-                    size: 22,
+                    size: AppIconSizes.md,
                     color: AppColors.textTertiary,
                   ),
                 ],
@@ -1109,7 +1109,7 @@ class _ServiceCardHeader extends StatelessWidget {
               if (showChevron)
                 const Icon(
                   Icons.chevron_right,
-                  size: 18,
+                  size: AppIconSizes.md,
                   color: _serviceMutedText,
                 ),
             ],
@@ -1322,9 +1322,9 @@ class _MiniMapPreview extends StatelessWidget {
               ),
               child: const Center(
                 child: Icon(
-                  Icons.location_on,
+                  Icons.location_on_outlined,
                   color: AppColors.brandRed,
-                  size: 28,
+                  size: AppIconSizes.lg,
                 ),
               ),
             ),

@@ -339,7 +339,7 @@ class _SlideToActionState extends State<SlideToAction>
                                 children: [
                                   Icon(
                                     Icons.chevron_right,
-                                    size: 18,
+                                    size: AppIconSizes.sm,
                                     color: chevronTextColor.withValues(
                                       alpha: chevronAlpha,
                                     ),
@@ -347,7 +347,7 @@ class _SlideToActionState extends State<SlideToAction>
                                   const SizedBox(width: 2),
                                   Icon(
                                     Icons.chevron_right,
-                                    size: 18,
+                                    size: AppIconSizes.sm,
                                     color: chevronTextColor.withValues(
                                       alpha: chevronAlpha,
                                     ),

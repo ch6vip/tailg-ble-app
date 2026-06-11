@@ -86,7 +86,7 @@ class _EmptyGarage extends StatelessWidget {
           const SizedBox(height: 20),
           FilledButton.icon(
             onPressed: onScan,
-            icon: const Icon(Icons.bluetooth_searching, size: 18),
+            icon: const Icon(Icons.bluetooth_searching, size: AppIconSizes.md),
             label: const Text('扫描绑定'),
           ),
         ],

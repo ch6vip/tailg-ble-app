@@ -142,7 +142,7 @@ class _SettingsPageState extends State<SettingsPage> {
             const AppSectionLabel('调试'),
             _group([
               _settingItem(
-                icon: Icons.health_and_safety,
+                icon: Icons.health_and_safety_outlined,
                 title: '故障诊断',
                 subtitle: '读取车辆错误码',
                 onTap: () => Navigator.push(
@@ -326,7 +326,7 @@ class _AutoConnectSettingTile extends StatelessWidget {
       builder: (context, snapshot) {
         final enabled = snapshot.data ?? false;
         return _settingItem(
-          icon: Icons.bluetooth,
+          icon: Icons.bluetooth_outlined,
           title: '自动连接',
           subtitle: enabled ? '打开 app 时自动连接上次的设备' : '关闭',
           trailing: _buildToggle(enabled, service.setEnabled),
@@ -348,7 +348,7 @@ class _ProximityUnlockSettingTile extends StatelessWidget {
       builder: (context, snapshot) {
         final enabled = snapshot.data ?? false;
         return _settingItem(
-          icon: Icons.sensors,
+          icon: Icons.sensors_outlined,
           title: '感应解锁',
           subtitle: enabled ? '靠近车辆时自动解锁（RSSI > -75dBm）' : '关闭',
           trailing: _buildToggle(enabled, service.setEnabled),
@@ -369,7 +369,7 @@ class _LanguageSettingTile extends StatelessWidget {
       initialData: prefs.language,
       builder: (context, snapshot) {
         return _settingItem(
-          icon: Icons.language,
+          icon: Icons.language_outlined,
           title: '语言设置',
           subtitle: snapshot.data?.label ?? '跟随系统',
           onTap: () => Navigator.push(

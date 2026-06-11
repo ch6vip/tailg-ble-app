@@ -909,7 +909,7 @@ class _EmptyReplicaCard extends StatelessWidget {
     return AppCard(
       child: Column(
         children: [
-          Icon(icon, size: 42, color: AppColors.textTertiary),
+          Icon(icon, size: AppIconSizes.xl, color: AppColors.textTertiary),
           const SizedBox(height: 10),
           Text(
             title,
@@ -980,7 +980,7 @@ class _CircleIcon extends StatelessWidget {
         color: color.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
-      child: Icon(icon, color: color, size: 22),
+      child: Icon(icon, color: color, size: AppIconSizes.md),
     );
   }
 }

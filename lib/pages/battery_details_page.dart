@@ -447,7 +447,7 @@ class _SourceStrip extends StatelessWidget {
             Icon(
               error == null ? Icons.verified_outlined : Icons.info_outline,
               color: color,
-              size: 20,
+              size: AppIconSizes.md,
             ),
           const SizedBox(width: 10),
           Expanded(
@@ -626,7 +626,11 @@ class _MetricTile extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.09),
               shape: BoxShape.circle,
             ),
-            child: Icon(metric.icon, color: AppColors.primary, size: 19),
+            child: Icon(
+              metric.icon,
+              color: AppColors.primary,
+              size: AppIconSizes.md,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -718,7 +722,7 @@ class _BmsDetailsCard extends StatelessWidget {
                 Icon(
                   Icons.list_alt_outlined,
                   color: AppColors.primary,
-                  size: 19,
+                  size: AppIconSizes.md,
                 ),
                 SizedBox(width: 8),
                 Text(
@@ -862,7 +866,7 @@ class _BatteryReadOnlyCard extends StatelessWidget {
             children: [
               Icon(
                 Icons.lock_outline,
-                size: 18,
+                size: AppIconSizes.sm,
                 color: AppColors.textSecondary,
               ),
               SizedBox(width: 8),

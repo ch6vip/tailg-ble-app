@@ -377,7 +377,7 @@ class _OfficialTextLinkRow extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: AppColors.primary),
+              Icon(icon, size: AppIconSizes.sm, color: AppColors.primary),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(

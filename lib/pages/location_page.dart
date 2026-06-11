@@ -384,7 +384,7 @@ class _SegmentedTabs extends StatelessWidget {
                 children: [
                   Icon(
                     item.icon,
-                    size: 17,
+                    size: AppIconSizes.sm,
                     color: active ? Colors.white : AppColors.textSecondary,
                   ),
                   const SizedBox(width: 5),
@@ -885,7 +885,7 @@ class _MapPanel extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.map_outlined,
-                          size: compact ? 48 : 58,
+                          size: compact ? AppIconSizes.xl : 58,
                           color: Colors.grey.shade300,
                         ),
                         const SizedBox(height: 8),
@@ -999,7 +999,10 @@ class _LocationDetailCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              _CircleIcon(icon: Icons.location_on, color: AppColors.primary),
+              _CircleIcon(
+                icon: Icons.location_on_outlined,
+                color: AppColors.primary,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -1061,7 +1064,7 @@ class _LocationDetailCard extends StatelessWidget {
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.my_location, size: 18),
+                      : const Icon(Icons.my_location, size: AppIconSizes.sm),
                   label: const Text('刷新位置'),
                 ),
               ),
@@ -1069,13 +1072,13 @@ class _LocationDetailCard extends StatelessWidget {
               IconButton.filledTonal(
                 tooltip: '复制坐标',
                 onPressed: onCopy,
-                icon: const Icon(Icons.copy, size: 18),
+                icon: const Icon(Icons.copy, size: AppIconSizes.sm),
               ),
               const SizedBox(width: 6),
               IconButton.filledTonal(
                 tooltip: '打开地图',
                 onPressed: onOpenMap,
-                icon: const Icon(Icons.open_in_new, size: 18),
+                icon: const Icon(Icons.open_in_new, size: AppIconSizes.sm),
               ),
             ],
           ),
@@ -1107,7 +1110,7 @@ class _TravelMonthSelector extends StatelessWidget {
           IconButton(
             tooltip: '上个月',
             onPressed: onPreviousMonth,
-            icon: const Icon(Icons.chevron_left, size: 20),
+            icon: const Icon(Icons.chevron_left, size: AppIconSizes.md),
           ),
           Expanded(
             child: Center(
@@ -1128,7 +1131,7 @@ class _TravelMonthSelector extends StatelessWidget {
                   const Icon(
                     Icons.keyboard_arrow_down,
                     color: AppColors.textTertiary,
-                    size: 18,
+                    size: AppIconSizes.sm,
                   ),
                 ],
               ),
@@ -1137,7 +1140,7 @@ class _TravelMonthSelector extends StatelessWidget {
           IconButton(
             tooltip: '下个月',
             onPressed: onNextMonth,
-            icon: const Icon(Icons.chevron_right, size: 20),
+            icon: const Icon(Icons.chevron_right, size: AppIconSizes.md),
           ),
         ],
       ),
@@ -1377,7 +1380,7 @@ class _TravelRecordCardState extends State<_TravelRecordCard> {
                   const Icon(
                     Icons.chevron_right,
                     color: AppColors.textTertiary,
-                    size: 20,
+                    size: AppIconSizes.md,
                   ),
                   const SizedBox(width: 10),
                 ],
@@ -1824,7 +1827,7 @@ class _OfficialFenceSheet extends StatelessWidget {
               const SizedBox(width: 8),
               const Icon(
                 Icons.help_outline,
-                size: 18,
+                size: AppIconSizes.sm,
                 color: AppColors.textTertiary,
               ),
               const Spacer(),
@@ -1840,7 +1843,7 @@ class _OfficialFenceSheet extends StatelessWidget {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.refresh, size: 20),
+                      : const Icon(Icons.refresh, size: AppIconSizes.md),
                 ),
               ),
             ],
@@ -2183,7 +2186,11 @@ class _PointRow extends StatelessWidget {
       decoration: cardDecoration,
       child: Row(
         children: [
-          const Icon(Icons.trip_origin, color: AppColors.info, size: 16),
+          const Icon(
+            Icons.trip_origin,
+            color: AppColors.info,
+            size: AppIconSizes.sm,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -2223,7 +2230,7 @@ class _CircleIcon extends StatelessWidget {
         color: color.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
-      child: Icon(icon, color: color, size: 22),
+      child: Icon(icon, color: color, size: AppIconSizes.md),
     );
   }
 }
@@ -2292,9 +2299,9 @@ class _MapMarker extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(Icons.two_wheeler, color: color, size: 20),
+          child: Icon(Icons.two_wheeler, color: color, size: AppIconSizes.md),
         ),
-        Icon(Icons.arrow_drop_down, color: color, size: 24),
+        Icon(Icons.arrow_drop_down, color: color, size: AppIconSizes.lg),
       ],
     );
   }
@@ -2356,7 +2363,11 @@ class _MapCaption extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.location_on, color: AppColors.primary, size: 16),
+          const Icon(
+            Icons.location_on_outlined,
+            color: AppColors.primary,
+            size: AppIconSizes.sm,
+          ),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -2393,7 +2404,11 @@ class _ReadOnlyNotice extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.lock_outline, color: AppColors.info, size: 18),
+          const Icon(
+            Icons.lock_outline,
+            color: AppColors.info,
+            size: AppIconSizes.sm,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -2469,7 +2484,7 @@ class _EmptyCard extends StatelessWidget {
       decoration: cardDecoration,
       child: Column(
         children: [
-          Icon(icon, size: 36, color: AppColors.textTertiary),
+          Icon(icon, size: AppIconSizes.xl, color: AppColors.textTertiary),
           const SizedBox(height: 10),
           Text(
             title,

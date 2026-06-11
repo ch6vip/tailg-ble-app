@@ -187,7 +187,7 @@ class _StatusCard extends StatelessWidget {
           Icon(
             compatible ? Icons.verified_outlined : Icons.info_outline,
             color: color,
-            size: 30,
+            size: AppIconSizes.lg,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -287,7 +287,11 @@ class _SafetyCard extends StatelessWidget {
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+          Icon(
+            Icons.warning_amber_rounded,
+            color: AppColors.warning,
+            size: AppIconSizes.md,
+          ),
           SizedBox(width: 12),
           Expanded(
             child: Text(

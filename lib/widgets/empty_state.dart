@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 /// 通用空态/错误态组件：图标 + 标题 + 副标题 + 可选操作按钮。
 ///
@@ -37,7 +38,11 @@ class EmptyState extends StatelessWidget {
                 color: const Color(0xFFF5F6FA),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 36, color: const Color(0xFF807E89)),
+              child: Icon(
+                icon,
+                size: AppIconSizes.xl,
+                color: const Color(0xFF807E89),
+              ),
             ),
             const SizedBox(height: 16),
             Text(

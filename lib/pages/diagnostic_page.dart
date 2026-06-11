@@ -239,7 +239,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                   color: Colors.white,
                                 ),
                               )
-                            : const Icon(Icons.search),
+                            : const Icon(Icons.search, size: AppIconSizes.lg),
                         label: Text(_scanning ? '诊断中...' : '一键诊断'),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(52),
@@ -259,7 +259,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                 color: allClear
                                     ? AppColors.success
                                     : AppColors.danger,
-                                size: 32,
+                                size: AppIconSizes.lg,
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -306,7 +306,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                   color: f.active
                                       ? AppColors.danger
                                       : AppColors.success,
-                                  size: 20,
+                                  size: AppIconSizes.md,
                                 ),
                               ),
                               title: Text(f.name),
@@ -354,7 +354,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                 color: hasFaults
                                     ? AppColors.warning
                                     : AppColors.success,
-                                size: 20,
+                                size: AppIconSizes.md,
                               ),
                               title: Text(
                                 hasFaults ? r.faults.join('、') : '无故障',

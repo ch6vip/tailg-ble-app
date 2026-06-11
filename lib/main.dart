@@ -389,7 +389,8 @@ class _HomePageState extends State<HomePage>
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _NavItem(
-                  icon: Icons.search,
+                  icon: Icons.manage_search,
+                  selectedIcon: Icons.search,
                   label: '扫描',
                   selected: _currentIndex == 0,
                   onTap: () => _switchTab(0),
@@ -474,7 +475,7 @@ class _NavItemState extends State<_NavItem> {
               child: Icon(
                 icon,
                 key: ValueKey(icon),
-                size: widget.selected ? 24 : 22,
+                size: widget.selected ? AppIconSizes.lg : 22.0,
                 color: color,
               ),
             ),

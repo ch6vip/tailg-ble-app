@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 /// 统一的 SnackBar 提示封装，避免 30+ 处 ScaffoldMessenger 调用散落各页。
 ///
@@ -66,7 +67,7 @@ abstract final class AppSnack {
       SnackBar(
         content: Row(
           children: [
-            Icon(icon, size: 18, color: Colors.white),
+            Icon(icon, size: AppIconSizes.sm, color: Colors.white),
             const SizedBox(width: 8),
             Expanded(
               child: Text(

@@ -297,7 +297,7 @@ class _ScanHintCard extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppColors.primary, size: 20),
+            child: Icon(icon, color: AppColors.primary, size: AppIconSizes.md),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -369,7 +369,7 @@ class _RadarWidget extends StatelessWidget {
               child: const Icon(
                 Icons.bluetooth_searching,
                 color: Colors.white,
-                size: 22,
+                size: AppIconSizes.md,
               ),
             ),
           ),
@@ -575,8 +575,8 @@ class _DeviceCardState extends State<_DeviceCard> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  isTailg ? Icons.electric_bike : Icons.bluetooth,
-                  size: 22,
+                  isTailg ? Icons.electric_bike : Icons.bluetooth_outlined,
+                  size: AppIconSizes.md,
                   color: isTailg ? AppColors.primary : const Color(0xFF9E9E9E),
                 ),
               ),
@@ -729,7 +729,7 @@ class _ScanFab extends StatelessWidget {
             Icon(
               scanning ? Icons.stop_rounded : Icons.bluetooth_searching,
               color: Colors.white,
-              size: 20,
+              size: AppIconSizes.md,
             ),
             const SizedBox(width: 8),
             Text(

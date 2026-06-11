@@ -521,7 +521,11 @@ class _EmptyInfoCard extends StatelessWidget {
               color: AppColors.textTertiary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppColors.textTertiary, size: 22),
+            child: Icon(
+              icon,
+              color: AppColors.textTertiary,
+              size: AppIconSizes.md,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

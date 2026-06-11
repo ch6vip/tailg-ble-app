@@ -109,9 +109,9 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                                   ),
                                   if (selected)
                                     Icon(
-                                      Icons.check_circle,
+                                      Icons.check_circle_outline,
                                       color: _controller.sensitivityColor,
-                                      size: 20,
+                                      size: AppIconSizes.md,
                                     ),
                                   const SizedBox(width: 16),
                                 ],
@@ -187,7 +187,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                           AppCard(
                             padding: EdgeInsets.zero,
                             child: _SwitchSettingRow(
-                              icon: Icons.phone_android,
+                              icon: Icons.phone_android_outlined,
                               title: 'APP遥控优先',
                               subtitle: '官方入口已对齐，写入命令待确认',
                               value: false,
@@ -237,7 +237,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                                 ),
                                 const _InsetDivider(),
                                 _NavSettingRow(
-                                  icon: Icons.speed,
+                                  icon: Icons.speed_outlined,
                                   title: '骑行设置',
                                   subtitle: '骑行模式和 ECU 功能入口',
                                   onTap: () => Navigator.push(
@@ -430,7 +430,7 @@ class _QgjSoundSettingsPage extends StatelessWidget {
                                 ),
                                 const _InsetDivider(),
                                 _SwitchSettingRow(
-                                  icon: Icons.volume_up,
+                                  icon: Icons.volume_up_outlined,
                                   title: '全部声音',
                                   subtitle: '设置上/下电、上锁、解锁',
                                   value: controller.allMainSoundsEnabled,
@@ -712,7 +712,7 @@ class _QgjRideSettingsPage extends StatelessWidget {
                                 ),
                                 _InsetDivider(),
                                 _DisabledInfoRow(
-                                  icon: Icons.speed,
+                                  icon: Icons.speed_outlined,
                                   title: '定速巡航',
                                   subtitle: '长按行车电脑键保持速度，命令待确认',
                                 ),
@@ -1025,7 +1025,7 @@ class _NavSettingRow extends StatelessWidget {
               const Icon(
                 Icons.chevron_right,
                 color: AppColors.textTertiary,
-                size: 22,
+                size: AppIconSizes.md,
               ),
             ],
           ),
@@ -1198,7 +1198,7 @@ class _RowIcon extends StatelessWidget {
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(icon, color: color, size: 20),
+      child: Icon(icon, color: color, size: AppIconSizes.md),
     );
   }
 }

@@ -107,7 +107,11 @@ class AppHeaderAction extends StatelessWidget {
         child: SizedBox(
           width: 36,
           height: 36,
-          child: Icon(icon, size: 20, color: AppColors.textSecondary),
+          child: Icon(
+            icon,
+            size: AppIconSizes.md,
+            color: AppColors.textSecondary,
+          ),
         ),
       ),
     );
@@ -159,7 +163,7 @@ class ConnectionStatusBanner extends StatelessWidget {
             child: Icon(
               ready ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
               color: color,
-              size: 18,
+              size: AppIconSizes.sm,
             ),
           ),
           const SizedBox(width: 12),
@@ -279,7 +283,11 @@ class AppEmptyState extends StatelessWidget {
               color: Color(0xFFF2F2EF),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 28, color: AppColors.textTertiary),
+            child: Icon(
+              icon,
+              size: AppIconSizes.md,
+              color: AppColors.textTertiary,
+            ),
           ),
           const SizedBox(height: 16),
           Text(

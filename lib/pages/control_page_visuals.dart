@@ -303,7 +303,7 @@ class _PulseActionIconState extends State<_PulseActionIcon>
             shape: BoxShape.circle,
             border: Border.all(color: widget.color.withValues(alpha: 0.22)),
           ),
-          child: Icon(widget.icon, color: widget.color, size: 16),
+          child: Icon(widget.icon, color: widget.color, size: AppIconSizes.sm),
         ),
         builder: (context, child) {
           final value = Curves.easeInOut.transform(_controller.value);

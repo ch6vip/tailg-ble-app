@@ -128,7 +128,7 @@ class _QgjAdvancedSettingsPageState extends State<QgjAdvancedSettingsPage> {
                     IconButton(
                       tooltip: '复制结果',
                       onPressed: _snapshot == null ? null : _copySnapshot,
-                      icon: const Icon(Icons.copy),
+                      icon: const Icon(Icons.copy, size: AppIconSizes.md),
                     ),
                     _RefreshButton(
                       loading: _loading,
@@ -332,7 +332,7 @@ class _ReadOnlyRow extends StatelessWidget {
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: Icon(icon, color: color, size: AppIconSizes.md),
           ),
           const SizedBox(width: 14),
           Expanded(

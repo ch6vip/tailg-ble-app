@@ -144,7 +144,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
         title: '故障诊断已完成',
         subtitle: entry.detail ?? entry.message,
         time: entry.time,
-        icon: Icons.health_and_safety,
+        icon: Icons.health_and_safety_outlined,
         category: _VehicleMessageCategory.device,
         severity: _VehicleMessageSeverity.info,
       );
@@ -476,7 +476,7 @@ class _MessageList extends StatelessWidget {
                               const Spacer(),
                               const Icon(
                                 Icons.chevron_right,
-                                size: 18,
+                                size: AppIconSizes.sm,
                                 color: AppColors.textTertiary,
                               ),
                             ],
@@ -511,7 +511,7 @@ class _MessageIcon extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         shape: BoxShape.circle,
       ),
-      child: Icon(message.icon, color: color, size: 22),
+      child: Icon(message.icon, color: color, size: AppIconSizes.md),
     );
   }
 }

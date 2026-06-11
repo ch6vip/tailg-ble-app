@@ -58,7 +58,7 @@ class _ControlTipBar extends StatelessWidget {
           ),
           child: const Icon(
             Icons.smart_toy_outlined,
-            size: 22,
+            size: AppIconSizes.md,
             color: AppColors.primary,
           ),
         ),

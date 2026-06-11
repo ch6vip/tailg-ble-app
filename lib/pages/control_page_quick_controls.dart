@@ -273,7 +273,7 @@ class _QuickEditOption extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(spec.icon, color: color, size: 24),
+                      Icon(spec.icon, color: color, size: AppIconSizes.lg),
                       const SizedBox(width: 10),
                       Flexible(
                         child: AnimatedDefaultTextStyle(
@@ -305,10 +305,10 @@ class _QuickEditOption extends StatelessWidget {
                       duration: duration,
                       curve: curve,
                       opacity: selected ? 1 : 0,
-                      child: const Icon(
+                      child: Icon(
                         Icons.check_circle,
                         color: AppColors.primary,
-                        size: 20,
+                        size: AppIconSizes.md,
                       ),
                     ),
                   ),

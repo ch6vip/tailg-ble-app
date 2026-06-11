@@ -140,6 +140,21 @@ abstract final class AppSpacing {
   static const sectionTop = 16.0;
 }
 
+/// Icon size tokens: sm → md → lg → xl four-tier hierarchy.
+abstract final class AppIconSizes {
+  /// Inline text, status badges, compact list items.
+  static const sm = 16.0;
+
+  /// List leading icons, settings tile icons.
+  static const md = 20.0;
+
+  /// Grid entries, bottom navigation, tab bar icons, action buttons.
+  static const lg = 24.0;
+
+  /// Empty states, hero illustrations, large decorative icons.
+  static const xl = 48.0;
+}
+
 abstract final class AppNav {
   static const barBaseHeight = 82.0;
   static const contentBottomPadding = 104.0;
