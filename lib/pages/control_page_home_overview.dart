@@ -8,7 +8,7 @@ class _HomeTopSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(color: ReplicaColors.pageBg),
+      decoration: const BoxDecoration(color: AppColors.pageBg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

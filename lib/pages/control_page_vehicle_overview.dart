@@ -79,11 +79,9 @@ class _ManualModePillState extends State<_ManualModePill> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
+                    Text(
                       '手动模式',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
+                      style: AppTextStyles.smallText.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),

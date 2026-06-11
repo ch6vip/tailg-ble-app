@@ -485,9 +485,7 @@ class _NavItemState extends State<_NavItem> {
                 padding: const EdgeInsets.only(left: 6),
                 child: Text(
                   widget.label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
+                  style: AppTextStyles.sectionLabelStrong.copyWith(
                     color: color,
                   ),
                 ),

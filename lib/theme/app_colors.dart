@@ -7,7 +7,7 @@ abstract final class AppColors {
   static const pageBg = Color(0xFFF5F5F7); // M3: slightly cooler, more modern
   static const textPrimary = Color(0xFF1A1A1A);
   static const textSecondary = Color(0xFF666666);
-  static const textTertiary = Color(0xFFBBBBBB);
+  static const textTertiary = Color(0xFF8A8A8A);
   static const border = Color(0xFFEBEBEB);
   static const success = Color(0xFF00A896);
   static const warning = Color(0xFFFF9800);
@@ -15,7 +15,7 @@ abstract final class AppColors {
   // 信息提示色统一为极简高端 teal（原 #2196F3 蓝已下线）。类别色冲突处
   // （骑行模式 standard、电池 BLE 来源 chip）已就地改用其它 token 以保持区分。
   static const info = Color(0xFF00A896);
-  static const navInactive = Color(0xFFC0C0C0);
+  static const navInactive = Color(0xFF929292);
 
   /// 官方品牌红，仅复刻保真场景使用。
   static const brandRed = Color(0xFFF11C2C);
@@ -40,21 +40,9 @@ abstract final class AppColors {
 
   /// Outline variant: lighter than [border], for dividers and hairlines.
   static const outlineVariant = Color(0xFFE8E8EC);
-}
 
-abstract final class ReplicaColors {
-  static const pageBg = Color(0xFFFAFAF8);
-  static const lightPageBg = Color(0xFFFAFAF8);
-  static const ink = Color(0xFF1A1A1A);
-  static const panelInk = Color(0xFF1A1A1A);
-  static const secondary = Color(0xFF666666);
-  static const muted = Color(0xFFBBBBBB);
-  static const subtle = Color(0xFF999999);
-  static const line = Color(0xFFF0F0F0);
-  static const blue = Color(0xFF1A1A1A);
-  static const darkPanel = Color(0xFF1A1A1A);
-  static const darkPanelDown = Color(0xFF111111);
-  static const darkPanelItem = Color(0x33999999);
+  /// Dark surface for contrast panels (e.g., battery detail dark card).
+  static const darkSurface = Color(0xFF1A1A1A);
 }
 
 /// 车体 painter 专用灰阶 token（replica 复刻保真）。
@@ -79,12 +67,6 @@ abstract final class ReplicaBikeColors {
 
   /// 停车场场景绿地
   static const parking = Color(0xFFDDE7D8);
-}
-
-abstract final class ReplicaRadii {
-  static const card = 8.0;
-  static const sheet = 18.0;
-  static const pill = 999.0;
 }
 
 abstract final class AppRadii {
@@ -209,6 +191,41 @@ abstract final class AppTextStyles {
   );
 
   static const caption = TextStyle(fontSize: 12, color: AppColors.textTertiary);
+
+  static const bodySmall = TextStyle(
+    fontSize: 13,
+    color: AppColors.textTertiary,
+  );
+
+  static const bodyLarge = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  static const subtitle = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  static const sectionTitle = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  static const cardTitle = TextStyle(
+    fontSize: 17,
+    fontWeight: FontWeight.w800,
+    color: AppColors.textPrimary,
+  );
+
+  static const sectionLabelStrong = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textTertiary,
+  );
 }
 
 /// Default card decoration: M3 elevated surface (no border, soft shadow).

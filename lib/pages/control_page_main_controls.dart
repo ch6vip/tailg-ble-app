@@ -453,10 +453,7 @@ class _MainControlEditPageState extends State<_MainControlEditPage> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   '拖动排序，开关控制是否在首页显示（至少保留 1 个）',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: AppTextStyles.bodyMedium,
                 ),
               ),
             ),

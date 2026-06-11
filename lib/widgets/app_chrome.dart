@@ -22,7 +22,11 @@ class AppPageHeader extends StatelessWidget {
         children: [
           if (showBack) ...[
             IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+              icon: const Icon(
+                Icons.arrow_back,
+                color: AppColors.textPrimary,
+                semanticLabel: '返回',
+              ),
               onPressed: () => Navigator.pop(context),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
@@ -180,13 +184,7 @@ class ConnectionStatusBanner extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
+                Text(subtitle, style: AppTextStyles.smallText),
               ],
             ),
           ),
@@ -293,9 +291,7 @@ class AppEmptyState extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
+            style: AppTextStyles.itemTitle.copyWith(
               color: AppColors.textSecondary,
             ),
           ),

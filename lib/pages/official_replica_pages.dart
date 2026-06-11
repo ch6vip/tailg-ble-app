@@ -135,7 +135,7 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
                 IconButton(
                   tooltip: '添加钥匙',
                   onPressed: () => _editKey(),
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.add, semanticLabel: '添加'),
                 ),
               ],
             ),
@@ -653,10 +653,7 @@ class RideRecordPage extends StatelessWidget {
                                 location == null
                                     ? '暂无最后位置记录'
                                     : '${location.coordinateText} · ${_formatDateTime(location.recordedAt)}',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary,
-                                ),
+                                style: AppTextStyles.bodyMedium,
                               ),
                             ),
                           ],
@@ -868,22 +865,9 @@ class _ReplicaNotice extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
+                Text(title, style: AppTextStyles.bodyLarge),
                 const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
+                Text(subtitle, style: AppTextStyles.smallText),
               ],
             ),
           ),
@@ -911,22 +895,12 @@ class _EmptyReplicaCard extends StatelessWidget {
         children: [
           Icon(icon, size: AppIconSizes.xl, color: AppColors.textTertiary),
           const SizedBox(height: 10),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          Text(title, style: AppTextStyles.itemTitle),
           const SizedBox(height: 4),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
+            style: AppTextStyles.smallText,
           ),
         ],
       ),
@@ -945,20 +919,13 @@ class _MetricBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-        ),
+        Text(label, style: AppTextStyles.smallText),
         const SizedBox(height: 6),
         Text(
           value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
+          style: AppTextStyles.subPageTitle,
         ),
       ],
     );

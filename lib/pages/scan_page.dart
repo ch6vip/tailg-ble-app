@@ -185,14 +185,7 @@ class _ScanPageState extends State<ScanPage>
                         padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
                         child: Row(
                           children: [
-                            Text(
-                              '搜索设备',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
+                            Text('搜索设备', style: AppTextStyles.pageTitle),
                           ],
                         ),
                       ),
@@ -216,20 +209,12 @@ class _ScanPageState extends State<ScanPage>
                                   : _scanning
                                   ? '正在搜索附近设备...'
                                   : '点击下方按钮开始搜索',
-                              style: const TextStyle(
-                                fontSize: 15,
+                              style: AppTextStyles.itemTitle.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              '请确保蓝牙已开启且靠近车辆',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textTertiary,
-                              ),
-                            ),
+                            Text('请确保蓝牙已开启且靠近车辆', style: AppTextStyles.caption),
                           ],
                         ),
                       ),
@@ -306,20 +291,12 @@ class _ScanHintCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: AppTextStyles.bodyLarge.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
+                Text(subtitle, style: AppTextStyles.caption),
               ],
             ),
           ),
@@ -589,10 +566,8 @@ class _DeviceCardState extends State<_DeviceCard> {
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
+                      style: AppTextStyles.itemTitle.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -610,21 +585,18 @@ class _DeviceCardState extends State<_DeviceCard> {
                 ),
               ),
               if (widget.connecting)
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    SizedBox(
+                    const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                    SizedBox(height: 6),
+                    const SizedBox(height: 6),
                     Text(
                       '连接中',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textTertiary,
-                      ),
+                      style: AppTextStyles.caption.copyWith(fontSize: 11.0),
                     ),
                   ],
                 )
@@ -636,10 +608,7 @@ class _DeviceCardState extends State<_DeviceCard> {
                     const SizedBox(height: 6),
                     Text(
                       widget.disabled ? '等待' : '连接绑定',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textTertiary,
-                      ),
+                      style: AppTextStyles.caption.copyWith(fontSize: 11.0),
                     ),
                   ],
                 ),

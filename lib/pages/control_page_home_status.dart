@@ -224,7 +224,7 @@ class _HeroMiniStat extends StatelessWidget {
                     fontSize: 20,
                     height: 1,
                     fontWeight: FontWeight.w800,
-                    color: ReplicaColors.ink,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -233,10 +233,8 @@ class _HeroMiniStat extends StatelessWidget {
                   padding: const EdgeInsets.only(left: 3),
                   child: Text(
                     unit,
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: AppTextStyles.smallText.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textTertiary,
                     ),
                   ),
                 ),
@@ -340,10 +338,8 @@ class _HomeStatusLine extends StatelessWidget {
                         statusText,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
+                        style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
                         ),
                       ),
                     ),

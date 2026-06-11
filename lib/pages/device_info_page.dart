@@ -393,18 +393,11 @@ class _GattServiceList extends StatelessWidget {
                 services[i].uuid,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+                style: AppTextStyles.bodyLarge,
               ),
               subtitle: Text(
                 '${services[i].characteristics.length} 个特征',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
+                style: AppTextStyles.smallText,
               ),
               children: services[i].characteristics
                   .map((characteristic) => _CharacteristicRow(characteristic))
@@ -437,10 +430,8 @@ class _CharacteristicRow extends StatelessWidget {
         children: [
           Text(
             characteristic.uuid,
-            style: const TextStyle(
-              fontSize: 12,
+            style: AppTextStyles.smallText.copyWith(
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
@@ -472,24 +463,14 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 86,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textTertiary,
-              ),
-            ),
+            child: Text(label, style: AppTextStyles.bodySmall),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+              style: AppTextStyles.valueText,
             ),
           ),
         ],
@@ -532,22 +513,9 @@ class _EmptyInfoCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
+                Text(title, style: AppTextStyles.bodyLarge),
                 const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
+                Text(subtitle, style: AppTextStyles.smallText),
               ],
             ),
           ),

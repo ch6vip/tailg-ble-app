@@ -99,10 +99,9 @@ class _Header extends StatelessWidget {
                                         displayName,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 21,
+                                        style: AppTextStyles.cardTitle.copyWith(
+                                          fontSize: 21.0,
                                           fontWeight: FontWeight.w800,
-                                          color: ReplicaColors.ink,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
@@ -110,11 +109,11 @@ class _Header extends StatelessWidget {
                                         subtitle,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: ReplicaColors.subtle,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                        style: AppTextStyles.sectionLabel
+                                            .copyWith(
+                                              fontWeight: FontWeight.w600,
+                                              letterSpacing: 0,
+                                            ),
                                       ),
                                     ],
                                   ),
@@ -123,7 +122,7 @@ class _Header extends StatelessWidget {
                                 const Icon(
                                   Icons.keyboard_arrow_down,
                                   size: AppIconSizes.md,
-                                  color: ReplicaColors.subtle,
+                                  color: AppColors.textTertiary,
                                 ),
                                 const SizedBox(width: 8),
                                 Semantics(
@@ -187,7 +186,7 @@ class _Header extends StatelessWidget {
                           color: isConnecting
                               ? AppColors.warning
                               : statusIcon == Icons.cloud_done
-                              ? ReplicaColors.ink
+                              ? AppColors.textPrimary
                               : effectiveStatusColor,
                           tooltip: '消息中心',
                           onTap: () => Navigator.push(
@@ -218,7 +217,7 @@ class _HeaderIconAction extends StatefulWidget {
 
   const _HeaderIconAction({
     required this.icon,
-    this.color = ReplicaColors.ink,
+    this.color = AppColors.textPrimary,
     required this.tooltip,
     required this.onTap,
   });

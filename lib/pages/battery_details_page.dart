@@ -164,7 +164,11 @@ class _BatteryHero extends StatelessWidget {
             left: 4,
             top: 0,
             child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+              icon: const Icon(
+                Icons.arrow_back,
+                color: AppColors.textPrimary,
+                semanticLabel: '返回',
+              ),
               onPressed: () => Navigator.pop(context),
               padding: const EdgeInsets.all(16),
               tooltip: '返回',
@@ -175,14 +179,7 @@ class _BatteryHero extends StatelessWidget {
             right: 0,
             top: 14,
             child: Center(
-              child: Text(
-                '电池信息',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+              child: Text('电池信息', style: AppTextStyles.sectionTitle),
             ),
           ),
           Positioned(
@@ -263,16 +260,13 @@ class _BatteryHero extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.62),
-                    borderRadius: BorderRadius.circular(ReplicaRadii.pill),
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
                   ),
                   child: Text(
                     _vehicleName(snapshot),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: AppTextStyles.bodyMedium,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -463,13 +457,7 @@ class _SourceStrip extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
+                Text(subtitle, style: AppTextStyles.smallText),
               ],
             ),
           ),
@@ -499,8 +487,8 @@ class _OfficialSummaryRow extends StatelessWidget {
     ];
     return Container(
       decoration: const BoxDecoration(
-        color: ReplicaColors.darkPanel,
-        borderRadius: BorderRadius.all(Radius.circular(ReplicaRadii.card)),
+        color: AppColors.darkSurface,
+        borderRadius: BorderRadius.all(Radius.circular(AppRadii.card)),
         boxShadow: AppShadows.cardShadow,
       ),
       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -638,24 +626,14 @@ class _MetricTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  metric.label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
+                Text(metric.label, style: AppTextStyles.caption),
                 const SizedBox(height: 5),
                 if (hasValue)
                   Text(
                     metric.value,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
+                    style: AppTextStyles.sectionTitle,
                   )
                 else
                   const Padding(
@@ -725,14 +703,7 @@ class _BmsDetailsCard extends StatelessWidget {
                   size: AppIconSizes.md,
                 ),
                 SizedBox(width: 8),
-                Text(
-                  'BMS 详情',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
+                Text('BMS 详情', style: AppTextStyles.itemTitle),
               ],
             ),
           ),
@@ -870,20 +841,13 @@ class _BatteryReadOnlyCard extends StatelessWidget {
                 color: AppColors.textSecondary,
               ),
               SizedBox(width: 8),
-              Text(
-                '只读复刻边界',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+              Text('只读复刻边界', style: AppTextStyles.itemTitle),
             ],
           ),
           SizedBox(height: 8),
           Text(
             '已复刻官方电池信息、BMS 与 C39 电池页的展示结构。刷新只读取官方电池信息；校准电池、换电池、升级电池和 BMS 写入类操作保持禁用，等真实协议和失败回滚验证完成后再开放。',
-            style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
+            style: AppTextStyles.bodySmall,
           ),
         ],
       ),

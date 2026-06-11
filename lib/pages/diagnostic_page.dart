@@ -239,7 +239,11 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                   color: Colors.white,
                                 ),
                               )
-                            : const Icon(Icons.search, size: AppIconSizes.lg),
+                            : const Icon(
+                                Icons.search,
+                                size: AppIconSizes.lg,
+                                semanticLabel: '诊断',
+                              ),
                         label: Text(_scanning ? '诊断中...' : '一键诊断'),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(52),
@@ -280,10 +284,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                     ),
                                     Text(
                                       '原始码: 0x${_rawFaultByte!.toRadixString(16).padLeft(2, '0').toUpperCase()}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textSecondary,
-                                      ),
+                                      style: AppTextStyles.smallText,
                                     ),
                                   ],
                                 ),
@@ -312,10 +313,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                               title: Text(f.name),
                               subtitle: Text(
                                 f.description,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textSecondary,
-                                ),
+                                style: AppTextStyles.caption,
                               ),
                               trailing: Text(
                                 f.active ? '异常' : '正常',

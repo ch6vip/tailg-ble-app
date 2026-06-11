@@ -24,7 +24,10 @@ class GaragePage extends StatelessWidget {
                 IconButton(
                   tooltip: '添加车辆',
                   onPressed: () => _openScan(context),
-                  icon: const Icon(Icons.add_circle_outline),
+                  icon: const Icon(
+                    Icons.add_circle_outline,
+                    semanticLabel: '添加车辆',
+                  ),
                 ),
               ],
             ),
@@ -86,7 +89,11 @@ class _EmptyGarage extends StatelessWidget {
           const SizedBox(height: 20),
           FilledButton.icon(
             onPressed: onScan,
-            icon: const Icon(Icons.bluetooth_searching, size: AppIconSizes.md),
+            icon: const Icon(
+              Icons.bluetooth_searching,
+              size: AppIconSizes.md,
+              semanticLabel: '扫描蓝牙',
+            ),
             label: const Text('扫描绑定'),
           ),
         ],
@@ -139,10 +146,8 @@ class _VehicleCard extends StatelessWidget {
                             vehicle.displayName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: AppTextStyles.subtitle.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
                             ),
                           ),
                         ),
@@ -257,7 +262,7 @@ class _VehicleCard extends StatelessWidget {
           children: [
             const Text(
               '官方 ECU 登录使用车辆密码和账号 UID。留空则使用默认 0。',
-              style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
+              style: AppTextStyles.bodySmall,
             ),
             const SizedBox(height: 12),
             TextField(
@@ -434,10 +439,7 @@ class _InfoPill extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textTertiary,
-              ),
+              style: AppTextStyles.caption,
             ),
           ),
         ],

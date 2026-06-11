@@ -41,7 +41,7 @@ part 'control_page_mode_widgets.dart';
 const _pageBg = AppColors.pageBg;
 const _kmPerPercent = 0.65;
 const _phoneControlItemBg = AppColors.surfaceContainerLow;
-const _phoneControlPrimary = ReplicaColors.blue;
+const _phoneControlPrimary = AppColors.primary;
 const _phoneControlRadius = 16.0;
 const _officialPressedBg = Color(0xFFE5E5E5);
 
@@ -55,7 +55,7 @@ const _controlConfirmPollDelay = Duration(milliseconds: 800);
 // M3: elevated card without border, soft dual-layer shadow
 const _cardDecoration = BoxDecoration(
   color: AppColors.surface,
-  borderRadius: BorderRadius.all(Radius.circular(ReplicaRadii.card)),
+  borderRadius: BorderRadius.all(Radius.circular(AppRadii.card)),
   boxShadow: AppShadows.elevation1,
 );
 

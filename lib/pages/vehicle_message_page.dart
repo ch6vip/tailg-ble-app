@@ -277,7 +277,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
                   icon: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      const Icon(Icons.done_all),
+                      const Icon(Icons.done_all, semanticLabel: '全部已读'),
                       if (unreadCount > 0)
                         Positioned(
                           right: -6,
@@ -308,7 +308,10 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
                   onPressed: currentMessages.isEmpty
                       ? null
                       : _clearCurrentMessages,
-                  icon: const Icon(Icons.delete_sweep_outlined),
+                  icon: const Icon(
+                    Icons.delete_sweep_outlined,
+                    semanticLabel: '清空',
+                  ),
                 ),
                 IconButton(
                   tooltip: '刷新',
@@ -441,11 +444,7 @@ class _MessageList extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                   message.title,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textPrimary,
-                                  ),
+                                  style: AppTextStyles.bodyLarge,
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -561,14 +560,7 @@ class _MessageDetailSheet extends StatelessWidget {
                 _MessageIcon(message: message, read: false),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    message.title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
+                  child: Text(message.title, style: AppTextStyles.sectionTitle),
                 ),
               ],
             ),

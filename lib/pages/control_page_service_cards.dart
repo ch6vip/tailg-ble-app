@@ -315,22 +315,23 @@ class _FunctionSettingsCardState extends State<_FunctionSettingsCard> {
                   InkWell(
                     onTap: widget.onLongPress,
                     borderRadius: BorderRadius.circular(8),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       child: Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.tune,
                             size: 14,
                             color: AppColors.textTertiary,
                           ),
-                          SizedBox(width: 4),
+                          const SizedBox(width: 4),
                           Text(
                             '编辑',
-                            style: TextStyle(
-                              fontSize: 12,
+                            style: AppTextStyles.caption.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textTertiary,
                             ),
                           ),
                         ],
@@ -459,7 +460,7 @@ class _HomeQuickTile extends StatelessWidget {
     return _OfficialPressable(
       onTap: item.onTap,
       onLongPress: onLongPress,
-      radius: ReplicaRadii.card,
+      radius: AppRadii.card,
       background: Colors.transparent,
       pressedBackground: _officialPressedBg,
       shadow: false,
@@ -482,9 +483,7 @@ class _HomeQuickTile extends StatelessWidget {
               item.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
+              style: AppTextStyles.smallText.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -550,10 +549,7 @@ class _QuickShortcutsEditPageState extends State<_QuickShortcutsEditPage> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   '拖动排序，开关控制是否在首页显示（至少保留 1 个）',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: AppTextStyles.bodyMedium,
                 ),
               ),
             ),
@@ -636,7 +632,7 @@ class _EditableListRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: visible ? AppColors.surface : AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(ReplicaRadii.card),
+        borderRadius: BorderRadius.circular(AppRadii.card),
         boxShadow: visible ? AppShadows.elevation1 : null,
       ),
       child: Row(
@@ -717,11 +713,7 @@ class _VehicleLocationServiceCard extends StatelessWidget {
                   address,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textTertiary,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: AppTextStyles.sectionLabelStrong,
                 ),
                 const SizedBox(height: 12),
                 const Expanded(child: _MiniMapPreview()),
@@ -787,9 +779,7 @@ class _OfficialServiceBannerCard extends StatelessWidget {
                           subtitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textTertiary,
+                          style: AppTextStyles.bodySmall.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -831,29 +821,27 @@ class _SoundEffectsServiceCard extends StatelessWidget {
                 ),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  _ServiceIconBox(
+                  const _ServiceIconBox(
                     icon: Icons.graphic_eq,
                     color: _serviceAccentAmber,
                   ),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _ServiceTitle('音效设置'),
-                        SizedBox(height: 7),
+                        const _ServiceTitle('音效设置'),
+                        const SizedBox(height: 7),
                         Text(
                           'QGJ 个性化提示音',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textTertiary,
+                          style: AppTextStyles.bodySmall.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -904,11 +892,7 @@ class _NfcServiceCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   const Text(
                     '刷卡骑行新体验',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textTertiary,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTextStyles.sectionLabelStrong,
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -962,11 +946,7 @@ class _BleRenewalServiceCard extends StatelessWidget {
                     '官方权益服务暂未开放',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textTertiary,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTextStyles.sectionLabelStrong,
                   ),
                 ],
               ),
@@ -1029,7 +1009,7 @@ class _ChargingStationServiceCard extends StatelessWidget {
                       size: 58,
                     ),
                     const SizedBox(width: 14),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1038,22 +1018,16 @@ class _ChargingStationServiceCard extends StatelessWidget {
                             '最近充电站',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: AppColors.textPrimary,
+                            style: AppTextStyles.itemTitle.copyWith(
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          SizedBox(height: 8),
-                          Text(
+                          const SizedBox(height: 8),
+                          const Text(
                             '官方站点与交易接口暂未接入',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textTertiary,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: AppTextStyles.sectionLabelStrong,
                           ),
                         ],
                       ),
@@ -1131,11 +1105,7 @@ class _ServiceTitle extends StatelessWidget {
       text,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(
-        fontSize: 17,
-        color: AppColors.textPrimary,
-        fontWeight: FontWeight.w800,
-      ),
+      style: AppTextStyles.cardTitle,
     );
   }
 }
@@ -1207,7 +1177,7 @@ class _OfficialPressable extends StatefulWidget {
     this.enabled = true,
     this.background = AppColors.surface,
     this.pressedBackground = _officialPressedBg,
-    this.radius = ReplicaRadii.card,
+    this.radius = AppRadii.card,
     this.shadow = true,
   });
 

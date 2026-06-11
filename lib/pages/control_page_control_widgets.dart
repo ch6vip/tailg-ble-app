@@ -114,11 +114,7 @@ class _ControlTipBar extends StatelessWidget {
                         status,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textTertiary,
-                        ),
+                        style: AppTextStyles.sectionLabelStrong,
                       ),
                     ),
                     if (vehicleName != null && canUseCloud) ...[
@@ -128,10 +124,7 @@ class _ControlTipBar extends StatelessWidget {
                           vehicleName!,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textTertiary,
-                          ),
+                          style: AppTextStyles.caption,
                         ),
                       ),
                     ],

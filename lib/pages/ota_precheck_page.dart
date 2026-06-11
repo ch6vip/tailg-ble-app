@@ -196,19 +196,14 @@ class _StatusCard extends StatelessWidget {
               children: [
                 Text(
                   compatible ? '可进行升级前检查' : '等待可检测设备',
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: AppTextStyles.subtitle.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   connected ? '当前协议：$protocol' : '连接车辆后可读取协议和设备信息',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textTertiary,
-                  ),
+                  style: AppTextStyles.caption,
                 ),
               ],
             ),
@@ -296,7 +291,7 @@ class _SafetyCard extends StatelessWidget {
           Expanded(
             child: Text(
               '当前页面只做升级前检测，不会擦写固件。真正 OTA 需要确认固件来源、分包协议、断点恢复和失败回滚策略后再开放。',
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              style: AppTextStyles.bodyMedium,
             ),
           ),
         ],
@@ -318,13 +313,7 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 92,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textTertiary,
-              ),
-            ),
+            child: Text(label, style: AppTextStyles.bodySmall),
           ),
           Expanded(
             child: Text(

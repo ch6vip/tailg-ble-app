@@ -278,14 +278,7 @@ class _LoginCardState extends State<_LoginCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '登录官方账号',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          const Text('登录官方账号', style: AppTextStyles.subtitle),
           const SizedBox(height: 14),
           TextField(
             controller: widget.phoneController,
@@ -398,21 +391,11 @@ class _SessionCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '官方账号已登录',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
+                const Text('官方账号已登录', style: AppTextStyles.itemTitle),
                 const SizedBox(height: 2),
                 Text(
                   state.phone.isEmpty ? '手机号已脱敏保存' : _maskPhone(state.phone),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: AppTextStyles.smallText,
                 ),
               ],
             ),
@@ -443,14 +426,7 @@ class _ChannelCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '控车通道',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          const Text('控车通道', style: AppTextStyles.itemTitle),
           const SizedBox(height: 12),
           ...OfficialControlChannel.values.map((channel) {
             final selected = channel == state.controlChannel;
@@ -490,7 +466,7 @@ class _VehicleListCard extends StatelessWidget {
       return const AppCard(
         child: Text(
           '当前官方账号未返回车辆，请确认手机号已绑定台铃车辆。',
-          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          style: AppTextStyles.bodyMedium,
         ),
       );
     }
@@ -549,11 +525,7 @@ class _OfficialVehicleCard extends StatelessWidget {
                     vehicle.displayName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
+                    style: AppTextStyles.subtitle,
                   ),
                 ),
                 _StatusChip(
@@ -668,10 +640,7 @@ class _OfficialVehicleCard extends StatelessWidget {
                       '已关联 ${linkedVehicle.displayName}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
+                      style: AppTextStyles.smallText,
                     ),
                   ),
                 ],
@@ -811,7 +780,11 @@ class OfficialVehicleDetailPage extends StatelessWidget {
                     errorBuilder: (_, __, ___) => const SizedBox(
                       height: 120,
                       child: Center(
-                        child: Icon(Icons.electric_bike, size: AppIconSizes.xl),
+                        child: Icon(
+                          Icons.electric_bike,
+                          size: AppIconSizes.xl,
+                          semanticLabel: '车辆',
+                        ),
                       ),
                     ),
                   ),
@@ -957,11 +930,7 @@ class _OfficialVehicleSelfCheckPageState
                     widget.vehicle.displayName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
+                    style: AppTextStyles.subtitle,
                   ),
                   const SizedBox(height: 8),
                   _DetailLine('命令 IMEI', _maskId(widget.vehicle.commandImei)),
@@ -1015,14 +984,7 @@ class _SelfCheckResultCard extends StatelessWidget {
           _DetailLine('返回 code', result.code?.toString() ?? '未返回'),
           if (data.isNotEmpty) ...[
             const SizedBox(height: 8),
-            const Text(
-              '自检字段',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            const Text('自检字段', style: AppTextStyles.bodyLarge),
             const SizedBox(height: 6),
             ...data.entries.map(
               (entry) => _DetailLine(
@@ -1243,23 +1205,13 @@ class _DetailLine extends StatelessWidget {
         children: [
           SizedBox(
             width: 92,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textTertiary,
-              ),
-            ),
+            child: Text(label, style: AppTextStyles.bodySmall),
           ),
           Expanded(
             child: Text(
               display,
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppTextStyles.valueText,
             ),
           ),
         ],

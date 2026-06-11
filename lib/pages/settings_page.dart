@@ -42,14 +42,7 @@ class _SettingsPageState extends State<SettingsPage> {
           children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Text(
-                '设置',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+              child: Text('设置', style: AppTextStyles.pageTitle),
             ),
             const AppSectionLabel('连接'),
             _group(const [
@@ -206,10 +199,7 @@ class _SettingsPageState extends State<SettingsPage> {
         color: selected ? AppColors.primary : AppColors.textTertiary,
       ),
       title: Text(title, style: const TextStyle(fontSize: 15)),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
-      ),
+      subtitle: Text(subtitle, style: AppTextStyles.caption),
       onTap: () => Navigator.pop(context),
     );
   }
@@ -266,23 +256,10 @@ Widget _settingItem({
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
+                  Text(title, style: AppTextStyles.itemTitle),
                   if (subtitle != null) ...[
                     const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
+                    Text(subtitle, style: AppTextStyles.caption),
                   ],
                 ],
               ),

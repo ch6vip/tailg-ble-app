@@ -136,10 +136,7 @@ class _QuickControlEditPageState extends State<QuickControlEditPage> {
                     padding: EdgeInsets.fromLTRB(20, 8, 20, 0),
                     child: Text(
                       '* 车辆命令仅使用已验证的本地 BLE 控车命令；页面入口不会写入车辆。',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
+                      style: AppTextStyles.smallText,
                     ),
                   ),
                 ],
@@ -178,20 +175,10 @@ class _QuickEditSection extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+                style: AppTextStyles.subtitle.copyWith(fontSize: 17.0),
               ),
               const SizedBox(width: 4),
-              Text(
-                '（$subtitle）',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                ),
-              ),
+              Text('（$subtitle）', style: AppTextStyles.bodyMedium),
             ],
           ),
           const SizedBox(height: 12),

@@ -54,14 +54,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      '震动灵敏度',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
+                    const Text('震动灵敏度', style: AppTextStyles.dialogTitle),
                     const SizedBox(height: 18),
                     ...List.generate(4, (index) {
                       final value = index + 1;
@@ -986,9 +979,7 @@ class _NavSettingRow extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                      style: AppTextStyles.itemTitle.copyWith(
                         color: enabled
                             ? AppColors.textPrimary
                             : AppColors.textTertiary,
@@ -999,10 +990,7 @@ class _NavSettingRow extends StatelessWidget {
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
+                      style: AppTextStyles.smallText,
                     ),
                   ],
                 ),
@@ -1014,10 +1002,7 @@ class _NavSettingRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: AppTextStyles.bodyMedium,
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -1076,9 +1061,7 @@ class _SwitchSettingRow extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                      style: AppTextStyles.itemTitle.copyWith(
                         color: enabled
                             ? AppColors.textPrimary
                             : AppColors.textTertiary,
@@ -1090,10 +1073,7 @@ class _SwitchSettingRow extends StatelessWidget {
                         subtitle!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
+                        style: AppTextStyles.smallText,
                       ),
                     ],
                   ],
@@ -1142,9 +1122,7 @@ class _DisabledInfoRow extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                      style: AppTextStyles.itemTitle.copyWith(
                         color: AppColors.textTertiary,
                       ),
                     ),
@@ -1153,18 +1131,12 @@ class _DisabledInfoRow extends StatelessWidget {
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
+                      style: AppTextStyles.smallText,
                     ),
                   ],
                 ),
               ),
-              const Text(
-                '待确认',
-                style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
-              ),
+              const Text('待确认', style: AppTextStyles.caption),
             ],
           ),
         ),
