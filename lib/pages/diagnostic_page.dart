@@ -256,7 +256,9 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                             children: [
                               Icon(
                                 allClear ? Icons.check_circle : Icons.warning,
-                                color: allClear ? AppColors.success : AppColors.danger,
+                                color: allClear
+                                    ? AppColors.success
+                                    : AppColors.danger,
                                 size: 32,
                               ),
                               const SizedBox(width: 12),
@@ -301,7 +303,9 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                     : AppColors.success.withValues(alpha: 0.15),
                                 child: Icon(
                                   f.icon,
-                                  color: f.active ? AppColors.danger : AppColors.success,
+                                  color: f.active
+                                      ? AppColors.danger
+                                      : AppColors.success,
                                   size: 20,
                                 ),
                               ),
@@ -316,7 +320,9 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                               trailing: Text(
                                 f.active ? '异常' : '正常',
                                 style: TextStyle(
-                                  color: f.active ? AppColors.danger : AppColors.success,
+                                  color: f.active
+                                      ? AppColors.danger
+                                      : AppColors.success,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -345,7 +351,9 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                 hasFaults
                                     ? Icons.warning_amber
                                     : Icons.check_circle_outline,
-                                color: hasFaults ? AppColors.warning : AppColors.success,
+                                color: hasFaults
+                                    ? AppColors.warning
+                                    : AppColors.success,
                                 size: 20,
                               ),
                               title: Text(

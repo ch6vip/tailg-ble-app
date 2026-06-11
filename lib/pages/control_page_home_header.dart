@@ -265,9 +265,7 @@ class _HeaderIconActionState extends State<_HeaderIconAction> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: _pressed
-                    ? AppColors.surfaceContainerHigh
-                    : Colors.white,
+                color: _pressed ? AppColors.surfaceContainerHigh : Colors.white,
                 shape: BoxShape.circle,
                 boxShadow: AppShadows.elevation1,
               ),

@@ -139,21 +139,22 @@ class _TailgBleAppState extends State<TailgBleApp> {
       title: 'Tailg BLE',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          brightness: Brightness.light,
-        ).copyWith(
-          primary: AppColors.primary,
-          onPrimary: Colors.white,
-          secondary: AppColors.accentTeal,
-          onSecondary: Colors.white,
-          surface: AppColors.surface,
-          onSurface: AppColors.textPrimary,
-          surfaceContainerLow: AppColors.surfaceContainerLow,
-          surfaceContainerHigh: AppColors.surfaceContainerHigh,
-          outline: AppColors.border,
-          outlineVariant: AppColors.outlineVariant,
-        ),
+        colorScheme:
+            ColorScheme.fromSeed(
+              seedColor: AppColors.primary,
+              brightness: Brightness.light,
+            ).copyWith(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              secondary: AppColors.accentTeal,
+              onSecondary: Colors.white,
+              surface: AppColors.surface,
+              onSurface: AppColors.textPrimary,
+              surfaceContainerLow: AppColors.surfaceContainerLow,
+              surfaceContainerHigh: AppColors.surfaceContainerHigh,
+              outline: AppColors.border,
+              outlineVariant: AppColors.outlineVariant,
+            ),
         scaffoldBackgroundColor: AppColors.pageBg,
         useMaterial3: true,
         filledButtonTheme: FilledButtonThemeData(
@@ -185,7 +186,9 @@ class _TailgBleAppState extends State<TailgBleApp> {
             return Colors.white;
           }),
           trackColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) return AppColors.accentTeal;
+            if (states.contains(WidgetState.selected)) {
+              return AppColors.accentTeal;
+            }
             return AppColors.border;
           }),
           trackOutlineColor: WidgetStateProperty.all(Colors.transparent),

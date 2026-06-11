@@ -31,10 +31,13 @@ abstract final class AppColors {
   // ── Material 3 surface tokens ──────────────────────────────────────────
   /// Card / elevated surface (pure white on light theme).
   static const surface = Color(0xFFFFFFFF);
+
   /// Subtle tinted background for nested containers.
   static const surfaceContainerLow = Color(0xFFF8F8FA);
+
   /// Slightly stronger tint for pressed / hovered states.
   static const surfaceContainerHigh = Color(0xFFF0F0F4);
+
   /// Outline variant: lighter than [border], for dividers and hairlines.
   static const outlineVariant = Color(0xFFE8E8EC);
 }
@@ -114,11 +117,13 @@ abstract final class AppShadows {
     BoxShadow(color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2)),
     BoxShadow(color: Color(0x04000000), blurRadius: 2, offset: Offset(0, 1)),
   ];
+
   /// Level 2: medium lift for floating panels and active cards.
   static const List<BoxShadow> elevation2 = [
     BoxShadow(color: Color(0x0A000000), blurRadius: 16, offset: Offset(0, 4)),
     BoxShadow(color: Color(0x05000000), blurRadius: 4, offset: Offset(0, 2)),
   ];
+
   /// Level 3: strong lift for FABs, dialogs, and overlays.
   static const List<BoxShadow> elevation3 = [
     BoxShadow(color: Color(0x0D000000), blurRadius: 24, offset: Offset(0, 8)),

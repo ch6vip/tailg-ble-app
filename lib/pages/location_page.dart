@@ -1932,7 +1932,10 @@ class _OfficialFenceSheet extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               '本地围栏：${localFence!.enabled ? '已开启' : '已关闭'} · ${localFence!.radiusMeters}m',
-              style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textTertiary,
+              ),
             ),
           ],
           if (error != null) ...[

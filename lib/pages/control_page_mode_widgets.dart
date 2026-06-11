@@ -32,7 +32,10 @@ class _RidingModeSelector extends StatelessWidget {
                   const SizedBox(height: 4),
                   const Text(
                     '需 BLE 连接后切换，云端模式仅展示车辆状态',
-                    style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textTertiary,
+                    ),
                   ),
                 ],
                 const SizedBox(height: 12),

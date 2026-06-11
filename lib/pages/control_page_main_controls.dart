@@ -220,9 +220,21 @@ class _OfficialSmallControlButtonState
         ? const Color(0xFFF2F2F0)
         : Colors.white;
     final shadow = widget.active
-        ? [BoxShadow(color: accent.withValues(alpha: 0.12), blurRadius: 10, offset: const Offset(0, 3))]
+        ? [
+            BoxShadow(
+              color: accent.withValues(alpha: 0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ]
         : _pressed
-        ? [BoxShadow(color: const Color(0x06000000), blurRadius: 4, offset: const Offset(0, 1))]
+        ? [
+            BoxShadow(
+              color: const Color(0x06000000),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ]
         : AppShadows.elevation1;
     const iconSize = 26.0;
     const fontSize = 12.0;

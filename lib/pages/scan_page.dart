@@ -556,7 +556,9 @@ class _DeviceCardState extends State<_DeviceCard> {
           decoration: BoxDecoration(
             color: widget.disabled ? const Color(0xFFF8F8F8) : Colors.white,
             borderRadius: BorderRadius.circular(14),
-            boxShadow: widget.disabled ? AppShadows.elevation1 : AppShadows.elevation1,
+            boxShadow: widget.disabled
+                ? AppShadows.elevation1
+                : AppShadows.elevation1,
           ),
           child: Row(
             children: [
