@@ -129,7 +129,7 @@ class _BatteryHero extends StatelessWidget {
             Color(0xFFFFFFFF),
             Color(0xFFE9F1FF),
             Color(0xFFDDE9FF),
-            ReplicaColors.pageBg,
+            AppColors.pageBg,
           ],
           stops: [0, 0.42, 0.74, 1],
         ),
@@ -164,7 +164,7 @@ class _BatteryHero extends StatelessWidget {
             left: 4,
             top: 0,
             child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: ReplicaColors.ink),
+              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
               onPressed: () => Navigator.pop(context),
               padding: const EdgeInsets.all(16),
               tooltip: '返回',
@@ -180,7 +180,7 @@ class _BatteryHero extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: ReplicaColors.ink,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
@@ -191,7 +191,7 @@ class _BatteryHero extends StatelessWidget {
             child: TextButton(
               onPressed: cloudState.batteryInfoLoading ? null : onRefresh,
               style: TextButton.styleFrom(
-                foregroundColor: ReplicaColors.secondary,
+                foregroundColor: AppColors.textSecondary,
                 visualDensity: VisualDensity.compact,
                 padding: const EdgeInsets.symmetric(horizontal: 6),
               ),
@@ -236,7 +236,7 @@ class _BatteryHero extends StatelessWidget {
                         fontWeight: FontWeight.w300,
                         color: percent == null
                             ? AppColors.textTertiary
-                            : ReplicaColors.ink,
+                            : AppColors.textPrimary,
                         height: 0.92,
                       ),
                     ),
@@ -248,7 +248,7 @@ class _BatteryHero extends StatelessWidget {
                           fontSize: 24,
                           color: percent == null
                               ? AppColors.textTertiary
-                              : ReplicaColors.ink,
+                              : AppColors.textPrimary,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -271,7 +271,7 @@ class _BatteryHero extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: ReplicaColors.secondary,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ),

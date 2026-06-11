@@ -39,7 +39,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
   Future<void> _openSensitivitySheet(bool canSend) async {
     final level = await showModalBottomSheet<int>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),

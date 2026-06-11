@@ -148,7 +148,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+        border: Border(bottom: BorderSide(color: AppColors.outlineVariant, width: 1)),
       ),
       child: Row(
         children: List.generate(3, (i) {
@@ -230,10 +230,10 @@ class _LogTile extends StatelessWidget {
         '${entry.time.minute.toString().padLeft(2, '0')}:'
         '${entry.time.second.toString().padLeft(2, '0')}';
     final levelColor = switch (entry.level) {
-      LogLevel.debug => const Color(0xFFBDBDBD),
-      LogLevel.info => const Color(0xFF2196F3),
-      LogLevel.warning => const Color(0xFFFF9800),
-      LogLevel.error => const Color(0xFFFF5252),
+      LogLevel.debug => AppColors.textTertiary,
+      LogLevel.info => AppColors.info,
+      LogLevel.warning => AppColors.warning,
+      LogLevel.error => AppColors.danger,
     };
 
     return RepaintBoundary(
@@ -246,7 +246,7 @@ class _LogTile extends StatelessWidget {
               timeStr,
               style: const TextStyle(
                 fontSize: 11,
-                color: Color(0xFF9E9E9E),
+                color: AppColors.textTertiary,
                 fontFamily: 'monospace',
               ),
             ),
@@ -280,7 +280,7 @@ class _LogTile extends StatelessWidget {
                         entry.detail!,
                         style: const TextStyle(
                           fontSize: 11,
-                          color: Color(0xFF757575),
+                          color: AppColors.textSecondary,
                           fontFamily: 'monospace',
                         ),
                       ),

@@ -360,7 +360,7 @@ class _LoginCardState extends State<_LoginCard> {
       hintText: hint,
       errorText: errorText,
       filled: true,
-      fillColor: const Color(0xFFF5F6FA),
+      fillColor: AppColors.surfaceContainerLow,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
@@ -528,7 +528,7 @@ class _OfficialVehicleCard extends StatelessWidget {
     return AppCard(
       color: selected
           ? AppColors.primary.withValues(alpha: 0.08)
-          : Colors.white,
+          : AppColors.surface,
       child: InkWell(
         onTap: () async {
           HapticFeedback.selectionClick();

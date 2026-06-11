@@ -250,13 +250,13 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                         AppCard(
                           margin: EdgeInsets.zero,
                           color: allClear
-                              ? Colors.green.shade50
-                              : Colors.red.shade50,
+                              ? AppColors.success.withValues(alpha: 0.08)
+                              : AppColors.danger.withValues(alpha: 0.08),
                           child: Row(
                             children: [
                               Icon(
                                 allClear ? Icons.check_circle : Icons.warning,
-                                color: allClear ? Colors.green : Colors.red,
+                                color: allClear ? AppColors.success : AppColors.danger,
                                 size: 32,
                               ),
                               const SizedBox(width: 12),
@@ -272,15 +272,15 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
                                         color: allClear
-                                            ? Colors.green.shade800
-                                            : Colors.red.shade800,
+                                            ? AppColors.success
+                                            : AppColors.danger,
                                       ),
                                     ),
                                     Text(
                                       '原始码: 0x${_rawFaultByte!.toRadixString(16).padLeft(2, '0').toUpperCase()}',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.grey.shade600,
+                                        color: AppColors.textSecondary,
                                       ),
                                     ),
                                   ],
@@ -297,11 +297,11 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                             child: ListTile(
                               leading: CircleAvatar(
                                 backgroundColor: f.active
-                                    ? Colors.red.shade100
-                                    : Colors.green.shade100,
+                                    ? AppColors.danger.withValues(alpha: 0.15)
+                                    : AppColors.success.withValues(alpha: 0.15),
                                 child: Icon(
                                   f.icon,
-                                  color: f.active ? Colors.red : Colors.green,
+                                  color: f.active ? AppColors.danger : AppColors.success,
                                   size: 20,
                                 ),
                               ),
@@ -310,13 +310,13 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                 f.description,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey.shade600,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                               trailing: Text(
                                 f.active ? '异常' : '正常',
                                 style: TextStyle(
-                                  color: f.active ? Colors.red : Colors.green,
+                                  color: f.active ? AppColors.danger : AppColors.success,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -345,7 +345,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                 hasFaults
                                     ? Icons.warning_amber
                                     : Icons.check_circle_outline,
-                                color: hasFaults ? Colors.orange : Colors.green,
+                                color: hasFaults ? AppColors.warning : AppColors.success,
                                 size: 20,
                               ),
                               title: Text(
@@ -356,14 +356,14 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                 '0x${r.rawByte.toRadixString(16).padLeft(2, '0').toUpperCase()}',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey.shade500,
+                                  color: AppColors.textTertiary,
                                 ),
                               ),
                               trailing: Text(
                                 timeStr,
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey.shade500,
+                                  color: AppColors.textTertiary,
                                 ),
                               ),
                             ),

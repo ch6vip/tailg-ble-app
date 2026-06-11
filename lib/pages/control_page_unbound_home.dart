@@ -27,7 +27,7 @@ class _UnboundVehicleHome extends StatelessWidget {
             fontSize: 36,
             height: 1.05,
             fontWeight: FontWeight.w800,
-            color: ReplicaColors.ink,
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 12),
@@ -37,7 +37,7 @@ class _UnboundVehicleHome extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             height: 1.35,
-            color: ReplicaColors.secondary,
+            color: AppColors.textSecondary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -52,15 +52,13 @@ class _UnboundVehicleHome extends StatelessWidget {
                 label: '绑定设备',
                 foreground: Colors.white,
                 background: AppColors.primary,
-                borderColor: AppColors.primary,
                 onTap: () => openScanTab(context),
               ),
               const SizedBox(height: 12),
               _OfficialActionButton(
                 label: '虚拟体验（演示）',
-                foreground: ReplicaColors.secondary,
-                background: Colors.white,
-                borderColor: AppColors.border,
+                foreground: AppColors.textSecondary,
+                background: AppColors.surface,
                 onTap: () =>
                     _showSnack(context, '虚拟体验功能开发中，可先「绑定设备」或登录官方账号查看车辆'),
               ),
@@ -73,7 +71,7 @@ class _UnboundVehicleHome extends StatelessWidget {
                 child: const Text(
                   '绑定说明',
                   style: TextStyle(
-                    color: ReplicaColors.muted,
+                    color: AppColors.textTertiary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -107,7 +105,7 @@ class _UnboundLogoMark extends StatelessWidget {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: AppShadows.cardShadow,
           ),
@@ -123,7 +121,7 @@ class _UnboundLogoMark extends StatelessWidget {
           style: TextStyle(
             fontSize: 21,
             fontWeight: FontWeight.w900,
-            color: ReplicaColors.ink,
+            color: AppColors.textPrimary,
           ),
         ),
       ],
@@ -144,7 +142,7 @@ class _UnboundBanner extends StatelessWidget {
             height: 230,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(18),
               boxShadow: const [
                 BoxShadow(
@@ -200,7 +198,7 @@ class _UnboundBanner extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
-                      color: ReplicaColors.secondary,
+                      color: AppColors.textSecondary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -242,7 +240,7 @@ class _UnboundBannerChip extends StatelessWidget {
         text,
         style: const TextStyle(
           fontSize: 11,
-          color: ReplicaColors.muted,
+          color: AppColors.textTertiary,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -262,7 +260,7 @@ class _BannerDot extends StatelessWidget {
       width: active ? 28 : 8,
       height: 6,
       decoration: BoxDecoration(
-        color: active ? AppColors.primary : const Color(0xFFD8DAE2),
+        color: active ? AppColors.primary : AppColors.outlineVariant,
         borderRadius: BorderRadius.circular(3),
       ),
     );
@@ -273,14 +271,12 @@ class _OfficialActionButton extends StatefulWidget {
   final String label;
   final Color foreground;
   final Color background;
-  final Color borderColor;
   final VoidCallback onTap;
 
   const _OfficialActionButton({
     required this.label,
     required this.foreground,
     required this.background,
-    required this.borderColor,
     required this.onTap,
   });
 
@@ -312,9 +308,7 @@ class _OfficialActionButtonState extends State<_OfficialActionButton> {
         decoration: BoxDecoration(
           color: _pressed ? _officialPressedBg : widget.background,
           borderRadius: BorderRadius.circular(15),
-          border: Border.all(
-            color: _pressed ? _officialPressedBg : widget.borderColor,
-          ),
+          boxShadow: _pressed ? null : AppShadows.elevation1,
         ),
         child: Material(
           color: Colors.transparent,
@@ -343,7 +337,7 @@ class _OfficialActionButtonState extends State<_OfficialActionButton> {
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: _pressed
-                        ? ReplicaColors.secondary
+                        ? AppColors.textSecondary
                         : widget.foreground,
                   ),
                 ),
@@ -376,14 +370,14 @@ class _OfficialTextLinkRow extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-        splashColor: ReplicaColors.blue.withValues(alpha: 0.08),
-        highlightColor: ReplicaColors.blue.withValues(alpha: 0.05),
+        splashColor: AppColors.primary.withValues(alpha: 0.08),
+        highlightColor: AppColors.primary.withValues(alpha: 0.05),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: ReplicaColors.blue),
+              Icon(icon, size: 16, color: AppColors.primary),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
@@ -392,7 +386,7 @@ class _OfficialTextLinkRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 12,
-                    color: ReplicaColors.secondary,
+                    color: AppColors.textSecondary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

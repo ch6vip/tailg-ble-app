@@ -40,7 +40,7 @@ part 'control_page_mode_widgets.dart';
 
 const _pageBg = AppColors.pageBg;
 const _kmPerPercent = 0.65;
-const _phoneControlItemBg = Color(0xFFF7F8FA);
+const _phoneControlItemBg = AppColors.surfaceContainerLow;
 const _phoneControlPrimary = ReplicaColors.blue;
 const _phoneControlRadius = 16.0;
 const _officialPressedBg = Color(0xFFE5E5E5);
@@ -49,12 +49,12 @@ const _officialPressedBg = Color(0xFFE5E5E5);
 const _serviceAccentViolet = Color(0xFF7B61FF);
 const _serviceAccentAmber = Color(0xFFFF8A00);
 const _serviceMutedText = Color(0xFFAAA9B1);
-const _serviceCardBorder = Color(0xFFE3E6EC);
+const _serviceCardBorder = AppColors.outlineVariant;
 const _controlConfirmTimeout = Duration(seconds: 8);
 const _controlConfirmPollDelay = Duration(milliseconds: 800);
 // M3: elevated card without border, soft dual-layer shadow
 const _cardDecoration = BoxDecoration(
-  color: Colors.white,
+  color: AppColors.surface,
   borderRadius: BorderRadius.all(Radius.circular(ReplicaRadii.card)),
   boxShadow: AppShadows.elevation1,
 );
@@ -107,7 +107,7 @@ class _ControlPageState extends State<ControlPage>
         child: RefreshIndicator(
           onRefresh: _handleRefresh,
           color: AppColors.primary,
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.surface,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),

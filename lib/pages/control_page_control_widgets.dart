@@ -38,8 +38,8 @@ class _ControlTipBar extends StatelessWidget {
         : disabledReason ?? '请连接车辆后控车';
     final effectiveColor = switch (effective) {
       'BLE' => AppColors.success,
-      '云端' => ReplicaColors.blue,
-      _ => ReplicaColors.muted,
+      '云端' => AppColors.primary,
+      _ => AppColors.textTertiary,
     };
     final effectiveIcon = switch (effective) {
       'BLE' => Icons.bluetooth_connected,
@@ -52,20 +52,20 @@ class _ControlTipBar extends StatelessWidget {
           width: 42,
           height: 42,
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surface,
             shape: BoxShape.circle,
             boxShadow: AppShadows.cardShadow,
           ),
           child: const Icon(
             Icons.smart_toy_outlined,
             size: 22,
-            color: ReplicaColors.blue,
+            color: AppColors.primary,
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: Material(
-            color: Colors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(30),
             child: InkWell(
               onTap: () => Navigator.push(
@@ -78,7 +78,8 @@ class _ControlTipBar extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: AppColors.border),
+                  color: AppColors.surfaceContainerLow,
+                  boxShadow: AppShadows.elevation1,
                 ),
                 child: Row(
                   children: [
@@ -116,7 +117,7 @@ class _ControlTipBar extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: ReplicaColors.muted,
+                          color: AppColors.textTertiary,
                         ),
                       ),
                     ),
@@ -129,7 +130,7 @@ class _ControlTipBar extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 12,
-                            color: ReplicaColors.subtle,
+                            color: AppColors.textTertiary,
                           ),
                         ),
                       ),

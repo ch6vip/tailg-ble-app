@@ -635,13 +635,9 @@ class _EditableListRow extends StatelessWidget {
       curve: curve,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: visible ? Colors.white : const Color(0xFFF7F7F5),
+        color: visible ? AppColors.surface : AppColors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(ReplicaRadii.card),
-        border: Border.all(
-          color: visible
-              ? AppColors.border
-              : AppColors.border.withValues(alpha: 0.7),
-        ),
+        boxShadow: visible ? AppShadows.elevation1 : null,
       ),
       child: Row(
         children: [
@@ -723,7 +719,7 @@ class _VehicleLocationServiceCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 13,
-                    color: ReplicaColors.muted,
+                    color: AppColors.textTertiary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -793,7 +789,7 @@ class _OfficialServiceBannerCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 13,
-                            color: ReplicaColors.muted,
+                            color: AppColors.textTertiary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -803,7 +799,7 @@ class _OfficialServiceBannerCard extends StatelessWidget {
                   const Icon(
                     Icons.chevron_right,
                     size: 22,
-                    color: ReplicaColors.muted,
+                    color: AppColors.textTertiary,
                   ),
                 ],
               ),
@@ -857,7 +853,7 @@ class _SoundEffectsServiceCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 13,
-                            color: ReplicaColors.muted,
+                            color: AppColors.textTertiary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -867,7 +863,7 @@ class _SoundEffectsServiceCard extends StatelessWidget {
                   Icon(
                     Icons.chevron_right,
                     size: 22,
-                    color: ReplicaColors.muted,
+                    color: AppColors.textTertiary,
                   ),
                 ],
               ),
@@ -910,7 +906,7 @@ class _NfcServiceCard extends StatelessWidget {
                     '刷卡骑行新体验',
                     style: TextStyle(
                       fontSize: 13,
-                      color: ReplicaColors.muted,
+                      color: AppColors.textTertiary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -926,7 +922,7 @@ class _NfcServiceCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: ReplicaColors.muted),
+            const Icon(Icons.chevron_right, color: AppColors.textTertiary),
           ],
         ),
       ),
@@ -942,7 +938,7 @@ class _BleRenewalServiceCard extends StatelessWidget {
     return _OfficialPressable(
       enabled: false,
       onTap: () {},
-      background: const Color(0xFFF4F5F7),
+      background: AppColors.surfaceContainerLow,
       pressedBackground: _officialPressedBg,
       child: Container(
         height: 92,
@@ -951,7 +947,7 @@ class _BleRenewalServiceCard extends StatelessWidget {
           children: [
             const _ServiceIconBox(
               icon: Icons.bluetooth_audio,
-              color: ReplicaColors.muted,
+              color: AppColors.textTertiary,
               size: 48,
             ),
             const SizedBox(width: 16),
@@ -968,7 +964,7 @@ class _BleRenewalServiceCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 13,
-                      color: ReplicaColors.muted,
+                      color: AppColors.textTertiary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -978,14 +974,14 @@ class _BleRenewalServiceCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
-                color: _serviceCardBorder,
+                color: AppColors.outlineVariant,
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Text(
                 '暂未开放',
                 style: TextStyle(
                   fontSize: 12,
-                  color: ReplicaColors.muted,
+                  color: AppColors.textTertiary,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -1029,7 +1025,7 @@ class _ChargingStationServiceCard extends StatelessWidget {
                   children: [
                     const _ServiceIconBox(
                       icon: Icons.ev_station,
-                      color: ReplicaColors.muted,
+                      color: AppColors.textTertiary,
                       size: 58,
                     ),
                     const SizedBox(width: 14),
@@ -1044,7 +1040,7 @@ class _ChargingStationServiceCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 15,
-                              color: ReplicaColors.ink,
+                              color: AppColors.textPrimary,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
@@ -1055,7 +1051,7 @@ class _ChargingStationServiceCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 13,
-                              color: ReplicaColors.muted,
+                              color: AppColors.textTertiary,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -1137,7 +1133,7 @@ class _ServiceTitle extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
       style: const TextStyle(
         fontSize: 17,
-        color: ReplicaColors.ink,
+        color: AppColors.textPrimary,
         fontWeight: FontWeight.w800,
       ),
     );
@@ -1209,7 +1205,7 @@ class _OfficialPressable extends StatefulWidget {
     required this.onTap,
     this.onLongPress,
     this.enabled = true,
-    this.background = Colors.white,
+    this.background = AppColors.surface,
     this.pressedBackground = _officialPressedBg,
     this.radius = ReplicaRadii.card,
     this.shadow = true,
@@ -1254,7 +1250,7 @@ class _OfficialPressableState extends State<_OfficialPressable> {
             borderRadius: BorderRadius.circular(widget.radius),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              splashColor: ReplicaColors.blue.withValues(alpha: 0.06),
+              splashColor: AppColors.primary.withValues(alpha: 0.06),
               highlightColor: Colors.black.withValues(alpha: 0.025),
               onTap: widget.enabled
                   ? () {
@@ -1297,7 +1293,7 @@ class _UnavailableBadge extends StatelessWidget {
         '筹备中',
         style: TextStyle(
           fontSize: 12,
-          color: ReplicaColors.muted,
+          color: AppColors.textTertiary,
           fontWeight: FontWeight.w800,
         ),
       ),

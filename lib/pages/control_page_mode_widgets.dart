@@ -25,14 +25,14 @@ class _RidingModeSelector extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: ReplicaColors.ink,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 if (!enabled) ...[
                   const SizedBox(height: 4),
                   const Text(
                     '需 BLE 连接后切换，云端模式仅展示车辆状态',
-                    style: TextStyle(fontSize: 12, color: ReplicaColors.subtle),
+                    style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
                   ),
                 ],
                 const SizedBox(height: 12),
@@ -45,9 +45,9 @@ class _RidingModeSelector extends StatelessWidget {
                       RidingMode.sport => Icons.bolt,
                     };
                     final color = switch (mode) {
-                      RidingMode.eco => Colors.green,
+                      RidingMode.eco => AppColors.success,
                       RidingMode.standard => Colors.blue,
-                      RidingMode.sport => Colors.orange,
+                      RidingMode.sport => AppColors.warning,
                     };
                     return Expanded(
                       child: Padding(
@@ -115,18 +115,18 @@ class _RidingModeOptionState extends State<_RidingModeOption> {
     final iconColor = widget.selected
         ? widget.color
         : widget.enabled
-        ? Colors.grey.shade500
-        : Colors.grey.shade400;
+        ? AppColors.textSecondary
+        : AppColors.textTertiary;
     final textColor = widget.selected
         ? widget.color
         : widget.enabled
-        ? Colors.grey.shade600
-        : Colors.grey.shade400;
+        ? AppColors.textSecondary
+        : AppColors.textTertiary;
     final backgroundColor = widget.selected
         ? widget.color.withValues(alpha: _pressed ? 0.19 : 0.15)
         : _pressed
-        ? const Color(0xFFEAEAE8)
-        : Colors.grey.shade100;
+        ? AppColors.surfaceContainerHigh
+        : AppColors.surfaceContainerLow;
 
     return AnimatedScale(
       duration: _motionDuration,
@@ -143,11 +143,7 @@ class _RidingModeOptionState extends State<_RidingModeOption> {
               decoration: BoxDecoration(
                 color: backgroundColor,
                 borderRadius: BorderRadius.circular(_phoneControlRadius),
-                border: Border.all(
-                  color: widget.selected
-                      ? widget.color.withValues(alpha: 0.18)
-                      : Colors.transparent,
-                ),
+                boxShadow: widget.selected ? AppShadows.elevation2 : null,
               ),
             ),
             Material(
@@ -254,7 +250,7 @@ class _ManualModeToggleState extends State<_ManualModeToggle> {
           width: 44,
           height: 26,
           decoration: BoxDecoration(
-            color: selected ? AppColors.primary : AppColors.border,
+            color: selected ? AppColors.primary : AppColors.outlineVariant,
             borderRadius: BorderRadius.circular(13),
           ),
           child: AnimatedAlign(
@@ -265,7 +261,7 @@ class _ManualModeToggleState extends State<_ManualModeToggle> {
               height: 22,
               margin: const EdgeInsets.all(2),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.surface,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(

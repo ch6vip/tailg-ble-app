@@ -367,9 +367,9 @@ class _SegmentedTabs extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(ReplicaRadii.card),
-        border: Border.all(color: AppColors.border, width: 1),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        boxShadow: AppShadows.elevation1,
       ),
       child: Row(
         children: List.generate(items.length, (i) {
@@ -681,7 +681,7 @@ class _FenceTab extends StatelessWidget {
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(
                       Icons.arrow_back,
-                      color: ReplicaColors.ink,
+                      color: AppColors.textPrimary,
                     ),
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.white.withValues(alpha: 0.88),
@@ -703,7 +703,7 @@ class _FenceTab extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: ReplicaColors.ink,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -767,7 +767,7 @@ class _MapPanel extends StatelessWidget {
     return Container(
       height: fullBleed ? null : (compact ? 260 : 340),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(radius),
         boxShadow: fullBleed ? null : AppShadows.cardShadow,
       ),
@@ -1121,13 +1121,13 @@ class _TravelMonthSelector extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
-                      color: ReplicaColors.ink,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(width: 6),
                   const Icon(
                     Icons.keyboard_arrow_down,
-                    color: ReplicaColors.muted,
+                    color: AppColors.textTertiary,
                     size: 18,
                   ),
                 ],
@@ -1178,14 +1178,14 @@ class _TravelDayCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,
-              color: ReplicaColors.muted,
+              color: AppColors.textTertiary,
             ),
           ),
           const SizedBox(height: 14),
           Container(
             height: 75,
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF0F5),
+              color: AppColors.outlineVariant,
               borderRadius: BorderRadius.circular(ReplicaRadii.card),
             ),
             child: Row(
@@ -1294,7 +1294,7 @@ class _TravelRecordCardState extends State<_TravelRecordCard> {
         duration: _motionDuration,
         curve: _motionCurve,
         decoration: BoxDecoration(
-          color: _pressed ? _officialPressedBg : Colors.white,
+          color: _pressed ? _officialPressedBg : AppColors.surface,
           borderRadius: BorderRadius.circular(ReplicaRadii.card),
         ),
         child: Material(
@@ -1327,7 +1327,7 @@ class _TravelRecordCardState extends State<_TravelRecordCard> {
                   Container(
                     width: 1,
                     height: 46,
-                    color: const Color(0xFFEFF0F5),
+                    color: AppColors.outlineVariant,
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -1342,7 +1342,7 @@ class _TravelRecordCardState extends State<_TravelRecordCard> {
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            color: ReplicaColors.ink,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -1352,7 +1352,7 @@ class _TravelRecordCardState extends State<_TravelRecordCard> {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 12,
-                            color: ReplicaColors.muted,
+                            color: AppColors.textTertiary,
                           ),
                         ),
                       ],
@@ -1369,7 +1369,7 @@ class _TravelRecordCardState extends State<_TravelRecordCard> {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: ReplicaColors.muted,
+                        color: AppColors.textTertiary,
                       ),
                     ),
                   ),
@@ -1406,7 +1406,7 @@ class _TrackTimeRail extends StatelessWidget {
           child: VerticalDivider(
             width: 1,
             thickness: 1,
-            color: Color(0xFFEFF0F5),
+            color: AppColors.outlineVariant,
           ),
         ),
         Positioned(
@@ -1424,7 +1424,7 @@ class _TrackTimeRail extends StatelessWidget {
           top: 15,
           child: Text(
             record.startTime.isEmpty ? '--' : record.startTime,
-            style: const TextStyle(fontSize: 12, color: ReplicaColors.muted),
+            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
           ),
         ),
         Positioned(
@@ -1432,7 +1432,7 @@ class _TrackTimeRail extends StatelessWidget {
           bottom: 15,
           child: Text(
             record.endTime.isEmpty ? '--' : record.endTime,
-            style: const TextStyle(fontSize: 12, color: ReplicaColors.muted),
+            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
           ),
         ),
       ],
@@ -1655,7 +1655,7 @@ class _DetailMetric extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: ReplicaColors.muted),
+          style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
         ),
         const SizedBox(height: 6),
         Text(
@@ -1665,7 +1665,7 @@ class _DetailMetric extends StatelessWidget {
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w800,
-            color: ReplicaColors.ink,
+            color: AppColors.textPrimary,
           ),
         ),
       ],
@@ -1700,7 +1700,7 @@ class _TrackStartEndCard extends StatelessWidget {
             height: 42,
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.only(left: 7),
-            child: Container(width: 1, color: const Color(0xFFEFF0F5)),
+            child: Container(width: 1, color: AppColors.outlineVariant),
           ),
           _TrackEndpointRow(
             color: AppColors.warning,
@@ -1743,14 +1743,14 @@ class _TrackEndpointRow extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: ReplicaColors.ink,
+              color: AppColors.textPrimary,
             ),
           ),
         ),
         const SizedBox(width: 12),
         Text(
           time,
-          style: const TextStyle(fontSize: 12, color: ReplicaColors.muted),
+          style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
         ),
       ],
     );
@@ -1795,7 +1795,7 @@ class _OfficialFenceSheet extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 18, 20, 18 + bottomPadding),
       decoration: const BoxDecoration(
-        color: Color(0xFFF7F7F7),
+        color: AppColors.surface,
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(ReplicaRadii.sheet),
         ),
@@ -1818,18 +1818,18 @@ class _OfficialFenceSheet extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
-                  color: ReplicaColors.ink,
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(width: 8),
               const Icon(
                 Icons.help_outline,
                 size: 18,
-                color: ReplicaColors.muted,
+                color: AppColors.textTertiary,
               ),
               const Spacer(),
               Material(
-                color: Colors.white,
+                color: AppColors.surface,
                 shape: const CircleBorder(),
                 child: IconButton(
                   tooltip: '刷新围栏',
@@ -1855,7 +1855,7 @@ class _OfficialFenceSheet extends StatelessWidget {
           Container(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(ReplicaRadii.card),
             ),
             child: Column(
@@ -1869,7 +1869,7 @@ class _OfficialFenceSheet extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: ReplicaColors.ink,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ),
@@ -1878,7 +1878,7 @@ class _OfficialFenceSheet extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
-                        color: ReplicaColors.blue,
+                        color: AppColors.primary,
                       ),
                     ),
                   ],
@@ -1889,9 +1889,9 @@ class _OfficialFenceSheet extends StatelessWidget {
                   child: LinearProgressIndicator(
                     minHeight: 6,
                     value: progress,
-                    backgroundColor: Colors.white,
+                    backgroundColor: AppColors.surface,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      enabled ? ReplicaColors.blue : ReplicaColors.muted,
+                      enabled ? AppColors.primary : AppColors.textTertiary,
                     ),
                   ),
                 ),
@@ -1902,7 +1902,7 @@ class _OfficialFenceSheet extends StatelessWidget {
                       _formatDistance(minRadius),
                       style: const TextStyle(
                         fontSize: 12,
-                        color: ReplicaColors.subtle,
+                        color: AppColors.textTertiary,
                       ),
                     ),
                     const Spacer(),
@@ -1910,18 +1910,18 @@ class _OfficialFenceSheet extends StatelessWidget {
                       _formatDistance(maxRadius),
                       style: const TextStyle(
                         fontSize: 12,
-                        color: ReplicaColors.subtle,
+                        color: AppColors.textTertiary,
                       ),
                     ),
                   ],
                 ),
-                const Divider(height: 24, color: ReplicaColors.line),
+                const Divider(height: 24, color: AppColors.outlineVariant),
                 _FenceSettingRow(
                   title: '时间设置',
                   subtitle: time,
                   trailing: const Icon(
                     Icons.chevron_right,
-                    color: ReplicaColors.muted,
+                    color: AppColors.textTertiary,
                   ),
                   dense: true,
                 ),
@@ -1932,7 +1932,7 @@ class _OfficialFenceSheet extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               '本地围栏：${localFence!.enabled ? '已开启' : '已关闭'} · ${localFence!.radiusMeters}m',
-              style: const TextStyle(fontSize: 12, color: ReplicaColors.muted),
+              style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
             ),
           ],
           if (error != null) ...[
@@ -1948,7 +1948,7 @@ class _OfficialFenceSheet extends StatelessWidget {
             height: 48,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: ReplicaColors.blue.withValues(alpha: 0.45),
+                color: AppColors.primary.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(ReplicaRadii.card),
               ),
               child: const Center(
@@ -2012,7 +2012,7 @@ class _FenceSettingRow extends StatelessWidget {
       decoration: dense
           ? null
           : BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(ReplicaRadii.card),
             ),
       child: Row(
@@ -2027,7 +2027,7 @@ class _FenceSettingRow extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: ReplicaColors.ink,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -2037,7 +2037,7 @@ class _FenceSettingRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 12,
-                    color: ReplicaColors.muted,
+                    color: AppColors.textTertiary,
                   ),
                 ),
               ],
@@ -2058,7 +2058,7 @@ class _FenceSwitchPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = enabled ? AppColors.success : ReplicaColors.muted;
+    final color = enabled ? AppColors.success : AppColors.textTertiary;
     return Container(
       width: 52,
       height: 28,
@@ -2279,7 +2279,7 @@ class _MapMarker extends StatelessWidget {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surface,
             shape: BoxShape.circle,
             boxShadow: const [
               BoxShadow(
