@@ -121,78 +121,122 @@ class _ControlPageState extends State<ControlPage>
   }
 }
 
-class _HomeBody extends StatelessWidget {
+class _HomeBody extends StatefulWidget {
   const _HomeBody();
 
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<ble.ConnectionState>(
-      stream: connectionManager.stateStream,
-      initialData: connectionManager.state,
-      builder: (context, snapshot) {
-        final connState = snapshot.data ?? ble.ConnectionState.disconnected;
-        return StreamBuilder<List<VehicleProfile>>(
-          stream: vehicleStore.vehiclesStream,
-          initialData: vehicleStore.vehicles,
-          builder: (context, vehicleSnapshot) {
-            final vehicles = vehicleSnapshot.data ?? const <VehicleProfile>[];
-            return StreamBuilder<OfficialCloudState>(
-              stream: officialCloudService.stateStream,
-              initialData: officialCloudService.state,
-              builder: (context, cloudSnapshot) {
-                final cloudState =
-                    cloudSnapshot.data ?? officialCloudService.state;
-                final hasLocalVehicle =
-                    vehicles.isNotEmpty || vehicleStore.defaultVehicle != null;
-                final hasCloudVehicle =
-                    cloudState.signedIn && cloudState.selectedVehicle != null;
-                final hasTransientDevice =
-                    connectionManager.device != null ||
-                    connState != ble.ConnectionState.disconnected;
-                final showUnboundHome =
-                    !hasLocalVehicle && !hasCloudVehicle && !hasTransientDevice;
+  State<_HomeBody> createState() => _HomeBodyState();
+}
 
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 260),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  transitionBuilder: (child, animation) {
-                    final curved = CurvedAnimation(
-                      parent: animation,
-                      curve: Curves.easeOutCubic,
-                      reverseCurve: Curves.easeInCubic,
-                    );
-                    return FadeTransition(
-                      opacity: curved,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, 0.018),
-                          end: Offset.zero,
-                        ).animate(curved),
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: showUnboundHome
-                      ? const _UnboundVehicleHome()
-                      : Column(
-                          key: const ValueKey('bound-home'),
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _HomeTopSection(connState: connState),
-                            const SizedBox(height: 14),
-                            _ControlArea(connState: connState),
-                            const SizedBox(height: 14),
-                            const _HomeQuickSection(),
-                            const SizedBox(height: 14),
-                            _RidingModeSelector(connState: connState),
-                            const SizedBox(height: 20),
-                          ],
-                        ),
-                );
-              },
+class _HomeBodyState extends State<_HomeBody> {
+  late final Stream<List<dynamic>> _combinedStream;
+  StreamSubscription<dynamic>? _subConn;
+  StreamSubscription<dynamic>? _subVehicles;
+  StreamSubscription<dynamic>? _subCloud;
+  StreamController<List<dynamic>>? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _combinedStream = _createCombinedStream();
+  }
+
+  Stream<List<dynamic>> _createCombinedStream() {
+    final controller = StreamController<List<dynamic>>.broadcast();
+    var latestConn = connectionManager.state;
+    var latestVehicles = vehicleStore.vehicles;
+    var latestCloud = officialCloudService.state;
+
+    void emit() => controller.add([latestConn, latestVehicles, latestCloud]);
+
+    // Emit initial values
+    scheduleMicrotask(emit);
+
+    _subConn = connectionManager.stateStream.listen((s) {
+      latestConn = s;
+      emit();
+    });
+    _subVehicles = vehicleStore.vehiclesStream.listen((v) {
+      latestVehicles = v;
+      emit();
+    });
+    _subCloud = officialCloudService.stateStream.listen((c) {
+      latestCloud = c;
+      emit();
+    });
+
+    _controller = controller;
+    controller.onCancel = () async {
+      await _subConn?.cancel();
+      await _subVehicles?.cancel();
+      await _subCloud?.cancel();
+    };
+
+    return controller.stream;
+  }
+
+  @override
+  void dispose() {
+    _controller?.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<dynamic>>(
+      stream: _combinedStream,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final connState = snapshot.data![0] as ble.ConnectionState;
+        final vehicles = snapshot.data![1] as List<VehicleProfile>;
+        final cloudState = snapshot.data![2] as OfficialCloudState;
+        final hasLocalVehicle =
+            vehicles.isNotEmpty || vehicleStore.defaultVehicle != null;
+        final hasCloudVehicle =
+            cloudState.signedIn && cloudState.selectedVehicle != null;
+        final hasTransientDevice =
+            connectionManager.device != null ||
+            connState != ble.ConnectionState.disconnected;
+        final showUnboundHome =
+            !hasLocalVehicle && !hasCloudVehicle && !hasTransientDevice;
+
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 260),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, animation) {
+            final curved = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+              reverseCurve: Curves.easeInCubic,
+            );
+            return FadeTransition(
+              opacity: curved,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.018),
+                  end: Offset.zero,
+                ).animate(curved),
+                child: child,
+              ),
             );
           },
+          child: showUnboundHome
+              ? const _UnboundVehicleHome()
+              : Column(
+                  key: const ValueKey('bound-home'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _HomeTopSection(connState: connState),
+                    const SizedBox(height: 14),
+                    _ControlArea(connState: connState),
+                    const SizedBox(height: 14),
+                    const _HomeQuickSection(),
+                    const SizedBox(height: 14),
+                    _RidingModeSelector(connState: connState),
+                    const SizedBox(height: 20),
+                  ],
+                ),
         );
       },
     );
@@ -292,13 +336,51 @@ class _ControlAreaState extends State<_ControlArea> {
   );
   final _confirmationGuard = const ControlCommandConfirmationGuard();
   bool _busy = false;
+  bool _disposed = false;
   String? _activeControlId;
   MainControlConfig _mainControlConfig = const MainControlConfig();
+  late final Stream<List<dynamic>> _combinedStream;
+  StreamController<List<dynamic>>? _combinedController;
 
   @override
   void initState() {
     super.initState();
     _loadMainControlConfig();
+    _combinedStream = _createCombinedStream();
+  }
+
+  Stream<List<dynamic>> _createCombinedStream() {
+    final controller = StreamController<List<dynamic>>.broadcast();
+    var latestCloud = officialCloudService.state;
+    var latestBike = connectionManager.latestBikeState;
+
+    void emit() => controller.add([latestCloud, latestBike]);
+
+    scheduleMicrotask(emit);
+
+    final s1 = officialCloudService.stateStream.listen((c) {
+      latestCloud = c;
+      emit();
+    });
+    final s2 = connectionManager.bikeStateStream.listen((b) {
+      latestBike = b;
+      emit();
+    });
+
+    _combinedController = controller;
+    controller.onCancel = () async {
+      await s1.cancel();
+      await s2.cancel();
+    };
+
+    return controller.stream;
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _combinedController?.close();
+    super.dispose();
   }
 
   Future<void> _loadMainControlConfig() async {
@@ -462,7 +544,7 @@ class _ControlAreaState extends State<_ControlArea> {
     if (!_needsStateConfirmation(command)) return true;
 
     final deadline = DateTime.now().add(_controlConfirmTimeout);
-    while (mounted) {
+    while (mounted && !_disposed) {
       if (!_isConfirmationTargetActive(context)) return false;
       if (_isCommandConfirmed(command, context)) return true;
       if (DateTime.now().isAfter(deadline)) return false;
@@ -682,56 +764,47 @@ class _ControlAreaState extends State<_ControlArea> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<OfficialCloudState>(
-      stream: officialCloudService.stateStream,
-      initialData: officialCloudService.state,
-      builder: (context, cloudSnapshot) {
-        final cloudState = cloudSnapshot.data ?? officialCloudService.state;
-
-        return StreamBuilder<BikeState?>(
-          stream: connectionManager.bikeStateStream,
-          initialData: connectionManager.latestBikeState,
-          builder: (context, snapshot) {
-            final model = _createViewModel(
-              cloudState: cloudState,
-              bike: snapshot.data,
-            );
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  _ControlTipBar(
-                    enabled: model.enabled,
-                    isLocked: model.isLocked,
-                    isPowerOn: model.isPowerOn,
-                    channel: model.channel,
-                    canUseBle: model.canUseBle,
-                    canUseCloud: model.canUseCloud,
-                    vehicleName: model.vehicleName,
-                    disabledReason: model.visibleDisabledReason,
-                  ),
-                  const SizedBox(height: 12),
-                  _OfficialMainControlCard(
-                    powerLabel: model.powerLabel,
-                    powerHint: model.powerHint,
-                    powerIcon: model.powerIcon,
-                    reverseSlide: model.isPowerOn,
-                    powerLoading: model.powerLoading,
-                    powerLoadingLabel: model.powerLoadingLabel,
-                    powerColor: model.powerColor,
-                    enabled: model.enabled,
-                    disabledReason: model.disabledReason,
-                    onDisabledTap: () =>
-                        _showUnavailableSnack(model.disabledReason),
-                    onPowerSlideComplete: () =>
-                        _send(model.powerCommand, actionId: 'slidePower'),
-                    buttons: _buildButtons(model),
-                    onEditButtons: _editMainControls,
-                  ),
-                ],
+    return StreamBuilder<List<dynamic>>(
+      stream: _combinedStream,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final cloudState = snapshot.data![0] as OfficialCloudState;
+        final bike = snapshot.data![1] as BikeState?;
+        final model = _createViewModel(cloudState: cloudState, bike: bike);
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            children: [
+              _ControlTipBar(
+                enabled: model.enabled,
+                isLocked: model.isLocked,
+                isPowerOn: model.isPowerOn,
+                channel: model.channel,
+                canUseBle: model.canUseBle,
+                canUseCloud: model.canUseCloud,
+                vehicleName: model.vehicleName,
+                disabledReason: model.visibleDisabledReason,
               ),
-            );
-          },
+              const SizedBox(height: 12),
+              _OfficialMainControlCard(
+                powerLabel: model.powerLabel,
+                powerHint: model.powerHint,
+                powerIcon: model.powerIcon,
+                reverseSlide: model.isPowerOn,
+                powerLoading: model.powerLoading,
+                powerLoadingLabel: model.powerLoadingLabel,
+                powerColor: model.powerColor,
+                enabled: model.enabled,
+                disabledReason: model.disabledReason,
+                onDisabledTap: () =>
+                    _showUnavailableSnack(model.disabledReason),
+                onPowerSlideComplete: () =>
+                    _send(model.powerCommand, actionId: 'slidePower'),
+                buttons: _buildButtons(model),
+                onEditButtons: _editMainControls,
+              ),
+            ],
+          ),
         );
       },
     );

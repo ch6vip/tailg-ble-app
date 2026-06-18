@@ -1,11 +1,59 @@
 part of 'control_page.dart';
 
-class _Header extends StatelessWidget {
+class _Header extends StatefulWidget {
   final ble.ConnectionState connState;
   const _Header({required this.connState});
 
   @override
+  State<_Header> createState() => _HeaderState();
+}
+
+class _HeaderState extends State<_Header> {
+  late final Stream<List<dynamic>> _combinedStream;
+  StreamController<List<dynamic>>? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _combinedStream = _createCombinedStream();
+  }
+
+  Stream<List<dynamic>> _createCombinedStream() {
+    final controller = StreamController<List<dynamic>>.broadcast();
+    var latestVehicles = vehicleStore.vehicles;
+    var latestCloud = officialCloudService.state;
+
+    void emit() => controller.add([latestVehicles, latestCloud]);
+
+    scheduleMicrotask(emit);
+
+    final s1 = vehicleStore.vehiclesStream.listen((v) {
+      latestVehicles = v;
+      emit();
+    });
+    final s2 = officialCloudService.stateStream.listen((c) {
+      latestCloud = c;
+      emit();
+    });
+
+    _controller = controller;
+    controller.onCancel = () async {
+      await s1.cancel();
+      await s2.cancel();
+    };
+
+    return controller.stream;
+  }
+
+  @override
+  void dispose() {
+    _controller?.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final connState = widget.connState;
     final statusText = connState.label;
     final statusColor = switch (connState) {
       ble.ConnectionState.ready => AppColors.success,
@@ -16,193 +64,184 @@ class _Header extends StatelessWidget {
         connState == ble.ConnectionState.connecting ||
         connState == ble.ConnectionState.reconnecting;
 
-    return StreamBuilder<List<VehicleProfile>>(
-      stream: vehicleStore.vehiclesStream,
-      initialData: vehicleStore.vehicles,
+    return StreamBuilder<List<dynamic>>(
+      stream: _combinedStream,
       builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        // vehicles stream triggers rebuild; data accessed via vehicleStore
+        // final _ = snapshot.data![0] as List<VehicleProfile>;
+        final cloudState = snapshot.data![1] as OfficialCloudState;
         final defaultVehicle = vehicleStore.defaultVehicle;
-        return StreamBuilder<OfficialCloudState>(
-          stream: officialCloudService.stateStream,
-          initialData: officialCloudService.state,
-          builder: (context, cloudSnapshot) {
-            final cloudState = cloudSnapshot.data ?? officialCloudService.state;
-            final cloudVehicle = cloudState.signedIn
-                ? cloudState.selectedVehicle
-                : null;
-            final deviceName = connectionManager.device?.platformName;
-            final hasDeviceName = deviceName != null && deviceName.isNotEmpty;
-            final usesCloudIdentity =
-                defaultVehicle == null &&
-                !hasDeviceName &&
-                cloudVehicle != null;
-            final useCloudStatus =
-                usesCloudIdentity &&
-                connState == ble.ConnectionState.disconnected;
-            final displayName =
-                defaultVehicle?.displayName ??
-                (hasDeviceName
-                    ? deviceName
-                    : cloudVehicle?.displayName ??
-                          (connState == ble.ConnectionState.disconnected
-                              ? '未绑定车辆'
-                              : '当前车辆'));
-            final effectiveStatusText = useCloudStatus
-                ? cloudVehicle.online
-                      ? '车辆在线'
-                      : '车辆离线'
-                : statusText;
-            final effectiveStatusColor = useCloudStatus
-                ? cloudVehicle.online
-                      ? AppColors.success
-                      : AppColors.textTertiary
-                : statusColor;
-            final statusIcon = useCloudStatus
-                ? cloudVehicle.online
-                      ? Icons.cloud_done
-                      : Icons.cloud_off
-                : connState == ble.ConnectionState.ready
-                ? Icons.bluetooth_connected
-                : Icons.bluetooth_disabled;
-            final subtitle = cloudVehicle != null
-                ? '${cloudVehicle.defenceLabel} · ${cloudVehicle.powerLabel}'
-                : hasDeviceName
-                ? '蓝牙：$deviceName'
-                : '点按选择或绑定车辆';
+        final cloudVehicle = cloudState.signedIn
+            ? cloudState.selectedVehicle
+            : null;
+        final deviceName = connectionManager.device?.platformName;
+        final hasDeviceName = deviceName != null && deviceName.isNotEmpty;
+        final usesCloudIdentity =
+            defaultVehicle == null && !hasDeviceName && cloudVehicle != null;
+        final useCloudStatus =
+            usesCloudIdentity && connState == ble.ConnectionState.disconnected;
+        final displayName =
+            defaultVehicle?.displayName ??
+            (hasDeviceName
+                ? deviceName
+                : cloudVehicle?.displayName ??
+                      (connState == ble.ConnectionState.disconnected
+                          ? '未绑定车辆'
+                          : '当前车辆'));
+        final effectiveStatusText = useCloudStatus
+            ? cloudVehicle.online
+                  ? '车辆在线'
+                  : '车辆离线'
+            : statusText;
+        final effectiveStatusColor = useCloudStatus
+            ? cloudVehicle.online
+                  ? AppColors.success
+                  : AppColors.textTertiary
+            : statusColor;
+        final statusIcon = useCloudStatus
+            ? cloudVehicle.online
+                  ? Icons.cloud_done
+                  : Icons.cloud_off
+            : connState == ble.ConnectionState.ready
+            ? Icons.bluetooth_connected
+            : Icons.bluetooth_disabled;
+        final subtitle = cloudVehicle != null
+            ? '${cloudVehicle.defenceLabel} · ${cloudVehicle.powerLabel}'
+            : hasDeviceName
+            ? '蓝牙：$deviceName'
+            : '点按选择或绑定车辆';
 
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => usesCloudIdentity
-                                    ? const OfficialCloudPage()
-                                    : const GaragePage(),
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => usesCloudIdentity
+                                ? const OfficialCloudPage()
+                                : const GaragePage(),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    displayName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTextStyles.cardTitle.copyWith(
+                                      fontSize: 21.0,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    subtitle,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTextStyles.sectionLabel.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            child: Row(
-                              children: [
-                                Flexible(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        displayName,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppTextStyles.cardTitle.copyWith(
-                                          fontSize: 21.0,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        subtitle,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppTextStyles.sectionLabel
-                                            .copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              letterSpacing: 0,
-                                            ),
-                                      ),
-                                    ],
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.keyboard_arrow_down,
+                              size: AppIconSizes.md,
+                              color: AppColors.textTertiary,
+                            ),
+                            const SizedBox(width: 8),
+                            Semantics(
+                              label: '车辆连接状态：$effectiveStatusText',
+                              liveRegion: true,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: effectiveStatusColor.withValues(
+                                    alpha: 0.15,
                                   ),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.keyboard_arrow_down,
-                                  size: AppIconSizes.md,
-                                  color: AppColors.textTertiary,
-                                ),
-                                const SizedBox(width: 8),
-                                Semantics(
-                                  label: '车辆连接状态：$effectiveStatusText',
-                                  liveRegion: true,
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 150),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      statusIcon,
+                                      size: 12,
+                                      color: effectiveStatusColor,
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: effectiveStatusColor.withValues(
-                                        alpha: 0.15,
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      effectiveStatusText,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: effectiveStatusColor,
+                                        fontWeight: FontWeight.w600,
                                       ),
-                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          statusIcon,
-                                          size: 12,
-                                          color: effectiveStatusColor,
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          effectiveStatusText,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: effectiveStatusColor,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        _HeaderIconAction(
-                          icon: Icons.article_outlined,
-                          tooltip: '车辆详情',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const VehicleSettingsPage(),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _HeaderIconAction(
-                          icon: isConnecting
-                              ? Icons.sync
-                              : statusIcon == Icons.cloud_done
-                              ? Icons.notifications_none
-                              : statusIcon,
-                          color: isConnecting
-                              ? AppColors.warning
-                              : statusIcon == Icons.cloud_done
-                              ? AppColors.textPrimary
-                              : effectiveStatusColor,
-                          tooltip: '消息中心',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const VehicleMessagePage(),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    _HeaderIconAction(
+                      icon: Icons.article_outlined,
+                      tooltip: '车辆详情',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const VehicleSettingsPage(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _HeaderIconAction(
+                      icon: isConnecting
+                          ? Icons.sync
+                          : statusIcon == Icons.cloud_done
+                          ? Icons.notifications_none
+                          : statusIcon,
+                      color: isConnecting
+                          ? AppColors.warning
+                          : statusIcon == Icons.cloud_done
+                          ? AppColors.textPrimary
+                          : effectiveStatusColor,
+                      tooltip: '消息中心',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const VehicleMessagePage(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            );
-          },
+            ],
+          ),
         );
       },
     );

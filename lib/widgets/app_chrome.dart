@@ -67,7 +67,7 @@ class AppCard extends StatelessWidget {
     required this.child,
     this.margin = const EdgeInsets.symmetric(horizontal: AppSpacing.screenX),
     this.padding = const EdgeInsets.all(16),
-    this.color = Colors.white,
+    this.color = AppColors.surface,
   });
 
   @override

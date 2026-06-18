@@ -294,19 +294,20 @@ Widget _buildToggle(bool value, ValueChanged<bool> onChanged) {
 class _AutoConnectSettingTile extends StatelessWidget {
   const _AutoConnectSettingTile();
 
+  static final _service = AutoConnectService();
+
   @override
   Widget build(BuildContext context) {
-    final service = AutoConnectService();
     return StreamBuilder<bool>(
-      stream: service.enabledStream,
-      initialData: service.enabled,
+      stream: _service.enabledStream,
+      initialData: _service.enabled,
       builder: (context, snapshot) {
         final enabled = snapshot.data ?? false;
         return _settingItem(
           icon: Icons.bluetooth_outlined,
           title: '自动连接',
           subtitle: enabled ? '打开 app 时自动连接上次的设备' : '关闭',
-          trailing: _buildToggle(enabled, service.setEnabled),
+          trailing: _buildToggle(enabled, _service.setEnabled),
         );
       },
     );
@@ -316,19 +317,20 @@ class _AutoConnectSettingTile extends StatelessWidget {
 class _ProximityUnlockSettingTile extends StatelessWidget {
   const _ProximityUnlockSettingTile();
 
+  static final _service = ProximityService();
+
   @override
   Widget build(BuildContext context) {
-    final service = ProximityService();
     return StreamBuilder<bool>(
-      stream: service.enabledStream,
-      initialData: service.enabled,
+      stream: _service.enabledStream,
+      initialData: _service.enabled,
       builder: (context, snapshot) {
         final enabled = snapshot.data ?? false;
         return _settingItem(
           icon: Icons.sensors_outlined,
           title: '感应解锁',
           subtitle: enabled ? '靠近车辆时自动解锁（RSSI > -75dBm）' : '关闭',
-          trailing: _buildToggle(enabled, service.setEnabled),
+          trailing: _buildToggle(enabled, _service.setEnabled),
         );
       },
     );
@@ -338,12 +340,13 @@ class _ProximityUnlockSettingTile extends StatelessWidget {
 class _LanguageSettingTile extends StatelessWidget {
   const _LanguageSettingTile();
 
+  static final _prefs = AppPreferencesService();
+
   @override
   Widget build(BuildContext context) {
-    final prefs = AppPreferencesService();
     return StreamBuilder<AppLanguagePreference>(
-      stream: prefs.languageStream,
-      initialData: prefs.language,
+      stream: _prefs.languageStream,
+      initialData: _prefs.language,
       builder: (context, snapshot) {
         return _settingItem(
           icon: Icons.language_outlined,
@@ -362,12 +365,13 @@ class _LanguageSettingTile extends StatelessWidget {
 class _DistanceUnitSettingTile extends StatelessWidget {
   const _DistanceUnitSettingTile();
 
+  static final _prefs = AppPreferencesService();
+
   @override
   Widget build(BuildContext context) {
-    final prefs = AppPreferencesService();
     return StreamBuilder<DistanceUnitPreference>(
-      stream: prefs.distanceUnitStream,
-      initialData: prefs.distanceUnit,
+      stream: _prefs.distanceUnitStream,
+      initialData: _prefs.distanceUnit,
       builder: (context, snapshot) {
         final unit = snapshot.data ?? DistanceUnitPreference.metric;
         return _settingItem(
@@ -387,19 +391,20 @@ class _DistanceUnitSettingTile extends StatelessWidget {
 class _RespectTextScaleSettingTile extends StatelessWidget {
   const _RespectTextScaleSettingTile();
 
+  static final _prefs = AppPreferencesService();
+
   @override
   Widget build(BuildContext context) {
-    final prefs = AppPreferencesService();
     return StreamBuilder<bool>(
-      stream: prefs.respectTextScaleStream,
-      initialData: prefs.respectSystemTextScale,
+      stream: _prefs.respectTextScaleStream,
+      initialData: _prefs.respectSystemTextScale,
       builder: (context, snapshot) {
         final enabled = snapshot.data ?? true;
         return _settingItem(
           icon: Icons.text_fields,
           title: '跟随系统字号',
           subtitle: enabled ? '允许系统字号设置生效（限 0.9-1.3 倍）' : '关闭后忽略系统字号',
-          trailing: _buildToggle(enabled, prefs.setRespectSystemTextScale),
+          trailing: _buildToggle(enabled, _prefs.setRespectSystemTextScale),
         );
       },
     );

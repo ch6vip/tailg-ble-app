@@ -1,90 +1,132 @@
 part of 'control_page.dart';
 
 /// 首页电量主视觉：居中超大电量数字 + 竖向分隔线 + 右侧堆叠里程/电压。
-class _StatusSection extends StatelessWidget {
+class _StatusSection extends StatefulWidget {
   final ble.ConnectionState connState;
   const _StatusSection({required this.connState});
 
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<BikeState?>(
-      stream: connectionManager.bikeStateStream,
-      initialData: connectionManager.latestBikeState,
-      builder: (context, snapshot) {
-        final bike = snapshot.data;
-        return StreamBuilder<OfficialCloudState>(
-          stream: officialCloudService.stateStream,
-          initialData: officialCloudService.state,
-          builder: (context, cloudSnapshot) {
-            final cloudState = cloudSnapshot.data ?? officialCloudService.state;
-            final cloudVehicle = cloudState.signedIn
-                ? cloudState.selectedVehicle
-                : null;
-            final isBleReady = connState == ble.ConnectionState.ready;
-            final battery = _normalizePercent(
-              isBleReady
-                  ? bike?.batteryPercent ?? cloudVehicle?.electricQuantity
-                  : cloudVehicle?.electricQuantity,
-            );
-            final batteryColor = battery == null
-                ? AppColors.textTertiary
-                : battery > 60
-                ? AppColors.success
-                : battery > 20
-                ? AppColors.warning
-                : AppColors.danger;
-            final mileage = cloudVehicle?.mileage;
-            final rangeText = mileage != null
-                ? _formatMetricNumber(mileage)
-                : battery != null
-                ? '${(battery * _kmPerPercent).round()}'
-                : '--';
-            final rangeLabel = mileage != null ? '累计里程' : '预估里程';
-            final voltage = isBleReady ? bike?.voltage : null;
-            final voltageText = voltage != null
-                ? _formatMetricNumber(voltage)
-                : '--';
+  State<_StatusSection> createState() => _StatusSectionState();
+}
 
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Center(
-                      child: _HeroBattery(
-                        value: battery != null ? '$battery' : '--',
-                        color: batteryColor,
-                        hasData: battery != null,
-                        hint: isBleReady ? '等待数据' : '连接后查看',
-                      ),
-                    ),
+class _StatusSectionState extends State<_StatusSection> {
+  late final Stream<List<dynamic>> _combinedStream;
+  StreamController<List<dynamic>>? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _combinedStream = _createCombinedStream();
+  }
+
+  Stream<List<dynamic>> _createCombinedStream() {
+    final controller = StreamController<List<dynamic>>.broadcast();
+    var latestBike = connectionManager.latestBikeState;
+    var latestCloud = officialCloudService.state;
+
+    void emit() => controller.add([latestBike, latestCloud]);
+
+    scheduleMicrotask(emit);
+
+    final s1 = connectionManager.bikeStateStream.listen((b) {
+      latestBike = b;
+      emit();
+    });
+    final s2 = officialCloudService.stateStream.listen((c) {
+      latestCloud = c;
+      emit();
+    });
+
+    _controller = controller;
+    controller.onCancel = () async {
+      await s1.cancel();
+      await s2.cancel();
+    };
+
+    return controller.stream;
+  }
+
+  @override
+  void dispose() {
+    _controller?.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final connState = widget.connState;
+    return StreamBuilder<List<dynamic>>(
+      stream: _combinedStream,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final bike = snapshot.data![0] as BikeState?;
+        final cloudState = snapshot.data![1] as OfficialCloudState;
+        final cloudVehicle = cloudState.signedIn
+            ? cloudState.selectedVehicle
+            : null;
+        final isBleReady = connState == ble.ConnectionState.ready;
+        final battery = _normalizePercent(
+          isBleReady
+              ? bike?.batteryPercent ?? cloudVehicle?.electricQuantity
+              : cloudVehicle?.electricQuantity,
+        );
+        final batteryColor = battery == null
+            ? AppColors.textTertiary
+            : battery > 60
+            ? AppColors.success
+            : battery > 20
+            ? AppColors.warning
+            : AppColors.danger;
+        final mileage = cloudVehicle?.mileage;
+        final rangeText = mileage != null
+            ? _formatMetricNumber(mileage)
+            : battery != null
+            ? '${(battery * _kmPerPercent).round()}'
+            : '--';
+        final rangeLabel = mileage != null ? '累计里程' : '预估里程';
+        final voltage = isBleReady ? bike?.voltage : null;
+        final voltageText = voltage != null
+            ? _formatMetricNumber(voltage)
+            : '--';
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Center(
+                  child: _HeroBattery(
+                    value: battery != null ? '$battery' : '--',
+                    color: batteryColor,
+                    hasData: battery != null,
+                    hint: isBleReady ? '等待数据' : '连接后查看',
                   ),
-                  Container(width: 1, height: 56, color: AppColors.border),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _HeroMiniStat(
-                          label: rangeLabel,
-                          value: rangeText,
-                          unit: rangeText == '--' ? '' : 'km',
-                        ),
-                        const SizedBox(height: 16),
-                        _HeroMiniStat(
-                          label: '电压',
-                          value: voltageText,
-                          unit: voltageText == '--' ? '' : 'V',
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            );
-          },
+              Container(width: 1, height: 56, color: AppColors.border),
+              const SizedBox(width: 24),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _HeroMiniStat(
+                      label: rangeLabel,
+                      value: rangeText,
+                      unit: rangeText == '--' ? '' : 'km',
+                    ),
+                    const SizedBox(height: 16),
+                    _HeroMiniStat(
+                      label: '电压',
+                      value: voltageText,
+                      unit: voltageText == '--' ? '' : 'V',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -259,95 +301,134 @@ class _HeroMiniStat extends StatelessWidget {
 }
 
 /// mockup 中的状态条：teal 圆点 + 设防/通电/健康文案 + 连接通道。
-class _HomeStatusLine extends StatelessWidget {
+class _HomeStatusLine extends StatefulWidget {
   final ble.ConnectionState connState;
   const _HomeStatusLine({required this.connState});
 
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<BikeState?>(
-      stream: connectionManager.bikeStateStream,
-      initialData: connectionManager.latestBikeState,
-      builder: (context, snapshot) {
-        final bike = snapshot.data;
-        return StreamBuilder<OfficialCloudState>(
-          stream: officialCloudService.stateStream,
-          initialData: officialCloudService.state,
-          builder: (context, cloudSnapshot) {
-            final cloudState = cloudSnapshot.data ?? officialCloudService.state;
-            final cloudVehicle = cloudState.signedIn
-                ? cloudState.selectedVehicle
-                : null;
-            final isBleReady = connState == ble.ConnectionState.ready;
-            final hasBikeState = isBleReady && bike != null;
-            final hasState = hasBikeState || cloudVehicle != null;
-            final isLocked = hasBikeState
-                ? bike.isLocked
-                : cloudVehicle?.isLocked ?? true;
-            final isPowerOn = hasBikeState
-                ? bike.isPowerOn
-                : cloudVehicle?.isPowerOn ?? false;
-            final hasFault =
-                hasBikeState &&
-                (bike.faultMotor ||
-                    bike.faultController ||
-                    bike.faultBrake ||
-                    bike.faultLowVoltage);
-            final statusText = !hasState
-                ? '等待车辆数据'
-                : '${isLocked ? '已设防' : '已解锁'} · '
-                      '${isPowerOn ? '已通电' : '未通电'} · '
-                      '${hasFault ? '检测到异常' : '系统正常'}';
-            final dotColor = !hasState
-                ? AppColors.textTertiary
-                : hasFault
-                ? AppColors.danger
-                : AppColors.success;
+  State<_HomeStatusLine> createState() => _HomeStatusLineState();
+}
 
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 11,
+class _HomeStatusLineState extends State<_HomeStatusLine> {
+  late final Stream<List<dynamic>> _combinedStream;
+  StreamController<List<dynamic>>? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _combinedStream = _createCombinedStream();
+  }
+
+  Stream<List<dynamic>> _createCombinedStream() {
+    final controller = StreamController<List<dynamic>>.broadcast();
+    var latestBike = connectionManager.latestBikeState;
+    var latestCloud = officialCloudService.state;
+
+    void emit() => controller.add([latestBike, latestCloud]);
+
+    scheduleMicrotask(emit);
+
+    final s1 = connectionManager.bikeStateStream.listen((b) {
+      latestBike = b;
+      emit();
+    });
+    final s2 = officialCloudService.stateStream.listen((c) {
+      latestCloud = c;
+      emit();
+    });
+
+    _controller = controller;
+    controller.onCancel = () async {
+      await s1.cancel();
+      await s2.cancel();
+    };
+
+    return controller.stream;
+  }
+
+  @override
+  void dispose() {
+    _controller?.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final connState = widget.connState;
+    return StreamBuilder<List<dynamic>>(
+      stream: _combinedStream,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final bike = snapshot.data![0] as BikeState?;
+        final cloudState = snapshot.data![1] as OfficialCloudState;
+        final cloudVehicle = cloudState.signedIn
+            ? cloudState.selectedVehicle
+            : null;
+        final isBleReady = connState == ble.ConnectionState.ready;
+        final hasBikeState = isBleReady && bike != null;
+        final hasState = hasBikeState || cloudVehicle != null;
+        final isLocked = hasBikeState
+            ? bike.isLocked
+            : cloudVehicle?.isLocked ?? true;
+        final isPowerOn = hasBikeState
+            ? bike.isPowerOn
+            : cloudVehicle?.isPowerOn ?? false;
+        final hasFault =
+            hasBikeState &&
+            (bike.faultMotor ||
+                bike.faultController ||
+                bike.faultBrake ||
+                bike.faultLowVoltage);
+        final statusText = !hasState
+            ? '等待车辆数据'
+            : '${isLocked ? '已设防' : '已解锁'} · '
+                  '${isPowerOn ? '已通电' : '未通电'} · '
+                  '${hasFault ? '检测到异常' : '系统正常'}';
+        final dotColor = !hasState
+            ? AppColors.textTertiary
+            : hasFault
+            ? AppColors.danger
+            : AppColors.success;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            decoration: BoxDecoration(
+              color: dotColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: dotColor.withValues(alpha: 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-                decoration: BoxDecoration(
-                  color: dotColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: dotColor.withValues(alpha: 0.06),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: dotColor,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: dotColor,
-                        shape: BoxShape.circle,
-                      ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    statusText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        statusText,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            );
-          },
+              ],
+            ),
+          ),
         );
       },
     );

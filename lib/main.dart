@@ -372,7 +372,7 @@ class _HomePageState extends State<HomePage>
       extendBody: true,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
