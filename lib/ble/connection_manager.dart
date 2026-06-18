@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import '../services/log_service.dart';
@@ -16,6 +17,8 @@ enum ConnectionState {
   connected,
   ready,
 }
+
+enum GattOperationPriority { high, normal, low }
 
 /// 中文文案扩展：把 ConnectionState 枚举映射成统一的连接状态文案。
 extension ConnectionStateLabel on ConnectionState {
@@ -66,7 +69,8 @@ class ConnectionManager {
 
   Completer<bool>? _cmdAckCompleter;
   final Map<int, Completer<QgjResponse?>> _qgjResponseCompleters = {};
-  Future<void> _gattQueue = Future.value();
+  final List<_QueuedGattOperation<dynamic>> _gattPending = [];
+  bool _gattRunning = false;
 
   final _stateController = StreamController<ConnectionState>.broadcast();
   final _responseController = StreamController<ParsedResponse>.broadcast();
@@ -95,23 +99,53 @@ class ConnectionManager {
     _qgjUserId = userId ?? 0;
   }
 
-  Future<T> runGattOperation<T>(Future<T> Function() operation) {
-    final next = _gattQueue.then(
-      (_) => operation().timeout(
-        const Duration(seconds: 30),
-        onTimeout: () =>
-            throw TimeoutException('GATT operation timed out after 30s'),
-      ),
-    );
-    _gattQueue = next.then<void>((_) {}, onError: (_) {});
-    return next;
+  Future<T> runGattOperation<T>(
+    Future<T> Function() operation, {
+    GattOperationPriority priority = GattOperationPriority.normal,
+  }) {
+    final queued = _QueuedGattOperation<T>(operation, priority);
+    _gattPending.add(queued);
+    _gattPending.sort((a, b) {
+      final priorityCompare = a.priority.index.compareTo(b.priority.index);
+      if (priorityCompare != 0) return priorityCompare;
+      return a.sequence.compareTo(b.sequence);
+    });
+    _drainGattQueue();
+    return queued.completer.future;
+  }
+
+  void _drainGattQueue() {
+    if (_gattRunning || _gattPending.isEmpty) return;
+    _gattRunning = true;
+    () async {
+      while (_gattPending.isNotEmpty) {
+        final queued = _gattPending.removeAt(0);
+        try {
+          final result = await queued.operation().timeout(
+            const Duration(seconds: 30),
+            onTimeout: () =>
+                throw TimeoutException('GATT operation timed out after 30s'),
+          );
+          if (!queued.completer.isCompleted) {
+            queued.completer.complete(result);
+          }
+        } catch (e, st) {
+          if (!queued.completer.isCompleted) {
+            queued.completer.completeError(e, st);
+          }
+        }
+      }
+    }().whenComplete(() {
+      _gattRunning = false;
+      if (_gattPending.isNotEmpty) _drainGattQueue();
+    });
   }
 
   Future<List<int>?> readFeb3() {
     return runGattOperation(() async {
       if (_state != ConnectionState.ready || _feb3Char == null) return null;
       return _feb3Char!.read();
-    });
+    }, priority: GattOperationPriority.low);
   }
 
   Future<BikeState?> refreshBikeState() async {
@@ -172,9 +206,12 @@ class ConnectionManager {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
     _completePendingOperations(StateError('QGJ disconnected'));
-    _notifySub?.cancel();
-    _gpsNotifySub?.cancel();
-    _connectionSub?.cancel();
+    await _notifySub?.cancel();
+    _notifySub = null;
+    await _gpsNotifySub?.cancel();
+    _gpsNotifySub = null;
+    await _connectionSub?.cancel();
+    _connectionSub = null;
     await _device?.disconnect();
     _reset();
   }
@@ -238,6 +275,7 @@ class ConnectionManager {
       final tokenReq = buildTokenRequest(_model.aesKey);
       await runGattOperation(
         () => _writeChar!.write(tokenReq.toList(), withoutResponse: false),
+        priority: GattOperationPriority.high,
       );
     }
   }
@@ -276,6 +314,7 @@ class ConnectionManager {
       );
       await runGattOperation(
         () => _feb1Char!.write(loginFrame.toList(), withoutResponse: false),
+        priority: GattOperationPriority.high,
       );
     }
   }
@@ -328,6 +367,7 @@ class ConnectionManager {
                 (characteristic.properties.indicate &&
                     !characteristic.properties.notify)),
       ),
+      priority: GattOperationPriority.high,
     );
   }
 
@@ -490,6 +530,12 @@ class ConnectionManager {
                 level: LogLevel.warning,
               );
             }
+            if (failCount >= 5 && _state == ConnectionState.ready) {
+              _log.ble('心跳持续失败 ($failCount 次)，触发重连', level: LogLevel.warning);
+              _heartbeatTimer?.cancel();
+              _heartbeatTimer = null;
+              _onDisconnected();
+            }
           })
           .whenComplete(() => heartbeatInFlight = false);
     }
@@ -549,6 +595,7 @@ class ConnectionManager {
       final frame = buildCommand(_model.aesKey, cmd, _token!);
       await runGattOperation(
         () => _writeChar!.write(frame.toList(), withoutResponse: false),
+        priority: GattOperationPriority.high,
       );
       return true;
     } else if (_protocol == ProtocolType.qgj) {
@@ -558,17 +605,14 @@ class ConnectionManager {
 
       final success = await runGattOperation(() async {
         _cmdAckCompleter = Completer<bool>();
-        try {
-          await _feb1Char!.write(frame.toList(), withoutResponse: false);
-
-          return _cmdAckCompleter!.future.timeout(
-            BleTimings.commandAckTimeout,
-            onTimeout: () => false,
-          );
-        } finally {
-          _cmdAckCompleter = null;
-        }
-      });
+        await _feb1Char!.write(frame.toList(), withoutResponse: false);
+        final result = await _cmdAckCompleter!.future.timeout(
+          BleTimings.commandAckTimeout,
+          onTimeout: () => false,
+        );
+        _cmdAckCompleter = null;
+        return result;
+      }, priority: GattOperationPriority.high);
 
       if (success) {
         _log.operation('指令确认: ${cmd.label}', level: LogLevel.info);
@@ -610,7 +654,7 @@ class ConnectionManager {
           _qgjResponseCompleters.remove(cmdId);
         }
       }
-    });
+    }, priority: GattOperationPriority.high);
   }
 
   RidingMode _ridingMode = RidingMode.standard;
@@ -636,7 +680,7 @@ class ConnectionManager {
         await fcc1.write(data, withoutResponse: false);
         await Future.delayed(BleTimings.fccReadbackDelay);
         return fcc1.read();
-      });
+      }, priority: GattOperationPriority.high);
       _ridingMode = parseQgjRidingMode(response) ?? mode;
 
       _addRidingMode(_ridingMode);
@@ -689,9 +733,13 @@ class ConnectionManager {
     while (_reconnectAttempt < _maxReconnectAttempts &&
         _state == ConnectionState.reconnecting) {
       _reconnectAttempt++;
-      final delay = Duration(
-        milliseconds: (3000 * (1 << (_reconnectAttempt - 1)).clamp(1, 3)),
-      );
+      final baseMs = 3000;
+      final maxMs = 30000;
+      final exponential = (baseMs * pow(2, _reconnectAttempt - 1))
+          .toInt()
+          .clamp(baseMs, maxMs);
+      final jitter = Random().nextInt(500);
+      final delay = Duration(milliseconds: exponential + jitter);
       _log.ble(
         '重连 $_reconnectAttempt/$_maxReconnectAttempts，${delay.inSeconds}s 后重试',
         level: LogLevel.info,
@@ -761,7 +809,7 @@ class ConnectionManager {
     await _connectionSub?.cancel();
     _connectionSub = null;
     _completePendingOperations(StateError('BLE runtime cleared'));
-    _gattQueue = Future.value();
+    _completePendingGattOperations(StateError('BLE runtime cleared'));
     if (disconnectDevice) {
       try {
         await _device?.disconnect();
@@ -812,6 +860,15 @@ class ConnectionManager {
     _qgjResponseCompleters.clear();
   }
 
+  void _completePendingGattOperations(Object error) {
+    for (final queued in _gattPending) {
+      if (!queued.completer.isCompleted) {
+        queued.completer.completeError(error);
+      }
+    }
+    _gattPending.clear();
+  }
+
   void _reset() {
     _state = ConnectionState.disconnected;
     if (!_disposed) {
@@ -842,10 +899,7 @@ class ConnectionManager {
     if (_disposed) return;
     _disposed = true;
 
-    // Drain pending GATT operations
-    try {
-      await _gattQueue.timeout(const Duration(seconds: 2));
-    } catch (_) {}
+    _completePendingGattOperations(StateError('ConnectionManager disposed'));
 
     // Cancel timers
     _heartbeatTimer?.cancel();
@@ -870,4 +924,16 @@ class ConnectionManager {
     _bikeStateController.close();
     _ridingModeController.close();
   }
+}
+
+class _QueuedGattOperation<T> {
+  static int _nextSequence = 0;
+
+  final Future<T> Function() operation;
+  final GattOperationPriority priority;
+  final int sequence;
+  final Completer<T> completer = Completer<T>();
+
+  _QueuedGattOperation(this.operation, this.priority)
+    : sequence = _nextSequence++;
 }

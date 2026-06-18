@@ -451,14 +451,25 @@ class _ChannelCard extends StatelessWidget {
   }
 }
 
-class _VehicleListCard extends StatelessWidget {
+class _VehicleListCard extends StatefulWidget {
   final OfficialCloudState state;
 
   const _VehicleListCard({required this.state});
 
   @override
-  Widget build(BuildContext context) {
+  State<_VehicleListCard> createState() => _VehicleListCardState();
+}
+
+class _VehicleListCardState extends State<_VehicleListCard> {
+  @override
+  void initState() {
+    super.initState();
     _pruneStaleLocalLinks();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = widget.state;
     if (state.loading && state.vehicles.isEmpty) {
       return const AppCard(child: Center(child: CircularProgressIndicator()));
     }

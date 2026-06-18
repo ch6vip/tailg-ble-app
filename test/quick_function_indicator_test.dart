@@ -22,7 +22,12 @@ Future<void> _pumpControlPage(WidgetTester tester, Size size) async {
 
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
-  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(() async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
 
   await tester.pumpWidget(const TestApp(home: ControlPage()));
   await tester.pump(const Duration(milliseconds: 50));

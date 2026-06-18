@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'log_service.dart';
+
 class NfcKeyRecord {
   final String id;
   final String name;
@@ -207,6 +209,14 @@ class ReplicaFeatureStore {
   static const _prefQuickShortcutsConfig = 'replica_quick_shortcuts_config';
   static const _prefMainControlConfig = 'replica_main_control_config';
 
+  void _logWarning(String message, Object error) {
+    LogService().operation(
+      message,
+      detail: error.toString(),
+      level: LogLevel.warning,
+    );
+  }
+
   Future<List<NfcKeyRecord>> loadNfcKeys() async {
     final raw = (await SharedPreferences.getInstance()).getString(_prefNfcKeys);
     return _decodeList(raw, NfcKeyRecord.fromJson);
@@ -289,14 +299,20 @@ class ReplicaFeatureStore {
     await prefs.setString(_prefMainControlConfig, jsonEncode(config.toJson()));
   }
 
-  String makeId() => DateTime.now().microsecondsSinceEpoch.toString();
+  static int _idCounter = 0;
+
+  String makeId() {
+    _idCounter++;
+    return '${DateTime.now().microsecondsSinceEpoch}_$_idCounter';
+  }
 
   List<T> _decodeList<T>(String? raw, T Function(Map<String, dynamic>) decode) {
     if (raw == null || raw.isEmpty) return [];
     final Object? decoded;
     try {
       decoded = jsonDecode(raw);
-    } catch (_) {
+    } catch (e) {
+      _logWarning('ReplicaFeatureStore: JSON decode failed', e);
       return [];
     }
     if (decoded is! List) return [];
@@ -305,7 +321,8 @@ class ReplicaFeatureStore {
       if (item is! Map) continue;
       try {
         records.add(decode(Map<String, dynamic>.from(item)));
-      } catch (_) {
+      } catch (e) {
+        _logWarning('ReplicaFeatureStore: decode list item failed', e);
         continue;
       }
     }
@@ -317,7 +334,8 @@ class ReplicaFeatureStore {
     try {
       final decoded = jsonDecode(raw);
       if (decoded is Map) return Map<String, dynamic>.from(decoded);
-    } catch (_) {
+    } catch (e) {
+      _logWarning('ReplicaFeatureStore: decode map failed', e);
       return null;
     }
     return null;

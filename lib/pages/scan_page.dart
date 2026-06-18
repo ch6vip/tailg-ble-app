@@ -9,6 +9,7 @@ import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
 import '../services/permission_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 
 class ScanPage extends StatefulWidget {
@@ -498,8 +499,6 @@ class _DeviceCard extends StatefulWidget {
 }
 
 class _DeviceCardState extends State<_DeviceCard> {
-  bool _pressed = false;
-
   @override
   Widget build(BuildContext context) {
     final name = widget.result.device.platformName.isNotEmpty
@@ -517,103 +516,98 @@ class _DeviceCardState extends State<_DeviceCard> {
 
     final interactive = !widget.disabled && !widget.connecting;
 
-    return GestureDetector(
-      onTapDown: interactive ? (_) => setState(() => _pressed = true) : null,
-      onTapUp: interactive ? (_) => setState(() => _pressed = false) : null,
-      onTapCancel: interactive ? () => setState(() => _pressed = false) : null,
-      onTap: interactive ? widget.onTap : null,
-      child: AnimatedScale(
-        scale: _pressed ? 0.98 : 1.0,
+    return AppPressable(
+      enabled: interactive,
+      onTap: widget.onTap,
+      pressedScale: 0.98,
+      haptic: false,
+      child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         curve: Curves.easeOutCubic,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: widget.disabled ? const Color(0xFFF8F8F8) : Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: widget.disabled
-                ? AppShadows.elevation1
-                : AppShadows.elevation1,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  gradient: isTailg
-                      ? const LinearGradient(
-                          colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
-                        )
-                      : null,
-                  color: isTailg ? null : const Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  isTailg ? Icons.electric_bike : Icons.bluetooth_outlined,
-                  size: AppIconSizes.md,
-                  color: isTailg ? AppColors.primary : const Color(0xFF9E9E9E),
-                ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: widget.disabled ? const Color(0xFFF8F8F8) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: widget.disabled
+              ? AppShadows.elevation1
+              : AppShadows.elevation1,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                gradient: isTailg
+                    ? const LinearGradient(
+                        colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
+                      )
+                    : null,
+                color: isTailg ? null : const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.itemTitle.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.result.device.remoteId.toString(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ],
-                ),
+              child: Icon(
+                isTailg ? Icons.electric_bike : Icons.bluetooth_outlined,
+                size: AppIconSizes.md,
+                color: isTailg ? AppColors.primary : const Color(0xFF9E9E9E),
               ),
-              if (widget.connecting)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.itemTitle.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '连接中',
-                      style: AppTextStyles.caption.copyWith(fontSize: 11.0),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.result.device.remoteId.toString(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textTertiary,
+                      fontFamily: 'monospace',
                     ),
-                  ],
-                )
-              else
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    _SignalBars(strength: strength),
-                    const SizedBox(height: 6),
-                    Text(
-                      widget.disabled ? '等待' : '连接绑定',
-                      style: AppTextStyles.caption.copyWith(fontSize: 11.0),
-                    ),
-                  ],
-                ),
-            ],
-          ),
+                  ),
+                ],
+              ),
+            ),
+            if (widget.connecting)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '连接中',
+                    style: AppTextStyles.caption.copyWith(fontSize: 11.0),
+                  ),
+                ],
+              )
+            else
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _SignalBars(strength: strength),
+                  const SizedBox(height: 6),
+                  Text(
+                    widget.disabled ? '等待' : '连接绑定',
+                    style: AppTextStyles.caption.copyWith(fontSize: 11.0),
+                  ),
+                ],
+              ),
+          ],
         ),
       ),
     );

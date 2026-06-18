@@ -1136,6 +1136,7 @@ class OfficialCloudService {
   }
 
   void _emit() {
+    if (_disposed) return;
     _stateController.add(_state);
   }
 

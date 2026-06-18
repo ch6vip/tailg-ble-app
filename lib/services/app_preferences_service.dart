@@ -134,4 +134,10 @@ class AppPreferencesService {
       _respectTextScaleController.add(_respectTextScale);
     }
   }
+
+  void dispose() {
+    _languageController.close();
+    _distanceUnitController.close();
+    _respectTextScaleController.close();
+  }
 }

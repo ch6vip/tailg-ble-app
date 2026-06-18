@@ -122,8 +122,9 @@ class BatterySnapshot {
     final officialTemperature = _parseNumber(officialBatteryInfo?.temperature);
     final vehicleMileage = officialVehicle?.mileage;
 
-    final percent =
+    final rawPercent =
         bikeState?.batteryPercent ?? officialPercent ?? vehiclePercent;
+    final percent = rawPercent?.clamp(0, 100);
     final voltage = bikeState?.voltage ?? officialVoltage ?? vehicleVoltage;
     final temperature = bikeState?.temperature ?? officialTemperature;
     final remainingMileage = _firstText([

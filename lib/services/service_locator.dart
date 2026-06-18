@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../ble/connection_manager.dart' as ble;
+import 'app_preferences_service.dart';
 import 'auto_connect_service.dart';
 import 'location_service.dart';
 import 'log_service.dart';
@@ -80,6 +81,21 @@ class AppServices {
   void dispose() {
     try {
       officialCloudService.dispose();
+    } catch (_) {}
+    try {
+      proximityService.dispose();
+    } catch (_) {}
+    try {
+      autoConnectService.dispose();
+    } catch (_) {}
+    try {
+      manualModeService.dispose();
+    } catch (_) {}
+    try {
+      vehicleStore.dispose();
+    } catch (_) {}
+    try {
+      AppPreferencesService().dispose();
     } catch (_) {}
   }
 }

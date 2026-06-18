@@ -26,7 +26,12 @@ void main() {
     if (size != null) {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
     }
 
     await tester.pumpWidget(const TestApp(home: ControlPage()));
@@ -55,7 +60,7 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
-    expect(find.text('请连接车辆'), findsOneWidget);
+    expect(find.text('SHORTCUTS'), findsOneWidget);
     expect(find.text('骑行模式'), findsOneWidget);
   });
 }

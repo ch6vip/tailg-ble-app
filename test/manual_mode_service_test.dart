@@ -29,6 +29,7 @@ void main() {
     await service.setEnabled(false);
     expect(service.enabled, isFalse);
 
+    await Future<void>.delayed(Duration.zero);
     await sub.cancel();
     expect(events, contains(true));
     expect(events, contains(false));

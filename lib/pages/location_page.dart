@@ -14,6 +14,7 @@ import '../services/replica_feature_store.dart';
 import '../services/vehicle_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/app_pressable.dart';
 import '../widgets/cached_tile_provider.dart';
 
 part 'location_map_tab.dart';
@@ -410,7 +411,7 @@ class _SegmentedTabs extends StatelessWidget {
   }
 }
 
-class _OfficialTabButton extends StatefulWidget {
+class _OfficialTabButton extends StatelessWidget {
   final bool active;
   final VoidCallback onTap;
   final Widget child;
@@ -422,59 +423,15 @@ class _OfficialTabButton extends StatefulWidget {
   });
 
   @override
-  State<_OfficialTabButton> createState() => _OfficialTabButtonState();
-}
-
-class _OfficialTabButtonState extends State<_OfficialTabButton> {
-  static const _motionDuration = Duration(milliseconds: 150);
-  static const _motionCurve = Curves.easeOutCubic;
-
-  bool _pressed = false;
-
-  void _setPressed(bool value) {
-    if (!mounted || _pressed == value) return;
-    setState(() => _pressed = value);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final color = widget.active
-        ? AppColors.primary
-        : _pressed
-        ? _officialPressedBg
-        : Colors.transparent;
-    return AnimatedScale(
-      duration: _motionDuration,
-      curve: _motionCurve,
-      scale: _pressed ? 0.97 : 1,
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          splashColor: AppColors.primary.withValues(alpha: 0.08),
-          highlightColor: AppColors.primary.withValues(alpha: 0.05),
-          onTap: () {
-            _setPressed(false);
-            HapticFeedback.selectionClick();
-            widget.onTap();
-          },
-          onTapDown: (_) => _setPressed(true),
-          onTapUp: (_) => _setPressed(false),
-          onTapCancel: () => _setPressed(false),
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          child: AnimatedContainer(
-            duration: _motionDuration,
-            curve: _motionCurve,
-            height: 38,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(AppRadii.card),
-            ),
-            child: widget.child,
-          ),
-        ),
-      ),
+    final color = active ? AppColors.primary : Colors.transparent;
+    return AppPressable(
+      onTap: onTap,
+      pressedScale: 0.97,
+      background: color,
+      pressedBackground: active ? AppColors.primary : _officialPressedBg,
+      borderRadius: BorderRadius.circular(AppRadii.card),
+      child: SizedBox(height: 38, child: child),
     );
   }
 }

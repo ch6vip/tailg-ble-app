@@ -519,7 +519,11 @@ class VehicleSettingsService {
     try {
       return await connectionManager.sendQgjCommand(cmdId, payload);
     } catch (e) {
-      _log.operation('QGJ 设置命令失败', detail: e.toString(), level: LogLevel.debug);
+      _log.operation(
+        'QGJ 设置命令失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
       return null;
     }
   }

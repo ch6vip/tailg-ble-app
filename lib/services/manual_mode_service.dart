@@ -50,10 +50,10 @@ class ManualModeService {
 
   Future<void> setEnabled(bool value) async {
     if (_enabled == value) return;
-    _enabled = value;
-    _enabledController.add(value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefKey, value);
+    _enabled = value;
+    _enabledController.add(value);
   }
 
   void dispose() {

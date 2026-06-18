@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../ble/constants.dart';
@@ -129,11 +130,15 @@ class AutoConnectService {
     _initializing = null;
   }
 
+  void dispose() {
+    _enabledController.close();
+  }
+
   Future<void> setEnabled(bool value) async {
-    _enabled = value;
-    _enabledController.add(value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefEnabled, value);
+    _enabled = value;
+    _enabledController.add(value);
   }
 
   Future<void> saveDevice(BluetoothDevice device) async {
@@ -204,9 +209,19 @@ class AutoConnectService {
         if (!completer.isCompleted) completer.complete();
       });
 
-      await FlutterBluePlus.startScan(
-        timeout: BleTimings.autoConnectScanTimeout,
-      );
+      try {
+        await FlutterBluePlus.startScan(
+          timeout: BleTimings.autoConnectScanTimeout,
+        );
+      } on PlatformException catch (e) {
+        _log.operation(
+          '自动连接: 扫描权限不足',
+          detail: e.toString(),
+          level: LogLevel.warning,
+        );
+        if (!completer.isCompleted) completer.complete();
+        return;
+      }
       await completer.future;
     } finally {
       scanSub?.cancel();

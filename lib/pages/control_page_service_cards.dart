@@ -263,17 +263,25 @@ class _FunctionSettingsCard extends StatefulWidget {
 }
 
 class _FunctionSettingsCardState extends State<_FunctionSettingsCard> {
+  static const _horizontalPadding = 16.0;
+  static const _itemWidth = 86.0;
+  static const _separatorWidth = 6.0;
+
   final _scrollController = ScrollController();
-  // Whether the quick-function row actually overflows. When it fits (few items
-  // / wide screen) the position indicator is meaningless, so hide it instead of
-  // leaving a stationary dark pill on a grey track.
-  final _scrollable = ValueNotifier<bool>(false);
 
   @override
   void dispose() {
     _scrollController.dispose();
-    _scrollable.dispose();
     super.dispose();
+  }
+
+  bool _itemsOverflow(BoxConstraints constraints) {
+    if (!constraints.hasBoundedWidth || widget.items.isEmpty) return false;
+    final contentWidth =
+        _horizontalPadding * 2 +
+        widget.items.length * _itemWidth +
+        math.max(0, widget.items.length - 1) * _separatorWidth;
+    return contentWidth > constraints.maxWidth + 0.5;
   }
 
   double _scrollProgress() {
@@ -291,110 +299,106 @@ class _FunctionSettingsCardState extends State<_FunctionSettingsCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(0, 16, 0, 12),
-      decoration: _cardDecoration,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 16, right: 8),
-            child: Row(
-              children: [
-                const Text(
-                  'SHORTCUTS',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 2,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
-                const Spacer(),
-                if (widget.onLongPress != null)
-                  InkWell(
-                    onTap: widget.onLongPress,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.tune,
-                            size: 14,
-                            color: AppColors.textTertiary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '编辑',
-                            style: AppTextStyles.caption.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scrollable = _itemsOverflow(constraints);
+        return Container(
+          padding: const EdgeInsets.fromLTRB(0, 16, 0, 12),
+          decoration: _cardDecoration,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 16, right: 8),
+                child: Row(
+                  children: [
+                    const Text(
+                      'SHORTCUTS',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2,
+                        color: AppColors.textTertiary,
                       ),
                     ),
+                    const Spacer(),
+                    if (widget.onLongPress != null)
+                      InkWell(
+                        onTap: widget.onLongPress,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.tune,
+                                size: 14,
+                                color: AppColors.textTertiary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '编辑',
+                                style: AppTextStyles.caption.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 92,
+                child: ListView.separated(
+                  controller: _scrollController,
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: _horizontalPadding,
                   ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 92,
-            child: NotificationListener<ScrollMetricsNotification>(
-              onNotification: (notification) {
-                final canScroll = notification.metrics.maxScrollExtent > 0;
-                if (_scrollable.value != canScroll) {
-                  _scrollable.value = canScroll;
-                }
-                return false;
-              },
-              child: ListView.separated(
-                controller: _scrollController,
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                scrollDirection: Axis.horizontal,
-                itemCount: widget.items.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 6),
-                itemBuilder: (context, index) => SizedBox(
-                  width: 86,
-                  child: _HomeQuickTile(
-                    item: widget.items[index],
-                    onLongPress: widget.onLongPress,
+                  scrollDirection: Axis.horizontal,
+                  itemCount: widget.items.length,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(width: _separatorWidth),
+                  itemBuilder: (context, index) => SizedBox(
+                    width: _itemWidth,
+                    child: _HomeQuickTile(
+                      item: widget.items[index],
+                      onLongPress: widget.onLongPress,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-          ValueListenableBuilder<bool>(
-            valueListenable: _scrollable,
-            builder: (context, scrollable, _) {
-              if (!scrollable) return const SizedBox(height: 10);
-              return Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: AnimatedBuilder(
-                  animation: _scrollController,
-                  builder: (context, _) {
-                    return Center(
-                      child: SizedBox(
-                        key: const Key('quickFunctionScrollIndicator'),
-                        width: 60,
-                        height: 4,
-                        child: _ScrollPositionIndicator(
-                          progress: _scrollProgress(),
+              if (!scrollable)
+                const SizedBox(height: 10)
+              else
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: AnimatedBuilder(
+                    animation: _scrollController,
+                    builder: (context, _) {
+                      return Center(
+                        child: SizedBox(
+                          key: const Key('quickFunctionScrollIndicator'),
+                          width: 60,
+                          height: 4,
+                          child: _ScrollPositionIndicator(
+                            progress: _scrollProgress(),
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              );
-            },
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

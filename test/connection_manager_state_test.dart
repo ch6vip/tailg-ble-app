@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart';
 import 'package:tailg_ble_app/ble/constants.dart';
@@ -47,6 +49,41 @@ void main() {
     await expectLater(commandAck, completion(isFalse));
     await responseExpectation;
   });
+
+  test(
+    'GATT queue runs high priority work before low priority pending work',
+    () async {
+      final manager = ConnectionManager();
+      addTearDown(manager.dispose);
+
+      final releaseFirst = Completer<void>();
+      final order = <String>[];
+
+      final first = manager.runGattOperation(() async {
+        order.add('first');
+        await releaseFirst.future;
+        return 'first';
+      });
+      final low = manager.runGattOperation(() async {
+        order.add('low');
+        return 'low';
+      }, priority: GattOperationPriority.low);
+      final high = manager.runGattOperation(() async {
+        order.add('high');
+        return 'high';
+      }, priority: GattOperationPriority.high);
+
+      await Future<void>.delayed(Duration.zero);
+      expect(order, ['first']);
+
+      releaseFirst.complete();
+
+      await expectLater(first, completion('first'));
+      await expectLater(high, completion('high'));
+      await expectLater(low, completion('low'));
+      expect(order, ['first', 'high', 'low']);
+    },
+  );
 
   test('dispose completes pending QGJ operations immediately', () async {
     final manager = ConnectionManager();

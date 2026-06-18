@@ -147,7 +147,11 @@ class _HomeBodyState extends State<_HomeBody> {
     var latestVehicles = vehicleStore.vehicles;
     var latestCloud = officialCloudService.state;
 
-    void emit() => controller.add([latestConn, latestVehicles, latestCloud]);
+    void emit() {
+      if (!controller.isClosed) {
+        controller.add([latestConn, latestVehicles, latestCloud]);
+      }
+    }
 
     // Emit initial values
     scheduleMicrotask(emit);
@@ -166,17 +170,23 @@ class _HomeBodyState extends State<_HomeBody> {
     });
 
     _controller = controller;
-    controller.onCancel = () async {
-      await _subConn?.cancel();
-      await _subVehicles?.cancel();
-      await _subCloud?.cancel();
-    };
+    controller.onCancel = _cancelSubscriptions;
 
     return controller.stream;
   }
 
+  Future<void> _cancelSubscriptions() async {
+    await _subConn?.cancel();
+    await _subVehicles?.cancel();
+    await _subCloud?.cancel();
+    _subConn = null;
+    _subVehicles = null;
+    _subCloud = null;
+  }
+
   @override
   void dispose() {
+    _cancelSubscriptions();
     _controller?.close();
     super.dispose();
   }
@@ -340,6 +350,8 @@ class _ControlAreaState extends State<_ControlArea> {
   String? _activeControlId;
   MainControlConfig _mainControlConfig = const MainControlConfig();
   late final Stream<List<dynamic>> _combinedStream;
+  StreamSubscription<dynamic>? _subCloud;
+  StreamSubscription<dynamic>? _subBike;
   StreamController<List<dynamic>>? _combinedController;
 
   @override
@@ -354,31 +366,40 @@ class _ControlAreaState extends State<_ControlArea> {
     var latestCloud = officialCloudService.state;
     var latestBike = connectionManager.latestBikeState;
 
-    void emit() => controller.add([latestCloud, latestBike]);
+    void emit() {
+      if (!controller.isClosed) {
+        controller.add([latestCloud, latestBike]);
+      }
+    }
 
     scheduleMicrotask(emit);
 
-    final s1 = officialCloudService.stateStream.listen((c) {
+    _subCloud = officialCloudService.stateStream.listen((c) {
       latestCloud = c;
       emit();
     });
-    final s2 = connectionManager.bikeStateStream.listen((b) {
+    _subBike = connectionManager.bikeStateStream.listen((b) {
       latestBike = b;
       emit();
     });
 
     _combinedController = controller;
-    controller.onCancel = () async {
-      await s1.cancel();
-      await s2.cancel();
-    };
+    controller.onCancel = _cancelCombinedSubscriptions;
 
     return controller.stream;
+  }
+
+  Future<void> _cancelCombinedSubscriptions() async {
+    await _subCloud?.cancel();
+    await _subBike?.cancel();
+    _subCloud = null;
+    _subBike = null;
   }
 
   @override
   void dispose() {
     _disposed = true;
+    _cancelCombinedSubscriptions();
     _combinedController?.close();
     super.dispose();
   }

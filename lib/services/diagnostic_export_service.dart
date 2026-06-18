@@ -29,7 +29,7 @@ class DiagnosticExportService {
       '',
       _buildBleSection(),
       '',
-      '## Logs (${entries.length})',
+      '## Logs (${entries.length})${logService.evictedCount > 0 ? ' [${logService.evictedCount} older entries evicted]' : ''}',
       ...entries.map(_formatEntry),
     ].join('\n');
   }

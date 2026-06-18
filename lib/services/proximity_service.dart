@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../ble/connection_manager.dart';
@@ -87,10 +88,10 @@ class ProximityService {
   }
 
   Future<void> setEnabled(bool value) async {
-    _enabled = value;
-    _enabledController.add(value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefKey, value);
+    _enabled = value;
+    _enabledController.add(value);
     if (value) {
       await start();
     } else {
@@ -130,8 +131,11 @@ class ProximityService {
       _scanning = false;
       await _scanSub?.cancel();
       _scanSub = null;
+      final isPermission =
+          e is PlatformException &&
+          (e.code.contains('Permission') || e.code.contains('denied'));
       _log.operation(
-        '感应解锁: 扫描启动失败',
+        isPermission ? '感应解锁: 扫描权限不足' : '感应解锁: 扫描启动失败',
         detail: e.toString(),
         level: LogLevel.warning,
       );

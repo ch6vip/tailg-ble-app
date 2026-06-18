@@ -27,8 +27,10 @@ class LogService {
 
   static const _maxEntries = 500;
   final _logs = Queue<LogEntry>();
+  int _evictedCount = 0;
 
   List<LogEntry> get all => _logs.toList();
+  int get evictedCount => _evictedCount;
 
   List<LogEntry> byCategory(LogCategory cat) =>
       _logs.where((e) => e.category == cat).toList();
@@ -65,8 +67,12 @@ class LogService {
     _logs.addLast(entry);
     while (_logs.length > _maxEntries) {
       _logs.removeFirst();
+      _evictedCount++;
     }
   }
 
-  void clear() => _logs.clear();
+  void clear() {
+    _logs.clear();
+    _evictedCount = 0;
+  }
 }

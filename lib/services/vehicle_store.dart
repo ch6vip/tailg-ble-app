@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/vehicle_profile.dart';
@@ -61,6 +62,7 @@ class VehicleStore {
     _defaultVehicleId = null;
     _initialized = false;
     _initializing = null;
+    _saveQueue = null;
   }
 
   List<VehicleProfile> _decodeVehicles(String? raw) {
@@ -217,7 +219,12 @@ class VehicleStore {
   }
 
   Future<void> _save() {
-    _saveQueue = (_saveQueue ?? Future<void>.value()).then((_) => _doSave());
+    _saveQueue = (_saveQueue ?? Future<void>.value())
+        .then((_) => _doSave())
+        .catchError((Object e) {
+          // Isolate save failures so subsequent writes are not poisoned.
+          debugPrint('VehicleStore save failed: $e');
+        });
     return _saveQueue!;
   }
 
@@ -237,5 +244,9 @@ class VehicleStore {
 
   void _emit() {
     _vehiclesController.add(List.unmodifiable(_vehicles));
+  }
+
+  void dispose() {
+    _vehiclesController.close();
   }
 }
