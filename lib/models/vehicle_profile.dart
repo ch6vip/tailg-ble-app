@@ -85,16 +85,24 @@ class VehicleProfile {
   String get displayName => name.trim().isEmpty ? '未命名车辆' : name.trim();
   bool get hasQgjCredentials => qgjLoginPassword != null || qgjUserId != null;
 
+  static const _sentinel = Object();
+
   VehicleProfile copyWith({
     String? name,
     VehicleProtocol? protocol,
     DateTime? updatedAt,
     DateTime? lastConnectedAt,
     VehicleLocation? lastLocation,
-    int? qgjLoginPassword,
-    int? qgjUserId,
+    Object? qgjLoginPassword = _sentinel,
+    Object? qgjUserId = _sentinel,
     bool clearQgjCredentials = false,
   }) {
+    final resolvedQgjPassword = identical(qgjLoginPassword, _sentinel)
+        ? (clearQgjCredentials ? null : this.qgjLoginPassword)
+        : qgjLoginPassword as int?;
+    final resolvedQgjUserId = identical(qgjUserId, _sentinel)
+        ? (clearQgjCredentials ? null : this.qgjUserId)
+        : qgjUserId as int?;
     return VehicleProfile(
       id: id,
       name: name ?? this.name,
@@ -103,10 +111,8 @@ class VehicleProfile {
       updatedAt: updatedAt ?? this.updatedAt,
       lastConnectedAt: lastConnectedAt ?? this.lastConnectedAt,
       lastLocation: lastLocation ?? this.lastLocation,
-      qgjLoginPassword: clearQgjCredentials
-          ? null
-          : qgjLoginPassword ?? this.qgjLoginPassword,
-      qgjUserId: clearQgjCredentials ? null : qgjUserId ?? this.qgjUserId,
+      qgjLoginPassword: resolvedQgjPassword,
+      qgjUserId: resolvedQgjUserId,
     );
   }
 

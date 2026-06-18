@@ -3,19 +3,28 @@ part of 'official_cloud_service.dart';
 class OfficialCloudAuthParser {
   const OfficialCloudAuthParser._();
 
-  static bool looksLikeAuthError(String message) {
-    final normalized = message.trim().toLowerCase();
-    return normalized.contains('token') ||
-        normalized.contains('unauthorized') ||
-        normalized.contains('forbidden') ||
-        normalized.contains('expired') ||
-        normalized.contains('登录') ||
-        normalized.contains('认证') ||
-        normalized.contains('授权') ||
-        normalized.contains('401') ||
-        normalized.contains('403') ||
-        normalized.contains('过期') ||
-        normalized.contains('失效');
+  static bool looksLikeAuthError(Object error) {
+    // Check HTTP status code first
+    if (error is OfficialCloudApiException) {
+      if (error.statusCode == 401 || error.statusCode == 403) return true;
+    }
+    final message = error.toString().trim().toLowerCase();
+    if (message.contains('unauthorized') ||
+        message.contains('token expired') ||
+        message.contains('token invalid') ||
+        message.contains('认证失败') ||
+        message.contains('登录已过期') ||
+        message.contains('授权已失效') ||
+        message.contains('401') ||
+        message.contains('403')) {
+      return true;
+    }
+    // Compound: 'token' paired with expiry keyword catches 'token 已过期' etc.
+    if (message.contains('token') &&
+        (message.contains('过期') || message.contains('失效'))) {
+      return true;
+    }
+    return false;
   }
 
   static String extractUserId(Map<String, dynamic> body) {

@@ -72,5 +72,14 @@ class AppServices {
 
   /// Restores the default production service graph. Intended for tests.
   @visibleForTesting
-  static void reset() => _instance = AppServices.production();
+  static void reset() {
+    _instance.dispose();
+    _instance = AppServices.production();
+  }
+
+  void dispose() {
+    try {
+      officialCloudService.dispose();
+    } catch (_) {}
+  }
 }

@@ -173,32 +173,46 @@ class AutoConnectService {
 
     StreamSubscription? scanSub;
     Timer? timeout;
-
     final completer = Completer<void>();
-
-    scanSub = FlutterBluePlus.scanResults.listen((results) {
-      for (final r in results) {
-        if (r.device.remoteId.toString() == _lastDeviceId) {
-          scanSub?.cancel();
-          timeout?.cancel();
-          FlutterBluePlus.stopScan();
-          _doConnect(r.device).whenComplete(() {
-            if (!completer.isCompleted) completer.complete();
-          });
-          return;
+    try {
+      scanSub = FlutterBluePlus.scanResults.listen((results) {
+        for (final r in results) {
+          if (r.device.remoteId.toString() == _lastDeviceId) {
+            scanSub?.cancel();
+            timeout?.cancel();
+            FlutterBluePlus.stopScan();
+            _doConnect(r.device)
+                .catchError((Object e) {
+                  _log.operation(
+                    '自动连接: 连接异常',
+                    detail: e.toString(),
+                    level: LogLevel.error,
+                  );
+                })
+                .whenComplete(() {
+                  if (!completer.isCompleted) completer.complete();
+                });
+            return;
+          }
         }
-      }
-    });
+      });
 
-    timeout = Timer(BleTimings.autoConnectScanTimeout, () {
+      timeout = Timer(BleTimings.autoConnectScanTimeout, () {
+        scanSub?.cancel();
+        FlutterBluePlus.stopScan();
+        _log.operation('自动连接: 超时未找到设备', level: LogLevel.warning);
+        if (!completer.isCompleted) completer.complete();
+      });
+
+      await FlutterBluePlus.startScan(
+        timeout: BleTimings.autoConnectScanTimeout,
+      );
+      await completer.future;
+    } finally {
       scanSub?.cancel();
+      timeout?.cancel();
       FlutterBluePlus.stopScan();
-      _log.operation('自动连接: 超时未找到设备', level: LogLevel.warning);
-      if (!completer.isCompleted) completer.complete();
-    });
-
-    await FlutterBluePlus.startScan(timeout: BleTimings.autoConnectScanTimeout);
-    await completer.future;
+    }
   }
 
   void _refreshTarget() {

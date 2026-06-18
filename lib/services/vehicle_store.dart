@@ -19,6 +19,7 @@ class VehicleStore {
   String? _defaultVehicleId;
   bool _initialized = false;
   Future<void>? _initializing;
+  Future<void>? _saveQueue;
 
   Stream<List<VehicleProfile>> get vehiclesStream => _vehiclesController.stream;
   List<VehicleProfile> get vehicles => List.unmodifiable(_vehicles);
@@ -182,14 +183,8 @@ class VehicleStore {
     final index = _vehicles.indexWhere((vehicle) => vehicle.id == normalizedId);
     if (index < 0) return;
     final current = _vehicles[index];
-    _vehicles[index] = VehicleProfile(
-      id: current.id,
-      name: current.name,
-      protocol: current.protocol,
-      createdAt: current.createdAt,
+    _vehicles[index] = current.copyWith(
       updatedAt: DateTime.now(),
-      lastConnectedAt: current.lastConnectedAt,
-      lastLocation: current.lastLocation,
       qgjLoginPassword: clear ? null : password,
       qgjUserId: clear ? null : userId,
     );
@@ -221,7 +216,12 @@ class VehicleStore {
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
 
-  Future<void> _save() async {
+  Future<void> _save() {
+    _saveQueue = (_saveQueue ?? Future<void>.value()).then((_) => _doSave());
+    return _saveQueue!;
+  }
+
+  Future<void> _doSave() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       _prefVehicles,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../ble/constants.dart';
 import 'control_channel_resolver.dart';
 import 'control_command_result.dart';
@@ -40,12 +42,21 @@ class ControlCommandExecutor {
 
   Future<ControlCommandResult> _sendBle(CommandCode command) async {
     try {
-      final success = await sendBleCommand(command);
+      final success = await sendBleCommand(command).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => throw TimeoutException('BLE command timed out'),
+      );
       if (success) return ControlCommandResult.bleSuccess(command);
       return ControlCommandResult.failure(
         command,
         transport: ControlCommandTransport.ble,
         message: '${command.label}失败',
+      );
+    } on TimeoutException catch (e) {
+      return ControlCommandResult.failure(
+        command,
+        transport: ControlCommandTransport.ble,
+        message: e.message ?? 'BLE command timed out',
       );
     } catch (e) {
       return ControlCommandResult.failure(
@@ -58,8 +69,17 @@ class ControlCommandExecutor {
 
   Future<ControlCommandResult> _sendCloud(CommandCode command) async {
     try {
-      final message = await sendCloudCommand(command);
+      final message = await sendCloudCommand(command).timeout(
+        const Duration(seconds: 20),
+        onTimeout: () => throw TimeoutException('Cloud command timed out'),
+      );
       return ControlCommandResult.cloudSuccess(command, message: message);
+    } on TimeoutException catch (e) {
+      return ControlCommandResult.failure(
+        command,
+        transport: ControlCommandTransport.officialCloud,
+        message: e.message ?? 'Cloud command timed out',
+      );
     } catch (e) {
       return ControlCommandResult.failure(
         command,

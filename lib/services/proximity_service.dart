@@ -177,7 +177,13 @@ class ProximityService {
       _lastUnlockTime = now;
       stop();
       _log.operation('感应解锁: RSSI=${result.rssi}dBm，触发解锁', level: LogLevel.info);
-      _connectAndUnlock(result.device);
+      _connectAndUnlock(result.device).catchError((Object e) {
+        _log.operation(
+          '感应解锁: 未捕获异常',
+          detail: e.toString(),
+          level: LogLevel.error,
+        );
+      });
     }
   }
 
@@ -202,6 +208,7 @@ class ProximityService {
         _log.operation('感应解锁: 解锁成功', level: LogLevel.info);
       }
     } catch (e) {
+      _unlockSent = false;
       _log.operation(
         '感应解锁: 连接失败',
         detail: e.toString(),

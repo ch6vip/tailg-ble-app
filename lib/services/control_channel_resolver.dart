@@ -56,11 +56,13 @@ class ControlChannelResolver {
           OfficialControlChannel.officialCloud => canUseCloud,
           OfficialControlChannel.automatic => canUseBle || canUseCloud,
         };
-    final willUseBle = switch (cloudState.controlChannel) {
-      OfficialControlChannel.ble => canUseBle,
-      OfficialControlChannel.officialCloud => false,
-      OfficialControlChannel.automatic => canUseBle,
-    };
+    final willUseBle =
+        !busy &&
+        switch (cloudState.controlChannel) {
+          OfficialControlChannel.ble => canUseBle,
+          OfficialControlChannel.officialCloud => false,
+          OfficialControlChannel.automatic => canUseBle,
+        };
 
     return ControlChannelAvailability(
       channel: cloudState.controlChannel,

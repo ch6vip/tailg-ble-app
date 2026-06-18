@@ -229,6 +229,7 @@ class OfficialCloudService {
   final Map<String, Future<void>> _inFlightRefreshes = {};
   bool _initialized = false;
   Future<void>? _initializing;
+  bool _disposed = false;
 
   OfficialCloudService._();
 
@@ -1064,8 +1065,7 @@ class OfficialCloudService {
   }
 
   Future<void> _handleAuthFailureIfNeeded(Object e) async {
-    final message = _errorMessage(e);
-    if (!OfficialCloudAuthParser.looksLikeAuthError(message)) return;
+    if (!OfficialCloudAuthParser.looksLikeAuthError(e)) return;
     await logout();
     _state = _state.copyWith(error: '官方登录已失效，请重新登录');
     _emit();
@@ -1137,6 +1137,13 @@ class OfficialCloudService {
 
   void _emit() {
     _stateController.add(_state);
+  }
+
+  void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    _apiClient.dispose();
+    _stateController.close();
   }
 }
 
