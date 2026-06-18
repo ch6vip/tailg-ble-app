@@ -1,6 +1,13 @@
 import 'dart:typed_data';
 
 Uint8List hexToBytes(String hex) {
+  if (hex.isEmpty) return Uint8List(0);
+  if (hex.length % 2 != 0) {
+    throw ArgumentError('Hex string must have even length, got ${hex.length}');
+  }
+  if (!RegExp(r'^[0-9a-fA-F]*$').hasMatch(hex)) {
+    throw ArgumentError('Hex string contains invalid characters: $hex');
+  }
   final bytes = Uint8List(hex.length ~/ 2);
   for (var i = 0; i < hex.length; i += 2) {
     bytes[i ~/ 2] = int.parse(hex.substring(i, i + 2), radix: 16);

@@ -1,3 +1,23 @@
+const _keyMask = 0x5A3C6F91D2E84B7A;
+
+String _obfuscate(String hexKey) {
+  final maskBytes = <int>[];
+  for (var i = 7; i >= 0; i--) {
+    maskBytes.add((_keyMask >> (i * 8)) & 0xFF);
+  }
+  final result = StringBuffer();
+  for (var i = 0; i < hexKey.length; i += 2) {
+    final keyByte = int.parse(hexKey.substring(i, i + 2), radix: 16);
+    final maskByte = maskBytes[(i ~/ 2) % maskBytes.length];
+    result.write(
+      (keyByte ^ maskByte).toRadixString(16).padLeft(2, '0').toUpperCase(),
+    );
+  }
+  return result.toString();
+}
+
+String _deobfuscate(String obfuscatedHex) => _obfuscate(obfuscatedHex);
+
 enum CommandCode {
   lock('01', '设防'),
   unlock('02', '解锁'),
@@ -14,17 +34,20 @@ enum CommandCode {
 }
 
 enum ModelType {
-  KKS('3A60432A5C01211F291E0F4E0C132825'),
-  BB('1AF78CD35BE92F4CA06DB89EC2D7EF01'),
-  AX('1AF78CD35BE92F4CA06DB89E7C4B1E6A'),
-  JD('1AF78CD35BE92F4CA06DB89E5F3D2A8C'),
-  HJ('1AF78CD35BE92F4CA06DB89E9E6C4B1A'),
-  JW('1AF78CD35BE92F4CA06DB89E6F8B39A5'),
-  XL('1AF78CD35BE92F4CA06DB89E1E6C8A9A'),
-  YY('1AF78CD35BE92F4CA06DB89E2A8C3F5D');
+  // Obfuscated keys generated via _obfuscate() with _keyMask
+  KKS('605C2CBB8EE96A65732260DFDEFB635F'),
+  BB('40CBE34289016436FA51D70F103FA47B'),
+  AX('40CBE34289016436FA51D70FAEA35510'),
+  JD('40CBE34289016436FA51D70F8DD561F6'),
+  HJ('40CBE34289016436FA51D70F4C840060'),
+  JW('40CBE34289016436FA51D70FBD6372DF'),
+  XL('40CBE34289016436FA51D70FCC84C1E0'),
+  YY('40CBE34289016436FA51D70FF8647427');
 
-  final String aesKey;
-  const ModelType(this.aesKey);
+  final String _obfuscatedKey;
+  const ModelType(this._obfuscatedKey);
+
+  String get aesKey => _deobfuscate(_obfuscatedKey);
 }
 
 enum RidingMode {
@@ -244,7 +267,7 @@ class BikeState {
       isLocked: isLocked,
       isPowerOn: isPowerOn,
       isMuted: isMuted,
-      voltage: voltage > 0 ? voltage : null,
+      voltage: voltage > 0 && voltage < 200 ? voltage : null,
       temperature: null,
       batteryPercent: batteryPercent,
       faultMotor: faultMotor,

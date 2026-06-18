@@ -96,7 +96,13 @@ class ConnectionManager {
   }
 
   Future<T> runGattOperation<T>(Future<T> Function() operation) {
-    final next = _gattQueue.then((_) => operation());
+    final next = _gattQueue.then(
+      (_) => operation().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () =>
+            throw TimeoutException('GATT operation timed out after 30s'),
+      ),
+    );
     _gattQueue = next.then<void>((_) {}, onError: (_) {});
     return next;
   }
@@ -755,6 +761,7 @@ class ConnectionManager {
     await _connectionSub?.cancel();
     _connectionSub = null;
     _completePendingOperations(StateError('BLE runtime cleared'));
+    _gattQueue = Future.value();
     if (disconnectDevice) {
       try {
         await _device?.disconnect();
@@ -814,6 +821,7 @@ class ConnectionManager {
   }
 
   void _setState(ConnectionState s) {
+    if (_state == s) return;
     _state = s;
     if (!_disposed) {
       _stateController.add(s);
@@ -830,15 +838,33 @@ class ConnectionManager {
     _ridingModeController.add(mode);
   }
 
-  void dispose() {
+  Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+
+    // Drain pending GATT operations
+    try {
+      await _gattQueue.timeout(const Duration(seconds: 2));
+    } catch (_) {}
+
+    // Cancel timers
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+
+    // Cancel subscriptions
+    await _notifySub?.cancel();
+    await _gpsNotifySub?.cancel();
+    await _connectionSub?.cancel();
+
+    // Complete pending operations
     _completePendingOperations(StateError('ConnectionManager disposed'));
-    _notifySub?.cancel();
-    _gpsNotifySub?.cancel();
-    _connectionSub?.cancel();
+
+    // Disconnect device
+    try {
+      await _device?.disconnect();
+    } catch (_) {}
+
+    // Close controllers
     _stateController.close();
     _responseController.close();
     _bikeStateController.close();
