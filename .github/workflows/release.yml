@@ -1,0 +1,142 @@
+# ───────────────────────────────────────────
+# Tailg BLE App — 独立 Release 工作流
+# ───────────────────────────────────────────
+# 仅当推送 v* 标签时触发，创建 GitHub Release 并附带 APK 构建产物。
+# 此工作流独立于主 CI/CD Pipeline，可在 CI 失败时手动补发 Release。
+
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要发布的标签（留空则使用最新标签）'
+        required: false
+        type: string
+        default: ''
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: '3.32.1'
+  APK_RELEASE_PATH: build/app/outputs/flutter-apk/app-release.apk
+
+jobs:
+  # ═══════════════════════════════════
+  # Build & Release
+  # ═══════════════════════════════════
+
+  release:
+    name: 'Build & Publish Release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Setup Flutter ${{ env.FLUTTER_VERSION }}
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      # ── 签名配置 ──
+      - name: Decode release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          : "${KEYSTORE_BASE64:?KEYSTORE_BASE64 secret is required}"
+          echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+
+      - name: Create signing properties
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          printf '%s\n' \
+            "storePassword=$KEYSTORE_PASSWORD" \
+            "keyPassword=$KEY_PASSWORD" \
+            "keyAlias=$KEY_ALIAS" \
+            "storeFile=../../release.keystore" \
+            > android/key.properties
+
+      # ── 构建 ──
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release --target-platform android-arm64
+
+      - name: Generate SHA-256 checksum
+        run: sha256sum "${{ env.APK_RELEASE_PATH }}" > "${{ env.APK_RELEASE_PATH }}.sha256"
+
+      # ── 提取版本号用于 Release 标题 ──
+      - name: Extract version
+        id: version
+        run: |
+          TAG="${{ github.ref_name }}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          # 从 pubspec.yaml 提取版本号
+          VER=$(grep '^version:' pubspec.yaml | awk '{print $2}' | sed 's/+.*//')
+          echo "app_version=${VER}" >> "$GITHUB_OUTPUT"
+          echo "is_prerelease=$([[ "$TAG" =~ -(rc|beta|alpha) ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      # ── 创建/更新 GitHub Release ──
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "Tailg BLE v${{ steps.version.outputs.app_version }} (${{ steps.version.outputs.tag }})"
+          files: |
+            ${{ env.APK_RELEASE_PATH }}
+            ${{ env.APK_RELEASE_PATH }}.sha256
+          generate_release_notes: true
+          prerelease: ${{ steps.version.outputs.is_prerelease }}
+          body: |
+            ## :package: 构建产物
+
+            | 文件 | 大小 | SHA-256 |
+            |------|------|---------|
+            | `app-release.apk` | $(du -h "${{ env.APK_RELEASE_PATH }}" | cut -f1) | \`$(cat "${{ env.APK_RELEASE_PATH }}.sha256" | awk '{print $1}')\` |
+
+            ## :gear: 安装说明
+
+            1. 下载 `app-release.apk`
+            2. 在 Android 设备上启用「允许安装未知来源应用」
+            3. 安装后运行，授予蓝牙和位置权限
+
+            ## :pushpin: 变更说明
+
+            请参见自动生成的 Release Notes。
+
+      - name: Post release summary
+        if: success()
+        run: |
+          echo '## :tada: Release Published' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo "| Detail | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tag | \`${{ steps.version.outputs.tag }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| App Version | ${{ steps.version.outputs.app_version }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Pre-release | ${{ steps.version.outputs.is_prerelease }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Release URL | [View](${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}) |" >> "$GITHUB_STEP_SUMMARY"
