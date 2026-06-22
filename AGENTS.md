@@ -27,6 +27,24 @@ Use `flutter_test`. Name test files `*_test.dart` and keep tests close to the be
 
 Recent history follows Conventional Commits with optional scopes, for example `fix(build): ...`, `feat(ui): ...`, and `fix(services): ...`. Prefer short imperative summaries and scope the change to one concern. Pull requests should include a clear description, affected modules, test results, and screenshots for UI changes. Link related issues or verification notes when relevant.
 
+## CI/CD Pipeline
+
+Workflows live in `.github/workflows/`:
+
+| File | Purpose | Trigger |
+|------|---------|---------|
+| `ci.yml` | Full CI/CD (format → analyze → test+coverage → build → deploy → notify) | push/PR to `master`/`develop`, `v*` tags, manual |
+| `release.yml` | Standalone GitHub Release creation | `v*` tags, manual |
+| `build.yml` | Legacy build workflow (kept for compatibility) | push/PR to `master`, tags |
+
+**Quality gates** enforced on every PR: `dart format`, `flutter analyze`, `flutter test --coverage`. Coverage reports are uploaded to Codecov.
+
+**Build strategy**: `develop` → debug APK; `master` → signed release APK (arm64); `v*` tags → GitHub Release with APK artifact. Release signing keys are injected via GitHub Secrets at build time — never committed to the repo.
+
+**Notifications**: Pipeline success/failure and Release publish events are pushed to Telegram. Configuration details and required Secrets reference in `docs/github_actions_guide.md`.
+
+**Cache**: Gradle dependencies are cached across builds. Flutter/Dart packages are cached by `subosito/flutter-action`.
+
 ## Security & Configuration Tips
 
 Do not commit keystores, `key.properties`, tokens, phone numbers, IMEI values, or captured vehicle data. Keep official cloud credentials in secure storage and preserve log redaction. Advanced BLE writes, OTA, and account/cloud changes should include reversible steps and a real-device verification note in `docs/first_batch_verification.md` when not fully tested.
