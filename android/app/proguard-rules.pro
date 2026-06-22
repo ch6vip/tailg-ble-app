@@ -21,3 +21,6 @@
 # OkHttp (if used by cloud API)
 -dontwarn okhttp3.**
 -dontwarn okio.**
+
+# Flutter Play Store deferred components — not needed for sideloaded apps
+-dontwarn com.google.android.play.core.**
