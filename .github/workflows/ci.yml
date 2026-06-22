@@ -411,6 +411,23 @@ jobs:
           echo "| Trigger | ${{ github.event_name }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Workflow Run | [View](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |" >> "$GITHUB_STEP_SUMMARY"
 
+      # Telegram 通知（失败）
+      - name: Notify via Telegram
+        uses: appleboy/telegram-action@v1
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            ❌ *CI/CD Pipeline Failed*
+            ━━━━━━━━━━━━━━━━━
+            *Repository:* `${{ github.repository }}`
+            *Branch:* `${{ github.ref_name }}`
+            *Commit:* `${{ github.sha }}`
+            *Trigger:* ${{ github.event_name }}
+            ━━━━━━━━━━━━━━━━━
+            [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
       # Slack 通知（如已配置 SLACK_WEBHOOK_URL）
       - name: Notify via Slack
         if: env.SLACK_WEBHOOK_URL != ''
@@ -456,6 +473,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # Telegram 通知（成功）
+      - name: Notify via Telegram
+        uses: appleboy/telegram-action@v1
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            ✅ *CI/CD Pipeline Passed*
+            ━━━━━━━━━━━━━━━━━
+            *Branch:* `${{ github.ref_name }}`
+            *Commit:* `${{ github.sha }}`
+            *Trigger:* ${{ github.event_name }}
+            ━━━━━━━━━━━━━━━━━
+            [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
       - name: Post success summary
         run: |
           echo '## :white_check_mark: CI/CD Pipeline Passed' >> "$GITHUB_STEP_SUMMARY"

@@ -147,6 +147,8 @@ Tag v* 推送 / 手动触发
 
 | Secret 名称 | 说明 | 用途 |
 |-------------|------|------|
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token | CI 失败/成功 + Release 通知推送（**已配置**） |
+| `TELEGRAM_CHAT_ID` | Telegram 会话/频道 ID | 通知目标（**已配置**） |
 | `FIREBASE_TOKEN` | Firebase CI 令牌 | 预发布环境分发 APK |
 | `FIREBASE_APP_ID_STAGING` | Firebase App ID（Staging） | 指定分发目标应用 |
 | `DEV_DEPLOY_WEBHOOK_URL` | 开发分发 Webhook | 开发环境 APK 内部分发 |
