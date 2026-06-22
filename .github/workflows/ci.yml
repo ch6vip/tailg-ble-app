@@ -395,11 +395,12 @@ jobs:
     needs:
       [format, analyze, test, build-debug, build-release,
        deploy-development, deploy-staging, deploy-production]
-    if: failure()
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Post failure summary
+        if: ${{ contains(needs.*.result, 'failure') }}
         run: |
           echo '## :x: CI/CD Pipeline Failed' >> "$GITHUB_STEP_SUMMARY"
           echo '' >> "$GITHUB_STEP_SUMMARY"
@@ -413,6 +414,7 @@ jobs:
 
       # Telegram 通知（失败）
       - name: Notify via Telegram
+        if: ${{ contains(needs.*.result, 'failure') }}
         uses: appleboy/telegram-action@v1
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -469,12 +471,13 @@ jobs:
     needs:
       [format, analyze, test, build-debug, build-release,
        deploy-development, deploy-staging, deploy-production]
-    if: success()
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      # Telegram 通知（成功）
+      # Telegram 通知（成功 — 仅无失败且无取消时发送）
       - name: Notify via Telegram
+        if: ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
         uses: appleboy/telegram-action@v1
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -490,6 +493,7 @@ jobs:
             [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
       - name: Post success summary
+        if: ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
         run: |
           echo '## :white_check_mark: CI/CD Pipeline Passed' >> "$GITHUB_STEP_SUMMARY"
           echo '' >> "$GITHUB_STEP_SUMMARY"
