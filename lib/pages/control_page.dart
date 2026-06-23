@@ -18,11 +18,15 @@ import '../services/replica_feature_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/slide_to_action.dart';
+import 'battery_details_page.dart';
+import 'device_info_page.dart';
+import 'diagnostic_page.dart';
 import 'garage_page.dart';
 import 'location_page.dart';
 import 'log_page.dart';
 import 'official_cloud_page.dart';
 import 'official_replica_pages.dart';
+import 'ota_precheck_page.dart';
 import 'vehicle_message_page.dart';
 import 'vehicle_settings_page.dart';
 

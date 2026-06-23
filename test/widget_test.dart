@@ -7,9 +7,10 @@ void main() {
     await tester.pumpWidget(const TailgBleApp());
     await tester.pump(); // Allow combined stream initial emission
     expect(find.text('未绑定车辆'), findsOneWidget);
-    expect(find.text('扫描'), findsOneWidget);
-    expect(find.text('爱车'), findsOneWidget);
-    expect(find.text('设置'), findsOneWidget);
+    expect(find.text('控车'), findsOneWidget);
+    expect(find.text('定位'), findsOneWidget);
+    expect(find.text('车库'), findsOneWidget);
+    expect(find.text('我的'), findsOneWidget);
   });
 
   testWidgets('Unbound home stays stable on a narrow surface', (

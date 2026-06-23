@@ -15,6 +15,8 @@ import 'services/app_preferences_service.dart';
 import 'pages/scan_page.dart';
 import 'pages/control_page.dart';
 import 'pages/settings_page.dart';
+import 'pages/location_page.dart';
+import 'pages/garage_page.dart';
 import 'theme/app_colors.dart';
 
 // App-wide services now live in the [AppServices] container (see
@@ -33,7 +35,7 @@ LogService get logService => AppServices.instance.logService;
 VehicleStore get vehicleStore => AppServices.instance.vehicleStore;
 OfficialCloudService get officialCloudService =>
     AppServices.instance.officialCloudService;
-final homeTabIndex = ValueNotifier<int>(1);
+final homeTabIndex = ValueNotifier<int>(0);
 
 void applyVehicleBleCredentials(VehicleProfile? vehicle) {
   connectionManager.setQgjCredentials(
@@ -51,8 +53,9 @@ VehicleProtocol vehicleProtocolFromBle(ble.ProtocolType protocol) {
 }
 
 void openScanTab(BuildContext context) {
-  Navigator.of(context).popUntil((route) => route.isFirst);
-  homeTabIndex.value = 0;
+  Navigator.of(
+    context,
+  ).push(MaterialPageRoute(builder: (_) => const ScanPage()));
 }
 
 void main() async {
@@ -242,7 +245,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
-  int _currentIndex = 1;
+  int _currentIndex = 0;
   late AnimationController _pageAnimController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
@@ -325,7 +328,7 @@ class _HomePageState extends State<HomePage>
 
   void _onExternalTabChanged() {
     final index = homeTabIndex.value;
-    if (index == _currentIndex || index < 0 || index > 2) return;
+    if (index == _currentIndex || index < 0 || index > 3) return;
     setState(() => _currentIndex = index);
     _pageAnimController.forward(from: 0);
   }
@@ -356,13 +359,20 @@ class _HomePageState extends State<HomePage>
           child: IndexedStack(
             index: _currentIndex,
             children: [
-              TickerMode(enabled: _currentIndex == 0, child: const ScanPage()),
               TickerMode(
-                enabled: _currentIndex == 1,
+                enabled: _currentIndex == 0,
                 child: const ControlPage(),
               ),
               TickerMode(
+                enabled: _currentIndex == 1,
+                child: const LocationPage(embedded: true),
+              ),
+              TickerMode(
                 enabled: _currentIndex == 2,
+                child: const GaragePage(embedded: true),
+              ),
+              TickerMode(
+                enabled: _currentIndex == 3,
                 child: const SettingsPage(),
               ),
             ],
@@ -389,25 +399,32 @@ class _HomePageState extends State<HomePage>
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _NavItem(
-                  icon: Icons.manage_search,
-                  selectedIcon: Icons.search,
-                  label: '扫描',
+                  icon: Icons.directions_car_outlined,
+                  selectedIcon: Icons.directions_car,
+                  label: '控车',
                   selected: _currentIndex == 0,
                   onTap: () => _switchTab(0),
                 ),
                 _NavItem(
-                  icon: Icons.directions_car_outlined,
-                  selectedIcon: Icons.directions_car,
-                  label: '爱车',
+                  icon: Icons.location_on_outlined,
+                  selectedIcon: Icons.location_on,
+                  label: '定位',
                   selected: _currentIndex == 1,
                   onTap: () => _switchTab(1),
                 ),
                 _NavItem(
-                  icon: Icons.settings_outlined,
-                  selectedIcon: Icons.settings,
-                  label: '设置',
+                  icon: Icons.garage_outlined,
+                  selectedIcon: Icons.garage,
+                  label: '车库',
                   selected: _currentIndex == 2,
                   onTap: () => _switchTab(2),
+                ),
+                _NavItem(
+                  icon: Icons.person_outline,
+                  selectedIcon: Icons.person,
+                  label: '我的',
+                  selected: _currentIndex == 3,
+                  onTap: () => _switchTab(3),
                 ),
               ],
             ),

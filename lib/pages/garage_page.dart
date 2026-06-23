@@ -8,7 +8,11 @@ import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
 class GaragePage extends StatelessWidget {
-  const GaragePage({super.key});
+  /// When hosted as a bottom-nav tab there is no route to pop back to, so the
+  /// header back button is hidden. Pushed instances keep the default back arrow.
+  final bool embedded;
+
+  const GaragePage({super.key, this.embedded = false});
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +24,7 @@ class GaragePage extends StatelessWidget {
           children: [
             AppPageHeader(
               title: '我的车库',
+              showBack: !embedded,
               actions: [
                 IconButton(
                   tooltip: '添加车辆',
@@ -116,6 +121,14 @@ class _VehicleCard extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         boxShadow: AppShadows.elevation1,
+        // v8: the current (default) vehicle gets a teal outline so it reads as
+        // the active card at a glance.
+        border: isDefault
+            ? Border.all(
+                color: AppColors.primary.withValues(alpha: 0.55),
+                width: 1.5,
+              )
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
