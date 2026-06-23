@@ -28,7 +28,15 @@ const _officialPressedBg = Color(0xFFE5E5E5);
 class LocationPage extends StatefulWidget {
   final LocationInitialTab initialTab;
 
-  const LocationPage({super.key, this.initialTab = LocationInitialTab.map});
+  /// When hosted as a bottom-nav tab there is no route to pop back to, so the
+  /// header back button is hidden. Pushed instances keep the default back arrow.
+  final bool embedded;
+
+  const LocationPage({
+    super.key,
+    this.initialTab = LocationInitialTab.map,
+    this.embedded = false,
+  });
 
   @override
   State<LocationPage> createState() => _LocationPageState();
@@ -289,6 +297,7 @@ class _LocationPageState extends State<LocationPage> {
                     if (_tabIndex != LocationInitialTab.fence.index)
                       AppPageHeader(
                         title: title,
+                        showBack: !widget.embedded,
                         actions: [
                           AppHeaderAction(
                             icon: Icons.refresh,

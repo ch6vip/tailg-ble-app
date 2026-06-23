@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppColors {
-  // 极简高端主操作色：黑。原亮蓝 #5596FF 已统一为黑色主操作。
-  static const primary = Color(0xFF1A1A1A);
-  static const primaryDark = Color(0xFF000000);
+  // 主操作色：v8 翡翠绿（Aurora Cockpit 设计语言）。原黑色 #1A1A1A 已下线为
+  // 主操作；纯黑仍保留在 [dark] token 上用于高对比深色表面（电池详情、骑行模式）。
+  static const primary = Color(0xFF00C896);
+  static const primaryDark = Color(0xFF00A57C);
   static const pageBg = Color(0xFFF5F5F7); // M3: slightly cooler, more modern
   static const textPrimary = Color(0xFF1A1A1A);
   static const textSecondary = Color(0xFF666666);

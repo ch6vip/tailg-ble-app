@@ -144,6 +144,13 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
           accent: spec.accent,
           onTap: () => _open(context, spec.page(context)),
         ),
+      // Trailing entry: open the grouped "全部功能" panel (v8 prototype).
+      _HomeQuickItem(
+        icon: Icons.apps,
+        label: '全部',
+        accent: AppColors.accentTeal,
+        onTap: () => showAllFunctionsSheet(context),
+      ),
     ];
 
     return Padding(
@@ -1304,6 +1311,360 @@ class _MiniMapPreview extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── 全部功能面板（v8「更多功能」底部 sheet） ──────────────────────────────
+
+/// One entry in the "全部功能" sheet. Every entry maps to an existing page
+/// route — this panel is a navigation hub, not a control surface, so no BLE
+/// commands run from here.
+class _AllFunctionSpec {
+  final IconData icon;
+  final String label;
+  final Color accent;
+  final WidgetBuilder page;
+
+  /// Small red dot on the icon (e.g. firmware update available).
+  final bool badge;
+
+  const _AllFunctionSpec({
+    required this.icon,
+    required this.label,
+    required this.accent,
+    required this.page,
+    this.badge = false,
+  });
+}
+
+/// A titled group of functions inside the sheet.
+class _AllFunctionGroup {
+  final String title;
+  final List<_AllFunctionSpec> items;
+
+  const _AllFunctionGroup({required this.title, required this.items});
+}
+
+/// Full function catalog grouped per the v8 prototype's "全部功能" panel.
+/// Four groups × four tiles; every tile navigates to a real page.
+List<_AllFunctionGroup> get _allFunctionGroups => [
+  _AllFunctionGroup(
+    title: '定位与出行',
+    items: [
+      _AllFunctionSpec(
+        icon: Icons.location_on,
+        label: '车辆定位',
+        accent: AppColors.danger,
+        page: (_) => const LocationPage(),
+      ),
+      _AllFunctionSpec(
+        icon: Icons.route_outlined,
+        label: '历史轨迹',
+        accent: _serviceAccentAmber,
+        page: (_) => const LocationPage(initialTab: LocationInitialTab.travel),
+      ),
+      _AllFunctionSpec(
+        icon: Icons.fence,
+        label: '电子围栏',
+        accent: _serviceAccentViolet,
+        page: (_) => const LocationPage(initialTab: LocationInitialTab.fence),
+      ),
+      _AllFunctionSpec(
+        icon: Icons.directions_bike_outlined,
+        label: '骑行记录',
+        accent: AppColors.accentTeal,
+        page: (_) => const RideRecordPage(),
+      ),
+    ],
+  ),
+  _AllFunctionGroup(
+    title: '车辆功能',
+    items: [
+      _AllFunctionSpec(
+        icon: Icons.tune,
+        label: '车辆设置',
+        accent: AppColors.accentTeal,
+        page: (_) => const VehicleSettingsPage(),
+      ),
+      _AllFunctionSpec(
+        icon: Icons.music_note,
+        label: '声音设置',
+        accent: _serviceAccentAmber,
+        page: (_) => const QgjSoundEffectsPage(),
+      ),
+      _AllFunctionSpec(
+        icon: Icons.nfc,
+        label: 'NFC钥匙',
+        accent: AppColors.accentTeal,
+        page: (_) => const NfcKeyPage(),
+      ),
+      _AllFunctionSpec(
+        icon: Icons.ios_share,
+        label: '分享用车',
+        accent: _serviceAccentViolet,
+        page: (_) => const ShareBikePage(),
+      ),
+    ],
+  ),
+  _AllFunctionGroup(
+    title: '云服务',
+    items: [
+      _AllFunctionSpec(
+        icon: Icons.cloud_outlined,
+        label: '智能控车',
+        accent: AppColors.accentTeal,
+        page: (_) => const OfficialCloudPage(),
+      ),
+      _AllFunctionSpec(
+        icon: Icons.mark_email_unread_outlined,
+        label: '消息中心',
+        accent: _serviceAccentViolet,
+        page: (_) => const VehicleMessagePage(),
+      ),
+      _AllFunctionSpec(
+        icon: Icons.battery_charging_full_outlined,
+        label: '电池详情',
+        accent: AppColors.success,
+        page: (_) => const BatteryDetailsPage(),
+      ),
+      _AllFunctionSpec(
+        icon: Icons.directions_bike_outlined,
+        label: '车辆信息',
+        accent: _serviceAccentAmber,
+        page: (_) => const DeviceInfoPage(),
+      ),
+    ],
+  ),
+  _AllFunctionGroup(
+    title: '维护与更多',
+    items: [
+      _AllFunctionSpec(
+        icon: Icons.system_update_alt,
+        label: '固件升级',
+        accent: AppColors.accentTeal,
+        page: (_) => const OtaPrecheckPage(),
+        badge: true,
+      ),
+      _AllFunctionSpec(
+        icon: Icons.warning_amber_rounded,
+        label: '故障诊断',
+        accent: AppColors.danger,
+        page: (_) => const DiagnosticPage(),
+      ),
+      _AllFunctionSpec(
+        icon: Icons.receipt_long_outlined,
+        label: '运行日志',
+        accent: AppColors.textSecondary,
+        page: (_) => const LogPage(),
+      ),
+      _AllFunctionSpec(
+        icon: Icons.garage_outlined,
+        label: '我的车库',
+        accent: _serviceAccentViolet,
+        page: (_) => const GaragePage(),
+      ),
+    ],
+  ),
+];
+
+/// Open the grouped "全部功能" panel as a modal bottom sheet.
+Future<void> showAllFunctionsSheet(BuildContext context) {
+  return showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (_) => const _AllFunctionsSheet(),
+  );
+}
+
+class _AllFunctionsSheet extends StatelessWidget {
+  const _AllFunctionsSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final groups = _allFunctionGroups;
+    final maxHeight = MediaQuery.of(context).size.height * 0.82;
+    return Container(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // grip
+            Container(
+              width: 38,
+              height: 4,
+              margin: const EdgeInsets.only(top: 10, bottom: 6),
+              decoration: BoxDecoration(
+                color: AppColors.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 12, 4),
+              child: Row(
+                children: [
+                  const Text('全部功能', style: AppTextStyles.sectionTitle),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, semanticLabel: '关闭'),
+                    color: AppColors.textSecondary,
+                    onPressed: () => Navigator.pop(context),
+                    tooltip: '关闭',
+                  ),
+                ],
+              ),
+            ),
+            Flexible(
+              child: ListView.builder(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+                itemCount: groups.length,
+                itemBuilder: (context, index) =>
+                    _AllFunctionGroupView(group: groups[index]),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AllFunctionGroupView extends StatelessWidget {
+  final _AllFunctionGroup group;
+
+  const _AllFunctionGroupView({required this.group});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(2, 12, 0, 12),
+          child: Text(
+            group.title,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.4,
+              color: AppColors.textTertiary,
+            ),
+          ),
+        ),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: group.items.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            mainAxisSpacing: 14,
+            crossAxisSpacing: 8,
+            childAspectRatio: 0.82,
+          ),
+          itemBuilder: (context, index) =>
+              _AllFunctionTile(spec: group.items[index]),
+        ),
+      ],
+    );
+  }
+}
+
+class _AllFunctionTile extends StatefulWidget {
+  final _AllFunctionSpec spec;
+
+  const _AllFunctionTile({required this.spec});
+
+  @override
+  State<_AllFunctionTile> createState() => _AllFunctionTileState();
+}
+
+class _AllFunctionTileState extends State<_AllFunctionTile> {
+  static const _duration = Duration(milliseconds: 150);
+  static const _curve = Curves.easeOutCubic;
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (!mounted || _pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  void _open() {
+    HapticFeedback.selectionClick();
+    final navigator = Navigator.of(context);
+    // Close the sheet first, then push the destination on the host navigator.
+    navigator.pop();
+    navigator.push(MaterialPageRoute(builder: widget.spec.page));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = widget.spec.accent;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _open,
+      onTapDown: (_) => _setPressed(true),
+      onTapUp: (_) => _setPressed(false),
+      onTapCancel: () => _setPressed(false),
+      child: AnimatedScale(
+        duration: _duration,
+        curve: _curve,
+        scale: _pressed ? 0.93 : 1,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(widget.spec.icon, color: accent, size: 23),
+                ),
+                if (widget.spec.badge)
+                  Positioned(
+                    right: -1,
+                    top: -1,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        color: AppColors.danger,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.surface,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.spec.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

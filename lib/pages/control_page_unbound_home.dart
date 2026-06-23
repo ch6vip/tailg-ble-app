@@ -162,9 +162,9 @@ class _UnboundBanner extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Color(0xFFF8FAFF),
-                          Color(0xFFE9F0FF),
-                          Color(0xFFFFF4F4),
+                          Color(0xFFF6F8FB),
+                          Color(0xFFEDF1F5),
+                          Color(0xFFE6F7F1),
                         ],
                       ),
                     ),
