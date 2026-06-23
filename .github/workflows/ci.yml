@@ -419,16 +419,16 @@ jobs:
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          format: markdown
+          format: html
           message: |
-            ❌ *CI/CD Pipeline Failed*
+            ❌ <b>CI/CD Pipeline Failed</b>
             ━━━━━━━━━━━━━━━━━
-            *Repository:* `${{ github.repository }}`
-            *Branch:* `${{ github.ref_name }}`
-            *Commit:* `${{ github.sha }}`
-            *Trigger:* ${{ github.event_name }}
+            <b>Repository:</b> <code>${{ github.repository }}</code>
+            <b>Branch:</b> <code>${{ github.ref_name }}</code>
+            <b>Commit:</b> <code>${{ github.sha }}</code>
+            <b>Trigger:</b> ${{ github.event_name }}
             ━━━━━━━━━━━━━━━━━
-            [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Workflow Run</a>
 
       # Slack 通知（如已配置 SLACK_WEBHOOK_URL）
       - name: Notify via Slack
@@ -482,15 +482,15 @@ jobs:
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          format: markdown
+          format: html
           message: |
-            ✅ *CI/CD Pipeline Passed*
+            ✅ <b>CI/CD Pipeline Passed</b>
             ━━━━━━━━━━━━━━━━━
-            *Branch:* `${{ github.ref_name }}`
-            *Commit:* `${{ github.sha }}`
-            *Trigger:* ${{ github.event_name }}
+            <b>Branch:</b> <code>${{ github.ref_name }}</code>
+            <b>Commit:</b> <code>${{ github.sha }}</code>
+            <b>Trigger:</b> ${{ github.event_name }}
             ━━━━━━━━━━━━━━━━━
-            [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Workflow Run</a>
 
       - name: Post success summary
         if: ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}

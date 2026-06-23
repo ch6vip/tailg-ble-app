@@ -136,15 +136,15 @@ jobs:
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          format: markdown
+          format: html
           message: |
-            🚀 *Release Published*
+            🚀 <b>Release Published</b>
             ━━━━━━━━━━━━━━━━━
-            *Tag:* `${{ steps.version.outputs.tag }}`
-            *Version:* ${{ steps.version.outputs.app_version }}
-            *Pre-release:* ${{ steps.version.outputs.is_prerelease }}
+            <b>Tag:</b> <code>${{ steps.version.outputs.tag }}</code>
+            <b>Version:</b> ${{ steps.version.outputs.app_version }}
+            <b>Pre-release:</b> ${{ steps.version.outputs.is_prerelease }}
             ━━━━━━━━━━━━━━━━━
-            [View Release](${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }})
+            <a href="${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}">View Release</a>
 
       - name: Post release summary
         if: success()
