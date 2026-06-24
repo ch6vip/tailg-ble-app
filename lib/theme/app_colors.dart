@@ -29,6 +29,18 @@ abstract final class AppColors {
   static const accentTeal = Color(0xFF00A896);
   static const accentOrange = Color(0xFFFF8A00);
 
+  // ── v8 accent tokens (aligned with home_v8_ninebot.html CSS) ───────────
+  static const accentViolet = Color(0xFF7C6CFF);
+  static const accentSky = Color(0xFF2E9BFF);
+  static const accentAmber = Color(0xFFF5A623);
+
+  // ── v8 surface tokens ──────────────────────────────────────────────────
+  static const card2 = Color(0xFFF2F5F8);
+  static const card3 = Color(0xFFE8ECF1);
+  static const energySoft = Color(0x1F00C896);
+  static const hairline = Color(0x120F1620);
+  static const hairline2 = Color(0x1A0F1620);
+
   // ── Material 3 surface tokens ──────────────────────────────────────────
   /// Card / elevated surface (pure white on light theme).
   static const surface = Color(0xFFFFFFFF);
@@ -151,6 +163,19 @@ abstract final class AppShadows {
   static const List<BoxShadow> elevation3 = [
     BoxShadow(color: Color(0x0D000000), blurRadius: 24, offset: Offset(0, 8)),
     BoxShadow(color: Color(0x06000000), blurRadius: 6, offset: Offset(0, 3)),
+  ];
+
+  // ── v8 tokens (home_v8_ninebot.html) ───────────────────────────────────
+  static const List<BoxShadow> svcCardShadow = [
+    BoxShadow(color: Color(0x0D182740), blurRadius: 14, offset: Offset(0, 4)),
+  ];
+
+  static const List<BoxShadow> sheetShadow = [
+    BoxShadow(color: Color(0x38182740), blurRadius: 40, offset: Offset(0, -10)),
+  ];
+
+  static const List<BoxShadow> fnIconShadow = [
+    BoxShadow(color: Color(0x0D182740), blurRadius: 10, offset: Offset(0, 3)),
   ];
 }
 
