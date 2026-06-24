@@ -312,7 +312,8 @@ class _VehicleCard extends StatelessWidget {
             onPressed: () {
               final password = _parseUint32(passwordController.text);
               final userId = _parseUint32(userIdController.text);
-              if (password == null && passwordController.text.trim().isNotEmpty) {
+              if (password == null &&
+                  passwordController.text.trim().isNotEmpty) {
                 return;
               }
               if (userId == null && userIdController.text.trim().isNotEmpty) {
