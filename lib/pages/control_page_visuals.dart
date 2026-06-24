@@ -1,4 +1,5 @@
 part of 'control_page.dart';
+// ignore_for_file: unused_element
 
 /// v8 透视线稿电动车。设计稿在 340×172 的 viewBox 中绘制，这里在同一坐标系
 /// 作画并整体缩放铺满画布，保证比例与设计稿一致（穿行式车架 + 双辐条轮 +
