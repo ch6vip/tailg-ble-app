@@ -38,16 +38,13 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
   }
 
-  // Regression: the bound (vehicle-present) control home used to throw
-  // "Null check operator used on a null value" on first build, because the
-  // quick-function card's scroll-progress indicator read maxScrollExtent before
-  // the horizontal list had laid out. In release that surfaced as a large grey
-  // ErrorWidget filling the screen below the SHORTCUTS section.
   testWidgets('bound control home builds without throwing', (tester) async {
     await pumpBoundHome(tester);
 
     expect(tester.takeException(), isNull);
-    expect(find.text('SHORTCUTS'), findsOneWidget);
+    // v8: 3 service cards replace old SHORTCUTS section
+    expect(find.text('车辆定位'), findsOneWidget);
+    expect(find.text('电池详情'), findsOneWidget);
   });
 
   testWidgets('bound control home stays stable on a narrow surface', (
@@ -60,7 +57,7 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
-    expect(find.text('SHORTCUTS'), findsOneWidget);
-    expect(find.text('骑行模式'), findsOneWidget);
+    expect(find.text('车辆定位'), findsOneWidget);
+    expect(find.text('骑行记录'), findsOneWidget);
   });
 }

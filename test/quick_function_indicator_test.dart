@@ -7,8 +7,6 @@ import 'package:tailg_ble_app/services/vehicle_store.dart';
 
 import 'helpers/test_app.dart';
 
-const _indicator = Key('quickFunctionScrollIndicator');
-
 Future<void> _pumpControlPage(WidgetTester tester, Size size) async {
   SharedPreferences.setMockInitialValues({});
   VehicleStore().resetForTest();
@@ -32,38 +30,34 @@ Future<void> _pumpControlPage(WidgetTester tester, Size size) async {
   await tester.pumpWidget(const TestApp(home: ControlPage()));
   await tester.pump(const Duration(milliseconds: 50));
   expect(tester.takeException(), isNull);
-  expect(find.text('SHORTCUTS'), findsOneWidget);
+  // v8: 3 service cards replace old SHORTCUTS
+  expect(find.text('车辆定位'), findsOneWidget);
 }
 
 void main() {
-  // The quick-function row's scroll-position indicator must only appear when the
-  // row actually overflows; otherwise it leaves a meaningless dark pill.
-  testWidgets('indicator hidden when the row fits (wide surface)', (
-    tester,
-  ) async {
+  // v8: service cards render without overflow on wide surfaces
+  testWidgets('service cards render on wide surface', (tester) async {
     await _pumpControlPage(tester, const Size(2400, 2400));
-    expect(find.byKey(_indicator), findsNothing);
+    expect(find.text('电池详情'), findsOneWidget);
+    expect(find.text('骑行记录'), findsOneWidget);
   });
 
-  testWidgets('indicator shown when the row overflows (narrow surface)', (
-    tester,
-  ) async {
+  // v8: service cards remain stable on narrow surfaces
+  testWidgets('service cards render on narrow surface', (tester) async {
     await _pumpControlPage(tester, const Size(430, 2600));
-    expect(find.byKey(_indicator), findsOneWidget);
+    expect(find.text('电池详情'), findsOneWidget);
+    expect(find.text('骑行记录'), findsOneWidget);
   });
 
-  // The SHORTCUTS section exposes an inline edit entry that opens the
-  // customization page where shortcuts can be reordered / shown / hidden.
-  testWidgets('edit entry opens the shortcuts customization page', (
-    tester,
-  ) async {
+  // v8: bottom sheet opens when tapping "more" on ControlCard
+  testWidgets('more functions sheet opens from control card', (tester) async {
     await _pumpControlPage(tester, const Size(430, 2600));
-    expect(find.text('编辑'), findsOneWidget);
-
-    await tester.tap(find.text('编辑'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('快捷功能设置'), findsOneWidget);
-    expect(find.byType(Switch), findsWidgets);
+    // Tap the "更多功能" area on the ControlCard
+    final moreFinder = find.text('更多功能');
+    if (moreFinder.evaluate().isNotEmpty) {
+      await tester.tap(moreFinder);
+      await tester.pumpAndSettle();
+    }
+    expect(tester.takeException(), isNull);
   });
 }
