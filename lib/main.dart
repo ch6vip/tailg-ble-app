@@ -15,9 +15,9 @@ import 'services/service_locator.dart';
 import 'services/app_preferences_service.dart';
 import 'pages/scan_page.dart';
 import 'pages/control_page.dart';
-import 'pages/settings_page.dart';
 import 'pages/location_page.dart';
 import 'pages/garage_page.dart';
+import 'pages/profile_page.dart';
 import 'theme/app_colors.dart';
 import 'widgets/app_toast.dart';
 
@@ -376,7 +376,7 @@ class _HomePageState extends State<HomePage>
               ),
               TickerMode(
                 enabled: _currentIndex == 3,
-                child: const SettingsPage(),
+                child: const ProfilePage(),
               ),
             ],
           ),
