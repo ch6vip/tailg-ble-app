@@ -153,7 +153,8 @@ class _EditableListRow extends StatelessWidget {
     required this.accent,
     required this.visible,
     this.lockOff = false,
-    this.onToggle,
+    this.dragIndex,
+    this.onVisibleChanged,
     this.onReorder,
   });
 
@@ -162,7 +163,8 @@ class _EditableListRow extends StatelessWidget {
   final Color accent;
   final bool visible;
   final bool lockOff;
-  final VoidCallback? onToggle;
+  final int? dragIndex;
+  final ValueChanged<bool>? onVisibleChanged;
   final VoidCallback? onReorder;
 
   @override
@@ -180,18 +182,18 @@ class _EditableListRow extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(child: Text(label, style: AppTextStyles.itemTitle)),
-        if (onToggle != null)
+        if (onVisibleChanged != null)
           IconButton(
             icon: Icon(
               visible ? Icons.visibility : Icons.visibility_off,
               size: 20,
             ),
             color: visible ? AppColors.textSecondary : AppColors.textTertiary,
-            onPressed: onToggle,
+            onPressed: () => onVisibleChanged?.call(!visible),
           ),
-        if (onReorder != null)
+        if (onReorder != null && dragIndex != null)
           ReorderableDragStartListener(
-            index: 0,
+            index: dragIndex!,
             child: const Icon(Icons.drag_handle, color: AppColors.textTertiary),
           ),
       ],
