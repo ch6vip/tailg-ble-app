@@ -1013,26 +1013,6 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _CircleIcon extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-
-  const _CircleIcon({required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, color: color, size: AppIconSizes.md),
-    );
-  }
-}
-
 class _MapChip extends StatelessWidget {
   final IconData icon;
   final String label;
