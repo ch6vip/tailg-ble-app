@@ -131,23 +131,30 @@ class _TopBar extends StatelessWidget {
         Flexible(
           child: GestureDetector(
             onTap: onVehicleSwitch,
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Flexible(
-                child: Text(
-                  displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.4,
-                    color: AppColors.textPrimary,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.4,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 2),
-              const Icon(Icons.keyboard_arrow_down, size: 18, color: AppColors.textTertiary),
-            ]),
+                const SizedBox(width: 2),
+                const Icon(
+                  Icons.keyboard_arrow_down,
+                  size: 18,
+                  color: AppColors.textTertiary,
+                ),
+              ],
+            ),
           ),
         ),
         const Spacer(),
@@ -158,22 +165,32 @@ class _TopBar extends StatelessWidget {
               color: AppColors.surfaceBrandTealTint,
               borderRadius: BorderRadius.circular(AppRadii.pill),
             ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(color: AppColors.energyGreen, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 5),
-              Flexible(
-                child: Text(
-                  displayConn ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.energyGreen),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: AppColors.energyGreen,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-            ]),
+                const SizedBox(width: 5),
+                Flexible(
+                  child: Text(
+                    displayConn ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.energyGreen,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         const SizedBox(width: 8),
         _TopIconButton(icon: Icons.notifications_outlined, onTap: () {}),
@@ -201,55 +218,88 @@ class _WideHeroData extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      // Big percentage
-      Row(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-        Text(
-          '$batteryLevel',
-          style: TextStyle(
-            fontSize: pctFontSize,
-            fontWeight: pctFontWeight,
-            height: 0.95,
-            letterSpacing: -2,
-            color: bColor,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text('%', style: TextStyle(fontSize: pctFontSize * 0.4, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-        ),
-        Padding(
-          padding: EdgeInsets.only(top: pctFontSize * 0.13, left: 2),
-          child: const Icon(Icons.chevron_right, size: 20, color: AppColors.textTertiary),
-        ),
-      ]),
-      const SizedBox(width: 16),
-      // Range text
-      Expanded(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 6),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            RichText(
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              text: TextSpan(
-                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                children: [
-                  const TextSpan(text: '续航 '),
-                  TextSpan(
-                    text: '$displayRange',
-                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                  ),
-                  const TextSpan(text: ' km'),
-                ],
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // Big percentage
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '$batteryLevel',
+              style: TextStyle(
+                fontSize: pctFontSize,
+                fontWeight: pctFontWeight,
+                height: 0.95,
+                letterSpacing: -2,
+                color: bColor,
               ),
             ),
-            const SizedBox(height: 2),
-            Text('· $displayHealth', style: const TextStyle(fontSize: 12, color: AppColors.textTertiary)),
-          ]),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '%',
+                style: TextStyle(
+                  fontSize: pctFontSize * 0.4,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(top: pctFontSize * 0.13, left: 2),
+              child: const Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: AppColors.textTertiary,
+              ),
+            ),
+          ],
         ),
-      ),
-    ]);
+        const SizedBox(width: 16),
+        // Range text
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RichText(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  text: TextSpan(
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                    children: [
+                      const TextSpan(text: '续航 '),
+                      TextSpan(
+                        text: '$displayRange',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const TextSpan(text: ' km'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '· $displayHealth',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -272,42 +322,72 @@ class _NarrowHeroData extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-        Text(
-          '$batteryLevel',
-          style: TextStyle(
-            fontSize: pctFontSize,
-            fontWeight: pctFontWeight,
-            height: 0.95,
-            letterSpacing: -2,
-            color: bColor,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text('%', style: TextStyle(fontSize: pctFontSize * 0.4, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-        ),
-        Padding(
-          padding: EdgeInsets.only(top: pctFontSize * 0.13, left: 2),
-          child: const Icon(Icons.chevron_right, size: 20, color: AppColors.textTertiary),
-        ),
-      ]),
-      const SizedBox(height: 4),
-      RichText(
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        text: TextSpan(
-          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const TextSpan(text: '续航 '),
-            TextSpan(text: '$displayRange', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-            const TextSpan(text: ' km'),
+            Text(
+              '$batteryLevel',
+              style: TextStyle(
+                fontSize: pctFontSize,
+                fontWeight: pctFontWeight,
+                height: 0.95,
+                letterSpacing: -2,
+                color: bColor,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '%',
+                style: TextStyle(
+                  fontSize: pctFontSize * 0.4,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(top: pctFontSize * 0.13, left: 2),
+              child: const Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: AppColors.textTertiary,
+              ),
+            ),
           ],
         ),
-      ),
-      Text('· $displayHealth', style: const TextStyle(fontSize: 12, color: AppColors.textTertiary)),
-    ]);
+        const SizedBox(height: 4),
+        RichText(
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          text: TextSpan(
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
+            children: [
+              const TextSpan(text: '续航 '),
+              TextSpan(
+                text: '$displayRange',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const TextSpan(text: ' km'),
+            ],
+          ),
+        ),
+        Text(
+          '· $displayHealth',
+          style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
+        ),
+      ],
+    );
   }
 }
 

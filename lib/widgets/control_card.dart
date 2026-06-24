@@ -106,7 +106,8 @@ class _ControlCardState extends State<ControlCard> {
                   label: '感应解锁',
                   color: AppColors.energyGreen,
                   active: widget.proximityEnabled,
-                  onTap: () => widget.onToggleProximity?.call(!widget.proximityEnabled),
+                  onTap: () =>
+                      widget.onToggleProximity?.call(!widget.proximityEnabled),
                 ),
                 _SubControl(
                   icon: Icons.people_outline,
@@ -155,22 +156,29 @@ class _SideButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLow,
-            shape: BoxShape.circle,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLow,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: size * 0.45, color: color),
           ),
-          child: Icon(icon, size: size * 0.45, color: color),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-        ),
-      ]),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -186,7 +194,8 @@ class _PowerKnob extends StatefulWidget {
   State<_PowerKnob> createState() => _PowerKnobState();
 }
 
-class _PowerKnobState extends State<_PowerKnob> with SingleTickerProviderStateMixin {
+class _PowerKnobState extends State<_PowerKnob>
+    with SingleTickerProviderStateMixin {
   static const _holdMs = 1200;
   late final AnimationController _ctrl;
   late final Animation<double> _progress;
@@ -195,8 +204,14 @@ class _PowerKnobState extends State<_PowerKnob> with SingleTickerProviderStateMi
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: _holdMs));
-    _progress = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _ctrl, curve: Curves.linear));
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: _holdMs),
+    );
+    _progress = Tween(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.linear));
   }
 
   @override
@@ -225,7 +240,9 @@ class _PowerKnobState extends State<_PowerKnob> with SingleTickerProviderStateMi
 
   @override
   Widget build(BuildContext context) {
-    final ringColor = widget.powered ? AppColors.energyGreen : AppColors.inkBtn2;
+    final ringColor = widget.powered
+        ? AppColors.energyGreen
+        : AppColors.inkBtn2;
     final coreColor = widget.powered ? AppColors.energyGreen : AppColors.inkBtn;
     final sz = widget.size;
 
@@ -233,56 +250,74 @@ class _PowerKnobState extends State<_PowerKnob> with SingleTickerProviderStateMi
       onPanStart: _onPanDown,
       onPanEnd: _onPanEnd,
       onPanCancel: _onPanCancel,
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        AnimatedBuilder(
-          animation: _progress,
-          builder: (_, child) => SizedBox(
-            width: sz,
-            height: sz,
-            child: Stack(alignment: Alignment.center, children: [
-              CustomPaint(
-                size: Size(sz, sz),
-                painter: _RingPainter(color: ringColor.withValues(alpha: 0.15), progress: 1.0),
-              ),
-              CustomPaint(
-                size: Size(sz, sz),
-                painter: _RingPainter(
-                  color: AppColors.energyGreen,
-                  progress: widget.powered ? 1.0 : _progress.value,
-                ),
-              ),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: _holding ? sz * 0.70 : sz * 0.73,
-                height: _holding ? sz * 0.70 : sz * 0.73,
-                decoration: BoxDecoration(
-                  color: coreColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: coreColor.withValues(alpha: 0.28),
-                      blurRadius: sz * 0.23,
-                      offset: Offset(0, sz * 0.09),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedBuilder(
+            animation: _progress,
+            builder: (_, child) => SizedBox(
+              width: sz,
+              height: sz,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CustomPaint(
+                    size: Size(sz, sz),
+                    painter: _RingPainter(
+                      color: ringColor.withValues(alpha: 0.15),
+                      progress: 1.0,
                     ),
-                  ],
-                ),
-                child: Icon(Icons.power_settings_new, color: Colors.white, size: sz * 0.3),
+                  ),
+                  CustomPaint(
+                    size: Size(sz, sz),
+                    painter: _RingPainter(
+                      color: AppColors.energyGreen,
+                      progress: widget.powered ? 1.0 : _progress.value,
+                    ),
+                  ),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: _holding ? sz * 0.70 : sz * 0.73,
+                    height: _holding ? sz * 0.70 : sz * 0.73,
+                    decoration: BoxDecoration(
+                      color: coreColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: coreColor.withValues(alpha: 0.28),
+                          blurRadius: sz * 0.23,
+                          offset: Offset(0, sz * 0.09),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.power_settings_new,
+                      color: Colors.white,
+                      size: sz * 0.3,
+                    ),
+                  ),
+                ],
               ),
-            ]),
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          widget.powered ? '已通电' : '长按开机',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: widget.powered ? AppColors.energyGreen : AppColors.textPrimary,
+          const SizedBox(height: 8),
+          Text(
+            widget.powered ? '已通电' : '长按开机',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: widget.powered
+                  ? AppColors.energyGreen
+                  : AppColors.textPrimary,
+            ),
           ),
-        ),
-        const SizedBox(height: 2),
-        const Text('按住 1.2 秒', style: TextStyle(fontSize: 11, color: AppColors.textTertiary)),
-      ]),
+          const SizedBox(height: 2),
+          const Text(
+            '按住 1.2 秒',
+            style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -290,8 +325,11 @@ class _PowerKnobState extends State<_PowerKnob> with SingleTickerProviderStateMi
 /// Sub-control circle button (proximity unlock, rider management, dashboard).
 class _SubControl extends StatelessWidget {
   const _SubControl({
-    required this.icon, required this.label, required this.color,
-    this.active = false, this.onTap,
+    required this.icon,
+    required this.label,
+    required this.color,
+    this.active = false,
+    this.onTap,
   });
 
   final IconData icon;
@@ -302,18 +340,34 @@ class _SubControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = active ? color.withValues(alpha: 0.14) : AppColors.surfaceContainerLow;
+    final bg = active
+        ? color.withValues(alpha: 0.14)
+        : AppColors.surfaceContainerLow;
     return GestureDetector(
       onTap: onTap,
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(
-          width: 44, height: 44,
-          decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-          child: Icon(icon, size: 20, color: active ? color : AppColors.inkBtn),
-        ),
-        const SizedBox(height: 6),
-        Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-      ]),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+            child: Icon(
+              icon,
+              size: 20,
+              color: active ? color : AppColors.inkBtn,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -335,10 +389,14 @@ class _RingPainter extends CustomPainter {
     final radius = size.width * 0.44;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
-      -1.5708, 6.2832 * progress, false, paint,
+      -1.5708,
+      6.2832 * progress,
+      false,
+      paint,
     );
   }
 
   @override
-  bool shouldRepaint(covariant _RingPainter old) => old.color != color || old.progress != progress;
+  bool shouldRepaint(covariant _RingPainter old) =>
+      old.color != color || old.progress != progress;
 }

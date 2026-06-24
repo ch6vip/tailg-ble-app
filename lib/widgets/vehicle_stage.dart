@@ -87,8 +87,14 @@ class VehicleStagePainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round;
 
     // Body fill
-    final bodyFill = Paint()..shader = bodyGradient.createShader(const Rect.fromLTRB(46, 50, 340, 130));
-    final tireFill = Paint()..shader = tireGradient.createShader(const Rect.fromLTRB(0, 100, 340, 172));
+    final bodyFill = Paint()
+      ..shader = bodyGradient.createShader(
+        const Rect.fromLTRB(46, 50, 340, 130),
+      );
+    final tireFill = Paint()
+      ..shader = tireGradient.createShader(
+        const Rect.fromLTRB(0, 100, 340, 172),
+      );
 
     // --- Rear mudguard ---
     canvas.drawPath(
@@ -130,7 +136,10 @@ class VehicleStagePainter extends CustomPainter {
         Rect.fromLTWH(108, 92, barW, 13),
         const Radius.circular(4),
       ),
-      Paint()..shader = enGradient.createShader(const Rect.fromLTWH(108, 92, 40, 13)),
+      Paint()
+        ..shader = enGradient.createShader(
+          const Rect.fromLTWH(108, 92, 40, 13),
+        ),
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -159,7 +168,10 @@ class VehicleStagePainter extends CustomPainter {
         ..color = const Color(0xFF3A434F)
         ..strokeWidth = 3
         ..strokeCap = StrokeCap.round
-        ..colorFilter = const ColorFilter.mode(Color(0x803A434F), BlendMode.srcOver),
+        ..colorFilter = const ColorFilter.mode(
+          Color(0x803A434F),
+          BlendMode.srcOver,
+        ),
     );
 
     // --- Front leg shield + stem ---
@@ -217,11 +229,17 @@ class VehicleStagePainter extends CustomPainter {
 
     // --- Dashboard ---
     canvas.drawRRect(
-      RRect.fromRectAndRadius(const Rect.fromLTWH(252, 40, 22, 15), const Radius.circular(4)),
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(252, 40, 22, 15),
+        const Radius.circular(4),
+      ),
       Paint()..color = const Color(0xFF1B2230),
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(const Rect.fromLTWH(256, 44, 14, 7), const Radius.circular(2)),
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(256, 44, 14, 7),
+        const Radius.circular(2),
+      ),
       Paint()..color = AppColors.energyGreen.withValues(alpha: 0.9),
     );
 
@@ -246,11 +264,7 @@ class VehicleStagePainter extends CustomPainter {
 
   void _drawWheel(Canvas canvas, double cx, double cy, Paint tireFill) {
     // Tire
-    canvas.drawCircle(
-      Offset(cx, cy),
-      30,
-      tireFill,
-    );
+    canvas.drawCircle(Offset(cx, cy), 30, tireFill);
     canvas.drawCircle(
       Offset(cx, cy),
       30,
@@ -289,14 +303,22 @@ class VehicleStagePainter extends CustomPainter {
     canvas.drawLine(Offset(cx - 8.5, cy + 8.5), Offset(cx + 8.5, cy - 8.5), sp);
   }
 
-  Path _cubicPath(double x1, double y1, double cx, double cy, double x2, double y2) {
+  Path _cubicPath(
+    double x1,
+    double y1,
+    double cx,
+    double cy,
+    double x2,
+    double y2,
+  ) {
     return Path()
       ..moveTo(x1, y1)
       ..quadraticBezierTo(cx, cy, x2, y2);
   }
 
   @override
-  bool shouldRepaint(covariant VehicleStagePainter old) => batteryLevel != old.batteryLevel;
+  bool shouldRepaint(covariant VehicleStagePainter old) =>
+      batteryLevel != old.batteryLevel;
 }
 
 /// Wrapper widget for the vehicle stage with proper sizing and shadow.

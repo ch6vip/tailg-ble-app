@@ -10,10 +10,7 @@ import '../widgets/status_badge.dart';
 import '../widgets/vehicle_stage.dart';
 
 class GaragePage extends StatelessWidget {
-  /// When hosted as a bottom-nav tab there is no route to pop back to, so the
-  /// header back button is hidden. Pushed instances keep the default back arrow.
   final bool embedded;
-
   const GaragePage({super.key, this.embedded = false});
 
   @override
@@ -123,8 +120,6 @@ class _VehicleCard extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         boxShadow: AppShadows.elevation1,
-        // v8: the current (default) vehicle gets a teal outline so it reads as
-        // the active card at a glance.
         border: isDefault
             ? Border.all(
                 color: AppColors.primary.withValues(alpha: 0.55),
@@ -135,11 +130,9 @@ class _VehicleCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // v8: vehicle illustration + title row
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Vehicle mini SVG
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
@@ -164,24 +157,35 @@ class _VehicleCard extends StatelessWidget {
                             vehicle.displayName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.w600),
+                            style: AppTextStyles.subtitle.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                         if (isDefault) ...[
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.primary.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Text('默认', style: TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                            child: const Text(
+                              '默认',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ],
                       ],
                     ),
                     const SizedBox(height: 4),
-                    // v8: SOC bar
                     ClipRRect(
                       borderRadius: BorderRadius.circular(2),
                       child: Container(
@@ -196,26 +200,26 @@ class _VehicleCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    // v8: status badge + action buttons
-                    Row(children: [
-                      const StatusBadge(type: StatusBadgeType.ble, compact: true),
-                      const Spacer(),
-                      _MiniActionButton(
-                        icon: Icons.location_on_outlined,
-                        label: '定位',
-                        onTap: () {
-                          homeTabIndex.value = 1;
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      _MiniActionButton(
-                        icon: Icons.sensors_rounded,
-                        label: '控车',
-                        onTap: () {
-                          homeTabIndex.value = 0;
-                        },
-                      ),
-                    ]),
+                    Row(
+                      children: [
+                        const StatusBadge(
+                          type: StatusBadgeType.ble,
+                          compact: true,
+                        ),
+                        const Spacer(),
+                        _MiniActionButton(
+                          icon: Icons.location_on_outlined,
+                          label: '定位',
+                          onTap: () => homeTabIndex.value = 1,
+                        ),
+                        const SizedBox(width: 12),
+                        _MiniActionButton(
+                          icon: Icons.sensors_rounded,
+                          label: '控车',
+                          onTap: () => homeTabIndex.value = 0,
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -261,7 +265,6 @@ class _VehicleCard extends StatelessWidget {
     final userIdController = TextEditingController(
       text: vehicle.qgjUserId?.toString() ?? '',
     );
-
     final result = await showDialog<_QgjCredentialEdit>(
       context: context,
       builder: (context) => AlertDialog(
@@ -309,13 +312,10 @@ class _VehicleCard extends StatelessWidget {
             onPressed: () {
               final password = _parseUint32(passwordController.text);
               final userId = _parseUint32(userIdController.text);
-              if (password == null &&
-                  passwordController.text.trim().isNotEmpty) {
+              if (password == null && passwordController.text.trim().isNotEmpty)
                 return;
-              }
-              if (userId == null && userIdController.text.trim().isNotEmpty) {
+              if (userId == null && userIdController.text.trim().isNotEmpty)
                 return;
-              }
               Navigator.pop(
                 context,
                 _QgjCredentialEdit(password: password, userId: userId),
@@ -329,7 +329,6 @@ class _VehicleCard extends StatelessWidget {
     passwordController.dispose();
     userIdController.dispose();
     if (result == null) return;
-
     await VehicleStore().updateQgjCredentials(
       id: vehicle.id,
       password: result.password,
@@ -374,9 +373,7 @@ class _VehicleCard extends StatelessWidget {
       ),
     );
     controller.dispose();
-    if (name != null) {
-      await VehicleStore().rename(vehicle.id, name);
-    }
+    if (name != null) await VehicleStore().rename(vehicle.id, name);
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
@@ -412,7 +409,6 @@ class _QgjCredentialEdit {
   final int? password;
   final int? userId;
   final bool clear;
-
   const _QgjCredentialEdit({this.password, this.userId}) : clear = false;
   const _QgjCredentialEdit.clear()
     : password = null,
@@ -420,9 +416,12 @@ class _QgjCredentialEdit {
       clear = true;
 }
 
-/// v8 mini action button for garage cards: locate / control.
 class _MiniActionButton extends StatelessWidget {
-  const _MiniActionButton({required this.icon, required this.label, this.onTap});
+  const _MiniActionButton({
+    required this.icon,
+    required this.label,
+    this.onTap,
+  });
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
@@ -431,39 +430,17 @@ class _MiniActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 15, color: AppColors.primary),
-        const SizedBox(width: 3),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
-      ]),
-    );
-  }
-}
-
-class _InfoPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  const _InfoPill({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.textTertiary),
-          const SizedBox(width: 5),
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.caption,
+          Icon(icon, size: 15, color: AppColors.primary),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
             ),
           ),
         ],

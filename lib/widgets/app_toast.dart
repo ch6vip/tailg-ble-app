@@ -27,11 +27,13 @@ class AppToast {
     if (context == null) return;
 
     _showing = true;
-    final entry = OverlayEntry(builder: (_) => _ToastWidget(
-      message: message,
-      isError: isError,
-      onDismissed: dismiss,
-    ));
+    final entry = OverlayEntry(
+      builder: (_) => _ToastWidget(
+        message: message,
+        isError: isError,
+        onDismissed: dismiss,
+      ),
+    );
 
     _entry = entry;
     Overlay.of(context).insert(entry);
@@ -99,9 +101,7 @@ class _ToastWidgetState extends State<_ToastWidget>
     super.dispose();
   }
 
-  Color get _bg => widget.isError
-      ? AppColors.energyRed
-      : AppColors.energyGreen;
+  Color get _bg => widget.isError ? AppColors.energyRed : AppColors.energyGreen;
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +149,11 @@ class _ToastWidgetState extends State<_ToastWidget>
                   ),
                   GestureDetector(
                     onTap: widget.onDismissed,
-                    child: const Icon(Icons.close, color: Colors.white70, size: 16),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white70,
+                      size: 16,
+                    ),
                   ),
                 ],
               ),

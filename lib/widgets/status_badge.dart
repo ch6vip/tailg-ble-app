@@ -28,77 +28,80 @@ class StatusBadge extends StatelessWidget {
   final bool compact;
 
   Color get _dotColor => switch (type) {
-        StatusBadgeType.armed || StatusBadgeType.offline => AppColors.energyRed,
-        StatusBadgeType.idle => AppColors.textTertiary,
-        StatusBadgeType.ble || StatusBadgeType.online => AppColors.energyGreen,
-      };
+    StatusBadgeType.armed || StatusBadgeType.offline => AppColors.energyRed,
+    StatusBadgeType.idle => AppColors.textTertiary,
+    StatusBadgeType.ble || StatusBadgeType.online => AppColors.energyGreen,
+  };
 
   Color get _bgColor => switch (type) {
-        StatusBadgeType.armed || StatusBadgeType.offline =>
-          AppColors.surfaceBrandRedTint,
-        StatusBadgeType.idle => AppColors.surfaceContainerHigh,
-        StatusBadgeType.ble || StatusBadgeType.online =>
-          AppColors.surfaceBrandTealTint,
-      };
+    StatusBadgeType.armed ||
+    StatusBadgeType.offline => AppColors.surfaceBrandRedTint,
+    StatusBadgeType.idle => AppColors.surfaceContainerHigh,
+    StatusBadgeType.ble ||
+    StatusBadgeType.online => AppColors.surfaceBrandTealTint,
+  };
 
   String get _defaultLabel => switch (type) {
-        StatusBadgeType.armed => '已设防',
-        StatusBadgeType.idle => '未通电',
-        StatusBadgeType.ble => '蓝牙直连',
-        StatusBadgeType.online => '在线',
-        StatusBadgeType.offline => '离线',
-      };
+    StatusBadgeType.armed => '已设防',
+    StatusBadgeType.idle => '未通电',
+    StatusBadgeType.ble => '蓝牙直连',
+    StatusBadgeType.online => '在线',
+    StatusBadgeType.offline => '离线',
+  };
 
   @override
   Widget build(BuildContext context) {
     final displayLabel = label ?? _defaultLabel;
 
     if (compact) {
-      return Row(mainAxisSize: MainAxisSize.min, children: [
-        if (showDot)
-          Container(
-            width: 8,
-            height: 8,
-            margin: const EdgeInsets.only(right: 5),
-            decoration: BoxDecoration(
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showDot)
+            Container(
+              width: 8,
+              height: 8,
+              margin: const EdgeInsets.only(right: 5),
+              decoration: BoxDecoration(
+                color: _dotColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+          Text(
+            displayLabel,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
               color: _dotColor,
-              shape: BoxShape.circle,
             ),
           ),
-        Text(
-          displayLabel,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: _dotColor,
-          ),
-        ),
-      ]);
+        ],
+      );
     }
 
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: showDot ? 10 : 12,
-        vertical: 5,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: showDot ? 10 : 12, vertical: 5),
       decoration: BoxDecoration(
         color: _bgColor,
         borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        if (showDot) ...[
-          _PulsingDot(color: _dotColor),
-          const SizedBox(width: 5),
-        ],
-        Text(
-          displayLabel,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: _dotColor,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showDot) ...[
+            _PulsingDot(color: _dotColor),
+            const SizedBox(width: 5),
+          ],
+          Text(
+            displayLabel,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: _dotColor,
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -124,9 +127,10 @@ class _PulsingDotState extends State<_PulsingDot>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
-    _scale = Tween(begin: 0.75, end: 1.1).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _scale = Tween(
+      begin: 0.75,
+      end: 1.1,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -139,10 +143,7 @@ class _PulsingDotState extends State<_PulsingDot>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _scale,
-      builder: (_, child) => Transform.scale(
-        scale: _scale.value,
-        child: child,
-      ),
+      builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
       child: Container(
         width: 7,
         height: 7,

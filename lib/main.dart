@@ -390,54 +390,51 @@ class _HomePageState extends State<HomePage>
             decoration: BoxDecoration(
               color: AppColors.surface.withValues(alpha: 0.82),
               border: const Border(
-                top: BorderSide(
-                  color: Color(0x0A000000),
-                  width: 0.5,
-                ),
+                top: BorderSide(color: Color(0x0A000000), width: 0.5),
               ),
             ),
             child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _NavItem(
-                  icon: Icons.directions_car_outlined,
-                  selectedIcon: Icons.directions_car,
-                  label: '控车',
-                  selected: _currentIndex == 0,
-                  onTap: () => _switchTab(0),
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _NavItem(
+                      icon: Icons.directions_car_outlined,
+                      selectedIcon: Icons.directions_car,
+                      label: '控车',
+                      selected: _currentIndex == 0,
+                      onTap: () => _switchTab(0),
+                    ),
+                    _NavItem(
+                      icon: Icons.location_on_outlined,
+                      selectedIcon: Icons.location_on,
+                      label: '定位',
+                      selected: _currentIndex == 1,
+                      onTap: () => _switchTab(1),
+                    ),
+                    _NavItem(
+                      icon: Icons.garage_outlined,
+                      selectedIcon: Icons.garage,
+                      label: '车库',
+                      selected: _currentIndex == 2,
+                      onTap: () => _switchTab(2),
+                    ),
+                    _NavItem(
+                      icon: Icons.person_outline,
+                      selectedIcon: Icons.person,
+                      label: '我的',
+                      selected: _currentIndex == 3,
+                      onTap: () => _switchTab(3),
+                    ),
+                  ],
                 ),
-                _NavItem(
-                  icon: Icons.location_on_outlined,
-                  selectedIcon: Icons.location_on,
-                  label: '定位',
-                  selected: _currentIndex == 1,
-                  onTap: () => _switchTab(1),
-                ),
-                _NavItem(
-                  icon: Icons.garage_outlined,
-                  selectedIcon: Icons.garage,
-                  label: '车库',
-                  selected: _currentIndex == 2,
-                  onTap: () => _switchTab(2),
-                ),
-                _NavItem(
-                  icon: Icons.person_outline,
-                  selectedIcon: Icons.person,
-                  label: '我的',
-                  selected: _currentIndex == 3,
-                  onTap: () => _switchTab(3),
-                ),
-              ],
+              ),
             ),
           ),
         ),
-  ),
-),
-),
+      ),
     );
   }
 }
