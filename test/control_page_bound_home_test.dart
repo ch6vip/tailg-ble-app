@@ -58,6 +58,5 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('车辆定位'), findsOneWidget);
-    expect(find.text('骑行记录'), findsOneWidget);
   });
 }

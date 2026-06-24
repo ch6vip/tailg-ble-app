@@ -49,15 +49,11 @@ void main() {
     expect(find.text('骑行记录'), findsOneWidget);
   });
 
-  // v8: bottom sheet opens when tapping "more" on ControlCard
-  testWidgets('more functions sheet opens from control card', (tester) async {
+  // v8: service cards visible on control page
+  testWidgets('service cards display key text labels', (tester) async {
     await _pumpControlPage(tester, const Size(430, 2600));
-    // Tap the "更多功能" area on the ControlCard
-    final moreFinder = find.text('更多功能');
-    if (moreFinder.evaluate().isNotEmpty) {
-      await tester.tap(moreFinder);
-      await tester.pumpAndSettle();
-    }
-    expect(tester.takeException(), isNull);
+    expect(find.text('车辆定位'), findsOneWidget);
+    expect(find.text('电池详情'), findsOneWidget);
+    expect(find.text('骑行记录'), findsOneWidget);
   });
 }
