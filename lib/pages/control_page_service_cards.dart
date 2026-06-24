@@ -165,7 +165,6 @@ class _EditableListRow extends StatelessWidget {
   final bool lockOff;
   final int? dragIndex;
   final ValueChanged<bool>? onVisibleChanged;
-  final VoidCallback? onReorder;
 
   @override
   Widget build(BuildContext context) {
@@ -191,7 +190,7 @@ class _EditableListRow extends StatelessWidget {
             color: visible ? AppColors.textSecondary : AppColors.textTertiary,
             onPressed: () => onVisibleChanged?.call(!visible),
           ),
-        if (onReorder != null && dragIndex != null)
+        if (dragIndex != null)
           ReorderableDragStartListener(
             index: dragIndex!,
             child: const Icon(Icons.drag_handle, color: AppColors.textTertiary),
