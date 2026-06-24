@@ -1,0 +1,72 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: 9:41
+      - generic [ref=e6]: 5G ▮▮▮ 84%
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - text: 我的车库
+          - generic [ref=e10]: 共 2 辆 · 1 辆在线
+        - img [ref=e12]
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - generic [ref=e17]:
+            - generic [ref=e18]:
+              - generic [ref=e19]:
+                - text: 台铃 N8
+                - generic [ref=e20]: 当前车辆
+              - generic [ref=e21]: 车架号 LTG••••4582 · 2024 款
+            - generic [ref=e22]: 蓝牙直连
+          - img [ref=e26]
+          - generic [ref=e41]:
+            - generic [ref=e42]: 84%
+            - generic [ref=e45]: 58 km
+          - generic [ref=e46]:
+            - link "定位" [ref=e47] [cursor=pointer]:
+              - /url: locate_v8.html
+              - img [ref=e48]
+              - text: 定位
+            - link "控车" [ref=e51] [cursor=pointer]:
+              - /url: home_v8_ninebot.html
+              - img [ref=e52]
+              - text: 控车
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - text: 台铃 M2
+                - generic [ref=e58]: 未连接
+              - generic [ref=e59]: 车架号 LTG••••1027 · 2022 款
+            - generic [ref=e60]: 离线
+          - img [ref=e64]
+          - generic [ref=e76]:
+            - generic [ref=e77]: —
+            - generic [ref=e79]: 未知
+          - generic [ref=e80]:
+            - generic [ref=e81]:
+              - img [ref=e82]
+              - text: 设为当前
+            - generic [ref=e84]:
+              - img [ref=e85]
+              - text: 详情
+      - generic [ref=e88]:
+        - img [ref=e89]
+        - text: 添加新车辆
+  - generic [ref=e91]:
+    - link "控车" [ref=e92] [cursor=pointer]:
+      - /url: home_v8_ninebot.html
+      - img [ref=e93]
+      - text: 控车
+    - link "定位" [ref=e95] [cursor=pointer]:
+      - /url: locate_v8.html
+      - img [ref=e96]
+      - text: 定位
+    - link "车库" [ref=e99] [cursor=pointer]:
+      - /url: garage_v8.html
+      - img [ref=e100]
+      - text: 车库
+    - link "我的" [ref=e103] [cursor=pointer]:
+      - /url: profile_v8.html
+      - img [ref=e104]
+      - text: 我的

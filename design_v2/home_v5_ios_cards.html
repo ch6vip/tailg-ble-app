@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tailg 首页 · iOS 卡片式</title>
+  <style>
+    :root {
+      --page: #F2F2F7;
+      --card: #FFFFFF;
+      --ink: #1A1A1A;
+      --secondary: #5C5C5E;
+      --muted: #8E8E93;
+      --subtle: #AEAEB2;
+      --line: #E5E5EA;
+      --separator: #F1F1F5;
+      --teal: #00A896;
+      --teal-bg: rgba(0,168,150,.12);
+      --red: #FF3B30;
+      --red-bg: rgba(255,59,48,.1);
+      --amber: #FF9500;
+      --amber-bg: rgba(255,149,0,.1);
+      --purple: #7B61FF;
+      --purple-bg: rgba(123,97,255,.1);
+      --orange: #FF8A00;
+      --orange-bg: rgba(255,138,0,.1);
+      --radius: 24px;
+      --radius-sm: 16px;
+      --radius-xs: 12px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      background: #D1D1D6;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .phone {
+      width: 390px;
+      height: 820px;
+      border-radius: 44px;
+      background: var(--page);
+      box-shadow: 0 0 0 6px #C7C7CC, 0 0 0 8px #B0B0B5, 0 40px 80px rgba(0,0,0,.3);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .island {
+      position: absolute;
+      z-index: 20;
+      top: 8px;
+      left: 50%;
+      width: 126px;
+      height: 35px;
+      transform: translateX(-50%);
+      background: #000;
+      border-radius: 20px;
+    }
+
+    .app {
+      flex: 1;
+      padding-top: 48px;
+      overflow-y: auto;
+      scrollbar-width: none;
+      padding-bottom: 60px;
+    }
+    .app::-webkit-scrollbar { display: none; }
+
+    .scroll-inner {
+      padding: 4px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ── Top: vehicle name + status ── */
+    .title-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 4px 4px;
+    }
+    .title-area .vehicle-name {
+      flex: 1;
+      min-width: 0;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .title-area .vehicle-name .chev {
+      font-size: 16px;
+      color: var(--muted);
+      margin-left: 2px;
+    }
+    .online-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 28px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: var(--teal-bg);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--teal);
+      flex: 0 0 auto;
+    }
+    .online-tag .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--teal);
+    }
+
+    /* ── Main Card: battery + vehicle ── */
+    .main-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px 22px 18px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.02);
+    }
+    .main-card .battery-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      margin-bottom: 4px;
+      position: relative;
+    }
+    .main-card .battery-row .big-num {
+      font-size: 72px;
+      font-weight: 200;
+      line-height: 1;
+      letter-spacing: -3px;
+      color: var(--teal);
+    }
+    .main-card .battery-row .big-unit {
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--muted);
+      padding-bottom: 10px;
+    }
+    .main-card .battery-row .range-info {
+      margin-left: auto;
+      text-align: right;
+      padding-bottom: 8px;
+    }
+    .main-card .battery-row .range-info .range-num {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .main-card .battery-row .range-info .range-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+      margin-top: 3px;
+    }
+    .main-card .battery-bar-wrap {
+      margin: 6px 0 16px;
+      position: relative;
+    }
+    .main-card .battery-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: #E8E8ED;
+      overflow: hidden;
+    }
+    .main-card .battery-bar .fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--teal);
+      width: 80%;
+      transition: width .6s ease;
+    }
+    .main-card .bike-pic {
+      height: 130px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .main-card .bike-pic .floor {
+      position: absolute;
+      bottom: 8px;
+      width: 140px; height: 6px;
+      background: radial-gradient(ellipse, rgba(0,0,0,.06), transparent 70%);
+      border-radius: 50%;
+    }
+
+    .main-card .state-chips {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      height: 28px;
+      padding: 0 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .chip.warn { background: var(--red-bg); color: var(--red); }
+    .chip.normal { background: var(--teal-bg); color: var(--teal); }
+    .chip.neutral { background: #F2F2F7; color: var(--secondary); }
+    .chip .c-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .chip svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── Control Card ── */
+    .control-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px 18px 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.02);
+    }
+    .control-card .cc-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      padding: 0 4px 14px;
+    }
+    .slide-duo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .slide-track {
+      height: 96px;
+      border-radius: var(--radius-sm);
+      background: #F7F7FA;
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+      user-select: none;
+      transition: all .15s ease;
+      border: 1.5px solid transparent;
+    }
+    .slide-track:active { border-color: #E0E0E5; }
+    .slide-track .thumb {
+      position: absolute;
+      left: 8px; top: 8px;
+      width: 80px; height: 80px;
+      border-radius: 20px;
+      background: var(--ink);
+      display: grid;
+      place-items: center;
+      transition: left .45s cubic-bezier(.22,1,.36,1);
+      z-index: 2;
+      box-shadow: 0 4px 16px rgba(0,0,0,.15);
+    }
+    .slide-track .thumb svg {
+      width: 32px; height: 32px;
+      stroke: #FFF;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .slide-track .label {
+      position: absolute;
+      top: 0; left: 96px; right: 12px; bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .slide-track .label .l-action {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .slide-track .label .l-hint {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .slide-track .label .l-arrows {
+      font-size: 11px;
+      color: var(--subtle);
+      letter-spacing: 2px;
+      margin-top: 1px;
+    }
+
+    /* ── Quick Row ── */
+    .quick-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.02);
+    }
+    .quick-card .qc-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      padding: 0 4px 12px;
+    }
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .qk-item {
+      height: 72px;
+      border-radius: var(--radius-xs);
+      background: #F7F7FA;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all .15s ease;
+    }
+    .qk-item:active { transform: scale(.95); background: #F0F0F3; }
+    .qk-item .qi-icon {
+      width: 32px; height: 32px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+    }
+    .qk-item .qi-icon.red { background: var(--red-bg); color: var(--red); }
+    .qk-item .qi-icon.teal { background: var(--teal-bg); color: var(--teal); }
+    .qk-item .qi-icon.purple { background: var(--purple-bg); color: var(--purple); }
+    .qk-item .qi-icon.orange { background: var(--orange-bg); color: var(--orange); }
+    .qk-item .qi-icon svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .qk-item .qi-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--secondary);
+    }
+
+    /* ── Service Card ── */
+    .service-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.02);
+    }
+    .service-card .sc-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      padding: 0 4px 12px;
+    }
+    .service-card .sc-list {
+      display: flex;
+      flex-direction: column;
+    }
+    .sc-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 48px;
+      cursor: pointer;
+      transition: all .15s ease;
+      border-radius: var(--radius-xs);
+      padding: 0 6px;
+      margin: 0 -6px;
+    }
+    .sc-row:active { background: #F7F7FA; }
+    .sc-row .sci {
+      width: 36px; height: 36px;
+      border-radius: 11px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+    .sc-row .sci.purple { background: var(--purple-bg); color: var(--purple); }
+    .sc-row .sci.teal { background: var(--teal-bg); color: var(--teal); }
+    .sc-row .sci.orange { background: var(--orange-bg); color: var(--orange); }
+    .sc-row .sci.red { background: var(--red-bg); color: var(--red); }
+    .sc-row .sci.blue { background: rgba(0,122,255,.1); color: #007AFF; }
+    .sc-row .sci svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .sc-row .sc-text { flex: 1; min-width: 0; }
+    .sc-row .sc-text .sct-name { font-size: 15px; font-weight: 600; color: var(--ink); }
+    .sc-row .sc-text .sct-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .sc-row .sc-arrow { color: var(--subtle); font-size: 17px; }
+    .sc-divider { height: 1px; background: var(--separator); margin: 2px 0; }
+
+    /* ── Bottom Nav ── */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 54px;
+      background: rgba(242,242,247,.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 0.5px solid rgba(0,0,0,.08);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      z-index: 10;
+      padding-bottom: 2px;
+    }
+    .bottom-nav button {
+      border: 0;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color .15s ease;
+    }
+    .bottom-nav button.active { color: var(--ink); }
+    .bottom-nav button svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    @media (max-width: 440px) {
+      body { padding: 0; }
+      .phone { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; }
+      .island { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="phone">
+  <div class="island"></div>
+  <div class="app">
+    <div class="scroll-inner">
+
+      <!-- Title area -->
+      <div class="title-area">
+        <div class="vehicle-name">
+          Tailg-001
+          <span class="chev">▾</span>
+        </div>
+        <span class="online-tag"><span class="dot"></span>在线</span>
+      </div>
+
+      <!-- Main card: battery + bike + chips -->
+      <div class="main-card">
+        <div class="battery-row">
+          <span class="big-num">80</span>
+          <span class="big-unit">%</span>
+          <div class="range-info">
+            <div class="range-num">52 km</div>
+            <div class="range-label">预估里程</div>
+          </div>
+        </div>
+        <div class="battery-bar-wrap">
+          <div class="battery-bar"><div class="fill"></div></div>
+        </div>
+        <div class="bike-pic">
+          <div class="floor"></div>
+          <svg viewBox="0 0 270 120" width="230" height="102" aria-hidden="true">
+            <circle cx="56" cy="90" r="22" fill="none" stroke="#E0E0E8" stroke-width="6"/>
+            <circle cx="214" cy="90" r="22" fill="none" stroke="#E0E0E8" stroke-width="6"/>
+            <circle cx="56" cy="90" r="5" fill="none" stroke="#CDD0D8" stroke-width="1.2"/>
+            <circle cx="214" cy="90" r="5" fill="none" stroke="#CDD0D8" stroke-width="1.2"/>
+            <path d="M56 90 L108 50 L162 90 L214 90" fill="none" stroke="#2A2D35" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M162 50 L205 32" stroke="#D8DCE5" stroke-width="6" stroke-linecap="round"/>
+            <path d="M108 50 L75 32" stroke="#D8DCE5" stroke-width="6" stroke-linecap="round"/>
+            <path d="M108 52 L124 32 L144 32 L162 50" fill="none" stroke="#2A2D35" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="114" y="58" width="36" height="20" rx="5" fill="#121418"/>
+            <rect x="118" y="62" width="7" height="12" rx="2" fill="rgba(0,168,150,.4)"/>
+            <rect x="128" y="62" width="6" height="12" rx="2" fill="rgba(0,168,150,.3)"/>
+            <rect x="137" y="62" width="5" height="12" rx="2" fill="rgba(0,168,150,.15)"/>
+            <circle cx="203" cy="58" r="6" fill="none" stroke="#2A2D35" stroke-width="1.8"/>
+            <circle cx="203" cy="58" r="2.5" fill="rgba(0,168,150,.18)"/>
+          </svg>
+        </div>
+        <div class="state-chips">
+          <span class="chip warn">
+            <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg>
+            已设防
+          </span>
+          <span class="chip neutral">
+            <svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M5.6 7.6a8 8 0 1 0 12.8 0"/></svg>
+            未通电
+          </span>
+          <span class="chip normal">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-7 8-13a8 8 0 1 0-16 0c0 6 8 13 8 13z"/><circle cx="12" cy="9" r="3"/></svg>
+            GPS 正常
+          </span>
+        </div>
+      </div>
+
+      <!-- Control card -->
+      <div class="control-card">
+        <div class="cc-title">车辆控制</div>
+        <div class="slide-duo">
+          <div class="slide-track" id="sl1">
+            <div class="thumb">
+              <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg>
+            </div>
+            <div class="label">
+              <span class="l-action">解锁</span>
+              <span class="l-arrows">› › › ›</span>
+              <span class="l-hint">右滑解除设防</span>
+            </div>
+          </div>
+          <div class="slide-track" id="sl2">
+            <div class="thumb">
+              <svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M5.6 7.6a8 8 0 1 0 12.8 0"/></svg>
+            </div>
+            <div class="label">
+              <span class="l-action">通电</span>
+              <span class="l-arrows" style="direction:rtl">‹ ‹ ‹ ‹</span>
+              <span class="l-hint">左滑启动电源</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick actions card -->
+      <div class="quick-card">
+        <div class="qc-title">快捷操作</div>
+        <div class="quick-grid">
+          <div class="qk-item">
+            <div class="qi-icon red"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg></div>
+            <span class="qi-label">设防</span>
+          </div>
+          <div class="qk-item">
+            <div class="qi-icon teal"><svg viewBox="0 0 24 24"><path d="M3 10v4a1 1 0 0 0 1 1h3l5 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8"/></svg></div>
+            <span class="qi-label">寻车</span>
+          </div>
+          <div class="qk-item">
+            <div class="qi-icon purple"><svg viewBox="0 0 24 24"><path d="M5 11h14l-1 9H6z"/><path d="M9 11V6a3 3 0 1 1 6 0"/></svg></div>
+            <span class="qi-label">开座桶</span>
+          </div>
+          <div class="qk-item">
+            <div class="qi-icon orange"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <span class="qi-label">骑行模式</span>
+          </div>
+          <div class="qk-item">
+            <div class="qi-icon teal"><svg viewBox="0 0 24 24"><path d="M12 22s8-7 8-13a8 8 0 1 0-16 0c0 6 8 13 8 13z"/><circle cx="12" cy="9" r="3"/></svg></div>
+            <span class="qi-label">车辆位置</span>
+          </div>
+          <div class="qk-item">
+            <div class="qi-icon purple"><svg viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16v4z"/><path d="M14 5l4 4"/></svg></div>
+            <span class="qi-label">日志</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service card -->
+      <div class="service-card">
+        <div class="sc-title">智能服务</div>
+        <div class="sc-list">
+          <div class="sc-row">
+            <div class="sci purple"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/></svg></div>
+            <div class="sc-text"><div class="sct-name">NFC 钥匙</div><div class="sct-sub">2 张已绑定</div></div>
+            <span class="sc-arrow">›</span>
+          </div>
+          <div class="sc-divider"></div>
+          <div class="sc-row">
+            <div class="sci orange"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+            <div class="sc-text"><div class="sct-name">历史轨迹</div><div class="sct-sub">今日 12 条记录</div></div>
+            <span class="sc-arrow">›</span>
+          </div>
+          <div class="sc-divider"></div>
+          <div class="sc-row">
+            <div class="sci teal"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></div>
+            <div class="sc-text"><div class="sct-name">电子围栏</div><div class="sct-sub">3 个围栏已启用</div></div>
+            <span class="sc-arrow">›</span>
+          </div>
+          <div class="sc-divider"></div>
+          <div class="sc-row">
+            <div class="sci blue"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></div>
+            <div class="sc-text"><div class="sct-name">分享用车</div><div class="sct-sub">家庭成员共享</div></div>
+            <span class="sc-arrow">›</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <button class="active">
+      <svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
+      <span>首页</span>
+    </button>
+    <button>
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-7 8-13a8 8 0 1 0-16 0c0 6 8 13 8 13z"/><circle cx="12" cy="9" r="3"/></svg>
+      <span>位置</span>
+    </button>
+    <button>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      <span>设置</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+  ['sl1','sl2'].forEach(id => {
+    const track = document.getElementById(id);
+    const thumb = track.querySelector('.thumb');
+    const isLeft = id === 'sl2';
+    let down = false, sx = 0, cx = 8;
+    const mx = 150 - 80 - 16;
+
+    track.addEventListener('mousedown', e => { down=true; sx=e.clientX; track.style.cursor='grabbing'; });
+    track.addEventListener('touchstart', e => { down=true; sx=e.touches[0].clientX; track.style.cursor='grabbing'; },{passive:true});
+
+    document.addEventListener('mousemove', e => {
+      if(!down) return;
+      const dx = isLeft ? (sx-e.clientX) : (e.clientX-sx);
+      cx = Math.max(8, Math.min(mx, 8+dx));
+      thumb.style.left = cx+'px';
+      if((cx-8)/(mx-8) > .85){
+        thumb.style.left = mx+'px'; down=false; track.style.cursor='grab';
+        setTimeout(()=>{ thumb.style.left='8px'; cx=8; }, 1200);
+      }
+    });
+    document.addEventListener('touchmove', e => {
+      if(!down) return;
+      const dx = isLeft ? (sx-e.touches[0].clientX) : (e.touches[0].clientX-sx);
+      cx = Math.max(8, Math.min(mx, 8+dx));
+      thumb.style.left = cx+'px';
+      if((cx-8)/(mx-8) > .85){
+        thumb.style.left = mx+'px'; down=false; track.style.cursor='grab';
+        setTimeout(()=>{ thumb.style.left='8px'; cx=8; }, 1200);
+      }
+    },{passive:true});
+
+    document.addEventListener('mouseup', ()=>{ if(!down)return; if((cx-8)/(mx-8)<.85){thumb.style.left='8px';cx=8;} down=false; track.style.cursor='grab'; });
+    document.addEventListener('touchend', ()=>{ if(!down)return; if((cx-8)/(mx-8)<.85){thumb.style.left='8px';cx=8;} down=false; track.style.cursor='grab'; });
+  });
+</script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'ble/connection_manager.dart' as ble;
@@ -18,6 +19,7 @@ import 'pages/settings_page.dart';
 import 'pages/location_page.dart';
 import 'pages/garage_page.dart';
 import 'theme/app_colors.dart';
+import 'widgets/app_toast.dart';
 
 // App-wide services now live in the [AppServices] container (see
 // service_locator.dart). These top-level getters preserve the existing call
@@ -140,6 +142,7 @@ class _TailgBleAppState extends State<TailgBleApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Tailg BLE',
+      navigatorKey: AppToast.navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme:
@@ -380,18 +383,20 @@ class _HomePageState extends State<HomePage>
         ),
       ),
       extendBody: true,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 20,
-              offset: const Offset(0, -2),
+      bottomNavigationBar: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface.withValues(alpha: 0.82),
+              border: const Border(
+                top: BorderSide(
+                  color: Color(0x0A000000),
+                  width: 0.5,
+                ),
+              ),
             ),
-          ],
-        ),
-        child: SafeArea(
+            child: SafeArea(
           top: false,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -430,7 +435,9 @@ class _HomePageState extends State<HomePage>
             ),
           ),
         ),
-      ),
+  ),
+),
+),
     );
   }
 }

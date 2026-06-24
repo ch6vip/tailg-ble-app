@@ -1,0 +1,162 @@
+import 'package:flutter/material.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
+
+/// Global unified Toast — slides down from the top of the screen.
+///
+/// Usage from anywhere (no BuildContext needed):
+/// ```dart
+/// AppToast.show('已通电');
+/// AppToast.show('操作失败', isError: true);
+/// ```
+///
+/// Aligns with v8 `.toast` HTML design:
+/// - Teal background (success) / Red background (error)
+/// - Slides in from top in ~300ms, auto-dismisses after 1.8s
+class AppToast {
+  static OverlayEntry? _entry;
+  static bool _showing = false;
+
+  /// Show a toast at the top of the current screen.
+  ///
+  /// If a toast is already showing, it will be replaced immediately.
+  static void show(String message, {bool isError = false}) {
+    // Dismiss any existing toast first
+    dismiss();
+
+    final context = _rootKey.currentContext;
+    if (context == null) return;
+
+    _showing = true;
+    final entry = OverlayEntry(builder: (_) => _ToastWidget(
+      message: message,
+      isError: isError,
+      onDismissed: dismiss,
+    ));
+
+    _entry = entry;
+    Overlay.of(context).insert(entry);
+
+    // Auto-dismiss after 1.8 seconds
+    Future.delayed(const Duration(milliseconds: 1800), () {
+      if (_showing && _entry == entry) {
+        dismiss();
+      }
+    });
+  }
+
+  /// Dismiss the current toast with animation.
+  static void dismiss() {
+    if (!_showing) return;
+    _showing = false;
+    _entry?.remove();
+    _entry = null;
+  }
+
+  // Global key for accessing overlay from anywhere.
+  static final GlobalKey<NavigatorState> _rootKey = GlobalKey<NavigatorState>();
+  static GlobalKey<NavigatorState> get navigatorKey => _rootKey;
+}
+
+class _ToastWidget extends StatefulWidget {
+  const _ToastWidget({
+    required this.message,
+    required this.isError,
+    required this.onDismissed,
+  });
+
+  final String message;
+  final bool isError;
+  final VoidCallback onDismissed;
+
+  @override
+  State<_ToastWidget> createState() => _ToastWidgetState();
+}
+
+class _ToastWidgetState extends State<_ToastWidget>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<Offset> _slide;
+  late final Animation<double> _fade;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _slide = Tween<Offset>(
+      begin: const Offset(0, -1.2),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _fade = Tween(begin: 0.0, end: 1.0).animate(_ctrl);
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Color get _bg => widget.isError
+      ? AppColors.energyRed
+      : AppColors.energyGreen;
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.of(context).padding.top;
+    return Positioned(
+      top: top + 12,
+      left: 20,
+      right: 20,
+      child: SlideTransition(
+        position: _slide,
+        child: FadeTransition(
+          opacity: _fade,
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              decoration: BoxDecoration(
+                color: _bg,
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                boxShadow: [
+                  BoxShadow(
+                    color: _bg.withValues(alpha: 0.35),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    widget.isError ? Icons.close : Icons.check_circle,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      widget.message,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: widget.onDismissed,
+                    child: const Icon(Icons.close, color: Colors.white70, size: 16),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

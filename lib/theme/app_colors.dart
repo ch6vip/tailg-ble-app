@@ -44,6 +44,46 @@ abstract final class AppColors {
 
   /// Dark surface for contrast panels (e.g., battery detail dark card).
   static const darkSurface = Color(0xFF1A1A1A);
+
+  // ── v8 Ninebot tokens ──────────────────────────────────────────────────
+  /// Page top background (cool teal-tinted light, v8 radial gradient top).
+  static const pageBgTop = Color(0xFFE9EEF4);
+
+  /// Page bottom background (warm light grey, v8 gradient bottom).
+  static const pageBgBot = Color(0xFFF6F8FB);
+
+  /// Deep ink button primary (Ninebot-style central knob).
+  static const inkBtn = Color(0xFF1B2230);
+
+  /// Lighter ink button variant (hover / secondary).
+  static const inkBtn2 = Color(0xFF2A3342);
+
+  /// Teal tinted surface (brand-coloured card background).
+  static const surfaceBrandTint = Color(0xFFF0FAF8);
+
+  /// Red soft surface (warning/alert card background).
+  static const surfaceBrandRedTint = Color(0xFFFFF1F2);
+
+  /// Amber soft surface (reconnecting/warning card background).
+  static const surfaceBrandAmberTint = Color(0xFFFFF4D6);
+
+  /// Teal soft surface (info/connected card background).
+  static const surfaceBrandTealTint = Color(0xFFE5F6F4);
+
+  /// Energy / battery green.
+  static const energyGreen = Color(0xFF00C896);
+
+  /// Energy amber (medium battery).
+  static const energyAmber = Color(0xFFF5A623);
+
+  /// Energy red (low battery).
+  static const energyRed = Color(0xFFFF4D5E);
+
+  /// Violet accent (service card / sub-control).
+  static const accentViolet = Color(0xFF7C6CFF);
+
+  /// Sky accent (locate / cloud).
+  static const accentSky = Color(0xFF2E9BFF);
 }
 
 /// 车体 painter 专用灰阶 token（replica 复刻保真）。

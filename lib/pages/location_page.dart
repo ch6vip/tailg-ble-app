@@ -702,25 +702,35 @@ class _LocationDetailCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = vehicleName ?? '未绑定车辆';
-    final subtitle = location == null
-        ? signedIn
-              ? '官方车辆暂无坐标'
-              : '暂无位置记录'
-        : location!.accuracy > 0
-        ? '${location!.coordinateText}  ·  精度约 ${location!.accuracy.toStringAsFixed(0)}m'
+    final hasLocation = location != null;
+    final addressText = !hasLocation
+        ? (signedIn ? '官方车辆暂无坐标' : '暂无位置记录')
+        : location!.address.isNotEmpty
+        ? location!.address
         : location!.coordinateText;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── 头部:teal 图标 + 车名 + 地址 + GPS 状态 tag ──
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _CircleIcon(
-                icon: Icons.location_on_outlined,
-                color: AppColors.primary,
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.location_on,
+                  color: AppColors.primary,
+                  size: AppIconSizes.lg,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -731,30 +741,54 @@ class _LocationDetailCard extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.subtitle,
+                      style: AppTextStyles.cardTitle,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
-                      subtitle,
+                      addressText,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.caption,
+                      style: AppTextStyles.bodyMedium.copyWith(height: 1.35),
                     ),
+                    if (hasLocation) ...[
+                      const SizedBox(height: 8),
+                      _LocationStatusTag(source: location!.source),
+                    ],
                   ],
                 ),
               ),
             ],
           ),
-          if (location != null) ...[
-            const SizedBox(height: 12),
-            _InfoRow('来源', location!.source),
-            _InfoRow(
-              '时间',
-              location!.timeLabel.isEmpty ? '待读取' : location!.timeLabel,
-            ),
-            _InfoRow(
-              '地址',
-              location!.address.isEmpty ? '待读取' : location!.address,
+          if (hasLocation) ...[
+            const SizedBox(height: 16),
+            // ── 三个数据格:来源 / 时间 / 精度（全部真实字段）──
+            Row(
+              children: [
+                Expanded(
+                  child: _LocationMetaBox(
+                    value: location!.source,
+                    label: '定位来源',
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _LocationMetaBox(
+                    value: location!.timeLabel.isEmpty
+                        ? '待读取'
+                        : location!.timeLabel,
+                    label: '最近更新',
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _LocationMetaBox(
+                    value: location!.accuracy > 0
+                        ? '±${location!.accuracy.toStringAsFixed(0)}m'
+                        : '—',
+                    label: '定位精度',
+                  ),
+                ),
+              ],
             ),
           ],
           if (error != null) ...[
@@ -764,49 +798,188 @@ class _LocationDetailCard extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: AppColors.warning),
             ),
           ],
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
+          // ── 操作:刷新（ghost）+ 复制 + 导航（深色 primary）──
           Row(
             children: [
               Expanded(
-                child: FilledButton.icon(
-                  onPressed: loading ? null : onRefresh,
-                  icon: loading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(
-                          Icons.my_location,
-                          size: AppIconSizes.sm,
-                          semanticLabel: '定位',
-                        ),
-                  label: const Text('刷新位置'),
+                child: _LocationActionButton(
+                  icon: Icons.my_location,
+                  label: '刷新',
+                  loading: loading,
+                  onTap: loading ? null : onRefresh,
                 ),
               ),
               const SizedBox(width: 10),
-              IconButton.filledTonal(
-                tooltip: '复制坐标',
-                onPressed: onCopy,
-                icon: const Icon(
-                  Icons.copy,
-                  size: AppIconSizes.sm,
-                  semanticLabel: '复制',
+              Expanded(
+                child: _LocationActionButton(
+                  icon: Icons.copy_outlined,
+                  label: '复制',
+                  onTap: onCopy,
                 ),
               ),
-              const SizedBox(width: 6),
-              IconButton.filledTonal(
-                tooltip: '打开地图',
-                onPressed: onOpenMap,
-                icon: const Icon(
-                  Icons.open_in_new,
-                  size: AppIconSizes.sm,
-                  semanticLabel: '打开',
+              const SizedBox(width: 10),
+              Expanded(
+                child: _LocationActionButton(
+                  icon: Icons.navigation_outlined,
+                  label: '导航',
+                  primary: true,
+                  onTap: onOpenMap,
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// v8 定位状态 tag：teal 圆点 + 来源文案。
+class _LocationStatusTag extends StatelessWidget {
+  final String source;
+
+  const _LocationStatusTag({required this.source});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: AppColors.primary,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            source,
+            style: const TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primaryDark,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// v8 数据格：大号数值 + 小标签，浅灰底圆角。
+class _LocationMetaBox extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const _LocationMetaBox({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(color: AppColors.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// v8 定位操作按钮：ghost（浅底）/ primary（深墨）两态。
+class _LocationActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool primary;
+  final bool loading;
+  final VoidCallback? onTap;
+
+  const _LocationActionButton({
+    required this.icon,
+    required this.label,
+    this.primary = false,
+    this.loading = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    final bg = primary ? AppColors.dark : AppColors.surfaceContainerLow;
+    final fg = primary ? Colors.white : AppColors.textPrimary;
+    return Opacity(
+      opacity: enabled ? 1 : 0.5,
+      child: Material(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            height: 48,
+            alignment: Alignment.center,
+            decoration: primary
+                ? null
+                : BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                    border: Border.all(color: AppColors.outlineVariant),
+                  ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (loading)
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: fg),
+                  )
+                else
+                  Icon(icon, size: AppIconSizes.sm, color: fg),
+                const SizedBox(width: 7),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: fg,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

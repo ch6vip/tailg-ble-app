@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>台铃 · 我的车库 v8</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    :root{
+      --bg-top:#E9EEF4; --bg-bot:#F6F8FB; --card:#FFFFFF; --card-2:#F2F5F8; --card-3:#E8ECF1;
+      --hairline:rgba(15,22,32,0.07); --hairline-2:rgba(15,22,32,0.10);
+      --energy:#00C896; --energy-deep:#00A57C; --energy-soft:rgba(0,200,150,0.12);
+      --ink-btn:#1B2230; --ink-btn-2:#2A3342;
+      --amber:#F5A623; --amber-soft:rgba(245,166,35,0.14);
+      --red:#FF4D5E; --red-soft:rgba(255,77,94,0.12);
+      --violet:#7C6CFF; --violet-soft:rgba(124,108,255,0.14);
+      --sky:#2E9BFF; --sky-soft:rgba(46,155,255,0.14);
+      --t-1:#0F1620; --t-2:#5A6472; --t-3:#98A1AE;
+      --r-sm:14px; --r-md:20px; --r-lg:26px; --r-xl:32px; --r-pill:999px;
+      --shadow-card:0 12px 36px rgba(24,39,64,0.10);
+      --shadow-btn:0 8px 20px rgba(27,34,48,0.28);
+      --ease:cubic-bezier(.4,.0,.2,1); --ease-out:cubic-bezier(.16,1,.3,1);
+    }
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+      background:#cfd6df; color:var(--t-1); display:flex; justify-content:center; min-height:100vh;
+      -webkit-font-smoothing:antialiased;}
+    .phone{position:relative; width:390px; min-height:844px; height:844px;
+      background:radial-gradient(120% 60% at 50% -8%, rgba(0,200,150,0.08) 0%, transparent 50%),
+      linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bot) 40%); overflow:hidden;}
+    .scroll{height:844px; overflow-y:auto; overflow-x:hidden; padding:0 0 110px;}
+    .scroll::-webkit-scrollbar{display:none;}
+    .pad{padding:0 20px;}
+
+    .statusbar{display:flex; justify-content:space-between; align-items:center;
+      padding:14px 24px 4px; font-size:13px; font-weight:600; color:var(--t-1);}
+    .statusbar .ico{display:flex; gap:6px; align-items:center; font-size:12px;}
+
+    .pagehead{display:flex; align-items:center; justify-content:space-between; padding:12px 0 4px;}
+    .pagehead .pt{font-size:24px; font-weight:800; letter-spacing:-.5px; color:var(--t-1);}
+    .pagehead .pt small{display:block; font-size:13px; font-weight:600; color:var(--t-3); margin-top:3px; letter-spacing:0;}
+    .circ-btn{width:40px; height:40px; border-radius:50%; display:grid; place-items:center;
+      background:var(--card); border:1px solid var(--hairline); color:var(--t-1);
+      box-shadow:0 4px 14px rgba(24,39,64,0.08); transition:transform .14s var(--ease);}
+    .circ-btn:active{transform:scale(.92);}
+    .circ-btn svg{width:19px; height:19px; stroke:var(--t-1); fill:none; stroke-width:2;
+      stroke-linecap:round; stroke-linejoin:round;}
+
+    /* ── 车辆卡 ── */
+    .veh-list{display:flex; flex-direction:column; gap:16px; margin-top:18px;}
+    .veh-card{position:relative; background:var(--card); border-radius:var(--r-xl);
+      padding:20px; box-shadow:var(--shadow-card); border:1px solid rgba(255,255,255,0.6);
+      overflow:hidden; transition:transform .16s var(--ease);}
+    .veh-card:active{transform:scale(.985);}
+    .veh-card.active{border:1.5px solid rgba(0,200,150,0.4);
+      box-shadow:0 14px 40px rgba(0,165,124,0.18);}
+    .veh-card .glow{position:absolute; top:-40px; right:-30px; width:160px; height:160px;
+      border-radius:50%; background:radial-gradient(circle, var(--energy-soft) 0%, transparent 70%);}
+    .vc-top{display:flex; align-items:flex-start; justify-content:space-between; position:relative; z-index:2;}
+    .vc-name{font-size:18px; font-weight:800; color:var(--t-1); display:flex; align-items:center; gap:8px;}
+    .vc-badge{font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:var(--r-pill);}
+    .vc-badge.cur{background:var(--energy-soft); color:var(--energy-deep);}
+    .vc-badge.off{background:var(--card-3); color:var(--t-3);}
+    .vc-sub{font-size:12.5px; color:var(--t-3); margin-top:4px;}
+    .vc-conn{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--energy-deep);}
+    .vc-conn .d{width:7px;height:7px;border-radius:50%;background:var(--energy);box-shadow:0 0 6px var(--energy);}
+    .vc-conn.gray{color:var(--t-3);} .vc-conn.gray .d{background:var(--t-3);box-shadow:none;}
+
+    /* 车辆插画 */
+    .vc-stage{position:relative; height:120px; display:grid; place-items:center; margin:6px 0;}
+    .vc-stage .floor{position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+      width:200px; height:22px; border-radius:50%;
+      background:radial-gradient(ellipse, rgba(24,39,64,0.14) 0%, transparent 70%); filter:blur(3px);}
+    .vc-svg{position:relative; width:240px; height:auto; z-index:2;
+      filter:drop-shadow(0 12px 16px rgba(24,39,64,0.16));}
+
+    /* 电量条 */
+    .vc-batt{display:flex; align-items:center; gap:12px; position:relative; z-index:2;}
+    .vc-batt .bar{flex:1; height:7px; border-radius:var(--r-pill); background:var(--card-3); overflow:hidden;}
+    .vc-batt .bar .fl{height:100%; border-radius:var(--r-pill);
+      background:linear-gradient(90deg,var(--energy-deep),var(--energy));}
+    .vc-batt .bv{font-size:13px; font-weight:800; color:var(--t-1);}
+    .vc-batt .bv small{font-size:11px; color:var(--t-3); font-weight:600;}
+    .vc-foot{display:flex; gap:10px; margin-top:16px; position:relative; z-index:2;}
+    .vc-foot .vbtn{flex:1; height:42px; border-radius:var(--r-md); display:flex; align-items:center;
+      justify-content:center; gap:7px; font-size:13.5px; font-weight:700;
+      background:var(--card-2); border:1px solid var(--hairline); color:var(--t-1);
+      transition:transform .14s var(--ease);}
+    .vc-foot .vbtn:active{transform:scale(.95);}
+    .vc-foot .vbtn svg{width:17px;height:17px;fill:none;stroke:var(--t-1);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+    .vc-foot .vbtn.primary{background:linear-gradient(135deg,var(--ink-btn-2),var(--ink-btn));color:#fff;border:none;box-shadow:var(--shadow-btn);}
+    .vc-foot .vbtn.primary svg{stroke:#fff;}
+
+    /* 添加车辆 */
+    .add-veh{margin-top:16px; height:74px; border-radius:var(--r-xl);
+      border:2px dashed var(--hairline-2); display:flex; align-items:center; justify-content:center;
+      gap:10px; color:var(--t-2); font-size:15px; font-weight:700; background:rgba(255,255,255,0.4);
+      transition:transform .14s var(--ease), border-color .2s;}
+    .add-veh:active{transform:scale(.98); border-color:var(--energy);}
+    .add-veh svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
+    .sec-label{font-size:13px; font-weight:700; color:var(--t-2); margin:26px 4px 12px;}
+
+    /* ── 底部导航 ── */
+    .nav{position:absolute; left:0; right:0; bottom:0; height:84px; z-index:30;
+      background:linear-gradient(to top, var(--bg-bot) 36%, transparent);
+      display:flex; align-items:flex-start; justify-content:center; pointer-events:none;}
+    .nav-inner{margin-top:10px; width:340px; height:60px; pointer-events:auto;
+      background:rgba(255,255,255,0.86); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+      border:1px solid var(--hairline); border-radius:22px;
+      display:flex; align-items:center; justify-content:space-around; padding:0 8px;
+      box-shadow:var(--shadow-card);}
+    .nav-item{display:flex; flex-direction:column; align-items:center; gap:4px;
+      color:var(--t-3); font-size:11px; font-weight:600; flex:1; padding:8px 0; text-decoration:none;}
+    .nav-item svg{width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.9;
+      stroke-linecap:round; stroke-linejoin:round;}
+    .nav-item.on{color:var(--energy-deep);}
+
+    .toast{position:absolute; top:64px; left:50%; transform:translateX(-50%) translateY(-80px);
+      background:var(--ink-btn); color:#fff; padding:11px 18px; border-radius:var(--r-pill);
+      font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px;
+      box-shadow:0 12px 30px rgba(24,39,64,0.3); opacity:0;
+      transition:all .35s var(--ease-out); z-index:50; pointer-events:none;}
+    .toast.show{transform:translateX(-50%) translateY(0); opacity:1;}
+    .toast .tdot{width:8px;height:8px;border-radius:50%;background:var(--energy);box-shadow:0 0 8px var(--energy);}
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="scroll">
+      <div class="statusbar"><span>9:41</span><span class="ico">5G &nbsp; ▮▮▮ &nbsp; 84%</span></div>
+
+      <div class="pad">
+        <div class="pagehead">
+          <div class="pt">我的车库<small>共 2 辆 · 1 辆在线</small></div>
+          <div class="circ-btn" data-name="扫码添加"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></div>
+        </div>
+
+        <div class="veh-list">
+          <!-- 当前车辆 -->
+          <div class="veh-card active" data-name="台铃 N8">
+            <div class="glow"></div>
+            <div class="vc-top">
+              <div>
+                <div class="vc-name">台铃 N8 <span class="vc-badge cur">当前车辆</span></div>
+                <div class="vc-sub">车架号 LTG••••4582 · 2024 款</div>
+              </div>
+              <div class="vc-conn"><span class="d"></span>蓝牙直连</div>
+            </div>
+            <div class="vc-stage">
+              <div class="floor"></div>
+              <svg class="vc-svg" viewBox="0 0 320 150">
+                <ellipse cx="78" cy="116" rx="30" ry="30" fill="none" stroke="#2A313D" stroke-width="5"/>
+                <ellipse cx="242" cy="116" rx="30" ry="30" fill="none" stroke="#2A313D" stroke-width="5"/>
+                <circle cx="78" cy="116" r="9" fill="#9AA3B0"/><circle cx="242" cy="116" r="9" fill="#9AA3B0"/>
+                <g stroke="#C4CCD6" stroke-width="2"><path d="M78 89v54M51 116h54M242 89v54M215 116h54"/></g>
+                <path d="M95 110 L150 110 Q166 110 172 96 L196 60" fill="none" stroke="#2A313D" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M150 110 L120 78 L92 78" fill="none" stroke="#2A313D" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M120 78 Q150 66 176 76 L226 96 L242 110" fill="none" stroke="#2A313D" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect x="120" y="68" width="64" height="20" rx="9" fill="#3A434F"/>
+                <rect x="128" y="73" width="26" height="9" rx="3" fill="#00C896"/>
+                <path d="M196 58 L214 56 L214 70 L196 70 Z" fill="#4A5563"/>
+                <circle cx="208" cy="63" r="4" fill="#FFE9A8"/>
+                <path d="M92 74 L88 64" stroke="#2A313D" stroke-width="6" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="vc-batt">
+              <span class="bv">84<small>%</small></span>
+              <div class="bar"><div class="fl" style="width:84%"></div></div>
+              <span class="bv" style="color:var(--t-2)">58<small> km</small></span>
+            </div>
+            <div class="vc-foot">
+              <a class="vbtn" href="locate_v8.html"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>定位</a>
+              <a class="vbtn primary" href="home_v8_ninebot.html"><svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>控车</a>
+            </div>
+          </div>
+
+          <!-- 第二辆(离线) -->
+          <div class="veh-card" data-name="台铃 M2">
+            <div class="vc-top">
+              <div>
+                <div class="vc-name">台铃 M2 <span class="vc-badge off">未连接</span></div>
+                <div class="vc-sub">车架号 LTG••••1027 · 2022 款</div>
+              </div>
+              <div class="vc-conn gray"><span class="d"></span>离线</div>
+            </div>
+            <div class="vc-stage">
+              <div class="floor" style="opacity:.5"></div>
+              <svg class="vc-svg" viewBox="0 0 320 150" style="opacity:.55; filter:grayscale(.4) drop-shadow(0 12px 16px rgba(24,39,64,0.12));">
+                <ellipse cx="78" cy="116" rx="30" ry="30" fill="none" stroke="#5A6472" stroke-width="5"/>
+                <ellipse cx="242" cy="116" rx="30" ry="30" fill="none" stroke="#5A6472" stroke-width="5"/>
+                <circle cx="78" cy="116" r="9" fill="#9AA3B0"/><circle cx="242" cy="116" r="9" fill="#9AA3B0"/>
+                <g stroke="#C4CCD6" stroke-width="2"><path d="M78 89v54M51 116h54M242 89v54M215 116h54"/></g>
+                <path d="M95 110 L150 110 Q166 110 172 96 L196 60" fill="none" stroke="#5A6472" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M150 110 L120 78 L92 78" fill="none" stroke="#5A6472" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M120 78 Q150 66 176 76 L226 96 L242 110" fill="none" stroke="#5A6472" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect x="120" y="68" width="64" height="20" rx="9" fill="#6A7484"/>
+                <path d="M196 58 L214 56 L214 70 L196 70 Z" fill="#6A7484"/>
+              </svg>
+            </div>
+            <div class="vc-batt">
+              <span class="bv" style="color:var(--t-3)">—<small></small></span>
+              <div class="bar"><div class="fl" style="width:0%"></div></div>
+              <span class="bv" style="color:var(--t-3)">未知</span>
+            </div>
+            <div class="vc-foot">
+              <div class="vbtn" data-name="设为当前"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>设为当前</div>
+              <div class="vbtn" data-name="车辆详情"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>详情</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="add-veh" data-name="添加新车辆">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>添加新车辆
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="nav">
+      <div class="nav-inner">
+        <a class="nav-item" href="home_v8_ninebot.html"><svg viewBox="0 0 24 24"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>控车</a>
+        <a class="nav-item" href="locate_v8.html"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>定位</a>
+        <a class="nav-item on" href="garage_v8.html"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>车库</a>
+        <a class="nav-item" href="profile_v8.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>我的</a>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"><span class="tdot"></span><span id="toastMsg"></span></div>
+  </div>
+
+  <script>
+    const toast=document.getElementById('toast'), toastMsg=document.getElementById('toastMsg'); let tt;
+    function showToast(m){toastMsg.textContent=m; toast.classList.add('show'); clearTimeout(tt);
+      tt=setTimeout(()=>toast.classList.remove('show'),1800);}
+    // 仅给非链接的 data-name 绑定 toast(避免拦截卡片内的 a 跳转)
+    document.querySelectorAll('[data-name]').forEach(el=>{
+      el.addEventListener('click',(e)=>{
+        if(e.target.closest('a')) return;        // 点到内部链接则放行
+        showToast(el.dataset.name); if(navigator.vibrate)navigator.vibrate(12);
+      });
+    });
+  </script>
+</body>
+</html>

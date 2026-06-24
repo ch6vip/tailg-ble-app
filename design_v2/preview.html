@@ -1,0 +1,1677 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tailg BLE App · UI v2 高保真原型</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root {
+      /* ── v2 Light tokens ─────────────────────────── */
+      --primary: #1A1A1A;
+      --on-primary: #FFFFFF;
+      --brand-red: #F11C2C;
+      --brand-red-soft: #FFE5E7;
+      --brand-teal: #00A896;
+      --brand-teal-soft: #E5F6F4;
+      --brand-amber: #FFB300;
+      --brand-amber-soft: #FFF4D6;
+
+      --text-primary: #0F0F10;
+      --text-secondary: #4A4A4D;
+      --text-tertiary: #8A8A8E;
+      --text-disabled: #B8B8BC;
+
+      --page-bg: #F5F5F7;
+      --surface: #FFFFFF;
+      --surface-low: #F8F8FA;
+      --surface-high: #F0F0F4;
+      --surface-teal-tint: #F0FAF8;
+      --surface-red-tint: #FFF1F2;
+
+      --border: #EBEBEB;
+      --outline: #E8E8EC;
+
+      --accent-violet: #7B61FF;
+      --accent-orange: #FF8A00;
+
+      --battery-high: #00B894;
+      --battery-mid: #FFB300;
+      --battery-low: #FF5252;
+
+      --radius-xs: 6px;
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-card: 12px;
+      --radius-lg: 20px;
+      --radius-sheet: 18px;
+      --radius-pill: 999px;
+
+      --shadow-1: 0 2px 8px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.03);
+      --shadow-2: 0 8px 16px rgba(0,0,0,.06), 0 2px 4px rgba(0,0,0,.03);
+      --shadow-3: 0 16px 24px rgba(0,0,0,.08), 0 4px 6px rgba(0,0,0,.04);
+
+      --motion-fast: 150ms ease;
+      --motion-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+      --motion-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="dark"] {
+      --primary: #F5F5F7;
+      --on-primary: #0E0F12;
+      --brand-red: #FF5566;
+      --brand-red-soft: #3A1A1E;
+      --brand-teal: #33C9B8;
+      --brand-teal-soft: #1A2E2C;
+      --brand-amber: #FFCB4A;
+      --brand-amber-soft: #3A2F18;
+
+      --text-primary: #F5F5F7;
+      --text-secondary: #B8B8BC;
+      --text-tertiary: #8A8A8E;
+
+      --page-bg: #0E0F12;
+      --surface: #1A1C20;
+      --surface-low: #22252B;
+      --surface-high: #2A2D33;
+      --surface-teal-tint: #1A2E2C;
+      --surface-red-tint: #2E1819;
+
+      --border: #2A2D33;
+      --outline: #1F2227;
+
+      --battery-high: #33D1AE;
+      --battery-mid: #FFCB4A;
+      --battery-low: #FF7575;
+
+      --shadow-1: 0 0 0 1px rgba(255,255,255,.04);
+      --shadow-2: 0 0 0 1px rgba(255,255,255,.06);
+      --shadow-3: 0 0 0 1px rgba(255,255,255,.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      background: #2A2D33;
+      color: var(--text-primary);
+      transition: background var(--motion-slow);
+    }
+
+    .page {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(390px, 1fr);
+      gap: 32px;
+      padding: 32px;
+      align-items: start;
+      background: linear-gradient(135deg, #1F2227 0%, #2A2D33 100%);
+    }
+
+    .panel {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-2);
+      padding: 24px;
+      position: sticky;
+      top: 32px;
+      color: var(--text-primary);
+      transition: background var(--motion-slow), color var(--motion-slow);
+    }
+
+    .panel h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .panel .subtitle {
+      margin: 0 0 16px;
+      color: var(--text-tertiary);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-low);
+      border: 0;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      transition: all var(--motion-fast);
+      margin-bottom: 18px;
+    }
+    .theme-toggle:hover { background: var(--surface-high); transform: translateY(-1px); }
+    .theme-toggle:active { transform: scale(.96); }
+    .theme-toggle .ic { width: 16px; height: 16px; }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 16px 0;
+    }
+    .score {
+      background: var(--surface-low);
+      border-radius: var(--radius-card);
+      padding: 14px;
+    }
+    .score strong {
+      display: block;
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--brand-teal);
+      letter-spacing: -0.5px;
+    }
+    .score span {
+      color: var(--text-tertiary);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .change-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .change-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .change-row .tag {
+      flex: 0 0 auto;
+      padding: 2px 7px;
+      border-radius: var(--radius-xs);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-top: 1px;
+    }
+    .tag.p0 { background: var(--brand-red-soft); color: var(--brand-red); }
+    .tag.p1 { background: var(--brand-teal-soft); color: var(--brand-teal); }
+    .tag.p2 { background: var(--brand-amber-soft); color: #B85A00; }
+    [data-theme="dark"] .tag.p2 { color: var(--brand-amber); }
+
+    .side-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .side-tab {
+      border: 0;
+      background: var(--surface-low);
+      color: var(--text-secondary);
+      height: 36px;
+      padding: 0 14px;
+      border-radius: var(--radius-pill);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--motion-fast);
+      font-size: 12px;
+    }
+    .side-tab:active { transform: scale(.96); background: var(--surface-high); }
+    .side-tab.active { background: var(--primary); color: var(--on-primary); }
+
+    /* ============ Stage ============ */
+    .stage {
+      display: flex;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .phone {
+      width: 390px;
+      height: 820px;
+      border: 10px solid #08090B;
+      border-radius: 48px;
+      background: var(--page-bg);
+      box-shadow: 0 32px 80px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.04);
+      overflow: hidden;
+      position: relative;
+      transition: background var(--motion-slow);
+    }
+
+    .island {
+      position: absolute;
+      z-index: 20;
+      top: 12px;
+      left: 50%;
+      width: 120px;
+      height: 32px;
+      transform: translateX(-50%);
+      background: #000;
+      border-radius: 20px;
+    }
+
+    .app {
+      height: 100%;
+      overflow: hidden;
+      padding-top: 44px;
+      background: var(--page-bg);
+      position: relative;
+      color: var(--text-primary);
+      transition: background var(--motion-slow), color var(--motion-slow);
+    }
+
+    .screen {
+      display: none;
+      height: calc(100% - 72px);
+      overflow-y: auto;
+      padding-bottom: 16px;
+      scrollbar-width: none;
+    }
+    .screen.active { display: block; }
+    .screen::-webkit-scrollbar { width: 0; }
+
+    /* ============ Home Hero ============ */
+    .hero {
+      margin: 0 16px 12px;
+      padding: 20px 20px 18px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(160deg, var(--surface) 0%, var(--surface-low) 100%);
+      box-shadow: var(--shadow-1);
+      position: relative;
+      overflow: hidden;
+    }
+    [data-theme="dark"] .hero {
+      background: linear-gradient(160deg, var(--surface) 0%, var(--surface-low) 100%);
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      right: -40px; top: -40px;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, rgba(0,168,150,.08), transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    [data-theme="dark"] .hero::before {
+      background: radial-gradient(circle, rgba(51,201,184,.12), transparent 70%);
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+    .vehicle-name {
+      flex: 1;
+      min-width: 0;
+    }
+    .vehicle-name .name {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .vehicle-name .caret { font-size: 16px; color: var(--text-tertiary); }
+    .vehicle-name .sub {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      font-weight: 600;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 26px;
+      padding: 0 10px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+    .status-badge.online {
+      background: var(--brand-teal-soft);
+      color: var(--brand-teal);
+    }
+    .status-badge.reconnect {
+      background: var(--brand-amber-soft);
+      color: #B85A00;
+    }
+    [data-theme="dark"] .status-badge.reconnect { color: var(--brand-amber); }
+    .status-badge.offline {
+      background: var(--brand-red-soft);
+      color: var(--brand-red);
+    }
+    .status-badge .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--surface-low);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: all var(--motion-fast);
+      color: var(--text-primary);
+      flex: 0 0 auto;
+    }
+    .icon-btn:hover { background: var(--surface-high); }
+    .icon-btn:active { transform: scale(.94); background: var(--surface-high); }
+    .icon-btn svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr;
+      gap: 16px;
+      margin: 16px 0 14px;
+      align-items: center;
+      position: relative;
+    }
+    .hero-stats .divider { background: var(--border); height: 50px; }
+    .stat-block { min-width: 0; }
+    .stat-block .value {
+      font-size: 48px;
+      font-weight: 300;
+      line-height: 1;
+      letter-spacing: -1.5px;
+      display: flex;
+      align-items: flex-start;
+      gap: 2px;
+    }
+    .stat-block .value.high { color: var(--battery-high); }
+    .stat-block .value.mid { color: var(--battery-mid); }
+    .stat-block .value.low { color: var(--battery-low); }
+    .stat-block .value .unit {
+      font-size: 18px;
+      font-weight: 400;
+      padding-top: 6px;
+      color: var(--text-tertiary);
+    }
+    .stat-block .label {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .bike-area {
+      height: 140px;
+      margin: 4px 0 10px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .bike-area svg { width: 280px; height: 130px; }
+    .bike-area .bike-shadow {
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px; height: 12px;
+      background: radial-gradient(ellipse, rgba(0,0,0,.15), transparent 70%);
+      border-radius: 50%;
+    }
+    [data-theme="dark"] .bike-area .bike-shadow {
+      background: radial-gradient(ellipse, rgba(0,0,0,.4), transparent 70%);
+    }
+
+    .state-chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: relative;
+    }
+    .state-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      height: 26px;
+      padding: 0 10px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-low);
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .state-chip.danger { background: var(--brand-red-soft); color: var(--brand-red); }
+    .state-chip.teal { background: var(--brand-teal-soft); color: var(--brand-teal); }
+    .state-chip svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ============ Dual Slide Controls ============ */
+    .dual-slide {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 0 16px;
+      margin-bottom: 14px;
+    }
+    .slide-card {
+      height: 96px;
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      box-shadow: var(--shadow-1);
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+      user-select: none;
+      transition: all var(--motion-fast);
+    }
+    .slide-card:active { transform: scale(.99); }
+    .slide-card.unlock { background: linear-gradient(135deg, var(--surface) 0%, var(--surface-teal-tint) 100%); }
+    .slide-card.power { background: linear-gradient(135deg, var(--surface) 0%, var(--surface-low) 100%); }
+
+    .slide-card .thumb {
+      position: absolute;
+      left: 6px; top: 6px;
+      width: 84px; height: 84px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: var(--on-primary);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,.18);
+      transition: left var(--motion-slow);
+      z-index: 2;
+    }
+    [data-theme="dark"] .slide-card .thumb {
+      background: var(--brand-teal);
+      color: var(--on-primary);
+    }
+    .slide-card .thumb svg { width: 36px; height: 36px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    .slide-card .label {
+      position: absolute;
+      top: 50%;
+      left: 100px;
+      right: 14px;
+      transform: translateY(-50%);
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+      pointer-events: none;
+      text-align: center;
+    }
+    .slide-card .label .arrow {
+      display: inline-block;
+      margin: 0 4px;
+      opacity: 0.4;
+      animation: arrowSlide 1.4s ease-in-out infinite;
+    }
+    .slide-card .label .arrow:nth-child(2) { animation-delay: 0.2s; }
+    .slide-card .label .arrow:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes arrowSlide {
+      0%, 100% { opacity: 0.3; transform: translateX(0); }
+      50% { opacity: 0.9; transform: translateX(-3px); }
+    }
+    .slide-card.power .label .arrow {
+      animation-name: arrowSlideRight;
+    }
+    @keyframes arrowSlideRight {
+      0%, 100% { opacity: 0.3; transform: translateX(0); }
+      50% { opacity: 0.9; transform: translateX(3px); }
+    }
+
+    .slide-card .progress-ring {
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--motion-normal);
+    }
+    .slide-card.executing .progress-ring { opacity: 1; }
+
+    /* ============ Quick Grid ============ */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 0 16px;
+      margin-bottom: 16px;
+    }
+    .quick-cell {
+      height: 76px;
+      border-radius: var(--radius-card);
+      background: var(--surface);
+      box-shadow: var(--shadow-1);
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 4px;
+      padding: 10px 6px;
+      cursor: pointer;
+      transition: all var(--motion-fast);
+      text-align: center;
+    }
+    .quick-cell:active { transform: scale(.96); background: var(--surface-high); }
+    .quick-cell .ic-wrap {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: var(--surface-low);
+      display: grid;
+      place-items: center;
+      margin: 0 auto;
+    }
+    .quick-cell .ic-wrap.teal { background: var(--brand-teal-soft); color: var(--brand-teal); }
+    .quick-cell .ic-wrap.red { background: var(--brand-red-soft); color: var(--brand-red); }
+    .quick-cell .ic-wrap.violet { background: rgba(123,97,255,.12); color: var(--accent-violet); }
+    .quick-cell .ic-wrap.orange { background: rgba(255,138,0,.12); color: var(--accent-orange); }
+    .quick-cell .ic-wrap svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .quick-cell .name {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    /* ============ Section Card ============ */
+    .section {
+      margin: 0 16px 12px;
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-1);
+      padding: 14px 16px;
+    }
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+    .section-head .ic {
+      width: 18px; height: 18px;
+      color: var(--brand-teal);
+    }
+    .section-head .ic svg { width: 100%; height: 100%; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .section-head .more {
+      margin-left: auto;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+    }
+
+    .service-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+    .service-scroll::-webkit-scrollbar { display: none; }
+    .service-card {
+      flex: 0 0 auto;
+      width: 96px;
+      height: 84px;
+      border-radius: var(--radius-card);
+      background: var(--surface-low);
+      padding: 10px;
+      display: grid;
+      grid-template-rows: 36px 1fr;
+      gap: 4px;
+      cursor: pointer;
+      transition: all var(--motion-fast);
+    }
+    .service-card:active { transform: scale(.96); }
+    .service-card .sc-ic {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+    }
+    .service-card .sc-ic svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .service-card .sc-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      line-height: 1.2;
+    }
+    .service-card .sc-sub {
+      font-size: 10px;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+    }
+
+    /* ============ Battery Screen ============ */
+    .battery-hero-v2 {
+      margin: 0 16px 14px;
+      padding: 24px 20px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, var(--surface) 0%, var(--surface-teal-tint) 100%);
+      box-shadow: var(--shadow-1);
+      position: relative;
+      overflow: hidden;
+    }
+    .battery-hero-v2::before {
+      content: "";
+      position: absolute;
+      right: -60px; top: -40px;
+      width: 220px; height: 220px;
+      background: radial-gradient(circle, rgba(0,168,150,.1), transparent 70%);
+      border-radius: 50%;
+    }
+
+    .battery-ring-wrap {
+      display: grid;
+      place-items: center;
+      margin: 8px 0 14px;
+      position: relative;
+    }
+    .battery-ring {
+      width: 180px; height: 180px;
+      position: relative;
+    }
+    .battery-ring svg { transform: rotate(-90deg); }
+    .battery-ring .ring-bg { stroke: var(--surface-high); }
+    .battery-ring .ring-fg { stroke: var(--battery-high); transition: stroke-dashoffset 1s ease, stroke var(--motion-normal); }
+    .battery-ring .ring-center {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+    .battery-ring .ring-center .num {
+      font-size: 56px;
+      font-weight: 300;
+      line-height: 1;
+      letter-spacing: -2px;
+      color: var(--text-primary);
+    }
+    .battery-ring .ring-center .pct {
+      font-size: 18px;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+    }
+    .battery-ring .ring-center .health {
+      font-size: 11px;
+      color: var(--battery-high);
+      font-weight: 800;
+      margin-top: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .battery-source {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0;
+      margin-top: 12px;
+      padding: 10px;
+      background: var(--surface-low);
+      border-radius: var(--radius-card);
+    }
+    .battery-source .cell {
+      text-align: center;
+      padding: 4px;
+    }
+    .battery-source .cell + .cell { border-left: 1px solid var(--border); }
+    .battery-source .cell strong { display: block; font-size: 13px; font-weight: 800; color: var(--text-primary); }
+    .battery-source .cell span { display: block; font-size: 10px; color: var(--text-tertiary); margin-top: 2px; }
+
+    .metric-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 0 16px 12px;
+    }
+    .metric-cell {
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-1);
+      padding: 14px;
+    }
+    .metric-cell .lbl { font-size: 11px; color: var(--text-tertiary); font-weight: 700; letter-spacing: 0.5px; }
+    .metric-cell .val { font-size: 24px; font-weight: 800; color: var(--text-primary); margin-top: 4px; letter-spacing: -0.5px; }
+    .metric-cell .val .u { font-size: 12px; color: var(--text-tertiary); font-weight: 600; margin-left: 2px; }
+    .metric-cell .delta {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      margin-top: 4px;
+      color: var(--brand-teal);
+    }
+
+    .info-section {
+      margin: 0 16px 12px;
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-1);
+      padding: 6px 16px;
+    }
+    .info-row {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .info-row:last-child { border-bottom: 0; }
+    .info-row .lbl { color: var(--text-tertiary); font-weight: 600; }
+    .info-row .val { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+
+    .danger-card-v2 {
+      margin: 0 16px 12px;
+      background: var(--surface-red-tint);
+      border-radius: var(--radius-card);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-left: 4px solid var(--brand-red);
+    }
+    .danger-card-v2 .ic {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--brand-red);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+    .danger-card-v2 .ic svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .danger-card-v2 .text { flex: 1; }
+    .danger-card-v2 .text strong { display: block; font-size: 14px; font-weight: 800; color: var(--brand-red); }
+    .danger-card-v2 .text span { display: block; font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+    /* ============ Map Screen ============ */
+    .map-screen-v2 {
+      position: relative;
+      height: calc(100% - 0px);
+      background: #DDE6DC;
+      overflow: hidden;
+    }
+    [data-theme="dark"] .map-screen-v2 { background: #1A2520; }
+
+    .map-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(30deg, transparent 46%, rgba(255,255,255,.4) 47%, rgba(255,255,255,.4) 50%, transparent 51%) 0 0 / 80px 80px,
+        linear-gradient(120deg, transparent 46%, rgba(255,255,255,.3) 47%, rgba(255,255,255,.3) 50%, transparent 51%) 0 0 / 110px 110px,
+        radial-gradient(circle at 65% 42%, rgba(0,168,150,.2) 0 8px, transparent 9px),
+        #DCE7DD;
+    }
+    [data-theme="dark"] .map-bg {
+      background:
+        linear-gradient(30deg, transparent 46%, rgba(255,255,255,.04) 47%, rgba(255,255,255,.04) 50%, transparent 51%) 0 0 / 80px 80px,
+        linear-gradient(120deg, transparent 46%, rgba(255,255,255,.03) 47%, rgba(255,255,255,.03) 50%, transparent 51%) 0 0 / 110px 110px,
+        radial-gradient(circle at 65% 42%, rgba(51,201,184,.2) 0 8px, transparent 9px),
+        #1A2520;
+    }
+
+    .map-search {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      right: 16px;
+      height: 44px;
+      background: var(--surface);
+      border-radius: var(--radius-pill);
+      box-shadow: var(--shadow-2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px;
+      z-index: 3;
+    }
+    .map-search svg { width: 18px; height: 18px; color: var(--text-tertiary); stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .map-search input {
+      flex: 1;
+      border: 0;
+      background: transparent;
+      outline: 0;
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+    .map-search .filter {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--surface-low);
+      display: grid; place-items: center;
+      cursor: pointer;
+    }
+
+    .map-tabs-v2 {
+      position: absolute;
+      top: 68px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      border-radius: var(--radius-pill);
+      padding: 4px;
+      box-shadow: var(--shadow-2);
+      z-index: 3;
+    }
+    .map-tabs-v2 button {
+      border: 0;
+      background: transparent;
+      height: 30px;
+      padding: 0 14px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--motion-fast);
+    }
+    .map-tabs-v2 button.active {
+      background: var(--primary);
+      color: var(--on-primary);
+    }
+    [data-theme="dark"] .map-tabs-v2 button.active { background: var(--brand-teal); color: var(--on-primary); }
+
+    .map-marker-v2 {
+      position: absolute;
+      left: 50%; top: 42%;
+      transform: translate(-50%, -100%);
+      z-index: 2;
+      animation: markerBounce 2s ease-in-out infinite;
+    }
+    @keyframes markerBounce {
+      0%, 100% { transform: translate(-50%, -100%); }
+      50% { transform: translate(-50%, -110%); }
+    }
+    .map-marker-v2 svg { width: 36px; height: 44px; filter: drop-shadow(0 3px 8px rgba(0,0,0,.3)); }
+
+    .map-floating {
+      position: absolute;
+      right: 16px;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--surface);
+      box-shadow: var(--shadow-2);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      z-index: 3;
+      transition: all var(--motion-fast);
+    }
+    .map-floating:active { transform: scale(.94); }
+    .map-floating.locate { top: 120px; }
+    .map-floating.copy { top: 170px; }
+    .map-floating svg { width: 18px; height: 18px; stroke: var(--text-primary); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    .map-sheet {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      background: var(--surface);
+      border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+      padding: 8px 16px 24px;
+      box-shadow: 0 -8px 24px rgba(0,0,0,.12);
+      z-index: 4;
+    }
+    .sheet-handle {
+      width: 36px; height: 4px;
+      border-radius: 999px;
+      background: var(--border);
+      margin: 4px auto 12px;
+    }
+    .sheet-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+    .sheet-title .pill {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--brand-teal-soft);
+      color: var(--brand-teal);
+    }
+    .sheet-row {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .sheet-row:last-child { border-bottom: 0; }
+    .sheet-row .ic {
+      width: 32px; height: 32px;
+      border-radius: 10px;
+      display: grid; place-items: center;
+      flex: 0 0 auto;
+    }
+    .sheet-row .ic.teal { background: var(--brand-teal-soft); color: var(--brand-teal); }
+    .sheet-row .ic.violet { background: rgba(123,97,255,.12); color: var(--accent-violet); }
+    .sheet-row .ic.orange { background: rgba(255,138,0,.12); color: var(--accent-orange); }
+    .sheet-row .ic svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .sheet-row .text { flex: 1; min-width: 0; }
+    .sheet-row .text strong { display: block; font-size: 13px; font-weight: 700; color: var(--text-primary); }
+    .sheet-row .text span { display: block; font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
+    .sheet-row .chev { color: var(--text-tertiary); font-size: 16px; }
+
+    /* ============ Settings Screen ============ */
+    .settings-header {
+      padding: 4px 16px 12px;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+    }
+
+    .settings-group {
+      margin: 0 16px 12px;
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-1);
+      overflow: hidden;
+    }
+    .settings-group .group-title {
+      padding: 12px 16px 6px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-tertiary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .settings-row {
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: all var(--motion-fast);
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-row:last-child { border-bottom: 0; }
+    .settings-row:active { background: var(--surface-low); }
+    .settings-row .ic {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+    .settings-row .ic.teal { background: var(--brand-teal-soft); color: var(--brand-teal); }
+    .settings-row .ic.red { background: var(--brand-red-soft); color: var(--brand-red); }
+    .settings-row .ic.violet { background: rgba(123,97,255,.12); color: var(--accent-violet); }
+    .settings-row .ic.orange { background: rgba(255,138,0,.12); color: var(--accent-orange); }
+    .settings-row .ic.dark { background: var(--surface-high); color: var(--text-primary); }
+    .settings-row .ic svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .settings-row .text { flex: 1; min-width: 0; }
+    .settings-row .text strong { display: block; font-size: 14px; font-weight: 700; color: var(--text-primary); }
+    .settings-row .text .preview {
+      display: block;
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+    }
+    .settings-row .text .preview .tag-mini {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: var(--radius-xs);
+      background: var(--brand-teal-soft);
+      color: var(--brand-teal);
+      font-weight: 700;
+      margin-right: 4px;
+    }
+    .settings-row .lock {
+      width: 16px; height: 16px;
+      color: var(--text-tertiary);
+    }
+    .settings-row .chev {
+      color: var(--text-tertiary);
+      font-size: 16px;
+    }
+
+    /* ============ Bottom Nav ============ */
+    .tabbar-v2 {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 72px;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      z-index: 5;
+    }
+    [data-theme="dark"] .tabbar-v2 {
+      background: rgba(26,28,32,.92);
+    }
+    .tabbar-v2 button {
+      border: 0;
+      background: transparent;
+      display: grid;
+      place-items: center;
+      gap: 3px;
+      color: var(--text-tertiary);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      position: relative;
+      transition: color var(--motion-fast);
+    }
+    .tabbar-v2 button.active { color: var(--brand-teal); }
+    .tabbar-v2 button.active::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px; height: 2px;
+      background: var(--brand-teal);
+      border-radius: 999px;
+    }
+    .tabbar-v2 button svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ============ Responsive ============ */
+    @media (max-width: 900px) {
+      .page { grid-template-columns: 1fr; padding: 16px; }
+      .panel { position: static; }
+    }
+    @media (max-width: 440px) {
+      .page { padding: 0; gap: 0; }
+      .panel { border-radius: 0; box-shadow: none; }
+      .phone { width: 100vw; height: 100vh; border: 0; border-radius: 0; box-shadow: none; }
+      .island { display: none; }
+    }
+  </style>
+</head>
+<body data-theme="light">
+  <main class="page">
+    <aside class="panel">
+      <h1>UI v2 高保真原型</h1>
+      <p class="subtitle">基于现有 v1 token 的迭代升级方案。核心改动：Hero 大数字、双滑动控制、6 宫格快捷、状态徽章、电量档位色、暗色模式。点击右侧 Tab 切换页面。</p>
+
+      <button class="theme-toggle" id="themeToggle">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <span id="themeLabel">切换暗色模式</span>
+      </button>
+
+      <div class="score-grid">
+        <div class="score"><strong>4</strong><span>核心页面</span></div>
+        <div class="score"><strong>WCAG AA</strong><span>无障碍达标</span></div>
+      </div>
+
+      <div class="change-list">
+        <div class="change-row"><span class="tag p0">P0</span><span>首页双滑动（解锁+通电）+ 6 宫格快捷</span></div>
+        <div class="change-row"><span class="tag p0">P0</span><span>StatusBadge 统一组件，4 种状态语义色</span></div>
+        <div class="change-row"><span class="tag p1">P1</span><span>Hero 大数字 56px，电量档位色梯度</span></div>
+        <div class="change-row"><span class="tag p1">P1</span><span>暗色模式 token + 主题切换</span></div>
+        <div class="change-row"><span class="tag p2">P2</span><span>电池页环形进度 + 双栏 BMS 字段</span></div>
+        <div class="change-row"><span class="tag p2">P2</span><span>滑动磁吸 + 扫光 + 进度环</span></div>
+        <div class="change-row"><span class="tag p2">P2</span><span>设置页分组卡片 + 值预览</span></div>
+      </div>
+
+      <div class="side-tabs">
+        <button class="side-tab active" data-screen="home">首页控车</button>
+        <button class="side-tab" data-screen="battery">电池信息</button>
+        <button class="side-tab" data-screen="map">车辆定位</button>
+        <button class="side-tab" data-screen="settings">设置</button>
+      </div>
+    </aside>
+
+    <section class="stage">
+      <div class="phone">
+        <div class="island"></div>
+        <div class="app">
+
+          <!-- ============== Home ============== -->
+          <section class="screen active" id="home">
+            <div class="hero">
+              <div class="hero-top">
+                <div class="vehicle-name">
+                  <div class="name">Tailg-001 <span class="caret">▾</span></div>
+                  <div class="sub">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M7 8l-3 3 3 3"/><path d="M17 8l3 3-3 3"/><path d="M7 12h10"/><path d="M12 7v10"/></svg>
+                    蓝牙已连接
+                  </div>
+                </div>
+                <span class="status-badge online">
+                  <span class="dot"></span>
+                  在线
+                </span>
+                <button class="icon-btn" aria-label="消息">
+                  <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0v5l1.5 3h-15L6 13V8z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+                </button>
+                <button class="icon-btn" aria-label="设置">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+                </button>
+              </div>
+
+              <div class="hero-stats">
+                <div class="stat-block">
+                  <div class="value high">80<span class="unit">%</span></div>
+                  <div class="label">剩余电量</div>
+                </div>
+                <div class="divider"></div>
+                <div class="stat-block">
+                  <div class="value" style="color:var(--text-primary)">52<span class="unit">km</span></div>
+                  <div class="label">预估里程</div>
+                </div>
+              </div>
+
+              <div class="bike-area">
+                <div class="bike-shadow"></div>
+                <svg viewBox="0 0 280 130" aria-hidden="true">
+                  <ellipse cx="80" cy="100" rx="32" ry="32" fill="none" stroke="#2A2D35" stroke-width="7"/>
+                  <ellipse cx="200" cy="100" rx="32" ry="32" fill="none" stroke="#2A2D35" stroke-width="7"/>
+                  <circle cx="80" cy="100" r="20" fill="none" stroke="#00A896" stroke-width="1.5"/>
+                  <circle cx="200" cy="100" r="20" fill="none" stroke="#00A896" stroke-width="1.5"/>
+                  <path d="M80 100 L120 56 L168 100 L200 100 M120 56 L150 22 L188 48" fill="none" stroke="#2A2D35" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M128 70 L168 70" fill="none" stroke="#00A896" stroke-width="6" stroke-linecap="round"/>
+                  <rect x="120" y="70" width="56" height="28" rx="10" fill="#121418"/>
+                  <path d="M178 46 L214 35" stroke="#2A2D35" stroke-width="7" stroke-linecap="round"/>
+                  <path d="M148 24 L116 22" stroke="#2A2D35" stroke-width="7" stroke-linecap="round"/>
+                  <circle cx="150" cy="22" r="4" fill="#1F1F1F" stroke="#00A896" stroke-width="1.5"/>
+                  <rect x="56" y="98" width="12" height="16" rx="2" fill="#2A2D35"/>
+                  <rect x="212" y="98" width="12" height="16" rx="2" fill="#2A2D35"/>
+                </svg>
+              </div>
+
+              <div class="state-chips">
+                <span class="state-chip danger">
+                  <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg>
+                  已设防
+                </span>
+                <span class="state-chip">
+                  <svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M5.6 7.6a8 8 0 1 0 12.8 0"/></svg>
+                  未通电
+                </span>
+                <span class="state-chip teal">
+                  <svg viewBox="0 0 24 24"><path d="M7 8l-3 3 3 3"/><path d="M17 8l3 3-3 3"/><path d="M7 12h10"/><path d="M12 7v10"/></svg>
+                  BLE 515 MTU
+                </span>
+              </div>
+            </div>
+
+            <!-- Dual Slide Controls -->
+            <div class="dual-slide">
+              <div class="slide-card unlock" id="slideUnlock">
+                <div class="thumb">
+                  <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg>
+                </div>
+                <div class="label">
+                  <span class="arrow">›</span><span class="arrow">›</span><span class="arrow">›</span>
+                  滑动解锁
+                </div>
+                <svg class="progress-ring" viewBox="0 0 96 96">
+                  <circle cx="48" cy="48" r="44" fill="none" stroke="rgba(0,168,150,.2)" stroke-width="2"/>
+                  <circle cx="48" cy="48" r="44" fill="none" stroke="#00A896" stroke-width="2" stroke-dasharray="276" stroke-dashoffset="276" stroke-linecap="round" transform="rotate(-90 48 48)"/>
+                </svg>
+              </div>
+              <div class="slide-card power" id="slidePower">
+                <div class="thumb">
+                  <svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M5.6 7.6a8 8 0 1 0 12.8 0"/></svg>
+                </div>
+                <div class="label">
+                  滑动通电
+                  <span class="arrow">‹</span><span class="arrow">‹</span><span class="arrow">‹</span>
+                </div>
+                <svg class="progress-ring" viewBox="0 0 96 96">
+                  <circle cx="48" cy="48" r="44" fill="none" stroke="rgba(0,0,0,.1)" stroke-width="2"/>
+                  <circle cx="48" cy="48" r="44" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-dasharray="276" stroke-dashoffset="276" stroke-linecap="round" transform="rotate(-90 48 48)"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Quick Grid -->
+            <div class="quick-grid">
+              <div class="quick-cell">
+                <div class="ic-wrap red"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg></div>
+                <div class="name">设防</div>
+              </div>
+              <div class="quick-cell">
+                <div class="ic-wrap teal"><svg viewBox="0 0 24 24"><path d="M3 10v4a1 1 0 0 0 1 1h3l5 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8"/></svg></div>
+                <div class="name">寻车</div>
+              </div>
+              <div class="quick-cell">
+                <div class="ic-wrap violet"><svg viewBox="0 0 24 24"><path d="M5 11h14l-1 9H6z"/><path d="M9 11V6a3 3 0 1 1 6 0"/></svg></div>
+                <div class="name">开座桶</div>
+              </div>
+              <div class="quick-cell">
+                <div class="ic-wrap orange"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                <div class="name">骑行模式</div>
+              </div>
+              <div class="quick-cell">
+                <div class="ic-wrap teal"><svg viewBox="0 0 24 24"><path d="M12 22s8-7 8-13a8 8 0 1 0-16 0c0 6 8 13 8 13z"/><circle cx="12" cy="9" r="3"/></svg></div>
+                <div class="name">车辆位置</div>
+              </div>
+              <div class="quick-cell">
+                <div class="ic-wrap violet"><svg viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16v4z"/><path d="M14 5l4 4"/></svg></div>
+                <div class="name">日志</div>
+              </div>
+            </div>
+
+            <!-- Service Scroll -->
+            <div class="section">
+              <div class="section-head">
+                <span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/></svg></span>
+                快捷服务
+                <span class="more">查看全部 ›</span>
+              </div>
+              <div class="service-scroll">
+                <div class="service-card">
+                  <div class="sc-ic" style="background:rgba(123,97,255,.12);color:var(--accent-violet)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/></svg></div>
+                  <div>
+                    <div class="sc-title">NFC 钥匙</div>
+                    <div class="sc-sub">2 张已绑</div>
+                  </div>
+                </div>
+                <div class="service-card">
+                  <div class="sc-ic" style="background:rgba(255,138,0,.12);color:var(--accent-orange)"><svg viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"/><circle cx="18" cy="5" r="3"/><path d="M6 16V8a4 4 0 0 1 4-4h4"/><path d="M9 9l3 3-3 3"/></svg></div>
+                  <div>
+                    <div class="sc-title">历史轨迹</div>
+                    <div class="sc-sub">今日 12 条</div>
+                  </div>
+                </div>
+                <div class="service-card">
+                  <div class="sc-ic" style="background:var(--brand-teal-soft);color:var(--brand-teal)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></div>
+                  <div>
+                    <div class="sc-title">电子围栏</div>
+                    <div class="sc-sub">3 个启用</div>
+                  </div>
+                </div>
+                <div class="service-card">
+                  <div class="sc-ic" style="background:rgba(123,97,255,.12);color:var(--accent-violet)"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></div>
+                  <div>
+                    <div class="sc-title">分享用车</div>
+                    <div class="sc-sub">家庭共享</div>
+                  </div>
+                </div>
+                <div class="service-card">
+                  <div class="sc-ic" style="background:rgba(255,138,0,.12);color:var(--accent-orange)"><svg viewBox="0 0 24 24"><path d="M3 10v4a1 1 0 0 0 1 1h3l5 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8"/></svg></div>
+                  <div>
+                    <div class="sc-title">音效设置</div>
+                    <div class="sc-sub">5 项可调</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============== Battery ============== -->
+          <section class="screen" id="battery">
+            <div class="battery-hero-v2">
+              <div class="battery-ring-wrap">
+                <div class="battery-ring">
+                  <svg width="180" height="180" viewBox="0 0 180 180">
+                    <circle class="ring-bg" cx="90" cy="90" r="78" fill="none" stroke-width="10"/>
+                    <circle class="ring-fg" cx="90" cy="90" r="78" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="490" stroke-dashoffset="98"/>
+                  </svg>
+                  <div class="ring-center">
+                    <div class="num">80<span style="font-size:24px;color:var(--text-tertiary);font-weight:400">%</span></div>
+                    <div class="pct">剩余电量</div>
+                    <div class="health">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M5 12l4 4L19 6"/></svg>
+                      健康 · 良好
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="battery-source">
+                <div class="cell"><strong>BLE</strong><span>蓝牙连接</span></div>
+                <div class="cell"><strong>QGJ</strong><span>协议</span></div>
+                <div class="cell"><strong>只读</strong><span>权限</span></div>
+              </div>
+            </div>
+
+            <div class="metric-grid-2">
+              <div class="metric-cell">
+                <div class="lbl">电压</div>
+                <div class="val">48.2<span class="u">V</span></div>
+                <div class="delta">↑ 0.3V 正常</div>
+              </div>
+              <div class="metric-cell">
+                <div class="lbl">电流</div>
+                <div class="val">2.1<span class="u">A</span></div>
+                <div class="delta" style="color:var(--text-tertiary)">静置</div>
+              </div>
+              <div class="metric-cell">
+                <div class="lbl">温度</div>
+                <div class="val">31<span class="u">℃</span></div>
+                <div class="delta" style="color:var(--brand-teal)">正常范围</div>
+              </div>
+              <div class="metric-cell">
+                <div class="lbl">循环次数</div>
+                <div class="val">128<span class="u">次</span></div>
+                <div class="delta" style="color:var(--text-tertiary)">寿命 92%</div>
+              </div>
+            </div>
+
+            <div class="info-section">
+              <div class="info-row"><span class="lbl">剩余里程</span><span class="val">52 km</span></div>
+              <div class="info-row"><span class="lbl">总里程</span><span class="val">328 km</span></div>
+              <div class="info-row"><span class="lbl">电池健康</span><span class="val" style="color:var(--battery-high)">92 分</span></div>
+              <div class="info-row"><span class="lbl">电池类型</span><span class="val">磷酸铁锂</span></div>
+              <div class="info-row"><span class="lbl">额定容量</span><span class="val">24 Ah</span></div>
+              <div class="info-row"><span class="lbl">序列号</span><span class="val">SN 8821-3344</span></div>
+              <div class="info-row"><span class="lbl">固件版本</span><span class="val">v2.3.1</span></div>
+            </div>
+
+            <div class="danger-card-v2">
+              <div class="ic">
+                <svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 6"/></svg>
+              </div>
+              <div class="text">
+                <strong>BMS 自检通过</strong>
+                <span>所有电池单元状态正常，无故障告警</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============== Map ============== -->
+          <section class="screen" id="map">
+            <div class="map-screen-v2">
+              <div class="map-bg"></div>
+
+              <div class="map-search">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                <input placeholder="搜索地点或地址" />
+                <div class="filter">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+                </div>
+              </div>
+
+              <div class="map-tabs-v2">
+                <button class="active">位置</button>
+                <button>轨迹</button>
+                <button>围栏</button>
+              </div>
+
+              <div class="map-marker-v2">
+                <svg viewBox="0 0 24 32"><path d="M12 0C5.4 0 0 5.4 0 12c0 8 12 20 12 20s12-12 12-20C24 5.4 18.6 0 12 0z" fill="#F11C2C"/><circle cx="12" cy="12" r="5" fill="#fff"/></svg>
+              </div>
+
+              <div class="map-floating locate">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              </div>
+              <div class="map-floating copy">
+                <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              </div>
+
+              <div class="map-sheet">
+                <div class="sheet-handle"></div>
+                <div class="sheet-title">
+                  北京市朝阳区建国路 88 号
+                  <span class="pill">实时</span>
+                </div>
+                <div class="sheet-row">
+                  <div class="ic teal"><svg viewBox="0 0 24 24"><path d="M12 22s8-7 8-13a8 8 0 1 0-16 0c0 6 8 13 8 13z"/><circle cx="12" cy="9" r="3"/></svg></div>
+                  <div class="text">
+                    <strong>SOHO 现代城 B 座</strong>
+                    <span>精度 8m · 2 分钟前更新</span>
+                  </div>
+                  <span class="chev">›</span>
+                </div>
+                <div class="sheet-row">
+                  <div class="ic violet"><svg viewBox="0 0 24 24"><path d="M9 11h6l-1 8h-4z"/><path d="M12 11V7a3 3 0 0 1 3-3"/></svg></div>
+                  <div class="text">
+                    <strong>导航到此处</strong>
+                    <span>使用外部地图 App</span>
+                  </div>
+                  <span class="chev">›</span>
+                </div>
+                <div class="sheet-row">
+                  <div class="ic orange"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></div>
+                  <div class="text">
+                    <strong>设为围栏中心</strong>
+                    <span>创建半径 200m 电子围栏</span>
+                  </div>
+                  <span class="chev">›</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============== Settings ============== -->
+          <section class="screen" id="settings">
+            <div class="settings-header">设置</div>
+
+            <div class="settings-group">
+              <div class="group-title">骑行参数</div>
+              <div class="settings-row">
+                <div class="ic teal"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                <div class="text">
+                  <strong>骑行模式</strong>
+                  <span class="preview"><span class="tag-mini">当前</span>超能跑 · 25km/h</span>
+                </div>
+                <span class="chev">›</span>
+              </div>
+              <div class="settings-row">
+                <div class="ic orange"><svg viewBox="0 0 24 24"><path d="M3 10v4a1 1 0 0 0 1 1h3l5 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8"/></svg></div>
+                <div class="text">
+                  <strong>音效设置</strong>
+                  <span class="preview">启动 / 熄火 / 上锁 / 解锁 / 速度</span>
+                </div>
+                <span class="chev">›</span>
+              </div>
+              <div class="settings-row">
+                <div class="ic violet"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></div>
+                <div class="text">
+                  <strong>光感开关</strong>
+                  <span class="preview"><span class="tag-mini">已开启</span>自动大灯</span>
+                </div>
+                <span class="chev">›</span>
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <div class="group-title">防盗安全</div>
+              <div class="settings-row">
+                <div class="ic red"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg></div>
+                <div class="text">
+                  <strong>震动灵敏度</strong>
+                  <span class="preview"><span class="tag-mini">中档</span>4 档可调</span>
+                </div>
+                <span class="chev">›</span>
+              </div>
+              <div class="settings-row">
+                <div class="ic dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                <div class="text">
+                  <strong>自动锁车</strong>
+                  <span class="preview">熄火后 30 秒自动设防</span>
+                </div>
+                <span class="chev">›</span>
+              </div>
+              <div class="settings-row">
+                <div class="ic dark"><svg viewBox="0 0 24 24"><path d="M5 11h14l-1 9H6z"/><path d="M9 11V6a3 3 0 1 1 6 0"/></svg></div>
+                <div class="text">
+                  <strong>感应解锁距离</strong>
+                  <span class="preview">RSSI ≥ -75dBm · 30s 冷却</span>
+                </div>
+                <span class="chev">›</span>
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <div class="group-title">高级 · 只读诊断</div>
+              <div class="settings-row">
+                <div class="ic dark"><svg viewBox="0 0 24 24"><path d="M9 11V6a3 3 0 1 1 6 0v5"/><path d="M5 11h14l-1 9H6z"/></svg></div>
+                <div class="text">
+                  <strong>QGJ 高级设置</strong>
+                  <span class="preview">HID / 安全锁 / 边撑 / 坐垫 / 侧翻</span>
+                </div>
+                <svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg>
+                <span class="chev">›</span>
+              </div>
+              <div class="settings-row">
+                <div class="ic dark"><svg viewBox="0 0 24 24"><path d="M12 2v6M12 22v-6M2 12h6M22 12h-6"/></svg></div>
+                <div class="text">
+                  <strong>OTA 前置检测</strong>
+                  <span class="preview">读取设备信息 · 不写入固件</span>
+                </div>
+                <span class="chev">›</span>
+              </div>
+              <div class="settings-row">
+                <div class="ic dark"><svg viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16v4z"/><path d="M14 5l4 4"/></svg></div>
+                <div class="text">
+                  <strong>故障诊断</strong>
+                  <span class="preview">最近 20 条历史记录</span>
+                </div>
+                <span class="chev">›</span>
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <div class="group-title">关于</div>
+              <div class="settings-row">
+                <div class="ic dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg></div>
+                <div class="text">
+                  <strong>版本信息</strong>
+                  <span class="preview">v2.0.0 · build 2026.06.22</span>
+                </div>
+                <span class="chev">›</span>
+              </div>
+              <div class="settings-row">
+                <div class="ic teal"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
+                <div class="text">
+                  <strong>主题模式</strong>
+                  <span class="preview">跟随系统</span>
+                </div>
+                <span class="chev">›</span>
+              </div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- Bottom Nav -->
+        <nav class="tabbar-v2">
+          <button class="active" data-nav="home">
+            <svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
+            <span>首页</span>
+          </button>
+          <button data-nav="map">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-7 8-13a8 8 0 1 0-16 0c0 6 8 13 8 13z"/><circle cx="12" cy="9" r="3"/></svg>
+            <span>位置</span>
+          </button>
+          <button data-nav="settings">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+            <span>设置</span>
+          </button>
+        </nav>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // 屏幕切换
+    const sideTabs = document.querySelectorAll('.side-tab');
+    const screens = document.querySelectorAll('.screen');
+    const navBtns = document.querySelectorAll('.tabbar-v2 button');
+
+    function switchScreen(target) {
+      sideTabs.forEach(t => t.classList.toggle('active', t.dataset.screen === target));
+      screens.forEach(s => s.classList.toggle('active', s.id === target));
+      navBtns.forEach(b => b.classList.toggle('active', b.dataset.nav === target));
+    }
+
+    sideTabs.forEach(tab => {
+      tab.addEventListener('click', () => switchScreen(tab.dataset.screen));
+    });
+    navBtns.forEach(btn => {
+      btn.addEventListener('click', () => switchScreen(btn.dataset.nav));
+    });
+
+    // 主题切换
+    const themeToggle = document.getElementById('themeToggle');
+    const themeLabel = document.getElementById('themeLabel');
+    themeToggle.addEventListener('click', () => {
+      const body = document.body;
+      const isDark = body.getAttribute('data-theme') === 'dark';
+      body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      themeLabel.textContent = isDark ? '切换暗色模式' : '切换亮色模式';
+    });
+
+    // 滑动按钮演示
+    ['slideUnlock', 'slidePower'].forEach(id => {
+      const card = document.getElementById(id);
+      const thumb = card.querySelector('.thumb');
+      const ring = card.querySelector('.progress-ring circle:last-child');
+      let isDown = false, startX = 0, currentX = 6;
+      const maxX = 280 - 84 - 12; // 容器宽 - thumb 宽 - padding
+
+      const start = (x) => { isDown = true; startX = x; card.style.cursor = 'grabbing'; };
+      const move = (x) => {
+        if (!isDown) return;
+        const dx = x - startX;
+        currentX = Math.max(6, Math.min(maxX, 6 + dx));
+        thumb.style.left = currentX + 'px';
+        const progress = (currentX - 6) / (maxX - 6);
+        ring.style.strokeDashoffset = 276 - (276 * progress);
+        if (progress > 0.8) {
+          card.classList.add('executing');
+          // 磁吸到底
+          thumb.style.left = maxX + 'px';
+          ring.style.strokeDashoffset = 0;
+          setTimeout(() => {
+            card.classList.remove('executing');
+            thumb.style.left = '6px';
+            ring.style.strokeDashoffset = 276;
+          }, 1200);
+          isDown = false;
+        }
+      };
+      const end = () => {
+        if (!isDown) return;
+        isDown = false;
+        card.style.cursor = 'grab';
+        // 未触发磁吸则回弹
+        const progress = (currentX - 6) / (maxX - 6);
+        if (progress < 0.8) {
+          thumb.style.left = '6px';
+          ring.style.strokeDashoffset = 276;
+          currentX = 6;
+        }
+      };
+
+      card.addEventListener('mousedown', e => start(e.clientX));
+      card.addEventListener('touchstart', e => start(e.touches[0].clientX), { passive: true });
+      document.addEventListener('mousemove', e => move(e.clientX));
+      document.addEventListener('touchmove', e => move(e.touches[0].clientX), { passive: true });
+      document.addEventListener('mouseup', end);
+      document.addEventListener('touchend', end);
+    });
+  </script>
+</body>
+</html>

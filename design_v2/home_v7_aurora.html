@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Aurora Cockpit — 台铃控车首页 v7</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    :root{
+      /* ── 座舱底色:近黑带冷蓝,非纯黑更柔和 ── */
+      --bg-0:#07090D;          /* 最底层 */
+      --bg-1:#0E1116;          /* 页面底 */
+      --surface:#161A21;       /* 卡片面 */
+      --surface-2:#1D222B;     /* 悬浮面 */
+      --surface-3:#252B36;     /* 高亮面 */
+      --hairline:rgba(255,255,255,0.07);
+      --hairline-strong:rgba(255,255,255,0.12);
+
+      /* ── 电能青绿:充电/在线/能量语义 ── */
+      --energy:#00E5A8;
+      --energy-dim:#00B488;
+      --energy-glow:rgba(0,229,168,0.22);
+      --energy-soft:rgba(0,229,168,0.10);
+
+      /* ── 语义色 ── */
+      --amber:#FFB020;         /* 重连/警告 */
+      --amber-glow:rgba(255,176,32,0.18);
+      --red:#FF4D5E;           /* 警示/断连/故障 */
+      --red-glow:rgba(255,77,94,0.18);
+      --violet:#8B7CFF;        /* 模式/智能 */
+      --sky:#4FB7FF;           /* 定位/信息 */
+
+      /* ── 文本层级 ── */
+      --t-1:#F4F6FA;           /* 主文本 */
+      --t-2:#A8B0BD;           /* 次文本 */
+      --t-3:#6B7280;           /* 辅助文本 */
+
+      --r-sm:14px; --r-md:20px; --r-lg:28px; --r-xl:34px; --r-pill:999px;
+      --gap:14px;
+      --shadow-card:0 8px 28px rgba(0,0,0,0.45);
+      --ease:cubic-bezier(.4,.0,.2,1);
+      --ease-out:cubic-bezier(.16,1,.3,1);
+    }
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+      background:var(--bg-0);
+      color:var(--t-1);
+      display:flex; justify-content:center;
+      min-height:100vh;
+      -webkit-font-smoothing:antialiased;
+    }
+    /* ── 手机外框 ── */
+    .phone{
+      position:relative; width:390px; min-height:844px;
+      background:
+        radial-gradient(120% 60% at 50% -10%, rgba(0,229,168,0.10) 0%, transparent 55%),
+        radial-gradient(90% 50% at 90% 8%, rgba(139,124,255,0.08) 0%, transparent 50%),
+        var(--bg-1);
+      overflow:hidden;
+      padding:0 18px 110px;
+    }
+    .scroll{height:844px; overflow-y:auto; overflow-x:hidden; padding-bottom:30px;}
+    .scroll::-webkit-scrollbar{display:none;}
+
+    /* ── 状态栏 ── */
+    .statusbar{display:flex; justify-content:space-between; align-items:center;
+      padding:14px 4px 6px; font-size:13px; font-weight:600; color:var(--t-1);}
+    .statusbar .ico{display:flex; gap:6px; align-items:center; font-size:12px;}
+
+    /* ── 顶栏:车辆切换 + 状态 + 操作 ── */
+    .topbar{display:flex; align-items:center; justify-content:space-between; padding:6px 0 18px;}
+    .vehicle-switch{display:flex; align-items:center; gap:10px;}
+    .vehicle-switch .vname{font-size:20px; font-weight:800; letter-spacing:-0.3px;}
+    .vehicle-switch .chev{color:var(--t-3); font-size:13px; margin-top:2px;}
+    .conn-pill{display:inline-flex; align-items:center; gap:7px; padding:6px 12px;
+      border-radius:var(--r-pill); background:var(--energy-soft);
+      border:1px solid rgba(0,229,168,0.25); font-size:12px; font-weight:600; color:var(--energy);}
+    .conn-pill .dot{width:7px; height:7px; border-radius:50%; background:var(--energy);
+      box-shadow:0 0 8px var(--energy); animation:pulse 2s var(--ease) infinite;}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}}
+    .top-actions{display:flex; gap:10px;}
+    .icon-btn{width:42px; height:42px; border-radius:14px; display:grid; place-items:center;
+      background:var(--surface); border:1px solid var(--hairline); color:var(--t-1);
+      position:relative; transition:transform .15s var(--ease), background .2s;}
+    .icon-btn:active{transform:scale(.92); background:var(--surface-2);}
+    .icon-btn .badge{position:absolute; top:-3px; right:-3px; width:9px; height:9px;
+      border-radius:50%; background:var(--red); border:2px solid var(--bg-1);}
+    .icon-btn svg{width:20px; height:20px; stroke:var(--t-1); fill:none; stroke-width:1.8;
+      stroke-linecap:round; stroke-linejoin:round;}
+
+    /* ── Hero 区:车辆 + 能量环 ── */
+    .hero{position:relative; padding:6px 0 4px;}
+    .hero-stats{display:flex; justify-content:space-between; align-items:flex-start;}
+    .stat-block .num{font-size:15px; font-weight:700; color:var(--t-2);}
+    .energy-readout{text-align:left;}
+    .energy-readout .big{font-size:62px; font-weight:800; line-height:0.9; letter-spacing:-2px;
+      background:linear-gradient(135deg, #fff 0%, var(--energy) 130%);
+      -webkit-background-clip:text; background-clip:text; color:transparent;}
+    .energy-readout .pct{font-size:24px; font-weight:700; color:var(--energy); margin-left:2px;}
+    .energy-readout .label{font-size:13px; color:var(--t-3); margin-top:4px; letter-spacing:.3px;}
+    .range-block{text-align:right;}
+    .range-block .r-num{font-size:32px; font-weight:800; letter-spacing:-1px;}
+    .range-block .r-unit{font-size:14px; color:var(--t-2); font-weight:600;}
+    .range-block .r-label{font-size:12px; color:var(--t-3); margin-top:2px;}
+
+    .vehicle-stage{position:relative; height:178px; display:grid; place-items:center; margin:4px 0 2px;}
+    .vehicle-stage .halo{position:absolute; width:300px; height:120px; bottom:14px; left:50%;
+      transform:translateX(-50%);
+      background:radial-gradient(ellipse, var(--energy-glow) 0%, transparent 70%);
+      filter:blur(8px);}
+    .vehicle-stage .floor{position:absolute; bottom:18px; left:50%; transform:translateX(-50%);
+      width:240px; height:8px; border-radius:50%; background:rgba(0,0,0,0.5); filter:blur(6px);}
+    .vehicle-svg{position:relative; width:300px; height:auto; z-index:2;
+      filter:drop-shadow(0 16px 24px rgba(0,0,0,0.55));}
+
+    /* 能量进度条:座舱仪表风 */
+    .energy-bar{position:relative; height:10px; border-radius:var(--r-pill);
+      background:var(--surface-2); margin:8px 2px 0; overflow:hidden; border:1px solid var(--hairline);}
+    .energy-bar .fill{height:100%; border-radius:var(--r-pill);
+      background:linear-gradient(90deg, var(--energy-dim), var(--energy));
+      box-shadow:0 0 12px var(--energy-glow); transition:width 1.2s var(--ease-out);}
+    .energy-meta{display:flex; justify-content:space-between; margin:8px 2px 0;
+      font-size:12px; color:var(--t-3);}
+
+    /* ── 车辆状态 chips ── */
+    .state-chips{display:flex; gap:8px; margin:16px 0 4px; flex-wrap:wrap;}
+    .chip{display:inline-flex; align-items:center; gap:7px; padding:9px 14px;
+      border-radius:var(--r-pill); background:var(--surface); border:1px solid var(--hairline);
+      font-size:13px; font-weight:600; color:var(--t-2);}
+    .chip .cdot{width:7px; height:7px; border-radius:50%;}
+    .chip.armed{background:rgba(255,77,94,0.10); border-color:rgba(255,77,94,0.3); color:#FF8A95;}
+    .chip.armed .cdot{background:var(--red); box-shadow:0 0 8px var(--red);}
+    .chip.energy .cdot{background:var(--energy); box-shadow:0 0 8px var(--energy);}
+    .chip.idle .cdot{background:var(--t-3);}
+
+    /* ── 区块标题 ── */
+    .sec-label{font-size:12px; font-weight:700; color:var(--t-3); letter-spacing:1.4px;
+      text-transform:uppercase; margin:26px 2px 12px;}
+
+    /* ── 长按点火(九号 / 小牛式环形进度) ── */
+    .press-row{display:flex; gap:12px;}
+    .press{position:relative; flex:1; display:flex; flex-direction:column; align-items:center;
+      padding:18px 10px 14px; border-radius:var(--r-lg);
+      background:linear-gradient(180deg, rgba(255,255,255,0.025), rgba(0,0,0,0.18));
+      border:1px solid var(--hairline); user-select:none; touch-action:none;
+      transition:background .2s, border-color .2s;}
+    .press.holding{background:linear-gradient(180deg, rgba(0,229,168,0.05), rgba(0,0,0,0.18));}
+    .press.unlock.holding{background:linear-gradient(180deg, rgba(255,176,32,0.06), rgba(0,0,0,0.18));}
+    /* 环 + 核心 */
+    .press .ring{position:absolute; top:14px; width:96px; height:96px;
+      transform:rotate(-90deg); pointer-events:none;}
+    .press .ring-bg{fill:none; stroke:rgba(255,255,255,0.06); stroke-width:5;}
+    .press .ring-fg{fill:none; stroke:var(--energy); stroke-width:5; stroke-linecap:round;
+      stroke-dasharray:339.292; stroke-dashoffset:339.292;
+      transition:stroke-dashoffset .08s linear; filter:drop-shadow(0 0 5px var(--energy-glow));}
+    .press.unlock .ring-fg{stroke:var(--amber); filter:drop-shadow(0 0 5px rgba(255,176,32,0.55));}
+    .press-core{position:relative; width:80px; height:80px; margin:8px 0 0; border-radius:50%;
+      display:grid; place-items:center; z-index:2; color:var(--energy);
+      background:radial-gradient(circle at 38% 30%, var(--surface-3), var(--surface-2));
+      border:1px solid var(--hairline-strong);
+      box-shadow:0 6px 18px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+      transition:transform .12s var(--ease-out), box-shadow .2s, background .2s, color .2s;}
+    .press.unlock .press-core{color:var(--amber);}
+    .press.holding .press-core{transform:scale(.93);}
+    .press-core svg{width:30px; height:30px; stroke:currentColor; fill:none;
+      stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+    .press.done .press-core{background:var(--energy); color:#04130E; border-color:var(--energy);
+      box-shadow:0 0 28px var(--energy-glow); transform:scale(1);}
+    .press.unlock.done .press-core{background:var(--amber); color:#1A1200;
+      box-shadow:0 0 28px rgba(255,176,32,0.5);}
+    .press-label{margin-top:13px; font-size:14.5px; font-weight:700; letter-spacing:.3px;
+      color:var(--t-1);}
+    .press-hint{margin-top:3px; font-size:11.5px; color:var(--t-3); transition:opacity .2s;}
+    .press.holding .press-hint{opacity:0;}
+    .press.done .press-hint{opacity:0;}
+
+    /* ── 6 宫格快捷 ── */
+    .quick-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+    .quick{position:relative; background:var(--surface); border:1px solid var(--hairline);
+      border-radius:var(--r-md); padding:16px 10px 13px; display:flex; flex-direction:column;
+      align-items:center; gap:9px; transition:transform .15s var(--ease), background .2s;}
+    .quick:active{transform:scale(.95); background:var(--surface-2);}
+    .quick .qicon{width:46px; height:46px; border-radius:14px; display:grid; place-items:center;}
+    .quick .qicon svg{width:23px; height:23px; fill:none; stroke-width:1.9;
+      stroke-linecap:round; stroke-linejoin:round;}
+    .quick .qlabel{font-size:12.5px; font-weight:600; color:var(--t-2);}
+    .quick.active{border-color:rgba(0,229,168,0.4); background:var(--energy-soft);}
+    .quick.active .qlabel{color:var(--energy);}
+    .q-energy .qicon{background:var(--energy-soft);} .q-energy svg{stroke:var(--energy);}
+    .q-red .qicon{background:var(--red-glow);} .q-red svg{stroke:var(--red);}
+    .q-amber .qicon{background:var(--amber-glow);} .q-amber svg{stroke:var(--amber);}
+    .q-violet .qicon{background:rgba(139,124,255,0.14);} .q-violet svg{stroke:var(--violet);}
+    .q-sky .qicon{background:rgba(79,183,255,0.14);} .q-sky svg{stroke:var(--sky);}
+    .q-mute .qicon{background:var(--surface-3);} .q-mute svg{stroke:var(--t-2);}
+
+    /* ── 服务卡片(横滑) ── */
+    .service-scroll{display:flex; gap:12px; overflow-x:auto; padding:2px 2px 6px; margin:0 -2px;}
+    .service-scroll::-webkit-scrollbar{display:none;}
+    .service-card{flex:0 0 152px; background:var(--surface); border:1px solid var(--hairline);
+      border-radius:var(--r-md); padding:16px; display:flex; flex-direction:column; gap:10px;
+      transition:transform .15s var(--ease);}
+    .service-card:active{transform:scale(.97);}
+    .service-card .s-ico{width:40px; height:40px; border-radius:12px; display:grid; place-items:center;}
+    .service-card .s-ico svg{width:21px;height:21px;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+    .service-card .s-title{font-size:14.5px; font-weight:700;}
+    .service-card .s-sub{font-size:12px; color:var(--t-3); line-height:1.4;}
+    .service-card .s-val{font-size:13px; font-weight:700; color:var(--energy); margin-top:auto;}
+
+    /* ── 底部导航 ── */
+    .nav{position:absolute; left:0; right:0; bottom:0; height:92px;
+      background:linear-gradient(to top, var(--bg-0) 30%, transparent);
+      display:flex; align-items:flex-start; justify-content:center; pointer-events:none;}
+    .nav-inner{margin-top:14px; width:330px; height:62px; pointer-events:auto;
+      background:rgba(22,26,33,0.82); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+      border:1px solid var(--hairline); border-radius:24px;
+      display:flex; align-items:center; justify-content:space-around; padding:0 8px;
+      box-shadow:var(--shadow-card);}
+    .nav-item{display:flex; flex-direction:column; align-items:center; gap:4px;
+      color:var(--t-3); font-size:11px; font-weight:600; flex:1; padding:8px 0;}
+    .nav-item svg{width:23px; height:23px; fill:none; stroke:currentColor; stroke-width:1.9;
+      stroke-linecap:round; stroke-linejoin:round;}
+    .nav-item.on{color:var(--energy);}
+
+    /* ── Toast ── */
+    .toast{position:absolute; top:64px; left:50%; transform:translateX(-50%) translateY(-80px);
+      background:var(--surface-3); border:1px solid var(--hairline-strong); color:var(--t-1);
+      padding:11px 18px; border-radius:var(--r-pill); font-size:13px; font-weight:600;
+      display:flex; align-items:center; gap:8px; box-shadow:var(--shadow-card);
+      opacity:0; transition:all .35s var(--ease-out); z-index:50; pointer-events:none;}
+    .toast.show{transform:translateX(-50%) translateY(0); opacity:1;}
+    .toast .tdot{width:8px;height:8px;border-radius:50%;background:var(--energy);box-shadow:0 0 8px var(--energy);}
+
+    /* placeholder-body */
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="scroll" id="scroll">
+      <div class="statusbar">
+        <span>9:41</span>
+        <span class="ico">5G &nbsp; ▮▮▮ &nbsp; 84%</span>
+      </div>
+      <!-- 顶栏 -->
+      <div class="topbar">
+        <div class="vehicle-switch">
+          <div>
+            <div class="vname">台铃 N8 ▾</div>
+          </div>
+        </div>
+        <div class="conn-pill"><span class="dot"></span>蓝牙已连接</div>
+        <div class="top-actions">
+          <div class="icon-btn"><span class="badge"></span>
+            <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          </div>
+          <div class="icon-btn">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero -->
+      <div class="hero">
+        <div class="hero-stats">
+          <div class="energy-readout">
+            <div><span class="big" id="bigPct">85</span><span class="pct">%</span></div>
+            <div class="label">剩余电量 · 健康良好</div>
+          </div>
+          <div class="range-block">
+            <div><span class="r-num">47</span><span class="r-unit"> km</span></div>
+            <div class="r-label">预估续航</div>
+          </div>
+        </div>
+
+        <div class="vehicle-stage">
+          <div class="halo"></div>
+          <div class="floor"></div>
+          <svg class="vehicle-svg" viewBox="0 0 320 140">
+            <path d="M60 100 L100 100 L130 70 L220 70 L250 100 L290 100" stroke="#E6EBF2" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M130 70 L120 50 L90 50" stroke="#E6EBF2" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M120 50 L140 45 L160 70" stroke="#E6EBF2" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <rect x="145" y="52" width="80" height="30" rx="8" fill="#2A313D"/>
+            <rect x="150" y="56" width="35" height="14" rx="4" fill="#00E5A8"/>
+            <path d="M220 55 L250 58 L250 68 L220 65 Z" fill="#3A434F"/>
+            <circle cx="55" cy="100" r="24" fill="#1D222B" stroke="#3A434F" stroke-width="2"/>
+            <circle cx="55" cy="100" r="11" fill="#0E1116"/>
+            <circle cx="295" cy="100" r="24" fill="#1D222B" stroke="#3A434F" stroke-width="2"/>
+            <circle cx="295" cy="100" r="11" fill="#0E1116"/>
+            <rect x="140" y="82" width="90" height="6" rx="3" fill="#5A6472"/>
+          </svg>
+        </div>
+
+        <div class="energy-bar"><div class="fill" id="energyFill" style="width:85%"></div></div>
+        <div class="energy-meta"><span>总里程 1,248 km</span><span>今日 32 km</span></div>
+
+        <div class="state-chips">
+          <div class="chip armed"><span class="cdot"></span>已设防</div>
+          <div class="chip idle"><span class="cdot"></span>未通电</div>
+          <div class="chip energy"><span class="cdot"></span>BLE 直连</div>
+        </div>
+      </div>
+
+      <!-- 主控制:长按点火(九号 / 小牛式环形进度) -->
+      <div class="sec-label">快捷控制</div>
+      <div class="press-row">
+        <div class="press unlock" id="pressUnlock">
+          <svg class="ring" viewBox="0 0 120 120">
+            <circle class="ring-bg" cx="60" cy="60" r="54"/>
+            <circle class="ring-fg" cx="60" cy="60" r="54"/>
+          </svg>
+          <div class="press-core">
+            <svg class="press-ico" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+          </div>
+          <div class="press-label">长按解锁</div>
+          <div class="press-hint">按住 1.2 秒</div>
+        </div>
+        <div class="press power" id="pressPower">
+          <svg class="ring" viewBox="0 0 120 120">
+            <circle class="ring-bg" cx="60" cy="60" r="54"/>
+            <circle class="ring-fg" cx="60" cy="60" r="54"/>
+          </svg>
+          <div class="press-core">
+            <svg class="press-ico" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+          </div>
+          <div class="press-label">长按通电</div>
+          <div class="press-hint">按住 1.2 秒</div>
+        </div>
+      </div>
+
+      <!-- 6 宫格 -->
+      <div class="sec-label">车辆操作</div>
+      <div class="quick-grid">
+        <div class="quick q-red" data-name="一键设防">
+          <div class="qicon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="qlabel">一键设防</div>
+        </div>
+        <div class="quick q-amber" data-name="寻车鸣笛">
+          <div class="qicon"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></div>
+          <div class="qlabel">寻车鸣笛</div>
+        </div>
+        <div class="quick q-energy" data-name="开座桶">
+          <div class="qicon"><svg viewBox="0 0 24 24"><path d="M3 12h18M3 12a9 9 0 0 1 18 0M3 12v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/></svg></div>
+          <div class="qlabel">开座桶</div>
+        </div>
+        <div class="quick q-violet" data-name="骑行模式">
+          <div class="qicon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></div>
+          <div class="qlabel">骑行模式</div>
+        </div>
+        <div class="quick q-sky" data-name="车辆定位">
+          <div class="qicon"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <div class="qlabel">车辆定位</div>
+        </div>
+        <div class="quick q-mute" data-name="运行日志">
+          <div class="qicon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg></div>
+          <div class="qlabel">运行日志</div>
+        </div>
+      </div>
+
+      <!-- 服务卡片 -->
+      <div class="sec-label">智能服务</div>
+      <div class="service-scroll">
+        <div class="service-card">
+          <div class="s-ico" style="background:var(--energy-soft)"><svg viewBox="0 0 24 24" stroke="var(--energy)"><path d="M14.7 6.3a4 4 0 0 1 0 5.4l-2 2a4 4 0 0 1-5.4-5.4M9.3 17.7a4 4 0 0 1 0-5.4l2-2a4 4 0 0 1 5.4 5.4"/></svg></div>
+          <div class="s-title">感应解锁</div>
+          <div class="s-sub">靠近自动解锁，离车自动设防</div>
+          <div class="s-val">已开启</div>
+        </div>
+        <div class="service-card">
+          <div class="s-ico" style="background:var(--amber-glow)"><svg viewBox="0 0 24 24" stroke="var(--amber)"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></div>
+          <div class="s-title">电池详情</div>
+          <div class="s-sub">BMS 电压 · 温度 · 循环次数</div>
+          <div class="s-val">健康 96%</div>
+        </div>
+        <div class="service-card">
+          <div class="s-ico" style="background:rgba(139,124,255,0.14)"><svg viewBox="0 0 24 24" stroke="var(--violet)"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+          <div class="s-title">骑行记录</div>
+          <div class="s-sub">轨迹回放 · 里程统计</div>
+          <div class="s-val">本月 312 km</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="nav">
+      <div class="nav-inner">
+        <div class="nav-item on"><svg viewBox="0 0 24 24"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>控车</div>
+        <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>定位</div>
+        <div class="nav-item"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>车库</div>
+        <div class="nav-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>我的</div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"><span class="tdot"></span><span id="toastMsg">已通电</span></div>
+  </div>
+
+  <script>
+    // ── Toast ──
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+    let toastTimer;
+    function showToast(msg){
+      toastMsg.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(()=>toast.classList.remove('show'), 1800);
+    }
+
+    // ── 长按点火(九号 / 小牛式:按住 1.3s,环形进度填满触发) ──
+    const HOLD_MS = 1200;
+    const RING_LEN = 339.292; // 2πr, r=54
+    function bindPress(el, label){
+      const ring = el.querySelector('.ring-fg');
+      let raf=0, startT=0, active=false;
+
+      const reset = ()=>{
+        cancelAnimationFrame(raf); active=false;
+        el.classList.remove('holding');
+        ring.style.transition='stroke-dashoffset .25s var(--ease-out)';
+        ring.style.strokeDashoffset = RING_LEN;
+      };
+      const tick = ()=>{
+        if(!active) return;
+        const p = Math.min(1, (performance.now()-startT)/HOLD_MS);
+        ring.style.transition='none';
+        ring.style.strokeDashoffset = RING_LEN*(1-p);
+        if(p>=1){ fire(); return; }
+        raf = requestAnimationFrame(tick);
+      };
+      const fire = ()=>{
+        active=false; cancelAnimationFrame(raf);
+        el.classList.remove('holding'); el.classList.add('done');
+        if(navigator.vibrate) navigator.vibrate([18,40,18]);
+        showToast(label+' 指令已下发');
+        setTimeout(()=>{
+          el.classList.remove('done');
+          ring.style.transition='stroke-dashoffset .3s var(--ease-out)';
+          ring.style.strokeDashoffset = RING_LEN;
+        }, 1500);
+      };
+      const onDown = e=>{
+        e.preventDefault();
+        if(el.classList.contains('done')) return;
+        active=true; startT=performance.now();
+        el.classList.add('holding');
+        if(navigator.vibrate) navigator.vibrate(8);
+        raf = requestAnimationFrame(tick);
+      };
+      el.addEventListener('mousedown', onDown);
+      el.addEventListener('touchstart', onDown, {passive:false});
+      window.addEventListener('mouseup', reset);
+      window.addEventListener('touchend', reset);
+      el.addEventListener('mouseleave', reset);
+    }
+    bindPress(document.getElementById('pressUnlock'), '解锁');
+    bindPress(document.getElementById('pressPower'),  '通电');
+
+    // ── 6 宫格:开关类切换激活态,其余直接反馈 ──
+    document.querySelectorAll('.quick').forEach(q=>{
+      q.addEventListener('click', ()=>{
+        const name = q.dataset.name;
+        if(q.classList.contains('q-red')||q.classList.contains('q-energy')){
+          q.classList.toggle('active');
+          showToast(name + (q.classList.contains('active')?' 已开启':' 已关闭'));
+        } else { showToast(name); }
+        if(navigator.vibrate) navigator.vibrate(12);
+      });
+    });
+
+    // ── 入场:电量条 + 数字滚动 ──
+    window.addEventListener('load', ()=>{
+      const fill = document.getElementById('energyFill');
+      const big  = document.getElementById('bigPct');
+      fill.style.width='0';
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{ fill.style.width='85%'; }));
+      let n=0; const t=setInterval(()=>{ n+=3; if(n>=85){n=85;clearInterval(t);} big.textContent=n; }, 22);
+    });
+
+    // ── 底部导航 ──
+    document.querySelectorAll('.nav-item').forEach(item=>{
+      item.addEventListener('click', ()=>{
+        document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('on'));
+        item.classList.add('on');
+      });
+    });
+  </script>
+</body>
+</html>

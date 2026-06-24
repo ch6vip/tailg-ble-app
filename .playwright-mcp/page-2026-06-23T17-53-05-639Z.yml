@@ -1,0 +1,97 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: 9:41
+      - generic [ref=e6]: 5G ▮▮▮ 84%
+    - generic [ref=e7]:
+      - generic [ref=e10]: 台铃 N8 ▾
+      - generic [ref=e11]: 蓝牙已连接
+      - generic [ref=e13]:
+        - img [ref=e16]
+        - img [ref=e20]
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]: 6%
+          - generic [ref=e27]: 剩余电量 · 健康良好
+        - generic [ref=e28]:
+          - generic [ref=e29]: 47 km
+          - generic [ref=e30]: 预估续航
+      - img [ref=e34]
+      - generic [ref=e48]:
+        - generic [ref=e49]: 总里程 1,248 km
+        - generic [ref=e50]: 今日 32 km
+      - generic [ref=e51]:
+        - generic [ref=e52]: 已设防
+        - generic [ref=e54]: 未通电
+        - generic [ref=e56]: BLE 直连
+    - generic [ref=e58]: 快捷控制
+    - generic [ref=e59]:
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - text: 滑动解锁
+          - generic [ref=e62]:
+            - generic [ref=e63]: ›
+            - generic [ref=e64]: ›
+            - generic [ref=e65]: ›
+        - img [ref=e67]
+      - generic [ref=e70]:
+        - generic [ref=e71]:
+          - text: 滑动通电
+          - generic [ref=e72]:
+            - generic [ref=e73]: ›
+            - generic [ref=e74]: ›
+            - generic [ref=e75]: ›
+        - img [ref=e77]
+    - generic [ref=e79]: 车辆操作
+    - generic [ref=e80]:
+      - generic [ref=e81]:
+        - img [ref=e83]
+        - generic [ref=e85]: 一键设防
+      - generic [ref=e86]:
+        - img [ref=e88]
+        - generic [ref=e91]: 寻车鸣笛
+      - generic [ref=e92]:
+        - img [ref=e94]
+        - generic [ref=e96]: 开座桶
+      - generic [ref=e97]:
+        - img [ref=e99]
+        - generic [ref=e102]: 骑行模式
+      - generic [ref=e103]:
+        - img [ref=e105]
+        - generic [ref=e108]: 车辆定位
+      - generic [ref=e109]:
+        - img [ref=e111]
+        - generic [ref=e114]: 运行日志
+    - generic [ref=e115]: 智能服务
+    - generic [ref=e116]:
+      - generic [ref=e117]:
+        - img [ref=e119]
+        - generic [ref=e121]: 感应解锁
+        - generic [ref=e122]: 靠近自动解锁，离车自动设防
+        - generic [ref=e123]: 已开启
+      - generic [ref=e124]:
+        - img [ref=e126]
+        - generic [ref=e128]: 电池详情
+        - generic [ref=e129]: BMS 电压 · 温度 · 循环次数
+        - generic [ref=e130]: 健康 96%
+      - generic [ref=e131]:
+        - img [ref=e133]
+        - generic [ref=e136]: 骑行记录
+        - generic [ref=e137]: 轨迹回放 · 里程统计
+        - generic [ref=e138]: 本月 312 km
+  - generic [ref=e139]:
+    - generic [ref=e140]:
+      - img [ref=e141]
+      - text: 控车
+    - generic [ref=e143]:
+      - img [ref=e144]
+      - text: 定位
+    - generic [ref=e147]:
+      - img [ref=e148]
+      - text: 车库
+    - generic [ref=e151]:
+      - img [ref=e152]
+      - text: 我的
+  - generic:
+    - generic: 已通电

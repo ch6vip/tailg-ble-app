@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>小米风格 — 台铃控车首页</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #F5F5F5;
+      --card: #FFFFFF;
+      --text-primary: #1A1A1A;
+      --text-secondary: #8C8C8C;
+      --text-tertiary: #B3B3B3;
+      --accent: #00A896;
+      --accent-light: #E5F7F5;
+      --warning: #FF9F0A;
+      --danger: #FF3B30;
+      --success: #34C759;
+      --divider: #E8E8E8;
+      --radius: 28px;
+      --radius-sm: 16px;
+      --shadow: 0 4px 20px rgba(0,0,0,0.04);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 0 16px 24px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0 12px;
+    }
+    .header-title { font-size: 15px; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.2px; }
+    .header-actions { display: flex; gap: 12px; }
+    .header-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--card); display: grid; place-items: center;
+      box-shadow: var(--shadow-sm); color: var(--text-primary); font-size: 18px;
+    }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 20px; background: var(--card);
+      font-size: 12px; color: var(--text-secondary); box-shadow: var(--shadow-sm);
+    }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+
+    /* 主设备卡片 */
+    .device-card {
+      background: var(--card); border-radius: var(--radius);
+      padding: 28px; box-shadow: var(--shadow); margin-top: 8px;
+    }
+    .device-top {
+      display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;
+    }
+    .device-name { font-size: 24px; font-weight: 700; letter-spacing: -0.3px; }
+    .device-tag {
+      padding: 5px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+      background: var(--accent-light); color: var(--accent);
+    }
+    .device-vin { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+
+    .vehicle-visual {
+      position: relative; height: 180px; display: grid; place-items: center; margin: 20px 0;
+    }
+    .vehicle-svg { width: 260px; height: auto; filter: drop-shadow(0 10px 24px rgba(0,0,0,0.08)); }
+    .vehicle-glow {
+      position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 220px; height: 40px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(0,168,150,0.12) 0%, transparent 70%);
+    }
+
+    .battery-strip {
+      display: flex; align-items: center; gap: 12px; margin-top: 4px;
+    }
+    .battery-bar {
+      flex: 1; height: 8px; border-radius: 4px; background: #F0F0F0; overflow: hidden;
+    }
+    .battery-fill { height: 100%; width: 85%; border-radius: 4px; background: var(--accent); transition: width 0.4s ease, background 0.4s ease; }
+    .battery-text { font-size: 13px; font-weight: 600; color: var(--accent); min-width: 38px; text-align: right; }
+    .battery-label { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+    .device-metrics {
+      display: flex; gap: 16px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--divider);
+    }
+    .metric { flex: 1; }
+    .metric-value { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+    .metric-label { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+
+    /* 快捷操作区 */
+    .section { margin-top: 24px; }
+    .section-title {
+      font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; padding-left: 4px;
+    }
+    .quick-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    }
+    .quick-item {
+      background: var(--card); border-radius: var(--radius-sm); padding: 14px 0;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      box-shadow: var(--shadow-sm); transition: transform 0.15s ease;
+    }
+    .quick-item:active { transform: scale(0.96); }
+    .quick-icon {
+      width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+      font-size: 22px; background: #F8F8F8; color: var(--text-primary);
+    }
+    .quick-icon.red { background: #FFF0ED; color: var(--danger); }
+    .quick-icon.green { background: var(--accent-light); color: var(--accent); }
+    .quick-icon.blue { background: #E8F4FF; color: #007AFF; }
+    .quick-icon.orange { background: #FFF5E5; color: var(--warning); }
+    .quick-label { font-size: 12px; color: var(--text-secondary); }
+
+    /* 滑动控制 */
+    .control-cards { display: flex; flex-direction: column; gap: 12px; }
+    .control-card {
+      background: var(--card); border-radius: var(--radius-sm); padding: 18px 20px;
+      box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between;
+    }
+    .control-info { display: flex; flex-direction: column; gap: 4px; }
+    .control-title { font-size: 15px; font-weight: 600; }
+    .control-desc { font-size: 12px; color: var(--text-secondary); }
+    .control-toggle {
+      width: 50px; height: 30px; border-radius: 15px; background: #E5E5EA; position: relative;
+      transition: background 0.25s ease; cursor: pointer; flex-shrink: 0;
+    }
+    .control-toggle::after {
+      content: ''; position: absolute; top: 2px; left: 2px; width: 26px; height: 26px;
+      border-radius: 50%; background: white; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      transition: transform 0.25s ease;
+    }
+    .control-toggle.on { background: var(--accent); }
+    .control-toggle.on::after { transform: translateX(20px); }
+
+    /* 底部导航 */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 80px;
+      background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+      display: flex; justify-content: space-around; align-items: flex-start; padding-top: 12px;
+      border-top: 0.5px solid var(--divider); z-index: 10;
+    }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-tertiary); font-size: 11px; }
+    .nav-item.active { color: var(--accent); }
+    .nav-icon { font-size: 24px; }
+    .safe-area { height: 80px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-title">我的台铃</div>
+    <div class="header-actions">
+      <div class="header-btn">🔔</div>
+      <div class="header-btn">⚙️</div>
+    </div>
+  </div>
+
+  <div class="status-badge">
+    <span class="status-dot"></span>
+    <span>车辆在线</span>
+  </div>
+
+  <div class="device-card">
+    <div class="device-top">
+      <div>
+        <div class="device-name">台铃 · 领跑</div>
+        <div class="device-vin">VIN: TLG8A32E2024</div>
+      </div>
+      <div class="device-tag">已设防</div>
+    </div>
+
+    <div class="vehicle-visual">
+      <div class="vehicle-glow"></div>
+      <svg class="vehicle-svg" viewBox="0 0 320 140">
+        <!-- 车架 -->
+        <path d="M60 100 L100 100 L130 70 L220 70 L250 100 L290 100" stroke="#1A1A1A" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M130 70 L120 50 L90 50" stroke="#1A1A1A" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M120 50 L140 45 L160 70" stroke="#1A1A1A" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <!-- 车身 -->
+        <rect x="145" y="52" width="80" height="30" rx="8" fill="#1A1A1A"/>
+        <rect x="150" y="56" width="35" height="14" rx="4" fill="#00A896"/>
+        <!-- 座椅 -->
+        <path d="M220 55 L250 58 L250 68 L220 65 Z" fill="#2A2D35"/>
+        <!-- 前轮 -->
+        <circle cx="55" cy="100" r="24" fill="#1A1A1A"/>
+        <circle cx="55" cy="100" r="12" fill="#F5F5F5"/>
+        <!-- 后轮 -->
+        <circle cx="295" cy="100" r="24" fill="#1A1A1A"/>
+        <circle cx="295" cy="100" r="12" fill="#F5F5F5"/>
+        <!-- 踏板 -->
+        <rect x="140" y="82" width="90" height="6" rx="3" fill="#8C8C8C"/>
+      </svg>
+    </div>
+
+    <div class="battery-strip">
+      <div class="battery-bar"><div class="battery-fill" id="batteryFill"></div></div>
+      <div class="battery-text" id="batteryText">85%</div>
+    </div>
+    <div class="battery-label">预计可续航 47 km</div>
+
+    <div class="device-metrics">
+      <div class="metric">
+        <div class="metric-value">1,248</div>
+        <div class="metric-label">总里程 (km)</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value">32</div>
+        <div class="metric-label">今日骑行 (km)</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value">3.2</div>
+        <div class="metric-label">平均能耗 (Wh/km)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">快捷控制</div>
+    <div class="quick-grid">
+      <div class="quick-item">
+        <div class="quick-icon green">🔓</div>
+        <div class="quick-label">解锁</div>
+      </div>
+      <div class="quick-item">
+        <div class="quick-icon red">🔒</div>
+        <div class="quick-label">设防</div>
+      </div>
+      <div class="quick-item">
+        <div class="quick-icon blue">🧳</div>
+        <div class="quick-label">座桶</div>
+      </div>
+      <div class="quick-item">
+        <div class="quick-icon orange">🔔</div>
+        <div class="quick-label">寻车</div>
+      </div>
+      <div class="quick-item">
+        <div class="quick-icon blue">💡</div>
+        <div class="quick-label">大灯</div>
+      </div>
+      <div class="quick-item">
+        <div class="quick-icon green">🔋</div>
+        <div class="quick-label">电池</div>
+      </div>
+      <div class="quick-item">
+        <div class="quick-icon orange">🧭</div>
+        <div class="quick-label">定位</div>
+      </div>
+      <div class="quick-item">
+        <div class="quick-icon">📝</div>
+        <div class="quick-label">更多</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">智能模式</div>
+    <div class="control-cards">
+      <div class="control-card" onclick="toggle(this)">
+        <div class="control-info">
+          <div class="control-title">无钥匙启动</div>
+          <div class="control-desc">靠近车辆自动解锁</div>
+        </div>
+        <div class="control-toggle on"></div>
+      </div>
+      <div class="control-card" onclick="toggle(this)">
+        <div class="control-info">
+          <div class="control-title">感应设防</div>
+          <div class="control-desc">离开车辆 5 米自动设防</div>
+        </div>
+        <div class="control-toggle"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="safe-area"></div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <div class="nav-icon">🏠</div>
+      <span>首页</span>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">📍</div>
+      <span>定位</span>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">🛠️</div>
+      <span>服务</span>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">👤</div>
+      <span>我的</span>
+    </div>
+  </div>
+
+  <script>
+    function toggle(el) {
+      const t = el.querySelector('.control-toggle');
+      t.classList.toggle('on');
+    }
+
+    // 点击电量切换档位演示
+    document.querySelector('.battery-strip').addEventListener('click', () => {
+      const fill = document.getElementById('batteryFill');
+      const text = document.getElementById('batteryText');
+      const current = parseInt(text.textContent);
+      let next = current === 85 ? 42 : current === 42 ? 12 : 85;
+      text.textContent = next + '%';
+      fill.style.width = next + '%';
+      if (next > 50) { fill.style.background = 'var(--accent)'; text.style.color = 'var(--accent)'; }
+      else if (next > 20) { fill.style.background = 'var(--warning)'; text.style.color = 'var(--warning)'; }
+      else { fill.style.background = 'var(--danger)'; text.style.color = 'var(--danger)'; }
+    });
+  </script>
+</body>
+</html>
