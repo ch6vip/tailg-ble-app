@@ -6,6 +6,8 @@ import '../models/vehicle_profile.dart';
 import '../services/vehicle_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/status_badge.dart';
+import '../widgets/vehicle_stage.dart';
 
 class GaragePage extends StatelessWidget {
   /// When hosted as a bottom-nav tab there is no route to pop back to, so the
@@ -133,18 +135,21 @@ class _VehicleCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // v8: vehicle illustration + title row
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.electric_bike,
-                  color: AppColors.primary,
+              // Vehicle mini SVG
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: 100,
+                  height: 70,
+                  color: AppColors.pageBgTop,
+                  child: CustomPaint(
+                    painter: VehicleStagePainter(batteryLevel: 0.7),
+                    size: const Size(100, 70),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -159,44 +164,58 @@ class _VehicleCard extends StatelessWidget {
                             vehicle.displayName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.subtitle.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.w600),
                           ),
                         ),
                         if (isDefault) ...[
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.1),
+                              color: AppColors.primary.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Text(
-                              '默认',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppColors.primary,
-                              ),
-                            ),
+                            child: const Text('默认', style: TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600)),
                           ),
                         ],
                       ],
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      vehicle.id,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
-                        fontFamily: 'monospace',
+                    const SizedBox(height: 4),
+                    // v8: SOC bar
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(2),
+                      child: Container(
+                        height: 4,
+                        width: 120,
+                        color: AppColors.surfaceContainerHigh,
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: 0.72,
+                          child: Container(color: AppColors.energyGreen),
+                        ),
                       ),
                     ),
+                    const SizedBox(height: 6),
+                    // v8: status badge + action buttons
+                    Row(children: [
+                      const StatusBadge(type: StatusBadgeType.ble, compact: true),
+                      const Spacer(),
+                      _MiniActionButton(
+                        icon: Icons.location_on_outlined,
+                        label: '定位',
+                        onTap: () {
+                          homeTabIndex.value = 1;
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      _MiniActionButton(
+                        icon: Icons.sensors_rounded,
+                        label: '控车',
+                        onTap: () {
+                          homeTabIndex.value = 0;
+                        },
+                      ),
+                    ]),
                   ],
                 ),
               ),
@@ -213,29 +232,6 @@ class _VehicleCard extends StatelessWidget {
                     const PopupMenuItem(value: 'default', child: Text('设为默认')),
                   const PopupMenuItem(value: 'delete', child: Text('删除车辆')),
                 ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              _InfoPill(icon: Icons.swap_horiz, label: vehicle.protocol.label),
-              const SizedBox(width: 8),
-              if (vehicle.protocol == VehicleProtocol.qgj ||
-                  vehicle.hasQgjCredentials) ...[
-                _InfoPill(
-                  icon: Icons.key_outlined,
-                  label: vehicle.hasQgjCredentials ? '自定义登录' : '默认登录',
-                ),
-                const SizedBox(width: 8),
-              ],
-              Expanded(
-                child: _InfoPill(
-                  icon: Icons.schedule,
-                  label: vehicle.lastConnectedAt == null
-                      ? '未记录连接'
-                      : '上次 ${_formatDate(vehicle.lastConnectedAt!)}',
-                ),
               ),
             ],
           ),
@@ -410,11 +406,6 @@ class _VehicleCard extends StatelessWidget {
       }
     }
   }
-
-  String _formatDate(DateTime value) {
-    String two(int number) => number.toString().padLeft(2, '0');
-    return '${value.month}/${value.day} ${two(value.hour)}:${two(value.minute)}';
-  }
 }
 
 class _QgjCredentialEdit {
@@ -427,6 +418,26 @@ class _QgjCredentialEdit {
     : password = null,
       userId = null,
       clear = true;
+}
+
+/// v8 mini action button for garage cards: locate / control.
+class _MiniActionButton extends StatelessWidget {
+  const _MiniActionButton({required this.icon, required this.label, this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 15, color: AppColors.primary),
+        const SizedBox(width: 3),
+        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
+      ]),
+    );
+  }
 }
 
 class _InfoPill extends StatelessWidget {
