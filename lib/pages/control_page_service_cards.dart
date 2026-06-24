@@ -155,7 +155,6 @@ class _EditableListRow extends StatelessWidget {
     this.lockOff = false,
     this.dragIndex,
     this.onVisibleChanged,
-    this.onReorder,
   });
 
   final IconData icon;
