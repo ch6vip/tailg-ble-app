@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,7 +22,6 @@ import '../widgets/vehicle_stage.dart';
 import '../widgets/control_card.dart';
 import 'control_page_hero.dart';
 import 'battery_details_page.dart';
-import 'device_info_page.dart';
 import 'diagnostic_page.dart';
 import 'garage_page.dart';
 import 'location_page.dart';
@@ -48,16 +46,12 @@ part 'control_page_mode_widgets.dart';
 
 const _pageBg = AppColors.pageBg;
 const _kmPerPercent = 0.65;
-const _phoneControlItemBg = AppColors.surfaceContainerLow;
 const _phoneControlPrimary = AppColors.primary;
 const _phoneControlRadius = 16.0;
 const _officialPressedBg = Color(0xFFE5E5E5);
 
-// 服务卡片强调色（control_page_service_cards.dart 复用）
-const _serviceAccentViolet = Color(0xFF7B61FF);
+// 服务卡片强调色
 const _serviceAccentAmber = Color(0xFFFF8A00);
-const _serviceMutedText = Color(0xFFAAA9B1);
-const _serviceCardBorder = AppColors.outlineVariant;
 const _controlConfirmTimeout = Duration(seconds: 8);
 const _controlConfirmPollDelay = Duration(milliseconds: 800);
 // M3: elevated card without border, soft dual-layer shadow

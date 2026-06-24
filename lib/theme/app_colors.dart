@@ -90,12 +90,6 @@ abstract final class AppColors {
 
   /// Energy red (low battery).
   static const energyRed = Color(0xFFFF4D5E);
-
-  /// Violet accent (service card / sub-control).
-  static const accentViolet = Color(0xFF7C6CFF);
-
-  /// Sky accent (locate / cloud).
-  static const accentSky = Color(0xFF2E9BFF);
 }
 
 /// 车体 painter 专用灰阶 token（replica 复刻保真）。
