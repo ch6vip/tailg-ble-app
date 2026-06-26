@@ -145,60 +145,6 @@ class _SvcListCard extends StatelessWidget {
   }
 }
 
-// Reusable editable list row (used by main_controls part).
-class _EditableListRow extends StatelessWidget {
-  const _EditableListRow({
-    required this.icon,
-    required this.label,
-    required this.accent,
-    required this.visible,
-    this.lockOff = false,
-    this.dragIndex,
-    this.onVisibleChanged,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color accent;
-  final bool visible;
-  final bool lockOff;
-  final int? dragIndex;
-  final ValueChanged<bool>? onVisibleChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: accent.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, size: 22, color: accent),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: Text(label, style: AppTextStyles.itemTitle)),
-        if (onVisibleChanged != null)
-          IconButton(
-            icon: Icon(
-              visible ? Icons.visibility : Icons.visibility_off,
-              size: 20,
-            ),
-            color: visible ? AppColors.textSecondary : AppColors.textTertiary,
-            onPressed: () => onVisibleChanged?.call(!visible),
-          ),
-        if (dragIndex != null)
-          ReorderableDragStartListener(
-            index: dragIndex!,
-            child: const Icon(Icons.drag_handle, color: AppColors.textTertiary),
-          ),
-      ],
-    );
-  }
-}
-
 // ── v8 All-Functions Bottom Sheet ────────────────────────────────
 
 enum _FunctionAction { navigate, toggle }
