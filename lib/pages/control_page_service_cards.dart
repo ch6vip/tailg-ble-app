@@ -149,11 +149,9 @@ class _SvcListCard extends StatelessWidget {
 
 enum _FunctionAction { navigate, toggle, command }
 
-typedef _FnCommandCallback = Future<void> Function(CommandCode cmd);
-
 Future<void> showAllFunctionsSheet(
   BuildContext context, {
-  _FnCommandCallback? onControlCommand,
+  Future<void> Function(CommandCode cmd)? onControlCommand,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -310,7 +308,7 @@ List<_V8FunctionGroup> get _v8FnGroups => [
 
 class _V8AllFunctionsSheet extends StatefulWidget {
   const _V8AllFunctionsSheet({this.onControlCommand});
-  final _FnCommandCallback? onControlCommand;
+  final Future<void> Function(CommandCode cmd)? onControlCommand;
 
   @override
   State<_V8AllFunctionsSheet> createState() => _V8AllFunctionsSheetState();
