@@ -238,8 +238,7 @@ class _PowerKnob extends StatefulWidget {
   State<_PowerKnob> createState() => _PowerKnobState();
 }
 
-class _PowerKnobState extends State<_PowerKnob>
-    with TickerProviderStateMixin {
+class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
   static const _holdMs = 1200;
   late final AnimationController _ctrl;
   late final Animation<double> _progress;
