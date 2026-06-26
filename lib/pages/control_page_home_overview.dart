@@ -411,7 +411,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
       initialData: connectionManager.latestBikeState,
       builder: (context, snapshot) {
         final bike = snapshot.data;
-        final soc = _normalizePercent(bike?.soc) ?? 0;
+        final soc = _normalizePercent(bike?.batteryPercent) ?? 0;
         final range = (soc * _kmPerPercent).round();
         final isArmed = bike?.isLocked ?? true;
         final isPowerOn = bike?.isPowerOn ?? false;
