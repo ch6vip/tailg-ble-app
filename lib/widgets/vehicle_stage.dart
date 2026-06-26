@@ -129,25 +129,42 @@ class VehicleStagePainter extends CustomPainter {
     canvas.drawPath(rearBody, bodyFill);
     canvas.drawPath(rearBody, bodyStroke);
 
-    // --- Battery energy bar ---
-    final barW = 40.0;
+    // --- Battery energy bar (dynamic: scales with batteryLevel) ---
+    const barW = 40.0;
+    const barX = 108.0;
+    const barY = 92.0;
+    const barH = 13.0;
+    final fillW = barW * (batteryLevel.clamp(0.0, 1.0));
+
+    // Background track (empty)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(108, 92, barW, 13),
+        Rect.fromLTWH(barX, barY, barW, barH),
         const Radius.circular(4),
       ),
-      Paint()
-        ..shader = enGradient.createShader(
-          const Rect.fromLTWH(108, 92, 40, 13),
-        ),
+      Paint()..color = const Color(0xFFE8ECF1),
     );
+    // Filled portion
+    if (fillW > 0) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(barX, barY, fillW, barH),
+          const Radius.circular(4),
+        ),
+        Paint()
+          ..shader = enGradient.createShader(
+            Rect.fromLTWH(barX, barY, barW, barH),
+          ),
+      );
+    }
+    // Subtle border
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(108, 92, barW * (batteryLevel.clamp(0.0, 1.0)), 13),
+        Rect.fromLTWH(barX, barY, barW, barH),
         const Radius.circular(4),
       ),
       Paint()
-        ..color = const Color(0xFF04231A).withValues(alpha: 0.12)
+        ..color = const Color(0xFF04231A).withValues(alpha: 0.08)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1,
     );
