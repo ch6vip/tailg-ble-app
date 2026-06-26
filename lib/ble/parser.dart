@@ -46,9 +46,14 @@ const _voltagePrefix = '780EB310';
 ParsedResponse parseResponse(String keyHex, Uint8List raw) {
   try {
     return _parseResponse(keyHex, raw);
-  } catch (_) {
+  } on FormatException catch (_) {
     // Malformed/garbled frames (wrong length, undecryptable, too short to slice)
     // must never throw out of the notification listener and crash the app.
+    return UnknownResponse(bytesToHex(raw));
+  } on RangeError catch (_) {
+    return UnknownResponse(bytesToHex(raw));
+  } on ArgumentError catch (_) {
+    // aesEcbDecrypt throws ArgumentError for empty or non-block-aligned data.
     return UnknownResponse(bytesToHex(raw));
   }
 }
@@ -76,6 +81,11 @@ ParsedResponse _parseResponse(String keyHex, Uint8List raw) {
     final lowByte = int.parse(hex.substring(10, 12), radix: 16);
     final voltage = ((highByte << 8) | lowByte) / 100.0;
     return VoltageResponse(hex, voltage);
+  }
+
+  // Validate frame starts with expected header before parsing as command response
+  if (!hex.startsWith('78')) {
+    return UnknownResponse(hex);
   }
 
   final controlCode = hex.substring(6, 10);

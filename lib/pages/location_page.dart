@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -15,6 +17,7 @@ import '../services/vehicle_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_pressable.dart';
+import '../widgets/app_snack.dart';
 import '../widgets/cached_tile_provider.dart';
 
 part 'location_map_tab.dart';
@@ -48,14 +51,35 @@ class _LocationPageState extends State<LocationPage> {
   String? _localError;
   FenceConfig? _localFence;
 
+  late final StreamSubscription<List<VehicleProfile>> _vehiclesSub;
+  late final StreamSubscription<OfficialCloudState> _cloudStateSub;
+
   @override
   void initState() {
     super.initState();
     _tabIndex = widget.initialTab.index;
     _loadLocalFence();
+
+    final vehicleStore = VehicleStore();
+    _vehiclesSub = vehicleStore.vehiclesStream.listen((_) {
+      if (mounted) setState(() {});
+    });
+
+    final cloudService = OfficialCloudService();
+    _cloudStateSub = cloudService.stateStream.listen((_) {
+      if (mounted) setState(() {});
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshOfficial(silent: true);
     });
+  }
+
+  @override
+  void dispose() {
+    _vehiclesSub.cancel();
+    _cloudStateSub.cancel();
+    super.dispose();
   }
 
   Future<void> _loadLocalFence() async {
@@ -122,7 +146,7 @@ class _LocationPageState extends State<LocationPage> {
         detail: e.toString(),
         level: LogLevel.warning,
       );
-      if (mounted) _showSnack(_errorMessage(e));
+      if (mounted) _showSnack(_errorMessage(e), isError: true);
     }
   }
 
@@ -142,7 +166,7 @@ class _LocationPageState extends State<LocationPage> {
         detail: e.toString(),
         level: LogLevel.warning,
       );
-      if (mounted) _showSnack(_errorMessage(e));
+      if (mounted) _showSnack(_errorMessage(e), isError: true);
     }
   }
 
@@ -164,13 +188,13 @@ class _LocationPageState extends State<LocationPage> {
       'query': '${location.latitude},${location.longitude}',
     });
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched && mounted) _showSnack('无法打开地图');
+    if (!launched && mounted) _showSnack('无法打开地图', isError: true);
   }
 
   Future<void> _openTravelDetail(OfficialTravelRecord record) async {
     final travelId = record.deviceTravelId;
     if (travelId.isEmpty) {
-      _showSnack('当前轨迹缺少官方 ID');
+      _showSnack('当前轨迹缺少官方 ID', isError: true);
       return;
     }
     try {
@@ -190,7 +214,7 @@ class _LocationPageState extends State<LocationPage> {
         detail: e.toString(),
         level: LogLevel.warning,
       );
-      if (mounted) _showSnack(_errorMessage(e));
+      if (mounted) _showSnack(_errorMessage(e), isError: true);
     }
   }
 
@@ -199,11 +223,13 @@ class _LocationPageState extends State<LocationPage> {
     return e.toString();
   }
 
-  void _showSnack(String message) {
+  void _showSnack(String message, {bool isError = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 1)),
-    );
+    if (isError) {
+      AppSnack.error(context, message);
+    } else {
+      AppSnack.info(context, message);
+    }
   }
 
   _ResolvedLocation? _resolveLocation({
@@ -267,96 +293,84 @@ class _LocationPageState extends State<LocationPage> {
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
-        child: StreamBuilder<List<VehicleProfile>>(
-          stream: VehicleStore().vehiclesStream,
-          initialData: VehicleStore().vehicles,
-          builder: (context, snapshot) {
-            return StreamBuilder<OfficialCloudState>(
-              stream: OfficialCloudService().stateStream,
-              initialData: OfficialCloudService().state,
-              builder: (context, cloudSnapshot) {
-                final cloudState =
-                    cloudSnapshot.data ?? OfficialCloudService().state;
-                final localVehicle = VehicleStore().defaultVehicle;
-                final cloudVehicle = cloudState.signedIn
-                    ? cloudState.selectedVehicle
-                    : null;
-                final location = _resolveLocation(
-                  localVehicle: localVehicle,
-                  cloudState: cloudState,
-                );
-                final loading =
-                    _localLoading ||
-                    cloudState.loading ||
-                    cloudState.vehicleLocationLoading ||
-                    cloudState.travelLoading ||
-                    cloudState.fenceLoading;
+        child: Builder(
+          builder: (context) {
+            final cloudState = OfficialCloudService().state;
+            final localVehicle = VehicleStore().defaultVehicle;
+            final cloudVehicle = cloudState.signedIn
+                ? cloudState.selectedVehicle
+                : null;
+            final location = _resolveLocation(
+              localVehicle: localVehicle,
+              cloudState: cloudState,
+            );
+            final loading =
+                _localLoading ||
+                cloudState.loading ||
+                cloudState.vehicleLocationLoading ||
+                cloudState.travelLoading ||
+                cloudState.fenceLoading;
 
-                return Column(
-                  children: [
-                    if (_tabIndex != LocationInitialTab.fence.index)
-                      AppPageHeader(
-                        title: title,
-                        showBack: !widget.embedded,
-                        actions: [
-                          AppHeaderAction(
-                            icon: Icons.refresh,
-                            tooltip: '刷新地图数据',
-                            onTap: loading
-                                ? null
-                                : () => _refreshAll(localVehicle),
-                          ),
-                        ],
+            return Column(
+              children: [
+                if (_tabIndex != LocationInitialTab.fence.index)
+                  AppPageHeader(
+                    title: title,
+                    showBack: !widget.embedded,
+                    actions: [
+                      AppHeaderAction(
+                        icon: Icons.refresh,
+                        tooltip: '刷新地图数据',
+                        onTap: loading ? null : () => _refreshAll(localVehicle),
                       ),
-                    if (_tabIndex != LocationInitialTab.fence.index)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                        child: _SegmentedTabs(
-                          index: _tabIndex,
-                          onChanged: (value) =>
-                              setState(() => _tabIndex = value),
-                        ),
-                      ),
-                    Expanded(
-                      child: IndexedStack(
-                        index: _tabIndex,
-                        children: [
-                          _MapTab(
-                            vehicleName:
-                                localVehicle?.displayName ??
-                                cloudVehicle?.displayName,
-                            location: location,
-                            cloudState: cloudState,
-                            error: _localError,
-                            loading: loading,
-                            onRefresh: () => _refreshAll(localVehicle),
-                            onCopy: location == null
-                                ? null
-                                : () => _copyLocation(location),
-                            onOpenMap: location == null
-                                ? null
-                                : () => _openMap(location),
-                          ),
-                          _TravelTab(
-                            cloudState: cloudState,
-                            onRefresh: () => _refreshTravelHistory(),
-                            onChangeMonth: _changeTravelMonth,
-                            onOpenDetail: _openTravelDetail,
-                          ),
-                          _FenceTab(
-                            cloudState: cloudState,
-                            location: location,
-                            localFence: _localFence,
-                            onRefresh: _refreshFenceData,
-                            onTabChanged: (value) =>
-                                setState(() => _tabIndex = value),
-                          ),
-                        ],
-                      ),
+                    ],
+                  ),
+                if (_tabIndex != LocationInitialTab.fence.index)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                    child: _SegmentedTabs(
+                      index: _tabIndex,
+                      onChanged: (value) => setState(() => _tabIndex = value),
                     ),
-                  ],
-                );
-              },
+                  ),
+                Expanded(
+                  child: IndexedStack(
+                    index: _tabIndex,
+                    children: [
+                      _MapTab(
+                        vehicleName:
+                            localVehicle?.displayName ??
+                            cloudVehicle?.displayName,
+                        location: location,
+                        cloudState: cloudState,
+                        error: _localError,
+                        loading: loading,
+                        onRefresh: () => _refreshAll(localVehicle),
+                        onCopy: location == null
+                            ? null
+                            : () => _copyLocation(location),
+                        onOpenMap: location == null
+                            ? null
+                            : () => _openMap(location),
+                      ),
+                      _TravelTab(
+                        cloudState: cloudState,
+                        onRefresh: () => _refreshTravelHistory(),
+                        onChangeMonth: _changeTravelMonth,
+                        onOpenDetail: _openTravelDetail,
+                      ),
+                      _FenceTab(
+                        cloudState: cloudState,
+                        location: location,
+                        localFence: _localFence,
+                        onRefresh: _refreshFenceData,
+                        onTabChanged: (value) =>
+                            setState(() => _tabIndex = value),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             );
           },
         ),

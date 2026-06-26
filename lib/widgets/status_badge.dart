@@ -148,6 +148,19 @@ class _PulsingDotState extends State<_PulsingDot>
   }
 
   @override
+  void didUpdateWidget(covariant _PulsingDot oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.pulsing != oldWidget.pulsing) {
+      if (widget.pulsing) {
+        _ctrl.repeat(reverse: true);
+      } else {
+        _ctrl.stop();
+        _ctrl.value = 0;
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();

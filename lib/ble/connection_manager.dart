@@ -65,6 +65,8 @@ class ConnectionManager {
 
   bool _userDisconnected = false;
   bool _reconnecting = false;
+  bool _reconnectCancelled = false;
+  bool _disconnectHandled = false;
   int _reconnectAttempt = 0;
   static const _maxReconnectAttempts = 8;
 
@@ -163,28 +165,47 @@ class ConnectionManager {
     if (_disposed) {
       throw StateError('ConnectionManager disposed');
     }
+
+    // C-1: Cancel any ongoing reconnect loop
+    _reconnectCancelled = true;
+    if (_reconnecting) {
+      // Give the reconnect loop a chance to exit
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
+    // H-1: Guard against double-invocation
+    if (_state == ConnectionState.connecting ||
+        _state == ConnectionState.connected ||
+        _state == ConnectionState.ready) {
+      _log.ble('connect() ignored: already in state $_state');
+      return;
+    }
+
     _userDisconnected = false;
     _reconnecting = false;
     _reconnectAttempt = 0;
+    _disconnectHandled = false;
     await _clearRuntimeResources(disconnectDevice: false);
 
     _device = device;
     _lastKnownProtocol = ProtocolType.unknown;
     _setState(ConnectionState.connecting);
+    _reconnectCancelled = false; // C-1: Reset after setup
     _log.ble('连接设备 ${device.platformName}', detail: device.remoteId.toString());
 
     try {
-      await _connectDeviceWithRetry(
-        device,
-        timeout: BleTimings.connectTimeout,
-        attempts: 3,
-      );
-
+      // Subscribe BEFORE connecting to not miss early disconnect events
       _connectionSub = device.connectionState.listen((state) {
         if (state == BluetoothConnectionState.disconnected) {
           _onDisconnected();
         }
       });
+
+      await _connectDeviceWithRetry(
+        device,
+        timeout: BleTimings.connectTimeout,
+        attempts: 3,
+      );
 
       _setState(ConnectionState.connected);
 
@@ -203,17 +224,15 @@ class ConnectionManager {
   Future<void> disconnect() async {
     _userDisconnected = true;
     _reconnecting = false;
+    _reconnectCancelled = true;
     _reconnectAttempt = 0;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
     _completePendingOperations(StateError('QGJ disconnected'));
-    await _notifySub?.cancel();
-    _notifySub = null;
-    await _gpsNotifySub?.cancel();
-    _gpsNotifySub = null;
-    await _connectionSub?.cancel();
-    _connectionSub = null;
+    _completePendingGattOperations(StateError('Disconnected by user'));
+    await _clearRuntimeResources(disconnectDevice: false);
     await _device?.disconnect();
+    _resetCharacteristics();
     _reset();
   }
 
@@ -539,7 +558,14 @@ class ConnectionManager {
               // (cancel subs, _attemptReconnect). Running it inline inside
               // the Timer callback would route those futures through the
               // Timer zone, swallowing any thrown exceptions.
-              scheduleMicrotask(_onDisconnected);
+              scheduleMicrotask(() {
+                _onDisconnected().catchError((e, st) {
+                  _log.ble(
+                    'Disconnect handler error: $e',
+                    level: LogLevel.error,
+                  );
+                });
+              });
             }
           })
           .whenComplete(() => heartbeatInFlight = false);
@@ -709,22 +735,26 @@ class ConnectionManager {
     return null;
   }
 
-  void _onDisconnected() {
+  Future<void> _onDisconnected() async {
     if (_disposed) return;
+    if (_disconnectHandled) return;
+    _disconnectHandled = true;
     _log.ble('设备断开连接', level: LogLevel.warning);
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
     _completePendingOperations(StateError('QGJ disconnected'));
-    _notifySub?.cancel();
+    await _notifySub?.cancel();
     _notifySub = null;
-    _gpsNotifySub?.cancel();
+    await _gpsNotifySub?.cancel();
     _gpsNotifySub = null;
-    _connectionSub?.cancel();
+    await _connectionSub?.cancel();
     _connectionSub = null;
     _resetCharacteristics();
     if (!_userDisconnected && _device != null) {
       _setState(ConnectionState.reconnecting);
-      _attemptReconnect();
+      _attemptReconnect().catchError((e, st) {
+        _log.ble('Reconnect error: $e', level: LogLevel.error);
+      });
     } else {
       _setState(ConnectionState.disconnected);
     }
@@ -737,6 +767,8 @@ class ConnectionManager {
 
     while (_reconnectAttempt < _maxReconnectAttempts &&
         _state == ConnectionState.reconnecting) {
+      // C-1: Check if reconnect was cancelled by connect()
+      if (_reconnectCancelled) break;
       _reconnectAttempt++;
       final baseMs = 3000;
       final maxMs = 30000;
@@ -907,7 +939,11 @@ class ConnectionManager {
       _log.ble('connected→ready 握手超时，回退断连并触发重连', level: LogLevel.warning);
       // scheduleMicrotask avoids running teardown inside the Timer zone,
       // where async exceptions from _onDisconnected would be swallowed.
-      scheduleMicrotask(_onDisconnected);
+      scheduleMicrotask(() {
+        _onDisconnected().catchError((e, st) {
+          _log.ble('Disconnect handler error: $e', level: LogLevel.error);
+        });
+      });
     });
   }
 

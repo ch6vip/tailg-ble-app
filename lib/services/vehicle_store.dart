@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/vehicle_profile.dart';
+import 'log_service.dart';
 
 class VehicleStore {
   static final VehicleStore _instance = VehicleStore._();
@@ -83,7 +83,12 @@ class VehicleStore {
           Map<String, dynamic>.from(item),
         );
         if (vehicle.id.isNotEmpty) vehicles.add(vehicle);
-      } catch (_) {
+      } catch (e) {
+        LogService().operation(
+          'VehicleStore',
+          detail: 'Skipped vehicle parse error: $e',
+          level: LogLevel.warning,
+        );
         continue;
       }
     }
@@ -223,7 +228,11 @@ class VehicleStore {
         .then((_) => _doSave())
         .catchError((Object e) {
           // Isolate save failures so subsequent writes are not poisoned.
-          debugPrint('VehicleStore save failed: $e');
+          LogService().operation(
+            'VehicleStore',
+            detail: 'Save failed: $e',
+            level: LogLevel.error,
+          );
         });
     return _saveQueue!;
   }

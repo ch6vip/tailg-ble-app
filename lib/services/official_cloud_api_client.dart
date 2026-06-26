@@ -138,74 +138,88 @@ class _OfficialCloudApiClient {
     Map<String, dynamic>? body,
   }) async {
     final client = _sharedClient;
-    final startedAt = DateTime.now();
-    try {
-      final uri = config.resolve(path);
-      final request = await client.openUrl(method, uri);
-      for (final entry in config.defaultHeaders.entries) {
-        request.headers.set(entry.key, entry.value);
-      }
-      if (token != null && token.isNotEmpty) {
-        request.headers.set(HttpHeaders.authorizationHeader, token);
-      }
-      if (body != null) {
-        request.add(utf8.encode(jsonEncode(body)));
-      }
+    const maxRetries = 2;
 
-      final response = await request.close().timeout(
-        config.responseTimeout,
-        onTimeout: () => throw const OfficialCloudApiException('请求超时，请检查网络'),
-      );
-      final text = await response.transform(utf8.decoder).join();
-      final decoded = await _decodeBody(text);
-      _recordRequest(
-        path: path,
-        method: method,
-        startedAt: startedAt,
-        statusCode: response.statusCode,
-        body: decoded,
-      );
-      final headers = <String, String>{};
-      response.headers.forEach((name, values) {
-        if (values.isNotEmpty) headers[name.toLowerCase()] = values.first;
-      });
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw OfficialCloudApiException(
-          decoded['msg']?.toString() ?? '官方接口返回 ${response.statusCode}',
-          statusCode: response.statusCode,
+    for (var attempt = 0; attempt <= maxRetries; attempt++) {
+      final startedAt = DateTime.now();
+      try {
+        final uri = config.resolve(path);
+        final request = await client.openUrl(method, uri);
+        for (final entry in config.defaultHeaders.entries) {
+          request.headers.set(entry.key, entry.value);
+        }
+        if (token != null && token.isNotEmpty) {
+          request.headers.set(HttpHeaders.authorizationHeader, token);
+        }
+        if (body != null) {
+          request.add(utf8.encode(jsonEncode(body)));
+        }
+
+        final response = await request.close().timeout(
+          config.responseTimeout,
+          onTimeout: () => throw const OfficialCloudApiException('请求超时，请检查网络'),
         );
+        final text = await response.transform(utf8.decoder).join();
+        final decoded = await _decodeBody(text);
+        _recordRequest(
+          path: path,
+          method: method,
+          startedAt: startedAt,
+          statusCode: response.statusCode,
+          body: decoded,
+        );
+        final headers = <String, String>{};
+        response.headers.forEach((name, values) {
+          if (values.isNotEmpty) headers[name.toLowerCase()] = values.first;
+        });
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          throw OfficialCloudApiException(
+            decoded['msg']?.toString() ?? '官方接口返回 ${response.statusCode}',
+            statusCode: response.statusCode,
+          );
+        }
+        return _OfficialApiResponse(
+          statusCode: response.statusCode,
+          headers: headers,
+          body: decoded,
+        );
+      } on TimeoutException {
+        if (attempt < maxRetries) {
+          await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
+          continue;
+        }
+        _recordRequestFailure(
+          path: path,
+          method: method,
+          startedAt: startedAt,
+          message: '请求超时，请检查网络',
+        );
+        throw const OfficialCloudApiException('请求超时，请检查网络');
+      } on SocketException {
+        if (attempt < maxRetries) {
+          await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
+          continue;
+        }
+        _recordRequestFailure(
+          path: path,
+          method: method,
+          startedAt: startedAt,
+          message: '网络不可用，请检查连接',
+        );
+        throw const OfficialCloudApiException('网络不可用，请检查连接');
+      } on OfficialCloudApiException catch (e) {
+        _recordRequestFailure(
+          path: path,
+          method: method,
+          startedAt: startedAt,
+          message: e.message,
+          statusCode: e.statusCode,
+        );
+        rethrow;
       }
-      return _OfficialApiResponse(
-        statusCode: response.statusCode,
-        headers: headers,
-        body: decoded,
-      );
-    } on TimeoutException {
-      _recordRequestFailure(
-        path: path,
-        method: method,
-        startedAt: startedAt,
-        message: '请求超时，请检查网络',
-      );
-      throw const OfficialCloudApiException('请求超时，请检查网络');
-    } on SocketException {
-      _recordRequestFailure(
-        path: path,
-        method: method,
-        startedAt: startedAt,
-        message: '网络不可用，请检查连接',
-      );
-      throw const OfficialCloudApiException('网络不可用，请检查连接');
-    } on OfficialCloudApiException catch (e) {
-      _recordRequestFailure(
-        path: path,
-        method: method,
-        startedAt: startedAt,
-        message: e.message,
-        statusCode: e.statusCode,
-      );
-      rethrow;
     }
+    // Unreachable — the loop always returns or throws.
+    throw StateError('Unreachable');
   }
 
   void _recordRequest({

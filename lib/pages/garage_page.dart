@@ -106,10 +106,18 @@ class _EmptyGarage extends StatelessWidget {
   }
 }
 
-class _VehicleCard extends StatelessWidget {
+class _VehicleCard extends StatefulWidget {
   final VehicleProfile vehicle;
   final bool isDefault;
   const _VehicleCard({required this.vehicle, required this.isDefault});
+
+  @override
+  State<_VehicleCard> createState() => _VehicleCardState();
+}
+
+class _VehicleCardState extends State<_VehicleCard> {
+  VehicleProfile get vehicle => widget.vehicle;
+  bool get isDefault => widget.isDefault;
 
   @override
   Widget build(BuildContext context) {
@@ -246,14 +254,18 @@ class _VehicleCard extends StatelessWidget {
 
   Future<void> _handleAction(BuildContext context, String value) async {
     if (value == 'rename') {
+      if (!mounted) return;
       await _showRenameDialog(context);
     } else if (value == 'qgj_credentials') {
+      if (!mounted) return;
       await _showQgjCredentialsDialog(context);
     } else if (value == 'default') {
       await VehicleStore().setDefault(vehicle.id);
+      if (!mounted) return;
       proximityService.setTargetDevice(vehicle.id);
       applyVehicleBleCredentials(VehicleStore().defaultVehicle);
     } else if (value == 'delete') {
+      if (!mounted) return;
       await _confirmDelete(context);
     }
   }
@@ -331,6 +343,7 @@ class _VehicleCard extends StatelessWidget {
     );
     passwordController.dispose();
     userIdController.dispose();
+    if (!mounted) return;
     if (result == null) return;
     await VehicleStore().updateQgjCredentials(
       id: vehicle.id,
@@ -338,6 +351,7 @@ class _VehicleCard extends StatelessWidget {
       userId: result.userId,
       clear: result.clear,
     );
+    if (!mounted) return;
     if (VehicleStore().defaultVehicle?.id == vehicle.id) {
       applyVehicleBleCredentials(VehicleStore().defaultVehicle);
     }
@@ -376,6 +390,7 @@ class _VehicleCard extends StatelessWidget {
       ),
     );
     controller.dispose();
+    if (!mounted) return;
     if (name != null) await VehicleStore().rename(vehicle.id, name);
   }
 
@@ -397,6 +412,7 @@ class _VehicleCard extends StatelessWidget {
         ],
       ),
     );
+    if (!mounted) return;
     if (confirmed == true) {
       await VehicleStore().remove(vehicle.id);
       final defaultVehicle = VehicleStore().defaultVehicle;

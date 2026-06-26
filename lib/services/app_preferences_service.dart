@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'log_service.dart';
+
 enum AppLanguagePreference {
   system('system', '跟随系统'),
   simplifiedChinese('zh-Hans', '简体中文'),
@@ -101,31 +103,48 @@ class AppPreferencesService {
 
   Future<void> setLanguage(AppLanguagePreference preference) async {
     await init();
-    _language = preference;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefLanguage, preference.value);
-    _emit();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefLanguage, preference.value);
+      _language = preference;
+      _emit();
+    } catch (e) {
+      // Persistence failed — do not update in-memory state
+      LogService().operation('setLanguage failed', detail: '$e');
+    }
   }
 
   Future<void> setDistanceUnit(DistanceUnitPreference preference) async {
     await init();
-    _distanceUnit = preference;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefDistanceUnit, preference.value);
-    _emit();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefDistanceUnit, preference.value);
+      _distanceUnit = preference;
+      _emit();
+    } catch (e) {
+      // Persistence failed — do not update in-memory state
+      LogService().operation('setDistanceUnit failed', detail: '$e');
+    }
   }
 
   Future<void> setRespectSystemTextScale(bool value) async {
     await init();
-    _respectTextScale = value;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_prefRespectTextScale, value);
-    _emitRespectTextScale();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_prefRespectTextScale, value);
+      _respectTextScale = value;
+      _emitRespectTextScale();
+    } catch (e) {
+      // Persistence failed — do not update in-memory state
+      LogService().operation('setRespectSystemTextScale failed', detail: '$e');
+    }
   }
 
   void _emit() {
-    _languageController.add(_language);
-    _distanceUnitController.add(_distanceUnit);
+    if (!_languageController.isClosed) _languageController.add(_language);
+    if (!_distanceUnitController.isClosed) {
+      _distanceUnitController.add(_distanceUnit);
+    }
     _emitRespectTextScale();
   }
 
