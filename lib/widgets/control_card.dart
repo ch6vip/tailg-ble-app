@@ -311,7 +311,9 @@ class _PowerKnobState extends State<_PowerKnob>
                       ],
                     ),
                     child: Icon(
-                      Icons.power_settings_new,
+                      widget.powered
+                          ? Icons.power_off
+                          : Icons.power_settings_new,
                       color: Colors.white,
                       size: sz * 0.3,
                     ),
@@ -322,12 +324,12 @@ class _PowerKnobState extends State<_PowerKnob>
           ),
           const SizedBox(height: 8),
           Text(
-            widget.powered ? '已通电' : '长按开机',
+            widget.powered ? '长按熄火' : '长按开机',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
               color: widget.powered
-                  ? AppColors.energyGreen
+                  ? AppColors.danger
                   : AppColors.textPrimary,
             ),
           ),
