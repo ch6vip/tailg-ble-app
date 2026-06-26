@@ -436,7 +436,7 @@ class _PulseActionIcon extends StatefulWidget {
   final IconData icon;
   final Color color;
 
-  const _PulseActionIcon({super.key, required this.icon, required this.color});
+  const _PulseActionIcon({required this.icon, required this.color});
 
   @override
   State<_PulseActionIcon> createState() => _PulseActionIconState();

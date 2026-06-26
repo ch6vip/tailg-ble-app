@@ -144,10 +144,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
           level: LogLevel.error,
         );
         if (mounted) {
-          _showSnack(
-            result.failureMessage ?? '${cmd.label}失败',
-            isError: true,
-          );
+          _showSnack(result.failureMessage ?? '${cmd.label}失败', isError: true);
         }
       }
     } finally {
@@ -213,8 +210,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
       CommandCode.lock ||
       CommandCode.unlock ||
       CommandCode.powerOn ||
-      CommandCode.powerOff =>
-        true,
+      CommandCode.powerOff => true,
       _ => false,
     };
   }
@@ -358,11 +354,12 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     return switch (_latestCloud.controlChannel) {
       OfficialControlChannel.ble => 'BLE',
       OfficialControlChannel.officialCloud => '云端',
-      OfficialControlChannel.automatic => availability.canUseBle
-          ? 'BLE'
-          : availability.canUseCloud
-              ? '云端'
-              : '待连接',
+      OfficialControlChannel.automatic =>
+        availability.canUseBle
+            ? 'BLE'
+            : availability.canUseCloud
+            ? '云端'
+            : '待连接',
     };
   }
 
@@ -375,8 +372,8 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     }
     final isLocked = _currentIsPowerOn()
         ? (connectionManager.latestBikeState?.isLocked ??
-            _latestCloud.selectedVehicle?.isLocked ??
-            true)
+              _latestCloud.selectedVehicle?.isLocked ??
+              true)
         : true;
     final isPowerOn = _currentIsPowerOn();
     return '${isPowerOn ? '已启动' : '未启动'} · ${isLocked ? '已设防' : '未设防'}';
@@ -420,13 +417,13 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
         final isPowerOn = bike?.isPowerOn ?? false;
         final vehicleName =
             connectionManager.device?.platformName ??
-                vehicleStore.defaultVehicle?.displayName ??
-                '我的车辆';
+            vehicleStore.defaultVehicle?.displayName ??
+            '我的车辆';
         final connectionLabel = _isBleReady
             ? '蓝牙已连接'
             : _isReconnecting
-                ? '重连中'
-                : null;
+            ? '重连中'
+            : null;
         final cloudVehicle = _latestCloud.selectedVehicle;
 
         return DecoratedBox(
@@ -449,9 +446,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                 vehicleName: cloudVehicle?.displayName ?? vehicleName,
                 connectionLabel: connectionLabel,
                 onBatteryTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const BatteryDetailsPage(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const BatteryDetailsPage()),
                 ),
               ),
               const SizedBox(height: 10),
@@ -532,9 +527,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                           borderRadius: BorderRadius.circular(30),
                           child: Container(
                             height: 38,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(30),
                               color: AppColors.surfaceContainerLow,
@@ -548,8 +541,9 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                                     horizontal: 5,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: _tipEffectiveColor
-                                        .withValues(alpha: 0.12),
+                                    color: _tipEffectiveColor.withValues(
+                                      alpha: 0.12,
+                                    ),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
