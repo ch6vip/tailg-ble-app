@@ -220,12 +220,14 @@ class _PowerKnobState extends State<_PowerKnob>
     super.dispose();
   }
 
-  void _onPanDown(_) {
+  void _onPointerDown(PointerDownEvent _) {
+    HapticFeedback.lightImpact();
     setState(() => _holding = true);
     _ctrl.forward();
   }
 
-  void _onPanEnd(_) {
+  void _onPointerUp(PointerUpEvent _) {
+    if (!_holding) return;
     setState(() => _holding = false);
     if (_ctrl.value >= 0.95) {
       widget.onPowerOn?.call();
@@ -233,7 +235,8 @@ class _PowerKnobState extends State<_PowerKnob>
     _ctrl.reverse();
   }
 
-  void _onPanCancel() {
+  void _onPointerCancel(PointerCancelEvent _) {
+    if (!_holding) return;
     setState(() => _holding = false);
     _ctrl.reverse();
   }
@@ -246,10 +249,10 @@ class _PowerKnobState extends State<_PowerKnob>
     final coreColor = widget.powered ? AppColors.energyGreen : AppColors.inkBtn;
     final sz = widget.size;
 
-    return GestureDetector(
-      onPanStart: _onPanDown,
-      onPanEnd: _onPanEnd,
-      onPanCancel: _onPanCancel,
+    return Listener(
+      onPointerDown: _onPointerDown,
+      onPointerUp: _onPointerUp,
+      onPointerCancel: _onPointerCancel,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
