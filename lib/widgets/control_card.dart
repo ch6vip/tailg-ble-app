@@ -216,6 +216,7 @@ class _PowerKnobState extends State<_PowerKnob>
   late final AnimationController _ctrl;
   late final Animation<double> _progress;
   bool _holding = false;
+  bool _fired = false;
 
   @override
   void initState() {
@@ -223,7 +224,13 @@ class _PowerKnobState extends State<_PowerKnob>
     _ctrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: _holdMs),
-    );
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _fired = true;
+          HapticFeedback.heavyImpact();
+          widget.onPowerOn?.call();
+        }
+      });
     _progress = Tween(
       begin: 0.0,
       end: 1.0,
@@ -238,6 +245,7 @@ class _PowerKnobState extends State<_PowerKnob>
 
   void _onPointerDown(PointerDownEvent _) {
     if (widget.busy) return;
+    _fired = false;
     HapticFeedback.lightImpact();
     setState(() => _holding = true);
     _ctrl.forward();
@@ -245,16 +253,20 @@ class _PowerKnobState extends State<_PowerKnob>
 
   void _onPointerUp(PointerUpEvent _) {
     if (!_holding) return;
-    setState(() => _holding = false);
-    if (_ctrl.value >= 0.95) {
-      widget.onPowerOn?.call();
-    }
-    _ctrl.reverse();
+    _finish();
   }
 
   void _onPointerCancel(PointerCancelEvent _) {
     if (!_holding) return;
+    _finish();
+  }
+
+  void _finish() {
     setState(() => _holding = false);
+    // If already auto-fired at 100%, don't fire again
+    if (!_fired) {
+      // Released early? Keep the visual feedback
+    }
     _ctrl.reverse();
   }
 
