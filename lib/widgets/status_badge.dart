@@ -44,8 +44,9 @@ class StatusBadge extends StatelessWidget {
   /// Only armed, ble, and online states are "active" — their dot should pulse.
   /// Idle and offline are static states and use a static dot.
   bool get _isActive => switch (type) {
-    StatusBadgeType.armed || StatusBadgeType.ble || StatusBadgeType.online =>
-      true,
+    StatusBadgeType.armed ||
+    StatusBadgeType.ble ||
+    StatusBadgeType.online => true,
     StatusBadgeType.idle || StatusBadgeType.offline => false,
   };
 

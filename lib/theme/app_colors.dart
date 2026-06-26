@@ -112,7 +112,9 @@ abstract final class AppColors {
   /// Then use `c.primary`, `c.surface`, etc.
   static AppColorsData of(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    return brightness == Brightness.dark ? AppColorsDark.instance : AppColorsLight.instance;
+    return brightness == Brightness.dark
+        ? AppColorsDark.instance
+        : AppColorsLight.instance;
   }
 }
 
@@ -154,34 +156,62 @@ class AppColorsLight extends AppColorsData {
   const AppColorsLight._();
   static const instance = AppColorsLight._();
 
-  @override Color get primary => AppColors.primary;
-  @override Color get primaryDark => AppColors.primaryDark;
-  @override Color get pageBg => AppColors.pageBg;
-  @override Color get textPrimary => AppColors.textPrimary;
-  @override Color get textSecondary => AppColors.textSecondary;
-  @override Color get textTertiary => AppColors.textTertiary;
-  @override Color get border => AppColors.border;
-  @override Color get success => AppColors.success;
-  @override Color get warning => AppColors.warning;
-  @override Color get danger => AppColors.danger;
-  @override Color get surface => AppColors.surface;
-  @override Color get surfaceContainerLow => AppColors.surfaceContainerLow;
-  @override Color get surfaceContainerHigh => AppColors.surfaceContainerHigh;
-  @override Color get outlineVariant => AppColors.outlineVariant;
-  @override Color get darkSurface => AppColors.darkSurface;
-  @override Color get energyGreen => AppColors.energyGreen;
-  @override Color get energyAmber => AppColors.energyAmber;
-  @override Color get energyRed => AppColors.energyRed;
-  @override Color get inkBtn => AppColors.inkBtn;
-  @override Color get inkBtn2 => AppColors.inkBtn2;
-  @override Color get accentSky => AppColors.accentSky;
-  @override Color get accentViolet => AppColors.accentViolet;
-  @override Color get accentAmber => AppColors.accentAmber;
-  @override Color get accentPurple => AppColors.accentPurple;
-  @override Color get accentOrange => AppColors.accentOrange;
-  @override Color get brandRed => AppColors.brandRed;
-  @override Color get pageBgTop => AppColors.pageBgTop;
-  @override Color get pageBgBot => AppColors.pageBgBot;
+  @override
+  Color get primary => AppColors.primary;
+  @override
+  Color get primaryDark => AppColors.primaryDark;
+  @override
+  Color get pageBg => AppColors.pageBg;
+  @override
+  Color get textPrimary => AppColors.textPrimary;
+  @override
+  Color get textSecondary => AppColors.textSecondary;
+  @override
+  Color get textTertiary => AppColors.textTertiary;
+  @override
+  Color get border => AppColors.border;
+  @override
+  Color get success => AppColors.success;
+  @override
+  Color get warning => AppColors.warning;
+  @override
+  Color get danger => AppColors.danger;
+  @override
+  Color get surface => AppColors.surface;
+  @override
+  Color get surfaceContainerLow => AppColors.surfaceContainerLow;
+  @override
+  Color get surfaceContainerHigh => AppColors.surfaceContainerHigh;
+  @override
+  Color get outlineVariant => AppColors.outlineVariant;
+  @override
+  Color get darkSurface => AppColors.darkSurface;
+  @override
+  Color get energyGreen => AppColors.energyGreen;
+  @override
+  Color get energyAmber => AppColors.energyAmber;
+  @override
+  Color get energyRed => AppColors.energyRed;
+  @override
+  Color get inkBtn => AppColors.inkBtn;
+  @override
+  Color get inkBtn2 => AppColors.inkBtn2;
+  @override
+  Color get accentSky => AppColors.accentSky;
+  @override
+  Color get accentViolet => AppColors.accentViolet;
+  @override
+  Color get accentAmber => AppColors.accentAmber;
+  @override
+  Color get accentPurple => AppColors.accentPurple;
+  @override
+  Color get accentOrange => AppColors.accentOrange;
+  @override
+  Color get brandRed => AppColors.brandRed;
+  @override
+  Color get pageBgTop => AppColors.pageBgTop;
+  @override
+  Color get pageBgBot => AppColors.pageBgBot;
 }
 
 /// Dark-mode token set.
@@ -194,34 +224,62 @@ class AppColorsDark extends AppColorsData {
   const AppColorsDark._();
   static const instance = AppColorsDark._();
 
-  @override Color get primary => const Color(0xFF00E0A8);
-  @override Color get primaryDark => const Color(0xFF00C896);
-  @override Color get pageBg => const Color(0xFF0F1117);
-  @override Color get textPrimary => const Color(0xFFF0F0F2);
-  @override Color get textSecondary => const Color(0xFFA0A4B0);
-  @override Color get textTertiary => const Color(0xFF6B7080);
-  @override Color get border => const Color(0xFF2A2D38);
-  @override Color get success => const Color(0xFF00D8A8);
-  @override Color get warning => const Color(0xFFFFB74D);
-  @override Color get danger => const Color(0xFFFF6B6B);
-  @override Color get surface => const Color(0xFF1A1D27);
-  @override Color get surfaceContainerLow => const Color(0xFF151820);
-  @override Color get surfaceContainerHigh => const Color(0xFF22252F);
-  @override Color get outlineVariant => const Color(0xFF2E3140);
-  @override Color get darkSurface => const Color(0xFF0A0C12);
-  @override Color get energyGreen => const Color(0xFF00E0A8);
-  @override Color get energyAmber => const Color(0xFFFFC04D);
-  @override Color get energyRed => const Color(0xFFFF6B6B);
-  @override Color get inkBtn => const Color(0xFF2A2D38);
-  @override Color get inkBtn2 => const Color(0xFF363A48);
-  @override Color get accentSky => const Color(0xFF5CB8FF);
-  @override Color get accentViolet => const Color(0xFF9B8EFF);
-  @override Color get accentAmber => const Color(0xFFFFB84D);
-  @override Color get accentPurple => const Color(0xFFA78BFA);
-  @override Color get accentOrange => const Color(0xFFFF9A3C);
-  @override Color get brandRed => const Color(0xFFFF4D5E);
-  @override Color get pageBgTop => const Color(0xFF11141C);
-  @override Color get pageBgBot => const Color(0xFF0F1117);
+  @override
+  Color get primary => const Color(0xFF00E0A8);
+  @override
+  Color get primaryDark => const Color(0xFF00C896);
+  @override
+  Color get pageBg => const Color(0xFF0F1117);
+  @override
+  Color get textPrimary => const Color(0xFFF0F0F2);
+  @override
+  Color get textSecondary => const Color(0xFFA0A4B0);
+  @override
+  Color get textTertiary => const Color(0xFF6B7080);
+  @override
+  Color get border => const Color(0xFF2A2D38);
+  @override
+  Color get success => const Color(0xFF00D8A8);
+  @override
+  Color get warning => const Color(0xFFFFB74D);
+  @override
+  Color get danger => const Color(0xFFFF6B6B);
+  @override
+  Color get surface => const Color(0xFF1A1D27);
+  @override
+  Color get surfaceContainerLow => const Color(0xFF151820);
+  @override
+  Color get surfaceContainerHigh => const Color(0xFF22252F);
+  @override
+  Color get outlineVariant => const Color(0xFF2E3140);
+  @override
+  Color get darkSurface => const Color(0xFF0A0C12);
+  @override
+  Color get energyGreen => const Color(0xFF00E0A8);
+  @override
+  Color get energyAmber => const Color(0xFFFFC04D);
+  @override
+  Color get energyRed => const Color(0xFFFF6B6B);
+  @override
+  Color get inkBtn => const Color(0xFF2A2D38);
+  @override
+  Color get inkBtn2 => const Color(0xFF363A48);
+  @override
+  Color get accentSky => const Color(0xFF5CB8FF);
+  @override
+  Color get accentViolet => const Color(0xFF9B8EFF);
+  @override
+  Color get accentAmber => const Color(0xFFFFB84D);
+  @override
+  Color get accentPurple => const Color(0xFFA78BFA);
+  @override
+  Color get accentOrange => const Color(0xFFFF9A3C);
+  @override
+  Color get brandRed => const Color(0xFFFF4D5E);
+  @override
+  Color get pageBgTop => const Color(0xFF11141C);
+  @override
+  Color get pageBgBot => const Color(0xFF0F1117);
 }
 
 /// 车体 painter 专用灰阶 token（replica 复刻保真）。

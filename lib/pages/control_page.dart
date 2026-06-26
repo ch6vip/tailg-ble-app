@@ -30,7 +30,6 @@ import 'ota_precheck_page.dart';
 import 'vehicle_message_page.dart';
 import 'vehicle_settings_page.dart';
 
-part 'control_page_visuals.dart';
 part 'control_page_service_cards.dart';
 part 'control_page_unbound_home.dart';
 part 'control_page_home_overview.dart';
@@ -197,7 +196,9 @@ class _HomeBodyState extends State<_HomeBody> {
         // If the BLE device was previously seen but vehicles aren't showing,
         // it's likely a connectivity issue rather than a genuine first-launch.
         final connectionLostHint =
-            connectionManager.device != null && !hasLocalVehicle && !hasCloudVehicle;
+            connectionManager.device != null &&
+            !hasLocalVehicle &&
+            !hasCloudVehicle;
 
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 260),

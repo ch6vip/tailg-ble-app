@@ -77,70 +77,69 @@ class _ControlCardState extends State<ControlCard> {
                     widget.onSeatOpen?.call();
                   },
                 ),
-                  _PowerKnob(
-                    size: knobSize,
-                    powered: widget.powered,
-                    busy: busy,
-                    onPowerOn: () {
-                      HapticFeedback.heavyImpact();
-                      widget.onPowerOn?.call();
-                    },
-                  ),
-                  _SideButton(
-                    size: sideSize,
-                    icon: Icons.apps,
-                    label: '更多功能',
-                    color: AppColors.inkBtn,
-                    disabled: busy,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      widget.onMore?.call();
-                    },
-                  ),
-                ],
-              ),
+                _PowerKnob(
+                  size: knobSize,
+                  powered: widget.powered,
+                  busy: busy,
+                  onPowerOn: () {
+                    HapticFeedback.heavyImpact();
+                    widget.onPowerOn?.call();
+                  },
+                ),
+                _SideButton(
+                  size: sideSize,
+                  icon: Icons.apps,
+                  label: '更多功能',
+                  color: AppColors.inkBtn,
+                  disabled: busy,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    widget.onMore?.call();
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            const Divider(height: 1, thickness: 0.5, color: Color(0x0A000000)),
-            // Sub control row
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _SubControl(
-                    icon: Icons.bluetooth_connected,
-                    label: '感应解锁',
-                    color: AppColors.energyGreen,
-                    active: widget.proximityEnabled,
-                    onTap: () => widget.onToggleProximity?.call(
-                      !widget.proximityEnabled,
-                    ),
-                  ),
-                  _SubControl(
-                    icon: Icons.people_outline,
-                    label: '用车人',
-                    color: AppColors.accentViolet,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      widget.onRiderManagement?.call();
-                    },
-                  ),
-                  _SubControl(
-                    icon: Icons.dashboard_outlined,
-                    label: '超级仪表',
-                    color: AppColors.accentSky,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      widget.onSuperDashboard?.call();
-                    },
-                  ),
-                ],
-              ),
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1, thickness: 0.5, color: Color(0x0A000000)),
+          // Sub control row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _SubControl(
+                  icon: Icons.bluetooth_connected,
+                  label: '感应解锁',
+                  color: AppColors.energyGreen,
+                  active: widget.proximityEnabled,
+                  onTap: () =>
+                      widget.onToggleProximity?.call(!widget.proximityEnabled),
+                ),
+                _SubControl(
+                  icon: Icons.people_outline,
+                  label: '用车人',
+                  color: AppColors.accentViolet,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    widget.onRiderManagement?.call();
+                  },
+                ),
+                _SubControl(
+                  icon: Icons.dashboard_outlined,
+                  label: '超级仪表',
+                  color: AppColors.accentSky,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    widget.onSuperDashboard?.call();
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
   }
 }
 
@@ -274,9 +273,10 @@ class _PowerKnobState extends State<_PowerKnob>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
-    _busyPulse = Tween(begin: 0.25, end: 0.55).animate(
-      CurvedAnimation(parent: _busyPulseCtrl, curve: Curves.easeInOut),
-    );
+    _busyPulse = Tween(
+      begin: 0.25,
+      end: 0.55,
+    ).animate(CurvedAnimation(parent: _busyPulseCtrl, curve: Curves.easeInOut));
   }
 
   @override
