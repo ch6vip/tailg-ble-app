@@ -77,7 +77,10 @@ class OfficialCloudApiConfig {
     this.apiBase = 'https://www.tailgdd.com/v1/api/',
     this.loginMacCode = '000000000000',
     this.phoneMode = 'SM-G998B',
-    this.forwardServiceIp = 'localhost',
+    // Empty by default: callers that genuinely need IP forwarding must set it
+    // explicitly. The previous 'localhost' default leaked into production
+    // requests and could confuse upstream routing/gateway logic.
+    this.forwardServiceIp = '',
     this.language = 'zh_CN',
     this.zoneId = 'UTC+08:00',
     this.apiVersion = '3.0.0',
@@ -90,8 +93,9 @@ class OfficialCloudApiConfig {
 
   Map<String, String> get defaultHeaders => {
     HttpHeaders.contentTypeHeader: 'application/json',
-    'Forward-Service-Ip': forwardServiceIp,
-    'Forward-ServiceIp': forwardServiceIp,
+    // Only emit Forward-Service-Ip when actually configured. The duplicate
+    // 'Forward-ServiceIp' (missing hyphen) was a typo that has been removed.
+    if (forwardServiceIp.isNotEmpty) 'Forward-Service-Ip': forwardServiceIp,
     'language': language,
     HttpHeaders.acceptLanguageHeader: language,
     'Zone-id': zoneId,

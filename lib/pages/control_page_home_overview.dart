@@ -30,15 +30,19 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   // ── Proximity / manual-mode toggle state ──────────────────────────
 
   bool _proximityEnabled = false;
-  StreamSubscription<bool>? _manualModeSub;
+  StreamSubscription<bool>? _proximitySub;
 
   // ── Lifecycle ──────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
-    _proximityEnabled = manualModeService.enabled;
-    _manualModeSub = manualModeService.enabledStream.listen((v) {
+    // Bind to proximityService (not manualModeService) so the switch reflects
+    // and controls the actual proximity-unlock feature. Manual mode remains a
+    // separate "disable all auto-control" override consulted by
+    // ProximityService.start().
+    _proximityEnabled = proximityService.enabled;
+    _proximitySub = proximityService.enabledStream.listen((v) {
       if (mounted) setState(() => _proximityEnabled = v);
     });
   }
@@ -46,7 +50,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   @override
   void dispose() {
     _disposed = true;
-    _manualModeSub?.cancel();
+    _proximitySub?.cancel();
     super.dispose();
   }
 
@@ -318,8 +322,11 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
 
   void _toggleProximity(bool value) {
     HapticFeedback.selectionClick();
-    manualModeService.setEnabled(value);
-    // The _manualModeSub listener syncs _proximityEnabled automatically.
+    // Drive the actual proximity-unlock service. setEnabled persists the flag
+    // and starts/stops scanning. The _proximitySub listener syncs
+    // _proximityEnabled automatically. Manual mode (a separate override that
+    // disables ALL auto-control) is still consulted inside start().
+    proximityService.setEnabled(value);
   }
 
   // ── Super Dashboard / Rider Management placeholders ────────────────

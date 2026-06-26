@@ -58,6 +58,7 @@ class ConnectionManager {
   BluetoothCharacteristic? _fbb2Char;
 
   Timer? _heartbeatTimer;
+  Timer? _readyWatchdog;
   StreamSubscription? _connectionSub;
   StreamSubscription? _notifySub;
   StreamSubscription? _gpsNotifySub;
@@ -534,7 +535,11 @@ class ConnectionManager {
               _log.ble('心跳持续失败 ($failCount 次)，触发重连', level: LogLevel.warning);
               _heartbeatTimer?.cancel();
               _heartbeatTimer = null;
-              _onDisconnected();
+              // scheduleMicrotask: _onDisconnected performs async cleanup
+              // (cancel subs, _attemptReconnect). Running it inline inside
+              // the Timer callback would route those futures through the
+              // Timer zone, swallowing any thrown exceptions.
+              scheduleMicrotask(_onDisconnected);
             }
           })
           .whenComplete(() => heartbeatInFlight = false);
@@ -802,6 +807,7 @@ class ConnectionManager {
   Future<void> _clearRuntimeResources({required bool disconnectDevice}) async {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    _disarmReadyWatchdog();
     await _notifySub?.cancel();
     _notifySub = null;
     await _gpsNotifySub?.cancel();
@@ -880,9 +886,34 @@ class ConnectionManager {
   void _setState(ConnectionState s) {
     if (_state == s) return;
     _state = s;
+    // Manage the ready-handshake watchdog: arm it when entering `connected`
+    // (GATT up, awaiting token/login response), disarm it on any other
+    // transition (ready = success, disconnected/reconnecting = teardown).
+    if (s == ConnectionState.connected) {
+      _armReadyWatchdog();
+    } else {
+      _disarmReadyWatchdog();
+    }
     if (!_disposed) {
       _stateController.add(s);
     }
+  }
+
+  void _armReadyWatchdog() {
+    _disarmReadyWatchdog();
+    _readyWatchdog = Timer(BleTimings.readyHandshakeTimeout, () {
+      if (_disposed) return;
+      if (_state != ConnectionState.connected) return;
+      _log.ble('connected→ready 握手超时，回退断连并触发重连', level: LogLevel.warning);
+      // scheduleMicrotask avoids running teardown inside the Timer zone,
+      // where async exceptions from _onDisconnected would be swallowed.
+      scheduleMicrotask(_onDisconnected);
+    });
+  }
+
+  void _disarmReadyWatchdog() {
+    _readyWatchdog?.cancel();
+    _readyWatchdog = null;
   }
 
   void _addResponse(ParsedResponse response) {
@@ -904,6 +935,7 @@ class ConnectionManager {
     // Cancel timers
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    _disarmReadyWatchdog();
 
     // Cancel subscriptions
     await _notifySub?.cancel();

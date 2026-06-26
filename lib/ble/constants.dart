@@ -113,6 +113,13 @@ class BleTimings {
   static const silentLocationThrottle = Duration(seconds: 60);
   static const qgjSearchCountdown = Duration(seconds: 30);
   static const gpsSearchCountdown = Duration(seconds: 6);
+
+  /// Max time to wait for the device to deliver the token (standard) or QGJ
+  /// login response after GATT setup completes. If the state is still
+  /// `connected` (not `ready`) when this elapses, the link is torn down and
+  /// reconnection is attempted — prevents the UI from hanging on
+  /// "连接中" forever when a device silently drops the handshake.
+  static const readyHandshakeTimeout = Duration(seconds: 8);
 }
 
 class QgjCommandHeaders {

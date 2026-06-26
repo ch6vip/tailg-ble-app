@@ -24,3 +24,13 @@
 - Use AppColors tokens — never hardcode Material Colors
 - New theme tokens go in `lib/theme/`, imported by consumers
 - Control page is split into part files under `lib/pages/control_page_*.dart`
+
+## Service Wiring Pitfalls (learned 2026-06-26)
+- UI toggles on the control page MUST bind to the actual feature service, not `ManualModeService`. ManualMode is a *disable-all-auto-control* override consulted by `ProximityService.start()` / `AutoConnectService` — wiring a feature switch to it inverts the semantics (switch ON = feature OFF).
+- `AppServices.reset()` (test-only) must call `resetForTest()` on each singleton service, NOT `dispose()`. `dispose()` closes StreamControllers permanently on factory singletons → zombie instances on next `production()`.
+- BLE `connected → ready` transition needs a watchdog timer (8s) — without it, a silent handshake failure leaves the UI stuck on "连接中" forever.
+- Any callback invoked from `Timer.periodic` that performs async cleanup must be wrapped in `scheduleMicrotask(...)` so thrown exceptions surface instead of being swallowed by the Timer zone.
+- `_findUserId`-style recursive extractors must NOT use `'id'` as a fallback key — too greedy, matches `carId`/`deviceTravelId`/`extendId` etc. Use only `'uid'`/`'userId'`.
+- HTTP header maps must be audited for typos — `Forward-Service-Ip` vs `Forward-ServiceIp` both existed and silently doubled the request size while only one form reached the server.
+- `LogService` now exposes a `changes` broadcast stream; UI pages should subscribe instead of `setState(() {})` polling.
+- BLE log entries containing login frames are redacted at `LogService.ble()` level — keep this pattern when adding new credential-bearing log calls.

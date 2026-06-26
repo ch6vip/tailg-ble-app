@@ -33,7 +33,11 @@ class OfficialCloudAuthParser {
 
   static Object? _findUserId(Object? value) {
     if (value is Map) {
-      for (final key in const ['uid', 'userId', 'id']) {
+      // Only match unambiguous user-id keys. The previous 'id' fallback was
+      // too greedy and would match `carId`, `deviceTravelId`, `extendId`,
+      // etc. — returning the wrong user id and breaking downstream queries
+      // (or, worse, leaking another user's data).
+      for (final key in const ['uid', 'userId']) {
         final candidate = value[key];
         if (candidate != null && candidate.toString().trim().isNotEmpty) {
           return candidate;

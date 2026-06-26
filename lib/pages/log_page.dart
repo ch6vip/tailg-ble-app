@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../main.dart';
@@ -17,6 +18,7 @@ class LogPage extends StatefulWidget {
 class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _log = LogService();
+  StreamSubscription<void>? _logSub;
   int _activeTab = 0;
 
   @override
@@ -28,10 +30,17 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
         setState(() => _activeTab = _tabController.index);
       }
     });
+    // Subscribe to LogService.changes so the list refreshes automatically
+    // when new entries arrive (P3-12). Removes the need for a manual
+    // "refresh" button that just calls setState(() {}).
+    _logSub = _log.changes.listen((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
+    _logSub?.cancel();
     _tabController.dispose();
     super.dispose();
   }
@@ -115,10 +124,9 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
                 AppHeaderAction(
                   icon: Icons.refresh,
                   tooltip: '刷新',
-                  // Full-page rebuild is intentional: LogService exposes no
-                  // stream/notifier, so only setState forces a re-read of its
-                  // synchronous getters. Scoping to the list would require
-                  // adding a stream to LogService (out of scope here).
+                  // LogService.changes now auto-refreshes the page, but keep
+                  // the manual button for cases where the user wants to force
+                  // a re-read (e.g. after rotating the device).
                   onTap: () => setState(() {}),
                 ),
                 AppHeaderAction(

@@ -61,6 +61,12 @@ ParsedResponse _parseResponse(String keyHex, Uint8List raw) {
   }
 
   if (hex.startsWith(_tokenPrefix)) {
+    // Token frame is at least 8 bytes (16 hex chars): 4-byte prefix + 4-byte
+    // token. Reject short frames explicitly instead of relying on the outer
+    // try/catch to swallow the RangeError from substring.
+    if (hex.length < 16) {
+      return UnknownResponse(hex);
+    }
     final token = hex.substring(8, 16);
     return TokenResponse(hex, token);
   }

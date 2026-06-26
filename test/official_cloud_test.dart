@@ -120,13 +120,22 @@ void main() {
       expect(config.phoneMode, 'SM-G998B');
       expect(config.connectTimeout, const Duration(seconds: 15));
       expect(config.responseTimeout, const Duration(seconds: 15));
-      expect(config.defaultHeaders['Forward-Service-Ip'], 'localhost');
-      expect(config.defaultHeaders['Forward-ServiceIp'], 'localhost');
+      // Forward-Service-Ip is omitted by default (P2-8: was 'localhost' +
+      // a duplicate 'Forward-ServiceIp' typo). Only emitted when configured.
+      expect(config.defaultHeaders.containsKey('Forward-Service-Ip'), isFalse);
+      expect(config.defaultHeaders.containsKey('Forward-ServiceIp'), isFalse);
       expect(config.defaultHeaders['language'], 'zh_CN');
       expect(config.defaultHeaders['accept-language'], 'zh_CN');
       expect(config.defaultHeaders['Zone-id'], 'UTC+08:00');
       expect(config.defaultHeaders['Api-Version'], '3.0.0');
       expect(config.defaultHeaders['user-agent'], 'okhttp/4.9.3');
+
+      const configured = OfficialCloudApiConfig(forwardServiceIp: '10.0.0.1');
+      expect(configured.defaultHeaders['Forward-Service-Ip'], '10.0.0.1');
+      expect(
+        configured.defaultHeaders.containsKey('Forward-ServiceIp'),
+        isFalse,
+      );
     });
   });
 
@@ -179,6 +188,27 @@ void main() {
         '12345',
       );
       expect(OfficialCloudAuthParser.extractUserId({}), isEmpty);
+    });
+
+    test('does not match generic id fields (regression for P1-4)', () {
+      // Previously 'id' was a fallback key and would mis-match carId,
+      // deviceTravelId, extendId, etc. Only uid/userId should match.
+      expect(
+        OfficialCloudAuthParser.extractUserId({
+          'data': {
+            'carId': 'CAR-XYZ',
+            'deviceTravelId': 'TRAVEL-1',
+            'extendId': 'EXT-9',
+          },
+        }),
+        isEmpty,
+      );
+      expect(
+        OfficialCloudAuthParser.extractUserId({
+          'data': {'id': 'should-not-match'},
+        }),
+        isEmpty,
+      );
     });
 
     test(

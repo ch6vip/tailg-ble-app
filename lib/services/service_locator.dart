@@ -72,9 +72,38 @@ class AppServices {
   static void override(AppServices services) => _instance = services;
 
   /// Restores the default production service graph. Intended for tests.
+  ///
+  /// P2-7: previously this called `dispose()` on each service, but most
+  /// services are factory singletons (`ProximityService._instance` etc.) —
+  /// `dispose()` closes their StreamControllers permanently, so the next
+  /// `AppServices.production()` returned the same disposed "zombie"
+  /// instances whose streams could no longer emit. We now call
+  /// `resetForTest()` (which resets state without closing streams) on
+  /// services that expose it, and only dispose stateless helpers.
   @visibleForTesting
   static void reset() {
-    _instance.dispose();
+    final old = _instance;
+    // Reset stateful singletons without killing their stream controllers.
+    try {
+      old.proximityService.resetForTest();
+    } catch (_) {}
+    try {
+      old.autoConnectService.resetForTest();
+    } catch (_) {}
+    try {
+      old.manualModeService.resetForTest();
+    } catch (_) {}
+    try {
+      old.vehicleStore.resetForTest();
+    } catch (_) {}
+    try {
+      AppPreferencesService().resetForTest();
+    } catch (_) {}
+    // OfficialCloudService has no resetForTest; its HttpClient is closed on
+    // dispose and recreated lazily, so disposing it is safe.
+    try {
+      old.officialCloudService.dispose();
+    } catch (_) {}
     _instance = AppServices.production();
   }
 
