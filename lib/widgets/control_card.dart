@@ -221,16 +221,17 @@ class _PowerKnobState extends State<_PowerKnob>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: _holdMs),
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _fired = true;
-          HapticFeedback.heavyImpact();
-          widget.onPowerOn?.call();
-        }
-      });
+    _ctrl =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: _holdMs),
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            _fired = true;
+            HapticFeedback.heavyImpact();
+            widget.onPowerOn?.call();
+          }
+        });
     _progress = Tween(
       begin: 0.0,
       end: 1.0,
@@ -340,9 +341,7 @@ class _PowerKnobState extends State<_PowerKnob>
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: widget.powered
-                  ? AppColors.danger
-                  : AppColors.textPrimary,
+              color: widget.powered ? AppColors.danger : AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 2),

@@ -423,8 +423,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             : (soc * _kmPerPercent).round();
         // Prefer BLE lock/power, fallback to cloud
         final isArmed = bike?.isLocked ?? cloudVehicle?.isLocked;
-        final isPowerOn =
-            bike?.isPowerOn ?? cloudVehicle?.isPowerOn ?? false;
+        final isPowerOn = bike?.isPowerOn ?? cloudVehicle?.isPowerOn ?? false;
         final vehicleName =
             connectionManager.device?.platformName ??
             vehicleStore.defaultVehicle?.displayName ??
