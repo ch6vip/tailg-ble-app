@@ -55,7 +55,7 @@ class ControlPageHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final bColor = batteryColor(batteryLevel);
     final displayRange = rangeKm ?? 0;
-    final displayHealth = healthLabel ?? '健康良好';
+    final displayHealth = healthLabel ?? '--';
     final displayName = vehicleName ?? '我的车辆';
     final displayConn = connectionLabel;
 

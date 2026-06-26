@@ -411,10 +411,20 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
       initialData: connectionManager.latestBikeState,
       builder: (context, snapshot) {
         final bike = snapshot.data;
-        final soc = _normalizePercent(bike?.batteryPercent) ?? 0;
-        final range = (soc * _kmPerPercent).round();
-        final isArmed = bike?.isLocked;
-        final isPowerOn = bike?.isPowerOn ?? false;
+        final cloudVehicle = _latestCloud.selectedVehicle;
+        // Prefer BLE battery, fallback to cloud electricQuantity
+        final rawPercent =
+            bike?.batteryPercent ?? cloudVehicle?.electricQuantity;
+        final soc = _normalizePercent(rawPercent) ?? 0;
+        // Prefer cloud mileage, fallback to estimated range
+        final cloudMileage = cloudVehicle?.mileage;
+        final range = cloudMileage != null
+            ? cloudMileage.round()
+            : (soc * _kmPerPercent).round();
+        // Prefer BLE lock/power, fallback to cloud
+        final isArmed = bike?.isLocked ?? cloudVehicle?.isLocked;
+        final isPowerOn =
+            bike?.isPowerOn ?? cloudVehicle?.isPowerOn ?? false;
         final vehicleName =
             connectionManager.device?.platformName ??
             vehicleStore.defaultVehicle?.displayName ??
@@ -424,7 +434,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             : _isReconnecting
             ? '重连中'
             : null;
-        final cloudVehicle = _latestCloud.selectedVehicle;
 
         return DecoratedBox(
           decoration: const BoxDecoration(
@@ -442,13 +451,13 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
               ControlPageHero(
                 batteryLevel: soc,
                 rangeKm: range,
-                healthLabel: bike != null
+                healthLabel: rawPercent != null
                     ? (soc >= 60
                           ? '健康良好'
                           : soc >= 30
                           ? '建议充电'
                           : '电量过低')
-                    : null,
+                    : '等待数据',
                 vehicleName: cloudVehicle?.displayName ?? vehicleName,
                 connectionLabel: connectionLabel,
                 onBatteryTap: () => Navigator.of(context).push(
