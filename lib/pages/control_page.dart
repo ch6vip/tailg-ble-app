@@ -108,10 +108,8 @@ class _ControlPageState extends State<ControlPage>
           color: AppColors.primary,
           backgroundColor: AppColors.surface,
           child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics(),
-            ),
-            padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 24),
             child: const _HomeBody(),
           ),
         ),
