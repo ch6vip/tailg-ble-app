@@ -218,30 +218,11 @@ void main() {
     expect(store.defaultVehicle?.displayName, '有效车辆');
   });
 
-  test('ReplicaFeatureStore saves quick control config', () async {
-    final store = ReplicaFeatureStore();
-
-    final defaults = await store.loadQuickControlConfig();
-    expect(defaults.firstActionId, 'soundEffects');
-    expect(defaults.secondActionId, 'seat');
-
-    await store.saveQuickControlConfig(
-      const QuickControlConfig(firstActionId: 'fence', secondActionId: 'find'),
-    );
-
-    final saved = await store.loadQuickControlConfig();
-    expect(saved.firstActionId, 'fence');
-    expect(saved.secondActionId, 'find');
-  });
-
   test('ReplicaFeatureStore tolerates corrupt persisted config', () async {
     SharedPreferences.setMockInitialValues({
       'replica_nfc_keys': 'not-json',
       'replica_fence_config': '[',
       'replica_share_members': '{"not":"a-list"}',
-      'replica_quick_control_config': 'bad',
-      'replica_quick_shortcuts_config': '42',
-      'replica_main_control_config': 'null',
     });
 
     final store = ReplicaFeatureStore();
@@ -249,18 +230,6 @@ void main() {
     expect(await store.loadNfcKeys(), isEmpty);
     expect(await store.loadFenceConfig(), isNull);
     expect(await store.loadShareMembers(), isEmpty);
-    expect(
-      await store.loadQuickControlConfig(),
-      isA<QuickControlConfig>()
-          .having(
-            (config) => config.firstActionId,
-            'firstActionId',
-            'soundEffects',
-          )
-          .having((config) => config.secondActionId, 'secondActionId', 'seat'),
-    );
-    expect(await store.loadQuickShortcutsConfig(), isA<QuickShortcutsConfig>());
-    expect(await store.loadMainControlConfig(), isA<MainControlConfig>());
   });
 
   test('ReplicaFeatureStore keeps recoverable malformed records', () async {
@@ -295,9 +264,5 @@ void main() {
     expect(fence.latitude, 31.2304);
     expect(fence.longitude, 121.4737);
     expect(fence.radiusMeters, 800);
-
-    final quickControl = await store.loadQuickControlConfig();
-    expect(quickControl.firstActionId, '123');
-    expect(quickControl.secondActionId, 'seat');
   });
 }

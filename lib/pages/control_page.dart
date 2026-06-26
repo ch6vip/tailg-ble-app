@@ -13,9 +13,7 @@ import '../services/control_command_policy.dart';
 import '../services/control_command_result.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
-import '../services/replica_feature_store.dart';
 import '../theme/app_colors.dart';
-import '../widgets/app_chrome.dart';
 import '../widgets/status_badge.dart';
 import '../widgets/vehicle_stage.dart';
 import '../widgets/control_card.dart';
@@ -31,16 +29,11 @@ import 'ota_precheck_page.dart';
 import 'vehicle_message_page.dart';
 import 'vehicle_settings_page.dart';
 
-part 'control_page_quick_controls.dart';
 part 'control_page_visuals.dart';
 part 'control_page_service_cards.dart';
 part 'control_page_unbound_home.dart';
 part 'control_page_home_overview.dart';
-part 'control_page_home_header.dart';
-part 'control_page_home_status.dart';
 part 'control_page_vehicle_overview.dart';
-part 'control_page_control_widgets.dart';
-part 'control_page_main_controls.dart';
 part 'control_page_mode_widgets.dart';
 
 const _pageBg = AppColors.pageBg;
@@ -61,12 +54,6 @@ const _cardDecoration = BoxDecoration(
 int? _normalizePercent(int? value) {
   if (value == null) return null;
   return value.clamp(0, 100).toInt();
-}
-
-String _formatMetricNumber(num value) {
-  final rounded = value.roundToDouble();
-  if ((value - rounded).abs() < 0.05) return rounded.toInt().toString();
-  return value.toStringAsFixed(1);
 }
 
 class ControlPage extends StatefulWidget {

@@ -32,11 +32,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   bool _proximityEnabled = false;
   StreamSubscription<bool>? _manualModeSub;
 
-  // ── Cloud-state listener (drives _ControlTipBar & control decisions) ─
-
-  StreamSubscription<OfficialCloudState>? _cloudSub;
-  OfficialCloudState _latestCloud = officialCloudService.state;
-
   // ── Lifecycle ──────────────────────────────────────────────────────
 
   @override
@@ -46,16 +41,12 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     _manualModeSub = manualModeService.enabledStream.listen((v) {
       if (mounted) setState(() => _proximityEnabled = v);
     });
-    _cloudSub = officialCloudService.stateStream.listen((c) {
-      if (mounted) setState(() => _latestCloud = c);
-    });
   }
 
   @override
   void dispose() {
     _disposed = true;
     _manualModeSub?.cancel();
-    _cloudSub?.cancel();
     super.dispose();
   }
 
@@ -69,15 +60,16 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     final availability = _controlAvailability();
     final useBleState =
         availability.canUseBle &&
-        _latestCloud.controlChannel != OfficialControlChannel.officialCloud;
+        officialCloudService.state.controlChannel !=
+            OfficialControlChannel.officialCloud;
     return useBleState
         ? connectionManager.latestBikeState?.isPowerOn ?? false
-        : _latestCloud.selectedVehicle?.isPowerOn ?? false;
+        : officialCloudService.state.selectedVehicle?.isPowerOn ?? false;
   }
 
   ControlChannelAvailability _controlAvailability() {
     return ControlChannelResolver.resolve(
-      cloudState: _latestCloud,
+      cloudState: officialCloudService.state,
       bleReady: _isBleReady,
       defaultVehicleId: vehicleStore.defaultVehicleId,
       busy: _busy,
@@ -115,7 +107,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
       final pending = PendingControlCommandConfirmationContext(
         defaultVehicleId: vehicleStore.defaultVehicleId,
         bleDeviceId: connectionManager.device?.remoteId.toString(),
-        officialVehicleKey: _latestCloud.selectedVehicle?.key,
+        officialVehicleKey: officialCloudService.state.selectedVehicle?.key,
       );
       final result = await _commandExecutor.send(
         command: cmd,
@@ -351,7 +343,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
 
   String get _tipEffective {
     final availability = _controlAvailability();
-    return switch (_latestCloud.controlChannel) {
+    return switch (officialCloudService.state.controlChannel) {
       OfficialControlChannel.ble => 'BLE',
       OfficialControlChannel.officialCloud => '云端',
       OfficialControlChannel.automatic =>
@@ -372,7 +364,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     }
     final isLocked = _currentIsPowerOn()
         ? (connectionManager.latestBikeState?.isLocked ??
-              _latestCloud.selectedVehicle?.isLocked ??
+              officialCloudService.state.selectedVehicle?.isLocked ??
               true)
         : true;
     final isPowerOn = _currentIsPowerOn();
@@ -398,7 +390,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   String? get _tipVehicleName {
     final availability = _controlAvailability();
     return availability.canUseCloud
-        ? _latestCloud.selectedVehicle?.displayName
+        ? officialCloudService.state.selectedVehicle?.displayName
         : null;
   }
 
@@ -411,7 +403,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
       initialData: connectionManager.latestBikeState,
       builder: (context, snapshot) {
         final bike = snapshot.data;
-        final cloudVehicle = _latestCloud.selectedVehicle;
+        final cloudVehicle = officialCloudService.state.selectedVehicle;
         // Prefer BLE battery, fallback to cloud electricQuantity
         final rawPercent =
             bike?.batteryPercent ?? cloudVehicle?.electricQuantity;
@@ -461,6 +453,9 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                 connectionLabel: connectionLabel,
                 onBatteryTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const BatteryDetailsPage()),
+                ),
+                onNotification: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const VehicleMessagePage()),
                 ),
               ),
               const SizedBox(height: 10),

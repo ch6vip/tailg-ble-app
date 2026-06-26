@@ -17,6 +17,7 @@ class ControlPageHero extends StatelessWidget {
     this.connectionLabel,
     this.onVehicleSwitch,
     this.onBatteryTap,
+    this.onNotification,
   });
 
   /// Battery level 0–100.
@@ -36,6 +37,7 @@ class ControlPageHero extends StatelessWidget {
 
   final VoidCallback? onVehicleSwitch;
   final VoidCallback? onBatteryTap;
+  final VoidCallback? onNotification;
 
   /// Returns the color for the battery percentage based on level.
   static Color batteryColor(int level) {
@@ -75,6 +77,7 @@ class ControlPageHero extends StatelessWidget {
                 displayName: displayName,
                 displayConn: displayConn,
                 onVehicleSwitch: onVehicleSwitch,
+                onNotification: onNotification,
               ),
               SizedBox(height: wide ? 14 : 8),
 
@@ -118,11 +121,13 @@ class _TopBar extends StatelessWidget {
     required this.displayName,
     required this.displayConn,
     this.onVehicleSwitch,
+    this.onNotification,
   });
 
   final String displayName;
   final String? displayConn;
   final VoidCallback? onVehicleSwitch;
+  final VoidCallback? onNotification;
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +198,10 @@ class _TopBar extends StatelessWidget {
             ),
           ),
         const SizedBox(width: 8),
-        _TopIconButton(icon: Icons.notifications_outlined, onTap: () {}),
+        _TopIconButton(
+          icon: Icons.notifications_outlined,
+          onTap: onNotification,
+        ),
       ],
     );
   }
