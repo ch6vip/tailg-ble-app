@@ -14,6 +14,7 @@ import '../services/control_command_result.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
 import '../widgets/status_badge.dart';
 import '../widgets/vehicle_stage.dart';
 import '../widgets/control_card.dart';
@@ -193,6 +194,10 @@ class _HomeBodyState extends State<_HomeBody> {
             connState != ble.ConnectionState.disconnected;
         final showUnboundHome =
             !hasLocalVehicle && !hasCloudVehicle && !hasTransientDevice;
+        // If the BLE device was previously seen but vehicles aren't showing,
+        // it's likely a connectivity issue rather than a genuine first-launch.
+        final connectionLostHint =
+            connectionManager.device != null && !hasLocalVehicle && !hasCloudVehicle;
 
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 260),
@@ -216,7 +221,7 @@ class _HomeBodyState extends State<_HomeBody> {
             );
           },
           child: showUnboundHome
-              ? const _UnboundVehicleHome()
+              ? _UnboundVehicleHome(connectionLost: connectionLostHint)
               : Column(
                   key: const ValueKey('bound-home'),
                   crossAxisAlignment: CrossAxisAlignment.start,

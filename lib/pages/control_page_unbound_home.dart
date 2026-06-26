@@ -1,7 +1,12 @@
 part of 'control_page.dart';
 
 class _UnboundVehicleHome extends StatelessWidget {
-  const _UnboundVehicleHome();
+  const _UnboundVehicleHome({this.connectionLost = false});
+
+  /// When true, the user previously had a BLE connection but vehicles are
+  /// currently unavailable — likely a connectivity glitch rather than a
+  /// first-launch empty state.
+  final bool connectionLost;
 
   void _showSnack(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -20,74 +25,129 @@ class _UnboundVehicleHome extends StatelessWidget {
           child: _UnboundLogoMark(),
         ),
         const SizedBox(height: 54),
-        const Text(
-          '未绑定车辆',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 36,
-            height: 1.05,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+        if (connectionLost) ...[
+          // Connection-lost variant: show retry CTA instead of full intro
+          const SizedBox(height: 20),
+          Container(
+            width: 80,
+            height: 80,
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceBrandAmberTint,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.bluetooth_disabled,
+              size: 40,
+              color: AppColors.energyAmber,
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          '绑定车辆后可使用蓝牙控车、定位、轨迹和电池服务',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 14,
-            height: 1.35,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w600,
+          const Text(
+            '连接已中断',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 28,
+              height: 1.05,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
           ),
-        ),
-        const SizedBox(height: 22),
-        const _UnboundBanner(),
-        const SizedBox(height: 20),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Column(
-            children: [
-              _OfficialActionButton(
-                label: '绑定设备',
-                foreground: Colors.white,
-                background: AppColors.primary,
-                onTap: () => openScanTab(context),
-              ),
-              const SizedBox(height: 12),
-              _OfficialActionButton(
-                label: '虚拟体验（演示）',
-                foreground: AppColors.textSecondary,
-                background: AppColors.surface,
-                onTap: () =>
-                    _showSnack(context, '虚拟体验功能开发中，可先「绑定设备」或登录官方账号查看车辆'),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const GaragePage()),
+          const SizedBox(height: 10),
+          Text(
+            '之前连接的设备暂时不可用\n请靠近车辆后重试',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 14,
+              height: 1.35,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 28),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: _OfficialActionButton(
+              label: '重新连接',
+              foreground: Colors.white,
+              background: AppColors.primary,
+              onTap: () => openScanTab(context),
+            ),
+          ),
+        ] else ...[
+          // Normal first-launch empty state
+          const Text(
+            '未绑定车辆',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 36,
+              height: 1.05,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            '绑定车辆后可使用蓝牙控车、定位、轨迹和电池服务',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.35,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+        if (!connectionLost) ...[
+          const SizedBox(height: 22),
+          const _UnboundBanner(),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Column(
+              children: [
+                _OfficialActionButton(
+                  label: '绑定设备',
+                  foreground: Colors.white,
+                  background: AppColors.primary,
+                  onTap: () => openScanTab(context),
                 ),
-                child: const Text(
-                  '绑定说明',
-                  style: TextStyle(
-                    color: AppColors.textTertiary,
-                    fontWeight: FontWeight.w700,
+                const SizedBox(height: 12),
+                _OfficialActionButton(
+                  label: '虚拟体验（演示）',
+                  foreground: AppColors.textSecondary,
+                  background: AppColors.surface,
+                  onTap: () =>
+                      _showSnack(context, '虚拟体验功能开发中，可先「绑定设备」或登录官方账号查看车辆'),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const GaragePage()),
+                  ),
+                  child: const Text(
+                    '绑定说明',
+                    style: TextStyle(
+                      color: AppColors.textTertiary,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              _OfficialTextLinkRow(
-                icon: Icons.cloud_done_outlined,
-                label: '已绑定官方账号？登录后自动显示车辆',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const OfficialCloudPage()),
+                const SizedBox(height: 8),
+                _OfficialTextLinkRow(
+                  icon: Icons.cloud_done_outlined,
+                  label: '已绑定官方账号？登录后自动显示车辆',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const OfficialCloudPage(),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
         const SizedBox(height: 20),
       ],
     );
@@ -129,8 +189,68 @@ class _UnboundLogoMark extends StatelessWidget {
   }
 }
 
-class _UnboundBanner extends StatelessWidget {
+class _UnboundBanner extends StatefulWidget {
   const _UnboundBanner();
+
+  @override
+  State<_UnboundBanner> createState() => _UnboundBannerState();
+}
+
+class _UnboundBannerState extends State<_UnboundBanner> {
+  final _pageController = PageController();
+  int _currentPage = 0;
+  Timer? _timer;
+
+  static const _pages = [
+    _BannerPage(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFFF6F8FB), Color(0xFFEDF1F5), Color(0xFFE6F7F1)],
+      ),
+      chips: ['蓝牙控车', '云端车辆'],
+      caption: '绑定设备后同步车辆状态',
+    ),
+    _BannerPage(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFFF8F4FF), Color(0xFFF0EBFF), Color(0xFFE8E0FF)],
+      ),
+      chips: ['一键寻车', '远程设防'],
+      caption: '手机就是你的车钥匙',
+    ),
+    _BannerPage(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFFFFF8F0), Color(0xFFFFF0E0), Color(0xFFFFE8D0)],
+      ),
+      chips: ['骑行记录', '电池管理'],
+      caption: '全面掌控车辆数据',
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted) return;
+      final next = (_currentPage + 1) % _pages.length;
+      _pageController.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,89 +258,93 @@ class _UnboundBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
-          Container(
+          SizedBox(
             height: 230,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x0A000000),
-                  blurRadius: 14,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFFF6F8FB),
-                          Color(0xFFEDF1F5),
-                          Color(0xFFE6F7F1),
-                        ],
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (i) => setState(() => _currentPage = i),
+              itemCount: _pages.length,
+              itemBuilder: (context, i) {
+                final page = _pages[i];
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x0A000000),
+                        blurRadius: 14,
+                        offset: Offset(0, 4),
                       ),
-                    ),
+                    ],
                   ),
-                ),
-                const Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 40,
-                  child: RepaintBoundary(
-                    child: CustomPaint(painter: _UnboundBannerPainter()),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: page.gradient,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 18,
+                        top: 18,
+                        child: _UnboundBannerChip(text: page.chips[0]),
+                      ),
+                      Positioned(
+                        right: 18,
+                        top: 18,
+                        child: _UnboundBannerChip(text: page.chips[1]),
+                      ),
+                      Positioned(
+                        left: 18,
+                        right: 18,
+                        bottom: 16,
+                        child: Text(
+                          page.caption,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const Positioned(
-                  left: 18,
-                  top: 18,
-                  child: _UnboundBannerChip(text: '蓝牙控车'),
-                ),
-                const Positioned(
-                  right: 18,
-                  top: 18,
-                  child: _UnboundBannerChip(text: '云端车辆'),
-                ),
-                const Positioned(
-                  left: 18,
-                  right: 18,
-                  bottom: 16,
-                  child: Text(
-                    '绑定设备后同步车辆状态',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
+                );
+              },
             ),
           ),
           const SizedBox(height: 12),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _BannerDot(active: true),
-              SizedBox(width: 6),
-              _BannerDot(active: false),
-              SizedBox(width: 6),
-              _BannerDot(active: false),
-            ],
+            children: List.generate(_pages.length, (i) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: _BannerDot(active: i == _currentPage),
+              );
+            }),
           ),
         ],
       ),
     );
   }
+}
+
+class _BannerPage {
+  final LinearGradient gradient;
+  final List<String> chips;
+  final String caption;
+  const _BannerPage({
+    required this.gradient,
+    required this.chips,
+    required this.caption,
+  });
 }
 
 class _UnboundBannerChip extends StatelessWidget {

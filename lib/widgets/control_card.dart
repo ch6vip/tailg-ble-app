@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
+import 'package:tailg_ble_app/theme/app_motion.dart';
 
 /// v8 floating control card — Ninebot-style central ink-button
 /// with long-press power ring progress.
@@ -56,28 +57,26 @@ class _ControlCardState extends State<ControlCard> {
           ),
         ],
       ),
-      child: Opacity(
-        opacity: busy ? 0.55 : 1.0,
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            // Main control row: seat | power knob | more
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: wide ? 16 : 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _SideButton(
-                    size: sideSize,
-                    icon: Icons.inventory_2_outlined,
-                    label: '打开座桶',
-                    color: AppColors.inkBtn,
-                    onTap: () {
-                      if (busy) return;
-                      HapticFeedback.mediumImpact();
-                      widget.onSeatOpen?.call();
-                    },
-                  ),
+      child: Column(
+        children: [
+          const SizedBox(height: 20),
+          // Main control row: seat | power knob | more
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: wide ? 16 : 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _SideButton(
+                  size: sideSize,
+                  icon: Icons.inventory_2_outlined,
+                  label: '打开座桶',
+                  color: AppColors.inkBtn,
+                  disabled: busy,
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    widget.onSeatOpen?.call();
+                  },
+                ),
                   _PowerKnob(
                     size: knobSize,
                     powered: widget.powered,
@@ -92,8 +91,8 @@ class _ControlCardState extends State<ControlCard> {
                     icon: Icons.apps,
                     label: '更多功能',
                     color: AppColors.inkBtn,
+                    disabled: busy,
                     onTap: () {
-                      if (busy) return;
                       HapticFeedback.selectionClick();
                       widget.onMore?.call();
                     },
@@ -142,17 +141,17 @@ class _ControlCardState extends State<ControlCard> {
           ],
         ),
       ),
-    );
   }
 }
 
 /// Side action button (seat bucket / more functions).
-class _SideButton extends StatelessWidget {
+class _SideButton extends StatefulWidget {
   const _SideButton({
     this.size = 52,
     required this.icon,
     required this.label,
     required this.color,
+    this.disabled = false,
     this.onTap,
   });
 
@@ -160,34 +159,64 @@ class _SideButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
+  final bool disabled;
   final VoidCallback? onTap;
 
   @override
+  State<_SideButton> createState() => _SideButtonState();
+}
+
+class _SideButtonState extends State<_SideButton> {
+  bool _pressed = false;
+
+  void _setPressed(bool v) {
+    if (!mounted || _pressed == v) return;
+    setState(() => _pressed = v);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final effectiveOnTap = widget.disabled ? null : widget.onTap;
     return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLow,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: size * 0.45, color: color),
+      onTapDown: effectiveOnTap != null ? (_) => _setPressed(true) : null,
+      onTapUp: effectiveOnTap != null ? (_) => _setPressed(false) : null,
+      onTapCancel: effectiveOnTap != null ? () => _setPressed(false) : null,
+      onTap: effectiveOnTap,
+      child: AnimatedScale(
+        scale: _pressed && !widget.disabled ? AppMotion.pressScale : 1.0,
+        duration: AppMotion.micro,
+        curve: AppMotion.pressCurve,
+        child: AnimatedOpacity(
+          opacity: widget.disabled ? 0.45 : 1.0,
+          duration: const Duration(milliseconds: 200),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: widget.size,
+                height: widget.size,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLow,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  widget.icon,
+                  size: widget.size * 0.45,
+                  color: widget.color,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -218,6 +247,10 @@ class _PowerKnobState extends State<_PowerKnob>
   bool _holding = false;
   bool _fired = false;
 
+  // Busy-state pulsing ring
+  late final AnimationController _busyPulseCtrl;
+  late final Animation<double> _busyPulse;
+
   @override
   void initState() {
     super.initState();
@@ -236,11 +269,20 @@ class _PowerKnobState extends State<_PowerKnob>
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.linear));
+
+    _busyPulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _busyPulse = Tween(begin: 0.25, end: 0.55).animate(
+      CurvedAnimation(parent: _busyPulseCtrl, curve: Curves.easeInOut),
+    );
   }
 
   @override
   void dispose() {
     _ctrl.dispose();
+    _busyPulseCtrl.dispose();
     super.dispose();
   }
 
@@ -287,67 +329,108 @@ class _PowerKnobState extends State<_PowerKnob>
         mainAxisSize: MainAxisSize.min,
         children: [
           AnimatedBuilder(
-            animation: _progress,
-            builder: (_, child) => SizedBox(
-              width: sz,
-              height: sz,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CustomPaint(
-                    size: Size(sz, sz),
-                    painter: _RingPainter(
-                      color: ringColor.withValues(alpha: 0.15),
-                      progress: 1.0,
-                    ),
-                  ),
-                  CustomPaint(
-                    size: Size(sz, sz),
-                    painter: _RingPainter(
-                      color: AppColors.energyGreen,
-                      progress: widget.powered ? 1.0 : _progress.value,
-                    ),
-                  ),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: _holding ? sz * 0.70 : sz * 0.73,
-                    height: _holding ? sz * 0.70 : sz * 0.73,
-                    decoration: BoxDecoration(
-                      color: coreColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: coreColor.withValues(alpha: 0.28),
-                          blurRadius: sz * 0.23,
-                          offset: Offset(0, sz * 0.09),
+            animation: Listenable.merge([_progress, _busyPulse]),
+            builder: (_, child) {
+              final busyGlowAlpha = widget.busy ? _busyPulse.value : 0.0;
+              return SizedBox(
+                width: sz,
+                height: sz,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Busy pulsing glow ring
+                    if (widget.busy)
+                      Container(
+                        width: sz * 1.12,
+                        height: sz * 1.12,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.energyGreen.withValues(
+                              alpha: busyGlowAlpha,
+                            ),
+                            width: 3,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.energyGreen.withValues(
+                                alpha: busyGlowAlpha * 0.4,
+                              ),
+                              blurRadius: sz * 0.2,
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
+                    CustomPaint(
+                      size: Size(sz, sz),
+                      painter: _RingPainter(
+                        color: ringColor.withValues(alpha: 0.15),
+                        progress: 1.0,
+                      ),
                     ),
-                    child: Icon(
-                      widget.powered
-                          ? Icons.power_off
-                          : Icons.power_settings_new,
-                      color: Colors.white,
-                      size: sz * 0.3,
+                    CustomPaint(
+                      size: Size(sz, sz),
+                      painter: _RingPainter(
+                        color: AppColors.energyGreen,
+                        progress: widget.powered ? 1.0 : _progress.value,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: _holding ? sz * 0.70 : sz * 0.73,
+                      height: _holding ? sz * 0.70 : sz * 0.73,
+                      decoration: BoxDecoration(
+                        color: coreColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: coreColor.withValues(alpha: 0.28),
+                            blurRadius: sz * 0.23,
+                            offset: Offset(0, sz * 0.09),
+                          ),
+                        ],
+                      ),
+                      child: widget.busy
+                          ? SizedBox(
+                              width: sz * 0.3,
+                              height: sz * 0.3,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Icon(
+                              widget.powered
+                                  ? Icons.power_off
+                                  : Icons.power_settings_new,
+                              color: Colors.white,
+                              size: sz * 0.3,
+                            ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
           const SizedBox(height: 8),
           Text(
-            widget.powered ? '长按熄火' : '长按开机',
+            widget.busy
+                ? '处理中…'
+                : widget.powered
+                ? '长按熄火'
+                : '长按开机',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: widget.powered ? AppColors.danger : AppColors.textPrimary,
+              color: widget.powered && !widget.busy
+                  ? AppColors.danger
+                  : AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 2),
-          const Text(
-            '按住 1.2 秒',
-            style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
+          Text(
+            widget.busy ? '请稍候' : '按住 1.2 秒',
+            style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
           ),
         ],
       ),
@@ -356,7 +439,7 @@ class _PowerKnobState extends State<_PowerKnob>
 }
 
 /// Sub-control circle button (proximity unlock, rider management, dashboard).
-class _SubControl extends StatelessWidget {
+class _SubControl extends StatefulWidget {
   const _SubControl({
     required this.icon,
     required this.label,
@@ -372,34 +455,56 @@ class _SubControl extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
+  State<_SubControl> createState() => _SubControlState();
+}
+
+class _SubControlState extends State<_SubControl> {
+  bool _pressed = false;
+
+  void _setPressed(bool v) {
+    if (!mounted || _pressed == v) return;
+    setState(() => _pressed = v);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final bg = active
-        ? color.withValues(alpha: 0.14)
+    final bg = widget.active
+        ? widget.color.withValues(alpha: 0.14)
+        : _pressed
+        ? AppColors.surfaceContainerHigh
         : AppColors.surfaceContainerLow;
     return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-            child: Icon(
-              icon,
-              size: 20,
-              color: active ? color : AppColors.inkBtn,
+      onTapDown: widget.onTap != null ? (_) => _setPressed(true) : null,
+      onTapUp: widget.onTap != null ? (_) => _setPressed(false) : null,
+      onTapCancel: widget.onTap != null ? () => _setPressed(false) : null,
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? AppMotion.pressScale : 1.0,
+        duration: AppMotion.micro,
+        curve: AppMotion.pressCurve,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+              child: Icon(
+                widget.icon,
+                size: 20,
+                color: widget.active ? widget.color : AppColors.inkBtn,
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.textSecondary,
+            const SizedBox(height: 6),
+            Text(
+              widget.label,
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

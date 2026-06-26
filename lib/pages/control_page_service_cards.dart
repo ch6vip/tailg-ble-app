@@ -478,6 +478,10 @@ class _FnTile extends StatelessWidget {
   final bool active;
   final VoidCallback onTap;
 
+  /// Toggle items without a backing BLE command are UI-only placeholders.
+  bool get _isPlaceholderToggle =>
+      spec.action == _FunctionAction.toggle && spec.command == null;
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -492,19 +496,31 @@ class _FnTile extends StatelessWidget {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: active ? AppColors.energySoft : AppColors.surface,
+                  color: _isPlaceholderToggle
+                      ? AppColors.surfaceContainerLow
+                      : active
+                      ? AppColors.energySoft
+                      : AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: active
+                    color: _isPlaceholderToggle
+                        ? AppColors.outlineVariant
+                        : active
                         ? const Color(0x5200C896)
                         : AppColors.hairline,
                   ),
-                  boxShadow: active ? null : AppShadows.fnIconShadow,
+                  boxShadow: active || _isPlaceholderToggle
+                      ? null
+                      : AppShadows.fnIconShadow,
                 ),
                 child: Icon(
                   spec.icon,
                   size: 23,
-                  color: active ? AppColors.primaryDark : AppColors.textPrimary,
+                  color: _isPlaceholderToggle
+                      ? AppColors.textTertiary
+                      : active
+                      ? AppColors.primaryDark
+                      : AppColors.textPrimary,
                 ),
               ),
               if (spec.badge)
@@ -521,6 +537,28 @@ class _FnTile extends StatelessWidget {
                     ),
                   ),
                 ),
+              // Placeholder badge for toggle items not yet wired to BLE
+              if (_isPlaceholderToggle)
+                Positioned(
+                  right: -4,
+                  bottom: -4,
+                  child: Tooltip(
+                    message: '功能开发中，暂不可用',
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: const BoxDecoration(
+                        color: AppColors.outlineVariant,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.lock,
+                        size: 9,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 6),
@@ -529,7 +567,11 @@ class _FnTile extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: active ? AppColors.primaryDark : AppColors.textSecondary,
+              color: _isPlaceholderToggle
+                  ? AppColors.textTertiary
+                  : active
+                  ? AppColors.primaryDark
+                  : AppColors.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),

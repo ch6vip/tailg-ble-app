@@ -1,0 +1,56 @@
+import 'package:flutter/animation.dart';
+
+/// Centralised motion tokens for the Tailg BLE app.
+///
+/// Based on `design_v2/UI_DESIGN_PROPOSAL.md` motion guidelines.
+/// Replace hardcoded `Duration` / `Curve` literals with these constants
+/// to keep animations consistent and tunable from a single source.
+abstract final class AppMotion {
+  // ── Durations ──────────────────────────────────────────────────────────
+
+  /// Instant feedback (ripple, highlight). ~100 ms.
+  static const instant = Duration(milliseconds: 100);
+
+  /// Micro-interaction (press scale, toggle snap). ~150 ms.
+  static const micro = Duration(milliseconds: 150);
+
+  /// Standard transition (fade, slide, colour tween). ~250 ms.
+  static const standard = Duration(milliseconds: 250);
+
+  /// Emphasis / page-level transition. ~350 ms.
+  static const emphasis = Duration(milliseconds: 350);
+
+  /// Slow reveal (hero, onboarding, empty states). ~500 ms.
+  static const reveal = Duration(milliseconds: 500);
+
+  /// Long-press hold timeout (power knob). 1200 ms.
+  static const longPressHold = Duration(milliseconds: 1200);
+
+  // ── Curves ────────────────────────────────────────────────────────────
+
+  /// Default press / release curve — snappy but not abrupt.
+  static const pressCurve = Curves.easeOutCubic;
+
+  /// Page entrance — gentle deceleration.
+  static const entranceCurve = Curves.easeOutCubic;
+
+  /// Page exit — gentle acceleration.
+  static const exitCurve = Curves.easeInCubic;
+
+  /// Progress / indeterminate — linear for accuracy.
+  static const progressCurve = Curves.linear;
+
+  /// Pulse / breathing — smooth in-out.
+  static const pulseCurve = Curves.easeInOut;
+
+  // ── Scale presets ─────────────────────────────────────────────────────
+
+  /// Pressed-down scale factor.
+  static const pressScale = 0.96;
+
+  /// Pulse min scale (breathing dot).
+  static const pulseMin = 0.75;
+
+  /// Pulse max scale (breathing dot).
+  static const pulseMax = 1.1;
+}

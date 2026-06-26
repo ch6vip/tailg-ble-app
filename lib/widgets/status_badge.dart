@@ -41,6 +41,14 @@ class StatusBadge extends StatelessWidget {
     StatusBadgeType.online => AppColors.surfaceBrandTealTint,
   };
 
+  /// Only armed, ble, and online states are "active" — their dot should pulse.
+  /// Idle and offline are static states and use a static dot.
+  bool get _isActive => switch (type) {
+    StatusBadgeType.armed || StatusBadgeType.ble || StatusBadgeType.online =>
+      true,
+    StatusBadgeType.idle || StatusBadgeType.offline => false,
+  };
+
   String get _defaultLabel => switch (type) {
     StatusBadgeType.armed => '已设防',
     StatusBadgeType.idle => '未通电',
@@ -89,7 +97,7 @@ class StatusBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (showDot) ...[
-            _PulsingDot(color: _dotColor),
+            _PulsingDot(color: _dotColor, pulsing: _isActive),
             const SizedBox(width: 5),
           ],
           Text(
@@ -107,9 +115,11 @@ class StatusBadge extends StatelessWidget {
 }
 
 /// Pulsing dot indicator — used inside status chips to signal live status.
+/// When [pulsing] is false the dot renders static (for idle/offline states).
 class _PulsingDot extends StatefulWidget {
-  const _PulsingDot({required this.color});
+  const _PulsingDot({required this.color, this.pulsing = true});
   final Color color;
+  final bool pulsing;
 
   @override
   State<_PulsingDot> createState() => _PulsingDotState();
@@ -126,11 +136,14 @@ class _PulsingDotState extends State<_PulsingDot>
     _ctrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
-    )..repeat(reverse: true);
+    );
     _scale = Tween(
       begin: 0.75,
       end: 1.1,
     ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    if (widget.pulsing) {
+      _ctrl.repeat(reverse: true);
+    }
   }
 
   @override

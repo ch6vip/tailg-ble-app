@@ -437,9 +437,11 @@ class _TopIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Container(
-        width: 36,
-        height: 36,
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: AppColors.surface.withValues(alpha: 0.9),
           shape: BoxShape.circle,

@@ -44,7 +44,7 @@ class _RidingModeSelector extends StatelessWidget {
                     };
                     final color = switch (mode) {
                       RidingMode.eco => AppColors.success,
-                      RidingMode.standard => Colors.blue,
+                      RidingMode.standard => AppColors.accentSky,
                       RidingMode.sport => AppColors.warning,
                     };
                     return Expanded(
@@ -98,8 +98,8 @@ class _RidingModeOption extends StatefulWidget {
 }
 
 class _RidingModeOptionState extends State<_RidingModeOption> {
-  static const _motionDuration = Duration(milliseconds: 150);
-  static const _motionCurve = Curves.easeOutCubic;
+  static const _motionDuration = AppMotion.micro;
+  static const _motionCurve = AppMotion.pressCurve;
 
   bool _pressed = false;
 
