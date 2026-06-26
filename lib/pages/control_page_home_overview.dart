@@ -413,7 +413,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
         final bike = snapshot.data;
         final soc = _normalizePercent(bike?.batteryPercent) ?? 0;
         final range = (soc * _kmPerPercent).round();
-        final isArmed = bike?.isLocked ?? true;
+        final isArmed = bike?.isLocked;
         final isPowerOn = bike?.isPowerOn ?? false;
         final vehicleName =
             connectionManager.device?.platformName ??
@@ -442,7 +442,13 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
               ControlPageHero(
                 batteryLevel: soc,
                 rangeKm: range,
-                healthLabel: bike != null ? '健康良好' : null,
+                healthLabel: bike != null
+                    ? (soc >= 60
+                          ? '健康良好'
+                          : soc >= 30
+                          ? '建议充电'
+                          : '电量过低')
+                    : null,
                 vehicleName: cloudVehicle?.displayName ?? vehicleName,
                 connectionLabel: connectionLabel,
                 onBatteryTap: () => Navigator.of(context).push(
@@ -458,9 +464,12 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                 child: Row(
                   children: [
                     StatusBadge(
-                      type: isArmed
+                      type: isArmed == null
+                          ? StatusBadgeType.idle
+                          : isArmed!
                           ? StatusBadgeType.armed
                           : StatusBadgeType.idle,
+                      label: isArmed == null ? '未知' : null,
                     ),
                     const SizedBox(width: 8),
                     StatusBadge(
@@ -485,9 +494,13 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
               ControlCard(
                 powered: isPowerOn,
                 proximityEnabled: _proximityEnabled,
+                busy: _busy,
                 onSeatOpen: _sendSeat,
                 onPowerOn: _sendPower,
-                onMore: () => showAllFunctionsSheet(context),
+                onMore: () => showAllFunctionsSheet(
+                  context,
+                  onControlCommand: _sendCommand,
+                ),
                 onToggleProximity: _toggleProximity,
                 onRiderManagement: _openRiderManagement,
                 onSuperDashboard: _openSuperDashboard,

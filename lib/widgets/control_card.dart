@@ -17,6 +17,7 @@ class ControlCard extends StatefulWidget {
     this.onSuperDashboard,
     this.proximityEnabled = false,
     this.powered = false,
+    this.busy = false,
   });
 
   final VoidCallback? onSeatOpen;
@@ -27,6 +28,7 @@ class ControlCard extends StatefulWidget {
   final VoidCallback? onSuperDashboard;
   final bool proximityEnabled;
   final bool powered;
+  final bool busy;
 
   @override
   State<ControlCard> createState() => _ControlCardState();
@@ -39,6 +41,7 @@ class _ControlCardState extends State<ControlCard> {
     final wide = screenW >= 360;
     final sideSize = wide ? 52.0 : 44.0;
     final knobSize = wide ? 88.0 : 70.0;
+    final busy = widget.busy;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -53,84 +56,91 @@ class _ControlCardState extends State<ControlCard> {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          // Main control row: seat | power knob | more
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: wide ? 16 : 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _SideButton(
-                  size: sideSize,
-                  icon: Icons.inventory_2_outlined,
-                  label: '打开座桶',
-                  color: AppColors.inkBtn,
-                  onTap: () {
-                    HapticFeedback.mediumImpact();
-                    widget.onSeatOpen?.call();
-                  },
-                ),
-                _PowerKnob(
-                  size: knobSize,
-                  powered: widget.powered,
-                  onPowerOn: () {
-                    HapticFeedback.heavyImpact();
-                    widget.onPowerOn?.call();
-                  },
-                ),
-                _SideButton(
-                  size: sideSize,
-                  icon: Icons.apps,
-                  label: '更多功能',
-                  color: AppColors.inkBtn,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    widget.onMore?.call();
-                  },
-                ),
-              ],
+      child: Opacity(
+        opacity: busy ? 0.55 : 1.0,
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            // Main control row: seat | power knob | more
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: wide ? 16 : 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _SideButton(
+                    size: sideSize,
+                    icon: Icons.inventory_2_outlined,
+                    label: '打开座桶',
+                    color: AppColors.inkBtn,
+                    onTap: () {
+                      if (busy) return;
+                      HapticFeedback.mediumImpact();
+                      widget.onSeatOpen?.call();
+                    },
+                  ),
+                  _PowerKnob(
+                    size: knobSize,
+                    powered: widget.powered,
+                    busy: busy,
+                    onPowerOn: () {
+                      HapticFeedback.heavyImpact();
+                      widget.onPowerOn?.call();
+                    },
+                  ),
+                  _SideButton(
+                    size: sideSize,
+                    icon: Icons.apps,
+                    label: '更多功能',
+                    color: AppColors.inkBtn,
+                    onTap: () {
+                      if (busy) return;
+                      HapticFeedback.selectionClick();
+                      widget.onMore?.call();
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          const Divider(height: 1, thickness: 0.5, color: Color(0x0A000000)),
-          // Sub control row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _SubControl(
-                  icon: Icons.bluetooth_connected,
-                  label: '感应解锁',
-                  color: AppColors.energyGreen,
-                  active: widget.proximityEnabled,
-                  onTap: () =>
-                      widget.onToggleProximity?.call(!widget.proximityEnabled),
-                ),
-                _SubControl(
-                  icon: Icons.people_outline,
-                  label: '用车人',
-                  color: AppColors.accentViolet,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    widget.onRiderManagement?.call();
-                  },
-                ),
-                _SubControl(
-                  icon: Icons.dashboard_outlined,
-                  label: '超级仪表',
-                  color: AppColors.accentSky,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    widget.onSuperDashboard?.call();
-                  },
-                ),
-              ],
+            const SizedBox(height: 16),
+            const Divider(height: 1, thickness: 0.5, color: Color(0x0A000000)),
+            // Sub control row
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _SubControl(
+                    icon: Icons.bluetooth_connected,
+                    label: '感应解锁',
+                    color: AppColors.energyGreen,
+                    active: widget.proximityEnabled,
+                    onTap: () => widget.onToggleProximity?.call(
+                      !widget.proximityEnabled,
+                    ),
+                  ),
+                  _SubControl(
+                    icon: Icons.people_outline,
+                    label: '用车人',
+                    color: AppColors.accentViolet,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      widget.onRiderManagement?.call();
+                    },
+                  ),
+                  _SubControl(
+                    icon: Icons.dashboard_outlined,
+                    label: '超级仪表',
+                    color: AppColors.accentSky,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      widget.onSuperDashboard?.call();
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -185,9 +195,15 @@ class _SideButton extends StatelessWidget {
 
 /// Central power knob with long-press ring progress (Ninebot-style).
 class _PowerKnob extends StatefulWidget {
-  const _PowerKnob({this.size = 88, required this.powered, this.onPowerOn});
+  const _PowerKnob({
+    this.size = 88,
+    required this.powered,
+    this.busy = false,
+    this.onPowerOn,
+  });
   final double size;
   final bool powered;
+  final bool busy;
   final VoidCallback? onPowerOn;
 
   @override
@@ -221,6 +237,7 @@ class _PowerKnobState extends State<_PowerKnob>
   }
 
   void _onPointerDown(PointerDownEvent _) {
+    if (widget.busy) return;
     HapticFeedback.lightImpact();
     setState(() => _holding = true);
     _ctrl.forward();

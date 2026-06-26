@@ -147,14 +147,19 @@ class _SvcListCard extends StatelessWidget {
 
 // ── v8 All-Functions Bottom Sheet ────────────────────────────────
 
-enum _FunctionAction { navigate, toggle }
+enum _FunctionAction { navigate, toggle, command }
 
-Future<void> showAllFunctionsSheet(BuildContext context) {
+typedef _FnCommandCallback = Future<void> Function(CommandCode cmd);
+
+Future<void> showAllFunctionsSheet(
+  BuildContext context, {
+  _FnCommandCallback? onControlCommand,
+}) {
   return showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    builder: (_) => const _V8AllFunctionsSheet(),
+    builder: (_) => _V8AllFunctionsSheet(onControlCommand: onControlCommand),
   );
 }
 
@@ -165,6 +170,7 @@ class _V8FunctionSpec {
   final bool initialToggle;
   final WidgetBuilder? page;
   final bool badge;
+  final CommandCode? command;
   const _V8FunctionSpec({
     required this.icon,
     required this.label,
@@ -172,6 +178,7 @@ class _V8FunctionSpec {
     this.initialToggle = false,
     this.page,
     this.badge = false,
+    this.command,
   });
 }
 
@@ -188,23 +195,27 @@ List<_V8FunctionGroup> get _v8FnGroups => [
       _V8FunctionSpec(
         icon: Icons.security,
         label: '一键设防',
-        action: _FunctionAction.toggle,
+        action: _FunctionAction.command,
+        command: CommandCode.lock,
         initialToggle: true,
       ),
       _V8FunctionSpec(
         icon: Icons.volume_up,
         label: '寻车鸣笛',
-        action: _FunctionAction.toggle,
+        action: _FunctionAction.command,
+        command: CommandCode.find,
       ),
       _V8FunctionSpec(
         icon: Icons.inventory_2_outlined,
         label: '开座桶',
-        action: _FunctionAction.toggle,
+        action: _FunctionAction.command,
+        command: CommandCode.openSeat,
       ),
       _V8FunctionSpec(
         icon: Icons.power_settings_new,
         label: '远程启动',
-        action: _FunctionAction.toggle,
+        action: _FunctionAction.command,
+        command: CommandCode.powerOn,
       ),
     ],
   ),
@@ -298,7 +309,9 @@ List<_V8FunctionGroup> get _v8FnGroups => [
 ];
 
 class _V8AllFunctionsSheet extends StatefulWidget {
-  const _V8AllFunctionsSheet();
+  const _V8AllFunctionsSheet({this.onControlCommand});
+  final _FnCommandCallback? onControlCommand;
+
   @override
   State<_V8AllFunctionsSheet> createState() => _V8AllFunctionsSheetState();
 }
@@ -428,7 +441,14 @@ class _V8AllFunctionsSheetState extends State<_V8AllFunctionsSheet> {
                               spec: item,
                               active: active,
                               onTap: () {
-                                if (item.action == _FunctionAction.toggle) {
+                                if (item.action == _FunctionAction.command &&
+                                    item.command != null) {
+                                  widget.onControlCommand?.call(item.command!);
+                                  setState(
+                                    () => _toggles[item.label] = !active,
+                                  );
+                                } else if (item.action ==
+                                    _FunctionAction.toggle) {
                                   _onToggle(item.label, !active);
                                 } else {
                                   _onNavigate(context, item.page!);
