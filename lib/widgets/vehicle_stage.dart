@@ -349,9 +349,9 @@ class VehicleStage extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: height,
+      width: double.infinity,
       child: CustomPaint(
         painter: VehicleStagePainter(batteryLevel: batteryLevel),
-        size: Size.infinite,
       ),
     );
   }
