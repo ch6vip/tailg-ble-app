@@ -1,3 +1,4 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
@@ -8,6 +9,7 @@ void main() {
   setUp(() {
     VehicleStore().resetForTest();
     SharedPreferences.setMockInitialValues({});
+    FlutterSecureStorage.setMockInitialValues({});
   });
 
   test('VehicleStore saves default vehicle and renames it', () async {
@@ -50,13 +52,35 @@ void main() {
       password: 123456,
       userId: 789,
     );
+    final prefs = await SharedPreferences.getInstance();
+    final secureStorage = const FlutterSecureStorage();
+    final persistedVehicles =
+        prefs.getString('vehicle_profiles') ?? '';
 
     expect(store.defaultVehicle?.qgjLoginPassword, 123456);
     expect(store.defaultVehicle?.qgjUserId, 789);
+    expect(persistedVehicles.contains('qgjLoginPassword'), isFalse);
+    expect(persistedVehicles.contains('qgjUserId'), isFalse);
+    expect(
+      await secureStorage.read(key: 'vehicle_qgj_password:${vehicle.id}'),
+      '123456',
+    );
+    expect(
+      await secureStorage.read(key: 'vehicle_qgj_user_id:${vehicle.id}'),
+      '789',
+    );
 
     await store.updateQgjCredentials(id: vehicle.id, clear: true);
 
     expect(store.defaultVehicle?.hasQgjCredentials, isFalse);
+    expect(
+      await secureStorage.read(key: 'vehicle_qgj_password:${vehicle.id}'),
+      isNull,
+    );
+    expect(
+      await secureStorage.read(key: 'vehicle_qgj_user_id:${vehicle.id}'),
+      isNull,
+    );
   });
 
   test('VehicleStore can reload a different mock preferences state', () async {
@@ -154,6 +178,39 @@ void main() {
     expect(store.defaultVehicle?.qgjUserId, 789);
   });
 
+  test(
+    'VehicleStore migrates legacy QGJ credentials to secure storage and scrubs prefs',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'vehicle_profiles':
+            '[{"id":"AA:BB:CC:DD:EE:FF","name":"有效车辆","protocol":"qgj","qgjLoginPassword":"123456","qgjUserId":"789"}]',
+        'vehicle_default_id': 'AA:BB:CC:DD:EE:FF',
+      });
+      FlutterSecureStorage.setMockInitialValues({});
+      VehicleStore().resetForTest();
+
+      final store = VehicleStore();
+      await store.init();
+
+      final prefs = await SharedPreferences.getInstance();
+      final secureStorage = const FlutterSecureStorage();
+      final persistedVehicles = prefs.getString('vehicle_profiles') ?? '';
+
+      expect(store.defaultVehicle?.qgjLoginPassword, 123456);
+      expect(store.defaultVehicle?.qgjUserId, 789);
+      expect(persistedVehicles.contains('qgjLoginPassword'), isFalse);
+      expect(persistedVehicles.contains('qgjUserId'), isFalse);
+      expect(
+        await secureStorage.read(key: 'vehicle_qgj_password:AA:BB:CC:DD:EE:FF'),
+        '123456',
+      );
+      expect(
+        await secureStorage.read(key: 'vehicle_qgj_user_id:AA:BB:CC:DD:EE:FF'),
+        '789',
+      );
+    },
+  );
+
   test('VehicleStore normalizes ids at write and lookup boundaries', () async {
     final store = VehicleStore();
     await store.init();
@@ -185,6 +242,29 @@ void main() {
 
     expect(store.vehicles, isEmpty);
     expect(store.defaultVehicleId, isNull);
+  });
+
+  test('VehicleStore remove clears secure QGJ credentials', () async {
+    final store = VehicleStore();
+    const secureStorage = FlutterSecureStorage();
+    await store.init();
+    await store.upsert(id: 'AA:BB:CC:DD:EE:FF', name: '测试车辆');
+    await store.updateQgjCredentials(
+      id: 'AA:BB:CC:DD:EE:FF',
+      password: 123456,
+      userId: 789,
+    );
+
+    await store.remove('AA:BB:CC:DD:EE:FF');
+
+    expect(
+      await secureStorage.read(key: 'vehicle_qgj_password:AA:BB:CC:DD:EE:FF'),
+      isNull,
+    );
+    expect(
+      await secureStorage.read(key: 'vehicle_qgj_user_id:AA:BB:CC:DD:EE:FF'),
+      isNull,
+    );
   });
 
   test(

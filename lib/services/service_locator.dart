@@ -79,9 +79,10 @@ class AppServices {
   /// `AppServices.production()` returned the same disposed "zombie"
   /// instances whose streams could no longer emit. We now call
   /// `resetForTest()` (which resets state without closing streams) on
-  /// services that expose it, and only dispose stateless helpers.
+  /// services that expose it, and only dispose non-singleton helpers such as
+  /// the old [connectionManager].
   @visibleForTesting
-  static void reset() {
+  static Future<void> reset() async {
     final old = _instance;
     // Reset stateful singletons without killing their stream controllers.
     try {
@@ -99,15 +100,19 @@ class AppServices {
     try {
       AppPreferencesService().resetForTest();
     } catch (_) {}
-    // OfficialCloudService has no resetForTest; its HttpClient is closed on
-    // dispose and recreated lazily, so disposing it is safe.
     try {
-      old.officialCloudService.dispose();
+      old.officialCloudService.resetForTest();
+    } catch (_) {}
+    try {
+      await old.connectionManager.dispose();
     } catch (_) {}
     _instance = AppServices.production();
   }
 
-  void dispose() {
+  Future<void> dispose() async {
+    try {
+      await connectionManager.dispose();
+    } catch (_) {}
     try {
       officialCloudService.dispose();
     } catch (_) {}
