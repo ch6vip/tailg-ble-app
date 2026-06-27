@@ -128,9 +128,6 @@ class ProximityService {
         continuousUpdates: true,
       );
     } catch (e) {
-      _scanning = false;
-      await _scanSub?.cancel();
-      _scanSub = null;
       final isPermission =
           e is PlatformException &&
           (e.code.contains('Permission') || e.code.contains('denied'));
@@ -139,6 +136,10 @@ class ProximityService {
         detail: e.toString(),
         level: LogLevel.warning,
       );
+    } finally {
+      _scanning = false;
+      await _scanSub?.cancel();
+      _scanSub = null;
     }
   }
 
@@ -193,7 +194,10 @@ class ProximityService {
 
   Future<void> _connectAndUnlock(BluetoothDevice device) async {
     final manager = _connectionManager;
-    if (manager == null) return;
+    if (manager == null) {
+      _unlockSent = false;
+      return;
+    }
     final deviceId = device.remoteId.toString();
     try {
       final vehicle = VehicleStore().defaultVehicle;
@@ -210,6 +214,8 @@ class ProximityService {
       )) {
         await manager.sendCommand(CommandCode.unlock);
         _log.operation('感应解锁: 解锁成功', level: LogLevel.info);
+      } else {
+        _unlockSent = false;
       }
     } catch (e) {
       _unlockSent = false;

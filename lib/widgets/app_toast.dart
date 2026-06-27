@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 
@@ -15,6 +17,7 @@ import 'package:tailg_ble_app/theme/app_colors.dart';
 class AppToast {
   static OverlayEntry? _entry;
   static bool _showing = false;
+  static Timer? _dismissTimer;
 
   /// Show a toast at the top of the current screen.
   ///
@@ -38,8 +41,9 @@ class AppToast {
     _entry = entry;
     Overlay.of(context).insert(entry);
 
-    // Auto-dismiss after 1.8 seconds
-    Future.delayed(const Duration(milliseconds: 1800), () {
+    // Auto-dismiss after 1.8 seconds via cancellable Timer
+    _dismissTimer?.cancel();
+    _dismissTimer = Timer(const Duration(milliseconds: 1800), () {
       if (_showing && _entry == entry) {
         dismiss();
       }
@@ -48,6 +52,8 @@ class AppToast {
 
   /// Dismiss the current toast with animation.
   static void dismiss() {
+    _dismissTimer?.cancel();
+    _dismissTimer = null;
     if (!_showing) return;
     _showing = false;
     _entry?.remove();

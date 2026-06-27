@@ -37,6 +37,10 @@ LogService get logService => AppServices.instance.logService;
 VehicleStore get vehicleStore => AppServices.instance.vehicleStore;
 OfficialCloudService get officialCloudService =>
     AppServices.instance.officialCloudService;
+
+/// Global [ValueNotifier] for the home tab index.
+/// Listeners MUST be removed in [dispose()] to avoid memory leaks,
+/// as this notifier outlives all widget lifecycles.
 final homeTabIndex = ValueNotifier<int>(0);
 
 void applyVehicleBleCredentials(VehicleProfile? vehicle) {
@@ -62,17 +66,24 @@ void openScanTab(BuildContext context) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AppPreferencesService().init();
-  await vehicleStore.init();
-  await officialCloudService.init();
-  final defaultVehicle = vehicleStore.defaultVehicle;
-  if (defaultVehicle != null) {
-    applyVehicleBleCredentials(defaultVehicle);
-    proximityService.setTargetDevice(defaultVehicle.id);
+
+  try {
+    await AppPreferencesService().init();
+    await vehicleStore.init();
+    await officialCloudService.init();
+    final defaultVehicle = vehicleStore.defaultVehicle;
+    if (defaultVehicle != null) {
+      applyVehicleBleCredentials(defaultVehicle);
+      proximityService.setTargetDevice(defaultVehicle.id);
+    }
+    await proximityService.init(connectionManager);
+    await autoConnectService.init(connectionManager);
+    await manualModeService.init();
+  } catch (e, st) {
+    debugPrint('Startup initialization failed: $e\n$st');
+    // Still proceed to runApp — services will lazy-init on first use.
   }
-  await proximityService.init(connectionManager);
-  await autoConnectService.init(connectionManager);
-  await manualModeService.init();
+
   runApp(const TailgBleApp());
 }
 

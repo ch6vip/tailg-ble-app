@@ -223,7 +223,8 @@ class OfficialCloudService {
     config: const OfficialCloudApiConfig(),
     log: LogService(),
   );
-  final _stateController = StreamController<OfficialCloudState>.broadcast();
+  StreamController<OfficialCloudState> _stateController =
+      StreamController<OfficialCloudState>.broadcast();
   OfficialCloudState _state = OfficialCloudState.initial();
   final Map<String, DateTime> _lastSuccessfulRefresh = {};
   final Map<String, Future<void>> _inFlightRefreshes = {};
@@ -342,6 +343,7 @@ class OfficialCloudService {
   Future<void> logout() async {
     await _storage.clearCredentialsAndSelection();
     _clearRefreshCache();
+    _inFlightRefreshes.clear();
     _state = _state.copyWith(
       token: '',
       phone: '',
@@ -1145,6 +1147,19 @@ class OfficialCloudService {
     _disposed = true;
     _apiClient.dispose();
     _stateController.close();
+  }
+
+  /// Resets the service state so it can be re-used after [dispose()].
+  /// Used by [AppServices.reset()] to support hot restart and testing.
+  void resetForTest() {
+    _disposed = false;
+    _initialized = false;
+    _initializing = null;
+    // Create a fresh state controller if the old one was closed
+    if (_stateController.isClosed) {
+      _stateController = StreamController<OfficialCloudState>.broadcast();
+    }
+    _state = OfficialCloudState.initial();
   }
 }
 

@@ -15,8 +15,8 @@ class OfficialCloudAuthParser {
         message.contains('认证失败') ||
         message.contains('登录已过期') ||
         message.contains('授权已失效') ||
-        message.contains('401') ||
-        message.contains('403')) {
+        RegExp(r'\b401\b').hasMatch(message) ||
+        RegExp(r'\b403\b').hasMatch(message)) {
       return true;
     }
     // Compound: 'token' paired with expiry keyword catches 'token 已过期' etc.

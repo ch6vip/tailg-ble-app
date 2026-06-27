@@ -23,12 +23,10 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final _preferences = AppPreferencesService();
-
   @override
   void initState() {
     super.initState();
-    _preferences.init();
+    // AppPreferencesService is already initialized in main().
   }
 
   @override

@@ -80,7 +80,7 @@ class DiagnosticExportService {
       lines.add('BT name: ${vehicle.btname.isEmpty ? 'none' : vehicle.btname}');
       lines.add('BT MAC: ${_maskId(vehicle.btmac)}');
       lines.add(
-        'Location: ${vehicle.latitude.isEmpty || vehicle.longitude.isEmpty ? 'none' : '${vehicle.latitude}, ${vehicle.longitude}'}',
+        'Location: ${vehicle.latitude.isEmpty || vehicle.longitude.isEmpty ? 'none' : 'present (hidden)'}',
       );
     }
 
@@ -135,16 +135,14 @@ class DiagnosticExportService {
     final location = vehicle.lastLocation;
     final lines = [
       '## Vehicle',
-      'Default ID: ${vehicle.id}',
+      'Default ID: ${_maskId(vehicle.id)}',
       'Name: ${vehicle.displayName}',
       'Protocol: ${vehicle.protocol.label}',
       'QGJ credentials: ${vehicle.hasQgjCredentials ? 'custom' : 'default'}',
       'Last connected: ${vehicle.lastConnectedAt?.toIso8601String() ?? 'none'}',
     ];
     if (location != null) {
-      lines.add('Last location: ${location.coordinateText}');
-      lines.add('Location accuracy: ${location.accuracy.toStringAsFixed(1)}m');
-      lines.add('Location time: ${location.recordedAt.toIso8601String()}');
+      lines.add('Last location: present (hidden)');
     }
     return lines.join('\n');
   }

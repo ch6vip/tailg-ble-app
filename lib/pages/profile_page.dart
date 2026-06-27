@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
@@ -10,8 +12,29 @@ import 'vehicle_message_page.dart';
 /// v8 Profile / "我的" page.
 ///
 /// Aligns with `design_v2/profile_v8.html`.
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  StreamSubscription? _cloudSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _cloudSub = officialCloudService.stateStream.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _cloudSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -222,11 +245,11 @@ class _DataOverview extends StatelessWidget {
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _DataItem(value: '1,248', unit: 'km', label: '累计里程'),
+            _DataItem(value: '--', unit: 'km', label: '累计里程'),
             _VerticalDividerWidget(),
-            _DataItem(value: '86', unit: '次', label: '骑行次数'),
+            _DataItem(value: '--', unit: '次', label: '骑行次数'),
             _VerticalDividerWidget(),
-            _DataItem(value: '312', unit: '天', label: '陪伴天数'),
+            _DataItem(value: '--', unit: '天', label: '陪伴天数'),
           ],
         ),
       ),
@@ -367,7 +390,7 @@ class _MembershipBanner extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '黄金会员 · 专属服务',
+                          '会员中心 · 即将上线',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
@@ -376,7 +399,7 @@ class _MembershipBanner extends StatelessWidget {
                         ),
                         SizedBox(height: 2),
                         Text(
-                          '免费保养 2 次 · 优先客服 · 延保权益',
+                          '会员权益加载中，敬请期待',
                           style: TextStyle(fontSize: 12, color: Colors.white60),
                         ),
                       ],

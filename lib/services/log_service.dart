@@ -64,7 +64,7 @@ class LogService {
         level: level,
         category: LogCategory.operation,
         message: message,
-        detail: detail,
+        detail: _redactDetail(message, detail),
       ),
     );
   }
@@ -93,7 +93,7 @@ class LogService {
       _logs.removeFirst();
       _evictedCount++;
     }
-    if (_controller.hasListener) {
+    if (_controller.hasListener && !_controller.isClosed) {
       _controller.add(null);
     }
   }
@@ -101,7 +101,7 @@ class LogService {
   void clear() {
     _logs.clear();
     _evictedCount = 0;
-    if (_controller.hasListener) {
+    if (_controller.hasListener && !_controller.isClosed) {
       _controller.add(null);
     }
   }
