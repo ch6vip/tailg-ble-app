@@ -616,6 +616,20 @@ class ConnectionManager {
     return completer.future;
   }
 
+  /// P0-1: 测试钩子 —— 模拟设备端断连守卫的标记与复位。
+  ///
+  /// `_disconnectHandled` 在 `_onDisconnected()` 首次进入时置 true，
+  /// 在 `connect()` 与 `_attemptReconnect()` 成功路径复位。
+  /// 此钩子让单元测试无需真实 BLE 设备即可验证复位语义。
+  @visibleForTesting
+  bool get disconnectHandledForTest => _disconnectHandled;
+
+  @visibleForTesting
+  bool markDisconnectHandledForTest() => _markDisconnectHandled();
+
+  @visibleForTesting
+  void resetDisconnectHandledForTest() => _disconnectHandled = false;
+
   Future<bool> sendCommand(CommandCode cmd) async {
     if (_state != ConnectionState.ready) return false;
 
@@ -735,10 +749,20 @@ class ConnectionManager {
     return null;
   }
 
+  /// P0-1: 守卫逻辑收敛到单一入口。
+  ///
+  /// 返回 true 表示首次进入断连处理，false 表示已处理过（重入守卫）。
+  /// 复位点在 `_attemptReconnect()` 成功路径与 `connect()` 中。
+  bool _markDisconnectHandled() {
+    if (_disconnectHandled) return false;
+    _disconnectHandled = true;
+    return true;
+  }
+
   Future<void> _onDisconnected() async {
     if (_disposed) return;
-    if (_disconnectHandled) return;
-    _disconnectHandled = true;
+    // P0-1: 收敛守卫到单一入口，便于 S4 状态机改造时统一复位点。
+    if (!_markDisconnectHandled()) return;
     _log.ble('设备断开连接', level: LogLevel.warning);
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
@@ -805,6 +829,10 @@ class ConnectionManager {
 
         _reconnecting = false;
         _reconnectAttempt = 0;
+        // P0-1: 复位守卫，确保二次断连能再次进入 _onDisconnected。
+        // 原 Bug：重连成功后此标志未复位，导致再次断连时 _onDisconnected 直接 return，
+        // App 假死在 reconnecting/ready 状态。
+        _disconnectHandled = false;
         _log.ble('重连成功', level: LogLevel.info);
         return;
       } catch (e) {
