@@ -54,8 +54,7 @@ void main() {
     );
     final prefs = await SharedPreferences.getInstance();
     final secureStorage = const FlutterSecureStorage();
-    final persistedVehicles =
-        prefs.getString('vehicle_profiles') ?? '';
+    final persistedVehicles = prefs.getString('vehicle_profiles') ?? '';
 
     expect(store.defaultVehicle?.qgjLoginPassword, 123456);
     expect(store.defaultVehicle?.qgjUserId, 789);

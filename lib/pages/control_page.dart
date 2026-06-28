@@ -143,8 +143,7 @@ class _HomeBodyState extends State<_HomeBody> {
 
   bool _computeShowUnboundHome() {
     final hasLocalVehicle =
-        vehicleStore.vehicles.isNotEmpty ||
-        vehicleStore.defaultVehicle != null;
+        vehicleStore.vehicles.isNotEmpty || vehicleStore.defaultVehicle != null;
     final cloudState = officialCloudService.state;
     final hasCloudVehicle =
         cloudState.signedIn && cloudState.selectedVehicle != null;

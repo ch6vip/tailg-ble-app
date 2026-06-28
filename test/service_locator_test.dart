@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart' as ble;
 import 'package:tailg_ble_app/main.dart' as app;
+import 'package:tailg_ble_app/services/app_preferences_service.dart';
 import 'package:tailg_ble_app/services/auto_connect_service.dart';
 import 'package:tailg_ble_app/services/location_service.dart';
 import 'package:tailg_ble_app/services/log_service.dart';
@@ -46,6 +47,7 @@ void main() {
         logService: LogService(),
         vehicleStore: VehicleStore(),
         officialCloudService: OfficialCloudService(),
+        appPreferencesService: AppPreferencesService(), // P0-6
       ),
     );
 
@@ -59,41 +61,44 @@ void main() {
     expect(original, isA<ble.ConnectionManager>());
   });
 
-  test('reset keeps OfficialCloudService reusable and emitting state', () async {
-    FlutterSecureStorage.setMockInitialValues({
-      'official_cloud_token': 'token-before-reset',
-      'official_cloud_phone': '18800001111',
-      'official_cloud_user_id': 'user-before-reset',
-    });
-    final beforeReset = AppServices.instance.officialCloudService;
-    final firstEvent = beforeReset.stateStream.first;
+  test(
+    'reset keeps OfficialCloudService reusable and emitting state',
+    () async {
+      FlutterSecureStorage.setMockInitialValues({
+        'official_cloud_token': 'token-before-reset',
+        'official_cloud_phone': '18800001111',
+        'official_cloud_user_id': 'user-before-reset',
+      });
+      final beforeReset = AppServices.instance.officialCloudService;
+      final firstEvent = beforeReset.stateStream.first;
 
-    await beforeReset.init();
-    final initialEmitted = await firstEvent;
+      await beforeReset.init();
+      final initialEmitted = await firstEvent;
 
-    expect(beforeReset.state.initialized, isTrue);
-    expect(beforeReset.state.token, 'token-before-reset');
-    expect(initialEmitted.initialized, isTrue);
-    expect(initialEmitted.token, 'token-before-reset');
+      expect(beforeReset.state.initialized, isTrue);
+      expect(beforeReset.state.token, 'token-before-reset');
+      expect(initialEmitted.initialized, isTrue);
+      expect(initialEmitted.token, 'token-before-reset');
 
-    FlutterSecureStorage.setMockInitialValues({
-      'official_cloud_token': 'token-after-reset',
-      'official_cloud_phone': '18800002222',
-      'official_cloud_user_id': 'user-after-reset',
-    });
+      FlutterSecureStorage.setMockInitialValues({
+        'official_cloud_token': 'token-after-reset',
+        'official_cloud_phone': '18800002222',
+        'official_cloud_user_id': 'user-after-reset',
+      });
 
-    await AppServices.reset();
+      await AppServices.reset();
 
-    final afterReset = AppServices.instance.officialCloudService;
-    final nextEvent = afterReset.stateStream.first;
+      final afterReset = AppServices.instance.officialCloudService;
+      final nextEvent = afterReset.stateStream.first;
 
-    await afterReset.init();
+      await afterReset.init();
 
-    final emitted = await nextEvent;
-    expect(afterReset.state.initialized, isTrue);
-    expect(afterReset.state.token, 'token-after-reset');
-    expect(afterReset.state.phone, '18800002222');
-    expect(afterReset.state.userId, 'user-after-reset');
-    expect(emitted.token, 'token-after-reset');
-  });
+      final emitted = await nextEvent;
+      expect(afterReset.state.initialized, isTrue);
+      expect(afterReset.state.token, 'token-after-reset');
+      expect(afterReset.state.phone, '18800002222');
+      expect(afterReset.state.userId, 'user-after-reset');
+      expect(emitted.token, 'token-after-reset');
+    },
+  );
 }

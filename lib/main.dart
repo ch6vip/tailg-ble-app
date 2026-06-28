@@ -231,21 +231,22 @@ class _TailgBleAppState extends State<TailgBleApp> {
       // 但此前被 ThemeMode.light 硬编码旁路。现改为跟随系统。
       // Sprint 3 Token 重建后通过 ThemeExtension<AppTokens> 统一注入。
       darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          brightness: Brightness.dark,
-        ).copyWith(
-          primary: AppColorsDark.instance.primary,
-          onPrimary: Colors.black,
-          secondary: AppColorsDark.instance.accentSky,
-          onSecondary: Colors.black,
-          surface: AppColorsDark.instance.surface,
-          onSurface: AppColorsDark.instance.textPrimary,
-          surfaceContainerLow: AppColorsDark.instance.surfaceContainerLow,
-          surfaceContainerHigh: AppColorsDark.instance.surfaceContainerHigh,
-          outline: AppColorsDark.instance.border,
-          outlineVariant: AppColorsDark.instance.outlineVariant,
-        ),
+        colorScheme:
+            ColorScheme.fromSeed(
+              seedColor: AppColors.primary,
+              brightness: Brightness.dark,
+            ).copyWith(
+              primary: AppColorsDark.instance.primary,
+              onPrimary: Colors.black,
+              secondary: AppColorsDark.instance.accentSky,
+              onSecondary: Colors.black,
+              surface: AppColorsDark.instance.surface,
+              onSurface: AppColorsDark.instance.textPrimary,
+              surfaceContainerLow: AppColorsDark.instance.surfaceContainerLow,
+              surfaceContainerHigh: AppColorsDark.instance.surfaceContainerHigh,
+              outline: AppColorsDark.instance.border,
+              outlineVariant: AppColorsDark.instance.outlineVariant,
+            ),
         scaffoldBackgroundColor: AppColorsDark.instance.pageBg,
         useMaterial3: true,
         filledButtonTheme: FilledButtonThemeData(

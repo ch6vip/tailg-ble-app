@@ -331,7 +331,9 @@ class _LocationPageState extends State<LocationPage> {
                           AppHeaderAction(
                             icon: Icons.refresh,
                             tooltip: '刷新地图数据',
-                            onTap: loading ? null : () => _refreshAll(localVehicle),
+                            onTap: loading
+                                ? null
+                                : () => _refreshAll(localVehicle),
                           ),
                         ],
                       ),
@@ -340,7 +342,8 @@ class _LocationPageState extends State<LocationPage> {
                         padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                         child: _SegmentedTabs(
                           index: _tabIndex,
-                          onChanged: (value) => setState(() => _tabIndex = value),
+                          onChanged: (value) =>
+                              setState(() => _tabIndex = value),
                         ),
                       ),
                     Expanded(

@@ -8,38 +8,34 @@ import 'package:tailg_ble_app/theme/app_colors.dart';
 /// 导致 AppColorsDark（app_colors.dart:223-283）已完整定义却永不生效。
 void main() {
   group('P0-2: dark theme wiring', () {
-    testWidgets(
-      'ThemeMode.system 下，暗色环境返回 AppColorsDark token',
-      (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            themeMode: ThemeMode.system,
-            darkTheme: ThemeData(brightness: Brightness.dark),
-            theme: ThemeData(brightness: Brightness.light),
-            home: Builder(
-              builder: (context) {
-                final brightness = Theme.of(context).brightness;
-                return Text(
-                  brightness == Brightness.dark ? 'DARK' : 'LIGHT',
-                );
-              },
-            ),
+    testWidgets('ThemeMode.system 下，暗色环境返回 AppColorsDark token', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          themeMode: ThemeMode.system,
+          darkTheme: ThemeData(brightness: Brightness.dark),
+          theme: ThemeData(brightness: Brightness.light),
+          home: Builder(
+            builder: (context) {
+              final brightness = Theme.of(context).brightness;
+              return Text(brightness == Brightness.dark ? 'DARK' : 'LIGHT');
+            },
           ),
-        );
+        ),
+      );
 
-        // 默认测试环境 brightness 为 light
-        expect(find.text('LIGHT'), findsOneWidget);
+      // 默认测试环境 brightness 为 light
+      expect(find.text('LIGHT'), findsOneWidget);
 
-        // 模拟系统暗色
-        tester.platformDispatcher.platformBrightnessTestValue =
-            Brightness.dark;
-        await tester.pumpAndSettle();
+      // 模拟系统暗色
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+      await tester.pumpAndSettle();
 
-        expect(find.text('DARK'), findsOneWidget);
+      expect(find.text('DARK'), findsOneWidget);
 
-        tester.platformDispatcher.clearPlatformBrightnessTestValue();
-      },
-    );
+      tester.platformDispatcher.clearPlatformBrightnessTestValue();
+    });
 
     test('AppColors.of 在暗色下返回 AppColorsDark 实例', () {
       // AppColors.of 依据 Theme.of(context).brightness 选择 token 集。
@@ -55,7 +51,10 @@ void main() {
       expect(dark.border, isNot(equals(light.border)));
 
       // 暗色模式：深背景、浅文字
-      expect(dark.pageBg.computeLuminance(), lessThan(light.pageBg.computeLuminance()));
+      expect(
+        dark.pageBg.computeLuminance(),
+        lessThan(light.pageBg.computeLuminance()),
+      );
       expect(
         dark.textPrimary.computeLuminance(),
         greaterThan(light.textPrimary.computeLuminance()),

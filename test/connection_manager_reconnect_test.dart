@@ -8,32 +8,29 @@ import 'package:tailg_ble_app/ble/connection_manager.dart';
 /// 未复位 `_disconnectHandled`，导致重连成功后再次断连无响应。
 void main() {
   group('P0-1: _disconnectHandled reset after reconnect', () {
-    test(
-      '首次断连标记守卫，重入被拦截，复位后可再次标记',
-      () {
-        final manager = ConnectionManager();
-        addTearDown(manager.dispose);
+    test('首次断连标记守卫，重入被拦截，复位后可再次标记', () {
+      final manager = ConnectionManager();
+      addTearDown(manager.dispose);
 
-        // 初始状态：未处理过断连
-        expect(manager.disconnectHandledForTest, isFalse);
+      // 初始状态：未处理过断连
+      expect(manager.disconnectHandledForTest, isFalse);
 
-        // 首次断连：守卫返回 true，标志位置位
-        expect(manager.markDisconnectHandledForTest(), isTrue);
-        expect(manager.disconnectHandledForTest, isTrue);
+      // 首次断连：守卫返回 true，标志位置位
+      expect(manager.markDisconnectHandledForTest(), isTrue);
+      expect(manager.disconnectHandledForTest, isTrue);
 
-        // 重入：守卫返回 false（已被处理过，拦截重入）
-        expect(manager.markDisconnectHandledForTest(), isFalse);
-        expect(manager.disconnectHandledForTest, isTrue);
+      // 重入：守卫返回 false（已被处理过，拦截重入）
+      expect(manager.markDisconnectHandledForTest(), isFalse);
+      expect(manager.disconnectHandledForTest, isTrue);
 
-        // 模拟重连成功：复位守卫（P0-1 修复点）
-        manager.resetDisconnectHandledForTest();
-        expect(manager.disconnectHandledForTest, isFalse);
+      // 模拟重连成功：复位守卫（P0-1 修复点）
+      manager.resetDisconnectHandledForTest();
+      expect(manager.disconnectHandledForTest, isFalse);
 
-        // 关键断言：二次断连应能再次触发处理
-        expect(manager.markDisconnectHandledForTest(), isTrue);
-        expect(manager.disconnectHandledForTest, isTrue);
-      },
-    );
+      // 关键断言：二次断连应能再次触发处理
+      expect(manager.markDisconnectHandledForTest(), isTrue);
+      expect(manager.disconnectHandledForTest, isTrue);
+    });
 
     test('重连成功路径复位后，允许多轮断连-重连循环', () {
       final manager = ConnectionManager();
