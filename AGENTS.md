@@ -33,13 +33,14 @@ Workflows live in `.github/workflows/`:
 
 | File | Purpose | Trigger |
 |------|---------|---------|
-| `ci.yml` | Full CI/CD (format → analyze → test+coverage → build → deploy → notify) | push/PR to `master`/`develop`, `v*` tags, manual |
-| `release.yml` | Standalone GitHub Release creation | `v*` tags, manual |
-| `build.yml` | Legacy build workflow (kept for compatibility) | push/PR to `master`, tags |
+| `build.yml` | Main CI/CD: `ci` (format → analyze → test) → `build` (signed APK) → `release` (GitHub Release) | push to `master`, `v*` tags, PR to `master`, manual |
+| `release.yml` | Standalone build & release with rich release notes and Telegram notification | `v*` tags, manual |
 
-**Quality gates** enforced on every PR: `dart format`, `flutter analyze`, `flutter test --coverage`. Coverage reports are uploaded to Codecov.
+> ⚠️ **Known issue (P0-8)**: `build.yml` and `release.yml` both trigger on `v*` tags and both create a GitHub Release via `softprops/action-gh-release`, producing duplicate/competing Releases. Fix tracked in Sprint 1.
 
-**Build strategy**: `develop` → debug APK; `master` → signed release APK (arm64); `v*` tags → GitHub Release with APK artifact. Release signing keys are injected via GitHub Secrets at build time — never committed to the repo.
+**Quality gates** enforced on every PR via `build.yml` ci job: `dart format --set-exit-if-changed`, `flutter analyze`, `flutter test`. Coverage reports are **not** currently uploaded (planned in Sprint 2).
+
+**Build strategy**: `master` push → signed release APK (arm64); `v*` tags → GitHub Release with APK artifact. The `develop` branch currently has no special build strategy. Release signing keys are injected via GitHub Secrets at build time — never committed to the repo.
 
 **Notifications**: Pipeline success/failure and Release publish events are pushed to Telegram. Configuration details and required Secrets reference in `docs/github_actions_guide.md`.
 
