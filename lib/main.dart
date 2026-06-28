@@ -225,7 +225,73 @@ class _TailgBleAppState extends State<TailgBleApp> {
           },
         ),
       ),
-      themeMode: ThemeMode.light,
+      // P0-2: 接线暗色主题。AppColorsDark 已完整定义（app_colors.dart:223-283）
+      // 但此前被 ThemeMode.light 硬编码旁路。现改为跟随系统。
+      // Sprint 3 Token 重建后通过 ThemeExtension<AppTokens> 统一注入。
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: Brightness.dark,
+        ).copyWith(
+          primary: AppColorsDark.instance.primary,
+          onPrimary: Colors.black,
+          secondary: AppColorsDark.instance.accentSky,
+          onSecondary: Colors.black,
+          surface: AppColorsDark.instance.surface,
+          onSurface: AppColorsDark.instance.textPrimary,
+          surfaceContainerLow: AppColorsDark.instance.surfaceContainerLow,
+          surfaceContainerHigh: AppColorsDark.instance.surfaceContainerHigh,
+          outline: AppColorsDark.instance.border,
+          outlineVariant: AppColorsDark.instance.outlineVariant,
+        ),
+        scaffoldBackgroundColor: AppColorsDark.instance.pageBg,
+        useMaterial3: true,
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(shape: _buttonShape),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(shape: _buttonShape),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(shape: _buttonShape),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(shape: _buttonShape),
+        ),
+        cardTheme: CardThemeData(
+          color: AppColorsDark.instance.surface,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.card),
+          ),
+          clipBehavior: Clip.antiAlias,
+        ),
+        switchTheme: SwitchThemeData(
+          thumbColor: WidgetStateProperty.all(Colors.white),
+          trackColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return AppColorsDark.instance.primary;
+            }
+            return AppColorsDark.instance.border;
+          }),
+          trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+        ),
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.sm),
+          ),
+        ),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: _FadeUpPageTransitionsBuilder(),
+            TargetPlatform.iOS: _FadeUpPageTransitionsBuilder(),
+            TargetPlatform.fuchsia: _FadeUpPageTransitionsBuilder(),
+          },
+        ),
+      ),
+      themeMode: ThemeMode.system,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
