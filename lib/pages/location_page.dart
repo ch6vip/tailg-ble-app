@@ -53,6 +53,9 @@ class _LocationPageState extends State<LocationPage> {
 
   late final StreamSubscription<List<VehicleProfile>> _vehiclesSub;
   late final StreamSubscription<OfficialCloudState> _cloudStateSub;
+  // P0-5: 用 ValueNotifier 驱动需要刷新的子树，避免空 setState 重建含 FlutterMap 的整页
+  late final ValueNotifier<OfficialCloudState> _cloudStateNotifier;
+  late final ValueNotifier<List<VehicleProfile>> _vehiclesNotifier;
 
   @override
   void initState() {
@@ -60,13 +63,14 @@ class _LocationPageState extends State<LocationPage> {
     _tabIndex = widget.initialTab.index;
     _loadLocalFence();
 
-    // P0-6: 直接使用 main.dart 顶层 getter，无需局部变量
-    _vehiclesSub = vehicleStore.vehiclesStream.listen((_) {
-      if (mounted) setState(() {});
+    // P0-5: 流回调只更新 ValueNotifier，不调 setState，避免 FlutterMap 重建
+    _cloudStateNotifier = ValueNotifier(officialCloudService.state);
+    _vehiclesNotifier = ValueNotifier(vehicleStore.vehicles);
+    _vehiclesSub = vehicleStore.vehiclesStream.listen((v) {
+      if (mounted) _vehiclesNotifier.value = v;
     });
-
-    _cloudStateSub = officialCloudService.stateStream.listen((_) {
-      if (mounted) setState(() {});
+    _cloudStateSub = officialCloudService.stateStream.listen((c) {
+      if (mounted) _cloudStateNotifier.value = c;
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -78,6 +82,8 @@ class _LocationPageState extends State<LocationPage> {
   void dispose() {
     _vehiclesSub.cancel();
     _cloudStateSub.cancel();
+    _cloudStateNotifier.dispose();
+    _vehiclesNotifier.dispose();
     super.dispose();
   }
 
@@ -292,84 +298,94 @@ class _LocationPageState extends State<LocationPage> {
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
-        child: Builder(
-          builder: (context) {
-            final cloudState = officialCloudService.state;
-            final localVehicle = vehicleStore.defaultVehicle;
-            final cloudVehicle = cloudState.signedIn
-                ? cloudState.selectedVehicle
-                : null;
-            final location = _resolveLocation(
-              localVehicle: localVehicle,
-              cloudState: cloudState,
-            );
-            final loading =
-                _localLoading ||
-                cloudState.loading ||
-                cloudState.vehicleLocationLoading ||
-                cloudState.travelLoading ||
-                cloudState.fenceLoading;
+        // P0-5: 用 ValueListenableBuilder 替代 Builder + 直接读取，
+        // 仅在 cloudState/vehicles 变化时重建依赖子树，FlutterMap 被 RepaintBoundary 隔离
+        child: ValueListenableBuilder<OfficialCloudState>(
+          valueListenable: _cloudStateNotifier,
+          builder: (context, cloudState, _) {
+            return ValueListenableBuilder<List<VehicleProfile>>(
+              valueListenable: _vehiclesNotifier,
+              builder: (context, vehicles, _) {
+                final localVehicle = vehicleStore.defaultVehicle;
+                final cloudVehicle = cloudState.signedIn
+                    ? cloudState.selectedVehicle
+                    : null;
+                final location = _resolveLocation(
+                  localVehicle: localVehicle,
+                  cloudState: cloudState,
+                );
+                final loading =
+                    _localLoading ||
+                    cloudState.loading ||
+                    cloudState.vehicleLocationLoading ||
+                    cloudState.travelLoading ||
+                    cloudState.fenceLoading;
 
-            return Column(
-              children: [
-                if (_tabIndex != LocationInitialTab.fence.index)
-                  AppPageHeader(
-                    title: title,
-                    showBack: !widget.embedded,
-                    actions: [
-                      AppHeaderAction(
-                        icon: Icons.refresh,
-                        tooltip: '刷新地图数据',
-                        onTap: loading ? null : () => _refreshAll(localVehicle),
+                return Column(
+                  children: [
+                    if (_tabIndex != LocationInitialTab.fence.index)
+                      AppPageHeader(
+                        title: title,
+                        showBack: !widget.embedded,
+                        actions: [
+                          AppHeaderAction(
+                            icon: Icons.refresh,
+                            tooltip: '刷新地图数据',
+                            onTap: loading ? null : () => _refreshAll(localVehicle),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                if (_tabIndex != LocationInitialTab.fence.index)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                    child: _SegmentedTabs(
-                      index: _tabIndex,
-                      onChanged: (value) => setState(() => _tabIndex = value),
+                    if (_tabIndex != LocationInitialTab.fence.index)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                        child: _SegmentedTabs(
+                          index: _tabIndex,
+                          onChanged: (value) => setState(() => _tabIndex = value),
+                        ),
+                      ),
+                    Expanded(
+                      child: IndexedStack(
+                        index: _tabIndex,
+                        children: [
+                          // P0-5: RepaintBoundary 隔离 FlutterMap，避免父级 rebuild 时地图重绘
+                          RepaintBoundary(
+                            child: _MapTab(
+                              vehicleName:
+                                  localVehicle?.displayName ??
+                                  cloudVehicle?.displayName,
+                              location: location,
+                              cloudState: cloudState,
+                              error: _localError,
+                              loading: loading,
+                              onRefresh: () => _refreshAll(localVehicle),
+                              onCopy: location == null
+                                  ? null
+                                  : () => _copyLocation(location),
+                              onOpenMap: location == null
+                                  ? null
+                                  : () => _openMap(location),
+                            ),
+                          ),
+                          _TravelTab(
+                            cloudState: cloudState,
+                            onRefresh: () => _refreshTravelHistory(),
+                            onChangeMonth: _changeTravelMonth,
+                            onOpenDetail: _openTravelDetail,
+                          ),
+                          _FenceTab(
+                            cloudState: cloudState,
+                            location: location,
+                            localFence: _localFence,
+                            onRefresh: _refreshFenceData,
+                            onTabChanged: (value) =>
+                                setState(() => _tabIndex = value),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                Expanded(
-                  child: IndexedStack(
-                    index: _tabIndex,
-                    children: [
-                      _MapTab(
-                        vehicleName:
-                            localVehicle?.displayName ??
-                            cloudVehicle?.displayName,
-                        location: location,
-                        cloudState: cloudState,
-                        error: _localError,
-                        loading: loading,
-                        onRefresh: () => _refreshAll(localVehicle),
-                        onCopy: location == null
-                            ? null
-                            : () => _copyLocation(location),
-                        onOpenMap: location == null
-                            ? null
-                            : () => _openMap(location),
-                      ),
-                      _TravelTab(
-                        cloudState: cloudState,
-                        onRefresh: () => _refreshTravelHistory(),
-                        onChangeMonth: _changeTravelMonth,
-                        onOpenDetail: _openTravelDetail,
-                      ),
-                      _FenceTab(
-                        cloudState: cloudState,
-                        location: location,
-                        localFence: _localFence,
-                        onRefresh: _refreshFenceData,
-                        onTabChanged: (value) =>
-                            setState(() => _tabIndex = value),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                  ],
+                );
+              },
             );
           },
         ),
