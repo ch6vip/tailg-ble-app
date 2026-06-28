@@ -5,8 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../main.dart';
 import '../services/app_preferences_service.dart';
 import '../services/diagnostic_export_service.dart';
-import '../services/log_service.dart';
-import '../services/vehicle_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
@@ -24,7 +22,7 @@ class LanguageSettingsPage extends StatefulWidget {
 }
 
 class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
-  final _preferences = AppPreferencesService();
+  final _preferences = appPreferencesService;
   AppLanguagePreference _selected = AppLanguagePreference.system;
   bool _saving = false;
 
@@ -117,7 +115,7 @@ class UnitSettingsPage extends StatefulWidget {
 }
 
 class _UnitSettingsPageState extends State<UnitSettingsPage> {
-  final _preferences = AppPreferencesService();
+  final _preferences = appPreferencesService;
   DistanceUnitPreference _selected = DistanceUnitPreference.metric;
 
   @override
@@ -188,11 +186,11 @@ class AboutAppPage extends StatelessWidget {
   const AboutAppPage({super.key});
 
   Future<void> _copyDiagnosticReport(BuildContext context) async {
-    final logService = LogService();
+    // P0-6: 直接使用 main.dart 顶层 getter logService，无需局部变量
     final report = DiagnosticExportService(
       connectionManager: connectionManager,
       logService: logService,
-      vehicleStore: VehicleStore(),
+      vehicleStore: vehicleStore,
       officialCloudService: officialCloudService,
     ).buildReport(logService.all);
     await Clipboard.setData(ClipboardData(text: report));

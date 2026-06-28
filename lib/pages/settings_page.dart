@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/proximity_service.dart';
-import '../services/auto_connect_service.dart';
+import '../main.dart'; // P0-6: service locator getters
 import '../services/app_preferences_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
@@ -292,7 +291,7 @@ Widget _buildToggle(bool value, ValueChanged<bool> onChanged) {
 class _AutoConnectSettingTile extends StatelessWidget {
   const _AutoConnectSettingTile();
 
-  static final _service = AutoConnectService();
+  static final _service = autoConnectService;
 
   @override
   Widget build(BuildContext context) {
@@ -315,7 +314,7 @@ class _AutoConnectSettingTile extends StatelessWidget {
 class _ProximityUnlockSettingTile extends StatelessWidget {
   const _ProximityUnlockSettingTile();
 
-  static final _service = ProximityService();
+  static final _service = proximityService;
 
   @override
   Widget build(BuildContext context) {
@@ -338,7 +337,7 @@ class _ProximityUnlockSettingTile extends StatelessWidget {
 class _LanguageSettingTile extends StatelessWidget {
   const _LanguageSettingTile();
 
-  static final _prefs = AppPreferencesService();
+  static final _prefs = appPreferencesService;
 
   @override
   Widget build(BuildContext context) {
@@ -363,7 +362,7 @@ class _LanguageSettingTile extends StatelessWidget {
 class _DistanceUnitSettingTile extends StatelessWidget {
   const _DistanceUnitSettingTile();
 
-  static final _prefs = AppPreferencesService();
+  static final _prefs = appPreferencesService;
 
   @override
   Widget build(BuildContext context) {
@@ -389,7 +388,7 @@ class _DistanceUnitSettingTile extends StatelessWidget {
 class _RespectTextScaleSettingTile extends StatelessWidget {
   const _RespectTextScaleSettingTile();
 
-  static final _prefs = AppPreferencesService();
+  static final _prefs = appPreferencesService;
 
   @override
   Widget build(BuildContext context) {

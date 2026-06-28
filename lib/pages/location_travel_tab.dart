@@ -464,10 +464,10 @@ class _TravelDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<OfficialCloudState>(
-      stream: OfficialCloudService().stateStream,
-      initialData: OfficialCloudService().state,
+      stream: officialCloudService.stateStream,
+      initialData: officialCloudService.state,
       builder: (context, snapshot) {
-        final state = snapshot.data ?? OfficialCloudService().state;
+        final state = snapshot.data ?? officialCloudService.state;
         final points = state.travelDetails[record.deviceTravelId] ?? const [];
         final firstPoint = _firstResolvedPoint(points);
         return Container(

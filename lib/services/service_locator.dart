@@ -34,6 +34,7 @@ class AppServices {
   final LogService logService;
   final VehicleStore vehicleStore;
   final OfficialCloudService officialCloudService;
+  final AppPreferencesService appPreferencesService; // P0-6: 注册到容器
 
   AppServices({
     required this.connectionManager,
@@ -44,6 +45,7 @@ class AppServices {
     required this.logService,
     required this.vehicleStore,
     required this.officialCloudService,
+    required this.appPreferencesService,
   });
 
   /// Builds the default production graph. Most of these types are themselves
@@ -59,6 +61,7 @@ class AppServices {
       logService: LogService(),
       vehicleStore: VehicleStore(),
       officialCloudService: OfficialCloudService(),
+      appPreferencesService: AppPreferencesService(),
     );
   }
 
@@ -98,7 +101,7 @@ class AppServices {
       old.vehicleStore.resetForTest();
     } catch (_) {}
     try {
-      AppPreferencesService().resetForTest();
+      old.appPreferencesService.resetForTest();
     } catch (_) {}
     try {
       old.officialCloudService.resetForTest();
@@ -129,7 +132,7 @@ class AppServices {
       vehicleStore.dispose();
     } catch (_) {}
     try {
-      AppPreferencesService().dispose();
+      appPreferencesService.dispose();
     } catch (_) {}
   }
 }

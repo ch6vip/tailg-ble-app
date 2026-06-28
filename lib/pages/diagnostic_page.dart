@@ -76,7 +76,7 @@ class DiagnosticPage extends StatefulWidget {
 }
 
 class _DiagnosticPageState extends State<DiagnosticPage> {
-  final _log = LogService();
+  final _log = logService;
   bool _scanning = false;
   List<FaultInfo> _currentFaults = [];
   int? _rawFaultByte;

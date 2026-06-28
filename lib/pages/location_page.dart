@@ -6,14 +6,14 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../main.dart'; // P0-6: service locator getters
+
 import '../config/map_tile_config.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
-import '../services/location_service.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../services/replica_feature_store.dart';
-import '../services/vehicle_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_pressable.dart';
@@ -60,13 +60,12 @@ class _LocationPageState extends State<LocationPage> {
     _tabIndex = widget.initialTab.index;
     _loadLocalFence();
 
-    final vehicleStore = VehicleStore();
+    // P0-6: 直接使用 main.dart 顶层 getter，无需局部变量
     _vehiclesSub = vehicleStore.vehiclesStream.listen((_) {
       if (mounted) setState(() {});
     });
 
-    final cloudService = OfficialCloudService();
-    _cloudStateSub = cloudService.stateStream.listen((_) {
+    _cloudStateSub = officialCloudService.stateStream.listen((_) {
       if (mounted) setState(() {});
     });
 
@@ -95,14 +94,14 @@ class _LocationPageState extends State<LocationPage> {
       _localError = null;
     });
     try {
-      await LocationService().recordVehicleLocation(
+      await locationService.recordVehicleLocation(
         vehicle.id,
         requestPermission: true,
       );
       if (!mounted) return;
       _showSnack('本地位置已更新');
     } catch (e) {
-      LogService().operation(
+      logService.operation(
         '本地车辆位置刷新失败',
         detail: e.toString(),
         level: LogLevel.warning,
@@ -114,7 +113,7 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   Future<void> _refreshOfficial({bool silent = false}) async {
-    final service = OfficialCloudService();
+    final service = officialCloudService;
     if (!service.state.signedIn) return;
     try {
       await service.refreshVehicles(
@@ -128,7 +127,7 @@ class _LocationPageState extends State<LocationPage> {
       ]);
       if (!silent && mounted) _showSnack('官方地图数据已刷新');
     } catch (e) {
-      LogService().operation(
+      logService.operation(
         '官云地图数据刷新失败',
         detail: e.toString(),
         level: LogLevel.warning,
@@ -139,9 +138,9 @@ class _LocationPageState extends State<LocationPage> {
 
   Future<void> _refreshTravelHistory({String? month}) async {
     try {
-      await OfficialCloudService().refreshTravelHistory(month: month);
+      await officialCloudService.refreshTravelHistory(month: month);
     } catch (e) {
-      LogService().operation(
+      logService.operation(
         '官云行程历史刷新失败',
         detail: e.toString(),
         level: LogLevel.warning,
@@ -151,7 +150,7 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   Future<void> _changeTravelMonth(int delta) async {
-    final state = OfficialCloudService().state;
+    final state = officialCloudService.state;
     final current = _parseMonth(state.travelMonth) ?? DateTime.now();
     final next = DateTime(current.year, current.month + delta);
     await _refreshTravelHistory(month: _monthText(next));
@@ -159,9 +158,9 @@ class _LocationPageState extends State<LocationPage> {
 
   Future<void> _refreshFenceData() async {
     try {
-      await OfficialCloudService().refreshFenceData();
+      await officialCloudService.refreshFenceData();
     } catch (e) {
-      LogService().operation(
+      logService.operation(
         '官云电子围栏刷新失败',
         detail: e.toString(),
         level: LogLevel.warning,
@@ -198,8 +197,8 @@ class _LocationPageState extends State<LocationPage> {
       return;
     }
     try {
-      if (!OfficialCloudService().state.travelDetails.containsKey(travelId)) {
-        await OfficialCloudService().refreshTravelDetail(travelId);
+      if (!officialCloudService.state.travelDetails.containsKey(travelId)) {
+        await officialCloudService.refreshTravelDetail(travelId);
       }
       if (!mounted) return;
       await showModalBottomSheet<void>(
@@ -209,7 +208,7 @@ class _LocationPageState extends State<LocationPage> {
         builder: (_) => _TravelDetailSheet(record: record),
       );
     } catch (e) {
-      LogService().operation(
+      logService.operation(
         '官云行程详情加载失败',
         detail: e.toString(),
         level: LogLevel.warning,
@@ -295,8 +294,8 @@ class _LocationPageState extends State<LocationPage> {
       body: SafeArea(
         child: Builder(
           builder: (context) {
-            final cloudState = OfficialCloudService().state;
-            final localVehicle = VehicleStore().defaultVehicle;
+            final cloudState = officialCloudService.state;
+            final localVehicle = vehicleStore.defaultVehicle;
             final cloudVehicle = cloudState.signedIn
                 ? cloudState.selectedVehicle
                 : null;

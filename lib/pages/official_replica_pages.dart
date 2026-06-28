@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../main.dart'; // P0-6: service locator getters
 import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
-import '../services/official_cloud_service.dart';
 import '../services/replica_feature_store.dart';
-import '../services/vehicle_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
@@ -226,9 +225,9 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
   }
 
   Future<void> _load() async {
-    await VehicleStore().init();
+    await vehicleStore.init();
     final config = await _store.loadFenceConfig();
-    final lastLocation = VehicleStore().defaultVehicle?.lastLocation;
+    final lastLocation = vehicleStore.defaultVehicle?.lastLocation;
     final latitude = config?.latitude ?? lastLocation?.latitude;
     final longitude = config?.longitude ?? lastLocation?.longitude;
     if (!mounted) return;
@@ -592,7 +591,7 @@ class RideRecordPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final logs = LogService()
+    final logs = logService
         .byCategory(LogCategory.operation)
         .reversed
         .take(12)
@@ -601,12 +600,12 @@ class RideRecordPage extends StatelessWidget {
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
         child: StreamBuilder<List<VehicleProfile>>(
-          stream: VehicleStore().vehiclesStream,
-          initialData: VehicleStore().vehicles,
+          stream: vehicleStore.vehiclesStream,
+          initialData: vehicleStore.vehicles,
           builder: (context, snapshot) {
-            final vehicle = VehicleStore().defaultVehicle;
+            final vehicle = vehicleStore.defaultVehicle;
             final location = vehicle?.lastLocation;
-            final cloudState = OfficialCloudService().state;
+            final cloudState = officialCloudService.state;
             final cloudVehicle = cloudState.signedIn
                 ? cloudState.selectedVehicle
                 : null;
