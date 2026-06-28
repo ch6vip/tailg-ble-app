@@ -118,6 +118,7 @@ class _HomeBodyState extends State<_HomeBody> {
   StreamSubscription<dynamic>? _subVehicles;
   StreamSubscription<dynamic>? _subCloud;
   StreamController<List<dynamic>>? _controller;
+  bool _disposed = false; // P0-3: dispose 竞态保护
 
   @override
   void initState() {
@@ -132,45 +133,56 @@ class _HomeBodyState extends State<_HomeBody> {
     var latestCloud = officialCloudService.state;
 
     void emit() {
-      if (!controller.isClosed) {
-        controller.add([latestConn, latestVehicles, latestCloud]);
-      }
+      // P0-3: dispose 后不再向 controller 发射，避免 StateError
+      if (_disposed || controller.isClosed) return;
+      controller.add([latestConn, latestVehicles, latestCloud]);
     }
 
     // Emit initial values
     scheduleMicrotask(emit);
 
     _subConn = connectionManager.stateStream.listen((s) {
+      if (_disposed) return; // P0-3
       latestConn = s;
       emit();
     });
     _subVehicles = vehicleStore.vehiclesStream.listen((v) {
+      if (_disposed) return; // P0-3
       latestVehicles = v;
       emit();
     });
     _subCloud = officialCloudService.stateStream.listen((c) {
+      if (_disposed) return; // P0-3
       latestCloud = c;
       emit();
     });
 
     _controller = controller;
-    controller.onCancel = _cancelSubscriptions;
+    // P0-3: onCancel 改为同步清理，不再触发竞态的 async _cancelSubscriptions
+    controller.onCancel = () {
+      _subConn?.cancel();
+      _subVehicles?.cancel();
+      _subCloud?.cancel();
+      _subConn = null;
+      _subVehicles = null;
+      _subCloud = null;
+    };
 
     return controller.stream;
   }
 
-  Future<void> _cancelSubscriptions() async {
-    await _subConn?.cancel();
-    await _subVehicles?.cancel();
-    await _subCloud?.cancel();
+  @override
+  void dispose() {
+    // P0-3: 先置标志，再同步取消，防止 onCancel 回调向已关闭的 controller 发射。
+    // 原 Bug：dispose() 调用 async _cancelSubscriptions() 但不 await，
+    // 随后 _controller?.close() 可能先执行，触发 onCancel 再次进入竞态。
+    _disposed = true;
+    _subConn?.cancel();
+    _subVehicles?.cancel();
+    _subCloud?.cancel();
     _subConn = null;
     _subVehicles = null;
     _subCloud = null;
-  }
-
-  @override
-  void dispose() {
-    _cancelSubscriptions();
     _controller?.close();
     super.dispose();
   }
