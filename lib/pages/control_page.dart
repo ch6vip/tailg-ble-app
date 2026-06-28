@@ -36,7 +36,8 @@ part 'control_page_home_overview.dart';
 part 'control_page_vehicle_overview.dart';
 part 'control_page_mode_widgets.dart';
 
-const _pageBg = AppColors.pageBg;
+// P0-2: 改为运行时读取，让暗色模式生效。Sprint 3 Token 重建后改用 ThemeExtension。
+Color _pageBg(BuildContext context) => AppColors.of(context).pageBg;
 const _kmPerPercent = 0.65;
 const _phoneControlRadius = 16.0;
 const _officialPressedBg = Color(0xFFE5E5E5);
@@ -88,7 +89,7 @@ class _ControlPageState extends State<ControlPage>
     // 静态外壳只构建一次；仅随数据变化的内容下沉到 [_HomeBody]，
     // 避免每次连接态/车辆/云态事件都重建 Scaffold/RefreshIndicator/滚动容器。
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: _pageBg(context),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _handleRefresh,
