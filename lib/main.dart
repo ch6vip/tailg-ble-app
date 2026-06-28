@@ -37,6 +37,8 @@ LogService get logService => AppServices.instance.logService;
 VehicleStore get vehicleStore => AppServices.instance.vehicleStore;
 OfficialCloudService get officialCloudService =>
     AppServices.instance.officialCloudService;
+AppPreferencesService get appPreferencesService =>
+    AppServices.instance.appPreferencesService; // P0-6
 
 /// Global [ValueNotifier] for the home tab index.
 /// Listeners MUST be removed in [dispose()] to avoid memory leaks,
@@ -68,7 +70,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await AppPreferencesService().init();
+    await appPreferencesService.init(); // P0-6
     await vehicleStore.init();
     await officialCloudService.init();
     final defaultVehicle = vehicleStore.defaultVehicle;
@@ -130,7 +132,7 @@ class TailgBleApp extends StatefulWidget {
 }
 
 class _TailgBleAppState extends State<TailgBleApp> {
-  final _preferences = AppPreferencesService();
+  final _preferences = appPreferencesService; // P0-6
   bool _respectTextScale = true;
   StreamSubscription<bool>? _textScaleSub;
 

@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import '../main.dart';
 import '../services/diagnostic_export_service.dart';
 import '../services/log_service.dart';
-import '../services/vehicle_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
@@ -17,7 +16,7 @@ class LogPage extends StatefulWidget {
 
 class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final _log = LogService();
+  final _log = logService;
   StreamSubscription<void>? _logSub;
   int _activeTab = 0;
 
@@ -68,7 +67,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
     final report = DiagnosticExportService(
       connectionManager: connectionManager,
       logService: _log,
-      vehicleStore: VehicleStore(),
+      vehicleStore: vehicleStore,
       officialCloudService: officialCloudService,
     ).buildReport(entries);
     await Clipboard.setData(ClipboardData(text: report));

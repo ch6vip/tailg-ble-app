@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../main.dart'; // P0-6: service locator getters
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
@@ -18,7 +19,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
   static const _prefHiddenIds = 'vehicle_message_hidden_ids';
 
   late final TabController _tabController;
-  final _log = LogService();
+  final _log = logService;
   int _activeTab = 0;
   final Set<String> _readIds = {};
   final Set<String> _hiddenIds = {};

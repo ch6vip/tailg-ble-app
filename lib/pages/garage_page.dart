@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import '../main.dart';
 import '../models/vehicle_profile.dart';
-import '../services/vehicle_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/status_badge.dart';
@@ -15,7 +14,7 @@ class GaragePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final store = VehicleStore();
+    final store = vehicleStore;
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
@@ -260,10 +259,10 @@ class _VehicleCardState extends State<_VehicleCard> {
       if (!mounted) return;
       await _showQgjCredentialsDialog(context);
     } else if (value == 'default') {
-      await VehicleStore().setDefault(vehicle.id);
+      await vehicleStore.setDefault(vehicle.id);
       if (!mounted) return;
       proximityService.setTargetDevice(vehicle.id);
-      applyVehicleBleCredentials(VehicleStore().defaultVehicle);
+      applyVehicleBleCredentials(vehicleStore.defaultVehicle);
     } else if (value == 'delete') {
       if (!mounted) return;
       await _confirmDelete(context);
@@ -345,15 +344,15 @@ class _VehicleCardState extends State<_VehicleCard> {
     userIdController.dispose();
     if (!mounted) return;
     if (result == null) return;
-    await VehicleStore().updateQgjCredentials(
+    await vehicleStore.updateQgjCredentials(
       id: vehicle.id,
       password: result.password,
       userId: result.userId,
       clear: result.clear,
     );
     if (!mounted) return;
-    if (VehicleStore().defaultVehicle?.id == vehicle.id) {
-      applyVehicleBleCredentials(VehicleStore().defaultVehicle);
+    if (vehicleStore.defaultVehicle?.id == vehicle.id) {
+      applyVehicleBleCredentials(vehicleStore.defaultVehicle);
     }
   }
 
@@ -391,7 +390,7 @@ class _VehicleCardState extends State<_VehicleCard> {
     );
     controller.dispose();
     if (!mounted) return;
-    if (name != null) await VehicleStore().rename(vehicle.id, name);
+    if (name != null) await vehicleStore.rename(vehicle.id, name);
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
@@ -414,8 +413,8 @@ class _VehicleCardState extends State<_VehicleCard> {
     );
     if (!mounted) return;
     if (confirmed == true) {
-      await VehicleStore().remove(vehicle.id);
-      final defaultVehicle = VehicleStore().defaultVehicle;
+      await vehicleStore.remove(vehicle.id);
+      final defaultVehicle = vehicleStore.defaultVehicle;
       if (defaultVehicle != null) {
         proximityService.setTargetDevice(defaultVehicle.id);
         applyVehicleBleCredentials(defaultVehicle);
