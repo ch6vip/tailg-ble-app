@@ -90,11 +90,7 @@ class _ScanPageState extends State<ScanPage>
     final adapterState = await FlutterBluePlus.adapterState.first;
     if (!mounted) return;
     if (adapterState != BluetoothAdapterState.on) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('请先开启蓝牙')));
-      }
+      AppSnack.info(context, '请先开启蓝牙');
       return;
     }
     await FlutterBluePlus.startScan(timeout: BleTimings.manualScanTimeout);
