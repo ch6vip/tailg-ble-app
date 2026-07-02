@@ -8,7 +8,7 @@
 
 共发现 **15 项缺陷**:P0 致命 ×1、P1 严重 ×4、P2 一般 ×6、P3 建议 ×4。
 
-## 修复状态(2026-06-26 同日完成)
+## 修复状态(截至 2026-07-03)
 
 | 编号 | 严重度 | 状态 | 关键改动 |
 |------|--------|------|----------|
@@ -29,9 +29,10 @@
 | P3-15 | 建议 | 📋 待处理 | `_initialized` + `_initializing` 抽基类(独立 PR) |
 
 **已修复**:11 项(1 P0 + 3 P1 + 6 P2 + 1 P3)
-**待处理**:4 项(均为独立 PR 范畴,不阻塞当前发布)
+**文档标注**:1 项(P1-5,客户端密钥混淆风险说明)
+**待处理**:3 项(均为独立 PR 范畴,不阻塞当前发布)
 
-值得注意:`flutter analyze` 全绿(No issues found),但 P0 语义反转 bug 仍存在——说明此类"逻辑错配"无法被静态分析捕获,依赖集成测试与人工审查。
+值得注意:该轮审查中 `flutter analyze` 全绿(No issues found),但仍检出了 P0 语义反转 bug——说明此类"逻辑错配"无法被静态分析捕获,依赖集成测试与人工审查。
 
 ---
 
@@ -125,7 +126,7 @@
 
 | 编号 | 文件 | 问题 |
 |------|------|------|
-| P3-12 | `lib/pages/log_page.dart:96,122` | `setState(() {})` 空刷新,应给 LogService 加 stream |
+| P3-12 | `lib/pages/log_page.dart:96,122` | 已修复:`LogService.changes` stream 驱动日志页刷新 |
 | P3-13 | `lib/ble/connection_manager.dart:660` | `_ridingMode` 未持久化,重连后默认回 standard |
 | P3-14 | `profile_page.dart` 等 30+ 处 | 主题色硬编码 `Color(0xFF...)` 未走 `AppColors` token,无 dark mode 适配 |
 | P3-15 | `auto_connect_service.dart` 等 4 个 service | `_initialized` + `_initializing` 双标志重复,可抽基类 |
@@ -135,11 +136,11 @@
 ## 测试与质量门禁评估
 
 ### 测试覆盖
-- test/ 共 18 个测试文件,覆盖协议解析(ble_parser)、云服务(official_cloud)、车辆存储(vehicle_store)、proximity / auto_connect / manual_mode service 等。
+- 当前 test/ 共 32 个 `*_test.dart` 文件,覆盖协议解析(ble_parser)、云服务(official_cloud)、车辆存储(vehicle_store)、proximity / auto_connect / manual_mode service 等。
 - **盲区**:
   - UI 绑定层测试薄弱,P0-1 的"开关 → 服务"绑定未被任何测试覆盖。
   - 无 connection_manager connected → ready 超时场景测试。
-  - 无 official_cloud_auth_parser 的 'id' 兜底误匹配测试。
+  - `official_cloud_auth_parser` 的 generic `id` 误匹配已有 P1-4 回归测试。
 
 ### 静态分析
 - `flutter analyze`:**No issues found**(全绿)。
@@ -147,14 +148,15 @@
 
 ### CI
 - `.github/workflows/build.yml` 的 ci job 已覆盖 format → analyze → test 三道门禁。
-- **文档不一致**:AGENTS.md 描述的 `ci.yml`(含 coverage → Codecov)实际不存在,功能合并在 `build.yml` 的 ci job,且无 coverage 上传步骤。建议对齐文档或补全 coverage。
+- `.github/workflows/release.yml` 已在发布前执行 format → analyze → test,并作为唯一 `v*` tag Release 发布入口。
+- AGENTS.md 与 `docs/github_actions_guide.md` 已对齐当前 `build.yml`/`release.yml` 配置;当前仍无 coverage 上传步骤。
 
 ---
 
-## 修复优先级建议
+## 后续优先级建议
 
-1. **立即修复 P0-1**:感应解锁开关接错服务,影响车辆安全,且用户无感知。
-2. **尽快修复 P1-2 / P1-4**:BLE 状态卡死、userId 误匹配影响核心功能。
-3. **补集成测试**:针对 UI 开关 → Service 绑定、连接状态机超时、auth parser 边界。
-4. **安全债 P1-5**:客户端密钥混淆只能降低静态暴露,不能替代服务端校验。
-5. **可维护性 P2 / P3**:文档对齐、token 统一、init 守卫抽基类。
+1. **P3-13**:`_ridingMode` 持久化,避免重连后回落默认模式。
+2. **P3-14**:主题色硬编码迁移到 `AppColors`/token 体系,降低暗色模式适配成本。
+3. **P3-15**:`_initialized` + `_initializing` service init guard 抽象化,减少重复状态机。
+4. **P1-5 安全债**:继续明确客户端密钥混淆只能降低静态暴露,不能替代服务端校验。
+5. **测试补强**:补 UI 开关 → Service 绑定、连接状态机超时的集成测试。
