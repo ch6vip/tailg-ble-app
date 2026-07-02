@@ -9,6 +9,7 @@ import 'location_service.dart';
 import 'log_service.dart';
 import 'manual_mode_service.dart';
 import 'official_cloud_service.dart';
+import 'permission_service.dart';
 import 'proximity_service.dart';
 import 'vehicle_store.dart';
 
@@ -37,6 +38,7 @@ class AppServices {
   final VehicleStore vehicleStore;
   final OfficialCloudService officialCloudService;
   final AppPreferencesService appPreferencesService; // P0-6: 注册到容器
+  final AppPermissionService permissionService;
   final ValueNotifier<int> homeTabIndex;
 
   AppServices({
@@ -49,6 +51,7 @@ class AppServices {
     required this.vehicleStore,
     required this.officialCloudService,
     required this.appPreferencesService,
+    required this.permissionService,
     required this.homeTabIndex,
   });
 
@@ -66,6 +69,7 @@ class AppServices {
       vehicleStore: VehicleStore(),
       officialCloudService: OfficialCloudService(),
       appPreferencesService: AppPreferencesService(),
+      permissionService: AppPermissionService(),
       homeTabIndex: ValueNotifier<int>(0),
     );
   }

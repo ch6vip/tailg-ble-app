@@ -10,6 +10,7 @@ import 'services/manual_mode_service.dart';
 import 'services/location_service.dart';
 import 'services/log_service.dart';
 import 'services/official_cloud_service.dart';
+import 'services/permission_service.dart';
 import 'services/vehicle_store.dart';
 import 'services/service_locator.dart';
 import 'services/app_preferences_service.dart';
@@ -39,6 +40,8 @@ OfficialCloudService get officialCloudService =>
     AppServices.instance.officialCloudService;
 AppPreferencesService get appPreferencesService =>
     AppServices.instance.appPreferencesService; // P0-6
+AppPermissionService get permissionService =>
+    AppServices.instance.permissionService;
 
 /// App-wide home tab index, owned by [AppServices] so tests can swap the whole
 /// service graph without leaving a separate mutable singleton behind.

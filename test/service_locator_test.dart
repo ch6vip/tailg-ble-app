@@ -10,6 +10,7 @@ import 'package:tailg_ble_app/services/location_service.dart';
 import 'package:tailg_ble_app/services/log_service.dart';
 import 'package:tailg_ble_app/services/manual_mode_service.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/services/permission_service.dart';
 import 'package:tailg_ble_app/services/proximity_service.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
@@ -33,6 +34,10 @@ void main() {
     );
     expect(identical(app.logService, AppServices.instance.logService), isTrue);
     expect(
+      identical(app.permissionService, AppServices.instance.permissionService),
+      isTrue,
+    );
+    expect(
       identical(app.homeTabIndex, AppServices.instance.homeTabIndex),
       isTrue,
     );
@@ -53,6 +58,7 @@ void main() {
         vehicleStore: VehicleStore(),
         officialCloudService: OfficialCloudService(),
         appPreferencesService: AppPreferencesService(), // P0-6
+        permissionService: AppPermissionService(),
         homeTabIndex: ValueNotifier<int>(2),
       ),
     );
@@ -88,6 +94,7 @@ void main() {
           vehicleStore: VehicleStore(),
           officialCloudService: OfficialCloudService(),
           appPreferencesService: AppPreferencesService(),
+          permissionService: AppPermissionService(),
           homeTabIndex: ValueNotifier<int>(0),
         ),
       );

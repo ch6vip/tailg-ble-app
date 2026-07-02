@@ -7,7 +7,6 @@ import '../main.dart';
 import '../services/ble_connection_snapshot_guard.dart';
 import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
-import '../services/permission_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
@@ -76,7 +75,7 @@ class _ScanPageState extends State<ScanPage>
   }
 
   Future<bool> _requestPermissions() async {
-    final result = await AppPermissionService().requestBleScanPermissions();
+    final result = await permissionService.requestBleScanPermissions();
     if (!mounted) return false;
     if (!result.granted) {
       AppSnack.error(context, result.message ?? '请授予蓝牙和定位权限后再扫描');
