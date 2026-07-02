@@ -17,7 +17,7 @@
 | P1-3 | 严重 | ✅ 已修复 | 心跳失败 + ready 超时改用 `scheduleMicrotask(_onDisconnected)`,异常不再被 Timer zone 吞 |
 | P1-4 | 严重 | ✅ 已修复 | `official_cloud_auth_parser.dart` 移除 `'id'` 兜底,只匹配 `'uid'/'userId'` + 回归测试 |
 | P1-5 | 严重 | ⚠️ 文档标注 | AES key 混淆本质为弱保护,在缺陷报告中明确说明,真正安全依赖服务端 |
-| P2-6 | 一般 | 📋 待处理 | QGJ 凭证迁移 secure storage(独立 PR) |
+| P2-6 | 一般 | ✅ 已修复 | QGJ 凭证迁移到 `FlutterSecureStorage`,并清理 legacy prefs |
 | P2-7 | 一般 | ✅ 已修复 | `service_locator.reset()` 改调 `resetForTest()` 而非 `dispose()`,消除僵尸单例 |
 | P2-8 | 一般 | ✅ 已修复 | 删除 `Forward-ServiceIp` 笔误头;`forwardServiceIp` 默认空 + 仅在非空时发送 |
 | P2-9 | 一般 | ✅ 已修复 | LogService 增加 BLE 登录帧脱敏 + broadcast stream |
@@ -28,8 +28,8 @@
 | P3-14 | 建议 | 📋 待处理 | 主题色硬编码迁移到 `AppColors` token(独立 PR) |
 | P3-15 | 建议 | 📋 待处理 | `_initialized` + `_initializing` 抽基类(独立 PR) |
 
-**已修复**:10 项(1 P0 + 3 P1 + 5 P2 + 1 P3)
-**待处理**:5 项(均为独立 PR 范畴,不阻塞当前发布)
+**已修复**:11 项(1 P0 + 3 P1 + 6 P2 + 1 P3)
+**待处理**:4 项(均为独立 PR 范畴,不阻塞当前发布)
 
 值得注意:`flutter analyze` 全绿(No issues found),但 P0 语义反转 bug 仍存在——说明此类"逻辑错配"无法被静态分析捕获,依赖集成测试与人工审查。
 
@@ -87,7 +87,7 @@
 
 - **文件**:`lib/models/vehicle_profile.dart:119-128` + `lib/services/vehicle_store.dart:231-243`
 - **问题**:`qgjLoginPassword`/`qgjUserId` 经 `toJson` 直接 `jsonEncode` 进 `SharedPreferences`(明文 XML)。root 设备或备份提取可读。对比 `official_cloud_storage.dart` 已迁 `FlutterSecureStorage`,BLE 凭证未迁。
-- **修复**:将 QGJ 凭证迁移到 `flutter_secure_storage`。
+- **修复**:`VehicleStore` 已将 QGJ 凭证写入 `FlutterSecureStorage`;持久化车辆列表前通过 `_profileJsonWithoutQgjCredentials` 剥离明文字段,并在加载 legacy prefs 时迁移后清理。`vehicle_store_test.dart` 覆盖写入、迁移和删除清理。
 
 ### P2-7 AppServices.reset() 误用单例
 
@@ -156,5 +156,5 @@
 1. **立即修复 P0-1**:感应解锁开关接错服务,影响车辆安全,且用户无感知。
 2. **尽快修复 P1-2 / P1-4**:BLE 状态卡死、userId 误匹配影响核心功能。
 3. **补集成测试**:针对 UI 开关 → Service 绑定、连接状态机超时、auth parser 边界。
-4. **安全债 P1-5 / P2-6 / P2-9**:凭证存储迁移 secure storage、日志脱敏。
+4. **安全债 P1-5**:客户端密钥混淆只能降低静态暴露,不能替代服务端校验。
 5. **可维护性 P2 / P3**:文档对齐、token 统一、init 守卫抽基类。
