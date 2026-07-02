@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/pages/diagnostic_page.dart';
 
+import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -18,7 +19,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('请先连接车辆'), findsOneWidget);
-      expect(find.byIcon(Icons.info_outline), findsOneWidget);
+      expect(snackIcon(Icons.info_outline), findsOneWidget);
     },
   );
 }

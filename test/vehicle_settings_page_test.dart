@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/pages/vehicle_settings_page.dart';
 
+import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -22,12 +23,6 @@ void main() {
     await tester.pump();
 
     expect(find.text('命令待真机验证，暂不开放写入'), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byType(SnackBar),
-        matching: find.byIcon(Icons.info_outline),
-      ),
-      findsOneWidget,
-    );
+    expect(snackIcon(Icons.info_outline), findsOneWidget);
   });
 }

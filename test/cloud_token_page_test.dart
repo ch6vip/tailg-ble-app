@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/pages/cloud_token_page.dart';
 
+import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -21,6 +22,6 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('cloud_token'), 'shared-token');
     expect(find.text('Token 已保存'), findsOneWidget);
-    expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+    expect(snackIcon(Icons.check_circle_outline), findsOneWidget);
   });
 }

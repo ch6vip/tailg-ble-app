@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/log_page.dart';
 
+import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -31,7 +32,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('当前没有可复制的日志'), findsOneWidget);
-    expect(find.byIcon(Icons.info_outline), findsOneWidget);
+    expect(snackIcon(Icons.info_outline), findsOneWidget);
   });
 
   testWidgets('copy action exports logs and shows success snack', (
@@ -46,6 +47,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('已复制诊断报告（1 条日志）'), findsOneWidget);
-    expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+    expect(snackIcon(Icons.check_circle_outline), findsOneWidget);
   });
 }

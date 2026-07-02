@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/app_preferences_pages.dart';
 
+import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -29,6 +30,6 @@ void main() {
     await tester.pump();
 
     expect(find.text('已复制诊断报告'), findsOneWidget);
-    expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+    expect(snackIcon(Icons.check_circle_outline), findsOneWidget);
   });
 }

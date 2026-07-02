@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/vehicle_message_page.dart';
 
+import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -29,6 +30,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('已清空 1 条当前分组消息'), findsOneWidget);
-    expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+    expect(snackIcon(Icons.check_circle_outline), findsOneWidget);
   });
 }

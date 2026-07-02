@@ -5,6 +5,7 @@ import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 
+import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -67,12 +68,6 @@ void main() {
     await tester.pump();
 
     expect(find.text('超级仪表功能开发中'), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byType(SnackBar),
-        matching: find.byIcon(Icons.info_outline),
-      ),
-      findsOneWidget,
-    );
+    expect(snackIcon(Icons.info_outline), findsOneWidget);
   });
 }

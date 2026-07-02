@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/profile_page.dart';
 
+import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -18,12 +19,6 @@ void main() {
     await tester.pump();
 
     expect(find.text('会员中心功能开发中'), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byType(SnackBar),
-        matching: find.byIcon(Icons.info_outline),
-      ),
-      findsOneWidget,
-    );
+    expect(snackIcon(Icons.info_outline), findsOneWidget);
   });
 }

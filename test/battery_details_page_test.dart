@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/battery_details_page.dart';
 
+import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -28,12 +29,6 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     expect(find.text('请先登录官方账号'), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byType(SnackBar),
-        matching: find.byIcon(Icons.info_outline),
-      ),
-      findsOneWidget,
-    );
+    expect(snackIcon(Icons.info_outline), findsOneWidget);
   });
 }
