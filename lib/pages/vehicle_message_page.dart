@@ -5,6 +5,7 @@ import '../main.dart'; // P0-6: service locator getters
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/app_snack.dart';
 
 class VehicleMessagePage extends StatefulWidget {
   const VehicleMessagePage({super.key});
@@ -227,12 +228,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
     });
     await _saveMessageState();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('已清空 ${currentMessages.length} 条当前分组消息'),
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    AppSnack.success(context, '已清空 ${currentMessages.length} 条当前分组消息');
   }
 
   Future<void> _openMessage(_VehicleMessage message) async {
