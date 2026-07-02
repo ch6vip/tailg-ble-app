@@ -37,6 +37,7 @@ class AppServices {
   final VehicleStore vehicleStore;
   final OfficialCloudService officialCloudService;
   final AppPreferencesService appPreferencesService; // P0-6: 注册到容器
+  final ValueNotifier<int> homeTabIndex;
 
   AppServices({
     required this.connectionManager,
@@ -48,6 +49,7 @@ class AppServices {
     required this.vehicleStore,
     required this.officialCloudService,
     required this.appPreferencesService,
+    required this.homeTabIndex,
   });
 
   /// Builds the default production graph. Most of these types are themselves
@@ -64,6 +66,7 @@ class AppServices {
       vehicleStore: VehicleStore(),
       officialCloudService: OfficialCloudService(),
       appPreferencesService: AppPreferencesService(),
+      homeTabIndex: ValueNotifier<int>(0),
     );
   }
 
@@ -118,6 +121,7 @@ class AppServices {
       'connectionManager.dispose',
       old.connectionManager.dispose,
     );
+    await _runCleanup('homeTabIndex.dispose', old.homeTabIndex.dispose);
     _instance = AppServices.production();
   }
 
@@ -135,6 +139,7 @@ class AppServices {
       'appPreferencesService.dispose',
       appPreferencesService.dispose,
     );
+    await _runCleanup('homeTabIndex.dispose', homeTabIndex.dispose);
   }
 
   static Future<void> _runCleanup(

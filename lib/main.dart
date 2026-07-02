@@ -40,10 +40,9 @@ OfficialCloudService get officialCloudService =>
 AppPreferencesService get appPreferencesService =>
     AppServices.instance.appPreferencesService; // P0-6
 
-/// Global [ValueNotifier] for the home tab index.
-/// Listeners MUST be removed in [dispose()] to avoid memory leaks,
-/// as this notifier outlives all widget lifecycles.
-final homeTabIndex = ValueNotifier<int>(0);
+/// App-wide home tab index, owned by [AppServices] so tests can swap the whole
+/// service graph without leaving a separate mutable singleton behind.
+ValueNotifier<int> get homeTabIndex => AppServices.instance.homeTabIndex;
 
 void applyVehicleBleCredentials(VehicleProfile? vehicle) {
   connectionManager.setQgjCredentials(
@@ -332,6 +331,7 @@ class _HomePageState extends State<HomePage>
   late AnimationController _pageAnimController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
+  late final ValueNotifier<int> _homeTabIndex;
   StreamSubscription? _stateSub;
   StreamSubscription? _manualModeSub;
 
@@ -352,7 +352,8 @@ class _HomePageState extends State<HomePage>
     ).animate(_fadeAnim);
     _pageAnimController.value = 1.0;
 
-    homeTabIndex.addListener(_onExternalTabChanged);
+    _homeTabIndex = homeTabIndex;
+    _homeTabIndex.addListener(_onExternalTabChanged);
     WidgetsBinding.instance.addObserver(this);
     // Manual mode promises to disable automatic control: stop any in-flight
     // proximity scan the moment it is switched on.
@@ -403,14 +404,14 @@ class _HomePageState extends State<HomePage>
   void dispose() {
     _stateSub?.cancel();
     _manualModeSub?.cancel();
-    homeTabIndex.removeListener(_onExternalTabChanged);
+    _homeTabIndex.removeListener(_onExternalTabChanged);
     _pageAnimController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   void _onExternalTabChanged() {
-    final index = homeTabIndex.value;
+    final index = _homeTabIndex.value;
     if (index == _currentIndex || index < 0 || index > 3) return;
     setState(() => _currentIndex = index);
     _pageAnimController.forward(from: 0);
@@ -420,7 +421,7 @@ class _HomePageState extends State<HomePage>
     if (index == _currentIndex) return;
     setState(() => _currentIndex = index);
     _pageAnimController.forward(from: 0);
-    homeTabIndex.value = index;
+    _homeTabIndex.value = index;
   }
 
   @override

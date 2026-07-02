@@ -32,6 +32,10 @@ void main() {
       isTrue,
     );
     expect(identical(app.logService, AppServices.instance.logService), isTrue);
+    expect(
+      identical(app.homeTabIndex, AppServices.instance.homeTabIndex),
+      isTrue,
+    );
   });
 
   test('override swaps the whole graph and reset restores it', () async {
@@ -49,10 +53,12 @@ void main() {
         vehicleStore: VehicleStore(),
         officialCloudService: OfficialCloudService(),
         appPreferencesService: AppPreferencesService(), // P0-6
+        homeTabIndex: ValueNotifier<int>(2),
       ),
     );
 
     expect(identical(app.connectionManager, injected), isTrue);
+    expect(app.homeTabIndex.value, 2);
 
     await AppServices.reset();
     // After reset the graph is rebuilt, so it is neither the injected fake nor
@@ -82,6 +88,7 @@ void main() {
           vehicleStore: VehicleStore(),
           officialCloudService: OfficialCloudService(),
           appPreferencesService: AppPreferencesService(),
+          homeTabIndex: ValueNotifier<int>(0),
         ),
       );
 
