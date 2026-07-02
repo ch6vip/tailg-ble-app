@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -61,6 +62,45 @@ void main() {
     expect(original, isA<ble.ConnectionManager>());
   });
 
+  test('reset reports cleanup failures and still restores graph', () async {
+    final messages = <String>[];
+    final previousDebugPrint = debugPrint;
+    debugPrint = (String? message, {int? wrapWidth}) {
+      if (message != null) messages.add(message);
+    };
+
+    try {
+      final injected = _ThrowingConnectionManager();
+      AppServices.override(
+        AppServices(
+          connectionManager: injected,
+          proximityService: ProximityService(),
+          autoConnectService: AutoConnectService(),
+          manualModeService: ManualModeService(),
+          locationService: LocationService(),
+          logService: LogService(),
+          vehicleStore: VehicleStore(),
+          officialCloudService: OfficialCloudService(),
+          appPreferencesService: AppPreferencesService(),
+        ),
+      );
+
+      await AppServices.reset();
+
+      expect(identical(app.connectionManager, injected), isFalse);
+      expect(
+        messages.any(
+          (message) =>
+              message.contains('connectionManager.dispose') &&
+              message.contains('dispose failed'),
+        ),
+        isTrue,
+      );
+    } finally {
+      debugPrint = previousDebugPrint;
+    }
+  });
+
   test(
     'reset keeps OfficialCloudService reusable and emitting state',
     () async {
@@ -101,4 +141,11 @@ void main() {
       expect(emitted.token, 'token-after-reset');
     },
   );
+}
+
+class _ThrowingConnectionManager extends ble.ConnectionManager {
+  @override
+  Future<void> dispose() async {
+    throw StateError('dispose failed');
+  }
 }

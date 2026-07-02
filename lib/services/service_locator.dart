@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../ble/connection_manager.dart' as ble;
@@ -88,51 +90,64 @@ class AppServices {
   static Future<void> reset() async {
     final old = _instance;
     // Reset stateful singletons without killing their stream controllers.
-    try {
-      old.proximityService.resetForTest();
-    } catch (_) {}
-    try {
-      old.autoConnectService.resetForTest();
-    } catch (_) {}
-    try {
-      old.manualModeService.resetForTest();
-    } catch (_) {}
-    try {
-      old.vehicleStore.resetForTest();
-    } catch (_) {}
-    try {
-      old.appPreferencesService.resetForTest();
-    } catch (_) {}
-    try {
-      old.officialCloudService.resetForTest();
-    } catch (_) {}
-    try {
-      await old.connectionManager.dispose();
-    } catch (_) {}
+    await _runCleanup(
+      'proximityService.resetForTest',
+      old.proximityService.resetForTest,
+    );
+    await _runCleanup(
+      'autoConnectService.resetForTest',
+      old.autoConnectService.resetForTest,
+    );
+    await _runCleanup(
+      'manualModeService.resetForTest',
+      old.manualModeService.resetForTest,
+    );
+    await _runCleanup(
+      'vehicleStore.resetForTest',
+      old.vehicleStore.resetForTest,
+    );
+    await _runCleanup(
+      'appPreferencesService.resetForTest',
+      old.appPreferencesService.resetForTest,
+    );
+    await _runCleanup(
+      'officialCloudService.resetForTest',
+      old.officialCloudService.resetForTest,
+    );
+    await _runCleanup(
+      'connectionManager.dispose',
+      old.connectionManager.dispose,
+    );
     _instance = AppServices.production();
   }
 
   Future<void> dispose() async {
+    await _runCleanup('connectionManager.dispose', connectionManager.dispose);
+    await _runCleanup(
+      'officialCloudService.dispose',
+      officialCloudService.dispose,
+    );
+    await _runCleanup('proximityService.dispose', proximityService.dispose);
+    await _runCleanup('autoConnectService.dispose', autoConnectService.dispose);
+    await _runCleanup('manualModeService.dispose', manualModeService.dispose);
+    await _runCleanup('vehicleStore.dispose', vehicleStore.dispose);
+    await _runCleanup(
+      'appPreferencesService.dispose',
+      appPreferencesService.dispose,
+    );
+  }
+
+  static Future<void> _runCleanup(
+    String operation,
+    FutureOr<void> Function() cleanup,
+  ) async {
     try {
-      await connectionManager.dispose();
-    } catch (_) {}
-    try {
-      officialCloudService.dispose();
-    } catch (_) {}
-    try {
-      proximityService.dispose();
-    } catch (_) {}
-    try {
-      autoConnectService.dispose();
-    } catch (_) {}
-    try {
-      manualModeService.dispose();
-    } catch (_) {}
-    try {
-      vehicleStore.dispose();
-    } catch (_) {}
-    try {
-      appPreferencesService.dispose();
-    } catch (_) {}
+      await cleanup();
+    } catch (error, stackTrace) {
+      debugPrint('AppServices cleanup failed during $operation: $error');
+      if (kDebugMode) {
+        debugPrintStack(stackTrace: stackTrace);
+      }
+    }
   }
 }
