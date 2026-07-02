@@ -6,6 +6,7 @@ import '../services/diagnostic_export_service.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/app_snack.dart';
 
 class LogPage extends StatefulWidget {
   const LogPage({super.key});
@@ -56,12 +57,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
   Future<void> _copyAll() async {
     final entries = _getEntries(_tabController.index);
     if (entries.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('当前没有可复制的日志'),
-          duration: Duration(seconds: 1),
-        ),
-      );
+      AppSnack.info(context, '当前没有可复制的日志');
       return;
     }
     final report = DiagnosticExportService(
@@ -72,12 +68,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
     ).buildReport(entries);
     await Clipboard.setData(ClipboardData(text: report));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('已复制诊断报告（${entries.length} 条日志）'),
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    AppSnack.success(context, '已复制诊断报告（${entries.length} 条日志）');
   }
 
   Future<void> _confirmClear() async {
