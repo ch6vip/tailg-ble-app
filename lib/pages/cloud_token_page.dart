@@ -5,6 +5,7 @@ import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/app_snack.dart';
 
 class CloudTokenPage extends StatefulWidget {
   const CloudTokenPage({super.key});
@@ -46,12 +47,7 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
     await prefs.setString(_prefKey, token);
     if (!mounted) return;
     setState(() => _savedToken = token);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Token 已保存'),
-        duration: Duration(seconds: 1),
-      ),
-    );
+    AppSnack.success(context, 'Token 已保存');
   }
 
   Future<void> _copyToken() async {
@@ -59,9 +55,7 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
     if (token == null || token.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: token));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已复制到剪贴板'), duration: Duration(seconds: 1)),
-    );
+    AppSnack.success(context, '已复制到剪贴板');
   }
 
   void _useCurrentToken() {
