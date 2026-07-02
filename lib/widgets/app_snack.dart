@@ -18,10 +18,12 @@ abstract final class AppSnack {
     String? actionLabel,
     VoidCallback? onAction,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     _show(
       context,
       message: message,
-      background: const Color(0xFFFF5252),
+      background: scheme.error,
+      foreground: scheme.onError,
       icon: Icons.error_outline,
       duration: _errorDuration,
       actionLabel: actionLabel,
@@ -31,10 +33,12 @@ abstract final class AppSnack {
 
   /// 成功提示：绿色背景，2s 停留。
   static void success(BuildContext context, String message) {
+    final scheme = Theme.of(context).colorScheme;
     _show(
       context,
       message: message,
-      background: const Color(0xFF4CAF50),
+      background: scheme.primary,
+      foreground: scheme.onPrimary,
       icon: Icons.check_circle_outline,
       duration: _infoDuration,
     );
@@ -42,10 +46,12 @@ abstract final class AppSnack {
 
   /// 普通提示：深灰背景，2s 停留。
   static void info(BuildContext context, String message) {
+    final scheme = Theme.of(context).colorScheme;
     _show(
       context,
       message: message,
-      background: const Color(0xFF323232),
+      background: scheme.inverseSurface,
+      foreground: scheme.onInverseSurface,
       icon: Icons.info_outline,
       duration: _infoDuration,
     );
@@ -55,6 +61,7 @@ abstract final class AppSnack {
     BuildContext context, {
     required String message,
     required Color background,
+    required Color foreground,
     required IconData icon,
     required Duration duration,
     String? actionLabel,
@@ -67,13 +74,13 @@ abstract final class AppSnack {
       SnackBar(
         content: Row(
           children: [
-            Icon(icon, size: AppIconSizes.sm, color: Colors.white),
+            Icon(icon, size: AppIconSizes.sm, color: foreground),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: foreground,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -89,7 +96,7 @@ abstract final class AppSnack {
         action: (actionLabel != null && onAction != null)
             ? SnackBarAction(
                 label: actionLabel,
-                textColor: Colors.white,
+                textColor: foreground,
                 onPressed: onAction,
               )
             : null,
