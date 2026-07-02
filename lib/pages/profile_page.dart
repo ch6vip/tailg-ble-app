@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 import '../main.dart';
+import '../widgets/app_snack.dart';
 import 'app_preferences_pages.dart';
 import 'official_cloud_page.dart';
 import 'ota_precheck_page.dart';
@@ -191,12 +192,7 @@ class _UserHeader extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const OfficialCloudPage()),
                 );
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('编辑资料功能开发中'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
+                AppSnack.info(context, '编辑资料功能开发中');
               }
             },
             child: Container(
@@ -323,12 +319,7 @@ class _MembershipBanner extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: GestureDetector(
-        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('会员中心功能开发中'),
-            duration: Duration(seconds: 2),
-          ),
-        ),
+        onTap: () => AppSnack.info(context, '会员中心功能开发中'),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           decoration: BoxDecoration(
