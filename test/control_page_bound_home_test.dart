@@ -59,4 +59,20 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('车辆定位'), findsOneWidget);
   });
+
+  testWidgets('super dashboard placeholder shows info snack', (tester) async {
+    await pumpBoundHome(tester, size: const Size(430, 2200));
+
+    await tester.tap(find.text('超级仪表'));
+    await tester.pump();
+
+    expect(find.text('超级仪表功能开发中'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(SnackBar),
+        matching: find.byIcon(Icons.info_outline),
+      ),
+      findsOneWidget,
+    );
+  });
 }

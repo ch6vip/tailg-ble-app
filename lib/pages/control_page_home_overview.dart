@@ -170,23 +170,19 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
 
   void _showSnack(String message, {required bool isError}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? AppColors.danger : null,
-        duration: Duration(seconds: isError ? 3 : 2),
-        action: isError
-            ? SnackBarAction(
-                label: '查看日志',
-                textColor: Colors.white,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LogPage()),
-                ),
-              )
-            : null,
-      ),
-    );
+    if (isError) {
+      AppSnack.error(
+        context,
+        message,
+        actionLabel: '查看日志',
+        onAction: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LogPage()),
+        ),
+      );
+      return;
+    }
+    AppSnack.info(context, message);
   }
 
   String _unconfirmedMessage(CommandCode command) {
