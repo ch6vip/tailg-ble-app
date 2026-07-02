@@ -120,6 +120,13 @@ void main() {
       expect(config.phoneMode, 'SM-G998B');
       expect(config.connectTimeout, const Duration(seconds: 15));
       expect(config.responseTimeout, const Duration(seconds: 15));
+      expect(config.retryBaseDelay, const Duration(milliseconds: 500));
+      expect(config.retryDelayForAttempt(0), const Duration(milliseconds: 500));
+      expect(config.retryDelayForAttempt(1), const Duration(seconds: 1));
+      expect(
+        config.retryDelayForAttempt(-1),
+        const Duration(milliseconds: 500),
+      );
       // Forward-Service-Ip is omitted by default (P2-8: was 'localhost' +
       // a duplicate 'Forward-ServiceIp' typo). Only emitted when configured.
       expect(config.defaultHeaders.containsKey('Forward-Service-Ip'), isFalse);

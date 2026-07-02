@@ -72,6 +72,7 @@ class OfficialCloudApiConfig {
   final String userAgent;
   final Duration connectTimeout;
   final Duration responseTimeout;
+  final Duration retryBaseDelay;
 
   const OfficialCloudApiConfig({
     this.apiBase = 'https://www.tailgdd.com/v1/api/',
@@ -87,9 +88,15 @@ class OfficialCloudApiConfig {
     this.userAgent = 'okhttp/4.9.3',
     this.connectTimeout = const Duration(seconds: 15),
     this.responseTimeout = const Duration(seconds: 15),
+    this.retryBaseDelay = const Duration(milliseconds: 500),
   });
 
   Uri resolve(String path) => Uri.parse(apiBase).resolve(path);
+
+  Duration retryDelayForAttempt(int attempt) {
+    final normalizedAttempt = attempt < 0 ? 0 : attempt;
+    return retryBaseDelay * (normalizedAttempt + 1);
+  }
 
   Map<String, String> get defaultHeaders => {
     HttpHeaders.contentTypeHeader: 'application/json',
@@ -185,7 +192,7 @@ class _OfficialCloudApiClient {
         );
       } on TimeoutException {
         if (attempt < maxRetries) {
-          await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
+          await Future.delayed(config.retryDelayForAttempt(attempt));
           continue;
         }
         _recordRequestFailure(
@@ -197,7 +204,7 @@ class _OfficialCloudApiClient {
         throw const OfficialCloudApiException('请求超时，请检查网络');
       } on SocketException {
         if (attempt < maxRetries) {
-          await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
+          await Future.delayed(config.retryDelayForAttempt(attempt));
           continue;
         }
         _recordRequestFailure(
