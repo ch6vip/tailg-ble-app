@@ -11,6 +11,7 @@ import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/app_snack.dart';
 
 class OfficialCloudPage extends StatefulWidget {
   const OfficialCloudPage({super.key});
@@ -115,12 +116,11 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
   }
 
   void _showSnack(String message, {bool error = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: error ? AppColors.danger : null,
-      ),
-    );
+    if (error) {
+      AppSnack.error(context, message);
+    } else {
+      AppSnack.success(context, message);
+    }
   }
 
   String _errorMessage(Object e) {
@@ -733,9 +733,7 @@ class _StaleLinkNotice extends StatelessWidget {
         onTap: () async {
           await officialCloudService.unlinkLocalVehicle(vehicle.key);
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('已清理失效关联，请重新关联本地 BLE 车辆')),
-            );
+            AppSnack.success(context, '已清理失效关联，请重新关联本地 BLE 车辆');
           }
         },
         child: const Padding(
@@ -1128,11 +1126,7 @@ class OfficialVehicleLinkPage extends StatelessWidget {
                               );
                               await _applyLocalVehicle(local);
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('已关联并切换为默认本地车辆'),
-                                  ),
-                                );
+                                AppSnack.success(context, '已关联并切换为默认本地车辆');
                               }
                             },
                           ),
@@ -1149,9 +1143,7 @@ class OfficialVehicleLinkPage extends StatelessWidget {
                                 vehicle.key,
                               );
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('已取消关联')),
-                                );
+                                AppSnack.success(context, '已取消关联');
                               }
                             },
                             icon: const Icon(
