@@ -7,6 +7,7 @@ import '../services/app_preferences_service.dart';
 import '../services/diagnostic_export_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/app_snack.dart';
 
 const _appVersion = '1.0.0+1';
 const _buildCommit = String.fromEnvironment(
@@ -195,21 +196,14 @@ class AboutAppPage extends StatelessWidget {
     ).buildReport(logService.all);
     await Clipboard.setData(ClipboardData(text: report));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已复制诊断报告'), duration: Duration(seconds: 1)),
-    );
+    AppSnack.success(context, '已复制诊断报告');
   }
 
   Future<void> _openRepository(BuildContext context) async {
     final uri = Uri.parse('https://github.com/ch6vip/tailg-ble-app');
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('无法打开 GitHub'),
-          duration: Duration(seconds: 1),
-        ),
-      );
+      AppSnack.error(context, '无法打开 GitHub');
     }
   }
 
