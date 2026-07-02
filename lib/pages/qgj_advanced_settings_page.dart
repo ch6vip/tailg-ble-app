@@ -8,6 +8,7 @@ import '../services/log_service.dart';
 import '../services/vehicle_settings_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/app_snack.dart';
 
 class QgjAdvancedSettingsPage extends StatefulWidget {
   const QgjAdvancedSettingsPage({super.key});
@@ -99,13 +100,11 @@ class _QgjAdvancedSettingsPageState extends State<QgjAdvancedSettingsPage> {
   }
 
   void _showSnack(String message, bool success) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: success ? null : AppColors.danger,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    if (success) {
+      AppSnack.success(context, message);
+    } else {
+      AppSnack.error(context, message);
+    }
   }
 
   @override
