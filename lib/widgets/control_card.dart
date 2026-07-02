@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/theme/app_motion.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 /// v8 floating control card — Ninebot-style central ink-button
 /// with long-press power ring progress.
@@ -144,7 +145,7 @@ class _ControlCardState extends State<ControlCard> {
 }
 
 /// Side action button (seat bucket / more functions).
-class _SideButton extends StatefulWidget {
+class _SideButton extends StatelessWidget {
   const _SideButton({
     this.size = 52,
     required this.icon,
@@ -162,59 +163,40 @@ class _SideButton extends StatefulWidget {
   final VoidCallback? onTap;
 
   @override
-  State<_SideButton> createState() => _SideButtonState();
-}
-
-class _SideButtonState extends State<_SideButton> {
-  bool _pressed = false;
-
-  void _setPressed(bool v) {
-    if (!mounted || _pressed == v) return;
-    setState(() => _pressed = v);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final effectiveOnTap = widget.disabled ? null : widget.onTap;
-    return GestureDetector(
-      onTapDown: effectiveOnTap != null ? (_) => _setPressed(true) : null,
-      onTapUp: effectiveOnTap != null ? (_) => _setPressed(false) : null,
-      onTapCancel: effectiveOnTap != null ? () => _setPressed(false) : null,
+    final effectiveOnTap = disabled ? null : onTap;
+    return AppPressable(
+      enabled: effectiveOnTap != null,
       onTap: effectiveOnTap,
-      child: AnimatedScale(
-        scale: _pressed && !widget.disabled ? AppMotion.pressScale : 1.0,
-        duration: AppMotion.micro,
-        curve: AppMotion.pressCurve,
-        child: AnimatedOpacity(
-          opacity: widget.disabled ? 0.45 : 1.0,
-          duration: const Duration(milliseconds: 200),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: widget.size,
-                height: widget.size,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerLow,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  widget.icon,
-                  size: widget.size * 0.45,
-                  color: widget.color,
-                ),
+      pressedScale: AppMotion.pressScale,
+      duration: AppMotion.micro,
+      curve: AppMotion.pressCurve,
+      haptic: false,
+      child: AnimatedOpacity(
+        opacity: disabled ? 0.45 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLow,
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 8),
-              Text(
-                widget.label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+              child: Icon(icon, size: size * 0.45, color: color),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
