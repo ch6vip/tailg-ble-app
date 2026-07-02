@@ -260,7 +260,7 @@ class _TravelDayCard extends StatelessWidget {
   }
 }
 
-class _TravelRecordCard extends StatefulWidget {
+class _TravelRecordCard extends StatelessWidget {
   final OfficialTravelRecord record;
   final int? pointCount;
   final bool loading;
@@ -274,113 +274,68 @@ class _TravelRecordCard extends StatefulWidget {
   });
 
   @override
-  State<_TravelRecordCard> createState() => _TravelRecordCardState();
-}
-
-class _TravelRecordCardState extends State<_TravelRecordCard> {
-  static const _motionDuration = Duration(milliseconds: 150);
-  static const _motionCurve = Curves.easeOutCubic;
-
-  bool _pressed = false;
-
-  void _setPressed(bool value) {
-    if (!mounted || _pressed == value) return;
-    setState(() => _pressed = value);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final interactive = !widget.loading;
-    return AnimatedScale(
-      duration: _motionDuration,
-      curve: _motionCurve,
-      scale: _pressed ? 0.985 : 1,
-      child: AnimatedContainer(
-        duration: _motionDuration,
-        curve: _motionCurve,
-        decoration: BoxDecoration(
-          color: _pressed ? _officialPressedBg : AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadii.card),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            splashColor: AppColors.primary.withValues(alpha: 0.06),
-            highlightColor: Colors.black.withValues(alpha: 0.025),
-            onTap: interactive
-                ? () {
-                    _setPressed(false);
-                    HapticFeedback.selectionClick();
-                    widget.onTap();
-                  }
-                : null,
-            onTapDown: interactive ? (_) => _setPressed(true) : null,
-            onTapUp: interactive ? (_) => _setPressed(false) : null,
-            onTapCancel: interactive ? () => _setPressed(false) : null,
-            borderRadius: BorderRadius.circular(AppRadii.card),
-            child: SizedBox(
-              height: 86,
-              child: Row(
+    final interactive = !loading;
+    return AppPressable(
+      enabled: interactive,
+      pressedScale: 0.985,
+      background: AppColors.surface,
+      pressedBackground: _officialPressedBg,
+      borderRadius: BorderRadius.circular(AppRadii.card),
+      haptic: false,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: SizedBox(
+        height: 86,
+        child: Row(
+          children: [
+            const SizedBox(width: 12),
+            SizedBox(width: 76, child: _TrackTimeRail(record: record)),
+            Container(width: 1, height: 46, color: AppColors.outlineVariant),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 76,
-                    child: _TrackTimeRail(record: widget.record),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 46,
-                    color: AppColors.outlineVariant,
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.record.mileageLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.sectionTitle.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '${widget.record.averageSpeedLabel}  ·  ${widget.record.durationLabel}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.caption,
-                        ),
-                      ],
+                  Text(
+                    record.mileageLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                  SizedBox(
-                    width: 72,
-                    child: Text(
-                      widget.pointCount == null
-                          ? '点击读取'
-                          : '${widget.pointCount} 点',
-                      textAlign: TextAlign.right,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.caption,
-                    ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${record.averageSpeedLabel}  ·  ${record.durationLabel}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption,
                   ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: AppColors.textTertiary,
-                    size: AppIconSizes.md,
-                  ),
-                  const SizedBox(width: 10),
                 ],
               ),
             ),
-          ),
+            SizedBox(
+              width: 72,
+              child: Text(
+                pointCount == null ? '点击读取' : '$pointCount 点',
+                textAlign: TextAlign.right,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.caption,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textTertiary,
+              size: AppIconSizes.md,
+            ),
+            const SizedBox(width: 10),
+          ],
         ),
       ),
     );
