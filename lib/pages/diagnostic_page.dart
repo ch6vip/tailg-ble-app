@@ -6,6 +6,7 @@ import '../ble/connection_manager.dart' as ble;
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/app_snack.dart';
 
 class FaultInfo {
   final int code;
@@ -161,9 +162,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
   // PLACEHOLDER_DIAGNOSTIC_METHODS
   Future<void> _runDiagnostic() async {
     if (connectionManager.state != ble.ConnectionState.ready) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('请先连接车辆')));
+      AppSnack.info(context, '请先连接车辆');
       return;
     }
     setState(() => _scanning = true);
@@ -194,9 +193,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
     } catch (e) {
       _log.operation('诊断失败', detail: e.toString(), level: LogLevel.error);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('诊断失败: $e')));
+        AppSnack.error(context, '诊断失败: $e');
       }
     } finally {
       if (mounted) setState(() => _scanning = false);
