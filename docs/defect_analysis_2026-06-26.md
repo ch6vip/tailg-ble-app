@@ -22,14 +22,14 @@
 | P2-8 | 一般 | ✅ 已修复 | 删除 `Forward-ServiceIp` 笔误头;`forwardServiceIp` 默认空 + 仅在非空时发送 |
 | P2-9 | 一般 | ✅ 已修复 | LogService 增加 BLE 登录帧脱敏 + broadcast stream |
 | P2-10 | 一般 | ✅ 已修复 | `parser.dart` token 帧显式校验最小长度 16 hex 后再切片 |
-| P2-11 | 一般 | 📋 待处理 | 全局 `homeTabIndex` 迁移到 AppServices(P3 级,低风险) |
+| P2-11 | 一般 | ✅ 已修复 | 全局 `homeTabIndex` 已迁移到 `AppServices` |
 | P3-12 | 建议 | ✅ 已修复 | `log_page.dart` 订阅 `LogService.changes` stream 自动刷新 |
 | P3-13 | 建议 | 📋 待处理 | `_ridingMode` 持久化(独立 PR) |
 | P3-14 | 建议 | 📋 待处理 | 主题色硬编码迁移到 `AppColors` token(独立 PR) |
 | P3-15 | 建议 | 📋 待处理 | `_initialized` + `_initializing` 抽基类(独立 PR) |
 
-**已修复**:9 项(1 P0 + 3 P1 + 4 P2 + 1 P3)
-**待处理**:6 项(均为独立 PR 范畴,不阻塞当前发布)
+**已修复**:10 项(1 P0 + 3 P1 + 5 P2 + 1 P3)
+**待处理**:5 项(均为独立 PR 范畴,不阻塞当前发布)
 
 值得注意:`flutter analyze` 全绿(No issues found),但 P0 语义反转 bug 仍存在——说明此类"逻辑错配"无法被静态分析捕获,依赖集成测试与人工审查。
 
@@ -117,7 +117,7 @@
 
 - **文件**:`lib/main.dart:40`
 - **问题**:`final homeTabIndex = ValueNotifier<int>(0);` 顶级可变单例,跨页面共享,违反单一数据源原则,易产生监听器泄漏。
-- **修复**:收敛到 AppServices 或路由状态管理。
+- **修复**:`homeTabIndex` 已收敛为 `AppServices.homeTabIndex`;`main.dart` 仅保留顶层 getter 委托 `AppServices.instance`,并由 `service_locator_test.dart` 覆盖 override/reset 行为。
 
 ---
 
