@@ -33,16 +33,16 @@ Workflows live in `.github/workflows/`:
 
 | File | Purpose | Trigger |
 |------|---------|---------|
-| `build.yml` | Main CI/CD: `ci` (format → analyze → test) → `build` (signed APK) → `release` (GitHub Release) | push to `master`, `v*` tags, PR to `master`, manual |
+| `build.yml` | CI gate (`format` → `analyze` → `test`) plus signed APK artifact build for non-PR runs | push/PR to `master` or `develop`, manual |
 | `release.yml` | Standalone build & release with rich release notes and Telegram notification | `v*` tags, manual |
 
-> ⚠️ **Known issue (P0-8)**: `build.yml` and `release.yml` both trigger on `v*` tags and both create a GitHub Release via `softprops/action-gh-release`, producing duplicate/competing Releases. Fix tracked in Sprint 1.
+`release.yml` is the only workflow that listens to `v*` tags and creates GitHub Releases. `build.yml` no longer listens to tags and does not call `softprops/action-gh-release`.
 
 **Quality gates** enforced on every PR via `build.yml` ci job: `dart format --set-exit-if-changed`, `flutter analyze`, `flutter test`. Coverage reports are **not** currently uploaded (planned in Sprint 2).
 
-**Build strategy**: `master` push → signed release APK (arm64); `v*` tags → GitHub Release with APK artifact. The `develop` branch currently has no special build strategy. Release signing keys are injected via GitHub Secrets at build time — never committed to the repo.
+**Build strategy**: `master`/`develop` push → signed release APK artifact (arm64); `v*` tags → GitHub Release with APK artifact via `release.yml`. Release signing keys are injected via GitHub Secrets at build time — never committed to the repo.
 
-**Notifications**: Pipeline success/failure and Release publish events are pushed to Telegram. Configuration details and required Secrets reference in `docs/github_actions_guide.md`.
+**Notifications**: Release publish events are pushed to Telegram. Configuration details and required Secrets reference in `docs/github_actions_guide.md`.
 
 **Cache**: Gradle dependencies are cached across builds. Flutter/Dart packages are cached by `subosito/flutter-action`.
 

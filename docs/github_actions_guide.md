@@ -1,6 +1,6 @@
-# Tailg BLE App — GitHub Actions CI/CD 配置指南
+# Tailg BLE App - GitHub Actions CI/CD 配置指南
 
-> 自动生成于项目架构分析。本文档说明每个工作流的关键步骤、触发规则及所需 Secrets 配置。
+> 本文档按 `.github/workflows/` 当前实际配置维护。当前只有 `build.yml` 和 `release.yml` 两个工作流，不存在 `ci.yml`。
 
 ---
 
@@ -10,11 +10,11 @@
 |------|------|
 | 框架 | Flutter 3.32.1 / Dart 3.8.1 |
 | 构建工具 | Gradle (Kotlin DSL), compileSdk 36, JDK 11 |
-| 依赖管理 | `flutter pub get`（pubspec.yaml + pubspec.lock） |
-| 测试框架 | `flutter_test`（19 个测试文件） |
+| 依赖管理 | `flutter pub get` (`pubspec.yaml` + `pubspec.lock`) |
+| 测试框架 | `flutter_test` |
 | 代码规范 | `flutter_lints`，Dart formatter |
-| 目标平台 | Android（minSdk 23, arm64 优先） |
-| 签名方式 | `key.properties` + `release.keystore`（Base64 注入） |
+| 目标平台 | Android (`minSdk 23`, arm64 优先) |
+| 签名方式 | GitHub Secrets 注入 keystore 与 `android/key.properties` |
 
 ---
 
@@ -22,194 +22,143 @@
 
 | 文件 | 用途 | 触发条件 |
 |------|------|----------|
-| `ci.yml` | 主 CI/CD 全流程管道 | push/PR 到 master/develop，tag v*，手动 |
-| `release.yml` | 独立 Release 发布 | push tag v*，手动 |
-| `build.yml` | 旧版构建工作流（保留兼容） | push/PR 到 master，tag v*，手动 |
+| `build.yml` | CI 门禁 + 非 PR 场景构建签名 APK artifact | push 到 `master`/`develop`，PR 到 `master`/`develop`，手动 |
+| `release.yml` | 构建签名 APK 并发布 GitHub Release | push `v*` tag，手动 |
 
-> 推荐：`ci.yml` 已涵盖旧版 `build.yml` 的全部功能，可在验证后删除 `build.yml` 避免重复触发。
+当前分工：
 
----
-
-## 工作流详细说明
-
-### 1. `ci.yml` — 主 CI/CD 管道
-
-#### 阶段结构
-
-```
-Stage 1 ─ 并行 ──────→  Stage 2 ─────→  Stage 3 ──────→  Stage 4 ─────→  Stage 5
-┌─────────┐           ┌──────────┐    ┌──────────────┐   ┌───────────────┐  ┌───────────┐
-│ format   │──┐        │          │    │ build-debug  │   │ deploy-dev    │  │ notify-   │
-│ (格式检查) │  ├──────→│  test    │───→│ (develop/PR) │──→│ (develop)     │  │ success/  │
-├─────────┤  │        │ (测试+   │    ├──────────────┤   ├───────────────┤  │ failure   │
-│ analyze  │──┘        │  覆盖率) │    │ build-release│   │ deploy-staging│  │ (汇总通知) │
-│ (静态分析) │           │          │    │ (master/tag) │──→│ (master)      │  │           │
-└─────────┘           └──────────┘    └──────────────┘   │ deploy-prod   │  └───────────┘
-                                                          │ (tag v*)      │
-                                                          └───────────────┘
-```
-
-#### 各 Step 详解
-
-| Job | Step | 作用 |
-|-----|------|------|
-| **format** | `dart format --output=none --set-exit-if-changed .` | 检查全部 Dart 代码是否符合官方格式规范，不一致则失败 |
-| **analyze** | `flutter pub get` + `flutter analyze` | 安装依赖后运行 Dart 静态分析器，检测类型错误、未使用变量、lint 违规等 |
-| **test** | `flutter test --coverage` | 运行 `test/` 下全部 19 个单元测试，生成 LCOV 覆盖率文件 |
-| **test** | `codecov/codecov-action@v5` | 将 `coverage/lcov.info` 上传至 Codecov，生成在线覆盖率报告 |
-| **test** | `upload-artifact@v4` | 保存覆盖率原始报告为 workflow artifact（7 天保留期） |
-| **test** | Post coverage summary | 在 GitHub Actions 运行摘要中输出测试文件和覆盖率概览 |
-| **build-debug** | Gradle 缓存 (`actions/cache@v4`) | 缓存 `~/.gradle/caches` 和 `~/.gradle/wrapper`，减少重复构建时间 |
-| **build-debug** | `flutter build apk --debug` | 编译 Debug APK（develop 分支和 PR 触发） |
-| **build-debug** | SHA-256 校验 | 生成 APK 的 SHA-256 校验和文件，防止篡改检测 |
-| **build-release** | Decode keystore | 从 `KEYSTORE_BASE64` Secret 解码出签名密钥文件 |
-| **build-release** | Create `key.properties` | 用 Secrets 中的密码和别名写入 Android 签名配置 |
-| **build-release** | `flutter build apk --release --target-platform android-arm64` | 编译签名 Release APK（仅 arm64，对应绝大多数真机） |
-| **deploy-development** | 下载 artifact + 分发 | 将 Debug APK 部署到开发分发渠道 |
-| **deploy-staging** | Firebase App Distribution | 将签名 APK 推送到 Firebase App Distribution（可选，需配置 Token） |
-| **deploy-production** | `softprops/action-gh-release@v2` | 创建 GitHub Release，上传签名 APK 和校验和文件 |
-| **notify-failure** | Slack 通知 | 管道任何步骤失败时推送 Slack 消息（需配置 Webhook） |
-| **notify-success** | 成功汇总 | 在运行摘要中输出各阶段通过状态 |
-
-#### 触发条件矩阵
-
-| 触发事件 | 分支/标签 | 执行范围 |
-|----------|-----------|----------|
-| `push` | `develop` | format → analyze → test → build-debug → deploy-development → notify |
-| `push` | `master` | format → analyze → test → build-release → deploy-staging → notify |
-| `push` | `v*` (tag) | format → analyze → test → build-release → deploy-production → notify |
-| `pull_request` | → `master`/`develop` | format → analyze → test → build-debug → notify |
-| `workflow_dispatch` | 手动选择 | 全流程（可按需选择目标环境） |
+- `build.yml` 不监听 `v*` tag，也不创建 GitHub Release。
+- `release.yml` 是唯一 tag 发布入口，负责 `softprops/action-gh-release`。
+- 两个工作流都会在构建前执行 `dart format --output=none --set-exit-if-changed .`、`flutter analyze`、`flutter test`。
+- 当前没有覆盖率上传、Codecov、Firebase 分发或 Slack 通知步骤。
 
 ---
 
-### 2. `release.yml` — 独立 Release 发布
+## `build.yml` - CI 与 APK Artifact
 
-#### 阶段结构
+### 触发规则
 
-```
-Tag v* 推送 / 手动触发
-       │
-       ▼
-┌────────────────┐
-│ Build & Publish│
-│ Release        │
-│                │
-│ 1. 签名配置    │
-│ 2. 构建 APK    │
-│ 3. 提取版本号  │
-│ 4. 创建 Release│
-└────────────────┘
-```
+| 触发事件 | 分支 | 执行范围 |
+|----------|------|----------|
+| `pull_request` | `master` / `develop` | `ci` |
+| `push` | `master` / `develop` | `ci` -> `build` |
+| `workflow_dispatch` | 手动选择当前 ref | `ci` -> `build` |
 
-#### 关键步骤
+### Job 结构
+
+| Job | 条件 | 关键步骤 |
+|-----|------|----------|
+| `ci` | 所有触发事件 | checkout、安装 Flutter、`flutter pub get`、format、analyze、test |
+| `build` | `needs: ci` 且不是 PR | Gradle 缓存、解码 keystore、生成 `android/key.properties`、构建 release APK、生成 SHA-256、上传 artifact |
+
+### 构建产物
+
+| 项 | 配置 |
+|----|------|
+| APK 路径 | `build/app/outputs/flutter-apk/app-release.apk` |
+| 校验文件 | `build/app/outputs/flutter-apk/app-release.apk.sha256` |
+| Artifact 名称 | `tailg-ble-${{ github.ref_name }}-${{ github.sha }}` |
+| 保留时间 | 14 天 |
+| 压缩级别 | 0 |
+
+---
+
+## `release.yml` - Release 发布
+
+### 触发规则
+
+| 触发事件 | 行为 |
+|----------|------|
+| `push` `v*` tag | checkout 当前 tag，构建并发布 Release |
+| `workflow_dispatch` | 可填写 `tag`；留空时使用当前 ref |
+
+手动补发 Release 时建议填写已存在的 tag，避免在分支 ref 上生成非预期 Release。
+
+### Job 结构
 
 | Step | 作用 |
 |------|------|
-| 解码密钥 | 从 `KEYSTORE_BASE64` 还原签名密钥 |
-| 创建 `key.properties` | 写入签名参数 |
-| `flutter build apk --release` | 构建签名 APK |
-| 提取版本号 | 从 `pubspec.yaml` 解析版本号，检测是否为 pre-release |
-| `softprops/action-gh-release@v2` | 创建/更新 GitHub Release，附带 APK 和 SHA-256 |
+| checkout | 使用 tag 输入或当前 ref |
+| setup Flutter | 安装 Flutter 3.32.1 stable，启用 pub cache |
+| quality gates | `flutter pub get`、format、analyze、test |
+| signing | 解码 keystore，写入 `android/key.properties` |
+| build | `flutter build apk --release --target-platform android-arm64` |
+| checksum | 生成 APK SHA-256 |
+| version | 从 `pubspec.yaml` 提取 App 版本，并根据 tag 判断 prerelease |
+| release | 用 `softprops/action-gh-release@v2` 创建/更新 GitHub Release |
+| notify | 发布成功后通过 Telegram 推送通知 |
+| summary | 写入 GitHub Actions run summary |
 
-#### 与 `ci.yml` 的关系
+### Release 产物
 
-- `ci.yml` 在 tag 推送时会**同时**执行完整 CI 管道和发布流程
-- `release.yml` 仅执行构建+发布，不触发 CI
-- 两者独立运行，互不阻塞。如果 `ci.yml` 的测试失败而只想补发 Release，可手动触发 `release.yml`
+| 文件 | 说明 |
+|------|------|
+| `app-release.apk` | arm64 release APK |
+| `app-release.apk.sha256` | SHA-256 校验文件 |
 
----
+Release 标题格式：
 
-## 仓库 Secrets 配置项
-
-需要在仓库 Settings → Secrets and variables → Actions 中配置以下 Secrets：
-
-### 必需（签名构建）
-
-| Secret 名称 | 说明 | 获取方式 |
-|-------------|------|----------|
-| `KEYSTORE_BASE64` | 签名密钥文件（`.keystore` 或 `.jks`）的 Base64 编码 | `base64 -w0 release.keystore` |
-| `KEYSTORE_PASSWORD` | 密钥库密码 | 创建密钥时设置 |
-| `KEY_PASSWORD` | 密钥密码 | 创建密钥时设置 |
-| `KEY_ALIAS` | 密钥别名 | 创建密钥时设置 |
-
-> 生成 Base64：`base64 -w0 release.keystore` → 复制输出字符串到 Secret
-
-### 推荐（覆盖率报告）
-
-| Secret 名称 | 说明 | 获取方式 |
-|-------------|------|----------|
-| `CODECOV_TOKEN` | Codecov 上传令牌 | 在 [Codecov](https://app.codecov.io) 注册仓库后获取 |
-
-> 公开仓库不强制需要 Token，但推荐配置以保证上传稳定性。
-
-### 可选（部署与通知）
-
-| Secret 名称 | 说明 | 用途 |
-|-------------|------|------|
-| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token | CI 失败/成功 + Release 通知推送（**已配置**） |
-| `TELEGRAM_CHAT_ID` | Telegram 会话/频道 ID | 通知目标（**已配置**） |
-| `FIREBASE_TOKEN` | Firebase CI 令牌 | 预发布环境分发 APK |
-| `FIREBASE_APP_ID_STAGING` | Firebase App ID（Staging） | 指定分发目标应用 |
-| `DEV_DEPLOY_WEBHOOK_URL` | 开发分发 Webhook | 开发环境 APK 内部分发 |
-| `SLACK_BOT_TOKEN` | Slack Bot xoxb- Token | 失败通知推送到 Slack |
-| `SLACK_WEBHOOK_URL` | Slack Incoming Webhook URL | 失败通知（备选方案） |
-| `SLACK_CHANNEL_ID` | Slack 频道 ID | 通知目标频道 |
-
----
-
-## 分支策略与环境映射
-
-```
-develop ──────────────────────────────→ development（Debug APK）
-  │
-  │  PR ───→ format + analyze + test
-  │
-  ▼
-master ───────────────────────────────→ staging（签名 APK + Firebase 分发）
-  │
-  │  tag v1.0.0 ──────────────────────→ production（GitHub Release）
-  │  tag v1.0.0-rc1 ─────────────────→ production（Pre-release）
-  │
-  ▼
-hotfix/* ──→ PR 到 master ──→ 同上
+```text
+Tailg BLE v<pubspec version> (<tag>)
 ```
 
-### 环境保护规则（推荐）
-
-在仓库 Settings → Environments 中为各环境设置保护规则：
-
-| 环境 | 保护规则建议 |
-|------|-------------|
-| `development` | 无特殊限制 |
-| `staging` | 需要至少 1 名审查者批准 |
-| `production` | 需要至少 2 名审查者批准，仅允许 `v*` 标签触发 |
+带 `-rc`、`-beta`、`-alpha` 的 tag 会标记为 prerelease。
 
 ---
 
-## 缓存策略
+## Secrets
 
-| 缓存类型 | 路径 | Key 策略 |
-|----------|------|----------|
-| Flutter/Dart 包 | 由 `subosito/flutter-action@v2` 的 `cache: true` 自动管理 | 基于 `pubspec.lock` |
-| Gradle 依赖 | `~/.gradle/caches`, `~/.gradle/wrapper` | 基于 `android/**/*.gradle*` 和 `gradle-wrapper.properties` 的 hash |
+### 必需：签名构建
 
-这些缓存可将重复构建时间从 ~8 分钟缩短至 ~2 分钟。
+| Secret | 用途 |
+|--------|------|
+| `KEYSTORE_BASE64` | Base64 编码的 Android keystore |
+| `KEYSTORE_PASSWORD` | keystore 密码 |
+| `KEY_PASSWORD` | key 密码 |
+| `KEY_ALIAS` | key alias |
+
+`build.yml` 会在缺少签名 Secret 时显式失败。`release.yml` 的签名属性也依赖同一组 Secret。
+
+### 发布通知
+
+| Secret | 用途 |
+|--------|------|
+| `TELEGRAM_CHAT_ID` | Telegram 接收会话 |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot token |
+
+当前 Release 成功后会执行 Telegram 通知步骤；如果不需要通知，应同步调整 `release.yml`，避免缺少 Secret 导致发布后的通知步骤失败。
 
 ---
 
-## 快速验证
+## 权限与并发
 
-推送配置后，可通过以下方式验证：
+| 工作流 | `permissions` | `concurrency` |
+|--------|---------------|---------------|
+| `build.yml` | `contents: read` | `build-${{ github.ref }}`，新运行会取消同 ref 旧运行 |
+| `release.yml` | `contents: write` | `release-${{ github.ref }}`，不取消同 ref 旧运行 |
+
+---
+
+## 本地验证命令
+
+提交前建议执行：
 
 ```bash
-# 本地模拟 CI 检查
 dart format --output=none --set-exit-if-changed .
 flutter analyze
-flutter test --coverage
-
-# 本地模拟构建
-flutter build apk --debug
+flutter test
 ```
 
-或直接提交到 `develop` 分支触发自动化管道验证。
+本地 release APK 构建需要准备 `android/key.properties` 和 keystore：
+
+```bash
+flutter build apk --release --target-platform android-arm64
+```
+
+---
+
+## 当前限制
+
+- 未上传覆盖率报告，覆盖率门禁仍是后续任务。
+- `build.yml` 对 `master` 与 `develop` push 都会构建签名 APK artifact，但不会部署到外部分发渠道。
+- `release.yml` 是唯一 GitHub Release 发布入口；验证 tag 发布时只需检查该工作流。
