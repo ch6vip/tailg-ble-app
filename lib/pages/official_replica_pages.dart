@@ -7,6 +7,7 @@ import '../services/log_service.dart';
 import '../services/replica_feature_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/app_snack.dart';
 
 class NfcKeyPage extends StatefulWidget {
   const NfcKeyPage({super.key});
@@ -283,9 +284,7 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
-    );
+    AppSnack.info(context, message);
   }
 
   @override
