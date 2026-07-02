@@ -8,6 +8,7 @@ import '../services/log_service.dart';
 import '../services/vehicle_settings_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/app_snack.dart';
 import 'qgj_advanced_settings_page.dart';
 
 class VehicleSettingsPage extends StatefulWidget {
@@ -137,13 +138,11 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
 
   void _showResult(_SettingsActionResult result) {
     if (!mounted || result.message.isEmpty) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(result.message),
-        backgroundColor: result.success ? null : AppColors.danger,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    if (result.success) {
+      AppSnack.success(context, result.message);
+    } else {
+      AppSnack.error(context, result.message);
+    }
   }
 
   @override
@@ -1149,9 +1148,7 @@ const _pendingCommandMessage = '命令待真机验证，暂不开放写入';
 
 void _showInfoSnack(BuildContext context, String? message) {
   final text = message ?? _pendingCommandMessage;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(text), duration: const Duration(seconds: 2)),
-  );
+  AppSnack.info(context, text);
 }
 
 class _RowIcon extends StatelessWidget {
@@ -1191,11 +1188,9 @@ class _InsetDivider extends StatelessWidget {
 
 void _showSnack(BuildContext context, _SettingsActionResult result) {
   if (!context.mounted || result.message.isEmpty) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(result.message),
-      backgroundColor: result.success ? null : AppColors.danger,
-      duration: const Duration(seconds: 2),
-    ),
-  );
+  if (result.success) {
+    AppSnack.success(context, result.message);
+  } else {
+    AppSnack.error(context, result.message);
+  }
 }
