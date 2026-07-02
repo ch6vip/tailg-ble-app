@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +9,24 @@ import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
 
 void main() {
+  test('ControlPage keeps home stream subscriptions split', () {
+    final source = File('lib/pages/control_page.dart').readAsStringSync();
+
+    expect(source, isNot(contains('_createCombinedStream')));
+    expect(source, isNot(contains('_combinedStream')));
+    expect(source, isNot(contains('StreamController<List<dynamic>>')));
+    expect(
+      RegExp(
+        r'StreamBuilder<ble\.ConnectionState>\(',
+      ).allMatches(source).length,
+      greaterThanOrEqualTo(2),
+      reason:
+          '_HomeTopSection and _RidingModeSelector should keep independent '
+          'connection-state subscriptions instead of sharing one combined '
+          'home stream.',
+    );
+  });
+
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     FlutterSecureStorage.setMockInitialValues({});
