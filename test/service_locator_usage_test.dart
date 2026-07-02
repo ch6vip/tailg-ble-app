@@ -32,6 +32,34 @@ void main() {
       );
     },
   );
+
+  test('pages and widgets route snack messages through AppSnack', () {
+    final rawSnackUsage = RegExp(
+      r'ScaffoldMessenger|showSnackBar\s*\(|\bSnackBar\s*\(',
+    );
+    final offenders = <String>[];
+
+    for (final root in [Directory('lib/pages'), Directory('lib/widgets')]) {
+      for (final entity in root.listSync(recursive: true)) {
+        if (entity is! File || !entity.path.endsWith('.dart')) continue;
+        if (entity.path.endsWith('app_snack.dart')) continue;
+        final source = entity.readAsStringSync();
+        final matches = rawSnackUsage.allMatches(source);
+        for (final match in matches) {
+          final line = _lineNumber(source, match.start);
+          offenders.add('${entity.path}:$line ${match.group(0)}');
+        }
+      }
+    }
+
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Use AppSnack so snack styling, icons, and theme colors stay '
+          'centralized.',
+    );
+  });
 }
 
 int _lineNumber(String source, int offset) {
