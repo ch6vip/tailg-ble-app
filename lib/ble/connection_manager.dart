@@ -1012,7 +1012,9 @@ class ConnectionManager {
     // Disconnect device
     try {
       await _device?.disconnect();
-    } catch (_) {}
+    } catch (e) {
+      _log.ble('释放连接时断开设备失败', detail: e.toString(), level: LogLevel.warning);
+    }
 
     // Close controllers
     _stateController.close();
