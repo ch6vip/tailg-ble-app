@@ -9,6 +9,7 @@ import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/app_snack.dart';
 
 class BatteryDetailsPage extends StatelessWidget {
   const BatteryDetailsPage({super.key});
@@ -83,9 +84,7 @@ class BatteryDetailsPage extends StatelessWidget {
 
   Future<void> _refreshOfficialBattery(BuildContext context) async {
     if (!officialCloudService.state.signedIn) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('请先登录官方账号')));
+      AppSnack.info(context, '请先登录官方账号');
       return;
     }
     try {
@@ -97,9 +96,7 @@ class BatteryDetailsPage extends StatelessWidget {
         level: LogLevel.warning,
       );
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      AppSnack.error(context, e.toString());
     }
   }
 }
