@@ -136,7 +136,7 @@
 ## 测试与质量门禁评估
 
 ### 测试覆盖
-- 当前 test/ 共 32 个 `*_test.dart` 文件,覆盖协议解析(ble_parser)、云服务(official_cloud)、车辆存储(vehicle_store)、proximity / auto_connect / manual_mode service 等。
+- 当前 test/ 共 34 个 `*_test.dart` 文件,覆盖协议解析(ble_parser)、云服务(official_cloud)、车辆存储(vehicle_store)、proximity / auto_connect / manual_mode service 等。
 - **盲区**:
   - UI 绑定层测试薄弱,P0-1 的"开关 → 服务"绑定未被任何测试覆盖。
   - 无 connection_manager connected → ready 超时场景测试。
