@@ -424,6 +424,7 @@ class _SegmentedTabs extends StatelessWidget {
           final item = items[i];
           return Expanded(
             child: _OfficialTabButton(
+              label: item.label,
               active: active,
               onTap: () => onChanged(i),
               child: Row(
@@ -454,11 +455,13 @@ class _SegmentedTabs extends StatelessWidget {
 }
 
 class _OfficialTabButton extends StatelessWidget {
+  final String label;
   final bool active;
   final VoidCallback onTap;
   final Widget child;
 
   const _OfficialTabButton({
+    required this.label,
     required this.active,
     required this.onTap,
     required this.child,
@@ -473,6 +476,9 @@ class _OfficialTabButton extends StatelessWidget {
       background: color,
       pressedBackground: active ? AppColors.primary : _officialPressedBg,
       borderRadius: BorderRadius.circular(AppRadii.card),
+      semanticsLabel: label,
+      semanticsButton: true,
+      semanticsSelected: active,
       child: SizedBox(height: 44, child: child),
     );
   }

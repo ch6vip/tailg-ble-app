@@ -66,6 +66,30 @@ void main() {
       );
       expect(locationTab, findsOneWidget);
       expect(tester.getSize(locationTab).height, greaterThanOrEqualTo(44));
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('位置')),
+        matchesSemantics(
+          label: '位置',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+          hasSelectedState: true,
+          isSelected: true,
+        ),
+      );
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('轨迹')),
+        matchesSemantics(
+          label: '轨迹',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+          hasSelectedState: true,
+          isSelected: false,
+        ),
+      );
 
       const refreshLabel = '刷新';
       final refreshAction = find.bySemanticsLabel(refreshLabel);
@@ -82,10 +106,22 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('轨迹'));
+      tester.semantics.tap(find.semantics.byLabel('轨迹'));
       await tester.pump();
 
       expect(find.text('历史轨迹'), findsOneWidget);
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('轨迹')),
+        matchesSemantics(
+          label: '轨迹',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+          hasSelectedState: true,
+          isSelected: true,
+        ),
+      );
     } finally {
       semantics.dispose();
     }
