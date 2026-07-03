@@ -27,6 +27,18 @@ void main() {
     expect(snackIcon(Icons.info_outline), findsOneWidget);
   });
 
+  testWidgets('profile edit action keeps a 44dp touch target', (tester) async {
+    await tester.pumpWidget(const TestApp(home: ProfilePage()));
+    await tester.pump();
+
+    final editAction = find.ancestor(
+      of: find.byIcon(Icons.edit_outlined),
+      matching: find.byType(GestureDetector),
+    );
+    expect(editAction, findsOneWidget);
+    expect(tester.getSize(editAction).height, greaterThanOrEqualTo(44));
+  });
+
   testWidgets('profile header follows official cloud state stream', (
     tester,
   ) async {

@@ -187,6 +187,7 @@ class _UserHeader extends StatelessWidget {
           ),
           // Edit profile
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () {
               if (!signedIn) {
                 Navigator.push(
@@ -197,19 +198,25 @@ class _UserHeader extends StatelessWidget {
                 AppSnack.info(context, '编辑资料功能开发中');
               }
             },
-            child: Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.hairline),
-                boxShadow: [AppShadows.cardShadow.first],
-              ),
-              child: const Icon(
-                Icons.edit_outlined,
-                size: 17,
-                color: AppColors.textSecondary,
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: Center(
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.hairline),
+                    boxShadow: [AppShadows.cardShadow.first],
+                  ),
+                  child: const Icon(
+                    Icons.edit_outlined,
+                    size: 17,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
             ),
           ),
