@@ -5,6 +5,7 @@ import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
@@ -112,6 +113,19 @@ void main() {
     await tester.pump();
 
     expect(app.manualModeService.enabled, isTrue);
+  });
+
+  testWidgets('riding mode options use AppPressable feedback', (tester) async {
+    await pumpBoundHome(tester, size: const Size(430, 2200));
+
+    for (final label in ['超能跑', '全速跑', '超速跑']) {
+      final option = find.ancestor(
+        of: find.text(label),
+        matching: find.byType(AppPressable),
+      );
+      expect(option, findsOneWidget);
+      expect(tester.getSize(option).height, 72);
+    }
   });
 
   testWidgets('official control tip keeps a 44dp touch target', (tester) async {

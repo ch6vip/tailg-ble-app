@@ -76,7 +76,7 @@ class _RidingModeSelector extends StatelessWidget {
   }
 }
 
-class _RidingModeOption extends StatefulWidget {
+class _RidingModeOption extends StatelessWidget {
   final RidingMode mode;
   final IconData icon;
   final Color color;
@@ -94,119 +94,68 @@ class _RidingModeOption extends StatefulWidget {
   });
 
   @override
-  State<_RidingModeOption> createState() => _RidingModeOptionState();
-}
-
-class _RidingModeOptionState extends State<_RidingModeOption> {
-  static const _motionDuration = AppMotion.micro;
-  static const _motionCurve = AppMotion.pressCurve;
-
-  bool _pressed = false;
-
-  void _setPressed(bool value) {
-    if (!mounted || _pressed == value) return;
-    setState(() => _pressed = value);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final iconColor = widget.selected
-        ? widget.color
-        : widget.enabled
+    final iconColor = selected
+        ? color
+        : enabled
         ? AppColors.textSecondary
         : AppColors.textTertiary;
-    final textColor = widget.selected
-        ? widget.color
-        : widget.enabled
+    final textColor = selected
+        ? color
+        : enabled
         ? AppColors.textSecondary
         : AppColors.textTertiary;
-    final backgroundColor = widget.selected
-        ? widget.color.withValues(alpha: _pressed ? 0.19 : 0.15)
-        : _pressed
-        ? AppColors.surfaceContainerHigh
-        : AppColors.surfaceContainerLow;
 
-    return AnimatedScale(
-      duration: _motionDuration,
-      curve: _motionCurve,
-      scale: widget.enabled && _pressed ? AppMotion.pressScale : 1,
-      child: SizedBox(
+    return AppPressable(
+      enabled: onTap != null,
+      onTap: onTap,
+      haptic: false,
+      pressedScale: AppMotion.pressScale,
+      duration: AppMotion.micro,
+      curve: AppMotion.pressCurve,
+      background: selected
+          ? color.withValues(alpha: 0.15)
+          : AppColors.surfaceContainerLow,
+      pressedBackground: selected
+          ? color.withValues(alpha: 0.19)
+          : AppColors.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(_phoneControlRadius),
+      boxShadow: selected ? AppShadows.elevation2 : null,
+      pressedBoxShadow: selected ? AppShadows.elevation2 : null,
+      builder: (context, pressed) => SizedBox(
         height: 72,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            AnimatedContainer(
-              duration: _motionDuration,
-              curve: _motionCurve,
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(_phoneControlRadius),
-                boxShadow: widget.selected ? AppShadows.elevation2 : null,
-              ),
+        child: Center(
+          child: AnimatedDefaultTextStyle(
+            duration: AppMotion.micro,
+            curve: AppMotion.pressCurve,
+            style: TextStyle(
+              fontSize: 12,
+              color: textColor,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
             ),
-            Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(_phoneControlRadius),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: widget.onTap,
-                onTapDown: widget.onTap != null
-                    ? (_) => _setPressed(true)
-                    : null,
-                onTapUp: widget.onTap != null
-                    ? (_) => _setPressed(false)
-                    : null,
-                onTapCancel: widget.onTap != null
-                    ? () => _setPressed(false)
-                    : null,
-                splashColor: widget.color.withValues(alpha: 0.08),
-                highlightColor: widget.color.withValues(alpha: 0.05),
-              ),
-            ),
-            IgnorePointer(
-              child: Center(
-                child: AnimatedDefaultTextStyle(
-                  duration: _motionDuration,
-                  curve: _motionCurve,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: textColor,
-                    fontWeight: widget.selected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TweenAnimationBuilder<double>(
-                        tween: Tween<double>(
-                          begin: 0,
-                          end: widget.selected ? 1 : 0,
-                        ),
-                        duration: _motionDuration,
-                        curve: _motionCurve,
-                        builder: (context, value, child) {
-                          return Transform.translate(
-                            offset: Offset(0, -2 * value),
-                            child: IconTheme(
-                              data: IconThemeData(
-                                color: iconColor,
-                                size: 24 + value,
-                              ),
-                              child: child!,
-                            ),
-                          );
-                        },
-                        child: Icon(widget.icon),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: selected ? 1 : 0),
+                  duration: AppMotion.micro,
+                  curve: AppMotion.pressCurve,
+                  builder: (context, value, child) {
+                    return Transform.translate(
+                      offset: Offset(0, -2 * value),
+                      child: IconTheme(
+                        data: IconThemeData(color: iconColor, size: 24 + value),
+                        child: child!,
                       ),
-                      const SizedBox(height: 4),
-                      Text(widget.mode.label, maxLines: 1),
-                    ],
-                  ),
+                    );
+                  },
+                  child: Icon(icon),
                 ),
-              ),
+                const SizedBox(height: 4),
+                Text(mode.label, maxLines: 1),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
