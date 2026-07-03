@@ -721,7 +721,13 @@ class _SettingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    final enabled = onTap != null;
+    final semanticsLabel = [
+      label,
+      if (value != null && value!.isNotEmpty) value!,
+      if (badge != null && badge!.isNotEmpty) badge!,
+    ].join('，');
+    final tile = InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
@@ -782,6 +788,13 @@ class _SettingTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+    return Semantics(
+      label: semanticsLabel,
+      button: true,
+      enabled: enabled,
+      onTap: onTap,
+      child: ExcludeSemantics(child: tile),
     );
   }
 }

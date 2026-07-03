@@ -77,6 +77,45 @@ void main() {
     }
   });
 
+  testWidgets('profile setting tiles expose semantics and 44dp targets', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      tester.view.physicalSize = const Size(430, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(const TestApp(home: ProfilePage()));
+      await tester.pump();
+
+      const messageLabel = '消息通知';
+      final messageTile = find.bySemanticsLabel(messageLabel);
+      expect(messageTile, findsOneWidget);
+      expect(tester.getSize(messageTile).height, greaterThanOrEqualTo(44));
+      expect(
+        tester.getSemantics(messageTile),
+        matchesSemantics(
+          label: messageLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel(messageLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.text('消息中心'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('profile header follows official cloud state stream', (
     tester,
   ) async {
