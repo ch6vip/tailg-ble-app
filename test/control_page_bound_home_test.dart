@@ -48,9 +48,11 @@ void main() {
     await pumpBoundHome(tester);
 
     expect(tester.takeException(), isNull);
-    // v8: 3 service cards replace old SHORTCUTS section
+    // Official replica: lower area follows fragment_control.xml entries.
     expect(find.text('车辆定位'), findsOneWidget);
-    expect(find.text('电池详情'), findsOneWidget);
+    expect(find.text('历史轨迹'), findsOneWidget);
+    expect(find.text('功能设置'), findsOneWidget);
+    expect(find.text('NFC钥匙'), findsOneWidget);
   });
 
   testWidgets('bound control home stays stable on a narrow surface', (
@@ -64,6 +66,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('车辆定位'), findsOneWidget);
+    expect(find.bySemanticsLabel('可添加GPS'), findsOneWidget);
   });
 
   testWidgets('super dashboard placeholder shows info snack', (tester) async {
@@ -155,35 +158,53 @@ void main() {
     }
   });
 
-  testWidgets('riding mode options use AppPressable feedback', (tester) async {
+  testWidgets('official settings entries use AppPressable feedback', (
+    tester,
+  ) async {
     await pumpBoundHome(tester, size: const Size(430, 2200));
 
-    for (final label in ['超能跑', '全速跑', '超速跑']) {
+    for (final label in ['车辆设置', '电子围栏', '分享用车']) {
       final option = find.ancestor(
         of: find.text(label),
         matching: find.byType(AppPressable),
       );
       expect(option, findsOneWidget);
-      expect(tester.getSize(option).height, 72);
+      expect(tester.getSize(option).height, greaterThanOrEqualTo(44));
     }
   });
 
-  testWidgets('riding mode options expose selected semantics', (tester) async {
+  testWidgets('official lower entries expose semantics actions', (
+    tester,
+  ) async {
     final semantics = tester.ensureSemantics();
     try {
       await pumpBoundHome(tester, size: const Size(430, 2200));
 
-      final standardMode = find.bySemanticsLabel('骑行模式：全速跑');
-      expect(standardMode, findsOneWidget);
+      for (final label in ['历史轨迹', '可添加GPS', 'NFC钥匙']) {
+        final action = find.bySemanticsLabel(label);
+        expect(action, findsOneWidget);
+        expect(
+          tester.getSemantics(action),
+          matchesSemantics(
+            label: label,
+            isButton: true,
+            hasEnabledState: true,
+            isEnabled: true,
+            hasTapAction: true,
+          ),
+        );
+      }
+
+      final vehicleSetting = find.bySemanticsLabel('车辆设置');
+      expect(vehicleSetting, findsOneWidget);
       expect(
-        tester.getSemantics(standardMode),
+        tester.getSemantics(vehicleSetting),
         matchesSemantics(
-          label: '骑行模式：全速跑',
+          label: '车辆设置',
           isButton: true,
           hasEnabledState: true,
-          isEnabled: false,
-          hasSelectedState: true,
-          isSelected: true,
+          isEnabled: true,
+          hasTapAction: true,
         ),
       );
     } finally {

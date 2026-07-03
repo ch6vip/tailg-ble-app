@@ -440,12 +440,13 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
           MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
         );
 
-        return DecoratedBox(
+        return Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment(0, 0.46),
-              colors: [AppColors.pageBgTop, AppColors.pageBgBot],
+            color: AppColors.officialPageBg,
+            image: DecorationImage(
+              image: AssetImage('assets/official_tailg/iv_bg_control.png'),
+              fit: BoxFit.fitWidth,
+              alignment: Alignment.topCenter,
             ),
           ),
           child: Column(
@@ -478,36 +479,14 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
               ),
               const SizedBox(height: 10),
               // ── v8 Vehicle stage SVG ──
-              VehicleStage(batteryLevel: soc / 100.0, height: 180),
-              // ── v8 Status chips row ──
+              VehicleStage(batteryLevel: soc / 100.0, height: 225),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    StatusBadge(
-                      type: isArmed == null
-                          ? StatusBadgeType.idle
-                          : isArmed
-                          ? StatusBadgeType.armed
-                          : StatusBadgeType.idle,
-                      label: isArmed == null ? '未知' : null,
-                    ),
-                    const SizedBox(width: 8),
-                    StatusBadge(
-                      type: isPowerOn
-                          ? StatusBadgeType.online
-                          : StatusBadgeType.idle,
-                      label: isPowerOn ? '已通电' : '未通电',
-                    ),
-                    const SizedBox(width: 8),
-                    if (_isBleReady)
-                      const StatusBadge(type: StatusBadgeType.ble),
-                    if (_isReconnecting)
-                      const StatusBadge(
-                        type: StatusBadgeType.offline,
-                        label: '重连中',
-                      ),
-                  ],
+                child: _OfficialControlTip(
+                  isArmed: isArmed,
+                  isPowerOn: isPowerOn,
+                  bleReady: _isBleReady,
+                  reconnecting: _isReconnecting,
                 ),
               ),
               const SizedBox(height: 14),
@@ -518,6 +497,8 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                 busy: _busy,
                 onSeatOpen: _sendSeat,
                 onPowerOn: _sendPower,
+                onFind: () => _sendCommand(CommandCode.find),
+                onLock: () => _sendCommand(CommandCode.lock),
                 onMore: () => showAllFunctionsSheet(
                   context,
                   onControlCommand: _sendCommand,
@@ -643,6 +624,109 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
           ),
         );
       },
+    );
+  }
+}
+
+class _OfficialControlTip extends StatelessWidget {
+  const _OfficialControlTip({
+    required this.isArmed,
+    required this.isPowerOn,
+    required this.bleReady,
+    required this.reconnecting,
+  });
+
+  final bool? isArmed;
+  final bool isPowerOn;
+  final bool bleReady;
+  final bool reconnecting;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusText = [
+      isPowerOn ? '已启动' : '未启动',
+      isArmed == null
+          ? '设防未知'
+          : isArmed!
+          ? '已设防'
+          : '未设防',
+      reconnecting
+          ? '重连中'
+          : bleReady
+          ? '蓝牙已连接'
+          : '手动控车模式',
+    ].join('  ');
+
+    return SizedBox(
+      height: 60,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: 40,
+            right: 54,
+            top: 10,
+            child: Container(
+              height: 38,
+              padding: const EdgeInsets.only(left: 42, right: 12),
+              alignment: Alignment.centerLeft,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.88),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Text(
+                statusText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.officialTextMuted,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            top: -10,
+            child: Image.asset(
+              'assets/official_tailg/ic_control_tip_mascot.png',
+              width: 60,
+              height: 60,
+              errorBuilder: (_, __, ___) => const CircleAvatar(
+                radius: 30,
+                backgroundColor: Colors.white,
+                child: Icon(Icons.smart_toy_outlined),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            top: 8,
+            child: Image.asset(
+              bleReady
+                  ? 'assets/official_tailg/ic_control_mode_induction.png'
+                  : 'assets/official_tailg/ic_control_mode_hand.png',
+              width: 54,
+              height: 42,
+              errorBuilder: (_, __, ___) => Container(
+                width: 54,
+                height: 42,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(21),
+                ),
+                child: Icon(
+                  bleReady ? Icons.bluetooth_connected : Icons.touch_app,
+                  size: 20,
+                  color: AppColors.brandRed,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

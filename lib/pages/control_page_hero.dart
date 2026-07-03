@@ -42,15 +42,13 @@ class ControlPageHero extends StatelessWidget {
 
   /// Returns the color for the battery percentage based on level.
   static Color batteryColor(int level) {
-    if (level >= 60) return AppColors.energyGreen;
-    if (level >= 30) return AppColors.energyAmber;
-    return AppColors.energyRed;
+    if (level >= 30) return AppColors.textPrimary;
+    return AppColors.brandRed;
   }
 
   /// Returns the color for the SOC bar fill.
   static Color barColor(int level) {
-    if (level >= 60) return AppColors.energyGreen;
-    if (level >= 30) return AppColors.energyAmber;
+    if (level >= 30) return AppColors.brandRed;
     return AppColors.energyRed;
   }
 
@@ -80,7 +78,7 @@ class ControlPageHero extends StatelessWidget {
                 onVehicleSwitch: onVehicleSwitch,
                 onNotification: onNotification,
               ),
-              SizedBox(height: wide ? 14 : 8),
+              SizedBox(height: wide ? 18 : 10),
 
               // Hero: big battery % + range
               Semantics(
@@ -112,8 +110,7 @@ class ControlPageHero extends StatelessWidget {
                 ),
               ),
 
-              // SOC bar
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               _SocBar(level: batteryLevel),
             ],
           );
@@ -155,7 +152,7 @@ class _TopBar extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 22,
+                  fontSize: 25,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0,
                   color: AppColors.textPrimary,
@@ -163,10 +160,15 @@ class _TopBar extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 2),
-            const Icon(
-              Icons.keyboard_arrow_down,
-              size: 18,
-              color: AppColors.textTertiary,
+            Image.asset(
+              'assets/official_tailg/ic_control_pup_select.png',
+              width: 12,
+              height: 12,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.keyboard_arrow_down,
+                size: 18,
+                color: AppColors.textTertiary,
+              ),
             ),
           ],
         ),
@@ -188,7 +190,7 @@ class _TopBar extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: AppColors.surfaceBrandTealTint,
+              color: Colors.white.withValues(alpha: 0.72),
               borderRadius: BorderRadius.circular(AppRadii.pill),
             ),
             child: Row(
@@ -220,6 +222,14 @@ class _TopBar extends StatelessWidget {
           ),
         const SizedBox(width: 8),
         _TopIconButton(
+          asset: 'assets/official_tailg/ic_control_detail.png',
+          icon: Icons.more_horiz,
+          semanticsLabel: '车辆详情',
+          onTap: onVehicleSwitch,
+        ),
+        const SizedBox(width: 8),
+        _TopIconButton(
+          asset: 'assets/official_tailg/ic_control_msg_change.png',
           icon: Icons.notifications_outlined,
           semanticsLabel: '车辆消息',
           onTap: onNotification,
@@ -251,77 +261,24 @@ class _WideHeroData extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // Big percentage
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _BatteryLevelText(
-              batteryLevel: batteryLevel,
-              color: bColor,
-              fontSize: pctFontSize,
-              fontWeight: pctFontWeight,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                '%',
-                style: TextStyle(
-                  fontSize: pctFontSize * 0.4,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.only(top: pctFontSize * 0.13, left: 2),
-              child: const Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: AppColors.textTertiary,
-              ),
-            ),
-          ],
+        _OfficialMetric(
+          label: '剩余电量',
+          value: '$batteryLevel',
+          unit: '%',
+          color: bColor,
+          fontSize: pctFontSize,
+          fontWeight: pctFontWeight,
         ),
-        const SizedBox(width: 16),
-        // Range text
+        const SizedBox(width: 34),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RichText(
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  text: TextSpan(
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                    children: [
-                      const TextSpan(text: '续航 '),
-                      TextSpan(
-                        text: '$displayRange',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const TextSpan(text: ' km'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '· $displayHealth',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
-              ],
-            ),
+          child: _OfficialMetric(
+            label: '预估里程',
+            value: '$displayRange',
+            unit: 'km',
+            color: AppColors.textPrimary,
+            fontSize: pctFontSize,
+            fontWeight: pctFontWeight,
+            footer: displayHealth,
           ),
         ),
       ],
@@ -352,91 +309,109 @@ class _NarrowHeroData extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            _BatteryLevelText(
-              batteryLevel: batteryLevel,
-              color: bColor,
-              fontSize: pctFontSize,
-              fontWeight: pctFontWeight,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                '%',
-                style: TextStyle(
-                  fontSize: pctFontSize * 0.4,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
-                ),
+            Expanded(
+              child: _OfficialMetric(
+                label: '剩余电量',
+                value: '$batteryLevel',
+                unit: '%',
+                color: bColor,
+                fontSize: pctFontSize,
+                fontWeight: pctFontWeight,
               ),
             ),
-            Padding(
-              padding: EdgeInsets.only(top: pctFontSize * 0.13, left: 2),
-              child: const Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: AppColors.textTertiary,
+            const SizedBox(width: 18),
+            Expanded(
+              child: _OfficialMetric(
+                label: '预估里程',
+                value: '$displayRange',
+                unit: 'km',
+                color: AppColors.textPrimary,
+                fontSize: pctFontSize,
+                fontWeight: pctFontWeight,
+                footer: displayHealth,
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 4),
-        RichText(
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          text: TextSpan(
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-            ),
-            children: [
-              const TextSpan(text: '续航 '),
-              TextSpan(
-                text: '$displayRange',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const TextSpan(text: ' km'),
-            ],
-          ),
-        ),
-        Text(
-          '· $displayHealth',
-          style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
         ),
       ],
     );
   }
 }
 
-class _BatteryLevelText extends StatelessWidget {
-  const _BatteryLevelText({
-    required this.batteryLevel,
+class _OfficialMetric extends StatelessWidget {
+  const _OfficialMetric({
+    required this.label,
+    required this.value,
+    required this.unit,
     required this.color,
     required this.fontSize,
     required this.fontWeight,
+    this.footer,
   });
 
-  final int batteryLevel;
+  final String label;
+  final String value;
+  final String unit;
   final Color color;
   final double fontSize;
   final FontWeight fontWeight;
+  final String? footer;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      '$batteryLevel',
-      style: TextStyle(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        height: 0.95,
-        letterSpacing: 0,
-        color: color,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.officialTextMuted,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: fontWeight,
+                height: 0.95,
+                letterSpacing: 0,
+                color: color,
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(bottom: fontSize * 0.08, left: 3),
+              child: Text(
+                unit,
+                style: TextStyle(
+                  fontSize: fontSize * 0.36,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (footer != null)
+          Text(
+            footer!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.officialTextMuted,
+            ),
+          ),
+      ],
     );
   }
 }
@@ -452,7 +427,7 @@ class _SocBar extends StatelessWidget {
       child: Container(
         height: 5,
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerHigh,
+          color: const Color(0xFFE0E1E7),
           borderRadius: BorderRadius.circular(3),
         ),
         child: FractionallySizedBox(
@@ -472,10 +447,12 @@ class _SocBar extends StatelessWidget {
 
 class _TopIconButton extends StatelessWidget {
   const _TopIconButton({
+    this.asset,
     required this.icon,
     required this.semanticsLabel,
     this.onTap,
   });
+  final String? asset;
   final IconData icon;
   final String semanticsLabel;
   final VoidCallback? onTap;
@@ -493,10 +470,27 @@ class _TopIconButton extends StatelessWidget {
         height: 44,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppColors.surface.withValues(alpha: 0.9),
+          color: Colors.white.withValues(alpha: 0.78),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 18, color: AppColors.textSecondary),
+        child: asset == null
+            ? Icon(icon, size: 18, color: AppColors.textSecondary)
+            : Stack(
+                alignment: Alignment.center,
+                children: [
+                  Image.asset(
+                    asset!,
+                    width: 22,
+                    height: 22,
+                    errorBuilder: (_, __, ___) =>
+                        Icon(icon, size: 18, color: AppColors.textSecondary),
+                  ),
+                  Opacity(
+                    opacity: 0,
+                    child: Icon(icon, size: 18, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
       ),
     );
   }

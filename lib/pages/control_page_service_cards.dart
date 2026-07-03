@@ -18,37 +18,162 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
-          const SizedBox(height: 4),
-          _SvcListCard(
-            icon: Icons.location_on,
-            iconBgColor: AppColors.accentSky.withValues(alpha: 0.14),
-            iconColor: AppColors.accentSky,
-            title: '车辆定位',
-            subtitle: '查看车辆实时位置与导航',
-            value: null,
+          _OfficialMapCard(onTap: () => _open(context, const LocationPage())),
+          const SizedBox(height: 10),
+          _OfficialNavProjectionCard(
             onTap: () => _open(context, const LocationPage()),
           ),
           const SizedBox(height: 10),
-          _SvcListCard(
-            icon: Icons.battery_charging_full_outlined,
-            iconBgColor: AppColors.accentAmber.withValues(alpha: 0.14),
-            iconColor: AppColors.accentAmber,
-            title: '电池详情',
-            subtitle: 'BMS 电压 · 温度 · 循环次数',
-            value: '健康 96%',
-            onTap: () => _open(context, const BatteryDetailsPage()),
-          ),
-          const SizedBox(height: 10),
-          _SvcListCard(
-            icon: Icons.route_outlined,
-            iconBgColor: AppColors.accentViolet.withValues(alpha: 0.14),
-            iconColor: AppColors.accentViolet,
-            title: '骑行记录',
-            subtitle: '轨迹回放 · 里程统计',
-            value: null,
+          _OfficialHistoryCard(
+            todayCount: logService.byCategory(LogCategory.operation).length,
             onTap: () => _open(
               context,
               const LocationPage(initialTab: LocationInitialTab.travel),
+            ),
+          ),
+          const SizedBox(height: 10),
+          _OfficialGpsBanner(
+            onTap: () => _open(context, const OfficialCloudPage()),
+          ),
+          const SizedBox(height: 10),
+          _OfficialSettingsCard(
+            onVehicleSetting: () => _open(context, const VehicleSettingsPage()),
+            onFence: () => _open(
+              context,
+              const LocationPage(initialTab: LocationInitialTab.fence),
+            ),
+            onShare: () => _open(context, const ShareBikePage()),
+          ),
+          const SizedBox(height: 10),
+          _OfficialImageBanner(
+            asset: 'assets/official_tailg/iv_add_sound_effects_set_qgj.webp',
+            semanticsLabel: 'QGJ音效设置',
+            onTap: () => _open(context, const QgjSoundEffectsPage()),
+          ),
+          const SizedBox(height: 10),
+          _OfficialNfcCard(onTap: () => _open(context, const NfcKeyPage())),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Official Control Lower Area ───────────────────────────────────
+
+class _OfficialCardSurface extends StatelessWidget {
+  const _OfficialCardSurface({
+    required this.child,
+    this.height,
+    this.onTap,
+    this.semanticLabel,
+    this.padding = EdgeInsets.zero,
+  });
+
+  final Widget child;
+  final double? height;
+  final VoidCallback? onTap;
+  final String? semanticLabel;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final card = Container(
+      height: height,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1F1F1F).withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: child,
+    );
+    if (onTap == null) return card;
+    return AppPressable(
+      onTap: onTap,
+      haptic: false,
+      semanticsLabel: semanticLabel,
+      semanticsButton: true,
+      semanticsEnabled: true,
+      child: card,
+    );
+  }
+}
+
+class _OfficialMapCard extends StatelessWidget {
+  const _OfficialMapCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialCardSurface(
+      height: 260,
+      onTap: onTap,
+      semanticLabel: '车辆定位',
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                '车辆定位',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              _OfficialArrow(),
+            ],
+          ),
+          const SizedBox(height: 5),
+          const Text(
+            '定位车辆  防盗通知  导航找车',
+            style: TextStyle(fontSize: 13, color: AppColors.officialTextMuted),
+          ),
+          const SizedBox(height: 14),
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Image.asset(
+                    'assets/official_tailg/iv_control_map_bg.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: const Color(0xFFE7E8EF),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.map_outlined,
+                        color: AppColors.officialTextMuted,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0x0F000000)),
+                    ),
+                  ),
+                ),
+                const Center(
+                  child: Icon(
+                    Icons.location_on,
+                    size: 34,
+                    color: AppColors.brandRed,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -57,100 +182,454 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
   }
 }
 
-// ── v8 Service Card ──────────────────────────────────────────────
+class _OfficialNavProjectionCard extends StatelessWidget {
+  const _OfficialNavProjectionCard({required this.onTap});
 
-class _SvcListCard extends StatelessWidget {
-  const _SvcListCard({
-    required this.icon,
-    required this.iconBgColor,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    this.value,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color iconBgColor;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final String? value;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final semanticsLabel = [
-      title,
-      subtitle,
-      if (value != null && value!.isNotEmpty) value!,
-    ].join('，');
-    final card = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.hairline),
-        boxShadow: AppShadows.svcCardShadow,
-      ),
+    return _OfficialCardSurface(
+      onTap: onTap,
+      semanticLabel: '导航投屏',
+      padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
-              color: iconBgColor,
-              borderRadius: BorderRadius.circular(13),
+              color: const Color(0xFFF8F8FA),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, size: 21, color: iconColor),
+            child: const Icon(
+              Icons.navigation_outlined,
+              color: AppColors.brandRed,
+              size: 23,
+            ),
           ),
-          const SizedBox(width: 14),
-          Expanded(
+          const SizedBox(width: 13),
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14.5,
+                  '导航投屏',
+                  style: TextStyle(
+                    fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: 5),
                 Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF98A1AE),
+                  '车辆仪表切换到地图页 查看导航',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.officialTextMuted,
                   ),
                 ),
               ],
             ),
           ),
-          if (value != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: Text(
-                value!,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primaryDark,
-                ),
-              ),
-            ),
-          const Icon(Icons.chevron_right, size: 18, color: Color(0xFF98A1AE)),
+          _OfficialArrow(),
         ],
       ),
     );
+  }
+}
+
+class _OfficialHistoryCard extends StatelessWidget {
+  const _OfficialHistoryCard({required this.todayCount, required this.onTap});
+
+  final int todayCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialCardSurface(
+      height: 100,
+      onTap: onTap,
+      semanticLabel: '历史轨迹',
+      padding: const EdgeInsets.all(10),
+      child: Row(
+        children: [
+          Container(
+            width: 84,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFD7B3).withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Image.asset(
+              'assets/official_tailg/iv_control_histroy_bg.png',
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.route_outlined, color: AppColors.brandRed),
+            ),
+          ),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  children: const [
+                    Expanded(
+                      child: Text(
+                        '历史轨迹',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    _OfficialArrow(),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text(
+                      '今日骑行记录',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.officialTextMuted,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      todayCount.toString(),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF060606),
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Text(
+                      '条',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.officialTextMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfficialGpsBanner extends StatelessWidget {
+  const _OfficialGpsBanner({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialImageBanner(
+      asset: 'assets/official_tailg/iv_add_intelligence_control.png',
+      semanticsLabel: '可添加GPS',
+      onTap: onTap,
+      fallback: _GpsFallback(),
+    );
+  }
+}
+
+class _OfficialImageBanner extends StatelessWidget {
+  const _OfficialImageBanner({
+    required this.asset,
+    required this.semanticsLabel,
+    required this.onTap,
+    this.fallback,
+  });
+
+  final String asset;
+  final String semanticsLabel;
+  final VoidCallback onTap;
+  final Widget? fallback;
+
+  @override
+  Widget build(BuildContext context) {
     return AppPressable(
       onTap: onTap,
       haptic: false,
       semanticsLabel: semanticsLabel,
       semanticsButton: true,
       semanticsEnabled: true,
-      child: card,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Image.asset(
+          asset,
+          width: double.infinity,
+          fit: BoxFit.fitWidth,
+          errorBuilder: (_, __, ___) =>
+              fallback ??
+              Container(
+                height: 100,
+                color: AppColors.surface,
+                alignment: Alignment.center,
+                child: Text(semanticsLabel),
+              ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GpsFallback extends StatelessWidget {
+  const _GpsFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialCardSurface(
+      height: 132,
+      padding: const EdgeInsets.only(left: 130, right: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Text(
+            '可添加GPS',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 6),
+          Text(
+            '可定位 防盗通知 远程控车等',
+            style: TextStyle(fontSize: 14, color: AppColors.officialTextMuted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfficialSettingsCard extends StatelessWidget {
+  const _OfficialSettingsCard({
+    required this.onVehicleSetting,
+    required this.onFence,
+    required this.onShare,
+  });
+
+  final VoidCallback onVehicleSetting;
+  final VoidCallback onFence;
+  final VoidCallback onShare;
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialCardSurface(
+      height: 158,
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '功能设置',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  child: _OfficialSettingAction(
+                    asset: 'assets/official_tailg/iv_control_setting_set.png',
+                    label: '车辆设置',
+                    onTap: onVehicleSetting,
+                  ),
+                ),
+                Expanded(
+                  child: _OfficialSettingAction(
+                    asset: 'assets/official_tailg/iv_control_setting_el.png',
+                    label: '电子围栏',
+                    onTap: onFence,
+                  ),
+                ),
+                Expanded(
+                  child: _OfficialSettingAction(
+                    asset: 'assets/official_tailg/iv_control_setting_share.png',
+                    label: '分享用车',
+                    onTap: onShare,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfficialSettingAction extends StatelessWidget {
+  const _OfficialSettingAction({
+    required this.asset,
+    required this.label,
+    required this.onTap,
+  });
+
+  final String asset;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppPressable(
+      onTap: onTap,
+      haptic: false,
+      semanticsLabel: label,
+      semanticsButton: true,
+      semanticsEnabled: true,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            asset,
+            width: 38,
+            height: 38,
+            errorBuilder: (_, __, ___) =>
+                const Icon(Icons.settings_outlined, color: AppColors.brandRed),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.officialTextMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfficialNfcCard extends StatelessWidget {
+  const _OfficialNfcCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialCardSurface(
+      height: 132,
+      onTap: onTap,
+      semanticLabel: 'NFC钥匙',
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      child: Row(
+        children: [
+          Image.asset(
+            'assets/official_tailg/ic_control_nfc.png',
+            width: 88,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) =>
+                const Icon(Icons.nfc, size: 46, color: AppColors.brandRed),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  children: const [
+                    Expanded(
+                      child: Text(
+                        'NFC钥匙',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    _OfficialArrow(),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                const Text(
+                  '刷卡骑行新体验',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.officialTextMuted,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: const [_NfcNote('手机如何添加'), _NfcNote('智能手表如何添加')],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NfcNote extends StatelessWidget {
+  const _NfcNote(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEDEEFF),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 10, color: Color(0xFF1F1DF1)),
+      ),
+    );
+  }
+}
+
+class _OfficialArrow extends StatelessWidget {
+  const _OfficialArrow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      'assets/official_tailg/ic_right_go.png',
+      width: 14,
+      height: 14,
+      errorBuilder: (_, __, ___) => const Icon(
+        Icons.chevron_right,
+        size: 18,
+        color: AppColors.officialTextMuted,
+      ),
     );
   }
 }

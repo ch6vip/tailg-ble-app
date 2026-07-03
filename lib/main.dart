@@ -592,9 +592,9 @@ class _HomePageState extends State<HomePage>
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.surface.withValues(alpha: 0.82),
+              color: AppColors.surface.withValues(alpha: 0.96),
               border: const Border(
-                top: BorderSide(color: Color(0x0A000000), width: 0.5),
+                top: BorderSide(color: Color(0x12000000), width: 0.5),
               ),
             ),
             child: SafeArea(
@@ -607,6 +607,9 @@ class _HomePageState extends State<HomePage>
                     _NavItem(
                       icon: Icons.directions_car_outlined,
                       selectedIcon: Icons.directions_car,
+                      asset: 'assets/official_tailg/ic_tab_home_unselected.png',
+                      selectedAsset:
+                          'assets/official_tailg/ic_tab_home_selected.png',
                       label: '控车',
                       selected: _currentIndex == 0,
                       onTap: () => _switchTab(0),
@@ -614,6 +617,10 @@ class _HomePageState extends State<HomePage>
                     _NavItem(
                       icon: Icons.location_on_outlined,
                       selectedIcon: Icons.location_on,
+                      asset:
+                          'assets/official_tailg/ic_tab_service_unselected.png',
+                      selectedAsset:
+                          'assets/official_tailg/ic_tab_service_selected.png',
                       label: '定位',
                       selected: _currentIndex == 1,
                       onTap: () => _switchTab(1),
@@ -621,6 +628,9 @@ class _HomePageState extends State<HomePage>
                     _NavItem(
                       icon: Icons.garage_outlined,
                       selectedIcon: Icons.garage,
+                      asset: 'assets/official_tailg/ic_tab_mall_unselected.png',
+                      selectedAsset:
+                          'assets/official_tailg/ic_tab_mall_selected.png',
                       label: '车库',
                       selected: _currentIndex == 2,
                       onTap: () => _switchTab(2),
@@ -628,6 +638,9 @@ class _HomePageState extends State<HomePage>
                     _NavItem(
                       icon: Icons.person_outline,
                       selectedIcon: Icons.person,
+                      asset: 'assets/official_tailg/ic_tab_mine_unselected.png',
+                      selectedAsset:
+                          'assets/official_tailg/ic_tab_mine_selected.png',
                       label: '我的',
                       selected: _currentIndex == 3,
                       onTap: () => _switchTab(3),
@@ -647,6 +660,8 @@ class _HomePageState extends State<HomePage>
 class _NavItem extends StatefulWidget {
   final IconData icon;
   final IconData? selectedIcon;
+  final String? asset;
+  final String? selectedAsset;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -654,6 +669,8 @@ class _NavItem extends StatefulWidget {
   const _NavItem({
     required this.icon,
     this.selectedIcon,
+    this.asset,
+    this.selectedAsset,
     required this.label,
     required this.selected,
     required this.onTap,
@@ -672,7 +689,10 @@ class _NavItemState extends State<_NavItem> {
     final icon = widget.selected
         ? (widget.selectedIcon ?? widget.icon)
         : widget.icon;
-    final color = widget.selected ? AppColors.dark : AppColors.navInactive;
+    final color = widget.selected ? AppColors.brandRed : AppColors.navInactive;
+    final asset = widget.selected
+        ? (widget.selectedAsset ?? widget.asset)
+        : widget.asset;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -686,7 +706,7 @@ class _NavItemState extends State<_NavItem> {
         ),
         decoration: BoxDecoration(
           color: widget.selected
-              ? AppColors.dark.withValues(alpha: 0.06)
+              ? AppColors.brandRed.withValues(alpha: 0.06)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
@@ -697,12 +717,24 @@ class _NavItemState extends State<_NavItem> {
               duration: _duration,
               switchInCurve: _curve,
               switchOutCurve: Curves.easeInCubic,
-              child: Icon(
-                icon,
-                key: ValueKey(icon),
-                size: widget.selected ? AppIconSizes.lg : 22.0,
-                color: color,
-              ),
+              child: asset == null
+                  ? Icon(
+                      icon,
+                      key: ValueKey(icon),
+                      size: widget.selected ? AppIconSizes.lg : 22.0,
+                      color: color,
+                    )
+                  : Image.asset(
+                      asset,
+                      key: ValueKey(asset),
+                      width: widget.selected ? 24 : 22,
+                      height: widget.selected ? 24 : 22,
+                      errorBuilder: (_, __, ___) => Icon(
+                        icon,
+                        size: widget.selected ? AppIconSizes.lg : 22.0,
+                        color: color,
+                      ),
+                    ),
             ),
             AnimatedCrossFade(
               firstChild: const SizedBox(width: 0),

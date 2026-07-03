@@ -21,11 +21,10 @@ void main() {
       RegExp(
         r'StreamBuilder<ble\.ConnectionState>\(',
       ).allMatches(source).length,
-      greaterThanOrEqualTo(2),
+      greaterThanOrEqualTo(1),
       reason:
-          '_HomeTopSection and _RidingModeSelector should keep independent '
-          'connection-state subscriptions instead of sharing one combined '
-          'home stream.',
+          '_HomeTopSection should keep a typed connection-state subscription '
+          'instead of sharing one combined home stream.',
     );
   });
 

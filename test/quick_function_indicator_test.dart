@@ -31,37 +31,39 @@ Future<void> _pumpControlPage(WidgetTester tester, Size size) async {
   await tester.pumpWidget(const TestApp(home: ControlPage()));
   await tester.pump(const Duration(milliseconds: 50));
   expect(tester.takeException(), isNull);
-  // v8: 3 service cards replace old SHORTCUTS
+  // Official replica lower area follows app-ui fragment_control.xml.
   expect(find.text('车辆定位'), findsOneWidget);
 }
 
 void main() {
-  // v8: service cards render without overflow on wide surfaces
+  // Official lower entries render without overflow on wide surfaces.
   testWidgets('service cards render on wide surface', (tester) async {
     await _pumpControlPage(tester, const Size(2400, 2400));
-    expect(find.text('电池详情'), findsOneWidget);
-    expect(find.text('骑行记录'), findsOneWidget);
+    expect(find.text('历史轨迹'), findsOneWidget);
+    expect(find.text('功能设置'), findsOneWidget);
+    expect(find.text('NFC钥匙'), findsOneWidget);
   });
 
-  // v8: service cards remain stable on narrow surfaces
+  // Official lower entries remain stable on narrow surfaces.
   testWidgets('service cards render on narrow surface', (tester) async {
     await _pumpControlPage(tester, const Size(430, 2600));
-    expect(find.text('电池详情'), findsOneWidget);
-    expect(find.text('骑行记录'), findsOneWidget);
+    expect(find.text('历史轨迹'), findsOneWidget);
+    expect(find.bySemanticsLabel('可添加GPS'), findsOneWidget);
   });
 
-  // v8: service cards visible on control page
+  // Official lower entries are visible on control page.
   testWidgets('service cards display key text labels', (tester) async {
     await _pumpControlPage(tester, const Size(430, 2600));
     expect(find.text('车辆定位'), findsOneWidget);
-    expect(find.text('电池详情'), findsOneWidget);
-    expect(find.text('骑行记录'), findsOneWidget);
+    expect(find.text('历史轨迹'), findsOneWidget);
+    expect(find.text('功能设置'), findsOneWidget);
+    expect(find.text('NFC钥匙'), findsOneWidget);
   });
 
   testWidgets('service cards use AppPressable feedback', (tester) async {
     await _pumpControlPage(tester, const Size(430, 2600));
 
-    for (final label in ['车辆定位', '电池详情', '骑行记录']) {
+    for (final label in ['车辆定位', '历史轨迹', 'NFC钥匙']) {
       final card = find.ancestor(
         of: find.text(label),
         matching: find.byType(AppPressable),
@@ -69,6 +71,10 @@ void main() {
       expect(card, findsOneWidget);
       expect(tester.getSize(card).height, greaterThanOrEqualTo(44));
     }
+
+    final gpsCard = find.bySemanticsLabel('可添加GPS');
+    expect(gpsCard, findsOneWidget);
+    expect(tester.getSize(gpsCard).height, greaterThanOrEqualTo(44));
   });
 
   testWidgets('service cards expose semantics', (tester) async {
@@ -76,47 +82,20 @@ void main() {
     try {
       await _pumpControlPage(tester, const Size(430, 2600));
 
-      const locationLabel = '车辆定位，查看车辆实时位置与导航';
-      final locationCard = find.bySemanticsLabel(locationLabel);
-      expect(locationCard, findsOneWidget);
-      expect(
-        tester.getSemantics(locationCard),
-        matchesSemantics(
-          label: locationLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasTapAction: true,
-        ),
-      );
-
-      const batteryLabel = '电池详情，BMS 电压 · 温度 · 循环次数，健康 96%';
-      final batteryCard = find.bySemanticsLabel(batteryLabel);
-      expect(batteryCard, findsOneWidget);
-      expect(
-        tester.getSemantics(batteryCard),
-        matchesSemantics(
-          label: batteryLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasTapAction: true,
-        ),
-      );
-
-      const travelLabel = '骑行记录，轨迹回放 · 里程统计';
-      final travelCard = find.bySemanticsLabel(travelLabel);
-      expect(travelCard, findsOneWidget);
-      expect(
-        tester.getSemantics(travelCard),
-        matchesSemantics(
-          label: travelLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasTapAction: true,
-        ),
-      );
+      for (final label in ['车辆定位', '历史轨迹', '可添加GPS', 'NFC钥匙']) {
+        final card = find.bySemanticsLabel(label);
+        expect(card, findsOneWidget);
+        expect(
+          tester.getSemantics(card),
+          matchesSemantics(
+            label: label,
+            isButton: true,
+            hasEnabledState: true,
+            isEnabled: true,
+            hasTapAction: true,
+          ),
+        );
+      }
     } finally {
       semantics.dispose();
     }

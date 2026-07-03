@@ -34,6 +34,12 @@ abstract final class AppColors {
   /// 官方品牌红，仅复刻保真场景使用。
   static const brandRed = Color(0xFFF11C2C);
 
+  /// 官方台铃 App 首页浅灰底色（APK: `ceff0f5`）。
+  static const officialPageBg = Color(0xFFEFF0F5);
+
+  /// 官方台铃 App 次级文字色（APK: `c807e89`）。
+  static const officialTextMuted = Color(0xFF807E89);
+
   /// 深色主操作色（极简高端风格滑块/按钮）。
   static const dark = Color(0xFF1A1A1A);
 

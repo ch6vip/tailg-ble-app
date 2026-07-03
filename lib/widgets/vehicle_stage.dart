@@ -350,8 +350,38 @@ class VehicleStage extends StatelessWidget {
     return SizedBox(
       height: height,
       width: double.infinity,
-      child: CustomPaint(
-        painter: VehicleStagePainter(batteryLevel: batteryLevel),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            left: 24,
+            right: 24,
+            bottom: 14,
+            child: Container(
+              height: 22,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF385064).withValues(alpha: 0.18),
+                    blurRadius: 24,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Image.asset(
+            'assets/official_tailg/vehicle.png',
+            fit: BoxFit.contain,
+            width: double.infinity,
+            height: height,
+            semanticLabel: '台铃车辆',
+            errorBuilder: (_, __, ___) => CustomPaint(
+              painter: VehicleStagePainter(batteryLevel: batteryLevel),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -15,7 +15,6 @@ import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
-import '../widgets/status_badge.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/vehicle_stage.dart';
@@ -39,21 +38,16 @@ part 'control_page_vehicle_overview.dart';
 part 'control_page_mode_widgets.dart';
 
 // P0-2: 改为运行时读取，让暗色模式生效。Sprint 3 Token 重建后改用 ThemeExtension。
-Color _pageBg(BuildContext context) => AppColors.of(context).pageBg;
+Color _pageBg(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+    ? AppColors.of(context).pageBg
+    : AppColors.officialPageBg;
 const _kmPerPercent = 0.65;
-const _phoneControlRadius = 16.0;
 const _officialPressedBg = Color(0xFFE5E5E5);
 
 // 控车确认超时与轮询间隔
 const _controlConfirmTimeout = Duration(seconds: 8);
 const _controlConfirmPollDelay = Duration(milliseconds: 800);
-// M3: elevated card without border, soft dual-layer shadow
-const _cardDecoration = BoxDecoration(
-  color: AppColors.surface,
-  borderRadius: BorderRadius.all(Radius.circular(AppRadii.card)),
-  boxShadow: AppShadows.elevation1,
-);
-
 int? _normalizePercent(int? value) {
   if (value == null) return null;
   return value.clamp(0, 100).toInt();
@@ -233,14 +227,6 @@ class _HomeBodyState extends State<_HomeBody> {
                     ),
                     const SizedBox(height: 14),
                     const _HomeQuickSection(),
-                    const SizedBox(height: 14),
-                    // P0-4: _RidingModeSelector 独立订阅 connState
-                    StreamBuilder<ble.ConnectionState>(
-                      stream: connectionManager.stateStream,
-                      initialData: connectionManager.state,
-                      builder: (context, snap) =>
-                          _RidingModeSelector(connState: snap.data!),
-                    ),
                     const SizedBox(height: 20),
                   ],
                 ),

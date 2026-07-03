@@ -16,6 +16,8 @@ class ControlCard extends StatefulWidget {
     super.key,
     this.onSeatOpen,
     this.onPowerOn,
+    this.onFind,
+    this.onLock,
     this.onMore,
     this.onToggleProximity,
     this.onRiderManagement,
@@ -27,6 +29,8 @@ class ControlCard extends StatefulWidget {
 
   final VoidCallback? onSeatOpen;
   final VoidCallback? onPowerOn;
+  final VoidCallback? onFind;
+  final VoidCallback? onLock;
   final VoidCallback? onMore;
   final ValueChanged<bool>? onToggleProximity;
   final VoidCallback? onRiderManagement;
@@ -44,78 +48,85 @@ class _ControlCardState extends State<ControlCard> {
   Widget build(BuildContext context) {
     final screenW = MediaQuery.of(context).size.width;
     final wide = screenW >= 360;
-    final sideSize = wide ? 52.0 : 44.0;
-    final knobSize = wide ? 88.0 : 70.0;
+    final leftWidth = wide ? 90.0 : 82.0;
+    final panelHeight = wide ? 170.0 : 160.0;
     final busy = widget.busy;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF182740).withValues(alpha: 0.1),
-            blurRadius: 36,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
       child: Column(
         children: [
-          const SizedBox(height: 20),
-          // Main control row: seat | power knob | more
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: wide ? 16 : 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _SideButton(
-                  size: sideSize,
-                  icon: Icons.inventory_2_outlined,
-                  label: '打开座桶',
-                  color: AppColors.inkBtn,
-                  disabled: busy,
-                  onTap: () {
-                    HapticFeedback.mediumImpact();
-                    widget.onSeatOpen?.call();
-                  },
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: leftWidth,
+                height: panelHeight,
+                child: _OfficialPanelCard(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: _SideButton(
+                          asset:
+                              'assets/official_tailg/ic_control_quick_operat.webp',
+                          icon: Icons.apps,
+                          label: '更多功能',
+                          color: AppColors.brandRed,
+                          disabled: busy,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            widget.onMore?.call();
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: _SideButton(
+                          asset:
+                              'assets/official_tailg/iv_control_chair_unclick.png',
+                          icon: Icons.inventory_2_outlined,
+                          label: '打开座桶',
+                          color: AppColors.brandRed,
+                          disabled: busy,
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            widget.onSeatOpen?.call();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                _PowerKnob(
-                  size: knobSize,
-                  powered: widget.powered,
-                  busy: busy,
-                  onPowerOn: () {
-                    HapticFeedback.heavyImpact();
-                    widget.onPowerOn?.call();
-                  },
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: SizedBox(
+                  height: panelHeight,
+                  child: _OfficialControlPanel(
+                    powered: widget.powered,
+                    busy: busy,
+                    onPowerOn: () {
+                      HapticFeedback.heavyImpact();
+                      widget.onPowerOn?.call();
+                    },
+                    onFind: widget.onFind,
+                    onLock: widget.onLock,
+                  ),
                 ),
-                _SideButton(
-                  size: sideSize,
-                  icon: Icons.apps,
-                  label: '更多功能',
-                  color: AppColors.inkBtn,
-                  disabled: busy,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    widget.onMore?.call();
-                  },
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          const Divider(height: 1, thickness: 0.5, color: Color(0x0A000000)),
-          // Sub control row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+          const SizedBox(height: 12),
+          _OfficialPanelCard(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _SubControl(
                   icon: Icons.bluetooth_connected,
                   label: '感应解锁',
-                  color: AppColors.energyGreen,
+                  color: AppColors.brandRed,
                   active: widget.proximityEnabled,
                   onTap: () =>
                       widget.onToggleProximity?.call(!widget.proximityEnabled),
@@ -123,7 +134,7 @@ class _ControlCardState extends State<ControlCard> {
                 _SubControl(
                   icon: Icons.people_outline,
                   label: '用车人',
-                  color: AppColors.accentViolet,
+                  color: AppColors.brandRed,
                   onTap: () {
                     HapticFeedback.selectionClick();
                     widget.onRiderManagement?.call();
@@ -132,7 +143,7 @@ class _ControlCardState extends State<ControlCard> {
                 _SubControl(
                   icon: Icons.dashboard_outlined,
                   label: '超级仪表',
-                  color: AppColors.accentSky,
+                  color: AppColors.brandRed,
                   onTap: () {
                     HapticFeedback.selectionClick();
                     widget.onSuperDashboard?.call();
@@ -147,10 +158,145 @@ class _ControlCardState extends State<ControlCard> {
   }
 }
 
+class _OfficialPanelCard extends StatelessWidget {
+  const _OfficialPanelCard({required this.child, required this.padding});
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1F1F1F).withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _OfficialControlPanel extends StatelessWidget {
+  const _OfficialControlPanel({
+    required this.powered,
+    required this.busy,
+    required this.onPowerOn,
+    this.onFind,
+    this.onLock,
+  });
+
+  final bool powered;
+  final bool busy;
+  final VoidCallback onPowerOn;
+  final VoidCallback? onFind;
+  final VoidCallback? onLock;
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialPanelCard(
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        children: [
+          Expanded(
+            child: _PowerKnob(
+              powered: powered,
+              busy: busy,
+              onPowerOn: onPowerOn,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _PanelCommand(
+                  asset: 'assets/official_tailg/ic_control_iv_find.png',
+                  icon: Icons.campaign_outlined,
+                  label: '寻车',
+                  onTap: busy ? null : onFind,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _PanelCommand(
+                  asset: 'assets/official_tailg/ic_control_iv_lock.png',
+                  icon: Icons.lock_outline,
+                  label: '设防',
+                  onTap: busy ? null : onLock,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PanelCommand extends StatelessWidget {
+  const _PanelCommand({
+    required this.asset,
+    required this.icon,
+    required this.label,
+    this.onTap,
+  });
+
+  final String asset;
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppPressable(
+      enabled: onTap != null,
+      onTap: onTap,
+      haptic: false,
+      semanticsLabel: label,
+      semanticsButton: true,
+      semanticsEnabled: onTap != null,
+      child: Container(
+        height: 64,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              asset,
+              width: 22,
+              height: 22,
+              errorBuilder: (_, __, ___) =>
+                  Icon(icon, size: 22, color: AppColors.brandRed),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.officialTextMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Side action button (seat bucket / more functions).
 class _SideButton extends StatelessWidget {
   const _SideButton({
-    this.size = 52,
+    this.asset,
     required this.icon,
     required this.label,
     required this.color,
@@ -158,7 +304,7 @@ class _SideButton extends StatelessWidget {
     this.onTap,
   });
 
-  final double size;
+  final String? asset;
   final IconData icon;
   final String label;
   final Color color;
@@ -181,28 +327,47 @@ class _SideButton extends StatelessWidget {
       child: AnimatedOpacity(
         opacity: disabled ? 0.45 : 1.0,
         duration: const Duration(milliseconds: 200),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLow,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: size * 0.45, color: color),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final finiteHeight = constraints.maxHeight.isFinite;
+            final iconBox = finiteHeight
+                ? (constraints.maxHeight - 20).clamp(34.0, 52.0)
+                : 52.0;
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: iconBox,
+                  height: iconBox,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F8FA),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: asset == null
+                      ? Icon(icon, size: iconBox * 0.45, color: color)
+                      : Image.asset(
+                          asset!,
+                          width: iconBox * 0.48,
+                          height: iconBox * 0.48,
+                          errorBuilder: (_, __, ___) =>
+                              Icon(icon, size: iconBox * 0.45, color: color),
+                        ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.officialTextMuted,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -211,13 +376,7 @@ class _SideButton extends StatelessWidget {
 
 /// Central power knob with long-press ring progress (Ninebot-style).
 class _PowerKnob extends StatefulWidget {
-  const _PowerKnob({
-    this.size = 88,
-    required this.powered,
-    this.busy = false,
-    this.onPowerOn,
-  });
-  final double size;
+  const _PowerKnob({required this.powered, this.busy = false, this.onPowerOn});
   final bool powered;
   final bool busy;
   final VoidCallback? onPowerOn;
@@ -304,9 +463,10 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
 
   void _onPointerMove(PointerMoveEvent event) {
     if (!_holding) return;
-    final width = context.size?.width ?? widget.size;
-    final left = ((width - widget.size) / 2).clamp(0.0, double.infinity);
-    final knobBounds = Rect.fromLTWH(left, 0, widget.size, widget.size);
+    final size = context.size ?? const Size(88, 64);
+    final knobBounds = widget.powered
+        ? Rect.fromLTWH(size.width - 70, 0, 70, size.height)
+        : Rect.fromLTWH(0, 0, 70, size.height);
     if (!knobBounds.contains(event.localPosition)) {
       _finish();
     }
@@ -333,11 +493,7 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final ringColor = widget.powered
-        ? AppColors.energyGreen
-        : AppColors.inkBtn2;
-    final coreColor = widget.powered ? AppColors.energyGreen : AppColors.inkBtn;
-    final sz = widget.size;
+    final coreColor = widget.powered ? AppColors.brandRed : AppColors.brandRed;
     final semanticLabel = widget.busy
         ? '电源：处理中'
         : widget.powered
@@ -361,117 +517,94 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
           onPointerMove: _onPointerMove,
           onPointerUp: _onPointerUp,
           onPointerCancel: _onPointerCancel,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedBuilder(
-                animation: Listenable.merge([_progress, _busyPulse]),
-                builder: (_, child) {
-                  final busyGlowAlpha = widget.busy ? _busyPulse.value : 0.0;
-                  return SizedBox(
-                    width: sz,
-                    height: sz,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Busy pulsing glow ring
-                        if (widget.busy)
-                          Container(
-                            width: sz * 1.12,
-                            height: sz * 1.12,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.energyGreen.withValues(
-                                  alpha: busyGlowAlpha,
-                                ),
-                                width: 3,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.energyGreen.withValues(
-                                    alpha: busyGlowAlpha * 0.4,
-                                  ),
-                                  blurRadius: sz * 0.2,
-                                ),
-                              ],
-                            ),
-                          ),
-                        CustomPaint(
-                          size: Size(sz, sz),
-                          painter: _RingPainter(
-                            color: ringColor.withValues(alpha: 0.15),
-                            progress: 1.0,
-                          ),
-                        ),
-                        CustomPaint(
-                          size: Size(sz, sz),
-                          painter: _RingPainter(
-                            color: AppColors.energyGreen,
-                            progress: widget.powered ? 1.0 : _progress.value,
-                          ),
-                        ),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: _holding ? sz * 0.70 : sz * 0.73,
-                          height: _holding ? sz * 0.70 : sz * 0.73,
+          child: AnimatedBuilder(
+            animation: Listenable.merge([_progress, _busyPulse]),
+            builder: (_, child) {
+              final progress = widget.busy
+                  ? _busyPulse.value
+                  : _holding
+                  ? _progress.value
+                  : widget.powered
+                  ? 1.0
+                  : 0.0;
+              return Container(
+                height: double.infinity,
+                constraints: const BoxConstraints(minHeight: 64),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF0F5),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Positioned.fill(
+                      child: FractionallySizedBox(
+                        alignment: widget.powered
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        widthFactor: progress.clamp(0.0, 1.0),
+                        child: DecoratedBox(
                           decoration: BoxDecoration(
-                            color: coreColor,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: coreColor.withValues(alpha: 0.28),
-                                blurRadius: sz * 0.23,
-                                offset: Offset(0, sz * 0.09),
-                              ),
-                            ],
+                            color: coreColor.withValues(alpha: 0.16),
                           ),
-                          child: widget.busy
-                              ? SizedBox(
-                                  width: sz * 0.3,
-                                  height: sz * 0.3,
-                                  child: const CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Icon(
-                                  widget.powered
-                                      ? Icons.power_off
-                                      : Icons.power_settings_new,
-                                  color: Colors.white,
-                                  size: sz * 0.3,
-                                ),
                         ),
-                      ],
+                      ),
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.busy
-                    ? '处理中…'
-                    : widget.powered
-                    ? '长按熄火'
-                    : '长按开机',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: widget.powered && !widget.busy
-                      ? AppColors.danger
-                      : AppColors.textPrimary,
+                    Text(
+                      widget.busy
+                          ? '执行中...'
+                          : widget.powered
+                          ? '左滑关闭'
+                          : '右滑启动',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.officialTextMuted,
+                      ),
+                    ),
+                    AnimatedAlign(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      alignment: widget.powered
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Container(
+                        width: 52,
+                        height: 52,
+                        margin: const EdgeInsets.symmetric(horizontal: 7),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: coreColor.withValues(alpha: 0.18),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: widget.busy
+                            ? const Padding(
+                                padding: EdgeInsets.all(15),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                  color: AppColors.brandRed,
+                                ),
+                              )
+                            : Icon(
+                                widget.powered
+                                    ? Icons.power_off
+                                    : Icons.power_settings_new,
+                                color: AppColors.brandRed,
+                                size: 24,
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                widget.busy ? '请稍候' : '按住 1.2 秒',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),
@@ -540,33 +673,4 @@ class _SubControl extends StatelessWidget {
       },
     );
   }
-}
-
-/// Ring progress painter for the power knob.
-class _RingPainter extends CustomPainter {
-  _RingPainter({required this.color, required this.progress});
-  final Color color;
-  final double progress;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 5
-      ..strokeCap = StrokeCap.round;
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width * 0.44;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -1.5708,
-      6.2832 * progress,
-      false,
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _RingPainter old) =>
-      old.color != color || old.progress != progress;
 }
