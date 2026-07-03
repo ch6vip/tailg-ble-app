@@ -94,4 +94,23 @@ void main() {
     expect(app.proximityService.enabled, isTrue);
     expect(app.manualModeService.enabled, isFalse);
   });
+
+  testWidgets('manual mode pill keeps a 44dp touch target', (tester) async {
+    await pumpBoundHome(tester, size: const Size(430, 2200));
+
+    final manualModePill = find.byTooltip('开启手动模式：禁用感应解锁/自动连接');
+    expect(manualModePill, findsOneWidget);
+    expect(tester.getSize(manualModePill).height, greaterThanOrEqualTo(44));
+
+    final enabledEvent = app.manualModeService.enabledStream.firstWhere(
+      (value) => value,
+    );
+
+    await tester.tap(manualModePill);
+    await tester.pump();
+    await enabledEvent;
+    await tester.pump();
+
+    expect(app.manualModeService.enabled, isTrue);
+  });
 }

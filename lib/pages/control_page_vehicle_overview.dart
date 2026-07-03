@@ -74,7 +74,7 @@ class _ManualModePillState extends State<_ManualModePill> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
-                  vertical: 7,
+                  vertical: 0,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
