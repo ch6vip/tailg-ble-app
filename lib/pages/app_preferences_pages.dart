@@ -330,33 +330,45 @@ class _OptionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: AppTextStyles.itemTitle),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 4),
-                      Text(subtitle!, style: AppTextStyles.smallText),
-                    ],
-                  ],
-                ),
+    final semanticLabel = subtitle == null ? title : '$title，$subtitle';
+    return Semantics(
+      label: semanticLabel,
+      button: true,
+      enabled: true,
+      selected: selected,
+      onTap: onTap,
+      child: ExcludeSemantics(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: AppTextStyles.itemTitle),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 4),
+                          Text(subtitle!, style: AppTextStyles.smallText),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    selected
+                        ? Icons.check_circle_outline
+                        : Icons.radio_button_unchecked,
+                    color: selected
+                        ? AppColors.primary
+                        : AppColors.textTertiary,
+                  ),
+                ],
               ),
-              Icon(
-                selected
-                    ? Icons.check_circle_outline
-                    : Icons.radio_button_unchecked,
-                color: selected ? AppColors.primary : AppColors.textTertiary,
-              ),
-            ],
+            ),
           ),
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/app_preferences_pages.dart';
 
@@ -9,6 +10,8 @@ import 'helpers/test_app.dart';
 
 void main() {
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    app.appPreferencesService.resetForTest();
     app.logService.clear();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, (call) async {
@@ -18,6 +21,8 @@ void main() {
   });
 
   tearDown(() {
+    SharedPreferences.setMockInitialValues({});
+    app.appPreferencesService.resetForTest();
     app.logService.clear();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, null);
@@ -31,5 +36,50 @@ void main() {
 
     expect(find.text('已复制诊断报告'), findsOneWidget);
     expect(snackIcon(Icons.check_circle_outline), findsOneWidget);
+  });
+
+  testWidgets('language options expose selected semantics and 44dp targets', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+
+    try {
+      await tester.pumpWidget(const TestApp(home: LanguageSettingsPage()));
+      await tester.pump();
+
+      final systemOption = find.bySemanticsLabel('跟随系统');
+      expect(systemOption, findsOneWidget);
+      expect(tester.getSize(systemOption).height, greaterThanOrEqualTo(44));
+      expect(
+        tester.getSemantics(systemOption),
+        matchesSemantics(
+          label: '跟随系统',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasSelectedState: true,
+          isSelected: true,
+          hasTapAction: true,
+        ),
+      );
+
+      await tester.tap(find.bySemanticsLabel('English'));
+      await tester.pump();
+
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('English')),
+        matchesSemantics(
+          label: 'English',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasSelectedState: true,
+          isSelected: true,
+          hasTapAction: true,
+        ),
+      );
+    } finally {
+      semantics.dispose();
+    }
   });
 }
