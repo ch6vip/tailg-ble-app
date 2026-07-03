@@ -60,7 +60,7 @@
 
 - **文件**:`lib/ble/connection_manager.dart:188-200, 305-319`
 - **问题**:`connect()` 在 `_setState(connected)` 后等待 TokenResponse / QGJ-login 通知才切到 `ready`。若 `_writeChar`/`_feb1Char`/`_feb2Char` 为 null,仅跳过写入不抛错;若设备不回 token 或 QGJ notify 未订阅(`_feb2Char==null` 时 `_notifySub` 永不创建),状态永久卡在 `connected`,UI 永久"连接中"。
-- **修复**:为 connected → ready 增加超时(如 8s),超时后回退 disconnected 并触发重连。
+- **修复**:为 connected → ready 增加 8s 超时,超时后回退 disconnected 并触发重连；`connection_manager_state_test.dart` 覆盖 watchdog 超时断连与 ready 后解除超时。
 
 ### P1-3 心跳线程内同步调用 _onDisconnected
 
@@ -136,10 +136,9 @@
 ## 测试与质量门禁评估
 
 ### 测试覆盖
-- 当前 test/ 共 36 个 `*_test.dart` 文件,覆盖协议解析(ble_parser)、云服务(official_cloud)、车辆存储(vehicle_store)、控车页绑定/生命周期、位置页重建结构、日志/消息流刷新、proximity / auto_connect / manual_mode service 等。
+- 当前 test/ 共 36 个 `*_test.dart` 文件,覆盖协议解析(ble_parser)、云服务(official_cloud)、车辆存储(vehicle_store)、控车页绑定/生命周期、位置页重建结构、日志/消息流刷新、connection_manager ready watchdog、proximity / auto_connect / manual_mode service 等。
 - **盲区**:
   - UI 绑定层测试仍需继续补强;P0-1 的"感应解锁开关 → ProximityService"绑定已由 `control_page_bound_home_test.dart` 覆盖。
-  - 无 connection_manager connected → ready 超时场景测试。
   - `official_cloud_auth_parser` 的 generic `id` 误匹配已有 P1-4 回归测试。
 
 ### 静态分析

@@ -50,6 +50,50 @@ void main() {
     await responseExpectation;
   });
 
+  testWidgets('ready watchdog disconnects stale connected state', (
+    tester,
+  ) async {
+    final manager = ConnectionManager();
+    addTearDown(manager.dispose);
+
+    manager.enterConnectedForTest();
+    expect(manager.state, ConnectionState.connected);
+    expect(manager.readyWatchdogActiveForTest, isTrue);
+
+    await tester.pump(
+      BleTimings.readyHandshakeTimeout - const Duration(milliseconds: 1),
+    );
+    expect(manager.state, ConnectionState.connected);
+    expect(manager.readyWatchdogActiveForTest, isTrue);
+
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump();
+
+    expect(manager.state, ConnectionState.disconnected);
+    expect(manager.readyWatchdogActiveForTest, isFalse);
+    expect(manager.disconnectHandledForTest, isTrue);
+  });
+
+  testWidgets('ready watchdog is disarmed after ready transition', (
+    tester,
+  ) async {
+    final manager = ConnectionManager();
+    addTearDown(manager.dispose);
+
+    manager.enterConnectedForTest();
+    expect(manager.readyWatchdogActiveForTest, isTrue);
+
+    manager.enterReadyForTest();
+    expect(manager.state, ConnectionState.ready);
+    expect(manager.readyWatchdogActiveForTest, isFalse);
+
+    await tester.pump(BleTimings.readyHandshakeTimeout);
+    await tester.pump();
+
+    expect(manager.state, ConnectionState.ready);
+    expect(manager.disconnectHandledForTest, isFalse);
+  });
+
   test(
     'GATT queue runs high priority work before low priority pending work',
     () async {

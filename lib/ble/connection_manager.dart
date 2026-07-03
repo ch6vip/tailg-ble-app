@@ -616,6 +616,15 @@ class ConnectionManager {
     return completer.future;
   }
 
+  @visibleForTesting
+  void enterConnectedForTest() => _setState(ConnectionState.connected);
+
+  @visibleForTesting
+  void enterReadyForTest() => _setState(ConnectionState.ready);
+
+  @visibleForTesting
+  bool get readyWatchdogActiveForTest => _readyWatchdog?.isActive ?? false;
+
   /// P0-1: 测试钩子 —— 模拟设备端断连守卫的标记与复位。
   ///
   /// `_disconnectHandled` 在 `_onDisconnected()` 首次进入时置 true，
