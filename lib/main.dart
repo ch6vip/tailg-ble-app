@@ -85,10 +85,130 @@ void main() async {
     await manualModeService.init();
   } catch (e, st) {
     debugPrint('Startup initialization failed: $e\n$st');
-    // Still proceed to runApp — services will lazy-init on first use.
+    runApp(StartupErrorApp(error: e, stackTrace: st));
+    return;
   }
 
   runApp(const TailgBleApp());
+}
+
+class StartupErrorApp extends StatelessWidget {
+  const StartupErrorApp({
+    super.key,
+    required this.error,
+    required this.stackTrace,
+  });
+
+  final Object error;
+  final StackTrace stackTrace;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Tailg BLE',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.danger),
+        scaffoldBackgroundColor: AppColors.pageBg,
+        useMaterial3: true,
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(shape: _buttonShape),
+        ),
+      ),
+      home: _StartupErrorView(error: error, stackTrace: stackTrace),
+    );
+  }
+}
+
+class _StartupErrorView extends StatelessWidget {
+  const _StartupErrorView({required this.error, required this.stackTrace});
+
+  final Object error;
+  final StackTrace stackTrace;
+
+  @override
+  Widget build(BuildContext context) {
+    final details = '$error\n\n$stackTrace';
+    return Scaffold(
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: AppColors.danger.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.error_outline,
+                            color: AppColors.danger,
+                            size: 34,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        const Text(
+                          '启动失败',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          '应用初始化失败，请重启应用或查看日志。',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            height: 1.5,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(AppRadii.card),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: SelectableText(
+                              details,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                height: 1.4,
+                                color: AppColors.textSecondary,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
 }
 
 /// 全 App 统一的按钮圆角矩形形状（替代 Material3 默认胶囊形）。

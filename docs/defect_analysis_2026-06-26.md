@@ -136,7 +136,7 @@
 ## 测试与质量门禁评估
 
 ### 测试覆盖
-- 当前 test/ 共 36 个 `*_test.dart` 文件,覆盖协议解析(ble_parser 边界/合法帧)、云服务(official_cloud,含 P1-4 generic `id` 回归)、车辆存储(vehicle_store)、控车页绑定/生命周期、位置页重建结构、日志/消息流刷新、connection_manager ready watchdog、proximity / auto_connect / manual_mode service 等。
+- 当前 test/ 共 37 个 `*_test.dart` 文件,覆盖协议解析(ble_parser 边界/合法帧)、云服务(official_cloud,含 P1-4 generic `id` 回归)、车辆存储(vehicle_store)、控车页绑定/生命周期、位置页重建结构、日志/消息流刷新、启动失败降级 UI、connection_manager ready watchdog、proximity / auto_connect / manual_mode service 等。
 - **盲区**:
   - UI 绑定层测试仍需继续补强;P0-1 的"感应解锁开关 → ProximityService"绑定已由 `control_page_bound_home_test.dart` 覆盖。
 
