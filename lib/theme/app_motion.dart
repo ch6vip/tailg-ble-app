@@ -2,7 +2,7 @@ import 'package:flutter/animation.dart';
 
 /// Centralised motion tokens for the Tailg BLE app.
 ///
-/// Based on `design_v2/UI_DESIGN_PROPOSAL.md` motion guidelines.
+/// Current design notes live in `docs/design_system.md`.
 /// Replace hardcoded `Duration` / `Curve` literals with these constants
 /// to keep animations consistent and tunable from a single source.
 abstract final class AppMotion {

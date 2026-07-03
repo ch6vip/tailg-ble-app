@@ -13,7 +13,7 @@ import 'vehicle_message_page.dart';
 
 /// v8 Profile / "我的" page.
 ///
-/// Aligns with `design_v2/profile_v8.html`.
+/// Current design notes live in `docs/design_system.md`.
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 

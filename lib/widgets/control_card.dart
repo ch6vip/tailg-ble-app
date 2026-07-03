@@ -10,7 +10,7 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 /// v8 floating control card — Ninebot-style central ink-button
 /// with long-press power ring progress.
 ///
-/// Aligns with `design_v2/home_v8_ninebot.html` `.control-card` section.
+/// Current design notes live in `docs/design_system.md`.
 class ControlCard extends StatefulWidget {
   const ControlCard({
     super.key,

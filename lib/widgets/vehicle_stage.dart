@@ -4,7 +4,7 @@ import 'package:tailg_ble_app/theme/app_colors.dart';
 /// v8 vehicle stage: full Tailg e-motorcycle SVG illustration with shadow,
 /// ground reflection, and "TAILG" brand watermark.
 ///
-/// Ported from `design_v2/home_v8_ninebot.html` lines 306–376.
+/// Current design notes live in `docs/design_system.md`.
 class VehicleStagePainter extends CustomPainter {
   VehicleStagePainter({this.batteryLevel = 0.84});
 

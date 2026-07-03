@@ -6,7 +6,7 @@ import 'package:tailg_ble_app/theme/app_colors.dart';
 /// Shows big battery percentage with color-coded SOC bar,
 /// range estimate, and vehicle name switcher. Responsive:
 /// switches to a stacked layout on narrow screens (< 360 logical px).
-/// Aligns with `design_v2/home_v8_ninebot.html` `.hero-head` + `.soc-bar`.
+/// Current design notes live in `docs/design_system.md`.
 class ControlPageHero extends StatelessWidget {
   const ControlPageHero({
     super.key,

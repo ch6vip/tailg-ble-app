@@ -56,7 +56,7 @@ Hybrid rules:
 - Create `lib/l10n/format.dart` with `s(String template, [Object? p1, ...])` and a couple of plural helpers (e.g. `sPluralCount(int n, String suffix)`).
 - Define key-naming convention: `Strings.<featureArea>.<screen>.<element>` (e.g. `Strings.scan.startButton`, `Strings.control.unbound.scanCta`).
 - Add a CI/lint guard: a grep-based check (or a tiny analyzer plugin later) that fails if a `Text('...')` with a CJK character lands in `lib/`. The guard is what keeps the debt from re-accumulating. Easiest form: a `tool/check_no_chinese_in_text.dart` script invoked from `flutter analyze` or CI.
-- Document the convention in `docs/i18n-conventions.md` (sibling doc).
+- If this plan moves into implementation, add a focused conventions section to this document or create `docs/i18n-conventions.md` in the same PR.
 
 ### Phase 2 — Extract high-traffic files (~5 pages, ~600 LoC touched)
 These are the screens with the most visible copy and the most "lone hero" pages users will see first. Prioritize by string count × visibility.
