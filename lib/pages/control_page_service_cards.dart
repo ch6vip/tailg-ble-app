@@ -80,7 +80,12 @@ class _SvcListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    final semanticsLabel = [
+      title,
+      subtitle,
+      if (value != null && value!.isNotEmpty) value!,
+    ].join('，');
+    final card = GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
@@ -141,6 +146,13 @@ class _SvcListCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+    return Semantics(
+      label: semanticsLabel,
+      button: true,
+      enabled: true,
+      onTap: onTap,
+      child: ExcludeSemantics(child: card),
     );
   }
 }

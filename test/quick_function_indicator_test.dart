@@ -56,4 +56,55 @@ void main() {
     expect(find.text('电池详情'), findsOneWidget);
     expect(find.text('骑行记录'), findsOneWidget);
   });
+
+  testWidgets('service cards expose semantics', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await _pumpControlPage(tester, const Size(430, 2600));
+
+      const locationLabel = '车辆定位，查看车辆实时位置与导航';
+      final locationCard = find.bySemanticsLabel(locationLabel);
+      expect(locationCard, findsOneWidget);
+      expect(
+        tester.getSemantics(locationCard),
+        matchesSemantics(
+          label: locationLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+
+      const batteryLabel = '电池详情，BMS 电压 · 温度 · 循环次数，健康 96%';
+      final batteryCard = find.bySemanticsLabel(batteryLabel);
+      expect(batteryCard, findsOneWidget);
+      expect(
+        tester.getSemantics(batteryCard),
+        matchesSemantics(
+          label: batteryLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+
+      const travelLabel = '骑行记录，轨迹回放 · 里程统计';
+      final travelCard = find.bySemanticsLabel(travelLabel);
+      expect(travelCard, findsOneWidget);
+      expect(
+        tester.getSemantics(travelCard),
+        matchesSemantics(
+          label: travelLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+    } finally {
+      semantics.dispose();
+    }
+  });
 }
