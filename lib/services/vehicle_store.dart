@@ -84,10 +84,17 @@ class VehicleStore {
     final Object? decoded;
     try {
       decoded = jsonDecode(raw);
-    } catch (_) {
+    } catch (e) {
+      _logDecodeWarning('Failed to decode persisted vehicle profiles: $e');
       return const [];
     }
-    if (decoded is! List) return const [];
+    if (decoded is! List) {
+      _logDecodeWarning(
+        'Expected persisted vehicle profiles to be a list, '
+        'got ${decoded.runtimeType}',
+      );
+      return const [];
+    }
 
     final vehicles = <VehicleProfile>[];
     for (final item in decoded) {
@@ -107,6 +114,14 @@ class VehicleStore {
       }
     }
     return vehicles;
+  }
+
+  void _logDecodeWarning(String detail) {
+    LogService().operation(
+      'VehicleStore',
+      detail: detail,
+      level: LogLevel.warning,
+    );
   }
 
   Future<List<VehicleProfile>> _hydrateQgjCredentials(

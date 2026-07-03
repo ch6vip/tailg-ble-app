@@ -2,14 +2,20 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
+import 'package:tailg_ble_app/services/log_service.dart';
 import 'package:tailg_ble_app/services/replica_feature_store.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 
 void main() {
   setUp(() {
     VehicleStore().resetForTest();
+    LogService().clear();
     SharedPreferences.setMockInitialValues({});
     FlutterSecureStorage.setMockInitialValues({});
+  });
+
+  tearDown(() {
+    LogService().clear();
   });
 
   test('VehicleStore saves default vehicle and renames it', () async {
@@ -120,6 +126,40 @@ void main() {
     expect(store.vehicles, isEmpty);
     expect(store.defaultVehicle, isNull);
     expect(store.defaultVehicleId, isNull);
+    final warnings = LogService().all
+        .where(
+          (entry) =>
+              entry.message == 'VehicleStore' &&
+              entry.level == LogLevel.warning,
+        )
+        .toList();
+    expect(warnings, hasLength(1));
+    expect(
+      warnings.single.detail,
+      contains('Failed to decode persisted vehicle profiles'),
+    );
+  });
+
+  test('VehicleStore logs non-list persisted vehicle payloads', () async {
+    SharedPreferences.setMockInitialValues({
+      'vehicle_profiles': '{"id":"AA:BB:CC:DD:EE:FF"}',
+      'vehicle_default_id': 'AA:BB:CC:DD:EE:FF',
+    });
+    VehicleStore().resetForTest();
+
+    final store = VehicleStore();
+    await store.init();
+
+    expect(store.vehicles, isEmpty);
+    expect(store.defaultVehicleId, isNull);
+    final warning = LogService().all.singleWhere(
+      (entry) =>
+          entry.message == 'VehicleStore' && entry.level == LogLevel.warning,
+    );
+    expect(
+      warning.detail,
+      contains('Expected persisted vehicle profiles to be a list'),
+    );
   });
 
   test(
