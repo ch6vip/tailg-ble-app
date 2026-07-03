@@ -194,10 +194,14 @@ class _UnboundBanner extends StatefulWidget {
   State<_UnboundBanner> createState() => _UnboundBannerState();
 }
 
-class _UnboundBannerState extends State<_UnboundBanner> {
+class _UnboundBannerState extends State<_UnboundBanner>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  static const _autoAdvanceInterval = Duration(seconds: 4);
+  static const _pageTransitionDuration = Duration(milliseconds: 400);
+
   final _pageController = PageController();
+  late final AnimationController _autoAdvanceController;
   int _currentPage = 0;
-  Timer? _timer;
 
   static const _pages = [
     _BannerPage(
@@ -232,20 +236,50 @@ class _UnboundBannerState extends State<_UnboundBanner> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!mounted) return;
-      final next = (_currentPage + 1) % _pages.length;
-      _pageController.animateToPage(
-        next,
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
-      );
-    });
+    WidgetsBinding.instance.addObserver(this);
+    _autoAdvanceController =
+        AnimationController(vsync: this, duration: _autoAdvanceInterval)
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              _advancePage();
+              _autoAdvanceController.reset();
+              _autoAdvanceController.forward();
+            }
+          });
+    _autoAdvanceController.forward();
+  }
+
+  void _advancePage() {
+    if (!mounted || !_pageController.hasClients) return;
+    final visiblePage = (_pageController.page ?? _currentPage).round().clamp(
+      0,
+      _pages.length - 1,
+    );
+    final next = (visiblePage + 1) % _pages.length;
+    _pageController.animateToPage(
+      next,
+      duration: _pageTransitionDuration,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _autoAdvanceController.stop();
+    } else if (state == AppLifecycleState.resumed) {
+      if (_autoAdvanceController.isCompleted) {
+        _autoAdvanceController.forward(from: 0);
+      } else {
+        _autoAdvanceController.forward();
+      }
+    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    _autoAdvanceController.dispose();
     _pageController.dispose();
     super.dispose();
   }
