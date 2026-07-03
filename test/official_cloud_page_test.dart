@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +11,15 @@ import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'helpers/test_app.dart';
 
 void main() {
+  test('OfficialCloudPage does not use empty setState refreshes', () {
+    final source = File(
+      'lib/pages/official_cloud_page.dart',
+    ).readAsStringSync();
+
+    expect(source, isNot(contains('setState(() {})')));
+    expect(source, contains('_syncInputState'));
+  });
+
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     app.vehicleStore.resetForTest();

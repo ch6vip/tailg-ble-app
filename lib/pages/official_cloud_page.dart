@@ -227,9 +227,15 @@ class _LoginCard extends StatefulWidget {
 }
 
 class _LoginCardState extends State<_LoginCard> {
+  bool _showPhoneError = false;
+  bool _showSmsError = false;
+  bool _validPhone = false;
+  bool _validSms = false;
+
   @override
   void initState() {
     super.initState();
+    _syncInputState();
     widget.phoneController.addListener(_onTextChanged);
     widget.smsController.addListener(_onTextChanged);
   }
@@ -237,13 +243,19 @@ class _LoginCardState extends State<_LoginCard> {
   @override
   void didUpdateWidget(_LoginCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+    var inputControllersChanged = false;
     if (oldWidget.phoneController != widget.phoneController) {
       oldWidget.phoneController.removeListener(_onTextChanged);
       widget.phoneController.addListener(_onTextChanged);
+      inputControllersChanged = true;
     }
     if (oldWidget.smsController != widget.smsController) {
       oldWidget.smsController.removeListener(_onTextChanged);
       widget.smsController.addListener(_onTextChanged);
+      inputControllersChanged = true;
+    }
+    if (inputControllersChanged) {
+      _syncInputState();
     }
   }
 
@@ -255,7 +267,8 @@ class _LoginCardState extends State<_LoginCard> {
   }
 
   void _onTextChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(_syncInputState);
   }
 
   String get _phoneText =>
@@ -263,15 +276,15 @@ class _LoginCardState extends State<_LoginCard> {
 
   String get _smsText => widget.smsController.text.trim();
 
-  bool get _validPhone => RegExp(r'^\d{11}$').hasMatch(_phoneText);
-
-  bool get _validSms => RegExp(r'^\d{4,8}$').hasMatch(_smsText);
+  void _syncInputState() {
+    _validPhone = RegExp(r'^\d{11}$').hasMatch(_phoneText);
+    _validSms = RegExp(r'^\d{4,8}$').hasMatch(_smsText);
+    _showPhoneError = widget.phoneController.text.isNotEmpty && !_validPhone;
+    _showSmsError = widget.smsController.text.isNotEmpty && !_validSms;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final showPhoneError =
-        widget.phoneController.text.isNotEmpty && !_validPhone;
-    final showSmsError = widget.smsController.text.isNotEmpty && !_validSms;
     final canRequestCode = !widget.loading && _validPhone;
     final canLogin = !widget.loading && _validPhone && _validSms;
     return AppCard(
@@ -290,7 +303,7 @@ class _LoginCardState extends State<_LoginCard> {
             ],
             decoration: _inputDecoration(
               '手机号',
-              errorText: showPhoneError ? '请输入 11 位手机号' : null,
+              errorText: _showPhoneError ? '请输入 11 位手机号' : null,
             ),
           ),
           const SizedBox(height: 12),
@@ -307,7 +320,7 @@ class _LoginCardState extends State<_LoginCard> {
                   ],
                   decoration: _inputDecoration(
                     '短信验证码',
-                    errorText: showSmsError ? '请输入短信验证码' : null,
+                    errorText: _showSmsError ? '请输入短信验证码' : null,
                   ),
                 ),
               ),
