@@ -1112,11 +1112,14 @@ class _DisabledInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    const trailingText = '待确认';
+    final semanticsLabel = '$title，$subtitle，$trailingText';
+    void showPendingInfo() => _showInfoSnack(context, _pendingCommandMessage);
+    final row = Material(
       color: Colors.transparent,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _showInfoSnack(context, _pendingCommandMessage),
+        onTap: showPendingInfo,
         splashColor: AppColors.primary.withValues(alpha: 0.06),
         highlightColor: Colors.black.withValues(alpha: 0.025),
         child: Padding(
@@ -1147,11 +1150,18 @@ class _DisabledInfoRow extends StatelessWidget {
                   ],
                 ),
               ),
-              const Text('待确认', style: AppTextStyles.caption),
+              const Text(trailingText, style: AppTextStyles.caption),
             ],
           ),
         ),
       ),
+    );
+    return Semantics(
+      label: semanticsLabel,
+      button: true,
+      enabled: true,
+      onTap: showPendingInfo,
+      child: ExcludeSemantics(child: row),
     );
   }
 }
