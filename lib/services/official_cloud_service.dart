@@ -31,6 +31,34 @@ enum OfficialControlChannel {
   const OfficialControlChannel(this.label, this.description);
 }
 
+enum OfficialCloudResponseCode {
+  success('200'),
+  legacySuccess('0');
+
+  final String wireCode;
+
+  const OfficialCloudResponseCode(this.wireCode);
+
+  static OfficialCloudResponseCode? parse(Object? code) {
+    final normalized = code?.toString().trim();
+    for (final value in values) {
+      if (value.wireCode == normalized) return value;
+    }
+    return null;
+  }
+
+  static bool isSuccessBody(Map<String, dynamic> body) {
+    return parse(body['code'])?.isSuccess == true;
+  }
+
+  bool get isSuccess {
+    return switch (this) {
+      OfficialCloudResponseCode.success ||
+      OfficialCloudResponseCode.legacySuccess => true,
+    };
+  }
+}
+
 class OfficialCloudState {
   final bool initialized;
   final String token;
@@ -1084,11 +1112,8 @@ class OfficialCloudService {
   }
 
   void _ensureSuccess(Map<String, dynamic> body, {required String fallback}) {
-    final code = body['code']?.toString();
     final msg = body['msg']?.toString();
-    final success =
-        code == '200' || code == '0' || (msg != null && msg.contains('成功'));
-    if (!success) {
+    if (!OfficialCloudResponseCode.isSuccessBody(body)) {
       throw OfficialCloudApiException(
         msg == null || msg.isEmpty ? fallback : msg,
       );

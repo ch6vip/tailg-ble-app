@@ -156,6 +156,32 @@ void main() {
     });
   });
 
+  group('OfficialCloudResponseCode', () {
+    test('parses only explicit official success codes', () {
+      expect(
+        OfficialCloudResponseCode.parse('200'),
+        OfficialCloudResponseCode.success,
+      );
+      expect(
+        OfficialCloudResponseCode.parse(0),
+        OfficialCloudResponseCode.legacySuccess,
+      );
+      expect(OfficialCloudResponseCode.parse('500'), isNull);
+      expect(OfficialCloudResponseCode.parse(null), isNull);
+    });
+
+    test('does not infer success from message text', () {
+      expect(
+        OfficialCloudResponseCode.isSuccessBody({
+          'code': '500',
+          'msg': '操作未成功',
+        }),
+        isFalse,
+      );
+      expect(OfficialCloudResponseCode.isSuccessBody({'msg': '成功'}), isFalse);
+    });
+  });
+
   group('OfficialCloudRedactor', () {
     test('masks sensitive request path values and diagnostic text', () {
       expect(
