@@ -6,6 +6,48 @@ import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 
 void main() {
+  testWidgets('switch setting rows expose labeled toggle semantics', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      tester.view.physicalSize = const Size(430, 2200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(const TestApp(home: VehicleSettingsPage()));
+      await tester.pump();
+
+      const appRemoteLabel = 'APP遥控优先，官方入口已对齐，写入命令待确认，已关闭，命令待真机验证，暂不开放写入';
+      final appRemoteRow = find.bySemanticsLabel(appRemoteLabel);
+      expect(appRemoteRow, findsOneWidget);
+      expect(tester.getSize(appRemoteRow).height, greaterThanOrEqualTo(44));
+      expect(
+        tester.getSemantics(appRemoteRow),
+        matchesSemantics(
+          label: appRemoteLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasToggledState: true,
+          isToggled: false,
+          hasTapAction: true,
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel(appRemoteLabel));
+      await tester.pump();
+
+      expect(find.text('命令待真机验证，暂不开放写入'), findsOneWidget);
+      expect(snackIcon(Icons.info_outline), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('disabled pending vehicle setting exposes semantics', (
     tester,
   ) async {

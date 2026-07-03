@@ -1051,11 +1051,25 @@ class _SwitchSettingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onChanged != null;
-    return Material(
+    final semanticsLabel = [
+      title,
+      if (subtitle != null && subtitle!.isNotEmpty) subtitle!,
+      value ? '已开启' : '已关闭',
+      if (!enabled) disabledReason ?? _pendingCommandMessage,
+    ].join('，');
+    void activate() {
+      if (enabled) {
+        onChanged!(!value);
+      } else {
+        _showInfoSnack(context, disabledReason);
+      }
+    }
+
+    final row = Material(
       color: Colors.transparent,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: enabled ? null : () => _showInfoSnack(context, disabledReason),
+        onTap: enabled ? null : activate,
         splashColor: AppColors.primary.withValues(alpha: 0.06),
         highlightColor: Colors.black.withValues(alpha: 0.025),
         child: Padding(
@@ -1095,6 +1109,15 @@ class _SwitchSettingRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+    return Semantics(
+      container: true,
+      label: semanticsLabel,
+      button: true,
+      enabled: true,
+      toggled: value,
+      onTap: activate,
+      child: ExcludeSemantics(child: row),
     );
   }
 }
