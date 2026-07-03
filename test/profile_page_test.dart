@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/profile_page.dart';
+import 'package:tailg_ble_app/services/official_cloud_service.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 
 void main() {
   setUp(() {
+    app.officialCloudService.resetForTest();
+  });
+
+  tearDown(() {
     app.officialCloudService.resetForTest();
   });
 
@@ -20,5 +25,32 @@ void main() {
 
     expect(find.text('会员中心功能开发中'), findsOneWidget);
     expect(snackIcon(Icons.info_outline), findsOneWidget);
+  });
+
+  testWidgets('profile header follows official cloud state stream', (
+    tester,
+  ) async {
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token-before-logout',
+        phone: '18812345678',
+        userId: 'user-before-logout',
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: ProfilePage()));
+    await tester.pump();
+
+    expect(find.text('188****5678'), findsOneWidget);
+
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(initialized: true),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('138****8888'), findsOneWidget);
+    expect(find.text('188****5678'), findsNothing);
   });
 }

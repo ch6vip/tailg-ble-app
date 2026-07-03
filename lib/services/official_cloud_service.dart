@@ -1161,6 +1161,13 @@ class OfficialCloudService {
     }
     _state = OfficialCloudState.initial();
   }
+
+  @visibleForTesting
+  void setStateForTest(OfficialCloudState state) {
+    _state = state;
+    _initialized = state.initialized;
+    _emit();
+  }
 }
 
 extension on String {

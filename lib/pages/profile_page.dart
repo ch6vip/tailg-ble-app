@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 import '../main.dart';
+import '../services/official_cloud_service.dart';
 import '../widgets/app_snack.dart';
 import 'app_preferences_pages.dart';
 import 'official_cloud_page.dart';
@@ -22,12 +23,14 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   StreamSubscription? _cloudSub;
+  late OfficialCloudState _cloudState;
 
   @override
   void initState() {
     super.initState();
-    _cloudSub = officialCloudService.stateStream.listen((_) {
-      if (mounted) setState(() {});
+    _cloudState = officialCloudService.state;
+    _cloudSub = officialCloudService.stateStream.listen((state) {
+      if (mounted) setState(() => _cloudState = state);
     });
   }
 
@@ -39,9 +42,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final cloud = officialCloudService.state;
-    final signedIn = cloud.signedIn;
-    final phone = signedIn ? cloud.phone : null;
+    final signedIn = _cloudState.signedIn;
+    final phone = signedIn ? _cloudState.phone : null;
 
     return Scaffold(
       backgroundColor: AppColors.pageBg,
