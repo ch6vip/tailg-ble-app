@@ -120,6 +120,41 @@ void main() {
     expect(app.manualModeService.enabled, isTrue);
   });
 
+  testWidgets('manual mode toggle exposes semantics action', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await pumpBoundHome(tester, size: const Size(430, 2200));
+
+      final manualModeToggle = find.bySemanticsLabel('手动模式');
+      expect(manualModeToggle, findsOneWidget);
+      expect(
+        tester.getSemantics(manualModeToggle),
+        matchesSemantics(
+          label: '手动模式',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+          hasToggledState: true,
+          isToggled: false,
+        ),
+      );
+
+      final enabledEvent = app.manualModeService.enabledStream.firstWhere(
+        (value) => value,
+      );
+
+      tester.semantics.tap(find.semantics.byLabel('手动模式'));
+      await tester.pump();
+      await enabledEvent;
+      await tester.pump();
+
+      expect(app.manualModeService.enabled, isTrue);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('riding mode options use AppPressable feedback', (tester) async {
     await pumpBoundHome(tester, size: const Size(430, 2200));
 

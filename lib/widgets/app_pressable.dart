@@ -29,6 +29,7 @@ class AppPressable extends StatefulWidget {
   final bool? semanticsButton;
   final bool? semanticsEnabled;
   final bool? semanticsSelected;
+  final bool? semanticsToggled;
 
   const AppPressable({
     super.key,
@@ -50,6 +51,7 @@ class AppPressable extends StatefulWidget {
     this.semanticsButton,
     this.semanticsEnabled,
     this.semanticsSelected,
+    this.semanticsToggled,
   }) : assert(child != null || builder != null);
 
   @override
@@ -81,6 +83,7 @@ class _AppPressableState extends State<AppPressable> {
       button: widget.semanticsButton ?? widget.enabled,
       enabled: widget.semanticsEnabled ?? widget.enabled,
       selected: widget.semanticsSelected,
+      toggled: widget.semanticsToggled,
       onTap: widget.enabled && widget.onTap != null ? _activateTap : null,
       onLongPress: widget.enabled ? widget.onLongPress : null,
       child: GestureDetector(

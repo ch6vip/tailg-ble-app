@@ -179,24 +179,28 @@ class _ManualModeToggle extends StatefulWidget {
 class _ManualModeToggleState extends State<_ManualModeToggle> {
   bool _manualMode = false;
 
+  void _toggle() {
+    final selected = widget.value ?? _manualMode;
+    final next = !selected;
+    if (widget.value == null) {
+      setState(() => _manualMode = next);
+    }
+    widget.onChanged?.call(next);
+    HapticFeedback.selectionClick();
+  }
+
   @override
   Widget build(BuildContext context) {
     final selected = widget.value ?? _manualMode;
     return Semantics(
       toggled: selected,
       label: '手动模式',
+      button: true,
+      enabled: widget.enabled,
+      onTap: widget.enabled ? _toggle : null,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: widget.enabled
-            ? () {
-                final next = !selected;
-                if (widget.value == null) {
-                  setState(() => _manualMode = next);
-                }
-                widget.onChanged?.call(next);
-                HapticFeedback.selectionClick();
-              }
-            : null,
+        onTap: widget.enabled ? _toggle : null,
         child: SizedBox(
           width: 44,
           height: 44,

@@ -46,6 +46,10 @@ class _ManualModePillState extends State<_ManualModePill> {
         background: Colors.white.withValues(alpha: 0.78),
         pressedBackground: _officialPressedBg,
         borderRadius: BorderRadius.circular(18),
+        semanticsLabel: '手动模式',
+        semanticsButton: true,
+        semanticsEnabled: true,
+        semanticsToggled: _manualMode,
         builder: (context, pressed) => Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
           child: Row(
