@@ -153,18 +153,26 @@ class _ToastWidgetState extends State<_ToastWidget>
                       ),
                     ),
                   ),
-                  GestureDetector(
-                    key: const ValueKey('app-toast-dismiss'),
-                    behavior: HitTestBehavior.opaque,
+                  Semantics(
+                    label: '关闭提示',
+                    button: true,
+                    enabled: true,
                     onTap: widget.onDismissed,
-                    child: const SizedBox(
-                      width: 44,
-                      height: 44,
-                      child: Center(
-                        child: Icon(
-                          Icons.close,
-                          color: Colors.white70,
-                          size: 16,
+                    child: ExcludeSemantics(
+                      child: GestureDetector(
+                        key: const ValueKey('app-toast-dismiss'),
+                        behavior: HitTestBehavior.opaque,
+                        onTap: widget.onDismissed,
+                        child: const SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: Center(
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.white70,
+                              size: 16,
+                            ),
+                          ),
                         ),
                       ),
                     ),
