@@ -1,6 +1,12 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tailg_ble_app/pages/location_page.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
+
+import 'helpers/test_app.dart';
 
 void main() {
   test('LocationPage routes vehicle and cloud streams through notifiers', () {
@@ -31,9 +37,36 @@ void main() {
       RegExp(r'RepaintBoundary\(\s*child:\s*_MapTab\(').hasMatch(source),
       isTrue,
       reason:
-          'The map tab should stay behind RepaintBoundary so parent rebuilds '
-          'do not repaint FlutterMap.',
+          'The map tab should stay behind RepaintBoundary so parent '
+          'rebuilds do not repaint FlutterMap.',
     );
+  });
+
+  testWidgets('LocationPage segmented tabs keep 44dp touch targets', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(430, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const TestApp(home: LocationPage(embedded: true)));
+    await tester.pump();
+
+    final locationTab = find.ancestor(
+      of: find.text('位置'),
+      matching: find.byType(AppPressable),
+    );
+    expect(locationTab, findsOneWidget);
+    expect(tester.getSize(locationTab).height, greaterThanOrEqualTo(44));
+
+    await tester.tap(find.text('轨迹'));
+    await tester.pump();
+
+    expect(find.text('历史轨迹'), findsOneWidget);
   });
 }
 

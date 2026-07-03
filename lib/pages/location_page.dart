@@ -473,7 +473,7 @@ class _OfficialTabButton extends StatelessWidget {
       background: color,
       pressedBackground: active ? AppColors.primary : _officialPressedBg,
       borderRadius: BorderRadius.circular(AppRadii.card),
-      child: SizedBox(height: 38, child: child),
+      child: SizedBox(height: 44, child: child),
     );
   }
 }
