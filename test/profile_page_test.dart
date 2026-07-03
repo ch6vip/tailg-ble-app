@@ -157,6 +157,13 @@ void main() {
       const logoutLabel = '退出登录';
       final logoutAction = find.bySemanticsLabel(logoutLabel);
       expect(logoutAction, findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.text(logoutLabel),
+          matching: find.byType(AppPressable),
+        ),
+        findsOneWidget,
+      );
       expect(tester.getSize(logoutAction).height, greaterThanOrEqualTo(44));
       expect(
         tester.getSemantics(logoutAction),

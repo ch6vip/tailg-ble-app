@@ -663,36 +663,32 @@ class _LogoutButton extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Semantics(
-        label: '退出登录',
-        button: true,
-        enabled: true,
+      child: AppPressable(
         onTap: confirmLogout,
-        child: ExcludeSemantics(
-          child: GestureDetector(
-            onTap: confirmLogout,
-            child: Container(
-              height: 52,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(AppRadii.md),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF182740).withValues(alpha: 0.06),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+        haptic: false,
+        semanticsLabel: '退出登录',
+        semanticsButton: true,
+        semanticsEnabled: true,
+        child: Container(
+          height: 52,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF182740).withValues(alpha: 0.06),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
               ),
-              child: const Center(
-                child: Text(
-                  '退出登录',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.energyRed,
-                  ),
-                ),
+            ],
+          ),
+          child: const Center(
+            child: Text(
+              '退出登录',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppColors.energyRed,
               ),
             ),
           ),
