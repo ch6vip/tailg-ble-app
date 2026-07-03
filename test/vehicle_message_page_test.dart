@@ -15,6 +15,21 @@ void main() {
 
   tearDown(app.logService.clear);
 
+  testWidgets('new log entries refresh visible messages automatically', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const TestApp(home: VehicleMessagePage()));
+    await tester.pump();
+
+    expect(find.text('暂无消息'), findsOneWidget);
+
+    app.logService.operation('发送指令');
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('发送指令'), findsOneWidget);
+  });
+
   testWidgets('clearing current message group shows success snack', (
     tester,
   ) async {

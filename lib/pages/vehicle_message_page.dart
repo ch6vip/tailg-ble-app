@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,6 +23,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
 
   late final TabController _tabController;
   final _log = logService;
+  StreamSubscription<void>? _logSub;
   int _activeTab = 0;
   final Set<String> _readIds = {};
   final Set<String> _hiddenIds = {};
@@ -34,11 +37,15 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
         setState(() => _activeTab = _tabController.index);
       }
     });
+    _logSub = _log.changes.listen((_) {
+      if (mounted) setState(() {});
+    });
     _loadMessageState();
   }
 
   @override
   void dispose() {
+    _logSub?.cancel();
     _tabController.dispose();
     super.dispose();
   }
@@ -312,10 +319,8 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
                 ),
                 IconButton(
                   tooltip: '刷新',
-                  // Full-page rebuild is intentional: messages are derived
-                  // synchronously from LogService which exposes no
-                  // stream/notifier. Scoping to the list would require adding
-                  // a stream to LogService (out of scope here).
+                  // LogService.changes auto-refreshes new messages; keep this
+                  // as a manual force-rebuild for persisted read/hidden state.
                   onPressed: () => setState(() {}),
                   icon: const Icon(Icons.refresh),
                 ),
