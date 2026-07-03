@@ -545,7 +545,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                           ),
                           borderRadius: BorderRadius.circular(30),
                           child: Container(
-                            height: 38,
+                            height: 44,
                             padding: const EdgeInsets.symmetric(horizontal: 10),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(30),

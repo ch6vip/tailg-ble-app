@@ -113,4 +113,15 @@ void main() {
 
     expect(app.manualModeService.enabled, isTrue);
   });
+
+  testWidgets('official control tip keeps a 44dp touch target', (tester) async {
+    await pumpBoundHome(tester, size: const Size(430, 2200));
+
+    final controlTip = find.ancestor(
+      of: find.text('BLE：BLE 未连接或协议未就绪；云端：请先登录官方账号'),
+      matching: find.byType(InkWell),
+    );
+    expect(controlTip, findsOneWidget);
+    expect(tester.getSize(controlTip).height, greaterThanOrEqualTo(44));
+  });
 }
