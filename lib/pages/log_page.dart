@@ -31,8 +31,8 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
       }
     });
     // Subscribe to LogService.changes so the list refreshes automatically
-    // when new entries arrive (P3-12). Removes the need for a manual
-    // "refresh" button that just calls setState(() {}).
+    // when new entries arrive (P3-12). The manual refresh button remains as
+    // a force-rebuild escape hatch.
     _logSub = _log.changes.listen((_) {
       if (mounted) setState(() {});
     });

@@ -35,6 +35,21 @@ void main() {
     expect(snackIcon(Icons.info_outline), findsOneWidget);
   });
 
+  testWidgets('new log entries refresh the visible list automatically', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const TestApp(home: LogPage()));
+    await tester.pump();
+
+    expect(find.text('暂无日志'), findsOneWidget);
+
+    app.logService.operation('测试操作');
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('测试操作'), findsOneWidget);
+  });
+
   testWidgets('copy action exports logs and shows success snack', (
     tester,
   ) async {
