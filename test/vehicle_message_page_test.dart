@@ -30,6 +30,18 @@ void main() {
     expect(find.text('发送指令'), findsOneWidget);
   });
 
+  testWidgets('custom tabs keep 44dp touch targets', (tester) async {
+    await tester.pumpWidget(const TestApp(home: VehicleMessagePage()));
+    await tester.pump();
+
+    final systemTab = find.ancestor(
+      of: find.text('系统消息'),
+      matching: find.byType(GestureDetector),
+    );
+    expect(systemTab, findsOneWidget);
+    expect(tester.getSize(systemTab).height, greaterThanOrEqualTo(44));
+  });
+
   testWidgets('clearing current message group shows success snack', (
     tester,
   ) async {
