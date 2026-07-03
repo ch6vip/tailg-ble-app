@@ -972,7 +972,7 @@ class _LocationActionButton extends StatelessWidget {
     final enabled = onTap != null;
     final bg = primary ? AppColors.dark : AppColors.surfaceContainerLow;
     final fg = primary ? Colors.white : AppColors.textPrimary;
-    return Opacity(
+    final button = Opacity(
       opacity: enabled ? 1 : 0.5,
       child: Material(
         color: bg,
@@ -1014,6 +1014,13 @@ class _LocationActionButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+    return Semantics(
+      label: label,
+      button: true,
+      enabled: enabled,
+      onTap: onTap,
+      child: ExcludeSemantics(child: button),
     );
   }
 }

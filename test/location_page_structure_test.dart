@@ -45,6 +45,7 @@ void main() {
   testWidgets('LocationPage segmented tabs keep 44dp touch targets', (
     tester,
   ) async {
+    final semantics = tester.ensureSemantics();
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(430, 1200);
     tester.view.devicePixelRatio = 1.0;
@@ -53,20 +54,41 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    await tester.pumpWidget(const TestApp(home: LocationPage(embedded: true)));
-    await tester.pump();
+    try {
+      await tester.pumpWidget(
+        const TestApp(home: LocationPage(embedded: true)),
+      );
+      await tester.pump();
 
-    final locationTab = find.ancestor(
-      of: find.text('位置'),
-      matching: find.byType(AppPressable),
-    );
-    expect(locationTab, findsOneWidget);
-    expect(tester.getSize(locationTab).height, greaterThanOrEqualTo(44));
+      final locationTab = find.ancestor(
+        of: find.text('位置'),
+        matching: find.byType(AppPressable),
+      );
+      expect(locationTab, findsOneWidget);
+      expect(tester.getSize(locationTab).height, greaterThanOrEqualTo(44));
 
-    await tester.tap(find.text('轨迹'));
-    await tester.pump();
+      const refreshLabel = '刷新';
+      final refreshAction = find.bySemanticsLabel(refreshLabel);
+      expect(refreshAction, findsOneWidget);
+      expect(tester.getSize(refreshAction).height, greaterThanOrEqualTo(44));
+      expect(
+        tester.getSemantics(refreshAction),
+        matchesSemantics(
+          label: refreshLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
 
-    expect(find.text('历史轨迹'), findsOneWidget);
+      await tester.tap(find.text('轨迹'));
+      await tester.pump();
+
+      expect(find.text('历史轨迹'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('LocationPage travel month controls keep 44dp touch targets', (
