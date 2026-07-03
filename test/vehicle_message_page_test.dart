@@ -31,15 +31,65 @@ void main() {
   });
 
   testWidgets('custom tabs keep 44dp touch targets', (tester) async {
-    await tester.pumpWidget(const TestApp(home: VehicleMessagePage()));
-    await tester.pump();
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(const TestApp(home: VehicleMessagePage()));
+      await tester.pump();
 
-    final systemTab = find.ancestor(
-      of: find.text('系统消息'),
-      matching: find.byType(GestureDetector),
-    );
-    expect(systemTab, findsOneWidget);
-    expect(tester.getSize(systemTab).height, greaterThanOrEqualTo(44));
+      final systemTab = find.ancestor(
+        of: find.text('系统消息'),
+        matching: find.byType(GestureDetector),
+      );
+      expect(systemTab, findsOneWidget);
+      expect(tester.getSize(systemTab).height, greaterThanOrEqualTo(44));
+
+      const allLabel = '全部';
+      expect(
+        tester.getSemantics(find.bySemanticsLabel(allLabel)),
+        matchesSemantics(
+          label: allLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasSelectedState: true,
+          isSelected: true,
+          hasTapAction: true,
+        ),
+      );
+
+      const systemLabel = '系统消息';
+      final systemTabSemantics = find.bySemanticsLabel(systemLabel);
+      expect(
+        tester.getSemantics(systemTabSemantics),
+        matchesSemantics(
+          label: systemLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasSelectedState: true,
+          isSelected: false,
+          hasTapAction: true,
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel(systemLabel));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getSemantics(systemTabSemantics),
+        matchesSemantics(
+          label: systemLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasSelectedState: true,
+          isSelected: true,
+          hasTapAction: true,
+        ),
+      );
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('clearing current message group shows success snack', (
