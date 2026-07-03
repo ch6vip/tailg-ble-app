@@ -284,7 +284,7 @@ Widget _buildToggle(bool value, ValueChanged<bool> onChanged) {
     activeTrackColor: AppColors.primary,
     inactiveThumbColor: Colors.white,
     inactiveTrackColor: AppColors.border,
-    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    materialTapTargetSize: MaterialTapTargetSize.padded,
   );
 }
 
