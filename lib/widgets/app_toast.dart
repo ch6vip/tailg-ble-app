@@ -26,10 +26,9 @@ class AppToast {
     // Dismiss any existing toast first
     dismiss();
 
-    final context = _rootKey.currentContext;
-    if (context == null) return;
+    final overlay = _rootKey.currentState?.overlay;
+    if (overlay == null) return;
 
-    _showing = true;
     final entry = OverlayEntry(
       builder: (_) => _ToastWidget(
         message: message,
@@ -39,7 +38,8 @@ class AppToast {
     );
 
     _entry = entry;
-    Overlay.of(context).insert(entry);
+    overlay.insert(entry);
+    _showing = true;
 
     // Auto-dismiss after 1.8 seconds via cancellable Timer
     _dismissTimer?.cancel();
@@ -123,7 +123,7 @@ class _ToastWidgetState extends State<_ToastWidget>
           child: Material(
             color: Colors.transparent,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              padding: const EdgeInsets.only(left: 18, right: 4),
               decoration: BoxDecoration(
                 color: _bg,
                 borderRadius: BorderRadius.circular(AppRadii.md),
@@ -154,11 +154,19 @@ class _ToastWidgetState extends State<_ToastWidget>
                     ),
                   ),
                   GestureDetector(
+                    key: const ValueKey('app-toast-dismiss'),
+                    behavior: HitTestBehavior.opaque,
                     onTap: widget.onDismissed,
-                    child: const Icon(
-                      Icons.close,
-                      color: Colors.white70,
-                      size: 16,
+                    child: const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Center(
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.white70,
+                          size: 16,
+                        ),
+                      ),
                     ),
                   ),
                 ],
