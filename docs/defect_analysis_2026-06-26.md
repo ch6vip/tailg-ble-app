@@ -49,7 +49,7 @@
   - `proximityService.setEnabled` 在全库**零调用**(grep 确认),即真正的感应解锁服务从未被 UI 开关控制。
 - **影响**:用户点"开启感应解锁"→ 实际关闭;开关显示"已开启"→ 实际禁用。双重错误,直接危及车辆自动解锁安全功能。
 - **对照**:`control_page_vehicle_overview.dart:15` 的 `_ManualModePill` 正确地把 `manualModeService.enabled` 当"手动模式"显示,反衬出 `_proximityEnabled` 的错配。
-- **测试盲区**:`manual_mode_service_test.dart` 只测 service 本身,未覆盖 UI 绑定层;无 control_page_home_overview 的"开关 → ProximityService"集成测试。
+- **回归测试**:`control_page_bound_home_test.dart` 覆盖"感应解锁"入口会切换 `ProximityService` 且不会误切 `ManualModeService`。
 - **修复**:`_toggleProximity` 改为调用 `proximityService.setEnabled(value)`;`_proximityEnabled` 绑定 `proximityService.enabledStream`;移除对 `manualModeService` 的误绑定。
 
 ---

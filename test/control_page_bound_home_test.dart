@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
@@ -15,6 +16,8 @@ void main() {
     String name = '测试车辆',
   }) async {
     SharedPreferences.setMockInitialValues({});
+    app.proximityService.resetForTest();
+    app.manualModeService.resetForTest();
     VehicleStore().resetForTest();
     await VehicleStore().init();
     await VehicleStore().upsert(
@@ -69,5 +72,26 @@ void main() {
 
     expect(find.text('超级仪表功能开发中'), findsOneWidget);
     expect(snackIcon(Icons.info_outline), findsOneWidget);
+  });
+
+  testWidgets('proximity control toggles ProximityService, not manual mode', (
+    tester,
+  ) async {
+    await pumpBoundHome(tester, size: const Size(430, 2200));
+
+    expect(app.proximityService.enabled, isFalse);
+    expect(app.manualModeService.enabled, isFalse);
+
+    final enabledEvent = app.proximityService.enabledStream.firstWhere(
+      (value) => value,
+    );
+
+    await tester.tap(find.text('感应解锁'));
+    await tester.pump();
+    await enabledEvent;
+    await tester.pump();
+
+    expect(app.proximityService.enabled, isTrue);
+    expect(app.manualModeService.enabled, isFalse);
   });
 }
