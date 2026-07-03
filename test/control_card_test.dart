@@ -40,12 +40,14 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
+    var seatOpenCount = 0;
+    bool? proximityNext;
     try {
       await tester.pumpWidget(
         TestApp(
           home: ControlCard(
-            onSeatOpen: () {},
-            onToggleProximity: (_) {},
+            onSeatOpen: () => seatOpenCount++,
+            onToggleProximity: (value) => proximityNext = value,
             proximityEnabled: true,
           ),
         ),
@@ -60,8 +62,12 @@ void main() {
           isButton: true,
           hasEnabledState: true,
           isEnabled: true,
+          hasTapAction: true,
         ),
       );
+      tester.semantics.tap(find.semantics.byLabel('打开座桶'));
+      await tester.pump();
+      expect(seatOpenCount, 1);
 
       final proximityAction = find.bySemanticsLabel('感应解锁');
       expect(proximityAction, findsOneWidget);
@@ -72,10 +78,14 @@ void main() {
           isButton: true,
           hasEnabledState: true,
           isEnabled: true,
+          hasTapAction: true,
           hasSelectedState: true,
           isSelected: true,
         ),
       );
+      tester.semantics.tap(find.semantics.byLabel('感应解锁'));
+      await tester.pump();
+      expect(proximityNext, isFalse);
     } finally {
       semantics.dispose();
     }

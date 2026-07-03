@@ -64,6 +64,13 @@ class _AppPressableState extends State<AppPressable> {
     setState(() => _pressed = value);
   }
 
+  void _activateTap() {
+    if (widget.haptic) {
+      HapticFeedback.lightImpact();
+    }
+    widget.onTap?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isActive = widget.enabled && _pressed;
@@ -74,16 +81,15 @@ class _AppPressableState extends State<AppPressable> {
       button: widget.semanticsButton ?? widget.enabled,
       enabled: widget.semanticsEnabled ?? widget.enabled,
       selected: widget.semanticsSelected,
+      onTap: widget.enabled && widget.onTap != null ? _activateTap : null,
+      onLongPress: widget.enabled ? widget.onLongPress : null,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapDown: widget.enabled ? (_) => _setPressed(true) : null,
         onTapUp: widget.enabled
             ? (_) {
                 _setPressed(false);
-                if (widget.haptic) {
-                  HapticFeedback.lightImpact();
-                }
-                widget.onTap?.call();
+                _activateTap();
               }
             : null,
         onTapCancel: widget.enabled ? () => _setPressed(false) : null,
