@@ -60,9 +60,9 @@ class ConnectionManager {
   Timer? _heartbeatInitialTimer;
   Timer? _heartbeatTimer;
   Timer? _readyWatchdog;
-  StreamSubscription? _connectionSub;
-  StreamSubscription? _notifySub;
-  StreamSubscription? _gpsNotifySub;
+  StreamSubscription<BluetoothConnectionState>? _connectionSub;
+  StreamSubscription<List<int>>? _notifySub;
+  StreamSubscription<List<int>>? _gpsNotifySub;
 
   bool _userDisconnected = false;
   bool _reconnecting = false;

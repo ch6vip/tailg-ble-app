@@ -25,8 +25,8 @@ class _ScanPageState extends State<ScanPage>
   final _connectionSnapshotGuard = const BleConnectionSnapshotGuard();
   bool _scanning = false;
   String? _connectingRemoteId;
-  StreamSubscription? _scanResultsSub;
-  StreamSubscription? _isScanSub;
+  StreamSubscription<List<ScanResult>>? _scanResultsSub;
+  StreamSubscription<bool>? _isScanSub;
   Timer? _throttle;
   List<ScanResult>? _pendingResults;
   late AnimationController _radarController;

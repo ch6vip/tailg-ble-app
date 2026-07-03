@@ -16,7 +16,7 @@ Stream<List<dynamic>> combineLatestStreams(
   void emit() => controller.add(List<dynamic>.from(latest));
   scheduleMicrotask(emit);
 
-  final subscriptions = <StreamSubscription>[];
+  final subscriptions = <StreamSubscription<dynamic>>[];
   for (var i = 0; i < streams.length; i++) {
     subscriptions.add(
       streams[i].listen((value) {

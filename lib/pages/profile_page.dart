@@ -22,7 +22,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  StreamSubscription? _cloudSub;
+  StreamSubscription<OfficialCloudState>? _cloudSub;
   late OfficialCloudState _cloudState;
 
   @override

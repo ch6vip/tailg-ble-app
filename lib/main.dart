@@ -455,8 +455,8 @@ class _HomePageState extends State<HomePage>
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
   late final ValueNotifier<int> _homeTabIndex;
-  StreamSubscription? _stateSub;
-  StreamSubscription? _manualModeSub;
+  StreamSubscription<ble.ConnectionState>? _stateSub;
+  StreamSubscription<bool>? _manualModeSub;
 
   @override
   void initState() {

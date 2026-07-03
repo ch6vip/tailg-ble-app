@@ -176,7 +176,7 @@ class AutoConnectService {
 
     _log.operation('自动连接: 扫描 $_lastDeviceName ($_lastDeviceId)');
 
-    StreamSubscription? scanSub;
+    StreamSubscription<List<ScanResult>>? scanSub;
     Timer? timeout;
     final completer = Completer<void>();
     try {

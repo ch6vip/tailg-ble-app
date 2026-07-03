@@ -317,7 +317,7 @@ class OfficialTravelDay {
       totalTime: _clean(json['totalTime']) ?? '',
       records: list is List
           ? list
-                .whereType<Map>()
+                .whereType<Map<Object?, Object?>>()
                 .map(
                   (item) => OfficialTravelRecord.fromJson(
                     Map<String, dynamic>.from(item),

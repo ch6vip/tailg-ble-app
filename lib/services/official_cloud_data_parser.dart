@@ -49,7 +49,9 @@ class OfficialCloudDataParser {
         : wrapSingle && data != null
         ? [data]
         : const [];
-    return items.whereType<Map>().map(Map<String, dynamic>.from);
+    return items.whereType<Map<Object?, Object?>>().map(
+      Map<String, dynamic>.from,
+    );
   }
 
   static bool _hasVehicleIdentity(OfficialVehicle vehicle) {

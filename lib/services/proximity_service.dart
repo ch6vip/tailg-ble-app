@@ -47,7 +47,7 @@ class ProximityService {
   final _connectionSnapshotGuard = const BleConnectionSnapshotGuard();
   final _unlockGuard = const ProximityUnlockGuard();
   ConnectionManager? _connectionManager;
-  StreamSubscription? _scanSub;
+  StreamSubscription<List<ScanResult>>? _scanSub;
   bool _scanning = false;
   bool _unlockSent = false;
   String? _targetDeviceId;
