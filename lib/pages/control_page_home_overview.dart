@@ -429,6 +429,16 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             : _isReconnecting
             ? '重连中'
             : null;
+        final tipVehicleName = _tipVehicleName;
+        final controlTipLabel = [
+          '控车通道 $_tipEffective',
+          _tipStatus,
+          if (tipVehicleName != null) tipVehicleName,
+        ].join('，');
+        void openOfficialCloud() => Navigator.push(
+          context,
+          MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
+        );
 
         return DecoratedBox(
           decoration: const BoxDecoration(
@@ -538,81 +548,86 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Material(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(30),
-                        child: InkWell(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute<void>(
-                              builder: (_) => const OfficialCloudPage(),
-                            ),
-                          ),
-                          borderRadius: BorderRadius.circular(30),
-                          child: Container(
-                            height: 44,
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            decoration: BoxDecoration(
+                      child: Semantics(
+                        label: controlTipLabel,
+                        button: true,
+                        enabled: true,
+                        onTap: openOfficialCloud,
+                        child: ExcludeSemantics(
+                          child: Material(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(30),
+                            child: InkWell(
+                              onTap: openOfficialCloud,
                               borderRadius: BorderRadius.circular(30),
-                              color: AppColors.surfaceContainerLow,
-                              boxShadow: AppShadows.elevation1,
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  height: 24,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _tipEffectiveColor.withValues(
-                                      alpha: 0.12,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        _tipEffectiveIcon,
-                                        size: 13,
-                                        color: _tipEffectiveColor,
+                              child: Container(
+                                height: 44,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(30),
+                                  color: AppColors.surfaceContainerLow,
+                                  boxShadow: AppShadows.elevation1,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      height: 24,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 5,
                                       ),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        _tipEffective,
+                                      decoration: BoxDecoration(
+                                        color: _tipEffectiveColor.withValues(
+                                          alpha: 0.12,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            _tipEffectiveIcon,
+                                            size: 13,
+                                            color: _tipEffectiveColor,
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            _tipEffective,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w800,
+                                              color: _tipEffectiveColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        _tipStatus,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w800,
-                                          color: _tipEffectiveColor,
+                                        style: AppTextStyles.sectionLabelStrong,
+                                      ),
+                                    ),
+                                    if (tipVehicleName != null) ...[
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          tipVehicleName,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTextStyles.caption,
                                         ),
                                       ),
                                     ],
-                                  ),
+                                  ],
                                 ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    _tipStatus,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTextStyles.sectionLabelStrong,
-                                  ),
-                                ),
-                                if (_tipVehicleName != null) ...[
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      _tipVehicleName!,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTextStyles.caption,
-                                    ),
-                                  ),
-                                ],
-                              ],
+                              ),
                             ),
                           ),
                         ),
