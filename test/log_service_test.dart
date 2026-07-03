@@ -42,4 +42,17 @@ void main() {
 
     expect(entry.detail, '<redacted login frame, 4 bytes>');
   });
+
+  test('keeps the latest 2000 log entries', () {
+    for (var i = 0; i < 2001; i++) {
+      log.operation('entry $i');
+    }
+
+    final entries = log.all;
+
+    expect(entries, hasLength(2000));
+    expect(log.evictedCount, 1);
+    expect(entries.first.message, 'entry 1');
+    expect(entries.last.message, 'entry 2000');
+  });
 }

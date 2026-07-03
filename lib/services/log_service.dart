@@ -26,7 +26,7 @@ class LogService {
   factory LogService() => _instance;
   LogService._();
 
-  static const _maxEntries = 500;
+  static const _maxEntries = 2000;
   final _logs = Queue<LogEntry>();
   int _evictedCount = 0;
 
@@ -72,7 +72,7 @@ class LogService {
   }
 
   /// Redacts sensitive BLE login payloads before they hit the in-memory log
-  /// ring buffer (P2-9). Previously the raw QGJ login frame — which carries
+  /// ring buffer (P2-4). Previously the raw QGJ login frame — which carries
   /// password/userId — was logged verbatim and could be exported/shared.
   static final RegExp _qgjLoginHint = RegExp(
     r'(登录|login|QGJ 登录)',
