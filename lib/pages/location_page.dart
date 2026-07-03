@@ -941,7 +941,7 @@ class _LocationMetaBox extends StatelessWidget {
               fontSize: 15,
               fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
-              letterSpacing: -0.3,
+              letterSpacing: 0,
             ),
           ),
           const SizedBox(height: 4),

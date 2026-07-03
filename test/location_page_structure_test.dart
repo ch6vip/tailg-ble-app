@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
+import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/location_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
@@ -154,6 +155,40 @@ void main() {
     final previousMonth = find.byTooltip('上个月');
     expect(previousMonth, findsOneWidget);
     expect(tester.getSize(previousMonth).height, greaterThanOrEqualTo(44));
+  });
+
+  testWidgets('LocationPage meta values avoid negative letter spacing', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    app.vehicleStore.resetForTest();
+    addTearDown(app.vehicleStore.resetForTest);
+
+    await app.vehicleStore.upsert(
+      id: 'vehicle-1',
+      name: '测试车辆',
+      protocol: VehicleProtocol.qgj,
+      makeDefault: true,
+    );
+    await app.vehicleStore.updateLastLocation(
+      'vehicle-1',
+      VehicleLocation(
+        latitude: 31.2304,
+        longitude: 121.4737,
+        accuracy: 8.5,
+        recordedAt: DateTime(2026, 7, 3, 12, 30),
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: LocationPage(embedded: true)));
+    await tester.pump();
+
+    final accuracySpacing = tester
+        .widget<Text>(find.text('±9m'))
+        .style
+        ?.letterSpacing;
+
+    expect(accuracySpacing, anyOf(isNull, greaterThanOrEqualTo(0)));
   });
 
   testWidgets('LocationPage travel records expose semantics action', (
