@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+set -eu
+
+dart format --output=none --set-exit-if-changed .
+flutter analyze --fatal-warnings --fatal-infos

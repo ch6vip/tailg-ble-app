@@ -82,15 +82,22 @@ storeFile=../../release.keystore
 
 ## 测试与质量门禁
 
-提交前请保持以下三项全绿（与 CI 一致）：
+提交前请保持以下门禁全绿（与 CI 一致）：
 
 ```bash
 dart format --output=none --set-exit-if-changed .   # 格式
-flutter analyze                                       # 静态分析
-flutter test                                          # 单元测试
+flutter analyze --fatal-warnings --fatal-infos        # 静态分析
+flutter test --coverage                               # 单元测试与覆盖率
+dart tool/check_coverage.dart coverage/lcov.info 40   # 覆盖率阈值
 ```
 
-CI（[.github/workflows/build.yml](.github/workflows/build.yml)）：`format → analyze → test`，push/PR 到 `master`、`develop` 触发；非 PR 场景在门禁通过后构建签名 APK artifact。
+可选启用本地 pre-commit hook：
+
+```bash
+git config core.hooksPath .husky
+```
+
+CI（[.github/workflows/build.yml](.github/workflows/build.yml)）：`format → analyze → test --coverage → coverage >= 40%`，push/PR 到 `master`、`develop` 触发；非 PR 场景在门禁通过后构建签名 APK artifact。
 
 Release（[.github/workflows/release.yml](.github/workflows/release.yml)）：推送 `v*` tag 或手动触发时执行同样门禁，随后签名构建 APK 并发布 GitHub Release。
 
