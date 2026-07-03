@@ -62,7 +62,7 @@ void main() {
 
       final editAction = find.ancestor(
         of: find.byIcon(Icons.edit_outlined),
-        matching: find.byType(GestureDetector),
+        matching: find.byType(AppPressable),
       );
       expect(editAction, findsOneWidget);
       expect(tester.getSize(editAction).height, greaterThanOrEqualTo(44));

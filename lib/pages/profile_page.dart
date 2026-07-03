@@ -198,35 +198,29 @@ class _UserHeader extends StatelessWidget {
               ],
             ),
           ),
-          // Edit profile
-          Semantics(
-            label: editActionLabel,
-            button: true,
-            enabled: true,
+          AppPressable(
             onTap: handleEditAction,
-            child: ExcludeSemantics(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: handleEditAction,
-                child: SizedBox(
-                  width: 44,
-                  height: 44,
-                  child: Center(
-                    child: Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.hairline),
-                        boxShadow: [AppShadows.cardShadow.first],
-                      ),
-                      child: const Icon(
-                        Icons.edit_outlined,
-                        size: 17,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
+            haptic: false,
+            semanticsLabel: editActionLabel,
+            semanticsButton: true,
+            semanticsEnabled: true,
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: Center(
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.hairline),
+                    boxShadow: [AppShadows.cardShadow.first],
+                  ),
+                  child: const Icon(
+                    Icons.edit_outlined,
+                    size: 17,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ),
