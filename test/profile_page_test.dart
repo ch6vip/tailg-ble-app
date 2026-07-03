@@ -116,6 +116,45 @@ void main() {
     }
   });
 
+  testWidgets('profile logout action exposes semantics and 44dp target', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      tester.view.physicalSize = const Size(430, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(const TestApp(home: ProfilePage()));
+      await tester.pump();
+
+      const logoutLabel = '退出登录';
+      final logoutAction = find.bySemanticsLabel(logoutLabel);
+      expect(logoutAction, findsOneWidget);
+      expect(tester.getSize(logoutAction).height, greaterThanOrEqualTo(44));
+      expect(
+        tester.getSemantics(logoutAction),
+        matchesSemantics(
+          label: logoutLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel(logoutLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.text('确定要退出当前账号吗？'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('profile header follows official cloud state stream', (
     tester,
   ) async {

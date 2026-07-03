@@ -643,52 +643,62 @@ class _LogoutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    void confirmLogout() {
+      HapticFeedback.mediumImpact();
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('退出登录'),
+          content: const Text('确定要退出当前账号吗？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () {
+                officialCloudService.logout();
+                Navigator.pop(ctx);
+              },
+              child: const Text('确定'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          showDialog<void>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('退出登录'),
-              content: const Text('确定要退出当前账号吗？'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('取消'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    officialCloudService.logout();
-                    Navigator.pop(ctx);
-                  },
-                  child: const Text('确定'),
-                ),
-              ],
-            ),
-          );
-        },
-        child: Container(
-          height: 52,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadii.md),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF182740).withValues(alpha: 0.06),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
+      child: Semantics(
+        label: '退出登录',
+        button: true,
+        enabled: true,
+        onTap: confirmLogout,
+        child: ExcludeSemantics(
+          child: GestureDetector(
+            onTap: confirmLogout,
+            child: Container(
+              height: 52,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF182740).withValues(alpha: 0.06),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: const Center(
-            child: Text(
-              '退出登录',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: AppColors.energyRed,
+              child: const Center(
+                child: Text(
+                  '退出登录',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.energyRed,
+                  ),
+                ),
               ),
             ),
           ),
