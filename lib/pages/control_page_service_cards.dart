@@ -85,74 +85,72 @@ class _SvcListCard extends StatelessWidget {
       subtitle,
       if (value != null && value!.isNotEmpty) value!,
     ].join('，');
-    final card = GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.hairline),
-          boxShadow: AppShadows.svcCardShadow,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: iconBgColor,
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: Icon(icon, size: 21, color: iconColor),
+    final card = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.hairline),
+        boxShadow: AppShadows.svcCardShadow,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: iconBgColor,
+              borderRadius: BorderRadius.circular(13),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF98A1AE),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (value != null)
-              Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: Text(
-                  value!,
+            child: Icon(icon, size: 21, color: iconColor),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 14.5,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.primaryDark,
+                    color: AppColors.textPrimary,
                   ),
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF98A1AE),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (value != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Text(
+                value!,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryDark,
+                ),
               ),
-            const Icon(Icons.chevron_right, size: 18, color: Color(0xFF98A1AE)),
-          ],
-        ),
+            ),
+          const Icon(Icons.chevron_right, size: 18, color: Color(0xFF98A1AE)),
+        ],
       ),
     );
-    return Semantics(
-      label: semanticsLabel,
-      button: true,
-      enabled: true,
+    return AppPressable(
       onTap: onTap,
-      child: ExcludeSemantics(child: card),
+      haptic: false,
+      semanticsLabel: semanticsLabel,
+      semanticsButton: true,
+      semanticsEnabled: true,
+      child: card,
     );
   }
 }

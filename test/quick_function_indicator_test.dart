@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/test_app.dart';
 
@@ -55,6 +56,19 @@ void main() {
     expect(find.text('车辆定位'), findsOneWidget);
     expect(find.text('电池详情'), findsOneWidget);
     expect(find.text('骑行记录'), findsOneWidget);
+  });
+
+  testWidgets('service cards use AppPressable feedback', (tester) async {
+    await _pumpControlPage(tester, const Size(430, 2600));
+
+    for (final label in ['车辆定位', '电池详情', '骑行记录']) {
+      final card = find.ancestor(
+        of: find.text(label),
+        matching: find.byType(AppPressable),
+      );
+      expect(card, findsOneWidget);
+      expect(tester.getSize(card).height, greaterThanOrEqualTo(44));
+    }
   });
 
   testWidgets('service cards expose semantics', (tester) async {
