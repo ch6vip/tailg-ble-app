@@ -12,6 +12,7 @@ void main() {
   test('ControlPage keeps home stream subscriptions split', () {
     final source = File('lib/pages/control_page.dart').readAsStringSync();
 
+    expect(File('lib/utils/combined_stream.dart').existsSync(), isFalse);
     expect(source, isNot(contains('_createCombinedStream')));
     expect(source, isNot(contains('_combinedStream')));
     expect(source, isNot(contains('StreamController<List<dynamic>>')));
