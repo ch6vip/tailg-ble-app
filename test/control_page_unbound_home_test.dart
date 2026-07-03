@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
@@ -74,6 +75,35 @@ void main() {
 
     expect(find.text('虚拟体验功能开发中，可先「绑定设备」或登录官方账号查看车辆'), findsOneWidget);
     expect(snackIcon(Icons.info_outline), findsOneWidget);
+  });
+
+  testWidgets('official action buttons use AppPressable feedback', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    VehicleStore().resetForTest();
+    await VehicleStore().init();
+
+    tester.view.physicalSize = const Size(430, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const TestApp(home: ControlPage()));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    for (final label in ['绑定设备', '虚拟体验（演示）']) {
+      final action = find.ancestor(
+        of: find.text(label),
+        matching: find.byType(AppPressable),
+      );
+      expect(action, findsOneWidget);
+      expect(tester.getSize(action).height, 54);
+    }
   });
 
   testWidgets('official cloud text link keeps a 44dp touch target', (

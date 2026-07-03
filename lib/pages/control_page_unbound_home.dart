@@ -423,7 +423,7 @@ class _BannerDot extends StatelessWidget {
   }
 }
 
-class _OfficialActionButton extends StatefulWidget {
+class _OfficialActionButton extends StatelessWidget {
   final String label;
   final Color foreground;
   final Color background;
@@ -437,71 +437,40 @@ class _OfficialActionButton extends StatefulWidget {
   });
 
   @override
-  State<_OfficialActionButton> createState() => _OfficialActionButtonState();
-}
-
-class _OfficialActionButtonState extends State<_OfficialActionButton> {
-  static const _motionDuration = AppMotion.micro;
-  static const _motionCurve = AppMotion.pressCurve;
-
-  bool _pressed = false;
-
-  void _setPressed(bool value) {
-    if (!mounted || _pressed == value) return;
-    setState(() => _pressed = value);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedScale(
-      duration: _motionDuration,
-      curve: _motionCurve,
-      scale: _pressed ? AppMotion.pressScale : 1,
-      child: AnimatedContainer(
-        duration: _motionDuration,
-        curve: _motionCurve,
-        height: 54,
-        decoration: BoxDecoration(
-          color: _pressed ? _officialPressedBg : widget.background,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: _pressed ? null : AppShadows.elevation1,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(15),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            splashColor: widget.foreground.withValues(alpha: 0.08),
-            highlightColor: widget.foreground.withValues(alpha: 0.05),
-            onTap: () {
-              _setPressed(false);
-              HapticFeedback.mediumImpact();
-              widget.onTap();
-            },
-            onTapDown: (_) => _setPressed(true),
-            onTapUp: (_) => _setPressed(false),
-            onTapCancel: () => _setPressed(false),
-            borderRadius: BorderRadius.circular(15),
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  widget.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: _pressed
-                        ? AppColors.textSecondary
-                        : widget.foreground,
-                  ),
+    return AppPressable(
+      pressedScale: AppMotion.pressScale,
+      duration: AppMotion.micro,
+      curve: AppMotion.pressCurve,
+      background: background,
+      pressedBackground: _officialPressedBg,
+      borderRadius: BorderRadius.circular(15),
+      boxShadow: AppShadows.elevation1,
+      haptic: false,
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        onTap();
+      },
+      builder: (context, pressed) {
+        return SizedBox(
+          height: 54,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: pressed ? AppColors.textSecondary : foreground,
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

@@ -15,6 +15,7 @@ import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
 import '../widgets/status_badge.dart';
+import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/vehicle_stage.dart';
 import '../widgets/control_card.dart';
