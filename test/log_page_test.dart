@@ -50,6 +50,17 @@ void main() {
     expect(find.text('测试操作'), findsOneWidget);
   });
 
+  testWidgets('custom tabs keep 44dp touch targets', (tester) async {
+    await tester.pumpWidget(const TestApp(home: LogPage()));
+
+    final bleTab = find.ancestor(
+      of: find.text('BLE'),
+      matching: find.byType(GestureDetector),
+    );
+    expect(bleTab, findsOneWidget);
+    expect(tester.getSize(bleTab).height, greaterThanOrEqualTo(44));
+  });
+
   testWidgets('copy action exports logs and shows success snack', (
     tester,
   ) async {
