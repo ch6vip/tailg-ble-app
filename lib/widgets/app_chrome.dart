@@ -99,7 +99,7 @@ class AppHeaderAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final button = Material(
+    Widget button = Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(18),
       clipBehavior: Clip.antiAlias,
@@ -119,7 +119,20 @@ class AppHeaderAction extends StatelessWidget {
         ),
       ),
     );
-    return tooltip == null ? button : Tooltip(message: tooltip!, child: button);
+    if (tooltip != null) {
+      button = Tooltip(
+        message: tooltip!,
+        excludeFromSemantics: true,
+        child: button,
+      );
+    }
+    return Semantics(
+      label: tooltip,
+      button: true,
+      enabled: onTap != null,
+      onTap: onTap,
+      child: ExcludeSemantics(child: button),
+    );
   }
 }
 
