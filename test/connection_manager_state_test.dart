@@ -1,10 +1,27 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart';
 import 'package:tailg_ble_app/ble/constants.dart';
 
 void main() {
+  test('heartbeat initial delay uses a cancellable timer', () {
+    final source = File('lib/ble/connection_manager.dart').readAsStringSync();
+
+    expect(
+      source,
+      contains(
+        '_heartbeatInitialTimer = Timer(BleTimings.heartbeatInitialDelay',
+      ),
+    );
+    expect(
+      source,
+      isNot(contains('Future.delayed(BleTimings.heartbeatInitialDelay')),
+    );
+    expect(source, contains('_heartbeatInitialTimer?.cancel()'));
+  });
+
   test(
     'ConnectionManager clears published bike state on runtime reset',
     () async {

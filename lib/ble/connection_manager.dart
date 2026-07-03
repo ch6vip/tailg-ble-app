@@ -57,6 +57,7 @@ class ConnectionManager {
   BluetoothCharacteristic? _fbb1Char;
   BluetoothCharacteristic? _fbb2Char;
 
+  Timer? _heartbeatInitialTimer;
   Timer? _heartbeatTimer;
   Timer? _readyWatchdog;
   StreamSubscription? _connectionSub;
@@ -226,8 +227,7 @@ class ConnectionManager {
     _reconnecting = false;
     _reconnectCancelled = true;
     _reconnectAttempt = 0;
-    _heartbeatTimer?.cancel();
-    _heartbeatTimer = null;
+    _cancelHeartbeat();
     _completePendingOperations(StateError('QGJ disconnected'));
     _completePendingGattOperations(StateError('Disconnected by user'));
     await _clearRuntimeResources(disconnectDevice: false);
@@ -514,7 +514,7 @@ class ConnectionManager {
   }
 
   void _startHeartbeat() {
-    _heartbeatTimer?.cancel();
+    _cancelHeartbeat();
     _log.ble(
       '心跳启动 feb3=${_feb3Char != null}',
       detail: 'interval=${BleTimings.qgjStatusPollInterval.inSeconds}s',
@@ -552,8 +552,7 @@ class ConnectionManager {
             }
             if (failCount >= 5 && _state == ConnectionState.ready) {
               _log.ble('心跳持续失败 ($failCount 次)，触发重连', level: LogLevel.warning);
-              _heartbeatTimer?.cancel();
-              _heartbeatTimer = null;
+              _cancelHeartbeat();
               // scheduleMicrotask: _onDisconnected performs async cleanup
               // (cancel subs, _attemptReconnect). Running it inline inside
               // the Timer callback would route those futures through the
@@ -571,11 +570,21 @@ class ConnectionManager {
           .whenComplete(() => heartbeatInFlight = false);
     }
 
-    Future.delayed(BleTimings.heartbeatInitialDelay, tick);
+    _heartbeatInitialTimer = Timer(BleTimings.heartbeatInitialDelay, () {
+      _heartbeatInitialTimer = null;
+      tick();
+    });
     _heartbeatTimer = Timer.periodic(
       BleTimings.qgjStatusPollInterval,
       (_) => tick(),
     );
+  }
+
+  void _cancelHeartbeat() {
+    _heartbeatInitialTimer?.cancel();
+    _heartbeatInitialTimer = null;
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
   }
 
   void _publishBikeState(BikeState? state) {
@@ -773,8 +782,7 @@ class ConnectionManager {
     // P0-1: 收敛守卫到单一入口，便于 S4 状态机改造时统一复位点。
     if (!_markDisconnectHandled()) return;
     _log.ble('设备断开连接', level: LogLevel.warning);
-    _heartbeatTimer?.cancel();
-    _heartbeatTimer = null;
+    _cancelHeartbeat();
     _completePendingOperations(StateError('QGJ disconnected'));
     await _notifySub?.cancel();
     _notifySub = null;
@@ -874,8 +882,7 @@ class ConnectionManager {
   }
 
   Future<void> _clearRuntimeResources({required bool disconnectDevice}) async {
-    _heartbeatTimer?.cancel();
-    _heartbeatTimer = null;
+    _cancelHeartbeat();
     _disarmReadyWatchdog();
     await _notifySub?.cancel();
     _notifySub = null;
@@ -1006,8 +1013,7 @@ class ConnectionManager {
     _completePendingGattOperations(StateError('ConnectionManager disposed'));
 
     // Cancel timers
-    _heartbeatTimer?.cancel();
-    _heartbeatTimer = null;
+    _cancelHeartbeat();
     _disarmReadyWatchdog();
 
     // Cancel subscriptions
