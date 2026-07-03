@@ -14,6 +14,7 @@ enum BatteryDataSource {
 
 class BatterySnapshot {
   static const _kmPerPercent = 0.65;
+  static final RegExp _numberPattern = RegExp(r'-?\d+(\.\d+)?');
 
   final int? percent;
   final double? voltage;
@@ -189,7 +190,7 @@ class BatterySnapshot {
   static double? _parseNumber(String? value) {
     final cleaned = _cleanText(value);
     if (cleaned == null) return null;
-    final match = RegExp(r'-?\d+(\.\d+)?').firstMatch(cleaned);
+    final match = _numberPattern.firstMatch(cleaned);
     if (match == null) return null;
     return double.tryParse(match.group(0)!);
   }

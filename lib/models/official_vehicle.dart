@@ -23,6 +23,7 @@ enum OfficialCloudCommand {
 
 class OfficialVehicle {
   static const _gpsModelTypes = {3, 8, 1501, 1601, 1701};
+  static final RegExp _btmacSeparatorPattern = RegExp(r'[^0-9a-fA-F]');
 
   final String imei;
   final String imeiGps;
@@ -125,7 +126,7 @@ class OfficialVehicle {
   }
 
   String get normalizedBtmac {
-    final compact = btmac.replaceAll(RegExp(r'[^0-9a-fA-F]'), '').toUpperCase();
+    final compact = btmac.replaceAll(_btmacSeparatorPattern, '').toUpperCase();
     if (compact.length != 12) return '';
     final pairs = <String>[];
     for (var index = 0; index < compact.length; index += 2) {

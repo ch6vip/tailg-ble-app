@@ -3,6 +3,9 @@ part of 'official_cloud_service.dart';
 class OfficialCloudAuthParser {
   const OfficialCloudAuthParser._();
 
+  static final RegExp _http401Pattern = RegExp(r'\b401\b');
+  static final RegExp _http403Pattern = RegExp(r'\b403\b');
+
   static bool looksLikeAuthError(Object error) {
     // Check HTTP status code first
     if (error is OfficialCloudApiException) {
@@ -15,8 +18,8 @@ class OfficialCloudAuthParser {
         message.contains('认证失败') ||
         message.contains('登录已过期') ||
         message.contains('授权已失效') ||
-        RegExp(r'\b401\b').hasMatch(message) ||
-        RegExp(r'\b403\b').hasMatch(message)) {
+        _http401Pattern.hasMatch(message) ||
+        _http403Pattern.hasMatch(message)) {
       return true;
     }
     // Compound: 'token' paired with expiry keyword catches 'token 已过期' etc.
