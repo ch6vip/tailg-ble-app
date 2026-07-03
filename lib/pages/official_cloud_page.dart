@@ -97,7 +97,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
   }
 
   String get _normalizedPhone =>
-      _phoneController.text.replaceAll(RegExp(r'\s+'), '');
+      OfficialCloudLoginValidator.compactPhone(_phoneController.text);
 
   Future<void> _refresh() async {
     try {
@@ -272,13 +272,13 @@ class _LoginCardState extends State<_LoginCard> {
   }
 
   String get _phoneText =>
-      widget.phoneController.text.replaceAll(RegExp(r'\s+'), '');
+      OfficialCloudLoginValidator.compactPhone(widget.phoneController.text);
 
   String get _smsText => widget.smsController.text.trim();
 
   void _syncInputState() {
-    _validPhone = RegExp(r'^\d{11}$').hasMatch(_phoneText);
-    _validSms = RegExp(r'^\d{4,8}$').hasMatch(_smsText);
+    _validPhone = OfficialCloudLoginValidator.isValidPhone(_phoneText);
+    _validSms = OfficialCloudLoginValidator.isValidSmsCode(_smsText);
     _showPhoneError = widget.phoneController.text.isNotEmpty && !_validPhone;
     _showSmsError = widget.smsController.text.isNotEmpty && !_validSms;
   }

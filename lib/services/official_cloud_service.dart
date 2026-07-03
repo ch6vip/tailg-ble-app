@@ -59,6 +59,26 @@ enum OfficialCloudResponseCode {
   }
 }
 
+final class OfficialCloudLoginValidator {
+  OfficialCloudLoginValidator._();
+
+  static final RegExp _phonePattern = RegExp(r'^\d{11}$');
+  static final RegExp _smsCodePattern = RegExp(r'^\d{4,8}$');
+  static final RegExp _phoneWhitespacePattern = RegExp(r'\s+');
+
+  static String compactPhone(String value) {
+    return value.replaceAll(_phoneWhitespacePattern, '');
+  }
+
+  static bool isValidPhone(String value) {
+    return _phonePattern.hasMatch(value);
+  }
+
+  static bool isValidSmsCode(String value) {
+    return _smsCodePattern.hasMatch(value);
+  }
+}
+
 class OfficialCloudState {
   final bool initialized;
   final String token;
@@ -301,7 +321,7 @@ class OfficialCloudService {
 
   Future<void> requestSmsCode(String phone) async {
     final normalized = phone.trim();
-    if (!_validPhone(normalized)) {
+    if (!OfficialCloudLoginValidator.isValidPhone(normalized)) {
       throw const OfficialCloudApiException('请输入 11 位手机号');
     }
     _setLoading(true);
@@ -320,10 +340,10 @@ class OfficialCloudService {
   Future<void> login(String phone, String smsCode) async {
     final normalizedPhone = phone.trim();
     final normalizedSms = smsCode.trim();
-    if (!_validPhone(normalizedPhone)) {
+    if (!OfficialCloudLoginValidator.isValidPhone(normalizedPhone)) {
       throw const OfficialCloudApiException('请输入 11 位手机号');
     }
-    if (!_validSmsCode(normalizedSms)) {
+    if (!OfficialCloudLoginValidator.isValidSmsCode(normalizedSms)) {
       throw const OfficialCloudApiException('请输入短信验证码');
     }
     _setLoading(true);
@@ -1136,10 +1156,6 @@ class OfficialCloudService {
     if (e is OfficialCloudApiException) return e.message;
     return e.toString();
   }
-
-  bool _validPhone(String value) => RegExp(r'^\d{11}$').hasMatch(value);
-
-  bool _validSmsCode(String value) => RegExp(r'^\d{4,8}$').hasMatch(value);
 
   bool _shouldUseRecentRefresh(String key) {
     final refreshedAt = _lastSuccessfulRefresh[key];

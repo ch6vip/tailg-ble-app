@@ -185,6 +185,29 @@ void main() {
     });
   });
 
+  group('OfficialCloudLoginValidator', () {
+    test('keeps official login input validation in one place', () {
+      expect(
+        OfficialCloudLoginValidator.compactPhone('188 1234\t5678'),
+        '18812345678',
+      );
+
+      expect(OfficialCloudLoginValidator.isValidPhone('18812345678'), isTrue);
+      expect(OfficialCloudLoginValidator.isValidPhone('1881234567'), isFalse);
+      expect(OfficialCloudLoginValidator.isValidPhone('188123456789'), isFalse);
+      expect(
+        OfficialCloudLoginValidator.isValidPhone('188 1234 5678'),
+        isFalse,
+      );
+
+      expect(OfficialCloudLoginValidator.isValidSmsCode('1234'), isTrue);
+      expect(OfficialCloudLoginValidator.isValidSmsCode('12345678'), isTrue);
+      expect(OfficialCloudLoginValidator.isValidSmsCode('123'), isFalse);
+      expect(OfficialCloudLoginValidator.isValidSmsCode('123456789'), isFalse);
+      expect(OfficialCloudLoginValidator.isValidSmsCode('abcd'), isFalse);
+    });
+  });
+
   group('OfficialCloudRedactor', () {
     test('masks sensitive request path values and diagnostic text', () {
       expect(
