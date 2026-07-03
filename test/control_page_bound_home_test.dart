@@ -102,6 +102,10 @@ void main() {
     final manualModePill = find.byTooltip('开启手动模式：禁用感应解锁/自动连接');
     expect(manualModePill, findsOneWidget);
     expect(tester.getSize(manualModePill).height, greaterThanOrEqualTo(44));
+    expect(
+      find.descendant(of: manualModePill, matching: find.byType(AppPressable)),
+      findsOneWidget,
+    );
 
     final enabledEvent = app.manualModeService.enabledStream.firstWhere(
       (value) => value,
