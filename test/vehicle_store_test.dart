@@ -366,6 +366,30 @@ void main() {
     expect(await store.loadShareMembers(), isEmpty);
   });
 
+  test('ReplicaFeatureStore logs malformed persisted payload shapes', () async {
+    SharedPreferences.setMockInitialValues({
+      'replica_nfc_keys': '[42]',
+      'replica_fence_config': '[]',
+      'replica_share_members': '{"not":"a-list"}',
+    });
+
+    final store = ReplicaFeatureStore();
+
+    expect(await store.loadNfcKeys(), isEmpty);
+    expect(await store.loadFenceConfig(), isNull);
+    expect(await store.loadShareMembers(), isEmpty);
+
+    final messages = LogService().all.map((entry) => entry.message).toList();
+    expect(
+      messages,
+      containsAll(<String>[
+        'ReplicaFeatureStore: skipped list item with type',
+        'ReplicaFeatureStore: expected map payload',
+        'ReplicaFeatureStore: expected list payload',
+      ]),
+    );
+  });
+
   test('ReplicaFeatureStore keeps recoverable malformed records', () async {
     SharedPreferences.setMockInitialValues({
       'replica_nfc_keys':

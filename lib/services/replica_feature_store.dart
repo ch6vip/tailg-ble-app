@@ -185,10 +185,22 @@ class ReplicaFeatureStore {
       _logWarning('ReplicaFeatureStore: JSON decode failed', e);
       return [];
     }
-    if (decoded is! List) return [];
+    if (decoded is! List) {
+      _logWarning(
+        'ReplicaFeatureStore: expected list payload',
+        decoded.runtimeType,
+      );
+      return [];
+    }
     final records = <T>[];
     for (final item in decoded) {
-      if (item is! Map) continue;
+      if (item is! Map) {
+        _logWarning(
+          'ReplicaFeatureStore: skipped list item with type',
+          item.runtimeType,
+        );
+        continue;
+      }
       try {
         records.add(decode(Map<String, dynamic>.from(item)));
       } catch (e) {
@@ -204,6 +216,10 @@ class ReplicaFeatureStore {
     try {
       final decoded = jsonDecode(raw);
       if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      _logWarning(
+        'ReplicaFeatureStore: expected map payload',
+        decoded.runtimeType,
+      );
     } catch (e) {
       _logWarning('ReplicaFeatureStore: decode map failed', e);
       return null;
