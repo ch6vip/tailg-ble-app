@@ -65,7 +65,7 @@ class ControlPageHero extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final wide = constraints.maxWidth >= 360;
-          final pctFontSize = wide ? 56.0 : 42.0;
+          final pctFontSize = wide ? 32.0 : 30.0;
           final pctFontWeight = FontWeight.w800;
 
           return Column(
@@ -389,11 +389,11 @@ class _OfficialMetric extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: EdgeInsets.only(bottom: fontSize * 0.08, left: 3),
+              padding: const EdgeInsets.only(bottom: 3, left: 3),
               child: Text(
                 unit,
                 style: TextStyle(
-                  fontSize: fontSize * 0.36,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
                 ),
