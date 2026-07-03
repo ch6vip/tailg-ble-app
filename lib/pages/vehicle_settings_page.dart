@@ -206,7 +206,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                                   subtitle: '车辆部分提示声音',
                                   onTap: () => Navigator.push(
                                     context,
-                                    MaterialPageRoute(
+                                    MaterialPageRoute<void>(
                                       builder: (_) => _QgjSoundSettingsPage(
                                         controller: _controller,
                                       ),
@@ -220,7 +220,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                                   subtitle: '感应大灯、坐垫感应等功能',
                                   onTap: () => Navigator.push(
                                     context,
-                                    MaterialPageRoute(
+                                    MaterialPageRoute<void>(
                                       builder: (_) => _QgjFunctionSettingsPage(
                                         controller: _controller,
                                       ),
@@ -234,7 +234,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                                   subtitle: '骑行模式和 ECU 功能入口',
                                   onTap: () => Navigator.push(
                                     context,
-                                    MaterialPageRoute(
+                                    MaterialPageRoute<void>(
                                       builder: (_) => _QgjRideSettingsPage(
                                         controller: _controller,
                                       ),
@@ -255,7 +255,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                                   subtitle: '自动锁车、HID、龙头锁等官方 GET 状态',
                                   onTap: () => Navigator.push(
                                     context,
-                                    MaterialPageRoute(
+                                    MaterialPageRoute<void>(
                                       builder: (_) =>
                                           const QgjAdvancedSettingsPage(),
                                     ),

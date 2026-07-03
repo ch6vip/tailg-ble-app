@@ -60,7 +60,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: '绑定车辆、默认车辆、多车管理',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const GaragePage()),
+                  MaterialPageRoute<void>(builder: (_) => const GaragePage()),
                 ),
               ),
               _settingItem(
@@ -69,7 +69,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: '声音、灵敏度、车辆功能、骑行设置',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (_) => const VehicleSettingsPage(),
                   ),
                 ),
@@ -80,7 +80,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: '车辆档案、蓝牙设备、服务和固件信息',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const DeviceInfoPage()),
+                  MaterialPageRoute<void>(
+                    builder: (_) => const DeviceInfoPage(),
+                  ),
                 ),
               ),
               _settingItem(
@@ -89,7 +91,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: '系统消息、设备消息和安全提醒',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const VehicleMessagePage()),
+                  MaterialPageRoute<void>(
+                    builder: (_) => const VehicleMessagePage(),
+                  ),
                 ),
               ),
               _settingItem(
@@ -98,7 +102,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: '电量、电压、温度、故障和预留 BMS 数据',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const BatteryDetailsPage()),
+                  MaterialPageRoute<void>(
+                    builder: (_) => const BatteryDetailsPage(),
+                  ),
                 ),
               ),
             ]),
@@ -110,7 +116,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: '协议、设备信息、固件版本和升级风险检查',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const OtaPrecheckPage()),
+                  MaterialPageRoute<void>(
+                    builder: (_) => const OtaPrecheckPage(),
+                  ),
                 ),
               ),
               _settingItem(
@@ -125,7 +133,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: '登录官方账号、车辆列表、云端控车',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const OfficialCloudPage()),
+                  MaterialPageRoute<void>(
+                    builder: (_) => const OfficialCloudPage(),
+                  ),
                 ),
               ),
             ]),
@@ -137,7 +147,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: '读取车辆错误码',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const DiagnosticPage()),
+                  MaterialPageRoute<void>(
+                    builder: (_) => const DiagnosticPage(),
+                  ),
                 ),
               ),
               _settingItem(
@@ -146,7 +158,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: '查看 BLE 通信和操作记录',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const LogPage()),
+                  MaterialPageRoute<void>(builder: (_) => const LogPage()),
                 ),
               ),
             ]),
@@ -158,7 +170,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: '版本、开源依赖、诊断导出',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const AboutAppPage()),
+                  MaterialPageRoute<void>(builder: (_) => const AboutAppPage()),
                 ),
               ),
               _settingItem(
@@ -175,7 +187,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _showProtocolDialog() {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => SimpleDialog(
         title: const Text('选择协议类型'),
@@ -351,7 +363,9 @@ class _LanguageSettingTile extends StatelessWidget {
           subtitle: snapshot.data?.label ?? '跟随系统',
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const LanguageSettingsPage()),
+            MaterialPageRoute<void>(
+              builder: (_) => const LanguageSettingsPage(),
+            ),
           ),
         );
       },
@@ -377,7 +391,7 @@ class _DistanceUnitSettingTile extends StatelessWidget {
           subtitle: '${unit.label} · ${unit.hint}',
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const UnitSettingsPage()),
+            MaterialPageRoute<void>(builder: (_) => const UnitSettingsPage()),
           ),
         );
       },

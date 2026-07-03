@@ -44,11 +44,11 @@ class OfficialCloudDataParser {
     Object? data, {
     bool wrapSingle = false,
   }) {
-    final items = data is List
-        ? data
+    final Iterable<Object?> items = data is List
+        ? data.cast<Object?>()
         : wrapSingle && data != null
-        ? [data]
-        : const [];
+        ? <Object?>[data]
+        : const <Object?>[];
     return items.whereType<Map<Object?, Object?>>().map(
       Map<String, dynamic>.from,
     );

@@ -182,7 +182,7 @@ class ConnectionManager {
     _reconnectCancelled = true;
     if (_reconnecting) {
       // Give the reconnect loop a chance to exit
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
     }
 
     // H-1: Guard against double-invocation
@@ -222,7 +222,7 @@ class ConnectionManager {
       _setState(ConnectionState.connected);
 
       await _requestQgjMtu(device);
-      await Future.delayed(BleTimings.serviceSetupDelay);
+      await Future<void>.delayed(BleTimings.serviceSetupDelay);
       await _discoverAndSetup();
     } catch (e) {
       _log.ble('连接失败', detail: e.toString(), level: LogLevel.error);
@@ -369,7 +369,7 @@ class ConnectionManager {
           level: LogLevel.debug,
         );
         await _recoverFailedConnect(device, e);
-        await Future.delayed(BleTimings.initialConnectRetryDelay);
+        await Future<void>.delayed(BleTimings.initialConnectRetryDelay);
       }
     }
     throw lastError ?? StateError('连接失败');
@@ -552,7 +552,7 @@ class ConnectionManager {
               }
             }
           })
-          .catchError((e) {
+          .catchError((Object e) {
             failCount++;
             if (failCount == 3) {
               _log.ble(
@@ -569,7 +569,7 @@ class ConnectionManager {
               // the Timer callback would route those futures through the
               // Timer zone, swallowing any thrown exceptions.
               scheduleMicrotask(() {
-                _onDisconnected().catchError((e, st) {
+                _onDisconnected().catchError((Object e, StackTrace st) {
                   _log.ble(
                     'Disconnect handler error: $e',
                     level: LogLevel.error,
@@ -752,7 +752,7 @@ class ConnectionManager {
           throw const FormatException('fcc1 状态数据不完整');
         }
         await fcc1.write(data, withoutResponse: false);
-        await Future.delayed(BleTimings.fccReadbackDelay);
+        await Future<void>.delayed(BleTimings.fccReadbackDelay);
         return fcc1.read();
       }, priority: GattOperationPriority.high);
       _ridingMode = parseQgjRidingMode(response) ?? mode;
@@ -804,7 +804,7 @@ class ConnectionManager {
     _resetCharacteristics();
     if (!_userDisconnected && _device != null) {
       _setState(ConnectionState.reconnecting);
-      _attemptReconnect().catchError((e, st) {
+      _attemptReconnect().catchError((Object e, StackTrace st) {
         _log.ble('Reconnect error: $e', level: LogLevel.error);
       });
     } else {
@@ -834,7 +834,7 @@ class ConnectionManager {
         level: LogLevel.info,
       );
 
-      await Future.delayed(delay);
+      await Future<void>.delayed(delay);
 
       if (_state != ConnectionState.reconnecting) break;
 
@@ -852,7 +852,7 @@ class ConnectionManager {
 
         _setState(ConnectionState.connected);
         await _requestQgjMtu(_device!);
-        await Future.delayed(BleTimings.serviceSetupDelay);
+        await Future<void>.delayed(BleTimings.serviceSetupDelay);
         await _discoverAndSetup();
 
         _reconnecting = false;
@@ -933,7 +933,7 @@ class ConnectionManager {
       detail: isAndroidGatt133 ? 'android-code: 133' : 'timeout',
       level: LogLevel.debug,
     );
-    await Future.delayed(
+    await Future<void>.delayed(
       isAndroidGatt133
           ? BleTimings.androidGattErrorRecoveryDelay
           : BleTimings.failedConnectRecoveryDelay,
@@ -997,7 +997,7 @@ class ConnectionManager {
       // scheduleMicrotask avoids running teardown inside the Timer zone,
       // where async exceptions from _onDisconnected would be swallowed.
       scheduleMicrotask(() {
-        _onDisconnected().catchError((e, st) {
+        _onDisconnected().catchError((Object e, StackTrace st) {
           _log.ble('Disconnect handler error: $e', level: LogLevel.error);
         });
       });

@@ -192,7 +192,7 @@ class _OfficialCloudApiClient {
         );
       } on TimeoutException {
         if (attempt < maxRetries) {
-          await Future.delayed(config.retryDelayForAttempt(attempt));
+          await Future<void>.delayed(config.retryDelayForAttempt(attempt));
           continue;
         }
         _recordRequestFailure(
@@ -204,7 +204,7 @@ class _OfficialCloudApiClient {
         throw const OfficialCloudApiException('请求超时，请检查网络');
       } on SocketException {
         if (attempt < maxRetries) {
-          await Future.delayed(config.retryDelayForAttempt(attempt));
+          await Future<void>.delayed(config.retryDelayForAttempt(attempt));
           continue;
         }
         _recordRequestFailure(

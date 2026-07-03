@@ -121,7 +121,7 @@ class _UnboundVehicleHome extends StatelessWidget {
                 TextButton(
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const GaragePage()),
+                    MaterialPageRoute<void>(builder: (_) => const GaragePage()),
                   ),
                   child: const Text(
                     '绑定说明',
@@ -137,7 +137,7 @@ class _UnboundVehicleHome extends StatelessWidget {
                   label: '已绑定官方账号？登录后自动显示车辆',
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (_) => const OfficialCloudPage(),
                     ),
                   ),

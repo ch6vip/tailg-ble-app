@@ -192,7 +192,9 @@ class _UserHeader extends StatelessWidget {
               if (!signedIn) {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const OfficialCloudPage()),
+                  MaterialPageRoute<void>(
+                    builder: (_) => const OfficialCloudPage(),
+                  ),
                 );
               } else {
                 AppSnack.info(context, '编辑资料功能开发中');
@@ -534,7 +536,7 @@ class _SettingsSection extends StatelessWidget {
                   iconColor: AppColors.textSecondary,
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (_) => const VehicleMessagePage(),
                     ),
                   ),
@@ -556,7 +558,9 @@ class _SettingsSection extends StatelessWidget {
                   badge: '新版本',
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const OtaPrecheckPage()),
+                    MaterialPageRoute<void>(
+                      builder: (_) => const OtaPrecheckPage(),
+                    ),
                   ),
                 ),
                 _DividerTile(),
@@ -576,7 +580,9 @@ class _SettingsSection extends StatelessWidget {
                   value: 'v8.0.1',
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const AboutAppPage()),
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AboutAppPage(),
+                    ),
                   ),
                 ),
               ],
@@ -620,7 +626,7 @@ class _LogoutButton extends StatelessWidget {
       child: GestureDetector(
         onTap: () {
           HapticFeedback.mediumImpact();
-          showDialog(
+          showDialog<void>(
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('退出登录'),

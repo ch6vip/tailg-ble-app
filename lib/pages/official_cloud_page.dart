@@ -599,7 +599,7 @@ class _OfficialVehicleCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () => Navigator.push(
                       context,
-                      MaterialPageRoute(
+                      MaterialPageRoute<void>(
                         builder: (_) =>
                             OfficialVehicleDetailPage(vehicle: vehicle),
                       ),
@@ -614,7 +614,7 @@ class _OfficialVehicleCard extends StatelessWidget {
                     builder: (context) {
                       void openLinkPage() => Navigator.push(
                         context,
-                        MaterialPageRoute(
+                        MaterialPageRoute<void>(
                           builder: (_) =>
                               OfficialVehicleLinkPage(vehicle: vehicle),
                         ),
@@ -850,7 +850,7 @@ class OfficialVehicleDetailPage extends StatelessWidget {
                 child: FilledButton.icon(
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (_) =>
                           OfficialVehicleSelfCheckPage(vehicle: vehicle),
                     ),

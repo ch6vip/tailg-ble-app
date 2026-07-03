@@ -9,7 +9,7 @@ class _HomeQuickSection extends StatefulWidget {
 
 class _HomeQuickSectionState extends State<_HomeQuickSection> {
   void _open(BuildContext context, Widget page) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+    Navigator.push(context, MaterialPageRoute<void>(builder: (_) => page));
   }
 
   @override
@@ -335,7 +335,7 @@ class _V8AllFunctionsSheetState extends State<_V8AllFunctionsSheet> {
 
   void _onNavigate(BuildContext context, WidgetBuilder page) {
     Navigator.pop(context);
-    Navigator.push(context, MaterialPageRoute(builder: page));
+    Navigator.push(context, MaterialPageRoute<void>(builder: page));
   }
 
   @override

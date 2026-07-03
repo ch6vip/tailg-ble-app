@@ -206,7 +206,7 @@ class ProximityService {
         userId: vehicle?.qgjUserId,
       );
       await manager.connect(device);
-      await Future.delayed(BleTimings.serviceSetupDelay);
+      await Future<void>.delayed(BleTimings.serviceSetupDelay);
       if (_canUnlockConnectedTarget(
         manager: manager,
         device: device,

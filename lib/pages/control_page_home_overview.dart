@@ -177,7 +177,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
         actionLabel: '查看日志',
         onAction: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const LogPage()),
+          MaterialPageRoute<void>(builder: (_) => const LogPage()),
         ),
       );
       return;
@@ -338,7 +338,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     // Navigate to ShareBikePage or a dedicated rider-management page.
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const ShareBikePage()),
+      MaterialPageRoute<void>(builder: (_) => const ShareBikePage()),
     );
   }
 
@@ -456,10 +456,14 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                 vehicleName: cloudVehicle?.displayName ?? vehicleName,
                 connectionLabel: connectionLabel,
                 onBatteryTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const BatteryDetailsPage()),
+                  MaterialPageRoute<void>(
+                    builder: (_) => const BatteryDetailsPage(),
+                  ),
                 ),
                 onNotification: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const VehicleMessagePage()),
+                  MaterialPageRoute<void>(
+                    builder: (_) => const VehicleMessagePage(),
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
@@ -540,7 +544,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                         child: InkWell(
                           onTap: () => Navigator.push(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (_) => const OfficialCloudPage(),
                             ),
                           ),

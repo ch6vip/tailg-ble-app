@@ -65,7 +65,7 @@ VehicleProtocol vehicleProtocolFromBle(ble.ProtocolType protocol) {
 void openScanTab(BuildContext context) {
   Navigator.of(
     context,
-  ).push(MaterialPageRoute(builder: (_) => const ScanPage()));
+  ).push(MaterialPageRoute<void>(builder: (_) => const ScanPage()));
 }
 
 void main() async {
