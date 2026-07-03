@@ -41,7 +41,10 @@ jobs:
         run: flutter analyze --fatal-warnings --fatal-infos
 
       - name: Test
-        run: flutter test
+        run: flutter test --coverage
+
+      - name: Check coverage
+        run: dart tool/check_coverage.dart coverage/lcov.info 40
 
   build:
     runs-on: ubuntu-latest
