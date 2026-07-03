@@ -48,6 +48,60 @@ void main() {
     }
   });
 
+  testWidgets('riding mode options expose selected semantics', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      tester.view.physicalSize = const Size(430, 2200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(const TestApp(home: VehicleSettingsPage()));
+      await tester.pump();
+
+      const rideSettingsLabel = '骑行设置，骑行模式和 ECU 功能入口';
+      tester.semantics.tap(find.semantics.byLabel(rideSettingsLabel));
+      await tester.pumpAndSettle();
+
+      const standardModeLabel = '骑行模式：全速跑';
+      final standardMode = find.bySemanticsLabel(standardModeLabel);
+      expect(standardMode, findsOneWidget);
+      expect(tester.getSize(standardMode).height, greaterThanOrEqualTo(44));
+      expect(
+        tester.getSemantics(standardMode),
+        matchesSemantics(
+          label: standardModeLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: false,
+          hasSelectedState: true,
+          isSelected: true,
+          hasTapAction: false,
+        ),
+      );
+
+      const ecoModeLabel = '骑行模式：超能跑';
+      final ecoMode = find.bySemanticsLabel(ecoModeLabel);
+      expect(ecoMode, findsOneWidget);
+      expect(
+        tester.getSemantics(ecoMode),
+        matchesSemantics(
+          label: ecoModeLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: false,
+          hasSelectedState: true,
+          isSelected: false,
+          hasTapAction: false,
+        ),
+      );
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('disabled pending vehicle setting exposes semantics', (
     tester,
   ) async {

@@ -629,48 +629,55 @@ class _QgjRideSettingsPage extends StatelessWidget {
                                   children: RidingMode.values.map((mode) {
                                     final selected =
                                         mode == controller.ridingMode;
+                                    final enabled = canSend && !selected;
                                     final color = switch (mode) {
                                       RidingMode.eco => AppColors.success,
                                       RidingMode.standard => AppColors.dark,
                                       RidingMode.sport => AppColors.warning,
                                     };
+                                    void selectMode() =>
+                                        _setMode(context, mode);
+                                    final option = Material(
+                                      color: selected
+                                          ? color.withValues(alpha: 0.14)
+                                          : AppColors.pageBg,
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(10),
+                                        onTap: enabled ? selectMode : null,
+                                        child: SizedBox(
+                                          height: 46,
+                                          child: Center(
+                                            child: Text(
+                                              mode.label,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: selected
+                                                    ? FontWeight.w700
+                                                    : FontWeight.w500,
+                                                color: selected
+                                                    ? color
+                                                    : AppColors.textSecondary,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
                                     return Expanded(
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 3,
                                         ),
-                                        child: Material(
-                                          color: selected
-                                              ? color.withValues(alpha: 0.14)
-                                              : AppColors.pageBg,
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                          child: InkWell(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                            onTap: canSend && !selected
-                                                ? () => _setMode(context, mode)
-                                                : null,
-                                            child: SizedBox(
-                                              height: 46,
-                                              child: Center(
-                                                child: Text(
-                                                  mode.label,
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: selected
-                                                        ? FontWeight.w700
-                                                        : FontWeight.w500,
-                                                    color: selected
-                                                        ? color
-                                                        : AppColors
-                                                              .textSecondary,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
+                                        child: Semantics(
+                                          container: true,
+                                          label: '骑行模式：${mode.label}',
+                                          button: true,
+                                          enabled: enabled,
+                                          selected: selected,
+                                          onTap: enabled ? selectMode : null,
+                                          child: ExcludeSemantics(
+                                            child: option,
                                           ),
                                         ),
                                       ),
