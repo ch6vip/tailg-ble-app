@@ -401,14 +401,14 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<dynamic>(
+    return StreamBuilder<BikeState?>(
       stream: connectionManager.bikeStateStream,
       initialData: connectionManager.latestBikeState,
       builder: (context, snapshot) {
-        final bike = snapshot.data;
+        final BikeState? bike = snapshot.data;
         final cloudVehicle = officialCloudService.state.selectedVehicle;
         // Prefer BLE battery, fallback to cloud electricQuantity
-        final rawPercent =
+        final int? rawPercent =
             bike?.batteryPercent ?? cloudVehicle?.electricQuantity;
         final soc = _normalizePercent(rawPercent) ?? 0;
         // Prefer cloud mileage, fallback to estimated range
@@ -417,8 +417,9 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             ? cloudMileage.round()
             : (soc * _kmPerPercent).round();
         // Prefer BLE lock/power, fallback to cloud
-        final isArmed = bike?.isLocked ?? cloudVehicle?.isLocked;
-        final isPowerOn = bike?.isPowerOn ?? cloudVehicle?.isPowerOn ?? false;
+        final bool? isArmed = bike?.isLocked ?? cloudVehicle?.isLocked;
+        final bool isPowerOn =
+            bike?.isPowerOn ?? cloudVehicle?.isPowerOn ?? false;
         final vehicleName =
             connectionManager.device?.platformName ??
             vehicleStore.defaultVehicle?.displayName ??
@@ -472,7 +473,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                     StatusBadge(
                       type: isArmed == null
                           ? StatusBadgeType.idle
-                          : isArmed!
+                          : isArmed
                           ? StatusBadgeType.armed
                           : StatusBadgeType.idle,
                       label: isArmed == null ? '未知' : null,

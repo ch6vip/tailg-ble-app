@@ -27,6 +27,15 @@ void main() {
     );
   });
 
+  test('Home overview keeps bike state stream typed', () {
+    final source = File(
+      'lib/pages/control_page_home_overview.dart',
+    ).readAsStringSync();
+
+    expect(source, contains('StreamBuilder<BikeState?>('));
+    expect(source, isNot(contains('StreamBuilder<dynamic>(')));
+  });
+
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     FlutterSecureStorage.setMockInitialValues({});
