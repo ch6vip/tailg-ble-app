@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
@@ -283,12 +286,27 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  void _onPointerDown(PointerDownEvent _) {
-    if (widget.busy) return;
+  void _onPointerDown(PointerDownEvent event) {
+    if (widget.busy ||
+        _holding ||
+        (event.kind == PointerDeviceKind.mouse &&
+            event.buttons != kPrimaryButton)) {
+      return;
+    }
     _fired = false;
     HapticFeedback.lightImpact();
     setState(() => _holding = true);
     _ctrl.forward();
+  }
+
+  void _onPointerMove(PointerMoveEvent event) {
+    if (!_holding) return;
+    final width = context.size?.width ?? widget.size;
+    final left = ((width - widget.size) / 2).clamp(0.0, double.infinity);
+    final knobBounds = Rect.fromLTWH(left, 0, widget.size, widget.size);
+    if (!knobBounds.contains(event.localPosition)) {
+      _finish();
+    }
   }
 
   void _onPointerUp(PointerUpEvent _) {
@@ -320,6 +338,7 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
 
     return Listener(
       onPointerDown: _onPointerDown,
+      onPointerMove: _onPointerMove,
       onPointerUp: _onPointerUp,
       onPointerCancel: _onPointerCancel,
       child: Column(
