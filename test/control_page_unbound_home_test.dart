@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
+import 'package:tailg_ble_app/pages/official_cloud_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
@@ -106,30 +107,57 @@ void main() {
     }
   });
 
-  testWidgets('official cloud text link keeps a 44dp touch target', (
+  testWidgets('official cloud text link exposes semantics and 44dp target', (
     tester,
   ) async {
+    final semantics = tester.ensureSemantics();
     SharedPreferences.setMockInitialValues({});
     VehicleStore().resetForTest();
     await VehicleStore().init();
 
-    tester.view.physicalSize = const Size(430, 2200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() async {
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump();
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+    try {
+      tester.view.physicalSize = const Size(430, 2200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
-    await tester.pumpWidget(const TestApp(home: ControlPage()));
-    await tester.pump(const Duration(milliseconds: 50));
+      await tester.pumpWidget(const TestApp(home: ControlPage()));
+      await tester.pump(const Duration(milliseconds: 50));
 
-    final officialCloudLink = find.ancestor(
-      of: find.text('已绑定官方账号？登录后自动显示车辆'),
-      matching: find.byType(InkWell),
-    );
-    expect(officialCloudLink, findsOneWidget);
-    expect(tester.getSize(officialCloudLink).height, greaterThanOrEqualTo(44));
+      const linkLabel = '已绑定官方账号？登录后自动显示车辆';
+      final officialCloudLink = find.ancestor(
+        of: find.text(linkLabel),
+        matching: find.byType(InkWell),
+      );
+      expect(officialCloudLink, findsOneWidget);
+      expect(
+        tester.getSize(officialCloudLink).height,
+        greaterThanOrEqualTo(44),
+      );
+
+      final linkAction = find.bySemanticsLabel(linkLabel);
+      expect(linkAction, findsOneWidget);
+      expect(
+        tester.getSemantics(linkAction),
+        matchesSemantics(
+          label: linkLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel(linkLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(OfficialCloudPage), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
   });
 }

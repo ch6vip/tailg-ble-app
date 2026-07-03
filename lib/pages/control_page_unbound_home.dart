@@ -488,7 +488,7 @@ class _OfficialTextLinkRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    final row = Material(
       color: Colors.white.withValues(alpha: 0.72),
       borderRadius: BorderRadius.circular(18),
       clipBehavior: Clip.antiAlias,
@@ -523,6 +523,13 @@ class _OfficialTextLinkRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+    return Semantics(
+      label: label,
+      button: true,
+      enabled: true,
+      onTap: onTap,
+      child: ExcludeSemantics(child: row),
     );
   }
 }
