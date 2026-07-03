@@ -30,6 +30,7 @@ class AppPressable extends StatefulWidget {
   final bool? semanticsEnabled;
   final bool? semanticsSelected;
   final bool? semanticsToggled;
+  final bool semanticsContainer;
 
   const AppPressable({
     super.key,
@@ -52,6 +53,7 @@ class AppPressable extends StatefulWidget {
     this.semanticsEnabled,
     this.semanticsSelected,
     this.semanticsToggled,
+    this.semanticsContainer = false,
   }) : assert(child != null || builder != null);
 
   @override
@@ -78,6 +80,7 @@ class _AppPressableState extends State<AppPressable> {
     final isActive = widget.enabled && _pressed;
     final child = widget.builder?.call(context, isActive) ?? widget.child!;
     return Semantics(
+      container: widget.semanticsContainer,
       label: widget.semanticsLabel,
       excludeSemantics: widget.semanticsLabel != null,
       button: widget.semanticsButton ?? widget.enabled,

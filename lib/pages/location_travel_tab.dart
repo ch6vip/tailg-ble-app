@@ -280,6 +280,19 @@ class _TravelRecordCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final interactive = !loading;
+    String fallback(String value, String fallback) =>
+        value.isEmpty ? fallback : value;
+    final timeLabel = record.startTime.isEmpty && record.endTime.isEmpty
+        ? fallback(record.travelDate, '时间未知')
+        : '${fallback(record.startTime, '--')} 至 ${fallback(record.endTime, '--')}';
+    final semanticsLabel = [
+      '轨迹记录',
+      timeLabel,
+      record.mileageLabel,
+      record.averageSpeedLabel,
+      record.durationLabel,
+      pointCount == null ? '点击读取' : '$pointCount 点',
+    ].join('，');
     return AppPressable(
       enabled: interactive,
       pressedScale: AppMotion.pressScale,
@@ -287,6 +300,10 @@ class _TravelRecordCard extends StatelessWidget {
       pressedBackground: _officialPressedBg,
       borderRadius: BorderRadius.circular(AppRadii.card),
       haptic: false,
+      semanticsLabel: semanticsLabel,
+      semanticsButton: true,
+      semanticsEnabled: interactive,
+      semanticsContainer: true,
       onTap: () {
         HapticFeedback.selectionClick();
         onTap();
