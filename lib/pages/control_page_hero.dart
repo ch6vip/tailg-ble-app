@@ -82,25 +82,33 @@ class ControlPageHero extends StatelessWidget {
               SizedBox(height: wide ? 14 : 8),
 
               // Hero: big battery % + range
-              GestureDetector(
+              Semantics(
+                label: '电量 $batteryLevel%，续航 $displayRange km，$displayHealth',
+                button: onBatteryTap != null,
+                enabled: onBatteryTap != null,
                 onTap: onBatteryTap,
-                child: wide
-                    ? _WideHeroData(
-                        batteryLevel: batteryLevel,
-                        bColor: bColor,
-                        pctFontSize: pctFontSize,
-                        pctFontWeight: pctFontWeight,
-                        displayRange: displayRange,
-                        displayHealth: displayHealth,
-                      )
-                    : _NarrowHeroData(
-                        batteryLevel: batteryLevel,
-                        bColor: bColor,
-                        pctFontSize: pctFontSize,
-                        pctFontWeight: pctFontWeight,
-                        displayRange: displayRange,
-                        displayHealth: displayHealth,
-                      ),
+                child: ExcludeSemantics(
+                  child: GestureDetector(
+                    onTap: onBatteryTap,
+                    child: wide
+                        ? _WideHeroData(
+                            batteryLevel: batteryLevel,
+                            bColor: bColor,
+                            pctFontSize: pctFontSize,
+                            pctFontWeight: pctFontWeight,
+                            displayRange: displayRange,
+                            displayHealth: displayHealth,
+                          )
+                        : _NarrowHeroData(
+                            batteryLevel: batteryLevel,
+                            bColor: bColor,
+                            pctFontSize: pctFontSize,
+                            pctFontWeight: pctFontWeight,
+                            displayRange: displayRange,
+                            displayHealth: displayHealth,
+                          ),
+                  ),
+                ),
               ),
 
               // SOC bar
@@ -131,40 +139,47 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final vehicleSwitch = GestureDetector(
+      key: const ValueKey('control-hero-vehicle-switch'),
+      onTap: onVehicleSwitch,
+      behavior: HitTestBehavior.opaque,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 44),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 2),
+            const Icon(
+              Icons.keyboard_arrow_down,
+              size: 18,
+              color: AppColors.textTertiary,
+            ),
+          ],
+        ),
+      ),
+    );
     return Row(
       children: [
         Flexible(
-          child: GestureDetector(
-            key: const ValueKey('control-hero-vehicle-switch'),
+          child: Semantics(
+            label: '$displayName，切换车辆',
+            button: true,
+            enabled: onVehicleSwitch != null,
             onTap: onVehicleSwitch,
-            behavior: HitTestBehavior.opaque,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 44),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      displayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.4,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  const Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 18,
-                    color: AppColors.textTertiary,
-                  ),
-                ],
-              ),
-            ),
+            child: ExcludeSemantics(child: vehicleSwitch),
           ),
         ),
         const Spacer(),
@@ -205,6 +220,7 @@ class _TopBar extends StatelessWidget {
         const SizedBox(width: 8),
         _TopIconButton(
           icon: Icons.notifications_outlined,
+          semanticsLabel: '车辆消息',
           onTap: onNotification,
         ),
       ],
@@ -434,13 +450,18 @@ class _SocBar extends StatelessWidget {
 }
 
 class _TopIconButton extends StatelessWidget {
-  const _TopIconButton({required this.icon, this.onTap});
+  const _TopIconButton({
+    required this.icon,
+    required this.semanticsLabel,
+    this.onTap,
+  });
   final IconData icon;
+  final String semanticsLabel;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    final button = GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
@@ -453,6 +474,13 @@ class _TopIconButton extends StatelessWidget {
         ),
         child: Icon(icon, size: 18, color: AppColors.textSecondary),
       ),
+    );
+    return Semantics(
+      label: semanticsLabel,
+      button: true,
+      enabled: onTap != null,
+      onTap: onTap,
+      child: ExcludeSemantics(child: button),
     );
   }
 }
