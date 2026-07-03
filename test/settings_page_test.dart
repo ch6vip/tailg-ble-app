@@ -40,4 +40,37 @@ void main() {
       );
     }
   });
+
+  testWidgets('settings navigation rows expose semantics and 44dp targets', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+
+    try {
+      await tester.pumpWidget(const TestApp(home: SettingsPage()));
+      await tester.pump();
+
+      const languageLabel = '语言设置，跟随系统';
+      final languageRow = find.bySemanticsLabel(languageLabel);
+      expect(languageRow, findsOneWidget);
+      expect(tester.getSize(languageRow).height, greaterThanOrEqualTo(44));
+      expect(
+        tester.getSemantics(languageRow),
+        matchesSemantics(
+          label: languageLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel(languageLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.text('语言设置'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
 }

@@ -243,7 +243,7 @@ Widget _settingItem({
   VoidCallback? onTap,
   bool showChevron = true,
 }) {
-  return Material(
+  final row = Material(
     color: Colors.transparent,
     child: InkWell(
       onTap: onTap,
@@ -285,6 +285,14 @@ Widget _settingItem({
         ),
       ),
     ),
+  );
+  if (onTap == null) return row;
+  return Semantics(
+    label: subtitle == null ? title : '$title，$subtitle',
+    button: true,
+    enabled: true,
+    onTap: onTap,
+    child: ExcludeSemantics(child: row),
   );
 }
 
