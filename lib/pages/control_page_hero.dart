@@ -156,7 +156,7 @@ class _TopBar extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
+                  letterSpacing: 0,
                   color: AppColors.textPrimary,
                 ),
               ),
@@ -255,15 +255,11 @@ class _WideHeroData extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '$batteryLevel',
-              style: TextStyle(
-                fontSize: pctFontSize,
-                fontWeight: pctFontWeight,
-                height: 0.95,
-                letterSpacing: -2,
-                color: bColor,
-              ),
+            _BatteryLevelText(
+              batteryLevel: batteryLevel,
+              color: bColor,
+              fontSize: pctFontSize,
+              fontWeight: pctFontWeight,
             ),
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -358,15 +354,11 @@ class _NarrowHeroData extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '$batteryLevel',
-              style: TextStyle(
-                fontSize: pctFontSize,
-                fontWeight: pctFontWeight,
-                height: 0.95,
-                letterSpacing: -2,
-                color: bColor,
-              ),
+            _BatteryLevelText(
+              batteryLevel: batteryLevel,
+              color: bColor,
+              fontSize: pctFontSize,
+              fontWeight: pctFontWeight,
             ),
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -416,6 +408,34 @@ class _NarrowHeroData extends StatelessWidget {
           style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
         ),
       ],
+    );
+  }
+}
+
+class _BatteryLevelText extends StatelessWidget {
+  const _BatteryLevelText({
+    required this.batteryLevel,
+    required this.color,
+    required this.fontSize,
+    required this.fontWeight,
+  });
+
+  final int batteryLevel;
+  final Color color;
+  final double fontSize;
+  final FontWeight fontWeight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '$batteryLevel',
+      style: TextStyle(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        height: 0.95,
+        letterSpacing: 0,
+        color: color,
+      ),
     );
   }
 }

@@ -89,4 +89,47 @@ void main() {
       semantics.dispose();
     }
   });
+
+  testWidgets('hero title and battery metrics avoid negative letter spacing', (
+    tester,
+  ) async {
+    Future<void> pumpHero(Size size) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1.0;
+      await tester.pumpWidget(
+        const TestApp(
+          home: Scaffold(
+            body: ControlPageHero(
+              batteryLevel: 72,
+              rangeKm: 48,
+              healthLabel: '健康良好',
+              vehicleName: '测试车辆',
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    for (final size in [const Size(430, 900), const Size(320, 900)]) {
+      await pumpHero(size);
+
+      final titleSpacing = tester
+          .widget<Text>(find.text('测试车辆'))
+          .style
+          ?.letterSpacing;
+      final batterySpacing = tester
+          .widget<Text>(find.text('72'))
+          .style
+          ?.letterSpacing;
+
+      expect(titleSpacing, anyOf(isNull, greaterThanOrEqualTo(0)));
+      expect(batterySpacing, anyOf(isNull, greaterThanOrEqualTo(0)));
+    }
+  });
 }
