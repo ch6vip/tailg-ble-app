@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/pages/control_page_hero.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/test_app.dart';
 
@@ -67,6 +68,13 @@ void main() {
       const notificationLabel = '车辆消息';
       final notificationAction = find.bySemanticsLabel(notificationLabel);
       expect(notificationAction, findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.byIcon(Icons.notifications_outlined),
+          matching: find.byType(AppPressable),
+        ),
+        findsOneWidget,
+      );
       expect(
         tester.getSemantics(notificationAction),
         matchesSemantics(

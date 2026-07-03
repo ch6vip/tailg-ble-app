@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 /// v8 Hero area for the control page home.
 ///
@@ -481,9 +482,12 @@ class _TopIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final button = GestureDetector(
+    return AppPressable(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
+      haptic: false,
+      semanticsLabel: semanticsLabel,
+      semanticsButton: true,
+      semanticsEnabled: onTap != null,
       child: Container(
         width: 44,
         height: 44,
@@ -494,13 +498,6 @@ class _TopIconButton extends StatelessWidget {
         ),
         child: Icon(icon, size: 18, color: AppColors.textSecondary),
       ),
-    );
-    return Semantics(
-      label: semanticsLabel,
-      button: true,
-      enabled: onTap != null,
-      onTap: onTap,
-      child: ExcludeSemantics(child: button),
     );
   }
 }
