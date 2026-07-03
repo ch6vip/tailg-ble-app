@@ -34,7 +34,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
     // when new entries arrive (P3-12). The manual refresh button remains as
     // a force-rebuild escape hatch.
     _logSub = _log.changes.listen((_) {
-      if (mounted) setState(() {});
+      _refreshVisibleLogs();
     });
   }
 
@@ -52,6 +52,11 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
       2 => _log.byCategory(LogCategory.operation),
       _ => _log.all,
     };
+  }
+
+  void _refreshVisibleLogs() {
+    if (!mounted) return;
+    setState(() => _activeTab = _tabController.index);
   }
 
   Future<void> _copyAll() async {
@@ -91,8 +96,6 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
     );
     if (confirmed != true) return;
     _log.clear();
-    if (!mounted) return;
-    setState(() {});
   }
 
   @override
@@ -117,7 +120,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
                   // LogService.changes now auto-refreshes the page, but keep
                   // the manual button for cases where the user wants to force
                   // a re-read (e.g. after rotating the device).
-                  onTap: () => setState(() {}),
+                  onTap: _refreshVisibleLogs,
                 ),
                 AppHeaderAction(
                   icon: Icons.delete_outline,

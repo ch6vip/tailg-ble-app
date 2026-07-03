@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +10,13 @@ import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 
 void main() {
+  test('LogPage does not use empty setState refreshes', () {
+    final source = File('lib/pages/log_page.dart').readAsStringSync();
+
+    expect(source, isNot(contains('setState(() {})')));
+    expect(source, contains('_refreshVisibleLogs'));
+  });
+
   setUp(() {
     app.logService.clear();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

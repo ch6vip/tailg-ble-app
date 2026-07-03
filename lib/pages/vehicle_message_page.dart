@@ -38,7 +38,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
       }
     });
     _logSub = _log.changes.listen((_) {
-      if (mounted) setState(() {});
+      _refreshVisibleMessages();
     });
     _loadMessageState();
   }
@@ -198,6 +198,11 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
     return '${entry.time.microsecondsSinceEpoch}_${entry.message}_${entry.detail ?? ''}';
   }
 
+  void _refreshVisibleMessages() {
+    if (!mounted) return;
+    setState(() => _activeTab = _tabController.index);
+  }
+
   Future<void> _loadMessageState() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
@@ -321,7 +326,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
                   tooltip: '刷新',
                   // LogService.changes auto-refreshes new messages; keep this
                   // as a manual force-rebuild for persisted read/hidden state.
-                  onPressed: () => setState(() {}),
+                  onPressed: _refreshVisibleMessages,
                   icon: const Icon(Icons.refresh),
                 ),
               ],
