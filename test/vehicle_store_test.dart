@@ -182,6 +182,21 @@ void main() {
       expect(store.defaultVehicle?.displayName, '有效车辆');
       expect(store.defaultVehicle?.protocol, VehicleProtocol.qgj);
       expect(store.defaultVehicleId, 'AA:BB:CC:DD:EE:FF');
+      final warningDetails = LogService().all
+          .where(
+            (entry) =>
+                entry.message == 'VehicleStore' &&
+                entry.level == LogLevel.warning,
+          )
+          .map((entry) => entry.detail)
+          .toList();
+      expect(
+        warningDetails,
+        containsAll(<String>[
+          'Skipped vehicle profile with blank id',
+          'Skipped vehicle profile entry with type int',
+        ]),
+      );
     },
   );
 
