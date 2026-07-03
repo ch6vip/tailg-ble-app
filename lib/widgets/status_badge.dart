@@ -61,7 +61,42 @@ class StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displayLabel = label ?? _defaultLabel;
+    final badge = _StatusBadgeVisual(
+      displayLabel: displayLabel,
+      dotColor: _dotColor,
+      bgColor: _bgColor,
+      showDot: showDot,
+      compact: compact,
+      pulsing: _isActive,
+    );
 
+    return Semantics(
+      container: true,
+      label: '车辆状态：$displayLabel',
+      child: ExcludeSemantics(child: badge),
+    );
+  }
+}
+
+class _StatusBadgeVisual extends StatelessWidget {
+  const _StatusBadgeVisual({
+    required this.displayLabel,
+    required this.dotColor,
+    required this.bgColor,
+    required this.showDot,
+    required this.compact,
+    required this.pulsing,
+  });
+
+  final String displayLabel;
+  final Color dotColor;
+  final Color bgColor;
+  final bool showDot;
+  final bool compact;
+  final bool pulsing;
+
+  @override
+  Widget build(BuildContext context) {
     if (compact) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -72,7 +107,7 @@ class StatusBadge extends StatelessWidget {
               height: 8,
               margin: const EdgeInsets.only(right: 5),
               decoration: BoxDecoration(
-                color: _dotColor,
+                color: dotColor,
                 shape: BoxShape.circle,
               ),
             ),
@@ -81,7 +116,7 @@ class StatusBadge extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: _dotColor,
+              color: dotColor,
             ),
           ),
         ],
@@ -91,14 +126,14 @@ class StatusBadge extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: showDot ? 10 : 12, vertical: 5),
       decoration: BoxDecoration(
-        color: _bgColor,
+        color: bgColor,
         borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (showDot) ...[
-            _PulsingDot(color: _dotColor, pulsing: _isActive),
+            _PulsingDot(color: dotColor, pulsing: pulsing),
             const SizedBox(width: 5),
           ],
           Text(
@@ -106,7 +141,7 @@ class StatusBadge extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: _dotColor,
+              color: dotColor,
             ),
           ),
         ],
