@@ -145,8 +145,9 @@ Tailg BLE v<pubspec version> (<tag>)
 
 ```bash
 dart format --output=none --set-exit-if-changed .
-flutter analyze
-flutter test
+flutter analyze --fatal-warnings --fatal-infos
+flutter test --coverage --reporter compact
+dart tool/check_coverage.dart coverage/lcov.info 40
 ```
 
 本地 release APK 构建需要准备 `android/key.properties` 和 keystore：
@@ -159,6 +160,6 @@ flutter build apk --release --target-platform android-arm64
 
 ## 当前限制
 
-- 未上传覆盖率报告，覆盖率门禁仍是后续任务。
+- 覆盖率报告尚未上传为 CI artifact；当前仅通过 `coverage/lcov.info` 执行 40% 线覆盖率门禁。
 - `build.yml` 对 `master` 与 `develop` push 都会构建签名 APK artifact，但不会部署到外部分发渠道。
 - `release.yml` 是唯一 GitHub Release 发布入口；验证 tag 发布时只需检查该工作流。
