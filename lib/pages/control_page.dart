@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
+import '../models/vehicle_profile.dart';
 import '../services/control_channel_resolver.dart';
 import '../services/control_command_confirmation.dart';
 import '../services/control_command_executor.dart';
@@ -117,9 +118,9 @@ class _HomeBody extends StatefulWidget {
 class _HomeBodyState extends State<_HomeBody> {
   // P0-4: 移除合并流，改用 ValueNotifier 驱动 showUnboundHome，
   // 三个子区域各自 StreamBuilder 精准订阅，避免整页重建。
-  StreamSubscription<dynamic>? _subConn;
-  StreamSubscription<dynamic>? _subVehicles;
-  StreamSubscription<dynamic>? _subCloud;
+  StreamSubscription<ble.ConnectionState>? _subConn;
+  StreamSubscription<List<VehicleProfile>>? _subVehicles;
+  StreamSubscription<OfficialCloudState>? _subCloud;
   late final ValueNotifier<bool> _showUnboundHome;
   late final ValueNotifier<bool> _connectionLostHint;
   bool _disposed = false; // P0-3: dispose 竞态保护

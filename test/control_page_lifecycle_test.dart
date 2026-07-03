@@ -16,6 +16,7 @@ void main() {
     expect(source, isNot(contains('_createCombinedStream')));
     expect(source, isNot(contains('_combinedStream')));
     expect(source, isNot(contains('StreamController<List<dynamic>>')));
+    expect(source, isNot(contains('StreamSubscription<dynamic>')));
     expect(
       RegExp(
         r'StreamBuilder<ble\.ConnectionState>\(',
