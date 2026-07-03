@@ -148,6 +148,11 @@ class _OfficialCloudStorage {
           ),
         );
       }
+      _log.operation(
+        '官云本地车辆关联数据格式异常，已忽略',
+        detail: 'Expected JSON object, got ${decoded.runtimeType}',
+        level: LogLevel.warning,
+      );
     } catch (e) {
       _log.operation(
         '官云本地车辆关联数据损坏，已忽略',

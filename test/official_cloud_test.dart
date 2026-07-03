@@ -1,11 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/ble/constants.dart';
+import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
+import 'package:tailg_ble_app/services/control_channel_resolver.dart';
 import 'package:tailg_ble_app/services/control_command_executor.dart';
 import 'package:tailg_ble_app/services/control_command_policy.dart';
 import 'package:tailg_ble_app/services/control_command_result.dart';
-import 'package:tailg_ble_app/models/official_vehicle.dart';
-import 'package:tailg_ble_app/services/control_channel_resolver.dart';
+import 'package:tailg_ble_app/services/log_service.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 
 void main() {
@@ -527,6 +530,42 @@ void main() {
         expect(decision.profileData, isNotNull);
         expect(decision.profileData!.id, 'AA:BB:CC:DD:EE:FF');
         expect(decision.profileData!.protocol, VehicleProtocol.qgj);
+      },
+    );
+  });
+
+  group('OfficialCloudStorage', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+      FlutterSecureStorage.setMockInitialValues({});
+      OfficialCloudService().resetForTest();
+      LogService().clear();
+    });
+
+    tearDown(() {
+      SharedPreferences.setMockInitialValues({});
+      FlutterSecureStorage.setMockInitialValues({});
+      OfficialCloudService().resetForTest();
+      LogService().clear();
+    });
+
+    test(
+      'logs non-map persisted vehicle links and loads empty links',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'official_cloud_vehicle_links': '[]',
+        });
+
+        final service = OfficialCloudService();
+        await service.init();
+
+        expect(service.state.localVehicleLinks, isEmpty);
+        final warning = LogService().all.singleWhere(
+          (entry) =>
+              entry.message == '官云本地车辆关联数据格式异常，已忽略' &&
+              entry.level == LogLevel.warning,
+        );
+        expect(warning.detail, 'Expected JSON object, got List<dynamic>');
       },
     );
   });
