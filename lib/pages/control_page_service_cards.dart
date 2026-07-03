@@ -353,6 +353,7 @@ class _V8AllFunctionsSheetState extends State<_V8AllFunctionsSheet> {
   @override
   Widget build(BuildContext context) {
     final maxH = MediaQuery.of(context).size.height * 0.84;
+    void closeSheet() => Navigator.pop(context);
     return Container(
       constraints: BoxConstraints(maxHeight: maxH),
       decoration: const BoxDecoration(
@@ -391,20 +392,29 @@ class _V8AllFunctionsSheetState extends State<_V8AllFunctionsSheet> {
                     ),
                   ),
                   const Spacer(),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.card2,
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: AppColors.hairline),
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        size: 16,
-                        color: AppColors.textSecondary,
+                  Semantics(
+                    container: true,
+                    label: '关闭全部功能',
+                    button: true,
+                    enabled: true,
+                    onTap: closeSheet,
+                    child: ExcludeSemantics(
+                      child: GestureDetector(
+                        onTap: closeSheet,
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.card2,
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(color: AppColors.hairline),
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 16,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ),
                     ),
                   ),

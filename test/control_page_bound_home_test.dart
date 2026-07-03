@@ -193,4 +193,39 @@ void main() {
       semantics.dispose();
     }
   });
+
+  testWidgets('all functions sheet close exposes semantics and 44dp target', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await pumpBoundHome(tester, size: const Size(430, 2200));
+
+      await tester.tap(find.text('更多功能'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('全部功能'), findsOneWidget);
+      const closeLabel = '关闭全部功能';
+      final closeAction = find.bySemanticsLabel(closeLabel);
+      expect(closeAction, findsOneWidget);
+      expect(tester.getSize(closeAction).height, greaterThanOrEqualTo(44));
+      expect(
+        tester.getSemantics(closeAction),
+        matchesSemantics(
+          label: closeLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel(closeLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.text('全部功能'), findsNothing);
+    } finally {
+      semantics.dispose();
+    }
+  });
 }
