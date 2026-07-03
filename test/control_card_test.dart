@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'package:tailg_ble_app/widgets/control_card.dart';
 
 import 'helpers/test_app.dart';
@@ -19,6 +20,19 @@ void main() {
     await tester.pump();
 
     expect(seatOpenCount, 1);
+  });
+
+  testWidgets('sub controls use AppPressable feedback', (tester) async {
+    await tester.pumpWidget(const TestApp(home: ControlCard()));
+
+    for (final label in ['感应解锁', '用车人', '超级仪表']) {
+      final control = find.ancestor(
+        of: find.text(label),
+        matching: find.byType(AppPressable),
+      );
+      expect(control, findsOneWidget);
+      expect(tester.getSize(control).height, greaterThanOrEqualTo(44));
+    }
   });
 
   testWidgets('power knob fires after hold completes', (tester) async {

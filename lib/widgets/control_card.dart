@@ -455,7 +455,7 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
 }
 
 /// Sub-control circle button (proximity unlock, rider management, dashboard).
-class _SubControl extends StatefulWidget {
+class _SubControl extends StatelessWidget {
   const _SubControl({
     required this.icon,
     required this.label,
@@ -471,34 +471,21 @@ class _SubControl extends StatefulWidget {
   final VoidCallback? onTap;
 
   @override
-  State<_SubControl> createState() => _SubControlState();
-}
-
-class _SubControlState extends State<_SubControl> {
-  bool _pressed = false;
-
-  void _setPressed(bool v) {
-    if (!mounted || _pressed == v) return;
-    setState(() => _pressed = v);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final bg = widget.active
-        ? widget.color.withValues(alpha: 0.14)
-        : _pressed
-        ? AppColors.surfaceContainerHigh
-        : AppColors.surfaceContainerLow;
-    return GestureDetector(
-      onTapDown: widget.onTap != null ? (_) => _setPressed(true) : null,
-      onTapUp: widget.onTap != null ? (_) => _setPressed(false) : null,
-      onTapCancel: widget.onTap != null ? () => _setPressed(false) : null,
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _pressed ? AppMotion.pressScale : 1.0,
-        duration: AppMotion.micro,
-        curve: AppMotion.pressCurve,
-        child: Column(
+    return AppPressable(
+      enabled: onTap != null,
+      onTap: onTap,
+      haptic: false,
+      pressedScale: AppMotion.pressScale,
+      duration: AppMotion.micro,
+      curve: AppMotion.pressCurve,
+      builder: (context, pressed) {
+        final bg = active
+            ? color.withValues(alpha: 0.14)
+            : pressed
+            ? AppColors.surfaceContainerHigh
+            : AppColors.surfaceContainerLow;
+        return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
@@ -506,22 +493,22 @@ class _SubControlState extends State<_SubControl> {
               height: 44,
               decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
               child: Icon(
-                widget.icon,
+                icon,
                 size: 20,
-                color: widget.active ? widget.color : AppColors.inkBtn,
+                color: active ? color : AppColors.inkBtn,
               ),
             ),
             const SizedBox(height: 6),
             Text(
-              widget.label,
+              label,
               style: const TextStyle(
                 fontSize: 11,
                 color: AppColors.textSecondary,
               ),
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
