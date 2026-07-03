@@ -106,7 +106,7 @@
 
 - **文件**:`lib/services/log_service.dart:23-78` + `lib/pages/log_page.dart:96,122`
 - **问题**:`LogService.ble(detail:...)` 直接记录原始 hex 帧,含 QGJ 登录帧(password/userId);BLE 类目 detail 未被 `OfficialCloudRedactor` 的 phone/imei/mac 正则覆盖,凭据可能落盘可复制。另:日志无 stream,UI 靠 `setState(() {})` 空刷新。
-- **修复**:对 BLE 登录帧脱敏;LogService 增加 broadcast stream。
+- **修复**:对 BLE 登录帧脱敏;LogService 增加 broadcast stream;`log_page_test.dart` 与 `vehicle_message_page_test.dart` 覆盖新日志到达后页面自动刷新。
 
 ### P2-10 协议帧前缀硬编码 magic byte,容错路径不明
 
@@ -126,7 +126,7 @@
 
 | 编号 | 文件 | 问题 |
 |------|------|------|
-| P3-12 | `lib/pages/log_page.dart:96,122` | 已修复:`LogService.changes` stream 驱动日志页刷新 |
+| P3-12 | `lib/pages/log_page.dart` / `lib/pages/vehicle_message_page.dart` | 已修复:`LogService.changes` stream 驱动日志页与消息中心刷新 |
 | P3-13 | `lib/ble/connection_manager.dart:660` | `_ridingMode` 未持久化,重连后默认回 standard |
 | P3-14 | `profile_page.dart` 等 30+ 处 | 主题色硬编码 `Color(0xFF...)` 未走 `AppColors` token,无 dark mode 适配 |
 | P3-15 | `auto_connect_service.dart` 等 4 个 service | `_initialized` + `_initializing` 双标志重复,可抽基类 |
