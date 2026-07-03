@@ -23,6 +23,17 @@ void main() {
   });
 
   test(
+    'GATT queue uses priority buckets instead of resorting pending work',
+    () {
+      final source = File('lib/ble/connection_manager.dart').readAsStringSync();
+
+      expect(source, contains('_gattPendingByPriority'));
+      expect(source, contains('_takeNextGattOperation()'));
+      expect(source, isNot(contains('_gattPending.sort')));
+    },
+  );
+
+  test(
     'ConnectionManager clears published bike state on runtime reset',
     () async {
       final manager = ConnectionManager();

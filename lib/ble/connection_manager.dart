@@ -73,7 +73,10 @@ class ConnectionManager {
 
   Completer<bool>? _cmdAckCompleter;
   final Map<int, Completer<QgjResponse?>> _qgjResponseCompleters = {};
-  final List<_QueuedGattOperation<dynamic>> _gattPending = [];
+  final Map<GattOperationPriority, List<_QueuedGattOperation<dynamic>>>
+  _gattPendingByPriority = {
+    for (final priority in GattOperationPriority.values) priority: [],
+  };
   bool _gattRunning = false;
 
   final _stateController = StreamController<ConnectionState>.broadcast();
@@ -108,22 +111,17 @@ class ConnectionManager {
     GattOperationPriority priority = GattOperationPriority.normal,
   }) {
     final queued = _QueuedGattOperation<T>(operation, priority);
-    _gattPending.add(queued);
-    _gattPending.sort((a, b) {
-      final priorityCompare = a.priority.index.compareTo(b.priority.index);
-      if (priorityCompare != 0) return priorityCompare;
-      return a.sequence.compareTo(b.sequence);
-    });
+    _gattPendingByPriority[priority]!.add(queued);
     _drainGattQueue();
     return queued.completer.future;
   }
 
   void _drainGattQueue() {
-    if (_gattRunning || _gattPending.isEmpty) return;
+    if (_gattRunning || !_hasPendingGattOperations) return;
     _gattRunning = true;
     () async {
-      while (_gattPending.isNotEmpty) {
-        final queued = _gattPending.removeAt(0);
+      while (_hasPendingGattOperations) {
+        final queued = _takeNextGattOperation();
         try {
           final result = await queued.operation().timeout(
             const Duration(seconds: 30),
@@ -141,8 +139,21 @@ class ConnectionManager {
       }
     }().whenComplete(() {
       _gattRunning = false;
-      if (_gattPending.isNotEmpty) _drainGattQueue();
+      if (_hasPendingGattOperations) _drainGattQueue();
     });
+  }
+
+  bool get _hasPendingGattOperations =>
+      _gattPendingByPriority.values.any((queue) => queue.isNotEmpty);
+
+  _QueuedGattOperation<dynamic> _takeNextGattOperation() {
+    for (final priority in GattOperationPriority.values) {
+      final queue = _gattPendingByPriority[priority]!;
+      if (queue.isNotEmpty) {
+        return queue.removeAt(0);
+      }
+    }
+    throw StateError('No pending GATT operation');
   }
 
   Future<List<int>?> readFeb3() {
@@ -943,12 +954,14 @@ class ConnectionManager {
   }
 
   void _completePendingGattOperations(Object error) {
-    for (final queued in _gattPending) {
-      if (!queued.completer.isCompleted) {
-        queued.completer.completeError(error);
+    for (final queue in _gattPendingByPriority.values) {
+      for (final queued in queue) {
+        if (!queued.completer.isCompleted) {
+          queued.completer.completeError(error);
+        }
       }
+      queue.clear();
     }
-    _gattPending.clear();
   }
 
   void _reset() {
@@ -1040,13 +1053,9 @@ class ConnectionManager {
 }
 
 class _QueuedGattOperation<T> {
-  static int _nextSequence = 0;
-
   final Future<T> Function() operation;
   final GattOperationPriority priority;
-  final int sequence;
   final Completer<T> completer = Completer<T>();
 
-  _QueuedGattOperation(this.operation, this.priority)
-    : sequence = _nextSequence++;
+  _QueuedGattOperation(this.operation, this.priority);
 }
