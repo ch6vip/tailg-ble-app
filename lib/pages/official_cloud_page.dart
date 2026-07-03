@@ -728,17 +728,20 @@ class _StaleLinkNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    const label = '关联的本地车辆已不存在，点击清理';
+    Future<void> clearStaleLink() async {
+      await officialCloudService.unlinkLocalVehicle(vehicle.key);
+      if (context.mounted) {
+        AppSnack.success(context, '已清理失效关联，请重新关联本地 BLE 车辆');
+      }
+    }
+
+    final notice = Material(
       color: AppColors.warning.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () async {
-          await officialCloudService.unlinkLocalVehicle(vehicle.key);
-          if (context.mounted) {
-            AppSnack.success(context, '已清理失效关联，请重新关联本地 BLE 车辆');
-          }
-        },
+        onTap: clearStaleLink,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 44),
           child: const Padding(
@@ -762,6 +765,13 @@ class _StaleLinkNotice extends StatelessWidget {
           ),
         ),
       ),
+    );
+    return Semantics(
+      label: label,
+      button: true,
+      enabled: true,
+      onTap: clearStaleLink,
+      child: ExcludeSemantics(child: notice),
     );
   }
 }

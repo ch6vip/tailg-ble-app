@@ -23,42 +23,61 @@ void main() {
   testWidgets('stale local link notice keeps a 44dp touch target', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(430, 1200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+    final semantics = tester.ensureSemantics();
+    try {
+      tester.view.physicalSize = const Size(430, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
-    final vehicle = OfficialVehicle.fromJson({
-      'carId': 'official-1',
-      'carName': '测试车辆',
-      'btmac': 'AABBCCDDEEFF',
-    });
-    app.officialCloudService.setStateForTest(
-      OfficialCloudState.initial().copyWith(
-        initialized: true,
-        token: 'token',
-        phone: '18812345678',
-        userId: 'user-1',
-        vehicles: [vehicle],
-        selectedVehicleKey: vehicle.key,
-        localVehicleLinks: {vehicle.key: 'missing-local-id'},
-      ),
-    );
+      final vehicle = OfficialVehicle.fromJson({
+        'carId': 'official-1',
+        'carName': '测试车辆',
+        'btmac': 'AABBCCDDEEFF',
+      });
+      app.officialCloudService.setStateForTest(
+        OfficialCloudState.initial().copyWith(
+          initialized: true,
+          token: 'token',
+          phone: '18812345678',
+          userId: 'user-1',
+          vehicles: [vehicle],
+          selectedVehicleKey: vehicle.key,
+          localVehicleLinks: {vehicle.key: 'missing-local-id'},
+        ),
+      );
 
-    await tester.pumpWidget(const TestApp(home: OfficialCloudPage()));
+      await tester.pumpWidget(const TestApp(home: OfficialCloudPage()));
 
-    final staleNotice = find.ancestor(
-      of: find.text('关联的本地车辆已不存在，点击清理'),
-      matching: find.byWidgetPredicate(
-        (widget) =>
-            widget is InkWell &&
-            widget.borderRadius == BorderRadius.circular(12),
-      ),
-    );
-    expect(staleNotice, findsOneWidget);
-    expect(tester.getSize(staleNotice).height, greaterThanOrEqualTo(44));
+      final staleNotice = find.ancestor(
+        of: find.text('关联的本地车辆已不存在，点击清理'),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is InkWell &&
+              widget.borderRadius == BorderRadius.circular(12),
+        ),
+      );
+      expect(staleNotice, findsOneWidget);
+      expect(tester.getSize(staleNotice).height, greaterThanOrEqualTo(44));
+
+      const staleNoticeLabel = '关联的本地车辆已不存在，点击清理';
+      final staleNoticeSemantics = find.bySemanticsLabel(staleNoticeLabel);
+      expect(staleNoticeSemantics, findsOneWidget);
+      expect(
+        tester.getSemantics(staleNoticeSemantics),
+        matchesSemantics(
+          label: staleNoticeLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('missing BLE identity scan action keeps a 44dp touch target', (
