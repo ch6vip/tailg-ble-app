@@ -736,23 +736,26 @@ class _StaleLinkNotice extends StatelessWidget {
             AppSnack.success(context, '已清理失效关联，请重新关联本地 BLE 车辆');
           }
         },
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          child: Row(
-            children: [
-              Icon(
-                Icons.link_off,
-                size: AppIconSizes.sm,
-                color: AppColors.warning,
-              ),
-              SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  '关联的本地车辆已不存在，点击清理',
-                  style: TextStyle(fontSize: 12, color: AppColors.warning),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.link_off,
+                  size: AppIconSizes.sm,
+                  color: AppColors.warning,
                 ),
-              ),
-            ],
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '关联的本地车辆已不存在，点击清理',
+                    style: TextStyle(fontSize: 12, color: AppColors.warning),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
