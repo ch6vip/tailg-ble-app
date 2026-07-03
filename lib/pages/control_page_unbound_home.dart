@@ -447,6 +447,9 @@ class _OfficialActionButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(15),
       boxShadow: AppShadows.elevation1,
       haptic: false,
+      semanticsLabel: label,
+      semanticsButton: true,
+      semanticsEnabled: true,
       onTap: () {
         HapticFeedback.mediumImpact();
         onTap();
