@@ -436,73 +436,84 @@ class _MessageList extends StatelessWidget {
       itemBuilder: (context, index) {
         final message = messages[index];
         final read = readIds.contains(message.id);
-        return RepaintBoundary(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-            child: InkWell(
-              onTap: () => onOpen(message),
-              borderRadius: BorderRadius.circular(AppRadii.lg),
-              child: AppCard(
-                margin: EdgeInsets.zero,
-                color: read
-                    ? Colors.white
-                    : message.severity.color.withValues(alpha: 0.06),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _MessageIcon(message: message, read: read),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+        final readLabel = read ? '已读' : '未读';
+        final semanticsLabel =
+            '${message.title}，${message.subtitle}，${message.category.label}，$readLabel';
+        void openMessage() => onOpen(message);
+        final card = InkWell(
+          onTap: openMessage,
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          child: AppCard(
+            margin: EdgeInsets.zero,
+            color: read
+                ? Colors.white
+                : message.severity.color.withValues(alpha: 0.06),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _MessageIcon(message: message, read: read),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  message.title,
-                                  style: AppTextStyles.bodyLarge,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _formatTime(message.time),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textTertiary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            message.subtitle,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                              height: 1.4,
+                          Expanded(
+                            child: Text(
+                              message.title,
+                              style: AppTextStyles.bodyLarge,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              _Tag(text: message.category.label),
-                              const SizedBox(width: 8),
-                              _Tag(text: read ? '已读' : '未读'),
-                              const Spacer(),
-                              const Icon(
-                                Icons.chevron_right,
-                                size: AppIconSizes.sm,
-                                color: AppColors.textTertiary,
-                              ),
-                            ],
+                          const SizedBox(width: 8),
+                          Text(
+                            _formatTime(message.time),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textTertiary,
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Text(
+                        message.subtitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _Tag(text: message.category.label),
+                          const SizedBox(width: 8),
+                          _Tag(text: readLabel),
+                          const Spacer(),
+                          const Icon(
+                            Icons.chevron_right,
+                            size: AppIconSizes.sm,
+                            color: AppColors.textTertiary,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
+            ),
+          ),
+        );
+        return RepaintBoundary(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+            child: Semantics(
+              label: semanticsLabel,
+              button: true,
+              enabled: true,
+              onTap: openMessage,
+              child: ExcludeSemantics(child: card),
             ),
           ),
         );

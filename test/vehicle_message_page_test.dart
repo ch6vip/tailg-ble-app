@@ -109,4 +109,37 @@ void main() {
     expect(find.text('已清空 1 条当前分组消息'), findsOneWidget);
     expect(snackIcon(Icons.check_circle_outline), findsOneWidget);
   });
+
+  testWidgets('message rows expose semantics and open detail sheet', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      app.logService.operation('发送指令');
+
+      await tester.pumpWidget(const TestApp(home: VehicleMessagePage()));
+      await tester.pump();
+
+      const messageLabel = '发送指令，车辆指令已发送。，设备消息，未读';
+      final messageRow = find.bySemanticsLabel(messageLabel);
+      expect(messageRow, findsOneWidget);
+      expect(
+        tester.getSemantics(messageRow),
+        matchesSemantics(
+          label: messageLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel(messageLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.text('知道了'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
 }
