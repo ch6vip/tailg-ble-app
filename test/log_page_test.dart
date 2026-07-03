@@ -51,14 +51,65 @@ void main() {
   });
 
   testWidgets('custom tabs keep 44dp touch targets', (tester) async {
-    await tester.pumpWidget(const TestApp(home: LogPage()));
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(const TestApp(home: LogPage()));
 
-    final bleTab = find.ancestor(
-      of: find.text('BLE'),
-      matching: find.byType(GestureDetector),
-    );
-    expect(bleTab, findsOneWidget);
-    expect(tester.getSize(bleTab).height, greaterThanOrEqualTo(44));
+      final bleTab = find.ancestor(
+        of: find.text('BLE'),
+        matching: find.byType(GestureDetector),
+      );
+      expect(bleTab, findsOneWidget);
+      expect(tester.getSize(bleTab).height, greaterThanOrEqualTo(44));
+
+      const allLabel = '全部';
+      final allTabSemantics = find.bySemanticsLabel(allLabel);
+      expect(
+        tester.getSemantics(allTabSemantics),
+        matchesSemantics(
+          label: allLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasSelectedState: true,
+          isSelected: true,
+          hasTapAction: true,
+        ),
+      );
+
+      const bleLabel = 'BLE';
+      final bleTabSemantics = find.bySemanticsLabel(bleLabel);
+      expect(
+        tester.getSemantics(bleTabSemantics),
+        matchesSemantics(
+          label: bleLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasSelectedState: true,
+          isSelected: false,
+          hasTapAction: true,
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel(bleLabel));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getSemantics(bleTabSemantics),
+        matchesSemantics(
+          label: bleLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasSelectedState: true,
+          isSelected: true,
+          hasTapAction: true,
+        ),
+      );
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('copy action exports logs and shows success snack', (
