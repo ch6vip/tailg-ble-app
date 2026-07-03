@@ -41,6 +41,90 @@ void main() {
     }
   });
 
+  testWidgets('settings switches expose labeled toggle semantics', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+
+    try {
+      await tester.pumpWidget(const TestApp(home: SettingsPage()));
+      await tester.pump();
+
+      const autoConnectLabel = '自动连接开关';
+      final autoConnectSwitch = find.bySemanticsLabel(autoConnectLabel);
+      expect(autoConnectSwitch, findsOneWidget);
+      expect(
+        tester.getSemantics(autoConnectSwitch),
+        matchesSemantics(
+          label: autoConnectLabel,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasToggledState: true,
+          isToggled: false,
+          hasTapAction: true,
+        ),
+      );
+
+      final autoEnabled = app.autoConnectService.enabledStream.firstWhere(
+        (value) => value,
+      );
+      tester.semantics.tap(find.semantics.byLabel(autoConnectLabel));
+      await autoEnabled;
+      await tester.pump();
+
+      expect(app.autoConnectService.enabled, isTrue);
+
+      const proximityLabel = '感应解锁开关';
+      final proximitySwitch = find.bySemanticsLabel(proximityLabel);
+      expect(proximitySwitch, findsOneWidget);
+      expect(
+        tester.getSemantics(proximitySwitch),
+        matchesSemantics(
+          label: proximityLabel,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasToggledState: true,
+          isToggled: false,
+          hasTapAction: true,
+        ),
+      );
+
+      final proximityEnabled = app.proximityService.enabledStream.firstWhere(
+        (value) => value,
+      );
+      tester.semantics.tap(find.semantics.byLabel(proximityLabel));
+      await proximityEnabled;
+      await tester.pump();
+
+      expect(app.proximityService.enabled, isTrue);
+
+      const textScaleLabel = '跟随系统字号开关';
+      final textScaleSwitch = find.bySemanticsLabel(textScaleLabel);
+      expect(textScaleSwitch, findsOneWidget);
+      expect(
+        tester.getSemantics(textScaleSwitch),
+        matchesSemantics(
+          label: textScaleLabel,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasToggledState: true,
+          isToggled: true,
+          hasTapAction: true,
+        ),
+      );
+
+      final textScaleDisabled = app.appPreferencesService.respectTextScaleStream
+          .firstWhere((value) => !value);
+      tester.semantics.tap(find.semantics.byLabel(textScaleLabel));
+      await textScaleDisabled;
+      await tester.pump();
+
+      expect(app.appPreferencesService.respectSystemTextScale, isFalse);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('settings navigation rows expose semantics and 44dp targets', (
     tester,
   ) async {

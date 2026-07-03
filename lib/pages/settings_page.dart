@@ -296,8 +296,12 @@ Widget _settingItem({
   );
 }
 
-Widget _buildToggle(bool value, ValueChanged<bool> onChanged) {
-  return Switch(
+Widget _buildToggle({
+  required String label,
+  required bool value,
+  required ValueChanged<bool> onChanged,
+}) {
+  final toggle = Switch(
     value: value,
     onChanged: onChanged,
     activeColor: Colors.white,
@@ -305,6 +309,14 @@ Widget _buildToggle(bool value, ValueChanged<bool> onChanged) {
     inactiveThumbColor: Colors.white,
     inactiveTrackColor: AppColors.border,
     materialTapTargetSize: MaterialTapTargetSize.padded,
+  );
+  return Semantics(
+    container: true,
+    label: label,
+    enabled: true,
+    toggled: value,
+    onTap: () => onChanged(!value),
+    child: ExcludeSemantics(child: toggle),
   );
 }
 
@@ -324,7 +336,11 @@ class _AutoConnectSettingTile extends StatelessWidget {
           icon: Icons.bluetooth_outlined,
           title: '自动连接',
           subtitle: enabled ? '打开 app 时自动连接上次的设备' : '关闭',
-          trailing: _buildToggle(enabled, _service.setEnabled),
+          trailing: _buildToggle(
+            label: '自动连接开关',
+            value: enabled,
+            onChanged: _service.setEnabled,
+          ),
         );
       },
     );
@@ -347,7 +363,11 @@ class _ProximityUnlockSettingTile extends StatelessWidget {
           icon: Icons.sensors_outlined,
           title: '感应解锁',
           subtitle: enabled ? '靠近车辆时自动解锁（RSSI > -75dBm）' : '关闭',
-          trailing: _buildToggle(enabled, _service.setEnabled),
+          trailing: _buildToggle(
+            label: '感应解锁开关',
+            value: enabled,
+            onChanged: _service.setEnabled,
+          ),
         );
       },
     );
@@ -423,7 +443,11 @@ class _RespectTextScaleSettingTile extends StatelessWidget {
           icon: Icons.text_fields,
           title: '跟随系统字号',
           subtitle: enabled ? '允许系统字号设置生效（限 0.9-1.3 倍）' : '关闭后忽略系统字号',
-          trailing: _buildToggle(enabled, _prefs.setRespectSystemTextScale),
+          trailing: _buildToggle(
+            label: '跟随系统字号开关',
+            value: enabled,
+            onChanged: _prefs.setRespectSystemTextScale,
+          ),
         );
       },
     );
