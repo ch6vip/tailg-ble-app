@@ -31,4 +31,25 @@ void main() {
     expect(find.text('请先登录官方账号'), findsOneWidget);
     expect(snackIcon(Icons.info_outline), findsOneWidget);
   });
+
+  testWidgets('battery correction action keeps a 44dp touch target', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(430, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const TestApp(home: BatteryDetailsPage()));
+    await tester.pump();
+
+    final correctionAction = find.ancestor(
+      of: find.text('更正电池'),
+      matching: find.byType(TextButton),
+    );
+    expect(correctionAction, findsOneWidget);
+    expect(tester.getSize(correctionAction).height, greaterThanOrEqualTo(44));
+  });
 }

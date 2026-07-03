@@ -182,16 +182,19 @@ class _BatteryHero extends StatelessWidget {
           Positioned(
             right: 20,
             top: 14,
-            child: TextButton(
-              onPressed: cloudState.batteryInfoLoading ? null : onRefresh,
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.textSecondary,
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-              ),
-              child: Text(
-                cloudState.batteryInfoLoading ? '刷新中' : '更正电池',
-                style: const TextStyle(fontSize: 14),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: TextButton(
+                onPressed: cloudState.batteryInfoLoading ? null : onRefresh,
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                ),
+                child: Text(
+                  cloudState.batteryInfoLoading ? '刷新中' : '更正电池',
+                  style: const TextStyle(fontSize: 14),
+                ),
               ),
             ),
           ),

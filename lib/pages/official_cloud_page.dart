@@ -696,13 +696,16 @@ class _MissingBleIdentityNotice extends StatelessWidget {
                 ),
               ),
             ),
-            TextButton(
-              onPressed: () => openScanTab(context),
-              style: TextButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: TextButton(
+                onPressed: () => openScanTab(context),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                child: const Text('去扫描'),
               ),
-              child: const Text('去扫描'),
             ),
           ],
         ),
