@@ -5,6 +5,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 import '../ble/connection_manager.dart' as ble;
 import '../main.dart';
+import '../services/log_service.dart' as app_log;
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
@@ -67,7 +68,12 @@ class _OtaPrecheckPageState extends State<OtaPrecheckPage> {
             final data = await characteristic.read();
             if (data.isEmpty) return null;
             return utf8.decode(data, allowMalformed: true).trim();
-          } catch (_) {
+          } catch (e) {
+            logService.operation(
+              'OTA 前置检测 GATT 字段读取失败',
+              detail: '$uuid: $e',
+              level: app_log.LogLevel.debug,
+            );
             return null;
           }
         }

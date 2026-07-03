@@ -75,6 +75,20 @@ void main() {
           'outer handling into GestureDetector/AppPressable.',
     );
   });
+
+  test('GATT device information reads log best-effort failures', () {
+    const pages = [
+      'lib/pages/device_info_page.dart',
+      'lib/pages/ota_precheck_page.dart',
+    ];
+
+    for (final path in pages) {
+      final source = File(path).readAsStringSync();
+      expect(source, isNot(contains('catch (_)')), reason: path);
+      expect(source, contains('GATT 字段读取失败'), reason: path);
+      expect(source, contains('LogLevel.debug'), reason: path);
+    }
+  });
 }
 
 int _lineNumber(String source, int offset) {

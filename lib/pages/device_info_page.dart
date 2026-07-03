@@ -7,6 +7,7 @@ import '../ble/connection_manager.dart' as ble;
 import '../main.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
+import '../services/log_service.dart' as app_log;
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
@@ -71,7 +72,12 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
           final data = await characteristic.read();
           if (data.isEmpty) return null;
           return utf8.decode(data, allowMalformed: true).trim();
-        } catch (_) {
+        } catch (e) {
+          logService.operation(
+            '设备信息 GATT 字段读取失败',
+            detail: '$uuid: $e',
+            level: app_log.LogLevel.debug,
+          );
           return null;
         }
       }
