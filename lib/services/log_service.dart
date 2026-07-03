@@ -42,12 +42,13 @@ class LogService {
       _logs.where((e) => e.category == cat).toList();
 
   void ble(String message, {String? detail, LogLevel level = LogLevel.debug}) {
+    final redactedMessage = _redactSensitiveText(message);
     _add(
       LogEntry(
         time: DateTime.now(),
         level: level,
         category: LogCategory.ble,
-        message: message,
+        message: redactedMessage,
         detail: _redactDetail(message, detail),
       ),
     );
@@ -58,12 +59,13 @@ class LogService {
     String? detail,
     LogLevel level = LogLevel.info,
   }) {
+    final redactedMessage = _redactSensitiveText(message);
     _add(
       LogEntry(
         time: DateTime.now(),
         level: level,
         category: LogCategory.operation,
-        message: message,
+        message: redactedMessage,
         detail: _redactDetail(message, detail),
       ),
     );
@@ -76,15 +78,50 @@ class LogService {
     r'(登录|login|QGJ 登录)',
     caseSensitive: false,
   );
+  static final RegExp _sensitiveKeyValuePattern = RegExp(
+    r'''(["']?\b(?:phone|token|imei|carId|uid|btmac)\b["']?\s*[:=]\s*["']?)([^"'\s,&}]+)(["']?)''',
+    caseSensitive: false,
+  );
+  static final RegExp _authorizationValuePattern = RegExp(
+    r'''(["']?\bauthorization\b["']?\s*[:=]\s*["']?)(?!Bearer\b)([^"'\s,&}]+)(["']?)''',
+    caseSensitive: false,
+  );
+  static final RegExp _bearerTokenPattern = RegExp(
+    r'\bBearer\s+([A-Za-z0-9._~+/=-]+)',
+    caseSensitive: false,
+  );
+  static final RegExp _phonePattern = RegExp(r'\b1\d{10}\b');
+  static final RegExp _imeiPattern = RegExp(r'\b\d{14,17}\b');
 
   String? _redactDetail(String message, String? detail) {
     if (detail == null) return null;
-    if (!_qgjLoginHint.hasMatch(message)) return detail;
+    if (!_qgjLoginHint.hasMatch(message)) return _redactSensitiveText(detail);
     // Replace hex payloads containing login frames with a length summary so
     // troubleshooting can still see "frame sent, N bytes" without leaking
     // credentials.
     final hexByteCount = detail.split(' ').where((s) => s.isNotEmpty).length;
     return '<redacted login frame, $hexByteCount bytes>';
+  }
+
+  String _redactSensitiveText(String value) {
+    return value
+        .replaceAllMapped(_bearerTokenPattern, (match) {
+          return 'Bearer ${_mask(match.group(1) ?? '')}';
+        })
+        .replaceAllMapped(_authorizationValuePattern, (match) {
+          return '${match.group(1)}${_mask(match.group(2) ?? '')}${match.group(3)}';
+        })
+        .replaceAllMapped(_sensitiveKeyValuePattern, (match) {
+          return '${match.group(1)}${_mask(match.group(2) ?? '')}${match.group(3)}';
+        })
+        .replaceAllMapped(_phonePattern, (match) => _mask(match.group(0)!))
+        .replaceAllMapped(_imeiPattern, (match) => _mask(match.group(0)!));
+  }
+
+  String _mask(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty || trimmed.length <= 6) return '***';
+    return '${trimmed.substring(0, 3)}***${trimmed.substring(trimmed.length - 3)}';
   }
 
   void _add(LogEntry entry) {
