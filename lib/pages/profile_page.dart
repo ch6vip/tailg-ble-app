@@ -83,6 +83,18 @@ class _UserHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final editActionLabel = signedIn ? '编辑资料' : '登录官方账号';
+    void handleEditAction() {
+      if (!signedIn) {
+        Navigator.push(
+          context,
+          MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
+        );
+      } else {
+        AppSnack.info(context, '编辑资料功能开发中');
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Row(
@@ -186,37 +198,34 @@ class _UserHeader extends StatelessWidget {
             ),
           ),
           // Edit profile
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              if (!signedIn) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const OfficialCloudPage(),
-                  ),
-                );
-              } else {
-                AppSnack.info(context, '编辑资料功能开发中');
-              }
-            },
-            child: SizedBox(
-              width: 44,
-              height: 44,
-              child: Center(
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.hairline),
-                    boxShadow: [AppShadows.cardShadow.first],
-                  ),
-                  child: const Icon(
-                    Icons.edit_outlined,
-                    size: 17,
-                    color: AppColors.textSecondary,
+          Semantics(
+            label: editActionLabel,
+            button: true,
+            enabled: true,
+            onTap: handleEditAction,
+            child: ExcludeSemantics(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: handleEditAction,
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Center(
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.hairline),
+                        boxShadow: [AppShadows.cardShadow.first],
+                      ),
+                      child: const Icon(
+                        Icons.edit_outlined,
+                        size: 17,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                   ),
                 ),
               ),

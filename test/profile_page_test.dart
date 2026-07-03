@@ -28,15 +28,34 @@ void main() {
   });
 
   testWidgets('profile edit action keeps a 44dp touch target', (tester) async {
-    await tester.pumpWidget(const TestApp(home: ProfilePage()));
-    await tester.pump();
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(const TestApp(home: ProfilePage()));
+      await tester.pump();
 
-    final editAction = find.ancestor(
-      of: find.byIcon(Icons.edit_outlined),
-      matching: find.byType(GestureDetector),
-    );
-    expect(editAction, findsOneWidget);
-    expect(tester.getSize(editAction).height, greaterThanOrEqualTo(44));
+      final editAction = find.ancestor(
+        of: find.byIcon(Icons.edit_outlined),
+        matching: find.byType(GestureDetector),
+      );
+      expect(editAction, findsOneWidget);
+      expect(tester.getSize(editAction).height, greaterThanOrEqualTo(44));
+
+      const loginActionLabel = '登录官方账号';
+      final loginAction = find.bySemanticsLabel(loginActionLabel);
+      expect(loginAction, findsOneWidget);
+      expect(
+        tester.getSemantics(loginAction),
+        matchesSemantics(
+          label: loginActionLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('profile header follows official cloud state stream', (
