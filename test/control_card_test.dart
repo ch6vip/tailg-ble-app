@@ -35,6 +35,51 @@ void main() {
     }
   });
 
+  testWidgets('pressable actions expose labels and selected semantics', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        TestApp(
+          home: ControlCard(
+            onSeatOpen: () {},
+            onToggleProximity: (_) {},
+            proximityEnabled: true,
+          ),
+        ),
+      );
+
+      final seatAction = find.bySemanticsLabel('打开座桶');
+      expect(seatAction, findsOneWidget);
+      expect(
+        tester.getSemantics(seatAction),
+        matchesSemantics(
+          label: '打开座桶',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+        ),
+      );
+
+      final proximityAction = find.bySemanticsLabel('感应解锁');
+      expect(proximityAction, findsOneWidget);
+      expect(
+        tester.getSemantics(proximityAction),
+        matchesSemantics(
+          label: '感应解锁',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasSelectedState: true,
+          isSelected: true,
+        ),
+      );
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('power knob fires after hold completes', (tester) async {
     var powerCount = 0;
 

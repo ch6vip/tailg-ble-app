@@ -175,6 +175,9 @@ class _SideButton extends StatelessWidget {
       duration: AppMotion.micro,
       curve: AppMotion.pressCurve,
       haptic: false,
+      semanticsLabel: label,
+      semanticsButton: true,
+      semanticsEnabled: effectiveOnTap != null,
       child: AnimatedOpacity(
         opacity: disabled ? 0.45 : 1.0,
         duration: const Duration(milliseconds: 200),
@@ -479,6 +482,10 @@ class _SubControl extends StatelessWidget {
       pressedScale: AppMotion.pressScale,
       duration: AppMotion.micro,
       curve: AppMotion.pressCurve,
+      semanticsLabel: label,
+      semanticsButton: true,
+      semanticsEnabled: onTap != null,
+      semanticsSelected: active ? true : null,
       builder: (context, pressed) {
         final bg = active
             ? color.withValues(alpha: 0.14)
