@@ -28,6 +28,31 @@ void main() {
           'SnackBar icon assertions so tests keep matching AppSnack structure.',
     );
   });
+
+  test('press feedback scale uses AppMotion token', () {
+    final hardcodedPressScale = RegExp(
+      r'(pressedScale:\s*0\.\d+|scale:\s*[^,\n]*\?\s*0\.\d+\s*:\s*1)',
+    );
+    final offenders = <String>[];
+
+    for (final entity in Directory('lib').listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      final source = entity.readAsStringSync();
+      final matches = hardcodedPressScale.allMatches(source);
+      for (final match in matches) {
+        final line = _lineNumber(source, match.start);
+        offenders.add('${entity.path}:$line ${match.group(0)}');
+      }
+    }
+
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Use AppMotion.pressScale for press feedback so interaction motion '
+          'stays consistent across widgets.',
+    );
+  });
 }
 
 int _lineNumber(String source, int offset) {

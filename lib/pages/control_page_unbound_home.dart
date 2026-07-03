@@ -407,8 +407,8 @@ class _OfficialActionButton extends StatefulWidget {
 }
 
 class _OfficialActionButtonState extends State<_OfficialActionButton> {
-  static const _motionDuration = Duration(milliseconds: 150);
-  static const _motionCurve = Curves.easeOutCubic;
+  static const _motionDuration = AppMotion.micro;
+  static const _motionCurve = AppMotion.pressCurve;
 
   bool _pressed = false;
 
@@ -422,7 +422,7 @@ class _OfficialActionButtonState extends State<_OfficialActionButton> {
     return AnimatedScale(
       duration: _motionDuration,
       curve: _motionCurve,
-      scale: _pressed ? 0.97 : 1,
+      scale: _pressed ? AppMotion.pressScale : 1,
       child: AnimatedContainer(
         duration: _motionDuration,
         curve: _motionCurve,

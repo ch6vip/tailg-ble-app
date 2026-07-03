@@ -15,6 +15,7 @@ import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../services/replica_feature_store.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
@@ -468,7 +469,7 @@ class _OfficialTabButton extends StatelessWidget {
     final color = active ? AppColors.primary : Colors.transparent;
     return AppPressable(
       onTap: onTap,
-      pressedScale: 0.97,
+      pressedScale: AppMotion.pressScale,
       background: color,
       pressedBackground: active ? AppColors.primary : _officialPressedBg,
       borderRadius: BorderRadius.circular(AppRadii.card),

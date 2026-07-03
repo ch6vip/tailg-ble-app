@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/app_motion.dart';
+
 /// Reusable press-feedback widget that consolidates the _pressed / AnimatedScale
 /// / GestureDetector pattern previously duplicated across 10+ files.
 ///
@@ -24,12 +26,12 @@ class AppPressable extends StatefulWidget {
     this.onTap,
     this.onLongPress,
     this.enabled = true,
-    this.pressedScale = 0.98,
+    this.pressedScale = AppMotion.pressScale,
     this.background = Colors.transparent,
     this.pressedBackground,
     this.borderRadius,
-    this.duration = const Duration(milliseconds: 150),
-    this.curve = Curves.easeOutCubic,
+    this.duration = AppMotion.micro,
+    this.curve = AppMotion.pressCurve,
     this.haptic = true,
   });
 

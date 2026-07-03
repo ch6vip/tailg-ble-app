@@ -197,7 +197,7 @@ sectionTop: 16  — 区块顶部间距
 
 - **时长**: `Duration(milliseconds: 150/200/300)` 分三档
 - **曲线**: 主要使用 `Curves.easeOutCubic`
-- **按压反馈**: `AnimatedScale(0.96-0.98)` + 颜色变化 + `HapticFeedback`
+- **按压反馈**: `AppMotion.pressScale` / `AppMotion.micro` + 颜色变化 + `HapticFeedback`
 - **转场**: `FadeTransition` + `SlideTransition`（淡入上滑）
 
 ### 5.2 关键交互

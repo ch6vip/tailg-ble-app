@@ -129,7 +129,7 @@ class _RidingModeOptionState extends State<_RidingModeOption> {
     return AnimatedScale(
       duration: _motionDuration,
       curve: _motionCurve,
-      scale: widget.enabled && _pressed ? 0.97 : 1,
+      scale: widget.enabled && _pressed ? AppMotion.pressScale : 1,
       child: SizedBox(
         height: 72,
         child: Stack(

@@ -8,6 +8,7 @@ import '../services/ble_connection_snapshot_guard.dart';
 import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 
@@ -514,11 +515,11 @@ class _DeviceCardState extends State<_DeviceCard> {
     return AppPressable(
       enabled: interactive,
       onTap: widget.onTap,
-      pressedScale: 0.98,
+      pressedScale: AppMotion.pressScale,
       haptic: false,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOutCubic,
+        duration: AppMotion.micro,
+        curve: AppMotion.pressCurve,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: widget.disabled ? const Color(0xFFF8F8F8) : Colors.white,

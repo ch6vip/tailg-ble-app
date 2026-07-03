@@ -221,7 +221,6 @@ class _PowerKnob extends StatefulWidget {
 }
 
 class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
-  static const _holdMs = 1200;
   late final AnimationController _ctrl;
   late final Animation<double> _progress;
   bool _holding = false;
@@ -234,34 +233,51 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _ctrl =
-        AnimationController(
-          vsync: this,
-          duration: const Duration(milliseconds: _holdMs),
-        )..addStatusListener((status) {
-          if (status == AnimationStatus.completed) {
-            _fired = true;
-            HapticFeedback.heavyImpact();
-            widget.onPowerOn?.call();
-          }
-        });
+    _ctrl = AnimationController(vsync: this, duration: AppMotion.longPressHold)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _fired = true;
+          HapticFeedback.heavyImpact();
+          widget.onPowerOn?.call();
+        }
+      });
     _progress = Tween(
       begin: 0.0,
       end: 1.0,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.linear));
+    ).animate(CurvedAnimation(parent: _ctrl, curve: AppMotion.progressCurve));
 
     _busyPulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
-    )..repeat(reverse: true);
-    _busyPulse = Tween(
-      begin: 0.25,
-      end: 0.55,
-    ).animate(CurvedAnimation(parent: _busyPulseCtrl, curve: Curves.easeInOut));
+    );
+    _busyPulse = Tween(begin: 0.25, end: 0.55).animate(
+      CurvedAnimation(parent: _busyPulseCtrl, curve: AppMotion.pulseCurve),
+    );
+    _syncBusyPulse();
+  }
+
+  @override
+  void didUpdateWidget(covariant _PowerKnob oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.busy != widget.busy) {
+      _syncBusyPulse();
+    }
+  }
+
+  void _syncBusyPulse() {
+    if (widget.busy) {
+      if (!_busyPulseCtrl.isAnimating) {
+        _busyPulseCtrl.repeat(reverse: true);
+      }
+    } else {
+      _busyPulseCtrl.stop();
+    }
   }
 
   @override
   void dispose() {
+    _ctrl.stop();
+    _busyPulseCtrl.stop();
     _ctrl.dispose();
     _busyPulseCtrl.dispose();
     super.dispose();

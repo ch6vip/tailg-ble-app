@@ -278,7 +278,7 @@ class _TravelRecordCard extends StatelessWidget {
     final interactive = !loading;
     return AppPressable(
       enabled: interactive,
-      pressedScale: 0.985,
+      pressedScale: AppMotion.pressScale,
       background: AppColors.surface,
       pressedBackground: _officialPressedBg,
       borderRadius: BorderRadius.circular(AppRadii.card),
