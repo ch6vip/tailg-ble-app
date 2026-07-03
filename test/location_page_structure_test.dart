@@ -68,6 +68,32 @@ void main() {
 
     expect(find.text('历史轨迹'), findsOneWidget);
   });
+
+  testWidgets('LocationPage travel month controls keep 44dp touch targets', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(430, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      const TestApp(
+        home: LocationPage(
+          initialTab: LocationInitialTab.travel,
+          embedded: true,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final previousMonth = find.byTooltip('上个月');
+    expect(previousMonth, findsOneWidget);
+    expect(tester.getSize(previousMonth).height, greaterThanOrEqualTo(44));
+  });
 }
 
 String _listenerBlock(String source, String listenerStart) {
