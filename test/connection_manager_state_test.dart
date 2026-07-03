@@ -33,6 +33,13 @@ void main() {
     },
   );
 
+  test('failed-connect recovery logs cleanup disconnect failures', () {
+    final source = File('lib/ble/connection_manager.dart').readAsStringSync();
+
+    expect(source, contains('连接失败恢复断开设备失败'));
+    expect(source, isNot(contains('catch (_)')));
+  });
+
   test(
     'ConnectionManager clears published bike state on runtime reset',
     () async {

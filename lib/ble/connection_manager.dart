@@ -924,8 +924,8 @@ class ConnectionManager {
     if (!isAndroidGatt133 && !isTimeout) return;
     try {
       await device.disconnect();
-    } catch (_) {
-      // Best-effort cleanup for Android GATT cache/state issues.
+    } catch (e) {
+      _log.ble('连接失败恢复断开设备失败', detail: e.toString(), level: LogLevel.debug);
     }
     _resetCharacteristics();
     _log.ble(
