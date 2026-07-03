@@ -294,7 +294,7 @@ class _DataItem extends StatelessWidget {
                 fontSize: 21,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
-                letterSpacing: -0.4,
+                letterSpacing: 0,
               ),
             ),
             if (unit != null) ...[
@@ -467,18 +467,7 @@ class _ServiceSection extends StatelessWidget {
         children: [
           const _SectionTitle('我的服务'),
           const SizedBox(height: 10),
-          Container(
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.all(Radius.circular(AppRadii.lg)),
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x0F182740),
-                  blurRadius: 20,
-                  offset: Offset(0, 6),
-                ),
-              ],
-            ),
+          _ProfileSectionCard(
             child: Column(
               children: [
                 _SettingTile(
@@ -537,18 +526,7 @@ class _SettingsSection extends StatelessWidget {
         children: [
           const _SectionTitle('设置'),
           const SizedBox(height: 10),
-          Container(
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.all(Radius.circular(AppRadii.lg)),
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x0F182740),
-                  blurRadius: 20,
-                  offset: Offset(0, 6),
-                ),
-              ],
-            ),
+          _ProfileSectionCard(
             child: Column(
               children: [
                 _SettingTile(
@@ -612,6 +590,30 @@ class _SettingsSection extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ProfileSectionCard extends StatelessWidget {
+  const _ProfileSectionCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.all(Radius.circular(AppRadii.lg)),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0F182740),
+            blurRadius: 20,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }

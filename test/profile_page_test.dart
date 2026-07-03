@@ -116,6 +116,21 @@ void main() {
     }
   });
 
+  testWidgets('profile data metrics avoid negative letter spacing', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const TestApp(home: ProfilePage()));
+    await tester.pump();
+
+    final metricTexts = tester
+        .widgetList<Text>(find.text('--'))
+        .map((text) => text.style?.letterSpacing)
+        .toList();
+
+    expect(metricTexts, hasLength(3));
+    expect(metricTexts, everyElement(anyOf(isNull, greaterThanOrEqualTo(0))));
+  });
+
   testWidgets('profile logout action exposes semantics and 44dp target', (
     tester,
   ) async {
