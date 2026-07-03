@@ -650,11 +650,7 @@ class _OfficialControlTip extends StatelessWidget {
           : isArmed!
           ? '已设防'
           : '未设防',
-      reconnecting
-          ? '重连中'
-          : bleReady
-          ? '蓝牙已连接'
-          : '手动控车模式',
+      if (reconnecting) '重连中' else if (bleReady) '蓝牙已连接',
     ].join('  ');
 
     return SizedBox(
