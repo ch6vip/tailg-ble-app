@@ -27,18 +27,36 @@ void main() {
   });
 
   testWidgets('mini vehicle actions keep 44dp touch targets', (tester) async {
-    await tester.pumpWidget(const TestApp(home: GaragePage(embedded: true)));
-    await tester.pump();
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(const TestApp(home: GaragePage(embedded: true)));
+      await tester.pump();
 
-    final locateAction = find.ancestor(
-      of: find.text('定位'),
-      matching: find.byType(GestureDetector),
-    );
-    expect(locateAction, findsOneWidget);
-    expect(tester.getSize(locateAction).height, greaterThanOrEqualTo(44));
+      final locateAction = find.ancestor(
+        of: find.text('定位'),
+        matching: find.byType(GestureDetector),
+      );
+      expect(locateAction, findsOneWidget);
+      expect(tester.getSize(locateAction).height, greaterThanOrEqualTo(44));
 
-    await tester.tap(locateAction);
+      const locateLabel = '定位';
+      final locateSemantics = find.bySemanticsLabel(locateLabel);
+      expect(
+        tester.getSemantics(locateSemantics),
+        matchesSemantics(
+          label: locateLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
 
-    expect(app.homeTabIndex.value, 1);
+      tester.semantics.tap(find.semantics.byLabel(locateLabel));
+
+      expect(app.homeTabIndex.value, 1);
+    } finally {
+      semantics.dispose();
+    }
   });
 }

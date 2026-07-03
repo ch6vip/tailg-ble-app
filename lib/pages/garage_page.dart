@@ -446,7 +446,8 @@ class _MiniActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    final enabled = onTap != null;
+    final button = GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: ConstrainedBox(
@@ -469,6 +470,13 @@ class _MiniActionButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+    return Semantics(
+      label: label,
+      button: true,
+      enabled: enabled,
+      onTap: onTap,
+      child: ExcludeSemantics(child: button),
     );
   }
 }
