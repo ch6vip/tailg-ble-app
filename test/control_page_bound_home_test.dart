@@ -132,6 +132,29 @@ void main() {
     }
   });
 
+  testWidgets('riding mode options expose selected semantics', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await pumpBoundHome(tester, size: const Size(430, 2200));
+
+      final standardMode = find.bySemanticsLabel('骑行模式：全速跑');
+      expect(standardMode, findsOneWidget);
+      expect(
+        tester.getSemantics(standardMode),
+        matchesSemantics(
+          label: '骑行模式：全速跑',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: false,
+          hasSelectedState: true,
+          isSelected: true,
+        ),
+      );
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('official control tip keeps a 44dp touch target', (tester) async {
     await pumpBoundHome(tester, size: const Size(430, 2200));
 

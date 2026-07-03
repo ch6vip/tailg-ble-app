@@ -122,6 +122,10 @@ class _RidingModeOption extends StatelessWidget {
       borderRadius: BorderRadius.circular(_phoneControlRadius),
       boxShadow: selected ? AppShadows.elevation2 : null,
       pressedBoxShadow: selected ? AppShadows.elevation2 : null,
+      semanticsLabel: '骑行模式：${mode.label}',
+      semanticsButton: true,
+      semanticsEnabled: enabled && onTap != null,
+      semanticsSelected: selected,
       builder: (context, pressed) => SizedBox(
         height: 72,
         child: Center(

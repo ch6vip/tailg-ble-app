@@ -25,6 +25,10 @@ class AppPressable extends StatefulWidget {
   final Duration duration;
   final Curve curve;
   final bool haptic;
+  final String? semanticsLabel;
+  final bool? semanticsButton;
+  final bool? semanticsEnabled;
+  final bool? semanticsSelected;
 
   const AppPressable({
     super.key,
@@ -42,6 +46,10 @@ class AppPressable extends StatefulWidget {
     this.duration = AppMotion.micro,
     this.curve = AppMotion.pressCurve,
     this.haptic = true,
+    this.semanticsLabel,
+    this.semanticsButton,
+    this.semanticsEnabled,
+    this.semanticsSelected,
   }) : assert(child != null || builder != null);
 
   @override
@@ -61,8 +69,11 @@ class _AppPressableState extends State<AppPressable> {
     final isActive = widget.enabled && _pressed;
     final child = widget.builder?.call(context, isActive) ?? widget.child!;
     return Semantics(
-      button: widget.enabled,
-      enabled: widget.enabled,
+      label: widget.semanticsLabel,
+      excludeSemantics: widget.semanticsLabel != null,
+      button: widget.semanticsButton ?? widget.enabled,
+      enabled: widget.semanticsEnabled ?? widget.enabled,
+      selected: widget.semanticsSelected,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapDown: widget.enabled ? (_) => _setPressed(true) : null,
