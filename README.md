@@ -90,7 +90,9 @@ flutter analyze                                       # 静态分析
 flutter test                                          # 单元测试
 ```
 
-CI（[.github/workflows/build.yml](.github/workflows/build.yml)）：`format → analyze → test`，`master` / PR 触发；推送 `v*` tag 时额外签名构建并发布 Release。
+CI（[.github/workflows/build.yml](.github/workflows/build.yml)）：`format → analyze → test`，push/PR 到 `master`、`develop` 触发；非 PR 场景在门禁通过后构建签名 APK artifact。
+
+Release（[.github/workflows/release.yml](.github/workflows/release.yml)）：推送 `v*` tag 或手动触发时执行同样门禁，随后签名构建 APK 并发布 GitHub Release。
 
 ## BLE 协议概览
 
