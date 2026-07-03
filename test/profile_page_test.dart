@@ -17,14 +17,33 @@ void main() {
   });
 
   testWidgets('membership entry shows info snack', (tester) async {
-    await tester.pumpWidget(const TestApp(home: ProfilePage()));
-    await tester.pump();
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(const TestApp(home: ProfilePage()));
+      await tester.pump();
 
-    await tester.tap(find.text('会员中心 · 即将上线'));
-    await tester.pump();
+      const membershipLabel = '会员中心，即将上线';
+      final membershipEntry = find.bySemanticsLabel(membershipLabel);
+      expect(membershipEntry, findsOneWidget);
+      expect(
+        tester.getSemantics(membershipEntry),
+        matchesSemantics(
+          label: membershipLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
 
-    expect(find.text('会员中心功能开发中'), findsOneWidget);
-    expect(snackIcon(Icons.info_outline), findsOneWidget);
+      tester.semantics.tap(find.semantics.byLabel(membershipLabel));
+      await tester.pump();
+
+      expect(find.text('会员中心功能开发中'), findsOneWidget);
+      expect(snackIcon(Icons.info_outline), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('profile edit action keeps a 44dp touch target', (tester) async {
