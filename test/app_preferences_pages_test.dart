@@ -38,6 +38,38 @@ void main() {
     expect(snackIcon(Icons.check_circle_outline), findsOneWidget);
   });
 
+  testWidgets('about action rows expose semantics and 44dp targets', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    const copyLabel = '复制诊断报告，导出当前 BLE 状态和本地日志';
+
+    try {
+      await tester.pumpWidget(const TestApp(home: AboutAppPage()));
+
+      final copyAction = find.bySemanticsLabel(copyLabel);
+      expect(copyAction, findsOneWidget);
+      expect(tester.getSize(copyAction).height, greaterThanOrEqualTo(44));
+      expect(
+        tester.getSemantics(copyAction),
+        matchesSemantics(
+          label: copyLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel(copyLabel));
+      await tester.pump();
+
+      expect(find.text('已复制诊断报告'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('language options expose selected semantics and 44dp targets', (
     tester,
   ) async {

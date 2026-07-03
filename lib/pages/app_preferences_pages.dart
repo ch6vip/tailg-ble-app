@@ -391,32 +391,40 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
-          child: Row(
-            children: [
-              _RowIcon(icon),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: AppTextStyles.itemTitle),
-                    const SizedBox(height: 4),
-                    Text(subtitle, style: AppTextStyles.smallText),
-                  ],
-                ),
+    return Semantics(
+      label: '$title，$subtitle',
+      button: true,
+      enabled: true,
+      onTap: onTap,
+      child: ExcludeSemantics(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+              child: Row(
+                children: [
+                  _RowIcon(icon),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: AppTextStyles.itemTitle),
+                        const SizedBox(height: 4),
+                        Text(subtitle, style: AppTextStyles.smallText),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.textTertiary,
+                    size: AppIconSizes.md,
+                  ),
+                ],
               ),
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textTertiary,
-                size: AppIconSizes.md,
-              ),
-            ],
+            ),
           ),
         ),
       ),
