@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'package:tailg_ble_app/widgets/app_toast.dart';
 
 void main() {
@@ -23,6 +24,7 @@ void main() {
 
       final dismiss = find.byKey(const ValueKey('app-toast-dismiss'));
       expect(dismiss, findsOneWidget);
+      expect(tester.widget(dismiss), isA<AppPressable>());
       expect(tester.getSize(dismiss).height, greaterThanOrEqualTo(44));
 
       const dismissLabel = '关闭提示';

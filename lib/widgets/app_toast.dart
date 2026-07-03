@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 /// Global unified Toast — slides down from the top of the screen.
 ///
@@ -153,26 +154,21 @@ class _ToastWidgetState extends State<_ToastWidget>
                       ),
                     ),
                   ),
-                  Semantics(
-                    label: '关闭提示',
-                    button: true,
-                    enabled: true,
+                  AppPressable(
+                    key: const ValueKey('app-toast-dismiss'),
                     onTap: widget.onDismissed,
-                    child: ExcludeSemantics(
-                      child: GestureDetector(
-                        key: const ValueKey('app-toast-dismiss'),
-                        behavior: HitTestBehavior.opaque,
-                        onTap: widget.onDismissed,
-                        child: const SizedBox(
-                          width: 44,
-                          height: 44,
-                          child: Center(
-                            child: Icon(
-                              Icons.close,
-                              color: Colors.white70,
-                              size: 16,
-                            ),
-                          ),
+                    haptic: false,
+                    semanticsLabel: '关闭提示',
+                    semanticsButton: true,
+                    semanticsEnabled: true,
+                    child: const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Center(
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.white70,
+                          size: 16,
                         ),
                       ),
                     ),
