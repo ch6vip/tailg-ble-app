@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/profile_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
@@ -25,6 +26,13 @@ void main() {
       const membershipLabel = '会员中心，即将上线';
       final membershipEntry = find.bySemanticsLabel(membershipLabel);
       expect(membershipEntry, findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.text('会员中心 · 即将上线'),
+          matching: find.byType(AppPressable),
+        ),
+        findsOneWidget,
+      );
       expect(
         tester.getSemantics(membershipEntry),
         matchesSemantics(

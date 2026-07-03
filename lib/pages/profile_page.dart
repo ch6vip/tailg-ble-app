@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 import '../main.dart';
 import '../services/official_cloud_service.dart';
+import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import 'app_preferences_pages.dart';
 import 'official_cloud_page.dart';
@@ -340,112 +341,103 @@ class _MembershipBanner extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Semantics(
-        label: '会员中心，即将上线',
-        button: true,
-        enabled: true,
+      child: AppPressable(
         onTap: openMembership,
-        child: ExcludeSemantics(
-          child: GestureDetector(
-            onTap: openMembership,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF222A3A), Color(0xFF1B2230)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(AppRadii.lg),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF1B2230).withValues(alpha: 0.28),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+        haptic: false,
+        semanticsLabel: '会员中心，即将上线',
+        semanticsButton: true,
+        semanticsEnabled: true,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF222A3A), Color(0xFF1B2230)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(AppRadii.lg),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1B2230).withValues(alpha: 0.28),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
-              child: Stack(
-                children: [
-                  // Decorative glow
-                  Positioned(
-                    right: -30,
-                    top: -30,
-                    child: Container(
-                      width: 130,
-                      height: 130,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            const Color(0xFFF5A623).withValues(alpha: 0.3),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -30,
+                top: -30,
+                child: Container(
+                  width: 130,
+                  height: 130,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        const Color(0xFFF5A623).withValues(alpha: 0.3),
+                        Colors.transparent,
+                      ],
                     ),
                   ),
-                  Row(
-                    children: [
-                      // Crown icon
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.all(Radius.circular(13)),
-                          gradient: LinearGradient(
-                            colors: [Color(0xFFFFD580), Color(0xFFF5A623)],
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: const BoxDecoration(
+                      borderRadius: BorderRadius.all(Radius.circular(13)),
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFFD580), Color(0xFFF5A623)],
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.star,
+                      color: Color(0xFF5A3A00),
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 13),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '会员中心 · 即将上线',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
                           ),
                         ),
-                        child: const Icon(
-                          Icons.star,
-                          color: Color(0xFF5A3A00),
-                          size: 22,
+                        SizedBox(height: 2),
+                        Text(
+                          '会员权益加载中，敬请期待',
+                          style: TextStyle(fontSize: 12, color: Colors.white60),
                         ),
-                      ),
-                      const SizedBox(width: 13),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '会员中心 · 即将上线',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              '会员权益加载中，敬请期待',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white60,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Text(
-                        '查看',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFFFFD580),
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      const Icon(
-                        Icons.chevron_right,
-                        color: Color(0xFFFFD580),
-                        size: 18,
-                      ),
-                    ],
+                      ],
+                    ),
+                  ),
+                  const Text(
+                    '查看',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFFFD580),
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: Color(0xFFFFD580),
+                    size: 18,
                   ),
                 ],
               ),
-            ),
+            ],
           ),
         ),
       ),
