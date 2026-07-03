@@ -25,4 +25,37 @@ void main() {
     expect(find.text('命令待真机验证，暂不开放写入'), findsOneWidget);
     expect(snackIcon(Icons.info_outline), findsOneWidget);
   });
+
+  testWidgets('navigation setting rows expose semantics and 44dp targets', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+
+    try {
+      await tester.pumpWidget(const TestApp(home: VehicleSettingsPage()));
+      await tester.pump();
+
+      const soundLabel = '声音设置，车辆部分提示声音';
+      final soundRow = find.bySemanticsLabel(soundLabel);
+      expect(soundRow, findsOneWidget);
+      expect(tester.getSize(soundRow).height, greaterThanOrEqualTo(44));
+      expect(
+        tester.getSemantics(soundRow),
+        matchesSemantics(
+          label: soundLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel(soundLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.text('声音开关'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
 }

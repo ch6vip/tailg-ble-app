@@ -957,7 +957,12 @@ class _NavSettingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
-    return Material(
+    final semanticsLabel = [
+      title,
+      if (trailingText != null && trailingText!.isNotEmpty) trailingText!,
+      subtitle,
+    ].join('，');
+    final row = Material(
       color: Colors.transparent,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -1015,6 +1020,13 @@ class _NavSettingRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+    return Semantics(
+      label: semanticsLabel,
+      button: true,
+      enabled: enabled,
+      onTap: onTap,
+      child: ExcludeSemantics(child: row),
     );
   }
 }
