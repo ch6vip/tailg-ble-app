@@ -76,6 +76,28 @@ void main() {
     );
   });
 
+  test('library code does not use wildcard catch variables', () {
+    final wildcardCatch = RegExp(r'\bcatch\s*\(\s*_\s*(?:,\s*_\s*)?\)');
+    final offenders = <String>[];
+
+    for (final entity in Directory('lib').listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      final source = entity.readAsStringSync();
+      for (final match in wildcardCatch.allMatches(source)) {
+        final line = _lineNumber(source, match.start);
+        offenders.add('${entity.path}:$line ${match.group(0)}');
+      }
+    }
+
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Use a typed on-clause, log the failure, or document intentional '
+          'degradation instead of swallowing catch (_) silently.',
+    );
+  });
+
   test('GATT device information reads log best-effort failures', () {
     const pages = [
       'lib/pages/device_info_page.dart',

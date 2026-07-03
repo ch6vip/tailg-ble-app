@@ -303,7 +303,7 @@ class _OfficialCloudApiClient {
           ? await compute<String, Object?>(jsonDecode, text)
           : jsonDecode(text);
       if (decoded is Map) return Map<String, dynamic>.from(decoded);
-    } catch (_) {
+    } on Object {
       final end = text.length < 80 ? text.length : 80;
       throw OfficialCloudApiException(
         '服务器返回非 JSON 数据: ${text.substring(0, end)}',

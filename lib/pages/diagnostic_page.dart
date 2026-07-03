@@ -63,7 +63,8 @@ class DiagnosticRecord {
       final decoded = jsonDecode(raw);
       if (decoded is! Map) return null;
       return DiagnosticRecord.fromJson(Map<String, dynamic>.from(decoded));
-    } catch (_) {
+    } on Object {
+      // One corrupt history entry should not hide later diagnostic records.
       return null;
     }
   }
