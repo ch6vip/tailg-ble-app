@@ -233,7 +233,7 @@ class _ScanPageState extends State<ScanPage>
                   left: 0,
                   right: 0,
                   child: Center(
-                    child: _ScanFab(
+                    child: ScanFab(
                       scanning: _scanning,
                       enabled: bluetoothOn,
                       onTap: _scanning ? _stopScan : _startScan,
@@ -646,11 +646,12 @@ class _SignalBars extends StatelessWidget {
   }
 }
 
-class _ScanFab extends StatelessWidget {
+class ScanFab extends StatelessWidget {
   final bool scanning;
   final bool enabled;
   final VoidCallback onTap;
-  const _ScanFab({
+  const ScanFab({
+    super.key,
     required this.scanning,
     required this.enabled,
     required this.onTap,
@@ -658,8 +659,10 @@ class _ScanFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
+    final label = scanning ? '停止扫描' : '扫描';
+    final tapHandler = enabled ? onTap : null;
+    final button = GestureDetector(
+      onTap: tapHandler,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
@@ -702,6 +705,14 @@ class _ScanFab extends StatelessWidget {
           ],
         ),
       ),
+    );
+    return Semantics(
+      container: true,
+      label: label,
+      button: true,
+      enabled: enabled,
+      onTap: tapHandler,
+      child: ExcludeSemantics(child: button),
     );
   }
 }
