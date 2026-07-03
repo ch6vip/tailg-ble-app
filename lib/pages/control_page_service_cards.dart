@@ -382,11 +382,11 @@ class _V8AllFunctionsSheetState extends State<_V8AllFunctionsSheet> {
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Container(
-                      width: 32,
-                      height: 32,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
                         color: AppColors.card2,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(22),
                         border: Border.all(color: AppColors.hairline),
                       ),
                       child: const Icon(

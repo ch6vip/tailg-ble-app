@@ -109,8 +109,8 @@ class AppHeaderAction extends StatelessWidget {
         splashColor: AppColors.primary.withValues(alpha: 0.08),
         highlightColor: AppColors.primary.withValues(alpha: 0.05),
         child: SizedBox(
-          width: 36,
-          height: 36,
+          width: 44,
+          height: 44,
           child: Icon(
             icon,
             size: AppIconSizes.md,
