@@ -243,6 +243,13 @@ void main() {
       const closeLabel = '关闭全部功能';
       final closeAction = find.bySemanticsLabel(closeLabel);
       expect(closeAction, findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.byIcon(Icons.close),
+          matching: find.byType(AppPressable),
+        ),
+        findsOneWidget,
+      );
       expect(tester.getSize(closeAction).height, greaterThanOrEqualTo(44));
       expect(
         tester.getSemantics(closeAction),

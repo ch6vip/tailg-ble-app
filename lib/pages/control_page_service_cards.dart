@@ -390,29 +390,25 @@ class _V8AllFunctionsSheetState extends State<_V8AllFunctionsSheet> {
                     ),
                   ),
                   const Spacer(),
-                  Semantics(
-                    container: true,
-                    label: '关闭全部功能',
-                    button: true,
-                    enabled: true,
+                  AppPressable(
                     onTap: closeSheet,
-                    child: ExcludeSemantics(
-                      child: GestureDetector(
-                        onTap: closeSheet,
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: AppColors.card2,
-                            borderRadius: BorderRadius.circular(22),
-                            border: Border.all(color: AppColors.hairline),
-                          ),
-                          child: const Icon(
-                            Icons.close,
-                            size: 16,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
+                    haptic: false,
+                    semanticsLabel: '关闭全部功能',
+                    semanticsButton: true,
+                    semanticsEnabled: true,
+                    semanticsContainer: true,
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.card2,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: AppColors.hairline),
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        size: 16,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ),
