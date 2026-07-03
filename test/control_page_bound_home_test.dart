@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
-import 'package:tailg_ble_app/pages/official_cloud_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
@@ -100,7 +99,9 @@ void main() {
     expect(app.manualModeService.enabled, isFalse);
   });
 
-  testWidgets('manual mode pill keeps a 44dp touch target', (tester) async {
+  testWidgets('official manual mode control keeps a 44dp touch target', (
+    tester,
+  ) async {
     await pumpBoundHome(tester, size: const Size(430, 2200));
 
     final manualModePill = find.byTooltip('开启手动模式：禁用感应解锁/自动连接');
@@ -212,39 +213,17 @@ void main() {
     }
   });
 
-  testWidgets('official control tip exposes semantics and 44dp target', (
-    tester,
-  ) async {
+  testWidgets('official control tip has no extra channel row', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
       await pumpBoundHome(tester, size: const Size(430, 2200));
 
-      const tipStatus = 'BLE：BLE 未连接或协议未就绪；云端：请先登录官方账号';
-      final controlTip = find.ancestor(
-        of: find.text(tipStatus),
-        matching: find.byType(InkWell),
-      );
-      expect(controlTip, findsOneWidget);
-      expect(tester.getSize(controlTip).height, greaterThanOrEqualTo(44));
+      expect(find.textContaining('控车通道'), findsNothing);
+      expect(find.text('手动模式'), findsNothing);
 
-      const tipLabel = '控车通道 待连接，$tipStatus';
-      final tipAction = find.bySemanticsLabel(tipLabel);
-      expect(tipAction, findsOneWidget);
-      expect(
-        tester.getSemantics(tipAction),
-        matchesSemantics(
-          label: tipLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasTapAction: true,
-        ),
-      );
-
-      tester.semantics.tap(find.semantics.byLabel(tipLabel));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(OfficialCloudPage), findsOneWidget);
+      final manualModeAction = find.bySemanticsLabel('手动模式');
+      expect(manualModeAction, findsOneWidget);
+      expect(tester.getSize(manualModeAction).height, greaterThanOrEqualTo(44));
     } finally {
       semantics.dispose();
     }

@@ -1,7 +1,7 @@
 part of 'control_page.dart';
 
-/// v8 home top section: Hero + vehicle stage + status chips + working control
-/// card + connection tip bar.
+/// v8 home top section: Hero + vehicle stage + official status tip + working
+/// control card.
 ///
 /// Owns all control execution (power on/off, seat, proximity toggle) that was
 /// previously in the old [_ControlArea].  Replaces the old three-section
@@ -30,7 +30,9 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   // ── Proximity / manual-mode toggle state ──────────────────────────
 
   bool _proximityEnabled = false;
+  bool _manualModeEnabled = false;
   StreamSubscription<bool>? _proximitySub;
+  StreamSubscription<bool>? _manualModeSub;
 
   // ── Lifecycle ──────────────────────────────────────────────────────
 
@@ -45,12 +47,17 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     _proximitySub = proximityService.enabledStream.listen((v) {
       if (mounted) setState(() => _proximityEnabled = v);
     });
+    _manualModeEnabled = manualModeService.enabled;
+    _manualModeSub = manualModeService.enabledStream.listen((v) {
+      if (mounted) setState(() => _manualModeEnabled = v);
+    });
   }
 
   @override
   void dispose() {
     _disposed = true;
     _proximitySub?.cancel();
+    _manualModeSub?.cancel();
     super.dispose();
   }
 
@@ -325,6 +332,11 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     proximityService.setEnabled(value);
   }
 
+  void _toggleManualMode() {
+    manualModeService.setEnabled(!_manualModeEnabled);
+    HapticFeedback.selectionClick();
+  }
+
   // ── Super Dashboard / Rider Management placeholders ────────────────
 
   void _openSuperDashboard() {
@@ -340,61 +352,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
       context,
       MaterialPageRoute<void>(builder: (_) => const ShareBikePage()),
     );
-  }
-
-  // ── UI: _ControlTipBar helpers ─────────────────────────────────────
-
-  String get _tipEffective {
-    final availability = _controlAvailability();
-    return switch (officialCloudService.state.controlChannel) {
-      OfficialControlChannel.ble => 'BLE',
-      OfficialControlChannel.officialCloud => '云端',
-      OfficialControlChannel.automatic =>
-        availability.canUseBle
-            ? 'BLE'
-            : availability.canUseCloud
-            ? '云端'
-            : '待连接',
-    };
-  }
-
-  String get _tipStatus {
-    final availability = _controlAvailability();
-    if (!availability.enabled) {
-      return availability.disabledReason.isNotEmpty
-          ? availability.disabledReason
-          : '请连接车辆后控车';
-    }
-    final isLocked = _currentIsPowerOn()
-        ? (connectionManager.latestBikeState?.isLocked ??
-              officialCloudService.state.selectedVehicle?.isLocked ??
-              true)
-        : true;
-    final isPowerOn = _currentIsPowerOn();
-    return '${isPowerOn ? '已启动' : '未启动'} · ${isLocked ? '已设防' : '未设防'}';
-  }
-
-  Color get _tipEffectiveColor {
-    return switch (_tipEffective) {
-      'BLE' => AppColors.success,
-      '云端' => AppColors.primary,
-      _ => AppColors.textTertiary,
-    };
-  }
-
-  IconData get _tipEffectiveIcon {
-    return switch (_tipEffective) {
-      'BLE' => Icons.bluetooth_connected,
-      '云端' => Icons.cloud_done_outlined,
-      _ => Icons.link_off,
-    };
-  }
-
-  String? get _tipVehicleName {
-    final availability = _controlAvailability();
-    return availability.canUseCloud
-        ? officialCloudService.state.selectedVehicle?.displayName
-        : null;
   }
 
   // ── Build ──────────────────────────────────────────────────────────
@@ -429,17 +386,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             : _isReconnecting
             ? '重连中'
             : null;
-        final tipVehicleName = _tipVehicleName;
-        final controlTipLabel = [
-          '控车通道 $_tipEffective',
-          _tipStatus,
-          if (tipVehicleName != null) tipVehicleName,
-        ].join('，');
-        void openOfficialCloud() => Navigator.push(
-          context,
-          MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
-        );
-
         return Container(
           decoration: const BoxDecoration(
             color: AppColors.officialPageBg,
@@ -487,6 +433,8 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                   isPowerOn: isPowerOn,
                   bleReady: _isBleReady,
                   reconnecting: _isReconnecting,
+                  manualModeEnabled: _manualModeEnabled,
+                  onToggleManualMode: _toggleManualMode,
                 ),
               ),
               const SizedBox(height: 14),
@@ -507,118 +455,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                 onRiderManagement: _openRiderManagement,
                 onSuperDashboard: _openSuperDashboard,
               ),
-              const SizedBox(height: 14),
-              // ── Connection tip bar (migrated from _ControlArea) ──
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: const BoxDecoration(
-                        color: AppColors.surface,
-                        shape: BoxShape.circle,
-                        boxShadow: AppShadows.cardShadow,
-                      ),
-                      child: const Icon(
-                        Icons.smart_toy_outlined,
-                        size: AppIconSizes.md,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Semantics(
-                        label: controlTipLabel,
-                        button: true,
-                        enabled: true,
-                        onTap: openOfficialCloud,
-                        child: ExcludeSemantics(
-                          child: Material(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(30),
-                            child: InkWell(
-                              onTap: openOfficialCloud,
-                              borderRadius: BorderRadius.circular(30),
-                              child: Container(
-                                height: 44,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(30),
-                                  color: AppColors.surfaceContainerLow,
-                                  boxShadow: AppShadows.elevation1,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      height: 24,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 5,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _tipEffectiveColor.withValues(
-                                          alpha: 0.12,
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            _tipEffectiveIcon,
-                                            size: 13,
-                                            color: _tipEffectiveColor,
-                                          ),
-                                          const SizedBox(width: 3),
-                                          Text(
-                                            _tipEffective,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w800,
-                                              color: _tipEffectiveColor,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        _tipStatus,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppTextStyles.sectionLabelStrong,
-                                      ),
-                                    ),
-                                    if (tipVehicleName != null) ...[
-                                      const SizedBox(width: 8),
-                                      Flexible(
-                                        child: Text(
-                                          tipVehicleName,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: AppTextStyles.caption,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    _ManualModePill(),
-                  ],
-                ),
-              ),
               const SizedBox(height: 16),
             ],
           ),
@@ -634,12 +470,16 @@ class _OfficialControlTip extends StatelessWidget {
     required this.isPowerOn,
     required this.bleReady,
     required this.reconnecting,
+    required this.manualModeEnabled,
+    required this.onToggleManualMode,
   });
 
   final bool? isArmed;
   final bool isPowerOn;
   final bool bleReady;
   final bool reconnecting;
+  final bool manualModeEnabled;
+  final VoidCallback onToggleManualMode;
 
   @override
   Widget build(BuildContext context) {
@@ -699,24 +539,45 @@ class _OfficialControlTip extends StatelessWidget {
           Positioned(
             right: 0,
             top: 8,
-            child: Image.asset(
-              bleReady
-                  ? 'assets/official_tailg/ic_control_mode_induction.png'
-                  : 'assets/official_tailg/ic_control_mode_hand.png',
-              width: 54,
-              height: 42,
-              errorBuilder: (_, __, ___) => Container(
-                width: 54,
-                height: 42,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(21),
-                ),
-                child: Icon(
-                  bleReady ? Icons.bluetooth_connected : Icons.touch_app,
-                  size: 20,
-                  color: AppColors.brandRed,
+            child: Tooltip(
+              message: manualModeEnabled
+                  ? '已开启手动模式：点按关闭'
+                  : '开启手动模式：禁用感应解锁/自动连接',
+              child: AppPressable(
+                onTap: onToggleManualMode,
+                haptic: false,
+                semanticsLabel: '手动模式',
+                semanticsButton: true,
+                semanticsEnabled: true,
+                semanticsToggled: manualModeEnabled,
+                child: SizedBox(
+                  width: 66,
+                  height: 44,
+                  child: Center(
+                    child: Image.asset(
+                      manualModeEnabled || !bleReady
+                          ? 'assets/official_tailg/ic_control_mode_hand.png'
+                          : 'assets/official_tailg/ic_control_mode_induction.png',
+                      width: 54,
+                      height: 42,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 54,
+                        height: 42,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(21),
+                        ),
+                        child: Icon(
+                          manualModeEnabled || !bleReady
+                              ? Icons.touch_app
+                              : Icons.bluetooth_connected,
+                          size: 20,
+                          color: AppColors.brandRed,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
