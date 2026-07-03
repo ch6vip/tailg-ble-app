@@ -338,120 +338,142 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
         : AppColors.inkBtn2;
     final coreColor = widget.powered ? AppColors.energyGreen : AppColors.inkBtn;
     final sz = widget.size;
+    final semanticLabel = widget.busy
+        ? '电源：处理中'
+        : widget.powered
+        ? '电源：长按熄火'
+        : '电源：长按开机';
+    final semanticAction = widget.busy || widget.onPowerOn == null
+        ? null
+        : () {
+            HapticFeedback.heavyImpact();
+            widget.onPowerOn?.call();
+          };
 
-    return Listener(
-      onPointerDown: _onPointerDown,
-      onPointerMove: _onPointerMove,
-      onPointerUp: _onPointerUp,
-      onPointerCancel: _onPointerCancel,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedBuilder(
-            animation: Listenable.merge([_progress, _busyPulse]),
-            builder: (_, child) {
-              final busyGlowAlpha = widget.busy ? _busyPulse.value : 0.0;
-              return SizedBox(
-                width: sz,
-                height: sz,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Busy pulsing glow ring
-                    if (widget.busy)
-                      Container(
-                        width: sz * 1.12,
-                        height: sz * 1.12,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.energyGreen.withValues(
-                              alpha: busyGlowAlpha,
-                            ),
-                            width: 3,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.energyGreen.withValues(
-                                alpha: busyGlowAlpha * 0.4,
+    return Semantics(
+      label: semanticLabel,
+      button: true,
+      enabled: semanticAction != null,
+      onLongPress: semanticAction,
+      child: ExcludeSemantics(
+        child: Listener(
+          onPointerDown: _onPointerDown,
+          onPointerMove: _onPointerMove,
+          onPointerUp: _onPointerUp,
+          onPointerCancel: _onPointerCancel,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedBuilder(
+                animation: Listenable.merge([_progress, _busyPulse]),
+                builder: (_, child) {
+                  final busyGlowAlpha = widget.busy ? _busyPulse.value : 0.0;
+                  return SizedBox(
+                    width: sz,
+                    height: sz,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Busy pulsing glow ring
+                        if (widget.busy)
+                          Container(
+                            width: sz * 1.12,
+                            height: sz * 1.12,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.energyGreen.withValues(
+                                  alpha: busyGlowAlpha,
+                                ),
+                                width: 3,
                               ),
-                              blurRadius: sz * 0.2,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.energyGreen.withValues(
+                                    alpha: busyGlowAlpha * 0.4,
+                                  ),
+                                  blurRadius: sz * 0.2,
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
+                        CustomPaint(
+                          size: Size(sz, sz),
+                          painter: _RingPainter(
+                            color: ringColor.withValues(alpha: 0.15),
+                            progress: 1.0,
+                          ),
                         ),
-                      ),
-                    CustomPaint(
-                      size: Size(sz, sz),
-                      painter: _RingPainter(
-                        color: ringColor.withValues(alpha: 0.15),
-                        progress: 1.0,
-                      ),
-                    ),
-                    CustomPaint(
-                      size: Size(sz, sz),
-                      painter: _RingPainter(
-                        color: AppColors.energyGreen,
-                        progress: widget.powered ? 1.0 : _progress.value,
-                      ),
-                    ),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: _holding ? sz * 0.70 : sz * 0.73,
-                      height: _holding ? sz * 0.70 : sz * 0.73,
-                      decoration: BoxDecoration(
-                        color: coreColor,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: coreColor.withValues(alpha: 0.28),
-                            blurRadius: sz * 0.23,
-                            offset: Offset(0, sz * 0.09),
+                        CustomPaint(
+                          size: Size(sz, sz),
+                          painter: _RingPainter(
+                            color: AppColors.energyGreen,
+                            progress: widget.powered ? 1.0 : _progress.value,
                           ),
-                        ],
-                      ),
-                      child: widget.busy
-                          ? SizedBox(
-                              width: sz * 0.3,
-                              height: sz * 0.3,
-                              child: const CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Colors.white,
+                        ),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: _holding ? sz * 0.70 : sz * 0.73,
+                          height: _holding ? sz * 0.70 : sz * 0.73,
+                          decoration: BoxDecoration(
+                            color: coreColor,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: coreColor.withValues(alpha: 0.28),
+                                blurRadius: sz * 0.23,
+                                offset: Offset(0, sz * 0.09),
                               ),
-                            )
-                          : Icon(
-                              widget.powered
-                                  ? Icons.power_off
-                                  : Icons.power_settings_new,
-                              color: Colors.white,
-                              size: sz * 0.3,
-                            ),
+                            ],
+                          ),
+                          child: widget.busy
+                              ? SizedBox(
+                                  width: sz * 0.3,
+                                  height: sz * 0.3,
+                                  child: const CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Icon(
+                                  widget.powered
+                                      ? Icons.power_off
+                                      : Icons.power_settings_new,
+                                  color: Colors.white,
+                                  size: sz * 0.3,
+                                ),
+                        ),
+                      ],
                     ),
-                  ],
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.busy
+                    ? '处理中…'
+                    : widget.powered
+                    ? '长按熄火'
+                    : '长按开机',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: widget.powered && !widget.busy
+                      ? AppColors.danger
+                      : AppColors.textPrimary,
                 ),
-              );
-            },
+              ),
+              const SizedBox(height: 2),
+              Text(
+                widget.busy ? '请稍候' : '按住 1.2 秒',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            widget.busy
-                ? '处理中…'
-                : widget.powered
-                ? '长按熄火'
-                : '长按开机',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: widget.powered && !widget.busy
-                  ? AppColors.danger
-                  : AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            widget.busy ? '请稍候' : '按住 1.2 秒',
-            style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
-          ),
-        ],
+        ),
       ),
     );
   }

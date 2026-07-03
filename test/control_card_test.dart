@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'package:tailg_ble_app/widgets/control_card.dart';
@@ -96,6 +97,68 @@ void main() {
     await tester.pump();
 
     expect(powerCount, 1);
+  });
+
+  testWidgets('power knob exposes a long-press semantics action', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    var powerCount = 0;
+
+    try {
+      await tester.pumpWidget(
+        TestApp(home: ControlCard(onPowerOn: () => powerCount++)),
+      );
+
+      final powerAction = find.bySemanticsLabel('电源：长按开机');
+      expect(powerAction, findsOneWidget);
+      expect(
+        tester.getSemantics(powerAction),
+        matchesSemantics(
+          label: '电源：长按开机',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasLongPressAction: true,
+        ),
+      );
+
+      tester.semantics.longPress(find.semantics.byLabel('电源：长按开机'));
+      await tester.pump();
+
+      expect(powerCount, 1);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('busy power knob exposes disabled semantics', (tester) async {
+    final semantics = tester.ensureSemantics();
+
+    try {
+      await tester.pumpWidget(
+        TestApp(home: ControlCard(onPowerOn: () {}, busy: true)),
+      );
+
+      final powerAction = find.bySemanticsLabel('电源：处理中');
+      expect(powerAction, findsOneWidget);
+      final SemanticsNode node = tester.getSemantics(powerAction);
+      expect(
+        node,
+        matchesSemantics(
+          label: '电源：处理中',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: false,
+        ),
+      );
+      expect(
+        node.getSemanticsData().hasAction(SemanticsAction.longPress),
+        isFalse,
+      );
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('power knob cancels hold after pointer leaves knob', (
