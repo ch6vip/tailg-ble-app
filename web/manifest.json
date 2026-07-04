@@ -1,6 +1,6 @@
 {
-    "name": "tailg_ble_app",
-    "short_name": "tailg_ble_app",
+    "name": "台铃智能",
+    "short_name": "台铃智能",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -145,7 +145,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
               ),
               children: [
                 AppPageHeader(
-                  title: '官方账号',
+                  title: '我的车辆',
                   actions: [
                     if (state.signedIn)
                       AppHeaderAction(
@@ -166,11 +166,9 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
                     onLogin: _login,
                   )
                 else ...[
-                  _SessionCard(state: state),
-                  const SizedBox(height: 14),
-                  _ChannelCard(state: state),
-                  const SizedBox(height: 14),
                   _VehicleListCard(state: state),
+                  const SizedBox(height: 14),
+                  _SessionCard(state: state),
                 ],
                 if (state.error != null) ...[
                   const SizedBox(height: 14),
@@ -188,7 +186,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
                 const SizedBox(height: 14),
                 const AppCard(
                   child: Text(
-                    '官方账号模式只使用你自己的验证码登录和已绑定车辆，不绕过官方登录、token 或车辆绑定关系。普通日志不会输出 token、手机号和 IMEI 明文。',
+                    '登录后会同步账号下已绑定车辆。车辆绑定、解绑和转让请按官方服务流程完成。',
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.45,
@@ -291,7 +289,7 @@ class _LoginCardState extends State<_LoginCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('登录官方账号', style: AppTextStyles.subtitle),
+          const Text('登录后查看车辆', style: AppTextStyles.subtitle),
           const SizedBox(height: 14),
           TextField(
             controller: widget.phoneController,
@@ -404,7 +402,7 @@ class _SessionCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('官方账号已登录', style: AppTextStyles.itemTitle),
+                const Text('账号已登录', style: AppTextStyles.itemTitle),
                 const SizedBox(height: 2),
                 Text(
                   state.phone.isEmpty ? '手机号已脱敏保存' : _maskPhone(state.phone),
@@ -425,42 +423,6 @@ class _SessionCard extends StatelessWidget {
   String _maskPhone(String phone) {
     if (phone.length < 7) return '已登录';
     return '${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}';
-  }
-}
-
-class _ChannelCard extends StatelessWidget {
-  final OfficialCloudState state;
-
-  const _ChannelCard({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('控车通道', style: AppTextStyles.itemTitle),
-          const SizedBox(height: 12),
-          ...OfficialControlChannel.values.map((channel) {
-            final selected = channel == state.controlChannel;
-            return RadioListTile<OfficialControlChannel>(
-              value: channel,
-              groupValue: state.controlChannel,
-              onChanged: (value) {
-                if (value != null) {
-                  officialCloudService.setControlChannel(value);
-                }
-              },
-              contentPadding: EdgeInsets.zero,
-              title: Text(channel.label),
-              subtitle: Text(channel.description),
-              activeColor: AppColors.primary,
-              selected: selected,
-            );
-          }),
-        ],
-      ),
-    );
   }
 }
 
@@ -488,10 +450,7 @@ class _VehicleListCardState extends State<_VehicleListCard> {
     }
     if (state.vehicles.isEmpty) {
       return const AppCard(
-        child: Text(
-          '当前官方账号未返回车辆，请确认手机号已绑定台铃车辆。',
-          style: AppTextStyles.bodyMedium,
-        ),
+        child: Text('暂无车辆，请确认当前账号已完成车辆绑定。', style: AppTextStyles.bodyMedium),
       );
     }
     return Column(
@@ -528,7 +487,7 @@ class _OfficialVehicleCard extends StatelessWidget {
         : _findLocalVehicle(localVehicles, linkedId);
     final linked = linkedVehicle != null;
     final staleLinked = linkedId != null && linkedId.isNotEmpty && !linked;
-    final linkLabel = linked ? '更换关联' : '关联本地 BLE';
+    final linkLabel = linked ? '更换近场连接' : '近场连接';
     return AppCard(
       color: selected
           ? AppColors.primary.withValues(alpha: 0.08)
@@ -596,13 +555,8 @@ class _OfficialVehicleCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            _DetailLine('蓝牙名', vehicle.btname.isEmpty ? '未返回' : vehicle.btname),
-            _DetailLine(
-              '蓝牙 MAC',
-              vehicle.btmac.isEmpty ? '未返回' : vehicle.btmac,
-            ),
             if (!vehicle.hasBleIdentity) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 2),
               const _MissingBleIdentityNotice(),
             ],
             const SizedBox(height: 10),
@@ -635,13 +589,19 @@ class _OfficialVehicleCard extends StatelessWidget {
                       if (linked) {
                         return OutlinedButton.icon(
                           onPressed: openLinkPage,
-                          icon: const Icon(Icons.link, size: AppIconSizes.sm),
+                          icon: const Icon(
+                            Icons.bluetooth_connected,
+                            size: AppIconSizes.sm,
+                          ),
                           label: Text(linkLabel),
                         );
                       }
-                      return FilledButton.icon(
+                      return OutlinedButton.icon(
                         onPressed: openLinkPage,
-                        icon: const Icon(Icons.link, size: AppIconSizes.sm),
+                        icon: const Icon(
+                          Icons.bluetooth_searching,
+                          size: AppIconSizes.sm,
+                        ),
                         label: Text(linkLabel),
                       );
                     },
@@ -661,7 +621,7 @@ class _OfficialVehicleCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      '已关联 ${linkedVehicle.displayName}',
+                      '已开启近场连接：${linkedVehicle.displayName}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.smallText,
@@ -701,7 +661,7 @@ class _MissingBleIdentityNotice extends StatelessWidget {
             const SizedBox(width: 6),
             const Expanded(
               child: Text(
-                '官方接口未返回蓝牙标识，无法自动生成本地 BLE 车辆。请先扫码连接一次，或进入关联页选择已保存的本地车辆。',
+                '该车辆暂未返回近场连接信息，远程控车不受影响。需要靠近车辆使用时，可添加近场连接车辆。',
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.35,
@@ -717,7 +677,7 @@ class _MissingBleIdentityNotice extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
-                child: const Text('去扫描'),
+                child: const Text('近场连接'),
               ),
             ),
           ],
@@ -741,11 +701,11 @@ class _StaleLinkNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const label = '关联的本地车辆已不存在，点击清理';
+    const label = '近场连接车辆已不可用，点击清理';
     Future<void> clearStaleLink() async {
       await officialCloudService.unlinkLocalVehicle(vehicle.key);
       if (context.mounted) {
-        AppSnack.success(context, '已清理失效关联，请重新关联本地 BLE 车辆');
+        AppSnack.success(context, '已清理失效直连车辆');
       }
     }
 
@@ -769,7 +729,7 @@ class _StaleLinkNotice extends StatelessWidget {
                 SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    '关联的本地车辆已不存在，点击清理',
+                    '近场连接车辆已不可用，点击清理',
                     style: TextStyle(fontSize: 12, color: AppColors.warning),
                   ),
                 ),
@@ -1109,11 +1069,11 @@ class OfficialVehicleLinkPage extends StatelessWidget {
                     bottom: AppNav.contentBottomPadding,
                   ),
                   children: [
-                    AppPageHeader(title: '关联本地车辆'),
+                    AppPageHeader(title: '近场连接'),
                     const SizedBox(height: 12),
                     AppCard(
                       child: Text(
-                        '把官方车辆“${vehicle.displayName}”关联到本地 BLE 车辆后，自动通道可以优先使用 BLE，未连接时再走官方云端。',
+                        '可选配置：靠近车辆时使用近场连接控车，网络不可用时也能保留基础控车能力。',
                         style: const TextStyle(
                           fontSize: 13,
                           height: 1.45,
@@ -1125,7 +1085,7 @@ class OfficialVehicleLinkPage extends StatelessWidget {
                     if (vehicles.isEmpty)
                       const AppCard(
                         child: Text(
-                          '本地车库暂无车辆，请先扫描连接车辆。',
+                          '暂无近场连接车辆。远程控车可继续使用官方车辆；需要靠近车辆使用时请先添加车辆。',
                           style: TextStyle(color: AppColors.textSecondary),
                         ),
                       )
@@ -1155,7 +1115,7 @@ class OfficialVehicleLinkPage extends StatelessWidget {
                               );
                               await _applyLocalVehicle(local);
                               if (context.mounted) {
-                                AppSnack.success(context, '已关联并切换为默认本地车辆');
+                                AppSnack.success(context, '已开启近场连接');
                               }
                             },
                           ),

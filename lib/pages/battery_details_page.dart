@@ -410,13 +410,13 @@ class _SourceStrip extends StatelessWidget {
     final loading = cloudState.batteryInfoLoading;
     final error = cloudState.batteryInfoError;
     final title = loading
-        ? '正在刷新官方电池信息'
+        ? '正在刷新电池信息'
         : error != null
-        ? '官方电池信息刷新失败'
+        ? '电池信息刷新失败'
         : signedIn
-        ? '数据来源：${snapshot.dataSourceLabel}'
-        : '未登录官方账号，仅显示本地 BLE 数据';
-    final subtitle = error ?? '官方接口只用于只读展示；BMS 写入、校准和升级未开放';
+        ? '电池数据已同步'
+        : '登录官方账号后可同步更多电池数据';
+    final subtitle = error ?? '电池维护、校准和升级请前往官方服务渠道处理';
     final color = error != null
         ? AppColors.warning
         : loading
@@ -792,23 +792,23 @@ class _BmsFieldRow extends StatelessWidget {
 
   _SourceChip _sourceDisplay(BmsField field) {
     if (!field.hasValue) {
-      return const _SourceChip('官方字段预留', AppColors.warning);
+      return const _SourceChip('待同步', AppColors.warning);
     }
     return switch (field.source) {
       BatteryDataSource.ble => const _SourceChip(
-        'BLE feb3 已确认',
+        '车辆实时状态',
         AppColors.textSecondary,
       ),
       BatteryDataSource.officialVehicle => const _SourceChip(
-        '官方车辆状态',
+        '车辆状态',
         AppColors.success,
       ),
       BatteryDataSource.officialBattery => const _SourceChip(
-        '官方电池接口',
+        '电池服务',
         AppColors.success,
       ),
       BatteryDataSource.bmsReserved => const _SourceChip(
-        '官方字段预留',
+        '待同步',
         AppColors.warning,
       ),
     };
@@ -841,12 +841,12 @@ class _BatteryReadOnlyCard extends StatelessWidget {
                 color: AppColors.textSecondary,
               ),
               SizedBox(width: 8),
-              Text('只读复刻边界', style: AppTextStyles.itemTitle),
+              Text('电池服务说明', style: AppTextStyles.itemTitle),
             ],
           ),
           SizedBox(height: 8),
           Text(
-            '已复刻官方电池信息、BMS 与 C39 电池页的展示结构。刷新只读取官方电池信息；校准电池、换电池、升级电池和 BMS 写入类操作保持禁用，等真实协议和失败回滚验证完成后再开放。',
+            '当前页面用于查看电量、电压、温度、健康状态和 BMS 信息。涉及电池校准、更换和升级的操作，请通过官方服务渠道完成。',
             style: AppTextStyles.bodySmall,
           ),
         ],

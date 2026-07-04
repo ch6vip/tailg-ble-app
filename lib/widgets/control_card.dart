@@ -1,6 +1,3 @@
-import 'dart:ui';
-
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
@@ -15,14 +12,24 @@ class ControlCard extends StatefulWidget {
     this.onPowerOn,
     this.onFind,
     this.onLock,
+    this.onUnlock,
+    this.onOpenSeat,
+    this.onProximityUnlock,
+    this.onQuickEdit,
     this.powered = false,
+    this.locked,
     this.busy = false,
   });
 
   final VoidCallback? onPowerOn;
   final VoidCallback? onFind;
   final VoidCallback? onLock;
+  final VoidCallback? onUnlock;
+  final VoidCallback? onOpenSeat;
+  final VoidCallback? onProximityUnlock;
+  final VoidCallback? onQuickEdit;
   final bool powered;
+  final bool? locked;
   final bool busy;
 
   @override
@@ -48,7 +55,12 @@ class _ControlCardState extends State<ControlCard> {
               SizedBox(
                 width: leftWidth,
                 height: panelHeight,
-                child: _OfficialQuickSlots(enabled: !busy),
+                child: _OfficialQuickSlots(
+                  enabled: !busy,
+                  onOpenSeat: widget.onOpenSeat,
+                  onProximityUnlock: widget.onProximityUnlock,
+                  onQuickEdit: widget.onQuickEdit,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -56,6 +68,7 @@ class _ControlCardState extends State<ControlCard> {
                   height: panelHeight,
                   child: _OfficialControlPanel(
                     powered: widget.powered,
+                    locked: widget.locked,
                     busy: busy,
                     onPowerOn: () {
                       HapticFeedback.heavyImpact();
@@ -63,6 +76,7 @@ class _ControlCardState extends State<ControlCard> {
                     },
                     onFind: widget.onFind,
                     onLock: widget.onLock,
+                    onUnlock: widget.onUnlock,
                   ),
                 ),
               ),
@@ -101,20 +115,30 @@ class _OfficialPanelCard extends StatelessWidget {
 class _OfficialControlPanel extends StatelessWidget {
   const _OfficialControlPanel({
     required this.powered,
+    required this.locked,
     required this.busy,
     required this.onPowerOn,
     this.onFind,
     this.onLock,
+    this.onUnlock,
   });
 
   final bool powered;
+  final bool? locked;
   final bool busy;
   final VoidCallback onPowerOn;
   final VoidCallback? onFind;
   final VoidCallback? onLock;
+  final VoidCallback? onUnlock;
 
   @override
   Widget build(BuildContext context) {
+    final lockLabel = locked == true ? '解防' : '设防';
+    final lockAsset = locked == true
+        ? 'assets/official_tailg/ic_control_iv_unlock.png'
+        : 'assets/official_tailg/ic_control_iv_lock.png';
+    final lockIcon = locked == true ? Icons.lock_open : Icons.lock_outline;
+    final lockAction = locked == true ? onUnlock : onLock;
     return _OfficialPanelCard(
       padding: const EdgeInsets.all(10),
       child: Column(
@@ -140,10 +164,10 @@ class _OfficialControlPanel extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: _PanelCommand(
-                  asset: 'assets/official_tailg/ic_control_iv_lock.png',
-                  icon: Icons.lock_outline,
-                  label: '设防',
-                  onTap: busy ? null : onLock,
+                  asset: lockAsset,
+                  icon: lockIcon,
+                  label: lockLabel,
+                  onTap: busy ? null : lockAction,
                 ),
               ),
             ],
@@ -210,9 +234,17 @@ class _PanelCommand extends StatelessWidget {
 }
 
 class _OfficialQuickSlots extends StatelessWidget {
-  const _OfficialQuickSlots({required this.enabled});
+  const _OfficialQuickSlots({
+    required this.enabled,
+    this.onOpenSeat,
+    this.onProximityUnlock,
+    this.onQuickEdit,
+  });
 
   final bool enabled;
+  final VoidCallback? onOpenSeat;
+  final VoidCallback? onProximityUnlock;
+  final VoidCallback? onQuickEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -221,7 +253,13 @@ class _OfficialQuickSlots extends StatelessWidget {
       child: Column(
         children: [
           Expanded(
-            child: _QuickAddSlot(semanticsLabel: '快捷功能1', enabled: enabled),
+            child: _QuickActionSlot(
+              label: '打开座桶',
+              asset: 'assets/official_tailg/ic_control_quick_seat.png',
+              icon: Icons.event_seat_outlined,
+              enabled: enabled && onOpenSeat != null,
+              onTap: onOpenSeat,
+            ),
           ),
           const SizedBox(height: 10),
           Expanded(
@@ -229,15 +267,22 @@ class _OfficialQuickSlots extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 Positioned.fill(
-                  child: _QuickAddSlot(
-                    semanticsLabel: '快捷功能2',
-                    enabled: enabled,
+                  child: _QuickActionSlot(
+                    label: '感应解锁',
+                    asset:
+                        'assets/official_tailg/ic_control_quick_induction.png',
+                    icon: Icons.sensors,
+                    enabled: enabled && onProximityUnlock != null,
+                    onTap: onProximityUnlock,
                   ),
                 ),
                 Positioned(
                   right: 3,
                   bottom: 3,
-                  child: _QuickEditButton(enabled: enabled),
+                  child: _QuickEditButton(
+                    enabled: enabled && onQuickEdit != null,
+                    onTap: onQuickEdit,
+                  ),
                 ),
               ],
             ),
@@ -248,45 +293,65 @@ class _OfficialQuickSlots extends StatelessWidget {
   }
 }
 
-class _QuickAddSlot extends StatelessWidget {
-  const _QuickAddSlot({required this.semanticsLabel, required this.enabled});
+class _QuickActionSlot extends StatelessWidget {
+  const _QuickActionSlot({
+    required this.label,
+    required this.asset,
+    required this.icon,
+    required this.enabled,
+    this.onTap,
+  });
 
-  final String semanticsLabel;
+  final String label;
+  final String asset;
+  final IconData icon;
   final bool enabled;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return AppPressable(
-      enabled: false,
-      onTap: null,
+      enabled: enabled,
+      onTap: onTap,
       haptic: false,
       pressedScale: AppMotion.pressScale,
       duration: AppMotion.micro,
       curve: AppMotion.pressCurve,
-      semanticsLabel: semanticsLabel,
+      semanticsLabel: label,
       semanticsButton: true,
-      semanticsEnabled: false,
+      semanticsEnabled: enabled,
       child: AnimatedOpacity(
         opacity: enabled ? 1.0 : 0.45,
         duration: const Duration(milliseconds: 200),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF0F5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Image.asset(
-                'assets/official_tailg/ic_control_quick_add.webp',
-                width: 26,
-                height: 26,
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEFF0F5),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                asset,
+                width: 24,
+                height: 24,
                 errorBuilder: (_, __, ___) =>
-                    const Icon(Icons.add, size: 24, color: AppColors.brandRed),
+                    Icon(icon, size: 23, color: AppColors.brandRed),
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.officialTextMuted,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -294,19 +359,20 @@ class _QuickAddSlot extends StatelessWidget {
 }
 
 class _QuickEditButton extends StatelessWidget {
-  const _QuickEditButton({required this.enabled});
+  const _QuickEditButton({required this.enabled, this.onTap});
 
   final bool enabled;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return AppPressable(
-      enabled: false,
-      onTap: null,
+      enabled: enabled,
+      onTap: onTap,
       haptic: false,
       semanticsLabel: '编辑快捷功能',
       semanticsButton: true,
-      semanticsEnabled: false,
+      semanticsEnabled: enabled,
       child: AnimatedOpacity(
         opacity: enabled ? 1.0 : 0.45,
         duration: const Duration(milliseconds: 200),
@@ -344,10 +410,9 @@ class _PowerKnob extends StatefulWidget {
 }
 
 class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _progress;
-  bool _holding = false;
-  bool _fired = false;
+  static const _triggerThreshold = 0.82;
+  double _dragProgress = 0;
+  bool _dragging = false;
 
   // Busy-state pulsing ring
   late final AnimationController _busyPulseCtrl;
@@ -356,19 +421,6 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: AppMotion.longPressHold)
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _fired = true;
-          HapticFeedback.heavyImpact();
-          widget.onPowerOn?.call();
-        }
-      });
-    _progress = Tween(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: AppMotion.progressCurve));
-
     _busyPulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -399,54 +451,59 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _ctrl.stop();
     _busyPulseCtrl.stop();
-    _ctrl.dispose();
     _busyPulseCtrl.dispose();
     super.dispose();
   }
 
-  void _onPointerDown(PointerDownEvent event) {
-    if (widget.busy ||
-        _holding ||
-        (event.kind == PointerDeviceKind.mouse &&
-            event.buttons != kPrimaryButton)) {
+  void _onDragStart(DragStartDetails details) {
+    if (widget.busy || widget.onPowerOn == null) {
       return;
     }
-    _fired = false;
     HapticFeedback.lightImpact();
-    setState(() => _holding = true);
-    _ctrl.forward();
+    setState(() {
+      _dragging = true;
+      _dragProgress = 0;
+    });
   }
 
-  void _onPointerMove(PointerMoveEvent event) {
-    if (!_holding) return;
-    final size = context.size ?? const Size(88, 64);
-    final knobBounds = widget.powered
-        ? Rect.fromLTWH(size.width - 70, 0, 70, size.height)
-        : Rect.fromLTWH(0, 0, 70, size.height);
-    if (!knobBounds.contains(event.localPosition)) {
-      _finish();
+  void _onDragUpdate(DragUpdateDetails details) {
+    if (!_dragging) return;
+    final width = context.size?.width ?? 1;
+    final travel = (width - 66).clamp(1.0, double.infinity);
+    final signedDelta = widget.powered
+        ? -details.primaryDelta!
+        : details.primaryDelta!;
+    setState(() {
+      _dragProgress = (_dragProgress + signedDelta / travel).clamp(0.0, 1.0);
+    });
+  }
+
+  void _onDragEnd([DragEndDetails? _]) {
+    if (!_dragging) return;
+    final shouldFire = _dragProgress >= _triggerThreshold;
+    setState(() {
+      _dragging = false;
+      _dragProgress = 0;
+    });
+    if (shouldFire) {
+      HapticFeedback.heavyImpact();
+      widget.onPowerOn?.call();
     }
   }
 
-  void _onPointerUp(PointerUpEvent _) {
-    if (!_holding) return;
-    _finish();
+  void _onDragCancel() {
+    if (!_dragging) return;
+    setState(() {
+      _dragging = false;
+      _dragProgress = 0;
+    });
   }
 
-  void _onPointerCancel(PointerCancelEvent _) {
-    if (!_holding) return;
-    _finish();
-  }
-
-  void _finish() {
-    setState(() => _holding = false);
-    // If already auto-fired at 100%, don't fire again
-    if (!_fired) {
-      // Released early? Keep the visual feedback
-    }
-    _ctrl.reverse();
+  void _triggerFromSemantics() {
+    if (widget.busy || widget.onPowerOn == null) return;
+    HapticFeedback.heavyImpact();
+    widget.onPowerOn?.call();
   }
 
   @override
@@ -455,36 +512,48 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
     final semanticLabel = widget.busy
         ? '电源：处理中'
         : widget.powered
-        ? '电源：长按熄火'
-        : '电源：长按开机';
+        ? '电源：左滑熄火'
+        : '电源：右滑启动';
     final semanticAction = widget.busy || widget.onPowerOn == null
         ? null
-        : () {
-            HapticFeedback.heavyImpact();
-            widget.onPowerOn?.call();
-          };
+        : _triggerFromSemantics;
 
     return Semantics(
       label: semanticLabel,
       button: true,
       enabled: semanticAction != null,
-      onLongPress: semanticAction,
+      onIncrease: widget.powered ? null : semanticAction,
+      onDecrease: widget.powered ? semanticAction : null,
       child: ExcludeSemantics(
-        child: Listener(
-          onPointerDown: _onPointerDown,
-          onPointerMove: _onPointerMove,
-          onPointerUp: _onPointerUp,
-          onPointerCancel: _onPointerCancel,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragStart: _onDragStart,
+          onHorizontalDragUpdate: _onDragUpdate,
+          onHorizontalDragEnd: _onDragEnd,
+          onHorizontalDragCancel: _onDragCancel,
           child: AnimatedBuilder(
-            animation: Listenable.merge([_progress, _busyPulse]),
+            animation: _busyPulse,
             builder: (_, child) {
               final progress = widget.busy
                   ? _busyPulse.value
-                  : _holding
-                  ? _progress.value
+                  : _dragging
+                  ? Curves.easeOutCubic.transform(_dragProgress)
                   : widget.powered
                   ? 1.0
                   : 0.0;
+              final knobAlignment = _dragging
+                  ? Alignment.lerp(
+                      widget.powered
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      widget.powered
+                          ? Alignment.centerLeft
+                          : Alignment.centerRight,
+                      progress,
+                    )!
+                  : widget.powered
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft;
               return Container(
                 height: double.infinity,
                 constraints: const BoxConstraints(minHeight: 64),
@@ -511,9 +580,9 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
                     ),
                     Text(
                       widget.busy
-                          ? '执行中...'
+                          ? (widget.powered ? '熄火中' : '启动中')
                           : widget.powered
-                          ? '左滑关闭'
+                          ? '左滑熄火'
                           : '右滑启动',
                       style: const TextStyle(
                         fontSize: 13,
@@ -522,11 +591,11 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
                       ),
                     ),
                     AnimatedAlign(
-                      duration: const Duration(milliseconds: 180),
+                      duration: _dragging
+                          ? Duration.zero
+                          : const Duration(milliseconds: 180),
                       curve: Curves.easeOutCubic,
-                      alignment: widget.powered
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
+                      alignment: knobAlignment,
                       child: Container(
                         width: 52,
                         height: 52,

@@ -93,6 +93,13 @@ void main() {
       expect(app.proximityService.enabled, isTrue);
 
       const textScaleLabel = '跟随系统字号开关';
+      await tester.scrollUntilVisible(
+        find.text('跟随系统字号'),
+        260,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.pump();
+
       final textScaleSwitch = find.bySemanticsLabel(textScaleLabel);
       expect(textScaleSwitch, findsOneWidget);
       expect(
@@ -128,7 +135,29 @@ void main() {
       await tester.pumpWidget(const TestApp(home: SettingsPage()));
       await tester.pump();
 
+      const myVehiclesLabel = '我的车辆，登录账号、车辆列表、远程控车';
+      final myVehiclesRow = find.bySemanticsLabel(myVehiclesLabel);
+      expect(myVehiclesRow, findsOneWidget);
+      expectMinTouchTargetHeight(tester, myVehiclesRow);
+      expect(
+        tester.getSemantics(myVehiclesRow),
+        matchesSemantics(
+          label: myVehiclesLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+
       const languageLabel = '语言设置，跟随系统';
+      await tester.scrollUntilVisible(
+        find.text('语言设置'),
+        260,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.pump();
+
       final languageRow = find.bySemanticsLabel(languageLabel);
       expect(languageRow, findsOneWidget);
       expectMinTouchTargetHeight(tester, languageRow);
@@ -142,6 +171,36 @@ void main() {
           hasTapAction: true,
         ),
       );
+
+      const advancedLabel = '高级诊断，设备信息、日志、协议和升级前检测';
+      await tester.scrollUntilVisible(
+        find.text('高级诊断'),
+        260,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.pump();
+
+      final advancedRow = find.bySemanticsLabel(advancedLabel);
+      expect(advancedRow, findsOneWidget);
+      expectMinTouchTargetHeight(tester, advancedRow);
+      tester.semantics.tap(find.semantics.byLabel(advancedLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.text('车辆信息'), findsOneWidget);
+      expect(find.text('OTA 前置检测'), findsOneWidget);
+      expect(find.text('协议类型'), findsOneWidget);
+      expect(find.text('故障诊断'), findsOneWidget);
+      expect(find.text('日志'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('返回'));
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.text('语言设置'),
+        260,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.pump();
 
       tester.semantics.tap(find.semantics.byLabel(languageLabel));
       await tester.pumpAndSettle();

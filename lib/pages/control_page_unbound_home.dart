@@ -12,6 +12,13 @@ class _UnboundVehicleHome extends StatelessWidget {
     AppSnack.info(context, message);
   }
 
+  void _openAddVehicle(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -85,7 +92,7 @@ class _UnboundVehicleHome extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            '绑定车辆后可使用蓝牙控车、定位、轨迹和电池服务',
+            '登录官方账号或绑定车辆后可使用控车、定位、轨迹和电池服务',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -107,15 +114,14 @@ class _UnboundVehicleHome extends StatelessWidget {
                   label: '绑定设备',
                   foreground: Colors.white,
                   background: AppColors.primary,
-                  onTap: () => openScanTab(context),
+                  onTap: () => _openAddVehicle(context),
                 ),
                 const SizedBox(height: 12),
                 _OfficialActionButton(
                   label: '虚拟体验（演示）',
                   foreground: AppColors.textSecondary,
                   background: AppColors.surface,
-                  onTap: () =>
-                      _showSnack(context, '虚拟体验功能开发中，可先「绑定设备」或登录官方账号查看车辆'),
+                  onTap: () => _showSnack(context, '虚拟体验暂未开放，可先登录账号或使用近场连接'),
                 ),
                 const SizedBox(height: 8),
                 TextButton(
@@ -133,14 +139,9 @@ class _UnboundVehicleHome extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 _OfficialTextLinkRow(
-                  icon: Icons.cloud_done_outlined,
-                  label: '已绑定官方账号？登录后自动显示车辆',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const OfficialCloudPage(),
-                    ),
-                  ),
+                  icon: Icons.bluetooth_searching,
+                  label: '附近车辆？使用近场连接',
+                  onTap: () => openScanTab(context),
                 ),
               ],
             ),
@@ -211,7 +212,7 @@ class _UnboundBannerState extends State<_UnboundBanner>
         colors: [Color(0xFFF6F8FB), Color(0xFFEDF1F5), Color(0xFFE6F7F1)],
       ),
       chips: ['蓝牙控车', '云端车辆'],
-      caption: '绑定设备后同步车辆状态',
+      caption: '登录官方账号后同步车辆状态',
     ),
     _BannerPage(
       gradient: LinearGradient(

@@ -8,7 +8,8 @@ class MapTileConfig {
       return 'https://t{s}.tianditu.gov.cn/DataServer'
           '?T=vec_w&x={x}&y={y}&l={z}&tk=$tiandituToken';
     }
-    return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    return 'https://webrd0{s}.is.autonavi.com/appmaptile'
+        '?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}';
   }
 
   static String? get annotationUrlTemplate {
@@ -21,8 +22,8 @@ class MapTileConfig {
     if (hasTiandituToken) {
       return const ['0', '1', '2', '3', '4', '5', '6', '7'];
     }
-    return const [];
+    return const ['1', '2', '3', '4'];
   }
 
-  static String get providerLabel => hasTiandituToken ? '天地图' : 'OSM';
+  static String get providerLabel => hasTiandituToken ? '天地图' : '高德地图';
 }

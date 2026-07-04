@@ -104,7 +104,7 @@ class StartupErrorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tailg BLE',
+      title: '台铃智能',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.danger),
@@ -275,7 +275,7 @@ class _TailgBleAppState extends State<TailgBleApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tailg BLE',
+      title: '台铃智能',
       navigatorKey: AppToast.navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

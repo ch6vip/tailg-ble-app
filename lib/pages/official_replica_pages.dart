@@ -144,11 +144,11 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.only(bottom: 24),
                 children: [
-                  const AppSectionLabel('本地钥匙'),
+                  const AppSectionLabel('我的钥匙'),
                   const _ReplicaNotice(
                     icon: Icons.nfc,
-                    title: '本页复刻官方钥匙管理入口',
-                    subtitle: '当前仅保存本地占位记录，暂不向车辆写入或删除真实钥匙。',
+                    title: 'NFC钥匙服务',
+                    subtitle: '可管理手机、手表和卡片钥匙；添加或删除真实钥匙请按官方授权流程完成。',
                   ),
                   const SizedBox(height: 14),
                   if (_loading)
@@ -162,7 +162,7 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
                     const _EmptyReplicaCard(
                       icon: Icons.key_off_outlined,
                       title: '暂无钥匙',
-                      subtitle: '点击右上角添加本地钥匙占位。',
+                      subtitle: '添加后可在这里查看钥匙名称和类型。',
                     )
                   else
                     AppCard(
@@ -300,11 +300,11 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.only(bottom: 24),
                 children: [
-                  const AppSectionLabel('本地围栏'),
+                  const AppSectionLabel('围栏设置'),
                   const _ReplicaNotice(
                     icon: Icons.location_searching,
-                    title: '本页复刻官方围栏设置入口',
-                    subtitle: '当前仅保存本地配置，不接入官方云端围栏和越界推送。',
+                    title: '电子围栏服务',
+                    subtitle: '设置车辆安全范围后，可用于后续位置提醒和安全守护。',
                   ),
                   const SizedBox(height: 14),
                   if (_loading)
@@ -321,8 +321,8 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
                         children: [
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('启用本地围栏'),
-                            subtitle: const Text('仅用于本机记录和后续提醒扩展'),
+                            title: const Text('启用围栏'),
+                            subtitle: const Text('开启后保存当前围栏设置'),
                             value: _enabled,
                             onChanged: (value) =>
                                 setState(() => _enabled = value),
@@ -537,8 +537,8 @@ class _ShareBikePageState extends State<ShareBikePage> {
                   const AppSectionLabel('家庭共享'),
                   const _ReplicaNotice(
                     icon: Icons.ios_share,
-                    title: '本页复刻官方分享入口',
-                    subtitle: '当前仅保存本地成员记录，不生成官方授权二维码或云端分享关系。',
+                    title: '家庭共享',
+                    subtitle: '可记录常用共享成员；正式授权请通过官方分享流程完成。',
                   ),
                   const SizedBox(height: 14),
                   if (_loading)
@@ -552,7 +552,7 @@ class _ShareBikePageState extends State<ShareBikePage> {
                     const _EmptyReplicaCard(
                       icon: Icons.group_off_outlined,
                       title: '暂无共享成员',
-                      subtitle: '点击右上角添加本地成员占位。',
+                      subtitle: '添加成员后可在这里查看共享联系人。',
                     )
                   else
                     AppCard(
@@ -730,8 +730,8 @@ class _QgjSoundEffectsPageState extends State<QgjSoundEffectsPage> {
                   const AppSectionLabel('音效包'),
                   const _ReplicaNotice(
                     icon: Icons.graphic_eq,
-                    title: '本页复刻官方音效入口',
-                    subtitle: '当前仅切换本地展示方案，真正音效包写入命令待确认。',
+                    title: '音效方案',
+                    subtitle: '可预览车辆提示音方案；写入车辆前请确认车辆支持该功能。',
                   ),
                   const SizedBox(height: 14),
                   AppCard(
@@ -744,7 +744,7 @@ class _QgjSoundEffectsPageState extends State<QgjSoundEffectsPage> {
                             subtitle: Text(
                               effects[i] == '官方默认'
                                   ? '保持当前车辆提示音'
-                                  : '本地预览占位，不写入车辆',
+                                  : '选择后用于当前页面预览',
                             ),
                             value: effects[i],
                             groupValue: _selected,

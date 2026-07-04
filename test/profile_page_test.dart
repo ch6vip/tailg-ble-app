@@ -50,7 +50,7 @@ void main() {
       tester.semantics.tap(find.semantics.byLabel(membershipLabel));
       await tester.pump();
 
-      expect(find.text('会员中心功能开发中'), findsOneWidget);
+      expect(find.text('会员服务暂未开放'), findsOneWidget);
       expect(snackIcon(Icons.info_outline), findsOneWidget);
     } finally {
       semantics.dispose();
@@ -70,7 +70,7 @@ void main() {
       expect(editAction, findsOneWidget);
       expectMinTouchTargetHeight(tester, editAction);
 
-      const loginActionLabel = '登录官方账号';
+      const loginActionLabel = '登录 / 查看车辆';
       final loginAction = find.bySemanticsLabel(loginActionLabel);
       expect(loginAction, findsOneWidget);
       expect(

@@ -161,15 +161,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   void _showSnack(String message, {required bool isError}) {
     if (!mounted) return;
     if (isError) {
-      AppSnack.error(
-        context,
-        message,
-        actionLabel: '查看日志',
-        onAction: () => Navigator.push(
-          context,
-          MaterialPageRoute<void>(builder: (_) => const LogPage()),
-        ),
-      );
+      AppSnack.error(context, message);
       return;
     }
     AppSnack.info(context, message);
@@ -177,11 +169,11 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
 
   String _unconfirmedMessage(CommandCode command) {
     return switch (command) {
-      CommandCode.powerOn => '已发送启动指令，但车辆未确认启动',
-      CommandCode.powerOff => '已发送熄火指令，但车辆未确认关闭',
-      CommandCode.lock => '已发送设防指令，但车辆未确认设防',
-      CommandCode.unlock => '已发送解锁指令，但车辆未确认解锁',
-      _ => '${command.label}已发送，但车辆状态未确认',
+      CommandCode.powerOn => '车辆未响应，请稍后重试',
+      CommandCode.powerOff => '车辆未响应，请稍后重试',
+      CommandCode.lock => '设防未完成，请稍后重试',
+      CommandCode.unlock => '解防未完成，请稍后重试',
+      _ => '车辆未响应，请稍后重试',
     };
   }
 
@@ -309,6 +301,23 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     HapticFeedback.selectionClick();
   }
 
+  Future<void> _enableProximityUnlock() async {
+    if (_busy) return;
+    final targetId =
+        connectionManager.device?.remoteId.toString() ??
+        vehicleStore.defaultVehicleId;
+    if (targetId != null && targetId.trim().isNotEmpty) {
+      proximityService.setTargetDevice(targetId);
+    }
+    if (manualModeService.enabled) {
+      await manualModeService.setEnabled(false);
+    }
+    await proximityService.setEnabled(true);
+    if (mounted) {
+      _showSnack('感应解锁已开启', isError: false);
+    }
+  }
+
   // ── Build ──────────────────────────────────────────────────────────
 
   @override
@@ -337,9 +346,9 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             vehicleStore.defaultVehicle?.displayName ??
             '我的车辆';
         final connectionLabel = _isBleReady
-            ? '蓝牙已连接'
+            ? '已连接'
             : _isReconnecting
-            ? '重连中'
+            ? '连接中'
             : null;
         final topPadding = MediaQuery.paddingOf(context).top + 18;
         return Container(
@@ -386,10 +395,19 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
               const SizedBox(height: 14),
               ControlCard(
                 powered: isPowerOn,
+                locked: isArmed,
                 busy: _busy,
                 onPowerOn: _sendPower,
                 onFind: () => _sendCommand(CommandCode.find),
                 onLock: () => _sendCommand(CommandCode.lock),
+                onUnlock: () => _sendCommand(CommandCode.unlock),
+                onOpenSeat: () => _sendCommand(CommandCode.openSeat),
+                onProximityUnlock: () => unawaited(_enableProximityUnlock()),
+                onQuickEdit: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const VehicleSettingsPage(),
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
             ],
@@ -417,9 +435,8 @@ class _OfficialControlTip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusText = isPowerOn
-        ? (isArmed == false ? '已开机未设防' : '已开机设防')
-        : (isArmed == false ? '已关机未设防' : '已关机设防');
+    final powerText = isPowerOn ? '已启动' : '未启动';
+    final defenceText = isArmed == true ? '已设防' : '未设防';
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -435,22 +452,19 @@ class _OfficialControlTip extends StatelessWidget {
                 child: Container(
                   width: pillWidth,
                   height: 38,
-                  padding: const EdgeInsets.only(left: 50, right: 12),
+                  padding: const EdgeInsets.only(left: 44, right: 10),
                   alignment: Alignment.centerLeft,
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  child: Text(
-                    statusText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.officialTextMuted,
-                      letterSpacing: 0,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(child: _StatusTextChip(powerText)),
+                      const SizedBox(width: 8),
+                      Flexible(child: _StatusTextChip(defenceText)),
+                    ],
                   ),
                 ),
               ),
@@ -472,16 +486,14 @@ class _OfficialControlTip extends StatelessWidget {
                 right: 0,
                 top: 7,
                 child: Tooltip(
-                  message: manualModeEnabled
-                      ? '已开启手动模式：点按关闭'
-                      : '开启手动模式：禁用感应解锁/自动连接',
+                  message: manualModeEnabled ? '手动模式已开启' : '感应模式已开启',
                   child: AppPressable(
                     onTap: onToggleManualMode,
                     haptic: false,
-                    semanticsLabel: '手动模式',
+                    semanticsLabel: manualModeEnabled ? '手动模式' : '感应模式',
                     semanticsButton: true,
                     semanticsEnabled: true,
-                    semanticsToggled: manualModeEnabled,
+                    semanticsToggled: !manualModeEnabled,
                     child: SizedBox(
                       width: 78,
                       height: 44,
@@ -504,7 +516,7 @@ class _OfficialControlTip extends StatelessWidget {
                             child: Icon(
                               manualModeEnabled || !bleReady
                                   ? Icons.touch_app
-                                  : Icons.bluetooth_connected,
+                                  : Icons.sensors,
                               size: 20,
                               color: AppColors.brandRed,
                             ),
@@ -519,6 +531,27 @@ class _OfficialControlTip extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _StatusTextChip extends StatelessWidget {
+  const _StatusTextChip(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w800,
+        color: AppColors.officialTextMuted,
+        letterSpacing: 0,
+      ),
     );
   }
 }

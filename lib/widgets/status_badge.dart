@@ -6,7 +6,7 @@ import 'package:tailg_ble_app/theme/app_colors.dart';
 /// Mirrors the HTML `.chip` style:
 /// - [StatusBadgeType.armed]  → red dot + "已设防"
 /// - [StatusBadgeType.idle]   → grey dot + "未通电"
-/// - [StatusBadgeType.ble]    → teal dot + "蓝牙直连"
+/// - [StatusBadgeType.ble]    → teal dot + "近场连接"
 /// - [StatusBadgeType.online] → teal "在线"
 /// - [StatusBadgeType.offline]→ red "离线"
 enum StatusBadgeType { armed, idle, ble, online, offline }
@@ -38,7 +38,7 @@ extension _StatusBadgeTypeTokens on StatusBadgeType {
   String get defaultLabel => switch (this) {
     StatusBadgeType.armed => '已设防',
     StatusBadgeType.idle => '未通电',
-    StatusBadgeType.ble => '蓝牙直连',
+    StatusBadgeType.ble => '近场连接',
     StatusBadgeType.online => '在线',
     StatusBadgeType.offline => '离线',
   };

@@ -8,6 +8,7 @@ import '../widgets/app_chrome.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/status_badge.dart';
 import '../widgets/vehicle_stage.dart';
+import 'add_vehicle_page.dart';
 
 class GaragePage extends StatelessWidget {
   final bool embedded;
@@ -27,7 +28,7 @@ class GaragePage extends StatelessWidget {
               actions: [
                 IconButton(
                   tooltip: '添加车辆',
-                  onPressed: () => _openScan(context),
+                  onPressed: () => _openOfficialVehicles(context),
                   icon: const Icon(
                     Icons.add_circle_outline,
                     semanticLabel: '添加车辆',
@@ -42,7 +43,10 @@ class GaragePage extends StatelessWidget {
                 builder: (context, snapshot) {
                   final vehicles = snapshot.data ?? const <VehicleProfile>[];
                   if (vehicles.isEmpty) {
-                    return _EmptyGarage(onScan: () => _openScan(context));
+                    return _EmptyGarage(
+                      onAddVehicle: () => _openOfficialVehicles(context),
+                      onDirectConnect: () => _openScan(context),
+                    );
                   }
                   final defaultVehicleId =
                       store.defaultVehicleId ?? store.defaultVehicle?.id;
@@ -72,11 +76,22 @@ class GaragePage extends StatelessWidget {
   void _openScan(BuildContext context) {
     openScanTab(context);
   }
+
+  void _openOfficialVehicles(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
+    );
+  }
 }
 
 class _EmptyGarage extends StatelessWidget {
-  final VoidCallback onScan;
-  const _EmptyGarage({required this.onScan});
+  final VoidCallback onAddVehicle;
+  final VoidCallback onDirectConnect;
+  const _EmptyGarage({
+    required this.onAddVehicle,
+    required this.onDirectConnect,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -87,18 +102,28 @@ class _EmptyGarage extends StatelessWidget {
           const AppEmptyState(
             icon: Icons.electric_bike_outlined,
             title: '还没有绑定车辆',
-            subtitle: '扫描附近蓝牙设备，连接成功后会自动加入车库。',
+            subtitle: '登录账号后会显示已绑定车辆，也可添加附近车辆用于近场连接。',
             padding: EdgeInsets.symmetric(horizontal: 40, vertical: 0),
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
-            onPressed: onScan,
+            onPressed: onAddVehicle,
+            icon: const Icon(
+              Icons.add_circle_outline,
+              size: AppIconSizes.md,
+              semanticLabel: '添加车辆',
+            ),
+            label: const Text('添加车辆'),
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: onDirectConnect,
             icon: const Icon(
               Icons.bluetooth_searching,
               size: AppIconSizes.md,
-              semanticLabel: '扫描蓝牙',
+              semanticLabel: '近场连接',
             ),
-            label: const Text('扫描绑定'),
+            label: const Text('近场连接'),
           ),
         ],
       ),
@@ -238,7 +263,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                   const PopupMenuItem(value: 'rename', child: Text('编辑名称')),
                   const PopupMenuItem(
                     value: 'qgj_credentials',
-                    child: Text('QGJ登录参数'),
+                    child: Text('高级参数'),
                   ),
                   if (!isDefault)
                     const PopupMenuItem(value: 'default', child: Text('设为默认')),
@@ -280,7 +305,7 @@ class _VehicleCardState extends State<_VehicleCard> {
     final result = await showDialog<_QgjCredentialEdit>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('QGJ登录参数'),
+        title: const Text('高级参数'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

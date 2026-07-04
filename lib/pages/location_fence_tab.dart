@@ -128,10 +128,10 @@ class _OfficialFenceSheet extends StatelessWidget {
         : ((radius - minRadius) / (maxRadius - minRadius)).clamp(0.0, 1.0);
     final time = fence?.timeLabel ?? '待读取';
     final source = fence?.hasData == true
-        ? '官方围栏配置只读展示'
+        ? '围栏配置已同步'
         : signedIn
-        ? '官方围栏暂未返回配置'
-        : '登录后读取官方围栏';
+        ? '暂无围栏配置'
+        : '登录后同步围栏配置';
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, 18, 20, 18 + bottomPadding),

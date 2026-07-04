@@ -30,7 +30,7 @@ void main() {
     app.officialCloudService.resetForTest();
   });
 
-  testWidgets('stale local link notice keeps a 44dp touch target', (
+  testWidgets('stale direct-connect notice keeps a 44dp touch target', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -57,7 +57,7 @@ void main() {
       await tester.pumpWidget(const TestApp(home: OfficialCloudPage()));
 
       final staleNotice = find.ancestor(
-        of: find.text('关联的本地车辆已不存在，点击清理'),
+        of: find.text('近场连接车辆已不可用，点击清理'),
         matching: find.byWidgetPredicate(
           (widget) =>
               widget is InkWell &&
@@ -67,7 +67,7 @@ void main() {
       expect(staleNotice, findsOneWidget);
       expectMinTouchTargetHeight(tester, staleNotice);
 
-      const staleNoticeLabel = '关联的本地车辆已不存在，点击清理';
+      const staleNoticeLabel = '近场连接车辆已不可用，点击清理';
       final staleNoticeSemantics = find.bySemanticsLabel(staleNoticeLabel);
       expect(staleNoticeSemantics, findsOneWidget);
       expect(
@@ -85,7 +85,7 @@ void main() {
     }
   });
 
-  testWidgets('missing BLE identity scan action keeps a 44dp touch target', (
+  testWidgets('missing direct-connect action keeps a 44dp touch target', (
     tester,
   ) async {
     setTestViewSize(tester, const Size(430, 1200));
@@ -108,10 +108,40 @@ void main() {
     await tester.pumpWidget(const TestApp(home: OfficialCloudPage()));
 
     final scanAction = find.ancestor(
-      of: find.text('去扫描'),
+      of: find.text('近场连接'),
       matching: find.byType(TextButton),
     );
     expect(scanAction, findsOneWidget);
     expectMinTouchTargetHeight(tester, scanAction);
+  });
+
+  testWidgets('signed in page presents vehicle center first', (tester) async {
+    setTestViewSize(tester, const Size(430, 1200));
+
+    final vehicle = OfficialVehicle.fromJson({
+      'carId': 'official-1',
+      'carName': '测试车辆',
+      'electricQuantity': 88,
+    });
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        phone: '18812345678',
+        userId: 'user-1',
+        vehicles: [vehicle],
+        selectedVehicleKey: vehicle.key,
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: OfficialCloudPage()));
+    await tester.pump();
+
+    expect(find.text('我的车辆'), findsOneWidget);
+    expect(find.text('测试车辆'), findsOneWidget);
+    expect(find.text('账号已登录'), findsOneWidget);
+    expect(find.textContaining('登录后会同步账号下已绑定车辆'), findsOneWidget);
+    expect(find.text('官方账号已登录'), findsNothing);
+    expect(find.text('官方账号模式只使用'), findsNothing);
   });
 }

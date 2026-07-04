@@ -102,15 +102,15 @@ void main() {
     expect(find.text('功能设置'), findsOneWidget);
   });
 
-  testWidgets('official control card has no legacy bottom shortcuts', (
+  testWidgets('official control card exposes configured shortcuts', (
     tester,
   ) async {
     await pumpBoundHome(tester, size: const Size(430, 2200));
 
-    for (final label in ['更多功能', '打开座桶', '感应解锁', '用车人', '超级仪表']) {
+    for (final label in ['更多功能', '用车人', '超级仪表']) {
       expect(find.text(label), findsNothing);
     }
-    for (final label in ['快捷功能1', '快捷功能2', '编辑快捷功能']) {
+    for (final label in ['打开座桶', '感应解锁', '编辑快捷功能']) {
       final action = find.bySemanticsLabel(label);
       expect(action, findsOneWidget);
       expectMinTouchTargetHeight(tester, action);
@@ -122,7 +122,7 @@ void main() {
   ) async {
     await pumpBoundHome(tester, size: const Size(430, 2200));
 
-    final manualModePill = find.byTooltip('开启手动模式：禁用感应解锁/自动连接');
+    final manualModePill = find.byTooltip('感应模式已开启');
     expect(manualModePill, findsOneWidget);
     expectMinTouchTargetHeight(tester, manualModePill);
     expect(
@@ -142,23 +142,23 @@ void main() {
     expect(app.manualModeService.enabled, isTrue);
   });
 
-  testWidgets('manual mode toggle exposes semantics action', (tester) async {
+  testWidgets('mode toggle exposes semantics action', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
       await pumpBoundHome(tester, size: const Size(430, 2200));
 
-      final manualModeToggle = find.bySemanticsLabel('手动模式');
-      expect(manualModeToggle, findsOneWidget);
+      final modeToggle = find.bySemanticsLabel('感应模式');
+      expect(modeToggle, findsOneWidget);
       expect(
-        tester.getSemantics(manualModeToggle),
+        tester.getSemantics(modeToggle),
         matchesSemantics(
-          label: '手动模式',
+          label: '感应模式',
           isButton: true,
           hasEnabledState: true,
           isEnabled: true,
           hasTapAction: true,
           hasToggledState: true,
-          isToggled: false,
+          isToggled: true,
         ),
       );
 
@@ -166,7 +166,7 @@ void main() {
         (value) => value,
       );
 
-      tester.semantics.tap(find.semantics.byLabel('手动模式'));
+      tester.semantics.tap(find.semantics.byLabel('感应模式'));
       await tester.pump();
       await enabledEvent;
       await tester.pump();
@@ -239,9 +239,9 @@ void main() {
       expect(find.textContaining('控车通道'), findsNothing);
       expect(find.text('手动模式'), findsNothing);
 
-      final manualModeAction = find.bySemanticsLabel('手动模式');
-      expect(manualModeAction, findsOneWidget);
-      expectMinTouchTargetHeight(tester, manualModeAction);
+      final modeAction = find.bySemanticsLabel('感应模式');
+      expect(modeAction, findsOneWidget);
+      expectMinTouchTargetHeight(tester, modeAction);
     } finally {
       semantics.dispose();
     }

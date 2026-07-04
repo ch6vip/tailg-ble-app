@@ -84,7 +84,7 @@ class _UserHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final editActionLabel = signedIn ? '编辑资料' : '登录官方账号';
+    final editActionLabel = signedIn ? '编辑资料' : '登录 / 查看车辆';
     void handleEditAction() {
       if (!signedIn) {
         Navigator.push(
@@ -92,7 +92,7 @@ class _UserHeader extends StatelessWidget {
           MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
         );
       } else {
-        AppSnack.info(context, '编辑资料功能开发中');
+        AppSnack.info(context, '资料编辑暂未开放');
       }
     }
 
@@ -331,7 +331,7 @@ class _MembershipBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    void openMembership() => AppSnack.info(context, '会员中心功能开发中');
+    void openMembership() => AppSnack.info(context, '会员服务暂未开放');
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),

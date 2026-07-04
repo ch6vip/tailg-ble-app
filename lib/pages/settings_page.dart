@@ -41,48 +41,26 @@ class _SettingsPageState extends State<SettingsPage> {
               padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Text('设置', style: AppTextStyles.pageTitle),
             ),
-            const AppSectionLabel('连接'),
-            _group(const [
-              _AutoConnectSettingTile(),
-              _ProximityUnlockSettingTile(),
-            ]),
-            const AppSectionLabel('通用'),
-            _group(const [
-              _LanguageSettingTile(),
-              _DistanceUnitSettingTile(),
-              _RespectTextScaleSettingTile(),
-            ]),
-            const AppSectionLabel('车辆'),
+            const AppSectionLabel('账号与车辆'),
             _group([
               _settingItem(
+                icon: Icons.cloud_outlined,
+                title: '我的车辆',
+                subtitle: '登录账号、车辆列表、远程控车',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const OfficialCloudPage(),
+                  ),
+                ),
+              ),
+              _settingItem(
                 icon: Icons.garage_outlined,
-                title: '我的车库',
-                subtitle: '绑定车辆、默认车辆、多车管理',
+                title: '车辆管理',
+                subtitle: '我的车辆、近场连接和默认车辆',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute<void>(builder: (_) => const GaragePage()),
-                ),
-              ),
-              _settingItem(
-                icon: Icons.tune,
-                title: '车辆设置',
-                subtitle: '声音、灵敏度、车辆功能、骑行设置',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const VehicleSettingsPage(),
-                  ),
-                ),
-              ),
-              _settingItem(
-                icon: Icons.directions_bike_outlined,
-                title: '车辆信息',
-                subtitle: '车辆档案、蓝牙设备、服务和固件信息',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const DeviceInfoPage(),
-                  ),
                 ),
               ),
               _settingItem(
@@ -93,6 +71,20 @@ class _SettingsPageState extends State<SettingsPage> {
                   context,
                   MaterialPageRoute<void>(
                     builder: (_) => const VehicleMessagePage(),
+                  ),
+                ),
+              ),
+            ]),
+            const AppSectionLabel('用车设置'),
+            _group([
+              _settingItem(
+                icon: Icons.tune,
+                title: '车辆设置',
+                subtitle: '声音、灵敏度、车辆功能、骑行设置',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const VehicleSettingsPage(),
                   ),
                 ),
               ),
@@ -107,9 +99,74 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
               ),
+              const _AutoConnectSettingTile(),
+              const _ProximityUnlockSettingTile(),
+            ]),
+            const AppSectionLabel('通用'),
+            _group(const [
+              _LanguageSettingTile(),
+              _DistanceUnitSettingTile(),
+              _RespectTextScaleSettingTile(),
             ]),
             const AppSectionLabel('高级'),
             _group([
+              _settingItem(
+                icon: Icons.admin_panel_settings_outlined,
+                title: '高级诊断',
+                subtitle: '设备信息、日志、协议和升级前检测',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const _AdvancedDiagnosticsPage(),
+                  ),
+                ),
+              ),
+            ]),
+            const AppSectionLabel('关于'),
+            _group([
+              _settingItem(
+                icon: Icons.info_outline,
+                title: '关于台铃智能',
+                subtitle: '版本信息、用户协议和隐私政策',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(builder: (_) => const AboutAppPage()),
+                ),
+              ),
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdvancedDiagnosticsPage extends StatelessWidget {
+  const _AdvancedDiagnosticsPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.pageBg,
+      body: SafeArea(
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
+          children: [
+            const AppPageHeader(title: '高级诊断'),
+            const SizedBox(height: 12),
+            _group([
+              _settingItem(
+                icon: Icons.directions_bike_outlined,
+                title: '车辆信息',
+                subtitle: '车辆档案、近场设备、服务和固件信息',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const DeviceInfoPage(),
+                  ),
+                ),
+              ),
               _settingItem(
                 icon: Icons.system_update_alt,
                 title: 'OTA 前置检测',
@@ -125,22 +182,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: Icons.swap_horiz,
                 title: '协议类型',
                 subtitle: '自动识别',
-                onTap: () => _showProtocolDialog(),
+                onTap: () => _showProtocolDialog(context),
               ),
-              _settingItem(
-                icon: Icons.cloud_outlined,
-                title: '官方账号',
-                subtitle: '登录官方账号、车辆列表、云端控车',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const OfficialCloudPage(),
-                  ),
-                ),
-              ),
-            ]),
-            const AppSectionLabel('调试'),
-            _group([
               _settingItem(
                 icon: Icons.health_and_safety_outlined,
                 title: '故障诊断',
@@ -155,29 +198,11 @@ class _SettingsPageState extends State<SettingsPage> {
               _settingItem(
                 icon: Icons.article_outlined,
                 title: '日志',
-                subtitle: '查看 BLE 通信和操作记录',
+                subtitle: '查看近场通信和操作记录',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute<void>(builder: (_) => const LogPage()),
                 ),
-              ),
-            ]),
-            const AppSectionLabel('关于'),
-            _group([
-              _settingItem(
-                icon: Icons.info_outline,
-                title: '关于 Tailg BLE',
-                subtitle: '版本、开源依赖、诊断导出',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(builder: (_) => const AboutAppPage()),
-                ),
-              ),
-              _settingItem(
-                icon: Icons.code,
-                title: 'GitHub',
-                subtitle: 'ch6vip/tailg-ble-app',
-                showChevron: false,
               ),
             ]),
           ],
@@ -186,22 +211,27 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showProtocolDialog() {
+  void _showProtocolDialog(BuildContext context) {
     showDialog<void>(
       context: context,
       builder: (context) => SimpleDialog(
         title: const Text('选择协议类型'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         children: [
-          _protocolOption('自动识别', '根据服务 UUID 自动判断', true),
-          _protocolOption('Standard (fee5)', '标准台铃协议', false),
-          _protocolOption('QGJ (feb0)', '骑管家协议', false),
+          _protocolOption(context, '自动识别', '根据服务 UUID 自动判断', true),
+          _protocolOption(context, 'Standard (fee5)', '标准台铃协议', false),
+          _protocolOption(context, 'QGJ (feb0)', '骑管家协议', false),
         ],
       ),
     );
   }
 
-  Widget _protocolOption(String title, String subtitle, bool selected) {
+  Widget _protocolOption(
+    BuildContext context,
+    String title,
+    String subtitle,
+    bool selected,
+  ) {
     return ListTile(
       leading: Icon(
         selected ? Icons.radio_button_checked : Icons.radio_button_off,

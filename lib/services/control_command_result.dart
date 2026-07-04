@@ -34,7 +34,11 @@ class ControlCommandResult {
       command: command,
       transport: ControlCommandTransport.officialCloud,
       success: true,
-      successMessage: '${command.label}已通过官方云端返回：$normalizedMessage',
+      successMessage:
+          normalizedMessage == 'success' ||
+              normalizedMessage.toLowerCase() == 'ok'
+          ? '${command.label}已完成'
+          : normalizedMessage,
     );
   }
 

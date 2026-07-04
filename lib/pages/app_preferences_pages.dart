@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../main.dart';
 import '../services/app_preferences_service.dart';
@@ -199,14 +198,6 @@ class AboutAppPage extends StatelessWidget {
     AppSnack.success(context, '已复制诊断报告');
   }
 
-  Future<void> _openRepository(BuildContext context) async {
-    final uri = Uri.parse('https://github.com/ch6vip/tailg-ble-app');
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched && context.mounted) {
-      AppSnack.error(context, '无法打开 GitHub');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -214,7 +205,7 @@ class AboutAppPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const AppPageHeader(title: '关于'),
+            const AppPageHeader(title: '关于台铃智能'),
             Expanded(
               child: ListView(
                 physics: const BouncingScrollPhysics(),
@@ -238,15 +229,9 @@ class AboutAppPage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 14),
-                        const Text(
-                          'Tailg BLE',
-                          style: AppTextStyles.dialogTitle,
-                        ),
+                        const Text('台铃智能', style: AppTextStyles.dialogTitle),
                         const SizedBox(height: 4),
-                        const Text(
-                          '台铃 BLE 本地控制工具',
-                          style: AppTextStyles.smallText,
-                        ),
+                        const Text('智慧用车服务', style: AppTextStyles.smallText),
                       ],
                     ),
                   ),
@@ -261,43 +246,31 @@ class AboutAppPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const AppSectionLabel('项目'),
+                  const AppSectionLabel('服务支持'),
                   AppCard(
                     padding: EdgeInsets.zero,
                     child: Column(
                       children: [
                         _ActionRow(
-                          icon: Icons.article_outlined,
-                          title: '复制诊断报告',
-                          subtitle: '导出当前 BLE 状态和本地日志',
+                          icon: Icons.support_agent_outlined,
+                          title: '服务诊断',
+                          subtitle: '复制信息用于客服排查问题',
                           onTap: () => _copyDiagnosticReport(context),
                         ),
                         const _InsetDivider(),
                         _ActionRow(
-                          icon: Icons.code,
-                          title: 'GitHub',
-                          subtitle: 'ch6vip/tailg-ble-app',
-                          onTap: () => _openRepository(context),
+                          icon: Icons.description_outlined,
+                          title: '用户协议',
+                          subtitle: '查看服务使用条款',
+                          onTap: () => AppSnack.info(context, '用户协议暂未开放'),
                         ),
-                      ],
-                    ),
-                  ),
-                  const AppSectionLabel('开源依赖'),
-                  AppCard(
-                    padding: EdgeInsets.zero,
-                    child: Column(
-                      children: const [
-                        _InfoRow(label: 'BLE', value: 'flutter_blue_plus'),
                         _InsetDivider(),
-                        _InfoRow(label: '权限', value: 'permission_handler'),
-                        _InsetDivider(),
-                        _InfoRow(label: '加密', value: 'encrypt'),
-                        _InsetDivider(),
-                        _InfoRow(label: '存储', value: 'shared_preferences'),
-                        _InsetDivider(),
-                        _InfoRow(label: '定位', value: 'geolocator'),
-                        _InsetDivider(),
-                        _InfoRow(label: '外链', value: 'url_launcher'),
+                        _ActionRow(
+                          icon: Icons.privacy_tip_outlined,
+                          title: '隐私政策',
+                          subtitle: '了解个人信息保护规则',
+                          onTap: () => AppSnack.info(context, '隐私政策暂未开放'),
+                        ),
                       ],
                     ),
                   ),

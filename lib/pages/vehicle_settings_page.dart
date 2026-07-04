@@ -181,7 +181,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                             child: _SwitchSettingRow(
                               icon: Icons.phone_android_outlined,
                               title: 'APP遥控优先',
-                              subtitle: '官方入口已对齐，写入命令待确认',
+                              subtitle: '待车辆支持后开放',
                               value: false,
                               onChanged: null,
                               disabledReason: _pendingCommandMessage,
@@ -251,8 +251,8 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                               children: [
                                 _NavSettingRow(
                                   icon: Icons.manage_search,
-                                  title: '高级设置只读',
-                                  subtitle: '自动锁车、HID、龙头锁等官方 GET 状态',
+                                  title: '高级设置',
+                                  subtitle: '自动锁车、感应、龙头锁等车辆功能',
                                   onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute<void>(
@@ -265,19 +265,19 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                                 const _DisabledInfoRow(
                                   icon: Icons.timer_outlined,
                                   title: '自动下电',
-                                  subtitle: '车辆静止后断电时间，命令待确认',
+                                  subtitle: '车辆静止后断电时间，暂未开放',
                                 ),
                                 const _InsetDivider(),
                                 _DisabledInfoRow(
                                   icon: Icons.lock_clock,
                                   title: '自动锁车',
-                                  subtitle: '已支持只读刷新，写入暂未开放',
+                                  subtitle: '车辆自动设防功能，暂未开放',
                                 ),
                                 const _InsetDivider(),
                                 const _DisabledInfoRow(
                                   icon: Icons.key_outlined,
                                   title: '密码解锁',
-                                  subtitle: '官方有入口，当前暂不写入车辆',
+                                  subtitle: '请通过官方服务渠道设置',
                                 ),
                               ],
                             ),
@@ -366,7 +366,7 @@ class _QgjSoundSettingsPage extends StatelessWidget {
                             child: _SwitchSettingRow(
                               icon: Icons.notifications_active_outlined,
                               title: '防盗报警音',
-                              subtitle: '车辆报警提示音，写入命令待确认',
+                              subtitle: '车辆报警提示音，暂未开放',
                               value: true,
                               onChanged: null,
                               disabledReason: _pendingCommandMessage,
@@ -514,7 +514,7 @@ class _QgjFunctionSettingsPage extends StatelessWidget {
                                 _SwitchSettingRow(
                                   icon: Icons.wb_twilight_outlined,
                                   title: '感应大灯',
-                                  subtitle: '官方 QGJ 命令 0x2410 / 0x2411',
+                                  subtitle: '根据环境光自动开关大灯',
                                   value: controller.lightSensor,
                                   onChanged: canSend
                                       ? (value) => _setLight(context, value)
@@ -524,7 +524,7 @@ class _QgjFunctionSettingsPage extends StatelessWidget {
                                 const _SwitchSettingRow(
                                   icon: Icons.lock_person_outlined,
                                   title: '电子龙头锁',
-                                  subtitle: '命令待确认，暂不写入车辆',
+                                  subtitle: '待车辆支持后开放',
                                   value: false,
                                   onChanged: null,
                                   disabledReason: _pendingCommandMessage,
@@ -533,7 +533,7 @@ class _QgjFunctionSettingsPage extends StatelessWidget {
                                 const _SwitchSettingRow(
                                   icon: Icons.sensor_occupied_outlined,
                                   title: '电子边撑感应',
-                                  subtitle: '命令待确认，暂不写入车辆',
+                                  subtitle: '待车辆支持后开放',
                                   value: false,
                                   onChanged: null,
                                   disabledReason: _pendingCommandMessage,
@@ -542,7 +542,7 @@ class _QgjFunctionSettingsPage extends StatelessWidget {
                                 const _SwitchSettingRow(
                                   icon: Icons.event_seat_outlined,
                                   title: '坐垫感应',
-                                  subtitle: '命令待确认，暂不写入车辆',
+                                  subtitle: '待车辆支持后开放',
                                   value: false,
                                   onChanged: null,
                                   disabledReason: _pendingCommandMessage,
@@ -551,7 +551,7 @@ class _QgjFunctionSettingsPage extends StatelessWidget {
                                 const _SwitchSettingRow(
                                   icon: Icons.warning_amber_outlined,
                                   title: '侧翻检测',
-                                  subtitle: '命令待确认，暂不写入车辆',
+                                  subtitle: '待车辆支持后开放',
                                   value: false,
                                   onChanged: null,
                                   disabledReason: _pendingCommandMessage,
@@ -695,31 +695,31 @@ class _QgjRideSettingsPage extends StatelessWidget {
                                 _DisabledInfoRow(
                                   icon: Icons.battery_2_bar,
                                   title: '低电量骑行模式',
-                                  subtitle: '电量低于 20% 时半速行驶，命令待确认',
+                                  subtitle: '电量较低时限制动力输出',
                                 ),
                                 _InsetDivider(),
                                 _DisabledInfoRow(
                                   icon: Icons.security_outlined,
                                   title: '车辆稳定性系统 (ESP+TCS)',
-                                  subtitle: '湿滑路面保持稳定，命令待确认',
+                                  subtitle: '湿滑路面辅助保持稳定',
                                 ),
                                 _InsetDivider(),
                                 _DisabledInfoRow(
                                   icon: Icons.trending_down,
                                   title: '起步降流',
-                                  subtitle: '降低起步电流，命令待确认',
+                                  subtitle: '降低起步电流输出',
                                 ),
                                 _InsetDivider(),
                                 _DisabledInfoRow(
                                   icon: Icons.speed_outlined,
                                   title: '定速巡航',
-                                  subtitle: '长按行车电脑键保持速度，命令待确认',
+                                  subtitle: '长按行车电脑键保持速度',
                                 ),
                                 _InsetDivider(),
                                 _DisabledInfoRow(
                                   icon: Icons.rocket_launch_outlined,
                                   title: '氮气加速',
-                                  subtitle: '官方入口存在，当前暂不写入车辆',
+                                  subtitle: '待车辆支持后开放',
                                 ),
                               ],
                             ),
@@ -1209,7 +1209,7 @@ class _VehicleSettingInkRow extends StatelessWidget {
   }
 }
 
-const _pendingCommandMessage = '命令待真机验证，暂不开放写入';
+const _pendingCommandMessage = '该功能暂未开放';
 
 void _showInfoSnack(BuildContext context, String? message) {
   final text = message ?? _pendingCommandMessage;

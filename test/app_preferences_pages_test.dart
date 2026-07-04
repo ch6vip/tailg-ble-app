@@ -27,7 +27,7 @@ void main() {
   testWidgets('copying diagnostic report shows success snack', (tester) async {
     await tester.pumpWidget(const TestApp(home: AboutAppPage()));
 
-    await tester.tap(find.text('复制诊断报告'));
+    await tester.tap(find.text('服务诊断'));
     await tester.pump();
 
     expect(find.text('已复制诊断报告'), findsOneWidget);
@@ -38,7 +38,7 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
-    const copyLabel = '复制诊断报告，导出当前 BLE 状态和本地日志';
+    const copyLabel = '服务诊断，复制信息用于客服排查问题';
 
     try {
       await tester.pumpWidget(const TestApp(home: AboutAppPage()));

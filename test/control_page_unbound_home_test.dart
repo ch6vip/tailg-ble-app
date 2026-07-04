@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tailg_ble_app/pages/add_vehicle_page.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
-import 'package:tailg_ble_app/pages/official_cloud_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
@@ -31,7 +31,7 @@ void main() {
     await tester.pumpWidget(const TestApp(home: ControlPage()));
     await tester.pump();
 
-    expect(find.text('绑定设备后同步车辆状态'), findsOneWidget);
+    expect(find.text('登录官方账号后同步车辆状态'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 4, milliseconds: 1));
     await tester.pump(const Duration(milliseconds: 401));
@@ -74,7 +74,7 @@ void main() {
     await tester.tap(find.text('虚拟体验（演示）'));
     await tester.pump();
 
-    expect(find.text('虚拟体验功能开发中，可先「绑定设备」或登录官方账号查看车辆'), findsOneWidget);
+    expect(find.text('虚拟体验暂未开放，可先登录账号或使用近场连接'), findsOneWidget);
     expect(snackIcon(Icons.info_outline), findsOneWidget);
   });
 
@@ -122,7 +122,7 @@ void main() {
         tester.semantics.tap(find.semantics.byLabel('虚拟体验（演示）'));
         await tester.pump();
 
-        expect(find.text('虚拟体验功能开发中，可先「绑定设备」或登录官方账号查看车辆'), findsOneWidget);
+        expect(find.text('虚拟体验暂未开放，可先登录账号或使用近场连接'), findsOneWidget);
         expect(snackIcon(Icons.info_outline), findsOneWidget);
       } finally {
         semantics.dispose();
@@ -130,7 +130,48 @@ void main() {
     },
   );
 
-  testWidgets('official cloud text link exposes semantics and 44dp target', (
+  testWidgets('primary bind action opens add vehicle page', (tester) async {
+    final semantics = tester.ensureSemantics();
+    resetMockPreferences();
+    VehicleStore().resetForTest();
+    await VehicleStore().init();
+
+    try {
+      applyTestViewSize(tester, const Size(430, 2200));
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(const TestApp(home: ControlPage()));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      const linkLabel = '绑定设备';
+      final officialCloudAction = find.bySemanticsLabel(linkLabel);
+      expect(officialCloudAction, findsOneWidget);
+      expect(
+        tester.getSemantics(officialCloudAction),
+        matchesSemantics(
+          label: linkLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel(linkLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddVehiclePage), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('bluetooth direct text link exposes semantics and 44dp target', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -150,7 +191,7 @@ void main() {
       await tester.pumpWidget(const TestApp(home: ControlPage()));
       await tester.pump(const Duration(milliseconds: 50));
 
-      const linkLabel = '已绑定官方账号？登录后自动显示车辆';
+      const linkLabel = '附近车辆？使用近场连接';
       final officialCloudLink = find.ancestor(
         of: find.text(linkLabel),
         matching: find.byType(InkWell),
@@ -170,11 +211,6 @@ void main() {
           hasTapAction: true,
         ),
       );
-
-      tester.semantics.tap(find.semantics.byLabel(linkLabel));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(OfficialCloudPage), findsOneWidget);
     } finally {
       semantics.dispose();
     }

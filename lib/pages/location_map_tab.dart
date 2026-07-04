@@ -45,9 +45,8 @@ class _MapTab extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         _ReadOnlyNotice(
-          title: '官方地图复刻边界',
-          subtitle:
-              '已接入官方车辆状态和停车位置只读数据，并用 flutter_map 显示真实瓦片地图。未配置天地图 Token 时默认使用 OSM 瓦片兜底。',
+          title: '车辆位置服务',
+          subtitle: '位置会随车辆在线状态和最近停车记录更新，地图显示可能受网络和定位服务影响。',
         ),
       ],
     );

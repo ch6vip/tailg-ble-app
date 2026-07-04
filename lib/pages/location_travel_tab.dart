@@ -57,7 +57,7 @@ class _TravelTab extends StatelessWidget {
             const _EmptyCard(
               icon: Icons.route_outlined,
               title: '暂无轨迹记录',
-              subtitle: '官方接口当前月份未返回骑行轨迹。',
+              subtitle: '本月还没有可显示的骑行轨迹。',
             )
           else
             ...dateGroups.map(
@@ -75,9 +75,8 @@ class _TravelTab extends StatelessWidget {
             ),
           const SizedBox(height: 4),
           const _ReadOnlyNotice(
-            title: '轨迹只读',
-            subtitle:
-                '官方删除轨迹、轨迹纠偏上报等写接口未开放。当前只读取 `deviceTravel` 与 `deviceTravelDetail` 的列表和轨迹点。',
+            title: '轨迹服务',
+            subtitle: '轨迹数据会按月份同步展示，删除轨迹和纠偏等操作请前往官方服务渠道处理。',
           ),
         ],
       ),
@@ -509,7 +508,7 @@ class _TravelDetailSheet extends StatelessWidget {
                       const _EmptyCard(
                         icon: Icons.route_outlined,
                         title: '未返回轨迹点',
-                        subtitle: '官方详情接口未返回可绘制坐标。',
+                        subtitle: '该行程暂时没有可绘制的坐标。',
                       )
                     else
                       ...points

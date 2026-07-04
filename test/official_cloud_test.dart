@@ -765,7 +765,7 @@ void main() {
       expect(result.success, isTrue);
       expect(result.transport, ControlCommandTransport.officialCloud);
       expect(result.shouldRefreshBikeState, isFalse);
-      expect(result.successMessage, '寻车已通过官方云端返回：success');
+      expect(result.successMessage, '寻车已完成');
     });
 
     test('carries unavailable and failed command messages', () {
@@ -873,7 +873,7 @@ void main() {
 
       expect(result.success, isTrue);
       expect(result.transport, ControlCommandTransport.officialCloud);
-      expect(result.successMessage, '寻车已通过官方云端返回：ok');
+      expect(result.successMessage, '寻车已完成');
       expect(calls, [CommandCode.find]);
     });
 

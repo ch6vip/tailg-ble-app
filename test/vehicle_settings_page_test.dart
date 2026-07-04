@@ -18,7 +18,7 @@ void main() {
       await tester.pumpWidget(const TestApp(home: VehicleSettingsPage()));
       await tester.pump();
 
-      const appRemoteLabel = 'APP遥控优先，官方入口已对齐，写入命令待确认，已关闭，命令待真机验证，暂不开放写入';
+      const appRemoteLabel = 'APP遥控优先，待车辆支持后开放，已关闭，该功能暂未开放';
       final appRemoteRow = find.bySemanticsLabel(appRemoteLabel);
       expect(appRemoteRow, findsOneWidget);
       expectMinTouchTargetHeight(tester, appRemoteRow);
@@ -38,7 +38,7 @@ void main() {
       tester.semantics.tap(find.semantics.byLabel(appRemoteLabel));
       await tester.pump();
 
-      expect(find.text('命令待真机验证，暂不开放写入'), findsOneWidget);
+      expect(find.text('该功能暂未开放'), findsOneWidget);
       expect(snackIcon(Icons.info_outline), findsOneWidget);
     } finally {
       semantics.dispose();
@@ -104,7 +104,7 @@ void main() {
       await tester.pumpWidget(const TestApp(home: VehicleSettingsPage()));
       await tester.pump();
 
-      const pendingLabel = '自动下电，车辆静止后断电时间，命令待确认，待确认';
+      const pendingLabel = '自动下电，车辆静止后断电时间，暂未开放，待确认';
       final pendingRow = find.bySemanticsLabel(pendingLabel);
       expect(pendingRow, findsOneWidget);
       expectMinTouchTargetHeight(tester, pendingRow);
@@ -122,7 +122,7 @@ void main() {
       tester.semantics.tap(find.semantics.byLabel(pendingLabel));
       await tester.pump();
 
-      expect(find.text('命令待真机验证，暂不开放写入'), findsOneWidget);
+      expect(find.text('该功能暂未开放'), findsOneWidget);
       expect(snackIcon(Icons.info_outline), findsOneWidget);
     } finally {
       semantics.dispose();

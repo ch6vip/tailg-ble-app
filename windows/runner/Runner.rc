@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "de.tttq" "\0"
-            VALUE "FileDescription", "tailg_ble_app" "\0"
+            VALUE "FileDescription", "台铃智能" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "tailg_ble_app" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 de.tttq. All rights reserved." "\0"
             VALUE "OriginalFilename", "tailg_ble_app.exe" "\0"
-            VALUE "ProductName", "tailg_ble_app" "\0"
+            VALUE "ProductName", "台铃智能" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
