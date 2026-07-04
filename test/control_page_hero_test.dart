@@ -5,6 +5,7 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
+import 'helpers/typography.dart';
 
 void main() {
   testWidgets('hero actions expose semantics and keep 44dp targets', (
@@ -135,8 +136,8 @@ void main() {
           .style
           ?.letterSpacing;
 
-      expect(titleSpacing, anyOf(isNull, greaterThanOrEqualTo(0)));
-      expect(rangeSpacing, anyOf(isNull, greaterThanOrEqualTo(0)));
+      expect(titleSpacing, nonNegativeLetterSpacing);
+      expect(rangeSpacing, nonNegativeLetterSpacing);
     }
   });
 }

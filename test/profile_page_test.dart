@@ -8,6 +8,7 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
+import 'helpers/typography.dart';
 
 void main() {
   setUp(() {
@@ -137,7 +138,7 @@ void main() {
         .toList();
 
     expect(metricTexts, hasLength(3));
-    expect(metricTexts, everyElement(anyOf(isNull, greaterThanOrEqualTo(0))));
+    expect(metricTexts, everyElement(nonNegativeLetterSpacing));
   });
 
   testWidgets('profile logout action exposes semantics and 44dp target', (

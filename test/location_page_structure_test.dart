@@ -11,6 +11,7 @@ import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
+import 'helpers/typography.dart';
 
 void main() {
   test('LocationPage routes vehicle and cloud streams through notifiers', () {
@@ -188,7 +189,7 @@ void main() {
         .style
         ?.letterSpacing;
 
-    expect(accuracySpacing, anyOf(isNull, greaterThanOrEqualTo(0)));
+    expect(accuracySpacing, nonNegativeLetterSpacing);
   });
 
   testWidgets('LocationPage travel records expose semantics action', (
