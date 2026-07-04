@@ -103,40 +103,41 @@ class AppPreferencesService {
 
   Future<void> setLanguage(AppLanguagePreference preference) async {
     await init();
-    try {
-      final prefs = await SharedPreferences.getInstance();
+    await _updatePreference('setLanguage failed', (prefs) async {
       await prefs.setString(_prefLanguage, preference.value);
       _language = preference;
       _emit();
-    } catch (e) {
-      // Persistence failed — do not update in-memory state
-      LogService().operation('setLanguage failed', detail: '$e');
-    }
+    });
   }
 
   Future<void> setDistanceUnit(DistanceUnitPreference preference) async {
     await init();
-    try {
-      final prefs = await SharedPreferences.getInstance();
+    await _updatePreference('setDistanceUnit failed', (prefs) async {
       await prefs.setString(_prefDistanceUnit, preference.value);
       _distanceUnit = preference;
       _emit();
-    } catch (e) {
-      // Persistence failed — do not update in-memory state
-      LogService().operation('setDistanceUnit failed', detail: '$e');
-    }
+    });
   }
 
   Future<void> setRespectSystemTextScale(bool value) async {
     await init();
-    try {
-      final prefs = await SharedPreferences.getInstance();
+    await _updatePreference('setRespectSystemTextScale failed', (prefs) async {
       await prefs.setBool(_prefRespectTextScale, value);
       _respectTextScale = value;
       _emitRespectTextScale();
+    });
+  }
+
+  Future<void> _updatePreference(
+    String failureMessage,
+    Future<void> Function(SharedPreferences prefs) update,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await update(prefs);
     } catch (e) {
       // Persistence failed — do not update in-memory state
-      LogService().operation('setRespectSystemTextScale failed', detail: '$e');
+      LogService().operation(failureMessage, detail: '$e');
     }
   }
 

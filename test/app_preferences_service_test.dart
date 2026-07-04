@@ -54,4 +54,21 @@ void main() {
     expect(service.distanceUnit, DistanceUnitPreference.metric);
     expect(service.respectSystemTextScale, isTrue);
   });
+
+  test('persists preference updates after initialization', () async {
+    final service = AppPreferencesService();
+    await service.init();
+
+    await service.setLanguage(AppLanguagePreference.english);
+    await service.setDistanceUnit(DistanceUnitPreference.imperial);
+    await service.setRespectSystemTextScale(false);
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(service.language, AppLanguagePreference.english);
+    expect(service.distanceUnit, DistanceUnitPreference.imperial);
+    expect(service.respectSystemTextScale, isFalse);
+    expect(prefs.getString('app_language_preference'), 'en');
+    expect(prefs.getString('app_distance_unit_preference'), 'imperial');
+    expect(prefs.getBool('app_respect_text_scale'), isFalse);
+  });
 }
