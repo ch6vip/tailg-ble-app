@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,11 +8,12 @@ import 'package:tailg_ble_app/pages/location_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
+import 'helpers/source_scan.dart';
 import 'helpers/test_app.dart';
 
 void main() {
   test('LocationPage routes vehicle and cloud streams through notifiers', () {
-    final source = File('lib/pages/location_page.dart').readAsStringSync();
+    final source = readSource('lib/pages/location_page.dart');
     final vehiclesListener = _listenerBlock(
       source,
       'vehicleStore.vehiclesStream.listen',
@@ -35,7 +34,7 @@ void main() {
   });
 
   test('LocationPage keeps map tab isolated behind RepaintBoundary', () {
-    final source = File('lib/pages/location_page.dart').readAsStringSync();
+    final source = readSource('lib/pages/location_page.dart');
 
     expect(
       RegExp(r'RepaintBoundary\(\s*child:\s*_MapTab\(').hasMatch(source),

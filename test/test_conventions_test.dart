@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers/source_scan.dart';
@@ -84,7 +82,7 @@ void main() {
     ];
 
     for (final path in pages) {
-      final source = File(path).readAsStringSync();
+      final source = readSource(path);
       expect(source, isNot(contains('catch (_)')), reason: path);
       expect(source, contains('GATT 字段读取失败'), reason: path);
       expect(source, contains('LogLevel.debug'), reason: path);

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,13 +6,12 @@ import 'package:tailg_ble_app/pages/vehicle_message_page.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/snack_finders.dart';
+import 'helpers/source_scan.dart';
 import 'helpers/test_app.dart';
 
 void main() {
   test('VehicleMessagePage does not use empty setState refreshes', () {
-    final source = File(
-      'lib/pages/vehicle_message_page.dart',
-    ).readAsStringSync();
+    final source = readSource('lib/pages/vehicle_message_page.dart');
 
     expect(source, isNot(contains('setState(() {})')));
     expect(source, contains('_refreshVisibleMessages'));

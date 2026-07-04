@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,11 +6,13 @@ import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
 
+import 'helpers/source_scan.dart';
+
 void main() {
   test('ControlPage keeps home stream subscriptions split', () {
-    final source = File('lib/pages/control_page.dart').readAsStringSync();
+    final source = readSource('lib/pages/control_page.dart');
 
-    expect(File('lib/utils/combined_stream.dart').existsSync(), isFalse);
+    expect(sourceExists('lib/utils/combined_stream.dart'), isFalse);
     expect(source, isNot(contains('_createCombinedStream')));
     expect(source, isNot(contains('_combinedStream')));
     expect(source, isNot(contains('StreamController<List<dynamic>>')));
@@ -29,9 +29,7 @@ void main() {
   });
 
   test('Home overview keeps bike state stream typed', () {
-    final source = File(
-      'lib/pages/control_page_home_overview.dart',
-    ).readAsStringSync();
+    final source = readSource('lib/pages/control_page_home_overview.dart');
 
     expect(source, contains('StreamBuilder<BikeState?>('));
     expect(source, isNot(contains('StreamBuilder<dynamic>(')));

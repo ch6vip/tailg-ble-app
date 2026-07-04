@@ -1,13 +1,13 @@
 import 'dart:async';
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart';
 import 'package:tailg_ble_app/ble/constants.dart';
 
+import 'helpers/source_scan.dart';
+
 void main() {
   test('heartbeat initial delay uses a cancellable timer', () {
-    final source = File('lib/ble/connection_manager.dart').readAsStringSync();
+    final source = readSource('lib/ble/connection_manager.dart');
 
     expect(
       source,
@@ -25,7 +25,7 @@ void main() {
   test(
     'GATT queue uses priority buckets instead of resorting pending work',
     () {
-      final source = File('lib/ble/connection_manager.dart').readAsStringSync();
+      final source = readSource('lib/ble/connection_manager.dart');
 
       expect(source, contains('_gattPendingByPriority'));
       expect(source, contains('_takeNextGattOperation()'));
@@ -34,7 +34,7 @@ void main() {
   );
 
   test('failed-connect recovery logs cleanup disconnect failures', () {
-    final source = File('lib/ble/connection_manager.dart').readAsStringSync();
+    final source = readSource('lib/ble/connection_manager.dart');
 
     expect(source, contains('连接失败恢复断开设备失败'));
     expect(source, isNot(contains('catch (_)')));

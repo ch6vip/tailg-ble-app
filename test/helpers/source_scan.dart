@@ -7,6 +7,10 @@ Iterable<File> dartFilesUnder(String path) {
       .where((file) => file.path.endsWith('.dart'));
 }
 
+String readSource(String path) => File(path).readAsStringSync();
+
+bool sourceExists(String path) => File(path).existsSync();
+
 List<String> patternOffenders(Iterable<File> files, RegExp pattern) {
   final offenders = <String>[];
   for (final file in files) {

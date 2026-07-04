@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,13 +6,12 @@ import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/official_cloud_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 
+import 'helpers/source_scan.dart';
 import 'helpers/test_app.dart';
 
 void main() {
   test('OfficialCloudPage does not use empty setState refreshes', () {
-    final source = File(
-      'lib/pages/official_cloud_page.dart',
-    ).readAsStringSync();
+    final source = readSource('lib/pages/official_cloud_page.dart');
 
     expect(source, isNot(contains('setState(() {})')));
     expect(source, contains('_syncInputState'));

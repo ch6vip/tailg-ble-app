@@ -1,13 +1,11 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
+
+import 'helpers/source_scan.dart';
 
 void main() {
   group('platform BLE permissions', () {
     test('Android manifest declares modern and legacy BLE permissions', () {
-      final String manifest = File(
-        'android/app/src/main/AndroidManifest.xml',
-      ).readAsStringSync();
+      final manifest = readSource('android/app/src/main/AndroidManifest.xml');
 
       expect(
         manifest,
@@ -54,7 +52,7 @@ void main() {
     });
 
     test('iOS Info.plist declares Bluetooth usage descriptions', () {
-      final String infoPlist = File('ios/Runner/Info.plist').readAsStringSync();
+      final infoPlist = readSource('ios/Runner/Info.plist');
 
       expect(
         infoPlist,
