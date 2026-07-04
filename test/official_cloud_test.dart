@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/ble/constants.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
@@ -10,6 +9,8 @@ import 'package:tailg_ble_app/services/control_command_policy.dart';
 import 'package:tailg_ble_app/services/control_command_result.dart';
 import 'package:tailg_ble_app/services/log_service.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+
+import 'helpers/storage_mocks.dart';
 
 void main() {
   group('OfficialVehicle', () {
@@ -561,15 +562,13 @@ void main() {
 
   group('OfficialCloudStorage', () {
     setUp(() {
-      SharedPreferences.setMockInitialValues({});
-      FlutterSecureStorage.setMockInitialValues({});
+      resetMockStorage();
       OfficialCloudService().resetForTest();
       LogService().clear();
     });
 
     tearDown(() {
-      SharedPreferences.setMockInitialValues({});
-      FlutterSecureStorage.setMockInitialValues({});
+      resetMockStorage();
       OfficialCloudService().resetForTest();
       LogService().clear();
     });
