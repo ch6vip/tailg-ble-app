@@ -9,12 +9,13 @@ import 'package:tailg_ble_app/services/auto_connect_service.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 
 import 'helpers/allowing_snapshot_guard.dart';
+import 'helpers/storage_mocks.dart';
 
 void main() {
   setUp(() {
     AutoConnectService().resetForTest();
     VehicleStore().resetForTest();
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
   });
 
   group('AutoConnectRunGate', () {

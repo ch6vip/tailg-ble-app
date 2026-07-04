@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
@@ -9,6 +8,7 @@ import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
+import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -18,7 +18,7 @@ void main() {
     String name = '测试车辆',
     OfficialVehicle? officialVehicle,
   }) async {
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
     app.proximityService.resetForTest();
     app.manualModeService.resetForTest();
     app.officialCloudService.resetForTest();

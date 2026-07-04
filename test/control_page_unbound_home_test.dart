@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/pages/official_cloud_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/snack_finders.dart';
+import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 
 void main() {
   testWidgets('unbound banner auto advance pauses with app lifecycle', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
     VehicleStore().resetForTest();
     await VehicleStore().init();
 
@@ -55,7 +55,7 @@ void main() {
   });
 
   testWidgets('virtual experience action shows info snack', (tester) async {
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
     VehicleStore().resetForTest();
     await VehicleStore().init();
 
@@ -82,7 +82,7 @@ void main() {
     'official action buttons expose semantics and AppPressable feedback',
     (tester) async {
       final semantics = tester.ensureSemantics();
-      SharedPreferences.setMockInitialValues({});
+      resetMockPreferences();
       VehicleStore().resetForTest();
       await VehicleStore().init();
 
@@ -135,7 +135,7 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
     VehicleStore().resetForTest();
     await VehicleStore().init();
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
@@ -9,6 +8,7 @@ import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/source_scan.dart';
+import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -49,7 +49,7 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
     tester.view.physicalSize = const Size(430, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -133,7 +133,7 @@ void main() {
   testWidgets('LocationPage travel month controls keep 44dp touch targets', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
     tester.view.physicalSize = const Size(430, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -159,7 +159,7 @@ void main() {
   testWidgets('LocationPage meta values avoid negative letter spacing', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
     app.vehicleStore.resetForTest();
     addTearDown(app.vehicleStore.resetForTest);
 
@@ -194,7 +194,7 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
     app.officialCloudService.resetForTest();
     addTearDown(app.officialCloudService.resetForTest);
     tester.view.physicalSize = const Size(430, 1400);
