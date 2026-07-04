@@ -91,26 +91,30 @@ class OfficialVehicle {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'imei': imei,
-    'imeiGps': imeiGps,
-    'carId': carId,
-    'carName': carName,
-    'carNickName': carNickName,
-    'carPhoto': carPhoto,
-    'frame': frame,
-    'defenceStatus': defenceStatus,
-    'acc': acc,
-    'electricQuantity': electricQuantity,
-    'voltage': voltage,
-    'online': online,
-    'btname': btname,
-    'btmac': btmac,
-    'longitude': longitude,
-    'latitude': latitude,
-    'modelType': modelType,
-    'mileage': mileage,
-  };
+  Map<String, dynamic> toJson() {
+    final json = Map<String, dynamic>.from(raw);
+    json.addAll({
+      'imei': imei,
+      'imeiGps': imeiGps,
+      'carId': carId,
+      'carName': carName,
+      'carNickName': carNickName,
+      'carPhoto': carPhoto,
+      'frame': frame,
+      'defenceStatus': defenceStatus,
+      'acc': acc,
+      'electricQuantity': electricQuantity,
+      'voltage': voltage,
+      'online': online,
+      'btname': btname,
+      'btmac': btmac,
+      'longitude': longitude,
+      'latitude': latitude,
+      'modelType': modelType,
+      'mileage': mileage,
+    });
+    return json;
+  }
 
   String get key {
     if (carId.isNotEmpty) return carId;

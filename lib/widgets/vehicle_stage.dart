@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 
@@ -345,94 +346,55 @@ class VehicleStage extends StatelessWidget {
     this.imageUrl,
   });
 
+  static const fallbackAsset = 'assets/official_tailg/iv_control_evbike.png';
+  static const officialHorizontalPadding = 20.0;
+
   final double batteryLevel;
   final double height;
   final String? imageUrl;
 
-  String? get _normalizedImageUrl {
-    final value = imageUrl?.trim();
-    if (value == null || value.isEmpty) return null;
-    final uri = Uri.tryParse(value);
-    if (uri == null) return null;
-    if (uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https')) {
-      return value;
-    }
-    if (value.startsWith('//')) return 'https:$value';
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final vehicleWidth = (constraints.maxWidth * 0.66).clamp(218.0, 300.0);
-        final remoteImageUrl = _normalizedImageUrl;
-        return SizedBox(
-          height: height,
-          width: double.infinity,
-          child: Stack(
-            alignment: Alignment.topCenter,
-            children: [
-              Positioned(
-                left: (constraints.maxWidth - vehicleWidth) / 2 + 18,
-                right: (constraints.maxWidth - vehicleWidth) / 2 + 18,
-                bottom: 28,
-                child: Container(
-                  height: 18,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF385064).withValues(alpha: 0.14),
-                        blurRadius: 24,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 0,
-                child: _VehicleImage(
-                  imageUrl: remoteImageUrl,
-                  width: vehicleWidth,
-                  height: height - 18,
-                  batteryLevel: batteryLevel,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    return SizedBox(
+      key: const ValueKey('vehicle-stage-root'),
+      height: height,
+      width: double.infinity,
+      child: Padding(
+        key: const ValueKey('vehicle-stage-padding'),
+        padding: const EdgeInsets.symmetric(
+          horizontal: officialHorizontalPadding,
+        ),
+        child: SizedBox.expand(
+          child: _VehicleImage(imageUrl: imageUrl, batteryLevel: batteryLevel),
+        ),
+      ),
     );
   }
 }
 
 class _VehicleImage extends StatelessWidget {
-  const _VehicleImage({
-    required this.imageUrl,
-    required this.width,
-    required this.height,
-    required this.batteryLevel,
-  });
+  const _VehicleImage({required this.imageUrl, required this.batteryLevel});
 
   final String? imageUrl;
-  final double width;
-  final double height;
   final double batteryLevel;
 
   @override
   Widget build(BuildContext context) {
     final url = imageUrl;
     if (url != null) {
-      return Image.network(
-        url,
-        key: const ValueKey('vehicle-stage-network-image'),
-        fit: BoxFit.contain,
-        width: width,
-        height: height,
-        semanticLabel: '台铃车辆',
-        errorBuilder: (_, __, ___) => _fallbackImage(),
+      return Semantics(
+        image: true,
+        label: '台铃车辆',
+        child: CachedNetworkImage(
+          imageUrl: url,
+          key: const ValueKey('vehicle-stage-network-image'),
+          fit: BoxFit.contain,
+          fadeInDuration: Duration.zero,
+          fadeOutDuration: Duration.zero,
+          placeholderFadeInDuration: Duration.zero,
+          placeholder: (_, __) => _fallbackImage(),
+          errorWidget: (_, __, ___) => _fallbackImage(),
+        ),
       );
     }
     return _fallbackImage();
@@ -440,15 +402,11 @@ class _VehicleImage extends StatelessWidget {
 
   Widget _fallbackImage() {
     return Image.asset(
-      'assets/official_tailg/vehicle.png',
+      VehicleStage.fallbackAsset,
       key: const ValueKey('vehicle-stage-asset-image'),
       fit: BoxFit.contain,
-      width: width,
-      height: height,
       semanticLabel: '台铃车辆',
-      errorBuilder: (_, __, ___) => SizedBox(
-        width: width,
-        height: height,
+      errorBuilder: (_, __, ___) => SizedBox.expand(
         child: CustomPaint(
           painter: VehicleStagePainter(batteryLevel: batteryLevel),
         ),

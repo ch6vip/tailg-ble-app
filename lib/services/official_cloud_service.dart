@@ -286,29 +286,50 @@ class OfficialCloudService {
   OfficialCloudState get state => _state;
   OfficialCloudRequestSummary? get lastRequest => _apiClient.lastRequest;
 
-  Future<void> init() async {
+  Future<void> init() => _init(refreshOnSignedIn: true);
+
+  @visibleForTesting
+  Future<void> initForTest({bool refreshOnSignedIn = false}) {
+    return _init(refreshOnSignedIn: refreshOnSignedIn);
+  }
+
+  Future<void> _init({required bool refreshOnSignedIn}) async {
     if (_initialized) return;
     final initializing = _initializing;
     if (initializing != null) return initializing;
-    _initializing = _loadInitialSession();
+    _initializing = _loadInitialSession(refreshOnSignedIn: refreshOnSignedIn);
     return _initializing!;
   }
 
-  Future<void> _loadInitialSession() async {
+  Future<void> _loadInitialSession({required bool refreshOnSignedIn}) async {
     try {
       final stored = await _storage.loadSession();
+      final cachedVehicles = stored.token.isEmpty
+          ? const <OfficialVehicle>[]
+          : stored.cachedVehicles;
+      final selectedVehicleKey = _selectVehicleKey(
+        cachedVehicles,
+        stored.selectedVehicleKey,
+      );
       _state = _state.copyWith(
         initialized: true,
         token: stored.token,
         phone: stored.phone,
         userId: stored.userId,
-        selectedVehicleKey: stored.selectedVehicleKey,
+        vehicles: cachedVehicles,
+        selectedVehicleKey: selectedVehicleKey,
         controlChannel: stored.controlChannel,
         localVehicleLinks: stored.localVehicleLinks,
       );
       _initialized = true;
       _emit();
-      if (_state.token.isNotEmpty) {
+      if (_state.selectedVehicle != null) {
+        _runSilentRefresh(
+          _applySelectedVehicleToLocalProfile(),
+          failureMessage: '官方缓存车辆同步到本地车库失败',
+        );
+      }
+      if (refreshOnSignedIn && _state.token.isNotEmpty) {
         _runSilentRefresh(
           refreshVehicles(silent: true),
           failureMessage: '官方车辆静默刷新失败',
@@ -378,6 +399,8 @@ class OfficialCloudService {
         token: token,
         phone: normalizedPhone,
         userId: userId,
+        vehicles: const [],
+        selectedVehicleKey: null,
         error: null,
       );
       _emit();
@@ -477,7 +500,10 @@ class OfficialCloudService {
           !vehicles.any((vehicle) => vehicle.key == selected)) {
         selected = vehicles.first.key;
       }
-      await _storage.saveSelectedVehicleKey(selected);
+      await Future.wait([
+        _storage.saveSelectedVehicleKey(selected),
+        _storage.saveCarControlInfo(_vehicleByKey(vehicles, selected)),
+      ]);
       _state = _state.copyWith(
         vehicles: vehicles,
         selectedVehicleKey: selected,
@@ -503,7 +529,10 @@ class OfficialCloudService {
   }
 
   Future<void> selectVehicle(OfficialVehicle vehicle) async {
-    await _storage.saveSelectedVehicleKey(vehicle.key);
+    await Future.wait([
+      _storage.saveSelectedVehicleKey(vehicle.key),
+      _storage.saveCarControlInfo(vehicle),
+    ]);
     _state = _state.copyWith(selectedVehicleKey: vehicle.key);
     _emit();
     await _applySelectedVehicleToLocalProfile();
@@ -1170,6 +1199,31 @@ class OfficialCloudService {
   void _clearRefreshCache() {
     _lastSuccessfulRefresh.clear();
     _inFlightRefreshes.clear();
+  }
+
+  String? _selectVehicleKey(
+    List<OfficialVehicle> vehicles,
+    String? preferredKey,
+  ) {
+    if (vehicles.isEmpty) return null;
+    final key = preferredKey?.trim();
+    if (key != null &&
+        key.isNotEmpty &&
+        vehicles.any((vehicle) => vehicle.key == key)) {
+      return key;
+    }
+    return vehicles.first.key;
+  }
+
+  OfficialVehicle? _vehicleByKey(
+    List<OfficialVehicle> vehicles,
+    String? selectedKey,
+  ) {
+    if (vehicles.isEmpty || selectedKey == null) return null;
+    for (final vehicle in vehicles) {
+      if (vehicle.key == selectedKey) return vehicle;
+    }
+    return null;
   }
 
   String _currentMonth() {

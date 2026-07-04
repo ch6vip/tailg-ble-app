@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/ble/constants.dart';
@@ -103,6 +105,27 @@ void main() {
       expect(vehicle.supportsSmartMeter, isFalse);
       expect(vehicle.supportsBleRenewal, isFalse);
       expect(vehicle.supportsChargingStation, isFalse);
+    });
+
+    test('serializes raw official fields for startup cache', () {
+      final vehicle = OfficialVehicle.fromJson({
+        'carId': 'car-1',
+        'carNickName': '缓存车',
+        'navigationProjection': '1',
+        'cameraService': true,
+        'featureGroup': {
+          'smartMeter': {'enabled': true},
+        },
+      });
+
+      final json = vehicle.toJson();
+
+      expect(json['carId'], 'car-1');
+      expect(json['navigationProjection'], '1');
+      expect(json['cameraService'], isTrue);
+      expect(json['featureGroup'], {
+        'smartMeter': {'enabled': true},
+      });
     });
   });
 
@@ -624,6 +647,112 @@ void main() {
         expect(warning.detail, 'Expected JSON object, got List<dynamic>');
       },
     );
+
+    test(
+      'restores cached carControlInfo with login session before refresh',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'official_cloud_token': 'cached-token',
+          'official_cloud_phone': '18800001111',
+          'official_cloud_user_id': 'user-1',
+          'official_cloud_selected_vehicle': 'car-1',
+          'carControlInfo': jsonEncode({
+            'carId': 'car-1',
+            'carNickName': '通勤车',
+            'carPhoto': 'https://example.com/bike.png',
+            'navigationProjection': '1',
+            'cameraService': true,
+          }),
+        });
+
+        final service = OfficialCloudService();
+        await service.initForTest();
+
+        expect(service.state.signedIn, isTrue);
+        expect(service.state.vehicles, hasLength(1));
+        expect(service.state.selectedVehicle?.key, 'car-1');
+        expect(service.state.selectedVehicle?.displayName, '通勤车');
+        expect(
+          service.state.selectedVehicle?.carPhoto,
+          'https://example.com/bike.png',
+        );
+        expect(
+          service.state.selectedVehicle?.supportsNavigationProjection,
+          isTrue,
+        );
+        expect(service.state.selectedVehicle?.supportsCamera, isTrue);
+      },
+    );
+
+    test('ignores cached carControlInfo without login session', () async {
+      SharedPreferences.setMockInitialValues({
+        'official_cloud_selected_vehicle': 'car-1',
+        'carControlInfo': jsonEncode({'carId': 'car-1', 'carNickName': '旧缓存车'}),
+      });
+
+      final service = OfficialCloudService();
+      await service.initForTest();
+
+      expect(service.state.signedIn, isFalse);
+      expect(service.state.vehicles, isEmpty);
+      expect(service.state.selectedVehicle, isNull);
+    });
+
+    test('selectVehicle persists official carControlInfo cache', () async {
+      final vehicle = OfficialVehicle.fromJson({
+        'carId': 'car-2',
+        'carNickName': '选中车',
+        'navigationProjection': '1',
+        'cameraService': true,
+      });
+      final service = OfficialCloudService();
+      service.setStateForTest(
+        OfficialCloudState.initial().copyWith(
+          initialized: true,
+          token: 'token',
+          vehicles: [vehicle],
+        ),
+      );
+
+      await service.selectVehicle(vehicle);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('official_cloud_selected_vehicle'), 'car-2');
+      final cached =
+          jsonDecode(prefs.getString('carControlInfo')!)
+              as Map<String, dynamic>;
+      expect(cached['carId'], 'car-2');
+      expect(cached['navigationProjection'], '1');
+      expect(cached['cameraService'], isTrue);
+    });
+
+    test('logout clears cached carControlInfo', () async {
+      final vehicle = OfficialVehicle.fromJson({
+        'carId': 'car-3',
+        'carNickName': '退出车',
+      });
+      SharedPreferences.setMockInitialValues({
+        'official_cloud_selected_vehicle': 'car-3',
+        'carControlInfo': jsonEncode(vehicle.toJson()),
+      });
+      final service = OfficialCloudService();
+      service.setStateForTest(
+        OfficialCloudState.initial().copyWith(
+          initialized: true,
+          token: 'token',
+          vehicles: [vehicle],
+          selectedVehicleKey: 'car-3',
+        ),
+      );
+
+      await service.logout();
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('official_cloud_selected_vehicle'), isNull);
+      expect(prefs.getString('carControlInfo'), isNull);
+      expect(service.state.vehicles, isEmpty);
+      expect(service.state.selectedVehicle, isNull);
+    });
   });
 
   group('ControlChannelResolver', () {

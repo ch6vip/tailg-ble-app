@@ -5,6 +5,7 @@ class _OfficialCloudStoredSession {
   final String phone;
   final String userId;
   final String? selectedVehicleKey;
+  final List<OfficialVehicle> cachedVehicles;
   final OfficialControlChannel controlChannel;
   final Map<String, String> localVehicleLinks;
 
@@ -13,6 +14,7 @@ class _OfficialCloudStoredSession {
     required this.phone,
     required this.userId,
     required this.selectedVehicleKey,
+    required this.cachedVehicles,
     required this.controlChannel,
     required this.localVehicleLinks,
   });
@@ -28,6 +30,7 @@ class _OfficialCloudStorage {
   static const _prefControlChannel = 'official_cloud_control_channel';
   static const _prefVehicleLinks = 'official_cloud_vehicle_links';
   static const _prefUserId = 'official_cloud_user_id';
+  static const _prefCarControlInfo = 'carControlInfo';
 
   final FlutterSecureStorage _secureStorage;
   final LogService _log;
@@ -44,11 +47,15 @@ class _OfficialCloudStorage {
     final prefs = await SharedPreferences.getInstance();
     final channelName = prefs.getString(_prefControlChannel);
     final credentials = await _loadSecureCredentials(prefs);
+    final token = credentials.$1;
     return _OfficialCloudStoredSession(
-      token: credentials.$1,
+      token: token,
       phone: credentials.$2,
       userId: credentials.$3,
       selectedVehicleKey: prefs.getString(_prefSelectedVehicle),
+      cachedVehicles: token.isEmpty
+          ? const <OfficialVehicle>[]
+          : _decodeCarControlInfo(prefs.getString(_prefCarControlInfo)),
       controlChannel: OfficialControlChannel.values.firstWhere(
         (item) => item.name == channelName,
         orElse: () => OfficialControlChannel.automatic,
@@ -73,6 +80,8 @@ class _OfficialCloudStorage {
     await prefs.remove(_prefToken);
     await prefs.remove(_prefPhone);
     await prefs.remove(_prefUserId);
+    await prefs.remove(_prefSelectedVehicle);
+    await prefs.remove(_prefCarControlInfo);
   }
 
   Future<void> clearCredentialsAndSelection() async {
@@ -84,6 +93,7 @@ class _OfficialCloudStorage {
     await prefs.remove(_prefPhone);
     await prefs.remove(_prefUserId);
     await prefs.remove(_prefSelectedVehicle);
+    await prefs.remove(_prefCarControlInfo);
   }
 
   Future<void> saveSelectedVehicleKey(String? key) async {
@@ -93,6 +103,15 @@ class _OfficialCloudStorage {
     } else {
       await prefs.setString(_prefSelectedVehicle, key);
     }
+  }
+
+  Future<void> saveCarControlInfo(OfficialVehicle? vehicle) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (vehicle == null) {
+      await prefs.remove(_prefCarControlInfo);
+      return;
+    }
+    await prefs.setString(_prefCarControlInfo, jsonEncode(vehicle.toJson()));
   }
 
   Future<void> saveControlChannel(OfficialControlChannel channel) async {
@@ -162,5 +181,27 @@ class _OfficialCloudStorage {
       return {};
     }
     return {};
+  }
+
+  List<OfficialVehicle> _decodeCarControlInfo(String? raw) {
+    if (raw == null || raw.isEmpty) return const <OfficialVehicle>[];
+    try {
+      final decoded = jsonDecode(raw);
+      final vehicles = OfficialCloudDataParser.vehicles(decoded);
+      if (vehicles.isNotEmpty) return vehicles;
+      _log.operation(
+        '官云车辆控制缓存无有效车辆，已忽略',
+        detail: 'type=${decoded.runtimeType}',
+        level: LogLevel.warning,
+      );
+    } catch (e) {
+      _log.operation(
+        '官云车辆控制缓存损坏，已忽略',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
+      return const <OfficialVehicle>[];
+    }
+    return const <OfficialVehicle>[];
   }
 }

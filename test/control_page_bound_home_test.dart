@@ -1,5 +1,9 @@
+import 'dart:convert';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
@@ -7,6 +11,7 @@ import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
+import 'package:tailg_ble_app/widgets/vehicle_stage.dart';
 
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
@@ -69,6 +74,49 @@ void main() {
     expect(find.text('NFC钥匙'), findsOneWidget);
   });
 
+  testWidgets(
+    'cached official carControlInfo opens bound home before refresh',
+    (tester) async {
+      resetMockStorage();
+      app.proximityService.resetForTest();
+      app.manualModeService.resetForTest();
+      app.officialCloudService.resetForTest();
+      VehicleStore().resetForTest();
+      SharedPreferences.setMockInitialValues({
+        'official_cloud_token': 'cached-token',
+        'official_cloud_phone': '18800001111',
+        'official_cloud_user_id': 'user-1',
+        'official_cloud_selected_vehicle': 'car-cached',
+        'carControlInfo': jsonEncode({
+          'carId': 'car-cached',
+          'carNickName': '官方缓存车',
+          'carPhoto': 'https://example.com/cached-bike.png',
+        }),
+      });
+      await VehicleStore().init();
+      await app.officialCloudService.initForTest();
+
+      applyTestViewSize(tester, const Size(430, 2200));
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        app.officialCloudService.resetForTest();
+        VehicleStore().resetForTest();
+        resetMockStorage();
+      });
+
+      await tester.pumpWidget(const TestApp(home: ControlPage()));
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('bound-home')), findsOneWidget);
+      expect(find.text('官方缓存车'), findsOneWidget);
+      expect(find.text('登录官方账号后同步车辆状态'), findsNothing);
+      expect(find.text('绑定设备'), findsNothing);
+    },
+  );
+
   testWidgets('bound control home stays stable on a narrow surface', (
     tester,
   ) async {
@@ -120,11 +168,63 @@ void main() {
       officialVehicle: vehicle,
     );
 
-    final image = tester.widget<Image>(
+    final image = tester.widget<CachedNetworkImage>(
       find.byKey(const ValueKey('vehicle-stage-network-image')),
     );
 
-    expect((image.image as NetworkImage).url, vehicle.carPhoto);
+    expect(image.imageUrl, vehicle.carPhoto);
+    expect(image.fadeInDuration, Duration.zero);
+    expect(image.fadeOutDuration, Duration.zero);
+    expect(image.placeholderFadeInDuration, Duration.zero);
+  });
+
+  testWidgets('official vehicle stage uses apk fallback image and layout', (
+    tester,
+  ) async {
+    await pumpBoundHome(tester, size: const Size(430, 2200));
+
+    final image = tester.widget<Image>(
+      find.byKey(const ValueKey('vehicle-stage-asset-image')),
+    );
+    final padding = tester.widget<Padding>(
+      find.byKey(const ValueKey('vehicle-stage-padding')),
+    );
+
+    expect((image.image as AssetImage).assetName, VehicleStage.fallbackAsset);
+    expect(
+      padding.padding,
+      const EdgeInsets.symmetric(
+        horizontal: VehicleStage.officialHorizontalPadding,
+      ),
+    );
+    expect(
+      tester.getSize(find.byKey(const ValueKey('vehicle-stage-root'))).height,
+      200,
+    );
+  });
+
+  testWidgets('official carPhoto value is passed without url filtering', (
+    tester,
+  ) async {
+    final vehicle = OfficialVehicle.fromJson({
+      'imei': 'IMEI_MAIN',
+      'carId': 'official-raw-photo-bike',
+      'carNickName': '官方原始图片车',
+      'btmac': 'AA:BB:CC:DD:EE:FF',
+      'carPhoto': '  //cdn.example.com/official-bike.png  ',
+    });
+
+    await pumpBoundHome(
+      tester,
+      size: const Size(430, 2200),
+      officialVehicle: vehicle,
+    );
+
+    final image = tester.widget<CachedNetworkImage>(
+      find.byKey(const ValueKey('vehicle-stage-network-image')),
+    );
+
+    expect(image.imageUrl, vehicle.carPhoto);
   });
 
   testWidgets('official feature flags reveal conditional control modules', (
