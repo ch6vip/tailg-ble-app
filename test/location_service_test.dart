@@ -19,24 +19,7 @@ void main() {
     'recordDefaultVehicleLocation initializes vehicle store before lookup',
     () async {
       final recordedAt = DateTime.now().toIso8601String();
-      SharedPreferences.setMockInitialValues({
-        'vehicle_profiles': jsonEncode([
-          {
-            'id': 'AA:BB:CC:DD:EE:FF',
-            'name': '默认车',
-            'protocol': 'qgj',
-            'createdAt': recordedAt,
-            'updatedAt': recordedAt,
-            'lastLocation': {
-              'latitude': 31.2304,
-              'longitude': 121.4737,
-              'accuracy': 8.5,
-              'recordedAt': recordedAt,
-            },
-          },
-        ]),
-        'vehicle_default_id': 'AA:BB:CC:DD:EE:FF',
-      });
+      SharedPreferences.setMockInitialValues(_storedVehiclePrefs(recordedAt));
       VehicleStore().resetForTest();
 
       final location = await LocationService().recordDefaultVehicleLocation();
@@ -50,24 +33,7 @@ void main() {
     'recordVehicleLocation normalizes ids before cached throttle lookup',
     () async {
       final recordedAt = DateTime.now().toIso8601String();
-      SharedPreferences.setMockInitialValues({
-        'vehicle_profiles': jsonEncode([
-          {
-            'id': 'AA:BB:CC:DD:EE:FF',
-            'name': '默认车',
-            'protocol': 'qgj',
-            'createdAt': recordedAt,
-            'updatedAt': recordedAt,
-            'lastLocation': {
-              'latitude': 31.2304,
-              'longitude': 121.4737,
-              'accuracy': 8.5,
-              'recordedAt': recordedAt,
-            },
-          },
-        ]),
-        'vehicle_default_id': 'AA:BB:CC:DD:EE:FF',
-      });
+      SharedPreferences.setMockInitialValues(_storedVehiclePrefs(recordedAt));
       VehicleStore().resetForTest();
 
       final location = await LocationService().recordVehicleLocation(
@@ -84,4 +50,25 @@ void main() {
 
     expect(location, isNull);
   });
+}
+
+Map<String, Object> _storedVehiclePrefs(String recordedAt) {
+  return {
+    'vehicle_profiles': jsonEncode([
+      {
+        'id': 'AA:BB:CC:DD:EE:FF',
+        'name': '默认车',
+        'protocol': 'qgj',
+        'createdAt': recordedAt,
+        'updatedAt': recordedAt,
+        'lastLocation': {
+          'latitude': 31.2304,
+          'longitude': 121.4737,
+          'accuracy': 8.5,
+          'recordedAt': recordedAt,
+        },
+      },
+    ]),
+    'vehicle_default_id': 'AA:BB:CC:DD:EE:FF',
+  };
 }
