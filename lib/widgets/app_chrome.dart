@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../theme/app_colors.dart';
+import 'app_pressable.dart';
 
 class AppPageHeader extends StatelessWidget {
   final String title;
@@ -99,23 +100,22 @@ class AppHeaderAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget button = Material(
-      color: Colors.transparent,
+    Widget button = AppPressable(
+      onTap: onTap,
+      enabled: onTap != null,
+      haptic: false,
+      semanticsLabel: tooltip,
+      semanticsButton: true,
+      semanticsEnabled: onTap != null,
       borderRadius: BorderRadius.circular(18),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        splashColor: AppColors.primary.withValues(alpha: 0.08),
-        highlightColor: AppColors.primary.withValues(alpha: 0.05),
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Icon(
-            icon,
-            size: AppIconSizes.md,
-            color: AppColors.textSecondary,
-          ),
+      pressedBackground: AppColors.primary.withValues(alpha: 0.05),
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: Icon(
+          icon,
+          size: AppIconSizes.md,
+          color: AppColors.textSecondary,
         ),
       ),
     );
@@ -126,13 +126,7 @@ class AppHeaderAction extends StatelessWidget {
         child: button,
       );
     }
-    return Semantics(
-      label: tooltip,
-      button: true,
-      enabled: onTap != null,
-      onTap: onTap,
-      child: ExcludeSemantics(child: button),
-    );
+    return button;
   }
 }
 
