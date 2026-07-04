@@ -660,9 +660,14 @@ class ScanFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = scanning ? '停止扫描' : '扫描';
-    final tapHandler = enabled ? onTap : null;
-    final button = GestureDetector(
-      onTap: tapHandler,
+    return AppPressable(
+      onTap: onTap,
+      enabled: enabled,
+      haptic: false,
+      semanticsContainer: true,
+      semanticsLabel: label,
+      semanticsButton: true,
+      semanticsEnabled: enabled,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
@@ -705,14 +710,6 @@ class ScanFab extends StatelessWidget {
           ],
         ),
       ),
-    );
-    return Semantics(
-      container: true,
-      label: label,
-      button: true,
-      enabled: enabled,
-      onTap: tapHandler,
-      child: ExcludeSemantics(child: button),
     );
   }
 }
