@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/vehicle_message_page.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
@@ -49,7 +50,7 @@ void main() {
 
       final systemTab = find.ancestor(
         of: find.text('系统消息'),
-        matching: find.byType(GestureDetector),
+        matching: find.byType(AppPressable),
       );
       expect(systemTab, findsOneWidget);
       expect(tester.getSize(systemTab).height, greaterThanOrEqualTo(44));

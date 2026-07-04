@@ -7,6 +7,7 @@ import '../main.dart'; // P0-6: service locator getters
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 
 class VehicleMessagePage extends StatefulWidget {
@@ -365,48 +366,41 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
           final active = _activeTab == i;
           void selectTab() => _tabController.animateTo(i);
           return Expanded(
-            child: Semantics(
-              label: tabs[i],
-              button: true,
-              selected: active,
-              enabled: true,
+            child: AppPressable(
               onTap: selectTab,
-              child: ExcludeSemantics(
-                child: GestureDetector(
-                  onTap: selectTab,
-                  behavior: HitTestBehavior.opaque,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 44),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: Text(
-                            tabs[i],
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: active
-                                  ? AppColors.primary
-                                  : AppColors.textTertiary,
-                            ),
-                          ),
+              haptic: false,
+              semanticsLabel: tabs[i],
+              semanticsButton: true,
+              semanticsEnabled: true,
+              semanticsSelected: active,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Text(
+                        tabs[i],
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: active
+                              ? AppColors.primary
+                              : AppColors.textTertiary,
                         ),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          height: 2,
-                          margin: const EdgeInsets.symmetric(horizontal: 20),
-                          decoration: BoxDecoration(
-                            color: active
-                                ? AppColors.primary
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(1),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      height: 2,
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      decoration: BoxDecoration(
+                        color: active ? AppColors.primary : Colors.transparent,
+                        borderRadius: BorderRadius.circular(1),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
