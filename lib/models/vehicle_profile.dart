@@ -40,22 +40,11 @@ class VehicleLocation {
 
   factory VehicleLocation.fromJson(Map<String, dynamic> json) {
     return VehicleLocation(
-      latitude: _doubleValue(json['latitude']),
-      longitude: _doubleValue(json['longitude']),
-      accuracy: _doubleValue(json['accuracy']),
+      latitude: _doubleValue(json['latitude']) ?? 0,
+      longitude: _doubleValue(json['longitude']) ?? 0,
+      accuracy: _doubleValue(json['accuracy']) ?? 0,
       recordedAt: _dateValue(json['recordedAt']) ?? DateTime.now(),
     );
-  }
-
-  static double _doubleValue(Object? value) {
-    if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value.trim()) ?? 0;
-    return 0;
-  }
-
-  static DateTime? _dateValue(Object? value) {
-    if (value == null) return null;
-    return DateTime.tryParse(value.toString());
   }
 }
 
@@ -145,19 +134,25 @@ class VehicleProfile {
       qgjUserId: _intValue(json['qgjUserId']),
     );
   }
+}
 
-  static String _stringValue(Object? value) {
-    return value?.toString().trim() ?? '';
-  }
+String _stringValue(Object? value) {
+  return value?.toString().trim() ?? '';
+}
 
-  static DateTime? _dateValue(Object? value) {
-    if (value == null) return null;
-    return DateTime.tryParse(value.toString());
-  }
+double? _doubleValue(Object? value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value.trim());
+  return null;
+}
 
-  static int? _intValue(Object? value) {
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value.trim());
-    return null;
-  }
+int? _intValue(Object? value) {
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value.trim());
+  return null;
+}
+
+DateTime? _dateValue(Object? value) {
+  if (value == null) return null;
+  return DateTime.tryParse(value.toString());
 }
