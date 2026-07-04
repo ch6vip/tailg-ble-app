@@ -8,6 +8,8 @@ import 'package:tailg_ble_app/services/ble_connection_snapshot_guard.dart';
 import 'package:tailg_ble_app/services/auto_connect_service.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 
+import 'helpers/allowing_snapshot_guard.dart';
+
 void main() {
   setUp(() {
     AutoConnectService().resetForTest();
@@ -126,27 +128,10 @@ void main() {
           manager: manager,
           device: device,
           currentManager: manager,
-          snapshotGuard: const _AllowingSnapshotGuard(),
+          snapshotGuard: const AllowingSnapshotGuard(),
         ),
         isTrue,
       );
     });
   });
-}
-
-class _AllowingSnapshotGuard implements BleConnectionSnapshotGuard {
-  const _AllowingSnapshotGuard();
-
-  @override
-  bool allowsReadyTarget({
-    required Object? startManager,
-    required Object? currentManager,
-    required Object? startDevice,
-    required Object? currentDevice,
-    required String? currentDeviceId,
-    required String expectedDeviceId,
-    required ConnectionState currentState,
-  }) {
-    return true;
-  }
 }
