@@ -2,13 +2,15 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'helpers/source_scan.dart';
+
 void main() {
   test('snack icon assertions use snackIcon helper', () {
     final directSnackIconFinder = RegExp(
       r'find\.byIcon\(Icons\.(info_outline|check_circle_outline|error_outline)\)',
     );
-    final offenders = _patternOffenders(
-      _dartFilesUnder('test')
+    final offenders = patternOffenders(
+      dartFilesUnder('test')
           .where((file) => file.path.endsWith('_test.dart'))
           .where((file) => !file.path.endsWith('test_conventions_test.dart')),
       directSnackIconFinder,
@@ -27,8 +29,8 @@ void main() {
     final hardcodedPressScale = RegExp(
       r'(pressedScale:\s*0\.\d+|scale:\s*[^,\n]*\?\s*0\.\d+\s*:\s*1)',
     );
-    final offenders = _patternOffenders(
-      _dartFilesUnder('lib'),
+    final offenders = patternOffenders(
+      dartFilesUnder('lib'),
       hardcodedPressScale,
     );
 
@@ -44,11 +46,11 @@ void main() {
   test('InkWell widgets are not nested inside another InkWell', () {
     final offenders = <String>[];
 
-    for (final entity in _dartFilesUnder('lib')) {
+    for (final entity in dartFilesUnder('lib')) {
       final source = entity.readAsStringSync();
       final nestedOffsets = _nestedConstructorOffsets(source, 'InkWell');
       for (final offset in nestedOffsets) {
-        final line = _lineNumber(source, offset);
+        final line = lineNumber(source, offset);
         offenders.add('${entity.path}:$line nested InkWell');
       }
     }
@@ -64,7 +66,7 @@ void main() {
 
   test('library code does not use wildcard catch variables', () {
     final wildcardCatch = RegExp(r'\bcatch\s*\(\s*_\s*(?:,\s*_\s*)?\)');
-    final offenders = _patternOffenders(_dartFilesUnder('lib'), wildcardCatch);
+    final offenders = patternOffenders(dartFilesUnder('lib'), wildcardCatch);
 
     expect(
       offenders,
@@ -88,29 +90,6 @@ void main() {
       expect(source, contains('LogLevel.debug'), reason: path);
     }
   });
-}
-
-Iterable<File> _dartFilesUnder(String path) {
-  return Directory(path)
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((file) => file.path.endsWith('.dart'));
-}
-
-List<String> _patternOffenders(Iterable<File> files, RegExp pattern) {
-  final offenders = <String>[];
-  for (final file in files) {
-    final source = file.readAsStringSync();
-    for (final match in pattern.allMatches(source)) {
-      final line = _lineNumber(source, match.start);
-      offenders.add('${file.path}:$line ${match.group(0)}');
-    }
-  }
-  return offenders;
-}
-
-int _lineNumber(String source, int offset) {
-  return '\n'.allMatches(source.substring(0, offset)).length + 1;
 }
 
 List<int> _nestedConstructorOffsets(String source, String constructorName) {

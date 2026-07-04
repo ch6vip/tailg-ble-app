@@ -1,6 +1,6 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
+
+import 'helpers/source_scan.dart';
 
 void main() {
   test(
@@ -11,13 +11,12 @@ void main() {
       );
       final offenders = <String>[];
 
-      for (final root in [Directory('lib/pages'), Directory('lib/widgets')]) {
-        for (final entity in root.listSync(recursive: true)) {
-          if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      for (final root in const ['lib/pages', 'lib/widgets']) {
+        for (final entity in dartFilesUnder(root)) {
           final source = entity.readAsStringSync();
           final matches = directServiceConstructor.allMatches(source);
           for (final match in matches) {
-            final line = _lineNumber(source, match.start);
+            final line = lineNumber(source, match.start);
             offenders.add('${entity.path}:$line ${match.group(0)}');
           }
         }
@@ -39,14 +38,13 @@ void main() {
     );
     final offenders = <String>[];
 
-    for (final root in [Directory('lib/pages'), Directory('lib/widgets')]) {
-      for (final entity in root.listSync(recursive: true)) {
-        if (entity is! File || !entity.path.endsWith('.dart')) continue;
+    for (final root in const ['lib/pages', 'lib/widgets']) {
+      for (final entity in dartFilesUnder(root)) {
         if (entity.path.endsWith('app_snack.dart')) continue;
         final source = entity.readAsStringSync();
         final matches = rawSnackUsage.allMatches(source);
         for (final match in matches) {
-          final line = _lineNumber(source, match.start);
+          final line = lineNumber(source, match.start);
           offenders.add('${entity.path}:$line ${match.group(0)}');
         }
       }
@@ -60,8 +58,4 @@ void main() {
           'centralized.',
     );
   });
-}
-
-int _lineNumber(String source, int offset) {
-  return '\n'.allMatches(source.substring(0, offset)).length + 1;
 }
