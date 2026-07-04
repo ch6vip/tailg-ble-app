@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/widgets/control_card.dart';
 
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   testWidgets('official quick placeholders render without legacy labels', (
@@ -25,7 +26,7 @@ void main() {
     for (final label in ['快捷功能1', '快捷功能2', '编辑快捷功能']) {
       final control = find.bySemanticsLabel(label);
       expect(control, findsOneWidget);
-      expect(tester.getSize(control).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, control);
     }
 
     for (final label in ['更多功能', '打开座桶', '感应解锁', '用车人', '超级仪表']) {

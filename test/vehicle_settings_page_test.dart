@@ -4,6 +4,7 @@ import 'package:tailg_ble_app/pages/vehicle_settings_page.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   testWidgets('switch setting rows expose labeled toggle semantics', (
@@ -24,7 +25,7 @@ void main() {
       const appRemoteLabel = 'APP遥控优先，官方入口已对齐，写入命令待确认，已关闭，命令待真机验证，暂不开放写入';
       final appRemoteRow = find.bySemanticsLabel(appRemoteLabel);
       expect(appRemoteRow, findsOneWidget);
-      expect(tester.getSize(appRemoteRow).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, appRemoteRow);
       expect(
         tester.getSemantics(appRemoteRow),
         matchesSemantics(
@@ -68,7 +69,7 @@ void main() {
       const standardModeLabel = '骑行模式：全速跑';
       final standardMode = find.bySemanticsLabel(standardModeLabel);
       expect(standardMode, findsOneWidget);
-      expect(tester.getSize(standardMode).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, standardMode);
       expect(
         tester.getSemantics(standardMode),
         matchesSemantics(
@@ -120,7 +121,7 @@ void main() {
       const pendingLabel = '自动下电，车辆静止后断电时间，命令待确认，待确认';
       final pendingRow = find.bySemanticsLabel(pendingLabel);
       expect(pendingRow, findsOneWidget);
-      expect(tester.getSize(pendingRow).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, pendingRow);
       expect(
         tester.getSemantics(pendingRow),
         matchesSemantics(
@@ -154,7 +155,7 @@ void main() {
       const soundLabel = '声音设置，车辆部分提示声音';
       final soundRow = find.bySemanticsLabel(soundLabel);
       expect(soundRow, findsOneWidget);
-      expect(tester.getSize(soundRow).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, soundRow);
       expect(
         tester.getSemantics(soundRow),
         matchesSemantics(

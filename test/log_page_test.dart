@@ -8,6 +8,7 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'helpers/snack_finders.dart';
 import 'helpers/source_scan.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   test('LogPage does not use empty setState refreshes', () {
@@ -69,7 +70,7 @@ void main() {
         matching: find.byType(AppPressable),
       );
       expect(bleTab, findsOneWidget);
-      expect(tester.getSize(bleTab).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, bleTab);
 
       const allLabel = '全部';
       final allTabSemantics = find.bySemanticsLabel(allLabel);

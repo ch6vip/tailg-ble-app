@@ -4,6 +4,7 @@ import 'package:tailg_ble_app/pages/control_page_hero.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   testWidgets('hero actions expose semantics and keep 44dp targets', (
@@ -34,7 +35,7 @@ void main() {
         const ValueKey('control-hero-vehicle-switch'),
       );
       expect(vehicleSwitch, findsOneWidget);
-      expect(tester.getSize(vehicleSwitch).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, vehicleSwitch);
 
       const vehicleLabel = '测试车辆，切换车辆';
       final vehicleAction = find.bySemanticsLabel(vehicleLabel);

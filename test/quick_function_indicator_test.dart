@@ -7,6 +7,7 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 Future<void> _pumpControlPage(WidgetTester tester, Size size) async {
   resetMockPreferences();
@@ -69,12 +70,12 @@ void main() {
         matching: find.byType(AppPressable),
       );
       expect(card, findsOneWidget);
-      expect(tester.getSize(card).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, card);
     }
 
     final gpsCard = find.bySemanticsLabel('可添加GPS');
     expect(gpsCard, findsOneWidget);
-    expect(tester.getSize(gpsCard).height, greaterThanOrEqualTo(44));
+    expectMinTouchTargetHeight(tester, gpsCard);
   });
 
   testWidgets('service cards expose semantics', (tester) async {

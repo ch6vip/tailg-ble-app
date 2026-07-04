@@ -10,6 +10,7 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   test('LocationPage routes vehicle and cloud streams through notifiers', () {
@@ -68,7 +69,7 @@ void main() {
         matching: find.byType(AppPressable),
       );
       expect(locationTab, findsOneWidget);
-      expect(tester.getSize(locationTab).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, locationTab);
       expect(
         tester.getSemantics(find.bySemanticsLabel('位置')),
         matchesSemantics(
@@ -97,7 +98,7 @@ void main() {
       const refreshLabel = '刷新';
       final refreshAction = find.bySemanticsLabel(refreshLabel);
       expect(refreshAction, findsOneWidget);
-      expect(tester.getSize(refreshAction).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, refreshAction);
       expect(
         tester.getSemantics(refreshAction),
         matchesSemantics(
@@ -153,7 +154,7 @@ void main() {
 
     final previousMonth = find.byTooltip('上个月');
     expect(previousMonth, findsOneWidget);
-    expect(tester.getSize(previousMonth).height, greaterThanOrEqualTo(44));
+    expectMinTouchTargetHeight(tester, previousMonth);
   });
 
   testWidgets('LocationPage meta values avoid negative letter spacing', (
@@ -261,7 +262,7 @@ void main() {
       const recordLabel = '轨迹记录，08:00 至 08:15，12.5km，25km/h，15m，0 点';
       final recordAction = find.bySemanticsLabel(recordLabel);
       expect(recordAction, findsOneWidget);
-      expect(tester.getSize(recordAction).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, recordAction);
       expect(
         tester.getSemantics(recordAction),
         matchesSemantics(

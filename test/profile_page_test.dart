@@ -7,6 +7,7 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   setUp(() {
@@ -65,7 +66,7 @@ void main() {
         matching: find.byType(AppPressable),
       );
       expect(editAction, findsOneWidget);
-      expect(tester.getSize(editAction).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, editAction);
 
       const loginActionLabel = '登录官方账号';
       final loginAction = find.bySemanticsLabel(loginActionLabel);
@@ -103,7 +104,7 @@ void main() {
       const messageLabel = '消息通知';
       final messageTile = find.bySemanticsLabel(messageLabel);
       expect(messageTile, findsOneWidget);
-      expect(tester.getSize(messageTile).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, messageTile);
       expect(
         tester.getSemantics(messageTile),
         matchesSemantics(
@@ -164,7 +165,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(tester.getSize(logoutAction).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, logoutAction);
       expect(
         tester.getSemantics(logoutAction),
         matchesSemantics(

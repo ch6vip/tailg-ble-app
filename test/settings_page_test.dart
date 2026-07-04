@@ -5,6 +5,7 @@ import 'package:tailg_ble_app/pages/settings_page.dart';
 
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   setUp(() {
@@ -34,10 +35,7 @@ void main() {
     final switches = find.byType(Switch);
     expect(switches, findsNWidgets(3));
     for (final element in switches.evaluate()) {
-      expect(
-        tester.getSize(find.byWidget(element.widget)).height,
-        greaterThanOrEqualTo(44),
-      );
+      expectMinTouchTargetHeight(tester, find.byWidget(element.widget));
     }
   });
 
@@ -137,7 +135,7 @@ void main() {
       const languageLabel = '语言设置，跟随系统';
       final languageRow = find.bySemanticsLabel(languageLabel);
       expect(languageRow, findsOneWidget);
-      expect(tester.getSize(languageRow).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, languageRow);
       expect(
         tester.getSemantics(languageRow),
         matchesSemantics(

@@ -8,6 +8,7 @@ import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   test('OfficialCloudPage does not use empty setState refreshes', () {
@@ -68,7 +69,7 @@ void main() {
         ),
       );
       expect(staleNotice, findsOneWidget);
-      expect(tester.getSize(staleNotice).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, staleNotice);
 
       const staleNoticeLabel = '关联的本地车辆已不存在，点击清理';
       final staleNoticeSemantics = find.bySemanticsLabel(staleNoticeLabel);
@@ -120,6 +121,6 @@ void main() {
       matching: find.byType(TextButton),
     );
     expect(scanAction, findsOneWidget);
-    expect(tester.getSize(scanAction).height, greaterThanOrEqualTo(44));
+    expectMinTouchTargetHeight(tester, scanAction);
   });
 }

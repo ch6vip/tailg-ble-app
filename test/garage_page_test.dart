@@ -6,6 +6,7 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   setUp(() async {
@@ -37,7 +38,7 @@ void main() {
         matching: find.byType(AppPressable),
       );
       expect(locateAction, findsOneWidget);
-      expect(tester.getSize(locateAction).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, locateAction);
 
       const locateLabel = '定位';
       final locateSemantics = find.bySemanticsLabel(locateLabel);

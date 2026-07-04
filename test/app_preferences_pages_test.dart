@@ -7,6 +7,7 @@ import 'package:tailg_ble_app/pages/app_preferences_pages.dart';
 import 'helpers/snack_finders.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   setUp(() {
@@ -49,7 +50,7 @@ void main() {
 
       final copyAction = find.bySemanticsLabel(copyLabel);
       expect(copyAction, findsOneWidget);
-      expect(tester.getSize(copyAction).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, copyAction);
       expect(
         tester.getSemantics(copyAction),
         matchesSemantics(
@@ -81,7 +82,7 @@ void main() {
 
       final systemOption = find.bySemanticsLabel('跟随系统');
       expect(systemOption, findsOneWidget);
-      expect(tester.getSize(systemOption).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, systemOption);
       expect(
         tester.getSemantics(systemOption),
         matchesSemantics(

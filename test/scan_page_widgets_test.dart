@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/pages/scan_page.dart';
 
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   testWidgets('ScanFab exposes enabled scan semantics and target size', (
@@ -28,7 +29,7 @@ void main() {
 
       final scanAction = find.bySemanticsLabel('扫描');
       expect(scanAction, findsOneWidget);
-      expect(tester.getSize(scanAction).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, scanAction);
       expect(
         tester.getSemantics(scanAction),
         matchesSemantics(
@@ -72,7 +73,7 @@ void main() {
 
       final stopAction = find.bySemanticsLabel('停止扫描');
       expect(stopAction, findsOneWidget);
-      expect(tester.getSize(stopAction).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, stopAction);
       expect(
         tester.getSemantics(stopAction),
         matchesSemantics(

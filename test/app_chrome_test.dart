@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/widgets/app_chrome.dart';
 
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   testWidgets('AppHeaderAction exposes size and enabled semantics', (
@@ -29,9 +30,9 @@ void main() {
 
       final action = find.bySemanticsLabel('刷新');
       expect(action, findsOneWidget);
-      expect(
-        tester.getSize(find.byKey(const ValueKey('header-action'))).height,
-        greaterThanOrEqualTo(44),
+      expectMinTouchTargetHeight(
+        tester,
+        find.byKey(const ValueKey('header-action')),
       );
       expect(
         tester.getSemantics(action),

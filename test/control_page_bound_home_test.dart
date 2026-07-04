@@ -10,6 +10,7 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   Future<void> pumpBoundHome(
@@ -112,7 +113,7 @@ void main() {
     for (final label in ['快捷功能1', '快捷功能2', '编辑快捷功能']) {
       final action = find.bySemanticsLabel(label);
       expect(action, findsOneWidget);
-      expect(tester.getSize(action).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, action);
     }
   });
 
@@ -123,7 +124,7 @@ void main() {
 
     final manualModePill = find.byTooltip('开启手动模式：禁用感应解锁/自动连接');
     expect(manualModePill, findsOneWidget);
-    expect(tester.getSize(manualModePill).height, greaterThanOrEqualTo(44));
+    expectMinTouchTargetHeight(tester, manualModePill);
     expect(
       find.descendant(of: manualModePill, matching: find.byType(AppPressable)),
       findsOneWidget,
@@ -187,7 +188,7 @@ void main() {
         matching: find.byType(AppPressable),
       );
       expect(option, findsOneWidget);
-      expect(tester.getSize(option).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, option);
     }
   });
 
@@ -240,7 +241,7 @@ void main() {
 
       final manualModeAction = find.bySemanticsLabel('手动模式');
       expect(manualModeAction, findsOneWidget);
-      expect(tester.getSize(manualModeAction).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, manualModeAction);
     } finally {
       semantics.dispose();
     }

@@ -5,6 +5,7 @@ import 'package:tailg_ble_app/pages/battery_details_page.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   setUp(() {
@@ -50,6 +51,6 @@ void main() {
       matching: find.byType(TextButton),
     );
     expect(correctionAction, findsOneWidget);
-    expect(tester.getSize(correctionAction).height, greaterThanOrEqualTo(44));
+    expectMinTouchTargetHeight(tester, correctionAction);
   });
 }

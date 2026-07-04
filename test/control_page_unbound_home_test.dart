@@ -8,6 +8,7 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'helpers/snack_finders.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   testWidgets('unbound banner auto advance pauses with app lifecycle', (
@@ -158,10 +159,7 @@ void main() {
         matching: find.byType(InkWell),
       );
       expect(officialCloudLink, findsOneWidget);
-      expect(
-        tester.getSize(officialCloudLink).height,
-        greaterThanOrEqualTo(44),
-      );
+      expectMinTouchTargetHeight(tester, officialCloudLink);
 
       final linkAction = find.bySemanticsLabel(linkLabel);
       expect(linkAction, findsOneWidget);

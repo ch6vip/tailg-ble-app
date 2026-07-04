@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'package:tailg_ble_app/widgets/app_toast.dart';
 
+import 'helpers/touch_target.dart';
+
 void main() {
   tearDown(AppToast.dismiss);
 
@@ -25,7 +27,7 @@ void main() {
       final dismiss = find.byKey(const ValueKey('app-toast-dismiss'));
       expect(dismiss, findsOneWidget);
       expect(tester.widget(dismiss), isA<AppPressable>());
-      expect(tester.getSize(dismiss).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, dismiss);
 
       const dismissLabel = '关闭提示';
       final dismissAction = find.bySemanticsLabel(dismissLabel);

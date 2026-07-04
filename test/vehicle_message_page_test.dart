@@ -8,6 +8,7 @@ import 'helpers/snack_finders.dart';
 import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 
 void main() {
   test('VehicleMessagePage does not use empty setState refreshes', () {
@@ -50,7 +51,7 @@ void main() {
         matching: find.byType(AppPressable),
       );
       expect(systemTab, findsOneWidget);
-      expect(tester.getSize(systemTab).height, greaterThanOrEqualTo(44));
+      expectMinTouchTargetHeight(tester, systemTab);
 
       const allLabel = '全部';
       expect(
