@@ -23,6 +23,70 @@ void main() {
     );
   });
 
+  test('touch target height assertions use helper', () {
+    final directTouchTargetAssertion = RegExp(
+      r'tester\.getSize\([^)]+\)\.height,\s*greaterThanOrEqualTo\(44\)',
+      multiLine: true,
+    );
+    final offenders = patternOffenders(
+      dartFilesUnder('test')
+          .where((file) => file.path.endsWith('_test.dart'))
+          .where((file) => !file.path.endsWith('test_conventions_test.dart')),
+      directTouchTargetAssertion,
+    );
+
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Use expectMinTouchTargetHeight(...) from '
+          'test/helpers/touch_target.dart for 44dp target assertions.',
+    );
+  });
+
+  test('widget tests use view size helpers', () {
+    final directViewSizeSet = RegExp(r'tester\.view\.physicalSize\s*=');
+    final offenders = patternOffenders(
+      dartFilesUnder('test')
+          .where((file) => file.path.endsWith('.dart'))
+          .where(
+            (file) =>
+                !_normalizedPath(file.path).endsWith('helpers/view_size.dart'),
+          ),
+      directViewSizeSet,
+    );
+
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Use setTestViewSize(...) or applyTestViewSize(...) from '
+          'test/helpers/view_size.dart so devicePixelRatio stays explicit.',
+    );
+  });
+
+  test('platform channel mocks use helper', () {
+    final directPlatformMock = RegExp(r'\.setMockMethodCallHandler\(');
+    final offenders = patternOffenders(
+      dartFilesUnder('test')
+          .where((file) => file.path.endsWith('.dart'))
+          .where(
+            (file) => !_normalizedPath(
+              file.path,
+            ).endsWith('helpers/platform_mocks.dart'),
+          ),
+      directPlatformMock,
+    );
+
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Use mockClipboardWrites()/clearPlatformChannelMock() from '
+          'test/helpers/platform_mocks.dart for platform channel mocks.',
+    );
+  });
+
   test('press feedback scale uses AppMotion token', () {
     final hardcodedPressScale = RegExp(
       r'(pressedScale:\s*0\.\d+|scale:\s*[^,\n]*\?\s*0\.\d+\s*:\s*1)',
@@ -198,3 +262,5 @@ bool _isIdentifierCodeUnit(int? codeUnit) {
       (codeUnit >= 0x61 && codeUnit <= 0x7A) ||
       codeUnit == 0x5F;
 }
+
+String _normalizedPath(String path) => path.replaceAll(r'\', '/');
