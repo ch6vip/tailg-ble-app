@@ -79,8 +79,9 @@ class VehicleSettingsSnapshot {
   }
 
   static bool? _readSwitch(List<int> payload) {
-    if (payload.isEmpty) return null;
-    return payload.first == 1;
+    final value = _readFirstByte(payload);
+    if (value == null) return null;
+    return value == 1;
   }
 
   static bool? _soundEnabled(int? volume) {
@@ -226,8 +227,7 @@ class VehicleAdvancedSettingsSnapshot {
   }
 
   static int? _readUInt8(List<int> payload) {
-    if (payload.isEmpty) return null;
-    return payload.first & 0xFF;
+    return _readFirstByte(payload);
   }
 
   static int? _readUInt16(List<int> payload) {
@@ -243,6 +243,11 @@ class VehicleAdvancedSettingsSnapshot {
       _ => null,
     };
   }
+}
+
+int? _readFirstByte(List<int> payload) {
+  if (payload.isEmpty) return null;
+  return payload.first & 0xFF;
 }
 
 class QgjSoundAdjust {

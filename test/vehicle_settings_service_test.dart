@@ -222,6 +222,19 @@ void main() {
     );
   });
 
+  test('QGJ switch parsers keep existing unknown value semantics', () {
+    expect(
+      VehicleSettingsSnapshot.fromLightSensorPayload([0x02]).lightSensor,
+      isFalse,
+    );
+    expect(
+      VehicleAdvancedSettingsSnapshot.fromSafeLockPayload([
+        0x02,
+      ]).safeLockEnabled,
+      isNull,
+    );
+  });
+
   test('QGJ sound adjust payload parses official index volume pairs', () {
     final snapshot = VehicleSettingsSnapshot.fromSoundPayload([
       QgjSoundIndexes.lock,
