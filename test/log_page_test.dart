@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/log_page.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
@@ -66,7 +67,7 @@ void main() {
 
       final bleTab = find.ancestor(
         of: find.text('BLE'),
-        matching: find.byType(GestureDetector),
+        matching: find.byType(AppPressable),
       );
       expect(bleTab, findsOneWidget);
       expect(tester.getSize(bleTab).height, greaterThanOrEqualTo(44));
