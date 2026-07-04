@@ -5,7 +5,11 @@ void resetMockPreferences() {
   SharedPreferences.setMockInitialValues({});
 }
 
+void resetMockSecureStorage() {
+  FlutterSecureStorage.setMockInitialValues({});
+}
+
 void resetMockStorage() {
   resetMockPreferences();
-  FlutterSecureStorage.setMockInitialValues({});
+  resetMockSecureStorage();
 }

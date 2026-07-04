@@ -241,7 +241,7 @@ void main() {
             '[{"id":"AA:BB:CC:DD:EE:FF","name":"有效车辆","protocol":"qgj","qgjLoginPassword":"123456","qgjUserId":"789"}]',
         'vehicle_default_id': 'AA:BB:CC:DD:EE:FF',
       });
-      FlutterSecureStorage.setMockInitialValues({});
+      resetMockSecureStorage();
       VehicleStore().resetForTest();
 
       final store = VehicleStore();

@@ -87,6 +87,32 @@ void main() {
     );
   });
 
+  test('empty storage mocks use reset helpers', () {
+    final directEmptyStorageMock = RegExp(
+      r'(SharedPreferences|FlutterSecureStorage)'
+      r'\.setMockInitialValues\(\s*\{\s*\}\s*\)',
+    );
+    final offenders = patternOffenders(
+      dartFilesUnder('test')
+          .where((file) => file.path.endsWith('.dart'))
+          .where(
+            (file) => !_normalizedPath(
+              file.path,
+            ).endsWith('helpers/storage_mocks.dart'),
+          ),
+      directEmptyStorageMock,
+    );
+
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Use resetMockPreferences(), resetMockSecureStorage(), or '
+          'resetMockStorage() from test/helpers/storage_mocks.dart for empty '
+          'test storage state.',
+    );
+  });
+
   test('press feedback scale uses AppMotion token', () {
     final hardcodedPressScale = RegExp(
       r'(pressedScale:\s*0\.\d+|scale:\s*[^,\n]*\?\s*0\.\d+\s*:\s*1)',
