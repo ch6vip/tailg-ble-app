@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers/source_scan.dart';
 
+const _sourceRoots = ['lib/pages', 'lib/widgets'];
+
 void main() {
   test(
     'pages and widgets use service locator getters instead of constructors',
@@ -9,18 +11,10 @@ void main() {
       final directServiceConstructor = RegExp(
         r'\b[A-Z][A-Za-z0-9]+Service\(\)',
       );
-      final offenders = <String>[];
-
-      for (final root in const ['lib/pages', 'lib/widgets']) {
-        for (final entity in dartFilesUnder(root)) {
-          final source = entity.readAsStringSync();
-          final matches = directServiceConstructor.allMatches(source);
-          for (final match in matches) {
-            final line = lineNumber(source, match.start);
-            offenders.add('${entity.path}:$line ${match.group(0)}');
-          }
-        }
-      }
+      final offenders = patternOffenders(
+        _sourceRoots.expand(dartFilesUnder),
+        directServiceConstructor,
+      );
 
       expect(
         offenders,
@@ -36,19 +30,12 @@ void main() {
     final rawSnackUsage = RegExp(
       r'ScaffoldMessenger|showSnackBar\s*\(|\bSnackBar\s*\(',
     );
-    final offenders = <String>[];
-
-    for (final root in const ['lib/pages', 'lib/widgets']) {
-      for (final entity in dartFilesUnder(root)) {
-        if (entity.path.endsWith('app_snack.dart')) continue;
-        final source = entity.readAsStringSync();
-        final matches = rawSnackUsage.allMatches(source);
-        for (final match in matches) {
-          final line = lineNumber(source, match.start);
-          offenders.add('${entity.path}:$line ${match.group(0)}');
-        }
-      }
-    }
+    final offenders = patternOffenders(
+      _sourceRoots
+          .expand(dartFilesUnder)
+          .where((file) => !file.path.endsWith('app_snack.dart')),
+      rawSnackUsage,
+    );
 
     expect(
       offenders,
