@@ -5,6 +5,7 @@ import '../main.dart';
 import '../models/vehicle_profile.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/app_pressable.dart';
 import '../widgets/status_badge.dart';
 import '../widgets/vehicle_stage.dart';
 
@@ -447,9 +448,13 @@ class _MiniActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
-    final button = GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return AppPressable(
       onTap: onTap,
+      enabled: enabled,
+      haptic: false,
+      semanticsLabel: label,
+      semanticsButton: true,
+      semanticsEnabled: enabled,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
         child: Center(
@@ -470,13 +475,6 @@ class _MiniActionButton extends StatelessWidget {
           ),
         ),
       ),
-    );
-    return Semantics(
-      label: label,
-      button: true,
-      enabled: enabled,
-      onTap: onTap,
-      child: ExcludeSemantics(child: button),
     );
   }
 }

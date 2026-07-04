@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/garage_page.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/test_app.dart';
 
@@ -34,7 +34,7 @@ void main() {
 
       final locateAction = find.ancestor(
         of: find.text('定位'),
-        matching: find.byType(GestureDetector),
+        matching: find.byType(AppPressable),
       );
       expect(locateAction, findsOneWidget);
       expect(tester.getSize(locateAction).height, greaterThanOrEqualTo(44));
