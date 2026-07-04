@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'ble/connection_manager.dart' as ble;
@@ -587,67 +586,109 @@ class _HomePageState extends State<HomePage>
         ),
       ),
       extendBody: true,
-      bottomNavigationBar: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface.withValues(alpha: 0.96),
-              border: const Border(
-                top: BorderSide(color: Color(0x12000000), width: 0.5),
-              ),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _NavItem(
-                      icon: Icons.directions_car_outlined,
-                      selectedIcon: Icons.directions_car,
-                      asset: 'assets/official_tailg/ic_tab_home_unselected.png',
-                      selectedAsset:
-                          'assets/official_tailg/ic_tab_home_selected.png',
-                      label: '控车',
-                      selected: _currentIndex == 0,
-                      onTap: () => _switchTab(0),
-                    ),
-                    _NavItem(
-                      icon: Icons.location_on_outlined,
-                      selectedIcon: Icons.location_on,
-                      asset:
-                          'assets/official_tailg/ic_tab_service_unselected.png',
-                      selectedAsset:
-                          'assets/official_tailg/ic_tab_service_selected.png',
-                      label: '定位',
-                      selected: _currentIndex == 1,
-                      onTap: () => _switchTab(1),
-                    ),
-                    _NavItem(
-                      icon: Icons.garage_outlined,
-                      selectedIcon: Icons.garage,
-                      asset: 'assets/official_tailg/ic_tab_mall_unselected.png',
-                      selectedAsset:
-                          'assets/official_tailg/ic_tab_mall_selected.png',
-                      label: '车库',
-                      selected: _currentIndex == 2,
-                      onTap: () => _switchTab(2),
-                    ),
-                    _NavItem(
-                      icon: Icons.person_outline,
-                      selectedIcon: Icons.person,
-                      asset: 'assets/official_tailg/ic_tab_mine_unselected.png',
-                      selectedAsset:
-                          'assets/official_tailg/ic_tab_mine_selected.png',
-                      label: '我的',
-                      selected: _currentIndex == 3,
-                      onTap: () => _switchTab(3),
-                    ),
-                  ],
+      bottomNavigationBar: _OfficialBottomNav(
+        currentIndex: _currentIndex,
+        onCircle: () => _switchTab(0),
+        onMall: () => _switchTab(2),
+        onVehicle: () => _switchTab(0),
+        onService: () => _switchTab(1),
+        onMine: () => _switchTab(3),
+      ),
+    );
+  }
+}
+
+class _OfficialBottomNav extends StatelessWidget {
+  const _OfficialBottomNav({
+    required this.currentIndex,
+    required this.onCircle,
+    required this.onMall,
+    required this.onVehicle,
+    required this.onService,
+    required this.onMine,
+  });
+
+  final int currentIndex;
+  final VoidCallback onCircle;
+  final VoidCallback onMall;
+  final VoidCallback onVehicle;
+  final VoidCallback onService;
+  final VoidCallback onMine;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 86,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 3, 20, 7),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _OfficialNavItem(
+                    label: '圈子',
+                    asset: 'assets/official_tailg/ic_rb_circle_unselect.webp',
+                    selectedAsset:
+                        'assets/official_tailg/ic_rb_circle_select.webp',
+                    selected: false,
+                    onTap: onCircle,
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: _OfficialNavItem(
+                    label: '商城',
+                    asset: 'assets/official_tailg/ic_rb_shop_unselect.webp',
+                    selectedAsset:
+                        'assets/official_tailg/ic_rb_shop_select.webp',
+                    selected: currentIndex == 2,
+                    onTap: onMall,
+                  ),
+                ),
+                Expanded(
+                  child: _OfficialNavItem(
+                    label: '爱车',
+                    asset: 'assets/official_tailg/ic_home_control_unselect.png',
+                    selectedAsset:
+                        'assets/official_tailg/ic_home_control_select.png',
+                    selected: currentIndex == 0,
+                    prominent: true,
+                    onTap: onVehicle,
+                  ),
+                ),
+                Expanded(
+                  child: _OfficialNavItem(
+                    label: '服务',
+                    asset: 'assets/official_tailg/ic_home_service_unselect.png',
+                    selectedAsset:
+                        'assets/official_tailg/ic_home_service_select.png',
+                    selected: currentIndex == 1,
+                    onTap: onService,
+                  ),
+                ),
+                Expanded(
+                  child: _OfficialNavItem(
+                    label: '我的',
+                    asset: 'assets/official_tailg/ic_home_mine_unselect.png',
+                    selectedAsset:
+                        'assets/official_tailg/ic_home_mine_select.png',
+                    selected: currentIndex == 3,
+                    onTap: onMine,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -656,103 +697,79 @@ class _HomePageState extends State<HomePage>
   }
 }
 
-/// Material 3 风格底部导航项：选中态使用 pill 背景高亮。
-class _NavItem extends StatefulWidget {
-  final IconData icon;
-  final IconData? selectedIcon;
-  final String? asset;
-  final String? selectedAsset;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.icon,
-    this.selectedIcon,
-    this.asset,
-    this.selectedAsset,
+class _OfficialNavItem extends StatelessWidget {
+  const _OfficialNavItem({
     required this.label,
+    required this.asset,
+    required this.selectedAsset,
     required this.selected,
     required this.onTap,
+    this.prominent = false,
   });
 
-  @override
-  State<_NavItem> createState() => _NavItemState();
-}
-
-class _NavItemState extends State<_NavItem> {
-  static const _duration = Duration(milliseconds: 200);
-  static const _curve = Curves.easeOutCubic;
+  final String label;
+  final String asset;
+  final String selectedAsset;
+  final bool selected;
+  final VoidCallback onTap;
+  final bool prominent;
 
   @override
   Widget build(BuildContext context) {
-    final icon = widget.selected
-        ? (widget.selectedIcon ?? widget.icon)
-        : widget.icon;
-    final color = widget.selected ? AppColors.brandRed : AppColors.navInactive;
-    final asset = widget.selected
-        ? (widget.selectedAsset ?? widget.asset)
-        : widget.asset;
+    final active = selected;
+    final displayAsset = active ? selectedAsset : asset;
+    final labelColor = active
+        ? AppColors.brandRed
+        : AppColors.officialTextMuted;
+    final iconSize = prominent && active ? 62.0 : 28.0;
+    final topOffset = prominent && active ? -24.0 : 6.0;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: _duration,
-        curve: _curve,
-        padding: EdgeInsets.symmetric(
-          horizontal: widget.selected ? 20 : 16,
-          vertical: 8,
-        ),
-        decoration: BoxDecoration(
-          color: widget.selected
-              ? AppColors.brandRed.withValues(alpha: 0.06)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedSwitcher(
-              duration: _duration,
-              switchInCurve: _curve,
-              switchOutCurve: Curves.easeInCubic,
-              child: asset == null
-                  ? Icon(
-                      icon,
-                      key: ValueKey(icon),
-                      size: widget.selected ? AppIconSizes.lg : 22.0,
-                      color: color,
-                    )
-                  : Image.asset(
-                      asset,
-                      key: ValueKey(asset),
-                      width: widget.selected ? 24 : 22,
-                      height: widget.selected ? 24 : 22,
-                      errorBuilder: (_, __, ___) => Icon(
-                        icon,
-                        size: widget.selected ? AppIconSizes.lg : 22.0,
-                        color: color,
-                      ),
-                    ),
-            ),
-            AnimatedCrossFade(
-              firstChild: const SizedBox(width: 0),
-              secondChild: Padding(
-                padding: const EdgeInsets.only(left: 6),
-                child: Text(
-                  widget.label,
-                  style: AppTextStyles.sectionLabelStrong.copyWith(
-                    color: color,
+    return Semantics(
+      label: label,
+      button: true,
+      selected: active,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: SizedBox(
+          height: 78,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.topCenter,
+            children: [
+              Positioned(
+                top: topOffset,
+                child: Image.asset(
+                  displayAsset,
+                  width: iconSize,
+                  height: iconSize,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Icon(
+                    prominent ? Icons.shield_outlined : Icons.circle_outlined,
+                    size: prominent && active ? 44 : 27,
+                    color: active
+                        ? AppColors.brandRed
+                        : AppColors.officialTextMuted,
                   ),
                 ),
               ),
-              crossFadeState: widget.selected
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
-              duration: _duration,
-            ),
-          ],
+              Positioned(
+                top: prominent && active ? 40 : 39,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                    letterSpacing: 0,
+                    color: labelColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -47,7 +47,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     // Official replica: lower area follows fragment_control.xml entries.
-    expect(find.text('车辆定位'), findsOneWidget);
+    expect(find.text('车辆位置'), findsOneWidget);
     expect(find.text('历史轨迹'), findsOneWidget);
     expect(find.text('功能设置'), findsOneWidget);
     expect(find.text('NFC钥匙'), findsOneWidget);
@@ -63,7 +63,7 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
-    expect(find.text('车辆定位'), findsOneWidget);
+    expect(find.text('车辆位置'), findsOneWidget);
     expect(find.bySemanticsLabel('可添加GPS'), findsOneWidget);
   });
 

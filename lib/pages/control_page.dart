@@ -21,13 +21,11 @@ import '../widgets/vehicle_stage.dart';
 import '../widgets/control_card.dart';
 import 'control_page_hero.dart';
 import 'battery_details_page.dart';
-import 'diagnostic_page.dart';
 import 'garage_page.dart';
 import 'location_page.dart';
 import 'log_page.dart';
 import 'official_cloud_page.dart';
 import 'official_replica_pages.dart';
-import 'ota_precheck_page.dart';
 import 'vehicle_message_page.dart';
 import 'vehicle_settings_page.dart';
 
@@ -86,16 +84,14 @@ class _ControlPageState extends State<ControlPage>
     // 避免每次连接态/车辆/云态事件都重建 Scaffold/RefreshIndicator/滚动容器。
     return Scaffold(
       backgroundColor: _pageBg(context),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _handleRefresh,
-          color: AppColors.primary,
-          backgroundColor: AppColors.surface,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 24),
-            child: const _HomeBody(),
-          ),
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: AppColors.primary,
+        backgroundColor: AppColors.surface,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 24),
+          child: const _HomeBody(),
         ),
       ),
     );

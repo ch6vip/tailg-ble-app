@@ -21,7 +21,6 @@ void main() {
             body: ControlPageHero(
               batteryLevel: 72,
               rangeKm: 48,
-              healthLabel: '健康良好',
               vehicleName: '测试车辆',
               onVehicleSwitch: () => vehicleTapped = true,
               onBatteryTap: () => batteryTapped = true,
@@ -51,7 +50,7 @@ void main() {
         ),
       );
 
-      const batteryLabel = '电量 72%，续航 48 km，健康良好';
+      const batteryLabel = '电量 72%，续航 48 km';
       final batteryAction = find.bySemanticsLabel(batteryLabel);
       expect(batteryAction, findsOneWidget);
       expect(
@@ -110,7 +109,6 @@ void main() {
             body: ControlPageHero(
               batteryLevel: 72,
               rangeKm: 48,
-              healthLabel: '健康良好',
               vehicleName: '测试车辆',
             ),
           ),
@@ -131,13 +129,13 @@ void main() {
           .widget<Text>(find.text('测试车辆'))
           .style
           ?.letterSpacing;
-      final batterySpacing = tester
-          .widget<Text>(find.text('72'))
+      final rangeSpacing = tester
+          .widget<Text>(find.text('48'))
           .style
           ?.letterSpacing;
 
       expect(titleSpacing, anyOf(isNull, greaterThanOrEqualTo(0)));
-      expect(batterySpacing, anyOf(isNull, greaterThanOrEqualTo(0)));
+      expect(rangeSpacing, anyOf(isNull, greaterThanOrEqualTo(0)));
     }
   });
 }

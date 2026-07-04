@@ -341,6 +341,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             : _isReconnecting
             ? '重连中'
             : null;
+        final topPadding = MediaQuery.paddingOf(context).top + 18;
         return Container(
           decoration: const BoxDecoration(
             color: AppColors.officialPageBg,
@@ -353,17 +354,10 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 8),
+              SizedBox(height: topPadding),
               ControlPageHero(
                 batteryLevel: soc,
                 rangeKm: range,
-                healthLabel: rawPercent != null
-                    ? (soc >= 60
-                          ? '健康良好'
-                          : soc >= 30
-                          ? '建议充电'
-                          : '电量过低')
-                    : '等待数据',
                 vehicleName: cloudVehicle?.displayName ?? vehicleName,
                 connectionLabel: connectionLabel,
                 onBatteryTap: () => Navigator.of(context).push(
@@ -377,15 +371,14 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
-              VehicleStage(batteryLevel: soc / 100.0, height: 225),
+              const SizedBox(height: 8),
+              VehicleStage(batteryLevel: soc / 100.0, height: 242),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _OfficialControlTip(
                   isArmed: isArmed,
                   isPowerOn: isPowerOn,
                   bleReady: _isBleReady,
-                  reconnecting: _isReconnecting,
                   manualModeEnabled: _manualModeEnabled,
                   onToggleManualMode: _toggleManualMode,
                 ),
@@ -412,7 +405,6 @@ class _OfficialControlTip extends StatelessWidget {
     required this.isArmed,
     required this.isPowerOn,
     required this.bleReady,
-    required this.reconnecting,
     required this.manualModeEnabled,
     required this.onToggleManualMode,
   });
@@ -420,113 +412,113 @@ class _OfficialControlTip extends StatelessWidget {
   final bool? isArmed;
   final bool isPowerOn;
   final bool bleReady;
-  final bool reconnecting;
   final bool manualModeEnabled;
   final VoidCallback onToggleManualMode;
 
   @override
   Widget build(BuildContext context) {
-    final statusText = [
-      isPowerOn ? '已启动' : '未启动',
-      isArmed == null
-          ? '设防未知'
-          : isArmed!
-          ? '已设防'
-          : '未设防',
-      if (reconnecting) '重连中' else if (bleReady) '蓝牙已连接',
-    ].join('  ');
+    final statusText = isPowerOn
+        ? (isArmed == false ? '已开机未设防' : '已开机设防')
+        : (isArmed == false ? '已关机未设防' : '已关机设防');
 
-    return SizedBox(
-      height: 60,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            left: 40,
-            right: 54,
-            top: 10,
-            child: Container(
-              height: 38,
-              padding: const EdgeInsets.only(left: 42, right: 12),
-              alignment: Alignment.centerLeft,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.88),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Text(
-                statusText,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.officialTextMuted,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final pillWidth = (constraints.maxWidth * 0.43).clamp(154.0, 184.0);
+        return SizedBox(
+          height: 60,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                left: 48,
+                top: 10,
+                child: Container(
+                  width: pillWidth,
+                  height: 38,
+                  padding: const EdgeInsets.only(left: 50, right: 12),
+                  alignment: Alignment.centerLeft,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Text(
+                    statusText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.officialTextMuted,
+                      letterSpacing: 0,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            top: -10,
-            child: Image.asset(
-              'assets/official_tailg/ic_control_tip_mascot.png',
-              width: 60,
-              height: 60,
-              errorBuilder: (_, __, ___) => const CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.white,
-                child: Icon(Icons.smart_toy_outlined),
+              Positioned(
+                left: 0,
+                top: -10,
+                child: Image.asset(
+                  'assets/official_tailg/ic_control_tip_mascot.png',
+                  width: 62,
+                  height: 62,
+                  errorBuilder: (_, __, ___) => const CircleAvatar(
+                    radius: 31,
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.smart_toy_outlined),
+                  ),
+                ),
               ),
-            ),
-          ),
-          Positioned(
-            right: 0,
-            top: 8,
-            child: Tooltip(
-              message: manualModeEnabled
-                  ? '已开启手动模式：点按关闭'
-                  : '开启手动模式：禁用感应解锁/自动连接',
-              child: AppPressable(
-                onTap: onToggleManualMode,
-                haptic: false,
-                semanticsLabel: '手动模式',
-                semanticsButton: true,
-                semanticsEnabled: true,
-                semanticsToggled: manualModeEnabled,
-                child: SizedBox(
-                  width: 66,
-                  height: 44,
-                  child: Center(
-                    child: Image.asset(
-                      manualModeEnabled || !bleReady
-                          ? 'assets/official_tailg/ic_control_mode_hand.png'
-                          : 'assets/official_tailg/ic_control_mode_induction.png',
-                      width: 54,
-                      height: 42,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 54,
-                        height: 42,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(21),
-                        ),
-                        child: Icon(
+              Positioned(
+                right: 0,
+                top: 7,
+                child: Tooltip(
+                  message: manualModeEnabled
+                      ? '已开启手动模式：点按关闭'
+                      : '开启手动模式：禁用感应解锁/自动连接',
+                  child: AppPressable(
+                    onTap: onToggleManualMode,
+                    haptic: false,
+                    semanticsLabel: '手动模式',
+                    semanticsButton: true,
+                    semanticsEnabled: true,
+                    semanticsToggled: manualModeEnabled,
+                    child: SizedBox(
+                      width: 78,
+                      height: 44,
+                      child: Center(
+                        child: Image.asset(
                           manualModeEnabled || !bleReady
-                              ? Icons.touch_app
-                              : Icons.bluetooth_connected,
-                          size: 20,
-                          color: AppColors.brandRed,
+                              ? 'assets/official_tailg/ic_control_mode_hand.png'
+                              : 'assets/official_tailg/ic_control_mode_induction.png',
+                          width: 74,
+                          height: 38,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 74,
+                            height: 38,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(19),
+                            ),
+                            child: Icon(
+                              manualModeEnabled || !bleReady
+                                  ? Icons.touch_app
+                                  : Icons.bluetooth_connected,
+                              size: 20,
+                              color: AppColors.brandRed,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

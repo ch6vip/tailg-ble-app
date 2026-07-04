@@ -32,7 +32,7 @@ Future<void> _pumpControlPage(WidgetTester tester, Size size) async {
   await tester.pump(const Duration(milliseconds: 50));
   expect(tester.takeException(), isNull);
   // Official replica lower area follows app-ui fragment_control.xml.
-  expect(find.text('车辆定位'), findsOneWidget);
+  expect(find.text('车辆位置'), findsOneWidget);
 }
 
 void main() {
@@ -54,7 +54,7 @@ void main() {
   // Official lower entries are visible on control page.
   testWidgets('service cards display key text labels', (tester) async {
     await _pumpControlPage(tester, const Size(430, 2600));
-    expect(find.text('车辆定位'), findsOneWidget);
+    expect(find.text('车辆位置'), findsOneWidget);
     expect(find.text('历史轨迹'), findsOneWidget);
     expect(find.text('功能设置'), findsOneWidget);
     expect(find.text('NFC钥匙'), findsOneWidget);
@@ -63,7 +63,7 @@ void main() {
   testWidgets('service cards use AppPressable feedback', (tester) async {
     await _pumpControlPage(tester, const Size(430, 2600));
 
-    for (final label in ['车辆定位', '历史轨迹', 'NFC钥匙']) {
+    for (final label in ['车辆位置', '历史轨迹', 'NFC钥匙']) {
       final card = find.ancestor(
         of: find.text(label),
         matching: find.byType(AppPressable),
@@ -82,7 +82,7 @@ void main() {
     try {
       await _pumpControlPage(tester, const Size(430, 2600));
 
-      for (final label in ['车辆定位', '历史轨迹', '可添加GPS', 'NFC钥匙']) {
+      for (final label in ['车辆位置', '历史轨迹', '可添加GPS', 'NFC钥匙']) {
         final card = find.bySemanticsLabel(label);
         expect(card, findsOneWidget);
         expect(

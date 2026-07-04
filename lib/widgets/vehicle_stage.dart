@@ -345,42 +345,54 @@ class VehicleStage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned(
-            left: 24,
-            right: 24,
-            bottom: 14,
-            child: Container(
-              height: 22,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(999),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF385064).withValues(alpha: 0.18),
-                    blurRadius: 24,
-                    spreadRadius: 2,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final vehicleWidth = (constraints.maxWidth * 0.66).clamp(218.0, 300.0);
+        return SizedBox(
+          height: height,
+          width: double.infinity,
+          child: Stack(
+            alignment: Alignment.topCenter,
+            children: [
+              Positioned(
+                left: (constraints.maxWidth - vehicleWidth) / 2 + 18,
+                right: (constraints.maxWidth - vehicleWidth) / 2 + 18,
+                bottom: 28,
+                child: Container(
+                  height: 18,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF385064).withValues(alpha: 0.14),
+                        blurRadius: 24,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+              Positioned(
+                top: 0,
+                child: Image.asset(
+                  'assets/official_tailg/vehicle.png',
+                  fit: BoxFit.contain,
+                  width: vehicleWidth,
+                  height: height - 18,
+                  semanticLabel: '台铃车辆',
+                  errorBuilder: (_, __, ___) => SizedBox(
+                    width: vehicleWidth,
+                    height: height - 18,
+                    child: CustomPaint(
+                      painter: VehicleStagePainter(batteryLevel: batteryLevel),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          Image.asset(
-            'assets/official_tailg/vehicle.png',
-            fit: BoxFit.contain,
-            width: double.infinity,
-            height: height,
-            semanticLabel: '台铃车辆',
-            errorBuilder: (_, __, ___) => CustomPaint(
-              painter: VehicleStagePainter(batteryLevel: batteryLevel),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
