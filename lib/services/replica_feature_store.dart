@@ -177,14 +177,8 @@ class ReplicaFeatureStore {
   }
 
   List<T> _decodeList<T>(String? raw, T Function(Map<String, dynamic>) decode) {
-    if (raw == null || raw.isEmpty) return [];
-    final Object? decoded;
-    try {
-      decoded = jsonDecode(raw);
-    } catch (e) {
-      _logWarning('ReplicaFeatureStore: JSON decode failed', e);
-      return [];
-    }
+    final decoded = _decodeJson(raw, 'ReplicaFeatureStore: JSON decode failed');
+    if (decoded == null) return [];
     if (decoded is! List) {
       _logWarning(
         'ReplicaFeatureStore: expected list payload',
@@ -212,19 +206,24 @@ class ReplicaFeatureStore {
   }
 
   Map<String, dynamic>? _decodeMap(String? raw) {
+    final decoded = _decodeJson(raw, 'ReplicaFeatureStore: decode map failed');
+    if (decoded == null) return null;
+    if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    _logWarning(
+      'ReplicaFeatureStore: expected map payload',
+      decoded.runtimeType,
+    );
+    return null;
+  }
+
+  Object? _decodeJson(String? raw, String errorMessage) {
     if (raw == null || raw.isEmpty) return null;
     try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map) return Map<String, dynamic>.from(decoded);
-      _logWarning(
-        'ReplicaFeatureStore: expected map payload',
-        decoded.runtimeType,
-      );
+      return jsonDecode(raw);
     } catch (e) {
-      _logWarning('ReplicaFeatureStore: decode map failed', e);
+      _logWarning(errorMessage, e);
       return null;
     }
-    return null;
   }
 
   Future<void> _saveList(
