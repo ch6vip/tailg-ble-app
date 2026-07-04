@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart';
 
+import 'helpers/view_size.dart';
+
 void main() {
   testWidgets('App renders home page', (WidgetTester tester) async {
     await tester.pumpWidget(const TailgBleApp());
@@ -17,9 +19,7 @@ void main() {
   testWidgets('Unbound home stays stable on a narrow surface', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(320, 1800);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
+    setTestViewSize(tester, const Size(320, 1800));
 
     await tester.pumpWidget(const TailgBleApp());
     await tester.pump(const Duration(milliseconds: 50));

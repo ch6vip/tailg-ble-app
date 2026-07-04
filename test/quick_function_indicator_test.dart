@@ -8,6 +8,7 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
+import 'helpers/view_size.dart';
 
 Future<void> _pumpControlPage(WidgetTester tester, Size size) async {
   resetMockPreferences();
@@ -20,8 +21,7 @@ Future<void> _pumpControlPage(WidgetTester tester, Size size) async {
     makeDefault: true,
   );
 
-  tester.view.physicalSize = size;
-  tester.view.devicePixelRatio = 1.0;
+  applyTestViewSize(tester, size);
   addTearDown(() async {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();

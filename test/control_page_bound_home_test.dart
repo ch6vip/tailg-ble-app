@@ -11,6 +11,7 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
+import 'helpers/view_size.dart';
 
 void main() {
   Future<void> pumpBoundHome(
@@ -43,8 +44,7 @@ void main() {
     }
 
     if (size != null) {
-      tester.view.physicalSize = size;
-      tester.view.devicePixelRatio = 1.0;
+      applyTestViewSize(tester, size);
       addTearDown(() async {
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();

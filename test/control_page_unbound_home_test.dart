@@ -9,6 +9,7 @@ import 'helpers/snack_finders.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
+import 'helpers/view_size.dart';
 
 void main() {
   testWidgets('unbound banner auto advance pauses with app lifecycle', (
@@ -18,8 +19,7 @@ void main() {
     VehicleStore().resetForTest();
     await VehicleStore().init();
 
-    tester.view.physicalSize = const Size(430, 2200);
-    tester.view.devicePixelRatio = 1.0;
+    applyTestViewSize(tester, const Size(430, 2200));
     addTearDown(() async {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpWidget(const SizedBox.shrink());
@@ -60,8 +60,7 @@ void main() {
     VehicleStore().resetForTest();
     await VehicleStore().init();
 
-    tester.view.physicalSize = const Size(430, 2200);
-    tester.view.devicePixelRatio = 1.0;
+    applyTestViewSize(tester, const Size(430, 2200));
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
@@ -88,8 +87,7 @@ void main() {
       await VehicleStore().init();
 
       try {
-        tester.view.physicalSize = const Size(430, 2200);
-        tester.view.devicePixelRatio = 1.0;
+        applyTestViewSize(tester, const Size(430, 2200));
         addTearDown(() async {
           await tester.pumpWidget(const SizedBox.shrink());
           await tester.pump();
@@ -141,8 +139,7 @@ void main() {
     await VehicleStore().init();
 
     try {
-      tester.view.physicalSize = const Size(430, 2200);
-      tester.view.devicePixelRatio = 1.0;
+      applyTestViewSize(tester, const Size(430, 2200));
       addTearDown(() async {
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();
