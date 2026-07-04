@@ -1,4 +1,3 @@
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart';
@@ -6,6 +5,7 @@ import 'package:tailg_ble_app/services/ble_connection_snapshot_guard.dart';
 import 'package:tailg_ble_app/services/proximity_service.dart';
 
 import 'helpers/allowing_snapshot_guard.dart';
+import 'helpers/ble_guard_fixtures.dart';
 import 'helpers/storage_mocks.dart';
 
 void main() {
@@ -38,19 +38,18 @@ void main() {
 
   test('ProximityUnlockGuard blocks unlock when manual mode is enabled', () {
     const guard = ProximityUnlockGuard();
-    final manager = ConnectionManager();
-    final device = BluetoothDevice(remoteId: const DeviceIdentifier('bike-1'));
-    addTearDown(manager.dispose);
+    final fixture = BleGuardFixture();
+    addTearDown(fixture.manager.dispose);
 
     expect(
       guard.allowsUnlock(
         proximityEnabled: true,
         manualModeEnabled: true,
-        targetDeviceId: 'bike-1',
-        deviceId: 'bike-1',
-        manager: manager,
-        device: device,
-        currentManager: manager,
+        targetDeviceId: testBleDeviceId,
+        deviceId: testBleDeviceId,
+        manager: fixture.manager,
+        device: fixture.device,
+        currentManager: fixture.manager,
         snapshotGuard: const BleConnectionSnapshotGuard(),
       ),
       isFalse,
@@ -59,19 +58,18 @@ void main() {
 
   test('ProximityUnlockGuard allows unlock when manual mode is disabled', () {
     const guard = ProximityUnlockGuard();
-    final manager = ConnectionManager();
-    final device = BluetoothDevice(remoteId: const DeviceIdentifier('bike-1'));
-    addTearDown(manager.dispose);
+    final fixture = BleGuardFixture();
+    addTearDown(fixture.manager.dispose);
 
     expect(
       guard.allowsUnlock(
         proximityEnabled: true,
         manualModeEnabled: false,
-        targetDeviceId: 'bike-1',
-        deviceId: 'bike-1',
-        manager: manager,
-        device: device,
-        currentManager: manager,
+        targetDeviceId: testBleDeviceId,
+        deviceId: testBleDeviceId,
+        manager: fixture.manager,
+        device: fixture.device,
+        currentManager: fixture.manager,
         snapshotGuard: const AllowingSnapshotGuard(),
       ),
       isTrue,
