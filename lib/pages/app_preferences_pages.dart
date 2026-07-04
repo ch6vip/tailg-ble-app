@@ -331,45 +331,33 @@ class _OptionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final semanticLabel = subtitle == null ? title : '$title，$subtitle';
-    return Semantics(
-      label: semanticLabel,
-      button: true,
-      enabled: true,
+    return _PreferenceRowPressable(
+      semanticLabel: semanticLabel,
       selected: selected,
       onTap: onTap,
-      child: ExcludeSemantics(
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              child: Row(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title, style: AppTextStyles.itemTitle),
-                        if (subtitle != null) ...[
-                          const SizedBox(height: 4),
-                          Text(subtitle!, style: AppTextStyles.smallText),
-                        ],
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    selected
-                        ? Icons.check_circle_outline
-                        : Icons.radio_button_unchecked,
-                    color: selected
-                        ? AppColors.primary
-                        : AppColors.textTertiary,
-                  ),
+                  Text(title, style: AppTextStyles.itemTitle),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 4),
+                    Text(subtitle!, style: AppTextStyles.smallText),
+                  ],
                 ],
               ),
             ),
-          ),
+            Icon(
+              selected
+                  ? Icons.check_circle_outline
+                  : Icons.radio_button_unchecked,
+              color: selected ? AppColors.primary : AppColors.textTertiary,
+            ),
+          ],
         ),
       ),
     );
@@ -391,41 +379,62 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _PreferenceRowPressable(
+      semanticLabel: '$title，$subtitle',
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+        child: Row(
+          children: [
+            _RowIcon(icon),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AppTextStyles.itemTitle),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: AppTextStyles.smallText),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textTertiary,
+              size: AppIconSizes.md,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PreferenceRowPressable extends StatelessWidget {
+  final String semanticLabel;
+  final bool? selected;
+  final VoidCallback onTap;
+  final Widget child;
+
+  const _PreferenceRowPressable({
+    required this.semanticLabel,
+    this.selected,
+    required this.onTap,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Semantics(
-      label: '$title，$subtitle',
+      label: semanticLabel,
       button: true,
       enabled: true,
+      selected: selected,
       onTap: onTap,
       child: ExcludeSemantics(
         child: Material(
           color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
-              child: Row(
-                children: [
-                  _RowIcon(icon),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title, style: AppTextStyles.itemTitle),
-                        const SizedBox(height: 4),
-                        Text(subtitle, style: AppTextStyles.smallText),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: AppColors.textTertiary,
-                    size: AppIconSizes.md,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          child: InkWell(onTap: onTap, child: child),
         ),
       ),
     );
