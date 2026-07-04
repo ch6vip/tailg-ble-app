@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/official_cloud_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 
 import 'helpers/source_scan.dart';
+import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -18,7 +18,7 @@ void main() {
   });
 
   setUp(() {
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
     app.vehicleStore.resetForTest();
     app.officialCloudService.resetForTest();
   });

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/app_preferences_pages.dart';
 
 import 'helpers/snack_finders.dart';
+import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 
 void main() {
   setUp(() {
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
     app.appPreferencesService.resetForTest();
     app.logService.clear();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -21,7 +21,7 @@ void main() {
   });
 
   tearDown(() {
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
     app.appPreferencesService.resetForTest();
     app.logService.clear();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/pages/diagnostic_page.dart';
 
 import 'helpers/snack_finders.dart';
+import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 
 void main() {
   testWidgets(
     'diagnostic action shows info snack when vehicle is disconnected',
     (tester) async {
-      SharedPreferences.setMockInitialValues({});
+      resetMockPreferences();
 
       await tester.pumpWidget(const TestApp(home: DiagnosticPage()));
       await tester.pump();

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
+import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 
 Future<void> _pumpControlPage(WidgetTester tester, Size size) async {
-  SharedPreferences.setMockInitialValues({});
+  resetMockPreferences();
   VehicleStore().resetForTest();
   await VehicleStore().init();
   await VehicleStore().upsert(
