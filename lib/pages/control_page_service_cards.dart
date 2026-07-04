@@ -103,14 +103,15 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
   }
 
   bool _supportsNavigationProjection(OfficialVehicle? vehicle) =>
-      vehicle?.modelType == -9001;
-  bool _supportsCamera(OfficialVehicle? vehicle) => vehicle?.modelType == -9002;
+      vehicle?.supportsNavigationProjection == true;
+  bool _supportsCamera(OfficialVehicle? vehicle) =>
+      vehicle?.supportsCamera == true;
   bool _supportsSmartMeter(OfficialVehicle? vehicle) =>
-      vehicle?.modelType == -9003;
+      vehicle?.supportsSmartMeter == true;
   bool _supportsBleRenewal(OfficialVehicle? vehicle) =>
-      vehicle?.modelType == -9004;
+      vehicle?.supportsBleRenewal == true;
   bool _supportsChargingStation(OfficialVehicle? vehicle) =>
-      vehicle?.modelType == -9005;
+      vehicle?.supportsChargingStation == true;
 }
 
 // ── Official Control Lower Area ───────────────────────────────────

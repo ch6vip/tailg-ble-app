@@ -480,6 +480,12 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final coreColor = widget.powered ? AppColors.brandRed : AppColors.brandRed;
+    final backgroundAsset = widget.powered
+        ? 'assets/official_tailg/ic_control_stop_drw_bg.png'
+        : 'assets/official_tailg/ic_control_start_drw_bg.png';
+    final handleAsset = widget.powered
+        ? 'assets/official_tailg/ic_slide_start_tip_anti_r.png'
+        : 'assets/official_tailg/ic_slide_start_tip_r.png';
     final semanticLabel = widget.busy
         ? '电源：处理中'
         : widget.powered
@@ -497,6 +503,7 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
       onDecrease: widget.powered ? semanticAction : null,
       child: ExcludeSemantics(
         child: GestureDetector(
+          key: const ValueKey('control-power-slide'),
           behavior: HitTestBehavior.opaque,
           onHorizontalDragStart: _onDragStart,
           onHorizontalDragUpdate: _onDragUpdate,
@@ -531,6 +538,11 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   color: const Color(0xFFEFF0F5),
                   borderRadius: BorderRadius.circular(15),
+                  image: DecorationImage(
+                    image: AssetImage(backgroundAsset),
+                    fit: BoxFit.fill,
+                    opacity: 0.92,
+                  ),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Stack(
@@ -568,11 +580,11 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
                       curve: Curves.easeOutCubic,
                       alignment: knobAlignment,
                       child: Container(
-                        width: 52,
-                        height: 52,
+                        width: 54,
+                        height: 54,
                         margin: const EdgeInsets.symmetric(horizontal: 7),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Colors.white.withValues(alpha: 0.96),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
@@ -590,12 +602,18 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
                                   color: AppColors.brandRed,
                                 ),
                               )
-                            : Icon(
-                                widget.powered
-                                    ? Icons.power_off
-                                    : Icons.power_settings_new,
-                                color: AppColors.brandRed,
-                                size: 24,
+                            : Image.asset(
+                                handleAsset,
+                                width: 54,
+                                height: 54,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => Icon(
+                                  widget.powered
+                                      ? Icons.keyboard_arrow_left
+                                      : Icons.keyboard_arrow_right,
+                                  color: AppColors.brandRed,
+                                  size: 26,
+                                ),
                               ),
                       ),
                     ),

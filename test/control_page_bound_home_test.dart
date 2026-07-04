@@ -103,6 +103,33 @@ void main() {
     expect(find.text('功能设置'), findsOneWidget);
   });
 
+  testWidgets('official feature flags reveal conditional control modules', (
+    tester,
+  ) async {
+    final vehicle = OfficialVehicle.fromJson({
+      'imei': 'IMEI_MAIN',
+      'carId': 'feature-bike',
+      'btmac': 'AA:BB:CC:DD:EE:FF',
+      'navigationProjection': '1',
+      'cameraService': true,
+      'smartMeter': {'enabled': true},
+      'bleRenewal': 1,
+      'chargingStation': 'true',
+    });
+
+    await pumpBoundHome(
+      tester,
+      size: const Size(430, 3200),
+      officialVehicle: vehicle,
+    );
+
+    expect(find.text('导航投屏'), findsOneWidget);
+    expect(find.text('摄像头'), findsOneWidget);
+    expect(find.text('智能仪表'), findsOneWidget);
+    expect(find.text('蓝牙续费'), findsOneWidget);
+    expect(find.text('台铃充电站'), findsOneWidget);
+  });
+
   testWidgets('official control card exposes default quick placeholders', (
     tester,
   ) async {
@@ -244,6 +271,7 @@ void main() {
       expect(find.text('已启动'), findsNothing);
       expect(find.text('已设防'), findsNothing);
       expect(find.text('未设防'), findsNothing);
+      expect(find.text('等待连接'), findsOneWidget);
       expect(find.bySemanticsLabel('点击连接'), findsOneWidget);
 
       final modeAction = find.bySemanticsLabel('感应模式');

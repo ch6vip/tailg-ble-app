@@ -51,8 +51,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   // ── Helpers ────────────────────────────────────────────────────────
 
   bool get _isBleReady => widget.connState == ble.ConnectionState.ready;
-  bool get _isReconnecting =>
-      widget.connState == ble.ConnectionState.reconnecting;
 
   bool _currentIsPowerOn() {
     final availability = _controlAvailability();
@@ -345,11 +343,13 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             connectionManager.device?.platformName ??
             vehicleStore.defaultVehicle?.displayName ??
             '我的车辆';
-        final connectionLabel = _isBleReady
-            ? '已连接'
-            : _isReconnecting
-            ? '连接中'
-            : null;
+        final connectionLabel = widget.connState.label;
+        final connectionProtocol = _connectionProtocolLabel();
+        final statusText = _officialTipText(
+          connState: widget.connState,
+          cloudVehicle: cloudVehicle,
+          manualModeEnabled: _manualModeEnabled,
+        );
         final topPadding = MediaQuery.paddingOf(context).top + 18;
         return Container(
           decoration: const BoxDecoration(
@@ -370,6 +370,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                 vehicleName: cloudVehicle?.displayName ?? vehicleName,
                 online: cloudVehicle?.online ?? true,
                 connectionLabel: connectionLabel,
+                connectionVariant: connectionProtocol,
                 onConnect: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => const AddVehiclePage(),
@@ -392,9 +393,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _OfficialControlTip(
                   bleReady: _isBleReady,
-                  statusText:
-                      cloudVehicle?.onlineLabel ??
-                      (_isBleReady ? '蓝牙已连接' : '等待连接'),
+                  statusText: statusText,
                   manualModeEnabled: _manualModeEnabled,
                   onToggleManualMode: _toggleManualMode,
                 ),
@@ -423,6 +422,32 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
       },
     );
   }
+}
+
+String _connectionProtocolLabel() {
+  final protocol = connectionManager.protocol != ble.ProtocolType.unknown
+      ? connectionManager.protocol
+      : connectionManager.lastKnownProtocol;
+  return switch (protocol) {
+    ble.ProtocolType.qgj => 'QGJ',
+    ble.ProtocolType.standard => 'BLE',
+    ble.ProtocolType.unknown => '',
+  };
+}
+
+String _officialTipText({
+  required ble.ConnectionState connState,
+  required OfficialVehicle? cloudVehicle,
+  required bool manualModeEnabled,
+}) {
+  return switch (connState) {
+    ble.ConnectionState.ready when manualModeEnabled => '手动模式控车',
+    ble.ConnectionState.ready => '蓝牙已连接',
+    ble.ConnectionState.connected => '蓝牙加载中',
+    ble.ConnectionState.connecting => '蓝牙连接中',
+    ble.ConnectionState.reconnecting => '蓝牙重连中',
+    ble.ConnectionState.disconnected => cloudVehicle?.onlineLabel ?? '等待连接',
+  };
 }
 
 class _OfficialControlTip extends StatelessWidget {

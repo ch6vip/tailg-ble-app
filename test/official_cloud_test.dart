@@ -72,6 +72,38 @@ void main() {
       expect(vehicle.normalizedBtmac, isEmpty);
       expect(vehicle.hasBleIdentity, isFalse);
     });
+
+    test('parses official feature flags for conditional control modules', () {
+      final vehicle = OfficialVehicle.fromJson({
+        'navigationProjection': '1',
+        'cameraService': true,
+        'smartMeter': {'enabled': true},
+        'bleRenewal': 1,
+        'chargingStation': 'true',
+      });
+
+      expect(vehicle.supportsNavigationProjection, isTrue);
+      expect(vehicle.supportsCamera, isTrue);
+      expect(vehicle.supportsSmartMeter, isTrue);
+      expect(vehicle.supportsBleRenewal, isTrue);
+      expect(vehicle.supportsChargingStation, isTrue);
+    });
+
+    test('treats disabled official feature flags as hidden', () {
+      final vehicle = OfficialVehicle.fromJson({
+        'navigationProjection': '0',
+        'cameraService': false,
+        'smartMeter': {'enabled': false},
+        'bleRenewal': '关闭',
+        'chargingStation': 'false',
+      });
+
+      expect(vehicle.supportsNavigationProjection, isFalse);
+      expect(vehicle.supportsCamera, isFalse);
+      expect(vehicle.supportsSmartMeter, isFalse);
+      expect(vehicle.supportsBleRenewal, isFalse);
+      expect(vehicle.supportsChargingStation, isFalse);
+    });
   });
 
   group('OfficialCloudCommand', () {

@@ -130,4 +130,39 @@ void main() {
       expect(rangeSpacing, nonNegativeLetterSpacing);
     }
   });
+
+  testWidgets('ble connection pill follows official status labels', (
+    tester,
+  ) async {
+    Future<void> pump(String? label) async {
+      await tester.pumpWidget(
+        TestApp(
+          home: Scaffold(
+            body: ControlPageHero(
+              batteryLevel: 72,
+              rangeKm: 48,
+              vehicleName: '测试车辆',
+              connectionLabel: label,
+              connectionVariant: 'QGJ',
+              onConnect: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    await pump('未连接');
+    expect(find.bySemanticsLabel('点击连接'), findsOneWidget);
+    expect(find.text('QGJ'), findsOneWidget);
+
+    await pump('连接中');
+    expect(find.bySemanticsLabel('连接中'), findsOneWidget);
+
+    await pump('正在重连');
+    expect(find.bySemanticsLabel('重连中'), findsOneWidget);
+
+    await pump('已连接');
+    expect(find.bySemanticsLabel('已连接'), findsOneWidget);
+  });
 }

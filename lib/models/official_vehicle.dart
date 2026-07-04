@@ -43,6 +43,7 @@ class OfficialVehicle {
   final String latitude;
   final int? modelType;
   final double? mileage;
+  final Map<String, dynamic> raw;
 
   const OfficialVehicle({
     required this.imei,
@@ -63,6 +64,7 @@ class OfficialVehicle {
     required this.latitude,
     required this.modelType,
     required this.mileage,
+    this.raw = const {},
   });
 
   factory OfficialVehicle.fromJson(Map<String, dynamic> json) {
@@ -85,6 +87,7 @@ class OfficialVehicle {
       latitude: _stringValue(json['latitude']),
       modelType: _intOrNull(json['modelType']),
       mileage: _doubleOrNull(json['mileage']),
+      raw: Map<String, dynamic>.unmodifiable(json),
     );
   }
 
@@ -151,6 +154,37 @@ class OfficialVehicle {
 
   bool get isLocked => defenceStatus == 1;
   bool get isPowerOn => acc == 1;
+
+  bool get supportsNavigationProjection => _rawFeatureFlag(raw, const [
+    'navigationProjection',
+    'navProjection',
+    'screenProjection',
+    'mapEs',
+    'mapProjection',
+  ]);
+
+  bool get supportsCamera =>
+      _rawFeatureFlag(raw, const ['camera', 'cameraService', 'videoService']);
+
+  bool get supportsSmartMeter => _rawFeatureFlag(raw, const [
+    'smartMeter',
+    'smartInstrument',
+    'instrumentService',
+    'sqService',
+  ]);
+
+  bool get supportsBleRenewal => _rawFeatureFlag(raw, const [
+    'bleRenewal',
+    'bluetoothRenewal',
+    'bleRecharge',
+    'bleServiceRenew',
+  ]);
+
+  bool get supportsChargingStation => _rawFeatureFlag(raw, const [
+    'chargingStation',
+    'chargeStation',
+    'tailgCharging',
+  ]);
 
   String get onlineLabel => online ? '车辆在线' : '车辆离线';
   String get defenceLabel => isLocked ? '已设防' : '已解防';
@@ -556,6 +590,65 @@ class OfficialVehicleSelfCheck {
 }
 
 String _stringValue(Object? value) => value?.toString().trim() ?? '';
+
+bool _rawFeatureFlag(Map<String, dynamic> raw, List<String> keys) {
+  if (raw.isEmpty) return false;
+  final targets = keys.map((key) => key.toLowerCase()).toList(growable: false);
+  return _rawEntries(raw).any((entry) {
+    final key = entry.key.toLowerCase();
+    if (!targets.any(key.contains)) return false;
+    return _truthyFeatureValue(entry.value);
+  });
+}
+
+Iterable<MapEntry<String, Object?>> _rawEntries(
+  Map<Object?, Object?> raw, [
+  String prefix = '',
+]) sync* {
+  for (final entry in raw.entries) {
+    final key = entry.key?.toString() ?? '';
+    final path = prefix.isEmpty ? key : '$prefix.$key';
+    final value = entry.value;
+    yield MapEntry(path, value);
+    if (value is Map<Object?, Object?>) {
+      yield* _rawEntries(value, path);
+    }
+  }
+}
+
+bool _truthyFeatureValue(Object? value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  if (value is String) {
+    final text = value.trim().toLowerCase();
+    if (text.isEmpty) return false;
+    return !const {
+      '0',
+      'false',
+      'no',
+      'n',
+      'off',
+      '关闭',
+      '无',
+      'none',
+      'null',
+    }.contains(text);
+  }
+  if (value is Iterable) return value.isNotEmpty;
+  if (value is Map) {
+    for (final key in const [
+      'enabled',
+      'enable',
+      'support',
+      'supported',
+      'open',
+    ]) {
+      if (value.containsKey(key)) return _truthyFeatureValue(value[key]);
+    }
+    return value.isNotEmpty;
+  }
+  return value != null;
+}
 
 bool _boolValue(Object? value) {
   if (value is bool) return value;

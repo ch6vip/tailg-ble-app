@@ -84,7 +84,7 @@ void main() {
     );
 
     await tester.drag(
-      find.byIcon(Icons.power_settings_new),
+      find.byKey(const ValueKey('control-power-slide')),
       const Offset(640, 0),
     );
     await tester.pumpAndSettle();
@@ -99,7 +99,10 @@ void main() {
       TestApp(home: ControlCard(powered: true, onPowerOn: () => powerCount++)),
     );
 
-    await tester.drag(find.byIcon(Icons.power_off), const Offset(-640, 0));
+    await tester.drag(
+      find.byKey(const ValueKey('control-power-slide')),
+      const Offset(-640, 0),
+    );
     await tester.pumpAndSettle();
 
     expect(powerCount, 1);
@@ -203,7 +206,7 @@ void main() {
     );
 
     await tester.drag(
-      find.byIcon(Icons.power_settings_new),
+      find.byKey(const ValueKey('control-power-slide')),
       const Offset(40, 0),
     );
     await tester.pumpAndSettle();
@@ -224,7 +227,9 @@ void main() {
       kind: PointerDeviceKind.mouse,
       buttons: kSecondaryMouseButton,
     );
-    await gesture.down(tester.getCenter(find.byIcon(Icons.power_settings_new)));
+    await gesture.down(
+      tester.getCenter(find.byKey(const ValueKey('control-power-slide'))),
+    );
     await gesture.moveBy(const Offset(180, 0));
     await gesture.up();
     await tester.pumpAndSettle();

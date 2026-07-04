@@ -12,6 +12,7 @@ class ControlPageHero extends StatelessWidget {
     this.vehicleName,
     this.online = true,
     this.connectionLabel,
+    this.connectionVariant,
     this.onVehicleSwitch,
     this.onConnect,
     this.onDetail,
@@ -35,6 +36,9 @@ class ControlPageHero extends StatelessWidget {
 
   /// Connection status label from the control channel.
   final String? connectionLabel;
+
+  /// Official header has separate BLE views for protocol variants.
+  final String? connectionVariant;
 
   final VoidCallback? onVehicleSwitch;
   final VoidCallback? onConnect;
@@ -91,12 +95,14 @@ class ControlPageHero extends StatelessWidget {
                         batteryLevel: batteryLevel,
                         displayRange: displayRange,
                         connectionLabel: connectionLabel,
+                        connectionVariant: connectionVariant,
                         onConnect: onConnect,
                       )
                     : _NarrowHeroData(
                         batteryLevel: batteryLevel,
                         displayRange: displayRange,
                         connectionLabel: connectionLabel,
+                        connectionVariant: connectionVariant,
                         onConnect: onConnect,
                       ),
               ),
@@ -208,12 +214,14 @@ class _WideHeroData extends StatelessWidget {
     required this.batteryLevel,
     required this.displayRange,
     required this.connectionLabel,
+    required this.connectionVariant,
     this.onConnect,
   });
 
   final int batteryLevel;
   final int displayRange;
   final String? connectionLabel;
+  final String? connectionVariant;
   final VoidCallback? onConnect;
 
   @override
@@ -225,7 +233,11 @@ class _WideHeroData extends StatelessWidget {
         const SizedBox(width: 46),
         _RangeMetric(value: displayRange),
         const Spacer(),
-        _BleConnectPill(label: connectionLabel, onTap: onConnect),
+        _BleConnectPill(
+          label: connectionLabel,
+          variant: connectionVariant,
+          onTap: onConnect,
+        ),
       ],
     );
   }
@@ -236,12 +248,14 @@ class _NarrowHeroData extends StatelessWidget {
     required this.batteryLevel,
     required this.displayRange,
     required this.connectionLabel,
+    required this.connectionVariant,
     this.onConnect,
   });
 
   final int batteryLevel;
   final int displayRange;
   final String? connectionLabel;
+  final String? connectionVariant;
   final VoidCallback? onConnect;
 
   @override
@@ -255,7 +269,11 @@ class _NarrowHeroData extends StatelessWidget {
             _BatteryIconMetric(level: batteryLevel),
             const SizedBox(width: 34),
             Expanded(child: _RangeMetric(value: displayRange)),
-            _BleConnectPill(label: connectionLabel, onTap: onConnect),
+            _BleConnectPill(
+              label: connectionLabel,
+              variant: connectionVariant,
+              onTap: onConnect,
+            ),
           ],
         ),
       ],
@@ -481,32 +499,26 @@ class _RangeMetric extends StatelessWidget {
 }
 
 class _BleConnectPill extends StatelessWidget {
-  const _BleConnectPill({required this.label, this.onTap});
+  const _BleConnectPill({required this.label, this.variant, this.onTap});
 
   final String? label;
+  final String? variant;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final connected = label?.trim() == '已连接';
-    final connecting = label?.trim() == '连接中';
-    final text = connected
-        ? '已连接'
-        : connecting
-        ? '连接中'
-        : '点击连接';
+    final state = _BlePillState.fromLabel(label, onTap != null);
     return AppPressable(
       onTap: onTap,
       haptic: false,
-      semanticsLabel: text,
+      semanticsLabel: state.text,
       semanticsButton: true,
       semanticsEnabled: onTap != null,
       child: Container(
         height: 33,
-        constraints: const BoxConstraints(minWidth: 82),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        constraints: const BoxConstraints(minWidth: 92),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.9),
+          color: state.fallbackBg,
           borderRadius: BorderRadius.circular(17),
           boxShadow: [
             BoxShadow(
@@ -516,31 +528,132 @@ class _BleConnectPill extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.passthrough,
           children: [
-            Icon(
-              connected ? Icons.bluetooth_connected : Icons.bluetooth,
-              size: 15,
-              color: connected
-                  ? const Color(0xFF31C764)
-                  : AppColors.officialTextMuted,
+            Positioned.fill(
+              child: Image.asset(
+                state.backgroundAsset,
+                fit: BoxFit.fill,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
             ),
-            const SizedBox(width: 4),
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0,
-                color: connected
-                    ? AppColors.officialTextMuted
-                    : AppColors.brandRed,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 11),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    state.iconAsset,
+                    width: 15,
+                    height: 15,
+                    errorBuilder: (_, __, ___) => Icon(
+                      state.connected
+                          ? Icons.bluetooth_connected
+                          : Icons.bluetooth,
+                      size: 15,
+                      color: state.iconColor,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  if ((variant ?? '').trim().isNotEmpty) ...[
+                    Text(
+                      variant!.trim(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0,
+                        color: state.textColor.withValues(alpha: 0.82),
+                      ),
+                    ),
+                    const SizedBox(width: 3),
+                  ],
+                  Text(
+                    state.text,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0,
+                      color: state.textColor,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _BlePillState {
+  const _BlePillState({
+    required this.text,
+    required this.backgroundAsset,
+    required this.iconAsset,
+    required this.fallbackBg,
+    required this.textColor,
+    required this.iconColor,
+    required this.connected,
+  });
+
+  final String text;
+  final String backgroundAsset;
+  final String iconAsset;
+  final Color fallbackBg;
+  final Color textColor;
+  final Color iconColor;
+  final bool connected;
+
+  static _BlePillState fromLabel(String? label, bool canConnect) {
+    final normalized = label?.trim();
+    final connected = normalized == '已连接';
+    final pending =
+        normalized == '连接中' || normalized == '正在重连' || normalized == '加载中...';
+    final text = connected
+        ? '已连接'
+        : pending
+        ? (normalized == '正在重连' ? '重连中' : '连接中')
+        : canConnect
+        ? '点击连接'
+        : '未连接';
+    if (connected) {
+      return const _BlePillState(
+        text: '已连接',
+        backgroundAsset: 'assets/official_tailg/ic_control_ble_bg_connect.png',
+        iconAsset: 'assets/official_tailg/ic_control_ble_clint.png',
+        fallbackBg: Color(0xFFEAF8EF),
+        textColor: AppColors.textPrimary,
+        iconColor: Color(0xFF31C764),
+        connected: true,
+      );
+    }
+    if (pending) {
+      return _BlePillState(
+        text: text,
+        backgroundAsset:
+            'assets/official_tailg/ic_control_ble_bg_can_connect.png',
+        iconAsset: 'assets/official_tailg/ic_control_ble_unclint.png',
+        fallbackBg: const Color(0xFFFFF4E8),
+        textColor: AppColors.textPrimary,
+        iconColor: AppColors.officialTextMuted,
+        connected: false,
+      );
+    }
+    return _BlePillState(
+      text: text,
+      backgroundAsset: canConnect
+          ? 'assets/official_tailg/ic_control_ble_bg_can_connect.png'
+          : 'assets/official_tailg/ic_control_ble_bg_un_connect.png',
+      iconAsset: 'assets/official_tailg/ic_control_ble_unclint.png',
+      fallbackBg: canConnect
+          ? const Color(0xFFFFF1F1)
+          : const Color(0xFFEFF0F5),
+      textColor: canConnect ? AppColors.brandRed : AppColors.officialTextMuted,
+      iconColor: AppColors.officialTextMuted,
+      connected: false,
     );
   }
 }
