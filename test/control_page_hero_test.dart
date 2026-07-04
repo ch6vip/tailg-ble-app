@@ -6,6 +6,7 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
 import 'helpers/typography.dart';
+import 'helpers/view_size.dart';
 
 void main() {
   testWidgets('hero actions expose semantics and keep 44dp targets', (
@@ -103,8 +104,7 @@ void main() {
     tester,
   ) async {
     Future<void> pumpHero(Size size) async {
-      tester.view.physicalSize = size;
-      tester.view.devicePixelRatio = 1.0;
+      applyTestViewSize(tester, size);
       await tester.pumpWidget(
         const TestApp(
           home: Scaffold(
