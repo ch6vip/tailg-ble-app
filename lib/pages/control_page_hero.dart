@@ -10,10 +10,12 @@ class ControlPageHero extends StatelessWidget {
     this.rangeKm,
     this.healthLabel,
     this.vehicleName,
+    this.online = true,
     this.connectionLabel,
     this.onVehicleSwitch,
-    this.onBatteryTap,
-    this.onNotification,
+    this.onConnect,
+    this.onDetail,
+    this.onMessage,
   });
 
   /// Battery level 0-100.
@@ -28,12 +30,16 @@ class ControlPageHero extends StatelessWidget {
   /// Current vehicle name.
   final String? vehicleName;
 
+  /// Current cloud online status.
+  final bool online;
+
   /// Connection status label from the control channel.
   final String? connectionLabel;
 
   final VoidCallback? onVehicleSwitch;
-  final VoidCallback? onBatteryTap;
-  final VoidCallback? onNotification;
+  final VoidCallback? onConnect;
+  final VoidCallback? onDetail;
+  final VoidCallback? onMessage;
 
   static Color batteryColor(int level) {
     if (level >= 30) return AppColors.textPrimary;
@@ -70,32 +76,29 @@ class ControlPageHero extends StatelessWidget {
             children: [
               _TopBar(
                 displayName: displayName,
+                online: online,
                 onVehicleSwitch: onVehicleSwitch,
-                onNotification: onNotification,
+                onDetail: onDetail,
+                onMessage: onMessage,
               ),
               SizedBox(height: wide ? 16 : 12),
               Semantics(
+                container: true,
+                explicitChildNodes: true,
                 label: '电量 $batteryLevel%，续航 $displayRange km',
-                button: onBatteryTap != null,
-                enabled: onBatteryTap != null,
-                onTap: onBatteryTap,
-                child: ExcludeSemantics(
-                  child: GestureDetector(
-                    onTap: onBatteryTap,
-                    behavior: HitTestBehavior.opaque,
-                    child: wide
-                        ? _WideHeroData(
-                            batteryLevel: batteryLevel,
-                            displayRange: displayRange,
-                            connectionLabel: connectionLabel,
-                          )
-                        : _NarrowHeroData(
-                            batteryLevel: batteryLevel,
-                            displayRange: displayRange,
-                            connectionLabel: connectionLabel,
-                          ),
-                  ),
-                ),
+                child: wide
+                    ? _WideHeroData(
+                        batteryLevel: batteryLevel,
+                        displayRange: displayRange,
+                        connectionLabel: connectionLabel,
+                        onConnect: onConnect,
+                      )
+                    : _NarrowHeroData(
+                        batteryLevel: batteryLevel,
+                        displayRange: displayRange,
+                        connectionLabel: connectionLabel,
+                        onConnect: onConnect,
+                      ),
               ),
             ],
           );
@@ -108,13 +111,17 @@ class ControlPageHero extends StatelessWidget {
 class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.displayName,
+    required this.online,
     this.onVehicleSwitch,
-    this.onNotification,
+    this.onDetail,
+    this.onMessage,
   });
 
   final String displayName;
+  final bool online;
   final VoidCallback? onVehicleSwitch;
-  final VoidCallback? onNotification;
+  final VoidCallback? onDetail;
+  final VoidCallback? onMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -172,23 +179,24 @@ class _TopBar extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const _OnlineBadge(),
+              _OnlineBadge(online: online),
             ],
           ),
         ),
         const SizedBox(width: 8),
         _TopIconButton(
           asset: 'assets/official_tailg/ic_control_detail.png',
-          icon: Icons.pedal_bike_outlined,
-          semanticsLabel: '车辆详情',
-          onTap: onVehicleSwitch,
+          fallback: Icons.more_horiz,
+          label: '车辆详情',
+          onTap: onDetail,
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 14),
         _TopIconButton(
           asset: 'assets/official_tailg/ic_control_msg_change.png',
-          icon: Icons.notifications_outlined,
-          semanticsLabel: '车辆消息',
-          onTap: onNotification,
+          fallback: Icons.notifications_none,
+          label: '消息',
+          onTap: onMessage,
+          showDot: true,
         ),
       ],
     );
@@ -200,11 +208,13 @@ class _WideHeroData extends StatelessWidget {
     required this.batteryLevel,
     required this.displayRange,
     required this.connectionLabel,
+    this.onConnect,
   });
 
   final int batteryLevel;
   final int displayRange;
   final String? connectionLabel;
+  final VoidCallback? onConnect;
 
   @override
   Widget build(BuildContext context) {
@@ -215,10 +225,7 @@ class _WideHeroData extends StatelessWidget {
         const SizedBox(width: 46),
         _RangeMetric(value: displayRange),
         const Spacer(),
-        Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: _ConnectionPill(label: connectionLabel),
-        ),
+        _BleConnectPill(label: connectionLabel, onTap: onConnect),
       ],
     );
   }
@@ -229,11 +236,13 @@ class _NarrowHeroData extends StatelessWidget {
     required this.batteryLevel,
     required this.displayRange,
     required this.connectionLabel,
+    this.onConnect,
   });
 
   final int batteryLevel;
   final int displayRange;
   final String? connectionLabel;
+  final VoidCallback? onConnect;
 
   @override
   Widget build(BuildContext context) {
@@ -246,32 +255,88 @@ class _NarrowHeroData extends StatelessWidget {
             _BatteryIconMetric(level: batteryLevel),
             const SizedBox(width: 34),
             Expanded(child: _RangeMetric(value: displayRange)),
+            _BleConnectPill(label: connectionLabel, onTap: onConnect),
           ],
-        ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerRight,
-          child: _ConnectionPill(label: connectionLabel),
         ),
       ],
     );
   }
 }
 
+class _TopIconButton extends StatelessWidget {
+  const _TopIconButton({
+    required this.asset,
+    required this.fallback,
+    required this.label,
+    this.onTap,
+    this.showDot = false,
+  });
+
+  final String asset;
+  final IconData fallback;
+  final String label;
+  final VoidCallback? onTap;
+  final bool showDot;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppPressable(
+      onTap: onTap,
+      haptic: false,
+      semanticsLabel: label,
+      semanticsButton: true,
+      semanticsEnabled: onTap != null,
+      child: SizedBox(
+        width: 30,
+        height: 30,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Center(
+              child: Image.asset(
+                asset,
+                width: 24,
+                height: 24,
+                errorBuilder: (_, __, ___) =>
+                    Icon(fallback, size: 24, color: AppColors.textPrimary),
+              ),
+            ),
+            if (showDot)
+              Positioned(
+                top: 2,
+                right: 1,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.brandRed,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _OnlineBadge extends StatelessWidget {
-  const _OnlineBadge();
+  const _OnlineBadge({required this.online});
+
+  final bool online;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFF31C764),
+        color: online ? const Color(0xFF31C764) : AppColors.officialTextMuted,
         borderRadius: BorderRadius.circular(6),
       ),
-      child: const Text(
-        '在线',
-        style: TextStyle(
+      child: Text(
+        online ? '在线' : '离线',
+        style: const TextStyle(
           fontSize: 14,
           height: 1,
           fontWeight: FontWeight.w700,
@@ -303,7 +368,42 @@ class _BatteryIconMetric extends StatelessWidget {
             letterSpacing: 0,
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 8),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                level.toString(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.w800,
+                  height: 0.95,
+                  letterSpacing: 0,
+                  color: Color(0xFF252525),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 2, left: 2),
+                child: Text(
+                  '%',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF252525),
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
         Image.asset(
           ControlPageHero.batteryAsset(level),
           width: 42,
@@ -341,138 +441,104 @@ class _RangeMetric extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              value.toString(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 36,
-                fontWeight: FontWeight.w800,
-                height: 0.95,
-                letterSpacing: 0,
-                color: Color(0xFF252525),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(bottom: 2, left: 2),
-              child: Text(
-                'km',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF252525),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                value.toString(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.w800,
+                  height: 0.95,
                   letterSpacing: 0,
+                  color: Color(0xFF252525),
                 ),
               ),
-            ),
-          ],
+              const Padding(
+                padding: EdgeInsets.only(bottom: 2, left: 2),
+                child: Text(
+                  'km',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF252525),
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 }
 
-class _ConnectionPill extends StatelessWidget {
-  const _ConnectionPill({required this.label});
+class _BleConnectPill extends StatelessWidget {
+  const _BleConnectPill({required this.label, this.onTap});
 
   final String? label;
-
-  @override
-  Widget build(BuildContext context) {
-    final normalized = label?.trim();
-    final text = normalized == '重连中' ? '重连中' : '连接中';
-    return Container(
-      height: 42,
-      constraints: const BoxConstraints(minWidth: 116),
-      padding: const EdgeInsets.symmetric(horizontal: 15),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.86),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 23,
-            height: 23,
-            child: CircularProgressIndicator(
-              value: 0.74,
-              strokeWidth: 3,
-              backgroundColor: Colors.transparent,
-              color: const Color(0xFF202124),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TopIconButton extends StatelessWidget {
-  const _TopIconButton({
-    this.asset,
-    required this.icon,
-    required this.semanticsLabel,
-    this.onTap,
-  });
-
-  final String? asset;
-  final IconData icon;
-  final String semanticsLabel;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final connected = label?.trim() == '已连接';
+    final connecting = label?.trim() == '连接中';
+    final text = connected
+        ? '已连接'
+        : connecting
+        ? '连接中'
+        : '点击连接';
     return AppPressable(
       onTap: onTap,
       haptic: false,
-      semanticsLabel: semanticsLabel,
+      semanticsLabel: text,
       semanticsButton: true,
       semanticsEnabled: onTap != null,
-      child: SizedBox(
-        width: 44,
-        height: 44,
-        child: Center(
-          child: asset == null
-              ? Icon(icon, size: 26, color: AppColors.textPrimary)
-              : Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Image.asset(
-                      asset!,
-                      width: 28,
-                      height: 28,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) =>
-                          Icon(icon, size: 26, color: AppColors.textPrimary),
-                    ),
-                    Opacity(
-                      opacity: 0,
-                      child: Icon(icon, size: 26, color: AppColors.textPrimary),
-                    ),
-                  ],
-                ),
+      child: Container(
+        height: 33,
+        constraints: const BoxConstraints(minWidth: 82),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(17),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              connected ? Icons.bluetooth_connected : Icons.bluetooth,
+              size: 15,
+              color: connected
+                  ? const Color(0xFF31C764)
+                  : AppColors.officialTextMuted,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+                color: connected
+                    ? AppColors.officialTextMuted
+                    : AppColors.brandRed,
+              ),
+            ),
+          ],
         ),
       ),
     );

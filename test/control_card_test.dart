@@ -8,15 +8,15 @@ import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
 
 void main() {
-  testWidgets('official quick actions render', (tester) async {
+  testWidgets('official quick placeholders render', (tester) async {
     await tester.pumpWidget(
       TestApp(
         home: ControlCard(onOpenSeat: () {}, onProximityUnlock: () {}),
       ),
     );
 
-    expect(find.text('打开座桶'), findsOneWidget);
-    expect(find.text('感应解锁'), findsOneWidget);
+    expect(find.text('打开座桶'), findsNothing);
+    expect(find.text('感应解锁'), findsNothing);
     expect(find.text('更多功能'), findsNothing);
   });
 
@@ -33,11 +33,10 @@ void main() {
       ),
     );
 
-    for (final label in ['打开座桶', '感应解锁', '编辑快捷功能']) {
-      final control = find.bySemanticsLabel(label);
-      expect(control, findsOneWidget);
-      expectMinTouchTargetHeight(tester, control);
-    }
+    expect(find.bySemanticsLabel('添加快捷功能'), findsNWidgets(2));
+    final edit = find.bySemanticsLabel('编辑快捷功能');
+    expect(edit, findsOneWidget);
+    expectMinTouchTargetHeight(tester, edit);
 
     for (final label in ['更多功能', '用车人', '超级仪表']) {
       expect(find.text(label), findsNothing);
@@ -57,20 +56,21 @@ void main() {
         ),
       );
 
-      for (final label in ['打开座桶', '感应解锁', '编辑快捷功能']) {
-        final action = find.bySemanticsLabel(label);
-        expect(action, findsOneWidget);
-        expect(
-          tester.getSemantics(action),
-          matchesSemantics(
-            label: label,
-            isButton: true,
-            hasEnabledState: true,
-            isEnabled: true,
-            hasTapAction: true,
-          ),
-        );
-      }
+      final placeholders = find.bySemanticsLabel('添加快捷功能');
+      expect(placeholders, findsNWidgets(2));
+
+      final edit = find.bySemanticsLabel('编辑快捷功能');
+      expect(edit, findsOneWidget);
+      expect(
+        tester.getSemantics(edit),
+        matchesSemantics(
+          label: '编辑快捷功能',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
     } finally {
       semantics.dispose();
     }
@@ -131,6 +131,21 @@ void main() {
       await tester.pump();
 
       expect(powerCount, 1);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('powered knob exposes official close wording', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        TestApp(home: ControlCard(powered: true, onPowerOn: () {})),
+      );
+
+      expect(find.bySemanticsLabel('电源：左滑关闭'), findsOneWidget);
+      expect(find.text('左滑关闭'), findsOneWidget);
+      expect(find.text('左滑熄火'), findsNothing);
     } finally {
       semantics.dispose();
     }

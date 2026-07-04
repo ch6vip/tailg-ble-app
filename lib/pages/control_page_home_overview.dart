@@ -368,13 +368,19 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                 batteryLevel: soc,
                 rangeKm: range,
                 vehicleName: cloudVehicle?.displayName ?? vehicleName,
+                online: cloudVehicle?.online ?? true,
                 connectionLabel: connectionLabel,
-                onBatteryTap: () => Navigator.of(context).push(
+                onConnect: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => const BatteryDetailsPage(),
+                    builder: (_) => const AddVehiclePage(),
                   ),
                 ),
-                onNotification: () => Navigator.of(context).push(
+                onDetail: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const OfficialCloudPage(),
+                  ),
+                ),
+                onMessage: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => const VehicleMessagePage(),
                   ),
@@ -385,9 +391,10 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _OfficialControlTip(
-                  isArmed: isArmed,
-                  isPowerOn: isPowerOn,
                   bleReady: _isBleReady,
+                  statusText:
+                      cloudVehicle?.onlineLabel ??
+                      (_isBleReady ? '蓝牙已连接' : '等待连接'),
                   manualModeEnabled: _manualModeEnabled,
                   onToggleManualMode: _toggleManualMode,
                 ),
@@ -420,24 +427,19 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
 
 class _OfficialControlTip extends StatelessWidget {
   const _OfficialControlTip({
-    required this.isArmed,
-    required this.isPowerOn,
     required this.bleReady,
+    required this.statusText,
     required this.manualModeEnabled,
     required this.onToggleManualMode,
   });
 
-  final bool? isArmed;
-  final bool isPowerOn;
   final bool bleReady;
+  final String statusText;
   final bool manualModeEnabled;
   final VoidCallback onToggleManualMode;
 
   @override
   Widget build(BuildContext context) {
-    final powerText = isPowerOn ? '已启动' : '未启动';
-    final defenceText = isArmed == true ? '已设防' : '未设防';
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final pillWidth = (constraints.maxWidth * 0.43).clamp(154.0, 184.0);
@@ -458,14 +460,7 @@ class _OfficialControlTip extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(child: _StatusTextChip(powerText)),
-                      const SizedBox(width: 8),
-                      Flexible(child: _StatusTextChip(defenceText)),
-                    ],
-                  ),
+                  child: _StatusTextChip(statusText),
                 ),
               ),
               Positioned(

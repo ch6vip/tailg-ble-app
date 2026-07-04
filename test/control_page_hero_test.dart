@@ -14,8 +14,7 @@ void main() {
   ) async {
     final semantics = tester.ensureSemantics();
     var vehicleTapped = false;
-    var batteryTapped = false;
-    var notificationTapped = false;
+    var connectTapped = false;
 
     try {
       await tester.pumpWidget(
@@ -26,8 +25,7 @@ void main() {
               rangeKm: 48,
               vehicleName: '测试车辆',
               onVehicleSwitch: () => vehicleTapped = true,
-              onBatteryTap: () => batteryTapped = true,
-              onNotification: () => notificationTapped = true,
+              onConnect: () => connectTapped = true,
             ),
           ),
         ),
@@ -58,29 +56,23 @@ void main() {
       expect(batteryAction, findsOneWidget);
       expect(
         tester.getSemantics(batteryAction),
-        matchesSemantics(
-          label: batteryLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasTapAction: true,
-        ),
+        matchesSemantics(label: batteryLabel),
       );
 
-      const notificationLabel = '车辆消息';
-      final notificationAction = find.bySemanticsLabel(notificationLabel);
-      expect(notificationAction, findsOneWidget);
+      const connectLabel = '点击连接';
+      final connectAction = find.bySemanticsLabel(connectLabel);
+      expect(connectAction, findsOneWidget);
       expect(
         find.ancestor(
-          of: find.byIcon(Icons.notifications_outlined),
+          of: find.text(connectLabel),
           matching: find.byType(AppPressable),
         ),
         findsOneWidget,
       );
       expect(
-        tester.getSemantics(notificationAction),
+        tester.getSemantics(connectAction),
         matchesSemantics(
-          label: notificationLabel,
+          label: connectLabel,
           isButton: true,
           hasEnabledState: true,
           isEnabled: true,
@@ -89,12 +81,10 @@ void main() {
       );
 
       tester.semantics.tap(find.semantics.byLabel(vehicleLabel));
-      tester.semantics.tap(find.semantics.byLabel(batteryLabel));
-      tester.semantics.tap(find.semantics.byLabel(notificationLabel));
+      tester.semantics.tap(find.semantics.byLabel(connectLabel));
 
       expect(vehicleTapped, isTrue);
-      expect(batteryTapped, isTrue);
-      expect(notificationTapped, isTrue);
+      expect(connectTapped, isTrue);
     } finally {
       semantics.dispose();
     }

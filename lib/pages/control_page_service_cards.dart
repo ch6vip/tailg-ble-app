@@ -14,17 +14,40 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
 
   @override
   Widget build(BuildContext context) {
-    final showGpsBanner =
-        officialCloudService.state.selectedVehicle?.hasGpsService != true;
+    final cloudState = officialCloudService.state;
+    final showGpsBanner = cloudState.selectedVehicle?.hasGpsService != true;
+    final vehicle = cloudState.selectedVehicle;
+    final location = cloudState.vehicleLocation;
+    final showNavigationProjection = _supportsNavigationProjection(vehicle);
+    final showCamera = _supportsCamera(vehicle);
+    final showSmartMeter = _supportsSmartMeter(vehicle);
+    final showBleRenewal = _supportsBleRenewal(vehicle);
+    final showChargingStation = _supportsChargingStation(vehicle);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
-          _OfficialMapCard(onTap: () => _open(context, const LocationPage())),
-          const SizedBox(height: 10),
-          _OfficialNavProjectionCard(
+          _OfficialMapCard(
+            location: location,
             onTap: () => _open(context, const LocationPage()),
           ),
+          if (showNavigationProjection) ...[
+            const SizedBox(height: 10),
+            _OfficialNavigationProjectionCard(onTap: () {}),
+          ],
+          if (showCamera) ...[
+            const SizedBox(height: 10),
+            _OfficialSimpleServiceCard(
+              title: '摄像头',
+              subtitle: '记录车辆周围环境',
+              icon: Icons.videocam_outlined,
+              onTap: () {},
+            ),
+          ],
+          if (showSmartMeter) ...[
+            const SizedBox(height: 10),
+            _OfficialSmartMeterCard(onTap: () {}),
+          ],
           const SizedBox(height: 10),
           _OfficialHistoryCard(
             todayCount: logService.byCategory(LogCategory.operation).length,
@@ -56,10 +79,38 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
           ),
           const SizedBox(height: 10),
           _OfficialNfcCard(onTap: () => _open(context, const NfcKeyPage())),
+          if (showBleRenewal) ...[
+            const SizedBox(height: 10),
+            _OfficialSimpleServiceCard(
+              title: '蓝牙续费',
+              subtitle: '充值后智能控车',
+              icon: Icons.bluetooth_connected,
+              onTap: () => _open(context, const OfficialCloudPage()),
+            ),
+          ],
+          if (showChargingStation) ...[
+            const SizedBox(height: 10),
+            _OfficialSimpleServiceCard(
+              title: '台铃充电站',
+              subtitle: '查看附近可用充电站',
+              icon: Icons.electrical_services_outlined,
+              onTap: () {},
+            ),
+          ],
         ],
       ),
     );
   }
+
+  bool _supportsNavigationProjection(OfficialVehicle? vehicle) =>
+      vehicle?.modelType == -9001;
+  bool _supportsCamera(OfficialVehicle? vehicle) => vehicle?.modelType == -9002;
+  bool _supportsSmartMeter(OfficialVehicle? vehicle) =>
+      vehicle?.modelType == -9003;
+  bool _supportsBleRenewal(OfficialVehicle? vehicle) =>
+      vehicle?.modelType == -9004;
+  bool _supportsChargingStation(OfficialVehicle? vehicle) =>
+      vehicle?.modelType == -9005;
 }
 
 // ── Official Control Lower Area ───────────────────────────────────
@@ -111,8 +162,9 @@ class _OfficialCardSurface extends StatelessWidget {
 }
 
 class _OfficialMapCard extends StatelessWidget {
-  const _OfficialMapCard({required this.onTap});
+  const _OfficialMapCard({required this.location, required this.onTap});
 
+  final OfficialVehicleLocation? location;
   final VoidCallback onTap;
 
   @override
@@ -120,7 +172,7 @@ class _OfficialMapCard extends StatelessWidget {
     return _OfficialCardSurface(
       height: 238,
       onTap: onTap,
-      semanticLabel: '车辆位置',
+      semanticLabel: '车辆定位',
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,7 +180,7 @@ class _OfficialMapCard extends StatelessWidget {
           Row(
             children: [
               const Text(
-                '车辆位置',
+                '车辆定位',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
@@ -140,7 +192,9 @@ class _OfficialMapCard extends StatelessWidget {
               _OfficialArrow(),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 10),
+          _OfficialLocationMeta(location: location),
+          const SizedBox(height: 10),
           Expanded(
             child: Stack(
               children: [
@@ -182,49 +236,89 @@ class _OfficialMapCard extends StatelessWidget {
   }
 }
 
-class _OfficialNavProjectionCard extends StatelessWidget {
-  const _OfficialNavProjectionCard({required this.onTap});
+class _OfficialLocationMeta extends StatelessWidget {
+  const _OfficialLocationMeta({required this.location});
+
+  final OfficialVehicleLocation? location;
+
+  @override
+  Widget build(BuildContext context) {
+    final time = location?.bleConnectTime.trim() ?? '';
+    final address = location?.bleConnectAddress.trim() ?? '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          time.isEmpty ? '暂无定位时间' : time,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.officialTextMuted,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          address.isEmpty ? '暂无车辆定位' : address,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 13,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OfficialNavigationProjectionCard extends StatelessWidget {
+  const _OfficialNavigationProjectionCard({required this.onTap});
 
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return _OfficialCardSurface(
+      height: 132,
       onTap: onTap,
       semanticLabel: '导航投屏',
-      padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
       child: Row(
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 76,
+            height: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F8FA),
+              color: const Color(0xFFEFF0F5),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
-              Icons.navigation_outlined,
+              Icons.screen_share_outlined,
               color: AppColors.brandRed,
-              size: 23,
+              size: 34,
             ),
           ),
-          const SizedBox(width: 13),
-          const Expanded(
+          const SizedBox(width: 16),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
                 Text(
                   '导航投屏',
                   style: TextStyle(
                     fontSize: 17,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                SizedBox(height: 5),
+                SizedBox(height: 6),
                 Text(
-                  '车辆仪表切换到地图页 查看导航',
-                  maxLines: 1,
+                  '调节仪表显示连接二维码，扫码投屏导航',
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 13,
@@ -234,7 +328,168 @@ class _OfficialNavProjectionCard extends StatelessWidget {
               ],
             ),
           ),
-          _OfficialArrow(),
+          const SizedBox(width: 8),
+          const _OfficialArrow(),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfficialSmartMeterCard extends StatelessWidget {
+  const _OfficialSmartMeterCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialCardSurface(
+      height: 172,
+      onTap: onTap,
+      semanticLabel: '智能仪表',
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Expanded(
+                child: Text(
+                  '智能仪表',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              _OfficialArrow(),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: const [
+              _MeterStatusChip('权限检测'),
+              SizedBox(width: 8),
+              _MeterStatusChip('WiFi'),
+              SizedBox(width: 8),
+              _MeterStatusChip('蓝牙'),
+            ],
+          ),
+          const Spacer(),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF0F5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Text(
+              '地图导航设置',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.officialTextMuted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MeterStatusChip extends StatelessWidget {
+  const _MeterStatusChip(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        height: 32,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: const Color(0xFFEFF0F5),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.officialTextMuted,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OfficialSimpleServiceCard extends StatelessWidget {
+  const _OfficialSimpleServiceCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _OfficialCardSurface(
+      height: 100,
+      onTap: onTap,
+      semanticLabel: title,
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(
+            width: 76,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF0F5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.brandRed),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.officialTextMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const _OfficialArrow(),
         ],
       ),
     );

@@ -57,8 +57,6 @@ class _ControlCardState extends State<ControlCard> {
                 height: panelHeight,
                 child: _OfficialQuickSlots(
                   enabled: !busy,
-                  onOpenSeat: widget.onOpenSeat,
-                  onProximityUnlock: widget.onProximityUnlock,
                   onQuickEdit: widget.onQuickEdit,
                 ),
               ),
@@ -234,16 +232,9 @@ class _PanelCommand extends StatelessWidget {
 }
 
 class _OfficialQuickSlots extends StatelessWidget {
-  const _OfficialQuickSlots({
-    required this.enabled,
-    this.onOpenSeat,
-    this.onProximityUnlock,
-    this.onQuickEdit,
-  });
+  const _OfficialQuickSlots({required this.enabled, this.onQuickEdit});
 
   final bool enabled;
-  final VoidCallback? onOpenSeat;
-  final VoidCallback? onProximityUnlock;
   final VoidCallback? onQuickEdit;
 
   @override
@@ -254,11 +245,9 @@ class _OfficialQuickSlots extends StatelessWidget {
         children: [
           Expanded(
             child: _QuickActionSlot(
-              label: '打开座桶',
-              asset: 'assets/official_tailg/ic_control_quick_seat.png',
-              icon: Icons.event_seat_outlined,
-              enabled: enabled && onOpenSeat != null,
-              onTap: onOpenSeat,
+              label: '添加快捷功能',
+              enabled: enabled && onQuickEdit != null,
+              onTap: onQuickEdit,
             ),
           ),
           const SizedBox(height: 10),
@@ -268,12 +257,9 @@ class _OfficialQuickSlots extends StatelessWidget {
               children: [
                 Positioned.fill(
                   child: _QuickActionSlot(
-                    label: '感应解锁',
-                    asset:
-                        'assets/official_tailg/ic_control_quick_induction.png',
-                    icon: Icons.sensors,
-                    enabled: enabled && onProximityUnlock != null,
-                    onTap: onProximityUnlock,
+                    label: '添加快捷功能',
+                    enabled: enabled && onQuickEdit != null,
+                    onTap: onQuickEdit,
                   ),
                 ),
                 Positioned(
@@ -296,15 +282,11 @@ class _OfficialQuickSlots extends StatelessWidget {
 class _QuickActionSlot extends StatelessWidget {
   const _QuickActionSlot({
     required this.label,
-    required this.asset,
-    required this.icon,
     required this.enabled,
     this.onTap,
   });
 
   final String label;
-  final String asset;
-  final IconData icon;
   final bool enabled;
   final VoidCallback? onTap;
 
@@ -333,22 +315,11 @@ class _QuickActionSlot extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Image.asset(
-                asset,
-                width: 24,
-                height: 24,
+                'assets/official_tailg/ic_control_quick_add.webp',
+                width: 26,
+                height: 26,
                 errorBuilder: (_, __, ___) =>
-                    Icon(icon, size: 23, color: AppColors.brandRed),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.officialTextMuted,
-                ),
+                    const Icon(Icons.add, size: 24, color: AppColors.brandRed),
               ),
             ],
           ),
@@ -512,7 +483,7 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
     final semanticLabel = widget.busy
         ? '电源：处理中'
         : widget.powered
-        ? '电源：左滑熄火'
+        ? '电源：左滑关闭'
         : '电源：右滑启动';
     final semanticAction = widget.busy || widget.onPowerOn == null
         ? null
@@ -580,9 +551,9 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
                     ),
                     Text(
                       widget.busy
-                          ? (widget.powered ? '熄火中' : '启动中')
+                          ? (widget.powered ? '关闭中' : '启动中')
                           : widget.powered
-                          ? '左滑熄火'
+                          ? '左滑关闭'
                           : '右滑启动',
                       style: const TextStyle(
                         fontSize: 13,

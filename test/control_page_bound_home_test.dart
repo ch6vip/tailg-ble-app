@@ -62,7 +62,8 @@ void main() {
 
     expect(tester.takeException(), isNull);
     // Official replica: lower area follows fragment_control.xml entries.
-    expect(find.text('车辆位置'), findsOneWidget);
+    expect(find.text('车辆定位'), findsOneWidget);
+    expect(find.text('导航投屏'), findsNothing);
     expect(find.text('历史轨迹'), findsOneWidget);
     expect(find.text('功能设置'), findsOneWidget);
     expect(find.text('NFC钥匙'), findsOneWidget);
@@ -78,7 +79,7 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
-    expect(find.text('车辆位置'), findsOneWidget);
+    expect(find.text('车辆定位'), findsOneWidget);
     expect(find.bySemanticsLabel('可添加GPS'), findsOneWidget);
   });
 
@@ -102,7 +103,7 @@ void main() {
     expect(find.text('功能设置'), findsOneWidget);
   });
 
-  testWidgets('official control card exposes configured shortcuts', (
+  testWidgets('official control card exposes default quick placeholders', (
     tester,
   ) async {
     await pumpBoundHome(tester, size: const Size(430, 2200));
@@ -110,11 +111,12 @@ void main() {
     for (final label in ['更多功能', '用车人', '超级仪表']) {
       expect(find.text(label), findsNothing);
     }
-    for (final label in ['打开座桶', '感应解锁', '编辑快捷功能']) {
-      final action = find.bySemanticsLabel(label);
-      expect(action, findsOneWidget);
-      expectMinTouchTargetHeight(tester, action);
-    }
+    expect(find.text('打开座桶'), findsNothing);
+    expect(find.text('感应解锁'), findsNothing);
+    expect(find.bySemanticsLabel('添加快捷功能'), findsNWidgets(2));
+    final edit = find.bySemanticsLabel('编辑快捷功能');
+    expect(edit, findsOneWidget);
+    expectMinTouchTargetHeight(tester, edit);
   });
 
   testWidgets('official manual mode control keeps a 44dp touch target', (
@@ -238,6 +240,11 @@ void main() {
 
       expect(find.textContaining('控车通道'), findsNothing);
       expect(find.text('手动模式'), findsNothing);
+      expect(find.text('未启动'), findsNothing);
+      expect(find.text('已启动'), findsNothing);
+      expect(find.text('已设防'), findsNothing);
+      expect(find.text('未设防'), findsNothing);
+      expect(find.bySemanticsLabel('点击连接'), findsOneWidget);
 
       final modeAction = find.bySemanticsLabel('感应模式');
       expect(modeAction, findsOneWidget);
