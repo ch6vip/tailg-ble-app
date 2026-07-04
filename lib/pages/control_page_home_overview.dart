@@ -1,12 +1,10 @@
 part of 'control_page.dart';
 
-/// v8 home top section: Hero + vehicle stage + official status tip + working
-/// control card.
+/// Official home top section: hero, vehicle stage, status tip, and control
+/// card.
 ///
-/// Owns all control execution (power on/off, seat, proximity toggle) that was
-/// previously in the old [_ControlArea].  Replaces the old three-section
-/// header/status/statusline + SlideToAction layout with the v8 Ninebot-inspired
-/// design.
+/// Owns the homepage control execution surface: power, find, lock, and the
+/// official mode toggle.
 class _HomeTopSection extends StatefulWidget {
   final ble.ConnectionState connState;
 
@@ -27,11 +25,9 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   bool _busy = false;
   bool _disposed = false;
 
-  // ── Proximity / manual-mode toggle state ──────────────────────────
+  // ── Manual-mode toggle state ──────────────────────────────────────
 
-  bool _proximityEnabled = false;
   bool _manualModeEnabled = false;
-  StreamSubscription<bool>? _proximitySub;
   StreamSubscription<bool>? _manualModeSub;
 
   // ── Lifecycle ──────────────────────────────────────────────────────
@@ -39,14 +35,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   @override
   void initState() {
     super.initState();
-    // Bind to proximityService (not manualModeService) so the switch reflects
-    // and controls the actual proximity-unlock feature. Manual mode remains a
-    // separate "disable all auto-control" override consulted by
-    // ProximityService.start().
-    _proximityEnabled = proximityService.enabled;
-    _proximitySub = proximityService.enabledStream.listen((v) {
-      if (mounted) setState(() => _proximityEnabled = v);
-    });
     _manualModeEnabled = manualModeService.enabled;
     _manualModeSub = manualModeService.enabledStream.listen((v) {
       if (mounted) setState(() => _manualModeEnabled = v);
@@ -56,7 +44,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   @override
   void dispose() {
     _disposed = true;
-    _proximitySub?.cancel();
     _manualModeSub?.cancel();
     super.dispose();
   }
@@ -93,10 +80,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     final isPowerOn = _currentIsPowerOn();
     final cmd = isPowerOn ? CommandCode.powerOff : CommandCode.powerOn;
     await _sendCommand(cmd);
-  }
-
-  Future<void> _sendSeat() async {
-    await _sendCommand(CommandCode.openSeat);
   }
 
   Future<void> _sendCommand(CommandCode cmd) async {
@@ -321,37 +304,9 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     );
   }
 
-  // ── Proximity toggle ───────────────────────────────────────────────
-
-  void _toggleProximity(bool value) {
-    HapticFeedback.selectionClick();
-    // Drive the actual proximity-unlock service. setEnabled persists the flag
-    // and starts/stops scanning. The _proximitySub listener syncs
-    // _proximityEnabled automatically. Manual mode (a separate override that
-    // disables ALL auto-control) is still consulted inside start().
-    proximityService.setEnabled(value);
-  }
-
   void _toggleManualMode() {
     manualModeService.setEnabled(!_manualModeEnabled);
     HapticFeedback.selectionClick();
-  }
-
-  // ── Super Dashboard / Rider Management placeholders ────────────────
-
-  void _openSuperDashboard() {
-    HapticFeedback.selectionClick();
-    // Navigate to a future dashboard page.
-    _showSnack('超级仪表功能开发中', isError: false);
-  }
-
-  void _openRiderManagement() {
-    HapticFeedback.selectionClick();
-    // Navigate to ShareBikePage or a dedicated rider-management page.
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(builder: (_) => const ShareBikePage()),
-    );
   }
 
   // ── Build ──────────────────────────────────────────────────────────
@@ -399,7 +354,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 8),
-              // ── v8 Hero ──
               ControlPageHero(
                 batteryLevel: soc,
                 rangeKm: range,
@@ -424,7 +378,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                 ),
               ),
               const SizedBox(height: 10),
-              // ── v8 Vehicle stage SVG ──
               VehicleStage(batteryLevel: soc / 100.0, height: 225),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -438,22 +391,12 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                 ),
               ),
               const SizedBox(height: 14),
-              // ── v8 Floating control card (wired!) ──
               ControlCard(
                 powered: isPowerOn,
-                proximityEnabled: _proximityEnabled,
                 busy: _busy,
-                onSeatOpen: _sendSeat,
                 onPowerOn: _sendPower,
                 onFind: () => _sendCommand(CommandCode.find),
                 onLock: () => _sendCommand(CommandCode.lock),
-                onMore: () => showAllFunctionsSheet(
-                  context,
-                  onControlCommand: _sendCommand,
-                ),
-                onToggleProximity: _toggleProximity,
-                onRiderManagement: _openRiderManagement,
-                onSuperDashboard: _openSuperDashboard,
               ),
               const SizedBox(height: 16),
             ],

@@ -235,8 +235,3 @@ class _HomeBodyState extends State<_HomeBody> {
     );
   }
 }
-
-// ── (old _ControlArea, _ControlAreaViewModel, _ControlAreaState removed —
-//     control logic migrated into _HomeTopSection in control_page_home_overview.dart) ──
-// ── (old _ControlArea, _ControlAreaViewModel, _ControlAreaState removed —
-//     control logic migrated into _HomeTopSection in control_page_home_overview.dart) ──

@@ -7,7 +7,6 @@ import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
-import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -68,35 +67,19 @@ void main() {
     expect(find.bySemanticsLabel('可添加GPS'), findsOneWidget);
   });
 
-  testWidgets('super dashboard placeholder shows info snack', (tester) async {
-    await pumpBoundHome(tester, size: const Size(430, 2200));
-
-    await tester.tap(find.text('超级仪表'));
-    await tester.pump();
-
-    expect(find.text('超级仪表功能开发中'), findsOneWidget);
-    expect(snackIcon(Icons.info_outline), findsOneWidget);
-  });
-
-  testWidgets('proximity control toggles ProximityService, not manual mode', (
+  testWidgets('official control card has no legacy bottom shortcuts', (
     tester,
   ) async {
     await pumpBoundHome(tester, size: const Size(430, 2200));
 
-    expect(app.proximityService.enabled, isFalse);
-    expect(app.manualModeService.enabled, isFalse);
-
-    final enabledEvent = app.proximityService.enabledStream.firstWhere(
-      (value) => value,
-    );
-
-    await tester.tap(find.text('感应解锁'));
-    await tester.pump();
-    await enabledEvent;
-    await tester.pump();
-
-    expect(app.proximityService.enabled, isTrue);
-    expect(app.manualModeService.enabled, isFalse);
+    for (final label in ['更多功能', '打开座桶', '感应解锁', '用车人', '超级仪表']) {
+      expect(find.text(label), findsNothing);
+    }
+    for (final label in ['快捷功能1', '快捷功能2', '编辑快捷功能']) {
+      final action = find.bySemanticsLabel(label);
+      expect(action, findsOneWidget);
+      expect(tester.getSize(action).height, greaterThanOrEqualTo(44));
+    }
   });
 
   testWidgets('official manual mode control keeps a 44dp touch target', (
@@ -229,45 +212,12 @@ void main() {
     }
   });
 
-  testWidgets('all functions sheet close exposes semantics and 44dp target', (
+  testWidgets('bound home does not expose legacy all-functions sheet', (
     tester,
   ) async {
-    final semantics = tester.ensureSemantics();
-    try {
-      await pumpBoundHome(tester, size: const Size(430, 2200));
+    await pumpBoundHome(tester, size: const Size(430, 2200));
 
-      await tester.tap(find.text('更多功能'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('全部功能'), findsOneWidget);
-      const closeLabel = '关闭全部功能';
-      final closeAction = find.bySemanticsLabel(closeLabel);
-      expect(closeAction, findsOneWidget);
-      expect(
-        find.ancestor(
-          of: find.byIcon(Icons.close),
-          matching: find.byType(AppPressable),
-        ),
-        findsOneWidget,
-      );
-      expect(tester.getSize(closeAction).height, greaterThanOrEqualTo(44));
-      expect(
-        tester.getSemantics(closeAction),
-        matchesSemantics(
-          label: closeLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasTapAction: true,
-        ),
-      );
-
-      tester.semantics.tap(find.semantics.byLabel(closeLabel));
-      await tester.pumpAndSettle();
-
-      expect(find.text('全部功能'), findsNothing);
-    } finally {
-      semantics.dispose();
-    }
+    expect(find.text('全部功能'), findsNothing);
+    expect(find.bySemanticsLabel('关闭全部功能'), findsNothing);
   });
 }

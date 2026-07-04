@@ -7,35 +7,21 @@ import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/theme/app_motion.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
-/// v8 floating control card — Ninebot-style central ink-button
-/// with long-press power ring progress.
-///
-/// Current design notes live in `docs/design_system.md`.
+/// Official Tailg control card: two quick placeholders on the left, the
+/// slide-style power control plus find/lock actions on the right.
 class ControlCard extends StatefulWidget {
   const ControlCard({
     super.key,
-    this.onSeatOpen,
     this.onPowerOn,
     this.onFind,
     this.onLock,
-    this.onMore,
-    this.onToggleProximity,
-    this.onRiderManagement,
-    this.onSuperDashboard,
-    this.proximityEnabled = false,
     this.powered = false,
     this.busy = false,
   });
 
-  final VoidCallback? onSeatOpen;
   final VoidCallback? onPowerOn;
   final VoidCallback? onFind;
   final VoidCallback? onLock;
-  final VoidCallback? onMore;
-  final ValueChanged<bool>? onToggleProximity;
-  final VoidCallback? onRiderManagement;
-  final VoidCallback? onSuperDashboard;
-  final bool proximityEnabled;
   final bool powered;
   final bool busy;
 
@@ -62,42 +48,7 @@ class _ControlCardState extends State<ControlCard> {
               SizedBox(
                 width: leftWidth,
                 height: panelHeight,
-                child: _OfficialPanelCard(
-                  padding: const EdgeInsets.all(10),
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: _SideButton(
-                          asset:
-                              'assets/official_tailg/ic_control_quick_operat.webp',
-                          icon: Icons.apps,
-                          label: '更多功能',
-                          color: AppColors.brandRed,
-                          disabled: busy,
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            widget.onMore?.call();
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Expanded(
-                        child: _SideButton(
-                          asset:
-                              'assets/official_tailg/iv_control_chair_unclick.png',
-                          icon: Icons.inventory_2_outlined,
-                          label: '打开座桶',
-                          color: AppColors.brandRed,
-                          disabled: busy,
-                          onTap: () {
-                            HapticFeedback.mediumImpact();
-                            widget.onSeatOpen?.call();
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                child: _OfficialQuickSlots(enabled: !busy),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -116,41 +67,6 @@ class _ControlCardState extends State<ControlCard> {
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 12),
-          _OfficialPanelCard(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _SubControl(
-                  icon: Icons.bluetooth_connected,
-                  label: '感应解锁',
-                  color: AppColors.brandRed,
-                  active: widget.proximityEnabled,
-                  onTap: () =>
-                      widget.onToggleProximity?.call(!widget.proximityEnabled),
-                ),
-                _SubControl(
-                  icon: Icons.people_outline,
-                  label: '用车人',
-                  color: AppColors.brandRed,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    widget.onRiderManagement?.call();
-                  },
-                ),
-                _SubControl(
-                  icon: Icons.dashboard_outlined,
-                  label: '超级仪表',
-                  color: AppColors.brandRed,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    widget.onSuperDashboard?.call();
-                  },
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -293,88 +209,130 @@ class _PanelCommand extends StatelessWidget {
   }
 }
 
-/// Side action button (seat bucket / more functions).
-class _SideButton extends StatelessWidget {
-  const _SideButton({
-    this.asset,
-    required this.icon,
-    required this.label,
-    required this.color,
-    this.disabled = false,
-    this.onTap,
-  });
+class _OfficialQuickSlots extends StatelessWidget {
+  const _OfficialQuickSlots({required this.enabled});
 
-  final String? asset;
-  final IconData icon;
-  final String label;
-  final Color color;
-  final bool disabled;
-  final VoidCallback? onTap;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    final effectiveOnTap = disabled ? null : onTap;
+    return _OfficialPanelCard(
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        children: [
+          Expanded(
+            child: _QuickAddSlot(semanticsLabel: '快捷功能1', enabled: enabled),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned.fill(
+                  child: _QuickAddSlot(
+                    semanticsLabel: '快捷功能2',
+                    enabled: enabled,
+                  ),
+                ),
+                Positioned(
+                  right: 3,
+                  bottom: 3,
+                  child: _QuickEditButton(enabled: enabled),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickAddSlot extends StatelessWidget {
+  const _QuickAddSlot({required this.semanticsLabel, required this.enabled});
+
+  final String semanticsLabel;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
     return AppPressable(
-      enabled: effectiveOnTap != null,
-      onTap: effectiveOnTap,
+      enabled: false,
+      onTap: null,
+      haptic: false,
       pressedScale: AppMotion.pressScale,
       duration: AppMotion.micro,
       curve: AppMotion.pressCurve,
-      haptic: false,
-      semanticsLabel: label,
+      semanticsLabel: semanticsLabel,
       semanticsButton: true,
-      semanticsEnabled: effectiveOnTap != null,
+      semanticsEnabled: false,
       child: AnimatedOpacity(
-        opacity: disabled ? 0.45 : 1.0,
+        opacity: enabled ? 1.0 : 0.45,
         duration: const Duration(milliseconds: 200),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final finiteHeight = constraints.maxHeight.isFinite;
-            final iconBox = finiteHeight
-                ? (constraints.maxHeight - 20).clamp(34.0, 52.0)
-                : 52.0;
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: iconBox,
-                  height: iconBox,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8F8FA),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: asset == null
-                      ? Icon(icon, size: iconBox * 0.45, color: color)
-                      : Image.asset(
-                          asset!,
-                          width: iconBox * 0.48,
-                          height: iconBox * 0.48,
-                          errorBuilder: (_, __, ___) =>
-                              Icon(icon, size: iconBox * 0.45, color: color),
-                        ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.officialTextMuted,
-                  ),
-                ),
-              ],
-            );
-          },
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF0F5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Image.asset(
+                'assets/official_tailg/ic_control_quick_add.webp',
+                width: 26,
+                height: 26,
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.add, size: 24, color: AppColors.brandRed),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Central power knob with long-press ring progress (Ninebot-style).
+class _QuickEditButton extends StatelessWidget {
+  const _QuickEditButton({required this.enabled});
+
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppPressable(
+      enabled: false,
+      onTap: null,
+      haptic: false,
+      semanticsLabel: '编辑快捷功能',
+      semanticsButton: true,
+      semanticsEnabled: false,
+      child: AnimatedOpacity(
+        opacity: enabled ? 1.0 : 0.45,
+        duration: const Duration(milliseconds: 200),
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Align(
+            alignment: Alignment.bottomRight,
+            child: Image.asset(
+              'assets/official_tailg/ic_quick_edit_entrance.webp',
+              width: 22,
+              height: 22,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.edit,
+                size: 18,
+                color: AppColors.officialTextMuted,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Central slide-style power control.
 class _PowerKnob extends StatefulWidget {
   const _PowerKnob({required this.powered, this.busy = false, this.onPowerOn});
   final bool powered;
@@ -608,69 +566,6 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Sub-control circle button (proximity unlock, rider management, dashboard).
-class _SubControl extends StatelessWidget {
-  const _SubControl({
-    required this.icon,
-    required this.label,
-    required this.color,
-    this.active = false,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final bool active;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppPressable(
-      enabled: onTap != null,
-      onTap: onTap,
-      haptic: false,
-      pressedScale: AppMotion.pressScale,
-      duration: AppMotion.micro,
-      curve: AppMotion.pressCurve,
-      semanticsLabel: label,
-      semanticsButton: true,
-      semanticsEnabled: onTap != null,
-      semanticsSelected: active ? true : null,
-      builder: (context, pressed) {
-        final bg = active
-            ? color.withValues(alpha: 0.14)
-            : pressed
-            ? AppColors.surfaceContainerHigh
-            : AppColors.surfaceContainerLow;
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-              child: Icon(
-                icon,
-                size: 20,
-                color: active ? color : AppColors.inkBtn,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }
