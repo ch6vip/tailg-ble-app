@@ -6,12 +6,13 @@ import 'package:tailg_ble_app/services/log_service.dart';
 import 'package:tailg_ble_app/services/replica_feature_store.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 
+import 'helpers/storage_mocks.dart';
+
 void main() {
   setUp(() {
     VehicleStore().resetForTest();
     LogService().clear();
-    SharedPreferences.setMockInitialValues({});
-    FlutterSecureStorage.setMockInitialValues({});
+    resetMockStorage();
   });
 
   tearDown(() {

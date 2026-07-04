@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
 
 import 'helpers/source_scan.dart';
+import 'helpers/storage_mocks.dart';
 
 void main() {
   test('ControlPage keeps home stream subscriptions split', () {
@@ -36,14 +35,12 @@ void main() {
   });
 
   setUp(() {
-    SharedPreferences.setMockInitialValues({});
-    FlutterSecureStorage.setMockInitialValues({});
+    resetMockStorage();
   });
 
   tearDown(() async {
     await AppServices.reset();
-    SharedPreferences.setMockInitialValues({});
-    FlutterSecureStorage.setMockInitialValues({});
+    resetMockStorage();
   });
 
   testWidgets('ControlPage ignores vehicle stream events after unmount', (

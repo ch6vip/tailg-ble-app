@@ -1,18 +1,18 @@
 import 'dart:convert';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/services/location_service.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
+
+import 'helpers/storage_mocks.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
     VehicleStore().resetForTest();
-    SharedPreferences.setMockInitialValues({});
-    FlutterSecureStorage.setMockInitialValues({});
+    resetMockStorage();
   });
 
   test(

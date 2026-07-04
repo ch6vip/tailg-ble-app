@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart' as ble;
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/services/app_preferences_service.dart';
@@ -15,16 +14,16 @@ import 'package:tailg_ble_app/services/proximity_service.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 
+import 'helpers/storage_mocks.dart';
+
 void main() {
   tearDown(() async {
     await AppServices.reset();
-    SharedPreferences.setMockInitialValues({});
-    FlutterSecureStorage.setMockInitialValues({});
+    resetMockStorage();
   });
 
   setUp(() {
-    SharedPreferences.setMockInitialValues({});
-    FlutterSecureStorage.setMockInitialValues({});
+    resetMockStorage();
   });
 
   test('top-level service getters delegate to AppServices.instance', () {
