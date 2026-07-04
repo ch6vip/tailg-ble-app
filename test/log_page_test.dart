@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/log_page.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
+import 'helpers/platform_mocks.dart';
 import 'helpers/snack_finders.dart';
 import 'helpers/source_scan.dart';
 import 'helpers/test_app.dart';
@@ -20,17 +20,12 @@ void main() {
 
   setUp(() {
     app.logService.clear();
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
-          if (call.method == 'Clipboard.setData') return null;
-          return null;
-        });
+    mockClipboardWrites();
   });
 
   tearDown(() {
     app.logService.clear();
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, null);
+    clearPlatformChannelMock();
   });
 
   testWidgets('copy action shows info snack when logs are empty', (

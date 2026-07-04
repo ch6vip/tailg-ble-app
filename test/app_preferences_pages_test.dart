@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/app_preferences_pages.dart';
 
+import 'helpers/platform_mocks.dart';
 import 'helpers/snack_finders.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
@@ -14,19 +14,14 @@ void main() {
     resetMockPreferences();
     app.appPreferencesService.resetForTest();
     app.logService.clear();
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
-          if (call.method == 'Clipboard.setData') return null;
-          return null;
-        });
+    mockClipboardWrites();
   });
 
   tearDown(() {
     resetMockPreferences();
     app.appPreferencesService.resetForTest();
     app.logService.clear();
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, null);
+    clearPlatformChannelMock();
   });
 
   testWidgets('copying diagnostic report shows success snack', (tester) async {
