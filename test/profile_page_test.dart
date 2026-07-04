@@ -9,6 +9,7 @@ import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
 import 'helpers/typography.dart';
+import 'helpers/view_size.dart';
 
 void main() {
   setUp(() {
@@ -92,12 +93,7 @@ void main() {
   ) async {
     final semantics = tester.ensureSemantics();
     try {
-      tester.view.physicalSize = const Size(430, 1800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+      setTestViewSize(tester, const Size(430, 1800));
 
       await tester.pumpWidget(const TestApp(home: ProfilePage()));
       await tester.pump();
@@ -146,12 +142,7 @@ void main() {
   ) async {
     final semantics = tester.ensureSemantics();
     try {
-      tester.view.physicalSize = const Size(430, 1800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+      setTestViewSize(tester, const Size(430, 1800));
 
       await tester.pumpWidget(const TestApp(home: ProfilePage()));
       await tester.pump();

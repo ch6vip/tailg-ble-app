@@ -9,6 +9,7 @@ import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
+import 'helpers/view_size.dart';
 
 void main() {
   test('OfficialCloudPage does not use empty setState refreshes', () {
@@ -34,12 +35,7 @@ void main() {
   ) async {
     final semantics = tester.ensureSemantics();
     try {
-      tester.view.physicalSize = const Size(430, 1200);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+      setTestViewSize(tester, const Size(430, 1200));
 
       final vehicle = OfficialVehicle.fromJson({
         'carId': 'official-1',
@@ -92,12 +88,7 @@ void main() {
   testWidgets('missing BLE identity scan action keeps a 44dp touch target', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(430, 1200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+    setTestViewSize(tester, const Size(430, 1200));
 
     final vehicle = OfficialVehicle.fromJson({
       'carId': 'official-without-ble',

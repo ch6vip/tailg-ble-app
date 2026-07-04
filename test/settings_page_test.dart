@@ -6,6 +6,7 @@ import 'package:tailg_ble_app/pages/settings_page.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
+import 'helpers/view_size.dart';
 
 void main() {
   setUp(() {
@@ -22,12 +23,7 @@ void main() {
   });
 
   testWidgets('settings switches keep 44dp touch targets', (tester) async {
-    tester.view.physicalSize = const Size(430, 1400);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+    setTestViewSize(tester, const Size(430, 1400));
 
     await tester.pumpWidget(const TestApp(home: SettingsPage()));
     await tester.pump();

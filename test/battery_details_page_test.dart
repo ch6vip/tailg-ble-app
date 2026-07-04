@@ -6,6 +6,7 @@ import 'package:tailg_ble_app/pages/battery_details_page.dart';
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
+import 'helpers/view_size.dart';
 
 void main() {
   setUp(() {
@@ -15,12 +16,7 @@ void main() {
   testWidgets('refreshing battery details while signed out shows info snack', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(430, 1200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+    setTestViewSize(tester, const Size(430, 1200));
 
     await tester.pumpWidget(const TestApp(home: BatteryDetailsPage()));
     await tester.pump();
@@ -36,12 +32,7 @@ void main() {
   testWidgets('battery correction action keeps a 44dp touch target', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(430, 1200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+    setTestViewSize(tester, const Size(430, 1200));
 
     await tester.pumpWidget(const TestApp(home: BatteryDetailsPage()));
     await tester.pump();

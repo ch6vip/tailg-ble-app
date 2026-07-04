@@ -12,6 +12,7 @@ import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
 import 'helpers/typography.dart';
+import 'helpers/view_size.dart';
 
 void main() {
   test('LocationPage routes vehicle and cloud streams through notifiers', () {
@@ -52,12 +53,7 @@ void main() {
   ) async {
     final semantics = tester.ensureSemantics();
     resetMockPreferences();
-    tester.view.physicalSize = const Size(430, 1200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+    setTestViewSize(tester, const Size(430, 1200));
 
     try {
       await tester.pumpWidget(
@@ -136,12 +132,7 @@ void main() {
     tester,
   ) async {
     resetMockPreferences();
-    tester.view.physicalSize = const Size(430, 1200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+    setTestViewSize(tester, const Size(430, 1200));
 
     await tester.pumpWidget(
       const TestApp(
@@ -199,12 +190,7 @@ void main() {
     resetMockPreferences();
     app.officialCloudService.resetForTest();
     addTearDown(app.officialCloudService.resetForTest);
-    tester.view.physicalSize = const Size(430, 1400);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+    setTestViewSize(tester, const Size(430, 1400));
 
     const travelRecord = OfficialTravelRecord(
       raw: {},

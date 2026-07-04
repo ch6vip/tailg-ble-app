@@ -5,6 +5,7 @@ import 'package:tailg_ble_app/pages/vehicle_settings_page.dart';
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
+import 'helpers/view_size.dart';
 
 void main() {
   testWidgets('switch setting rows expose labeled toggle semantics', (
@@ -12,12 +13,7 @@ void main() {
   ) async {
     final semantics = tester.ensureSemantics();
     try {
-      tester.view.physicalSize = const Size(430, 2200);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+      setTestViewSize(tester, const Size(430, 2200));
 
       await tester.pumpWidget(const TestApp(home: VehicleSettingsPage()));
       await tester.pump();
@@ -52,12 +48,7 @@ void main() {
   testWidgets('riding mode options expose selected semantics', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
-      tester.view.physicalSize = const Size(430, 2200);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+      setTestViewSize(tester, const Size(430, 2200));
 
       await tester.pumpWidget(const TestApp(home: VehicleSettingsPage()));
       await tester.pump();
@@ -108,12 +99,7 @@ void main() {
   ) async {
     final semantics = tester.ensureSemantics();
     try {
-      tester.view.physicalSize = const Size(430, 2200);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+      setTestViewSize(tester, const Size(430, 2200));
 
       await tester.pumpWidget(const TestApp(home: VehicleSettingsPage()));
       await tester.pump();
