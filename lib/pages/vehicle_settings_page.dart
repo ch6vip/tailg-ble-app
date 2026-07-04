@@ -969,71 +969,60 @@ class _NavSettingRow extends StatelessWidget {
       if (trailingText != null && trailingText!.isNotEmpty) trailingText!,
       subtitle,
     ].join('，');
-    final row = Material(
-      color: Colors.transparent,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        splashColor: AppColors.primary.withValues(alpha: 0.06),
-        highlightColor: Colors.black.withValues(alpha: 0.025),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          child: Row(
-            children: [
-              _RowIcon(icon, enabled: enabled),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.itemTitle.copyWith(
-                        color: enabled
-                            ? AppColors.textPrimary
-                            : AppColors.textTertiary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.smallText,
-                    ),
-                  ],
-                ),
-              ),
-              if (trailingText != null) ...[
-                Flexible(
-                  child: Text(
-                    trailingText!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.right,
-                    style: AppTextStyles.bodyMedium,
-                  ),
-                ),
-                const SizedBox(width: 4),
-              ],
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textTertiary,
-                size: AppIconSizes.md,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    return Semantics(
-      label: semanticsLabel,
-      button: true,
+    return _VehicleSettingInkRow(
+      semanticsLabel: semanticsLabel,
       enabled: enabled,
       onTap: onTap,
-      child: ExcludeSemantics(child: row),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Row(
+          children: [
+            _RowIcon(icon, enabled: enabled),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.itemTitle.copyWith(
+                      color: enabled
+                          ? AppColors.textPrimary
+                          : AppColors.textTertiary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.smallText,
+                  ),
+                ],
+              ),
+            ),
+            if (trailingText != null) ...[
+              Flexible(
+                child: Text(
+                  trailingText!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: AppTextStyles.bodyMedium,
+                ),
+              ),
+              const SizedBox(width: 4),
+            ],
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textTertiary,
+              size: AppIconSizes.md,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1145,52 +1134,76 @@ class _DisabledInfoRow extends StatelessWidget {
     const trailingText = '待确认';
     final semanticsLabel = '$title，$subtitle，$trailingText';
     void showPendingInfo() => _showInfoSnack(context, _pendingCommandMessage);
+    return _VehicleSettingInkRow(
+      semanticsLabel: semanticsLabel,
+      enabled: true,
+      onTap: showPendingInfo,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Row(
+          children: [
+            _RowIcon(icon, enabled: false),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.itemTitle.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.smallText,
+                  ),
+                ],
+              ),
+            ),
+            const Text(trailingText, style: AppTextStyles.caption),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _VehicleSettingInkRow extends StatelessWidget {
+  final String semanticsLabel;
+  final bool enabled;
+  final VoidCallback? onTap;
+  final Widget child;
+
+  const _VehicleSettingInkRow({
+    required this.semanticsLabel,
+    required this.enabled,
+    required this.onTap,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final row = Material(
       color: Colors.transparent,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: showPendingInfo,
+        onTap: onTap,
         splashColor: AppColors.primary.withValues(alpha: 0.06),
         highlightColor: Colors.black.withValues(alpha: 0.025),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          child: Row(
-            children: [
-              _RowIcon(icon, enabled: false),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.itemTitle.copyWith(
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.smallText,
-                    ),
-                  ],
-                ),
-              ),
-              const Text(trailingText, style: AppTextStyles.caption),
-            ],
-          ),
-        ),
+        child: child,
       ),
     );
     return Semantics(
       label: semanticsLabel,
       button: true,
-      enabled: true,
-      onTap: showPendingInfo,
+      enabled: enabled,
+      onTap: onTap,
       child: ExcludeSemantics(child: row),
     );
   }
