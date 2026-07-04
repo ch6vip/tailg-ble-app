@@ -388,7 +388,11 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                 ),
               ),
               const SizedBox(height: 8),
-              VehicleStage(batteryLevel: soc / 100.0, height: 242),
+              VehicleStage(
+                batteryLevel: soc / 100.0,
+                height: 242,
+                imageUrl: cloudVehicle?.carPhoto,
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _OfficialControlTip(

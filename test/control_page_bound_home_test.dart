@@ -103,6 +103,30 @@ void main() {
     expect(find.text('功能设置'), findsOneWidget);
   });
 
+  testWidgets('official vehicle photo is used on control stage', (
+    tester,
+  ) async {
+    final vehicle = OfficialVehicle.fromJson({
+      'imei': 'IMEI_MAIN',
+      'carId': 'official-photo-bike',
+      'carNickName': '官方图片车',
+      'btmac': 'AA:BB:CC:DD:EE:FF',
+      'carPhoto': 'https://example.com/official-bike.png',
+    });
+
+    await pumpBoundHome(
+      tester,
+      size: const Size(430, 2200),
+      officialVehicle: vehicle,
+    );
+
+    final image = tester.widget<Image>(
+      find.byKey(const ValueKey('vehicle-stage-network-image')),
+    );
+
+    expect((image.image as NetworkImage).url, vehicle.carPhoto);
+  });
+
   testWidgets('official feature flags reveal conditional control modules', (
     tester,
   ) async {

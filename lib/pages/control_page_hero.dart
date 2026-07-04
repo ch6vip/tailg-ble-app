@@ -202,7 +202,6 @@ class _TopBar extends StatelessWidget {
           fallback: Icons.notifications_none,
           label: '消息',
           onTap: onMessage,
-          showDot: true,
         ),
       ],
     );
@@ -287,14 +286,12 @@ class _TopIconButton extends StatelessWidget {
     required this.fallback,
     required this.label,
     this.onTap,
-    this.showDot = false,
   });
 
   final String asset;
   final IconData fallback;
   final String label;
   final VoidCallback? onTap;
-  final bool showDot;
 
   @override
   Widget build(BuildContext context) {
@@ -319,19 +316,6 @@ class _TopIconButton extends StatelessWidget {
                     Icon(fallback, size: 24, color: AppColors.textPrimary),
               ),
             ),
-            if (showDot)
-              Positioned(
-                top: 2,
-                right: 1,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.brandRed,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
           ],
         ),
       ),

@@ -479,10 +479,11 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final coreColor = widget.powered ? AppColors.brandRed : AppColors.brandRed;
-    final backgroundAsset = widget.powered
-        ? 'assets/official_tailg/ic_control_stop_drw_bg.png'
-        : 'assets/official_tailg/ic_control_start_drw_bg.png';
+    const handleSize = 64.0;
+    const handleMargin = 6.0;
+    const reservedHandleSpace = handleSize + handleMargin * 2 + 6;
+    const trackColor = Color(0xFFEFF0F5);
+    const accentColor = AppColors.brandRed;
     final handleAsset = widget.powered
         ? 'assets/official_tailg/ic_slide_start_tip_anti_r.png'
         : 'assets/official_tailg/ic_slide_start_tip_r.png';
@@ -519,6 +520,11 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
                   : widget.powered
                   ? 1.0
                   : 0.0;
+              final visualProgress = widget.busy
+                  ? _busyPulse.value
+                  : _dragging
+                  ? progress
+                  : 0.0;
               final knobAlignment = _dragging
                   ? Alignment.lerp(
                       widget.powered
@@ -532,45 +538,72 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
                   : widget.powered
                   ? Alignment.centerRight
                   : Alignment.centerLeft;
+              final hintText = widget.busy
+                  ? (widget.powered ? '关闭中' : '启动中')
+                  : widget.powered
+                  ? '左滑关闭'
+                  : '右滑启动';
+              final hintIcon = widget.powered
+                  ? Icons.keyboard_double_arrow_left_rounded
+                  : Icons.keyboard_double_arrow_right_rounded;
               return Container(
                 height: double.infinity,
                 constraints: const BoxConstraints(minHeight: 64),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF0F5),
+                  color: trackColor,
                   borderRadius: BorderRadius.circular(15),
-                  image: DecorationImage(
-                    image: AssetImage(backgroundAsset),
-                    fit: BoxFit.fill,
-                    opacity: 0.92,
-                  ),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    Positioned.fill(
-                      child: FractionallySizedBox(
-                        alignment: widget.powered
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        widthFactor: progress.clamp(0.0, 1.0),
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: coreColor.withValues(alpha: 0.16),
+                    if (visualProgress > 0)
+                      Positioned.fill(
+                        child: FractionallySizedBox(
+                          alignment: widget.powered
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          widthFactor: visualProgress.clamp(0.0, 1.0),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: accentColor.withValues(alpha: 0.12),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    Text(
-                      widget.busy
-                          ? (widget.powered ? '关闭中' : '启动中')
-                          : widget.powered
-                          ? '左滑关闭'
-                          : '右滑启动',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.officialTextMuted,
+                    Positioned.fill(
+                      left: widget.powered ? 10 : reservedHandleSpace,
+                      right: widget.powered ? reservedHandleSpace : 10,
+                      child: Center(
+                        child: AnimatedOpacity(
+                          duration: AppMotion.micro,
+                          opacity: _dragging ? 0.45 : 1,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (!widget.busy) ...[
+                                  Icon(
+                                    hintIcon,
+                                    size: 27,
+                                    color: const Color(0xFFB9BBC4),
+                                  ),
+                                  const SizedBox(width: 2),
+                                ],
+                                Text(
+                                  hintText,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.officialTextMuted,
+                                    letterSpacing: 0,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                     AnimatedAlign(
@@ -579,42 +612,43 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
                           : const Duration(milliseconds: 180),
                       curve: Curves.easeOutCubic,
                       alignment: knobAlignment,
-                      child: Container(
-                        width: 54,
-                        height: 54,
-                        margin: const EdgeInsets.symmetric(horizontal: 7),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.96),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: coreColor.withValues(alpha: 0.18),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                      child: SizedBox(
+                        width: handleSize,
+                        height: handleSize,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: handleMargin,
+                          ),
+                          child: widget.busy
+                              ? DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF50515A),
+                                    borderRadius: BorderRadius.circular(9),
+                                  ),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(14),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.2,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : Image.asset(
+                                  handleAsset,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF50515A),
+                                      borderRadius: BorderRadius.circular(9),
+                                    ),
+                                    child: Icon(
+                                      Icons.power_settings_new,
+                                      color: Colors.white,
+                                      size: widget.powered ? 27 : 28,
+                                    ),
+                                  ),
+                                ),
                         ),
-                        child: widget.busy
-                            ? const Padding(
-                                padding: EdgeInsets.all(15),
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.2,
-                                  color: AppColors.brandRed,
-                                ),
-                              )
-                            : Image.asset(
-                                handleAsset,
-                                width: 54,
-                                height: 54,
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) => Icon(
-                                  widget.powered
-                                      ? Icons.keyboard_arrow_left
-                                      : Icons.keyboard_arrow_right,
-                                  color: AppColors.brandRed,
-                                  size: 26,
-                                ),
-                              ),
                       ),
                     ),
                   ],

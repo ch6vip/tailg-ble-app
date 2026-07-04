@@ -338,16 +338,35 @@ class VehicleStagePainter extends CustomPainter {
 
 /// Wrapper widget for the vehicle stage with proper sizing and shadow.
 class VehicleStage extends StatelessWidget {
-  const VehicleStage({super.key, this.batteryLevel = 0.84, this.height = 200});
+  const VehicleStage({
+    super.key,
+    this.batteryLevel = 0.84,
+    this.height = 200,
+    this.imageUrl,
+  });
 
   final double batteryLevel;
   final double height;
+  final String? imageUrl;
+
+  String? get _normalizedImageUrl {
+    final value = imageUrl?.trim();
+    if (value == null || value.isEmpty) return null;
+    final uri = Uri.tryParse(value);
+    if (uri == null) return null;
+    if (uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https')) {
+      return value;
+    }
+    if (value.startsWith('//')) return 'https:$value';
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final vehicleWidth = (constraints.maxWidth * 0.66).clamp(218.0, 300.0);
+        final remoteImageUrl = _normalizedImageUrl;
         return SizedBox(
           height: height,
           width: double.infinity,
@@ -374,25 +393,66 @@ class VehicleStage extends StatelessWidget {
               ),
               Positioned(
                 top: 0,
-                child: Image.asset(
-                  'assets/official_tailg/vehicle.png',
-                  fit: BoxFit.contain,
+                child: _VehicleImage(
+                  imageUrl: remoteImageUrl,
                   width: vehicleWidth,
                   height: height - 18,
-                  semanticLabel: '台铃车辆',
-                  errorBuilder: (_, __, ___) => SizedBox(
-                    width: vehicleWidth,
-                    height: height - 18,
-                    child: CustomPaint(
-                      painter: VehicleStagePainter(batteryLevel: batteryLevel),
-                    ),
-                  ),
+                  batteryLevel: batteryLevel,
                 ),
               ),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _VehicleImage extends StatelessWidget {
+  const _VehicleImage({
+    required this.imageUrl,
+    required this.width,
+    required this.height,
+    required this.batteryLevel,
+  });
+
+  final String? imageUrl;
+  final double width;
+  final double height;
+  final double batteryLevel;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl;
+    if (url != null) {
+      return Image.network(
+        url,
+        key: const ValueKey('vehicle-stage-network-image'),
+        fit: BoxFit.contain,
+        width: width,
+        height: height,
+        semanticLabel: '台铃车辆',
+        errorBuilder: (_, __, ___) => _fallbackImage(),
+      );
+    }
+    return _fallbackImage();
+  }
+
+  Widget _fallbackImage() {
+    return Image.asset(
+      'assets/official_tailg/vehicle.png',
+      key: const ValueKey('vehicle-stage-asset-image'),
+      fit: BoxFit.contain,
+      width: width,
+      height: height,
+      semanticLabel: '台铃车辆',
+      errorBuilder: (_, __, ___) => SizedBox(
+        width: width,
+        height: height,
+        child: CustomPaint(
+          painter: VehicleStagePainter(batteryLevel: batteryLevel),
+        ),
+      ),
     );
   }
 }

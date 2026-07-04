@@ -139,6 +139,37 @@ void main() {
     }
   });
 
+  testWidgets('right slide startup uses square official handle', (
+    tester,
+  ) async {
+    await tester.pumpWidget(TestApp(home: ControlCard(onPowerOn: () {})));
+
+    final slide = find.byKey(const ValueKey('control-power-slide'));
+    final track = tester
+        .widgetList<Container>(
+          find.descendant(of: slide, matching: find.byType(Container)),
+        )
+        .firstWhere((container) {
+          final decoration = container.decoration;
+          return decoration is BoxDecoration &&
+              decoration.color == const Color(0xFFEFF0F5);
+        });
+    final decoration = track.decoration as BoxDecoration;
+    final assetNames = tester
+        .widgetList<Image>(
+          find.descendant(of: slide, matching: find.byType(Image)),
+        )
+        .map((image) => image.image)
+        .whereType<AssetImage>()
+        .map((asset) => asset.assetName);
+
+    expect(decoration.image, isNull);
+    expect(
+      assetNames,
+      contains('assets/official_tailg/ic_slide_start_tip_r.png'),
+    );
+  });
+
   testWidgets('powered knob exposes official close wording', (tester) async {
     final semantics = tester.ensureSemantics();
     try {

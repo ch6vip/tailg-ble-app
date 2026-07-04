@@ -17,6 +17,7 @@ import 'pages/scan_page.dart';
 import 'pages/control_page.dart';
 import 'pages/location_page.dart';
 import 'pages/garage_page.dart';
+import 'pages/vehicle_message_page.dart';
 import 'pages/profile_page.dart';
 import 'theme/app_colors.dart';
 import 'widgets/app_toast.dart';
@@ -546,6 +547,12 @@ class _HomePageState extends State<HomePage>
     _homeTabIndex.value = index;
   }
 
+  void _openMessages() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const VehicleMessagePage()));
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -588,8 +595,8 @@ class _HomePageState extends State<HomePage>
       extendBody: true,
       bottomNavigationBar: _OfficialBottomNav(
         currentIndex: _currentIndex,
-        onCircle: () => _switchTab(0),
-        onMall: () => _switchTab(2),
+        onMessage: _openMessages,
+        onGarage: () => _switchTab(2),
         onVehicle: () => _switchTab(0),
         onService: () => _switchTab(1),
         onMine: () => _switchTab(3),
@@ -601,16 +608,16 @@ class _HomePageState extends State<HomePage>
 class _OfficialBottomNav extends StatelessWidget {
   const _OfficialBottomNav({
     required this.currentIndex,
-    required this.onCircle,
-    required this.onMall,
+    required this.onMessage,
+    required this.onGarage,
     required this.onVehicle,
     required this.onService,
     required this.onMine,
   });
 
   final int currentIndex;
-  final VoidCallback onCircle;
-  final VoidCallback onMall;
+  final VoidCallback onMessage;
+  final VoidCallback onGarage;
   final VoidCallback onVehicle;
   final VoidCallback onService;
   final VoidCallback onMine;
@@ -639,22 +646,22 @@ class _OfficialBottomNav extends StatelessWidget {
               children: [
                 Expanded(
                   child: _OfficialNavItem(
-                    label: '圈子',
+                    label: '消息',
                     asset: 'assets/official_tailg/ic_rb_circle_unselect.webp',
                     selectedAsset:
                         'assets/official_tailg/ic_rb_circle_select.webp',
                     selected: false,
-                    onTap: onCircle,
+                    onTap: onMessage,
                   ),
                 ),
                 Expanded(
                   child: _OfficialNavItem(
-                    label: '商城',
+                    label: '车库',
                     asset: 'assets/official_tailg/ic_rb_shop_unselect.webp',
                     selectedAsset:
                         'assets/official_tailg/ic_rb_shop_select.webp',
                     selected: currentIndex == 2,
-                    onTap: onMall,
+                    onTap: onGarage,
                   ),
                 ),
                 Expanded(

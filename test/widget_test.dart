@@ -9,11 +9,21 @@ void main() {
     await tester.pumpWidget(const TailgBleApp());
     await tester.pump(); // Allow combined stream initial emission
     expect(find.text('未绑定车辆'), findsOneWidget);
-    expect(find.text('圈子'), findsOneWidget);
-    expect(find.text('商城'), findsOneWidget);
+    expect(find.text('消息'), findsOneWidget);
+    expect(find.text('车库'), findsOneWidget);
     expect(find.text('爱车'), findsOneWidget);
     expect(find.text('服务'), findsOneWidget);
     expect(find.text('我的'), findsOneWidget);
+  });
+
+  testWidgets('Message nav opens message center', (WidgetTester tester) async {
+    await tester.pumpWidget(const TailgBleApp());
+    await tester.pump();
+
+    await tester.tap(find.text('消息'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('消息中心'), findsOneWidget);
   });
 
   testWidgets('Unbound home stays stable on a narrow surface', (

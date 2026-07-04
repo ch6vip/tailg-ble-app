@@ -63,6 +63,10 @@ void main() {
       final connectAction = find.bySemanticsLabel(connectLabel);
       expect(connectAction, findsOneWidget);
       expect(
+        find.byKey(const ValueKey('control-hero-message-dot')),
+        findsNothing,
+      );
+      expect(
         find.ancestor(
           of: find.text(connectLabel),
           matching: find.byType(AppPressable),
