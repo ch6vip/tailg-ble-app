@@ -7,18 +7,12 @@ void main() {
     final directSnackIconFinder = RegExp(
       r'find\.byIcon\(Icons\.(info_outline|check_circle_outline|error_outline)\)',
     );
-    final offenders = <String>[];
-
-    for (final entity in Directory('test').listSync(recursive: true)) {
-      if (entity is! File || !entity.path.endsWith('_test.dart')) continue;
-      if (entity.path.endsWith('test_conventions_test.dart')) continue;
-      final source = entity.readAsStringSync();
-      final matches = directSnackIconFinder.allMatches(source);
-      for (final match in matches) {
-        final line = _lineNumber(source, match.start);
-        offenders.add('${entity.path}:$line ${match.group(0)}');
-      }
-    }
+    final offenders = _patternOffenders(
+      _dartFilesUnder('test')
+          .where((file) => file.path.endsWith('_test.dart'))
+          .where((file) => !file.path.endsWith('test_conventions_test.dart')),
+      directSnackIconFinder,
+    );
 
     expect(
       offenders,
@@ -33,17 +27,10 @@ void main() {
     final hardcodedPressScale = RegExp(
       r'(pressedScale:\s*0\.\d+|scale:\s*[^,\n]*\?\s*0\.\d+\s*:\s*1)',
     );
-    final offenders = <String>[];
-
-    for (final entity in Directory('lib').listSync(recursive: true)) {
-      if (entity is! File || !entity.path.endsWith('.dart')) continue;
-      final source = entity.readAsStringSync();
-      final matches = hardcodedPressScale.allMatches(source);
-      for (final match in matches) {
-        final line = _lineNumber(source, match.start);
-        offenders.add('${entity.path}:$line ${match.group(0)}');
-      }
-    }
+    final offenders = _patternOffenders(
+      _dartFilesUnder('lib'),
+      hardcodedPressScale,
+    );
 
     expect(
       offenders,
@@ -57,8 +44,7 @@ void main() {
   test('InkWell widgets are not nested inside another InkWell', () {
     final offenders = <String>[];
 
-    for (final entity in Directory('lib').listSync(recursive: true)) {
-      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+    for (final entity in _dartFilesUnder('lib')) {
       final source = entity.readAsStringSync();
       final nestedOffsets = _nestedConstructorOffsets(source, 'InkWell');
       for (final offset in nestedOffsets) {
@@ -78,16 +64,7 @@ void main() {
 
   test('library code does not use wildcard catch variables', () {
     final wildcardCatch = RegExp(r'\bcatch\s*\(\s*_\s*(?:,\s*_\s*)?\)');
-    final offenders = <String>[];
-
-    for (final entity in Directory('lib').listSync(recursive: true)) {
-      if (entity is! File || !entity.path.endsWith('.dart')) continue;
-      final source = entity.readAsStringSync();
-      for (final match in wildcardCatch.allMatches(source)) {
-        final line = _lineNumber(source, match.start);
-        offenders.add('${entity.path}:$line ${match.group(0)}');
-      }
-    }
+    final offenders = _patternOffenders(_dartFilesUnder('lib'), wildcardCatch);
 
     expect(
       offenders,
@@ -111,6 +88,25 @@ void main() {
       expect(source, contains('LogLevel.debug'), reason: path);
     }
   });
+}
+
+Iterable<File> _dartFilesUnder(String path) {
+  return Directory(path)
+      .listSync(recursive: true)
+      .whereType<File>()
+      .where((file) => file.path.endsWith('.dart'));
+}
+
+List<String> _patternOffenders(Iterable<File> files, RegExp pattern) {
+  final offenders = <String>[];
+  for (final file in files) {
+    final source = file.readAsStringSync();
+    for (final match in pattern.allMatches(source)) {
+      final line = _lineNumber(source, match.start);
+      offenders.add('${file.path}:$line ${match.group(0)}');
+    }
+  }
+  return offenders;
 }
 
 int _lineNumber(String source, int offset) {
