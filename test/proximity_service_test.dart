@@ -6,11 +6,12 @@ import 'package:tailg_ble_app/services/ble_connection_snapshot_guard.dart';
 import 'package:tailg_ble_app/services/proximity_service.dart';
 
 import 'helpers/allowing_snapshot_guard.dart';
+import 'helpers/storage_mocks.dart';
 
 void main() {
   setUp(() {
     ProximityService().resetForTest();
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
   });
 
   test('ProximityService coalesces init and loads persisted switch', () async {

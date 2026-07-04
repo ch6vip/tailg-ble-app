@@ -2,10 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/services/manual_mode_service.dart';
 
+import 'helpers/storage_mocks.dart';
+
 void main() {
   setUp(() {
     ManualModeService().resetForTest();
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
   });
 
   test('ManualModeService defaults to off and persists toggles', () async {

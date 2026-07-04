@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/settings_page.dart';
 
+import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 
 void main() {
   setUp(() {
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
     app.autoConnectService.resetForTest();
     app.proximityService.resetForTest();
     app.appPreferencesService.resetForTest();

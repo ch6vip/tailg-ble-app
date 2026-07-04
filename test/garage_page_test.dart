@@ -1,15 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/garage_page.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
+import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 
 void main() {
   setUp(() async {
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
     app.vehicleStore.resetForTest();
     app.homeTabIndex.value = 3;
     await app.vehicleStore.init();

@@ -2,10 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/services/app_preferences_service.dart';
 
+import 'helpers/storage_mocks.dart';
+
 void main() {
   setUp(() {
     AppPreferencesService().resetForTest();
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
   });
 
   test('loads persisted app preferences before UI reads them', () async {

@@ -4,13 +4,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/pages/cloud_token_page.dart';
 
 import 'helpers/snack_finders.dart';
+import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 
 void main() {
   testWidgets('saving token persists value and shows success snack', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
 
     await tester.pumpWidget(const TestApp(home: CloudTokenPage()));
     await tester.pump();
