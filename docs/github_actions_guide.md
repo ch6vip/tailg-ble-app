@@ -22,12 +22,13 @@
 
 | 文件 | 用途 | 触发条件 |
 |------|------|----------|
-| `build.yml` | CI 门禁 + 非 PR 场景构建签名 APK artifact | push 到 `master`/`develop`，PR 到 `master`/`develop`，手动 |
+| `build.yml` | PR 自动 CI 门禁 + 手动构建签名 APK artifact | PR 到 `master`/`develop`，手动 |
 | `release.yml` | 构建签名 APK 并发布 GitHub Release | push `v*` tag，手动 |
 
 当前分工：
 
 - `build.yml` 不监听 `v*` tag，也不创建 GitHub Release。
+- 普通 push 到 `master`/`develop` 不触发 `build.yml`，避免频繁代码提交自动编译 APK。
 - `release.yml` 是唯一 tag 发布入口，负责 `softprops/action-gh-release`。
 - 两个工作流都会在构建前执行 `dart format --output=none --set-exit-if-changed .`、`flutter analyze`、`flutter test`。
 - 当前没有覆盖率上传、Codecov、Firebase 分发或 Slack 通知步骤。
@@ -41,7 +42,6 @@
 | 触发事件 | 分支 | 执行范围 |
 |----------|------|----------|
 | `pull_request` | `master` / `develop` | `ci` |
-| `push` | `master` / `develop` | `ci` -> `build` |
 | `workflow_dispatch` | 手动选择当前 ref | `ci` -> `build` |
 
 ### Job 结构
@@ -49,7 +49,7 @@
 | Job | 条件 | 关键步骤 |
 |-----|------|----------|
 | `ci` | 所有触发事件 | checkout、安装 Flutter、`flutter pub get`、format、analyze、test |
-| `build` | `needs: ci` 且不是 PR | Gradle 缓存、解码 keystore、生成 `android/key.properties`、构建 release APK、生成 SHA-256、上传 artifact |
+| `build` | `needs: ci` 且手动触发 | Gradle 缓存、解码 keystore、生成 `android/key.properties`、构建 release APK、生成 SHA-256、上传 artifact |
 
 ### 构建产物
 
@@ -161,5 +161,5 @@ flutter build apk --release --target-platform android-arm64
 ## 当前限制
 
 - 覆盖率报告尚未上传为 CI artifact；当前仅通过 `coverage/lcov.info` 执行 40% 线覆盖率门禁。
-- `build.yml` 对 `master` 与 `develop` push 都会构建签名 APK artifact，但不会部署到外部分发渠道。
+- `build.yml` 不再响应普通 push；需要测试 APK 时从 GitHub Actions 手动运行 Build APK workflow。
 - `release.yml` 是唯一 GitHub Release 发布入口；验证 tag 发布时只需检查该工作流。
