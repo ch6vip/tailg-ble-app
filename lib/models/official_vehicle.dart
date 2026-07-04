@@ -67,22 +67,22 @@ class OfficialVehicle {
 
   factory OfficialVehicle.fromJson(Map<String, dynamic> json) {
     return OfficialVehicle(
-      imei: _string(json['imei']),
-      imeiGps: _string(json['imeiGps']),
-      carId: _string(json['carId']),
-      carName: _string(json['carName']),
-      carNickName: _string(json['carNickName']),
-      carPhoto: _string(json['carPhoto']),
-      frame: _string(json['frame']),
+      imei: _stringValue(json['imei']),
+      imeiGps: _stringValue(json['imeiGps']),
+      carId: _stringValue(json['carId']),
+      carName: _stringValue(json['carName']),
+      carNickName: _stringValue(json['carNickName']),
+      carPhoto: _stringValue(json['carPhoto']),
+      frame: _stringValue(json['frame']),
       defenceStatus: _intOrNull(json['defenceStatus']),
       acc: _intOrNull(json['acc']),
       electricQuantity: _intOrNull(json['electricQuantity']),
       voltage: _doubleOrNull(json['voltage']),
-      online: _bool(json['online']),
-      btname: _string(json['btname']),
-      btmac: _string(json['btmac']),
-      longitude: _string(json['longitude']),
-      latitude: _string(json['latitude']),
+      online: _boolValue(json['online']),
+      btname: _stringValue(json['btname']),
+      btmac: _stringValue(json['btmac']),
+      longitude: _stringValue(json['longitude']),
+      latitude: _stringValue(json['latitude']),
       modelType: _intOrNull(json['modelType']),
       mileage: _doubleOrNull(json['mileage']),
     );
@@ -155,29 +155,6 @@ class OfficialVehicle {
   String get onlineLabel => online ? '车辆在线' : '车辆离线';
   String get defenceLabel => isLocked ? '已设防' : '已解防';
   String get powerLabel => isPowerOn ? '车辆已启动' : '车辆未启动';
-
-  static String _string(Object? value) => value?.toString().trim() ?? '';
-
-  static bool _bool(Object? value) {
-    if (value is bool) return value;
-    if (value is num) return value != 0;
-    final text = value?.toString().toLowerCase();
-    return text == 'true' || text == '1';
-  }
-
-  static int? _intOrNull(Object? value) {
-    if (value == null) return null;
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    return int.tryParse(value.toString());
-  }
-
-  static double? _doubleOrNull(Object? value) {
-    if (value == null) return null;
-    if (value is double) return value;
-    if (value is num) return value.toDouble();
-    return double.tryParse(value.toString());
-  }
 }
 
 class OfficialVehicleLocation {
@@ -557,7 +534,7 @@ class OfficialVehicleSelfCheck {
   factory OfficialVehicleSelfCheck.fromResponse(Map<String, dynamic> json) {
     return OfficialVehicleSelfCheck(
       raw: Map<String, dynamic>.from(json),
-      code: OfficialVehicle._intOrNull(json['code']),
+      code: _intOrNull(json['code']),
       message: json['msg']?.toString() ?? '',
       data: json['data'],
     );
@@ -576,4 +553,27 @@ class OfficialVehicleSelfCheck {
     if (code != null) return 'code=$code';
     return '自检已返回';
   }
+}
+
+String _stringValue(Object? value) => value?.toString().trim() ?? '';
+
+bool _boolValue(Object? value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  final text = value?.toString().toLowerCase();
+  return text == 'true' || text == '1';
+}
+
+int? _intOrNull(Object? value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString());
+}
+
+double? _doubleOrNull(Object? value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  return double.tryParse(value.toString());
 }
