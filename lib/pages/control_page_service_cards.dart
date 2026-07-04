@@ -14,6 +14,8 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
 
   @override
   Widget build(BuildContext context) {
+    final showGpsBanner =
+        officialCloudService.state.selectedVehicle?.hasGpsService != true;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -31,10 +33,12 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
               const LocationPage(initialTab: LocationInitialTab.travel),
             ),
           ),
-          const SizedBox(height: 10),
-          _OfficialGpsBanner(
-            onTap: () => _open(context, const OfficialCloudPage()),
-          ),
+          if (showGpsBanner) ...[
+            const SizedBox(height: 10),
+            _OfficialGpsBanner(
+              onTap: () => _open(context, const OfficialCloudPage()),
+            ),
+          ],
           const SizedBox(height: 10),
           _OfficialSettingsCard(
             onVehicleSetting: () => _open(context, const VehicleSettingsPage()),

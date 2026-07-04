@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
+import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
+import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
@@ -14,10 +16,12 @@ void main() {
     WidgetTester tester, {
     Size? size,
     String name = '测试车辆',
+    OfficialVehicle? officialVehicle,
   }) async {
     SharedPreferences.setMockInitialValues({});
     app.proximityService.resetForTest();
     app.manualModeService.resetForTest();
+    app.officialCloudService.resetForTest();
     VehicleStore().resetForTest();
     await VehicleStore().init();
     await VehicleStore().upsert(
@@ -26,6 +30,16 @@ void main() {
       protocol: VehicleProtocol.auto,
       makeDefault: true,
     );
+    if (officialVehicle != null) {
+      app.officialCloudService.setStateForTest(
+        OfficialCloudState.initial().copyWith(
+          initialized: true,
+          token: 'token',
+          vehicles: [officialVehicle],
+          selectedVehicleKey: officialVehicle.key,
+        ),
+      );
+    }
 
     if (size != null) {
       tester.view.physicalSize = size;
@@ -65,6 +79,26 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('车辆位置'), findsOneWidget);
     expect(find.bySemanticsLabel('可添加GPS'), findsOneWidget);
+  });
+
+  testWidgets('gps official vehicle hides add gps banner', (tester) async {
+    final vehicle = OfficialVehicle.fromJson({
+      'imei': 'IMEI_MAIN',
+      'imeiGps': 'IMEI_GPS',
+      'carId': 'official-gps-bike',
+      'modelType': 1501,
+      'btmac': 'AA:BB:CC:DD:EE:FF',
+    });
+
+    await pumpBoundHome(
+      tester,
+      size: const Size(430, 2200),
+      officialVehicle: vehicle,
+    );
+
+    expect(find.text('历史轨迹'), findsOneWidget);
+    expect(find.bySemanticsLabel('可添加GPS'), findsNothing);
+    expect(find.text('功能设置'), findsOneWidget);
   });
 
   testWidgets('official control card has no legacy bottom shortcuts', (

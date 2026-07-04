@@ -137,9 +137,13 @@ class OfficialVehicle {
 
   bool get hasBleIdentity => normalizedBtmac.isNotEmpty;
 
-  String get commandImei {
+  bool get hasGpsService {
     final type = modelType;
-    if (type != null && _gpsModelTypes.contains(type) && imeiGps.isNotEmpty) {
+    return type != null && _gpsModelTypes.contains(type) && imeiGps.isNotEmpty;
+  }
+
+  String get commandImei {
+    if (hasGpsService) {
       return imeiGps;
     }
     return imei;

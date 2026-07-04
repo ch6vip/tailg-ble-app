@@ -44,6 +44,7 @@ void main() {
       expect(vehicle.commandImei, 'IMEI_GPS');
       expect(vehicle.normalizedBtmac, 'AA:BB:CC:DD:EE:FF');
       expect(vehicle.hasBleIdentity, isTrue);
+      expect(vehicle.hasGpsService, isTrue);
     });
 
     test('falls back to main imei for non GPS model type', () {
@@ -54,6 +55,7 @@ void main() {
       });
 
       expect(vehicle.commandImei, 'IMEI_MAIN');
+      expect(vehicle.hasGpsService, isFalse);
     });
 
     test('normalizes compact official bluetooth mac', () {
