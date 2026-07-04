@@ -20,6 +20,37 @@ void main() {
     }
   });
 
+  testWidgets('status badge exposes every default label to semantics', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                StatusBadge(type: StatusBadgeType.armed),
+                StatusBadge(type: StatusBadgeType.idle),
+                StatusBadge(type: StatusBadgeType.ble),
+                StatusBadge(type: StatusBadgeType.online),
+                StatusBadge(type: StatusBadgeType.offline),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(find.bySemanticsLabel('车辆状态：已设防'), findsOneWidget);
+      expect(find.bySemanticsLabel('车辆状态：未通电'), findsOneWidget);
+      expect(find.bySemanticsLabel('车辆状态：蓝牙直连'), findsOneWidget);
+      expect(find.bySemanticsLabel('车辆状态：在线'), findsOneWidget);
+      expect(find.bySemanticsLabel('车辆状态：离线'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('status badge exposes custom label to semantics', (tester) async {
     final semantics = tester.ensureSemantics();
     try {

@@ -11,6 +11,39 @@ import 'package:tailg_ble_app/theme/app_colors.dart';
 /// - [StatusBadgeType.offline]→ red "离线"
 enum StatusBadgeType { armed, idle, ble, online, offline }
 
+extension _StatusBadgeTypeTokens on StatusBadgeType {
+  Color get dotColor => switch (this) {
+    StatusBadgeType.armed || StatusBadgeType.offline => AppColors.energyRed,
+    StatusBadgeType.idle => AppColors.textTertiary,
+    StatusBadgeType.ble || StatusBadgeType.online => AppColors.energyGreen,
+  };
+
+  Color get bgColor => switch (this) {
+    StatusBadgeType.armed ||
+    StatusBadgeType.offline => AppColors.surfaceBrandRedTint,
+    StatusBadgeType.idle => AppColors.surfaceContainerHigh,
+    StatusBadgeType.ble ||
+    StatusBadgeType.online => AppColors.surfaceBrandTealTint,
+  };
+
+  /// Only armed, ble, and online states are "active" — their dot should pulse.
+  /// Idle and offline are static states and use a static dot.
+  bool get isActive => switch (this) {
+    StatusBadgeType.armed ||
+    StatusBadgeType.ble ||
+    StatusBadgeType.online => true,
+    StatusBadgeType.idle || StatusBadgeType.offline => false,
+  };
+
+  String get defaultLabel => switch (this) {
+    StatusBadgeType.armed => '已设防',
+    StatusBadgeType.idle => '未通电',
+    StatusBadgeType.ble => '蓝牙直连',
+    StatusBadgeType.online => '在线',
+    StatusBadgeType.offline => '离线',
+  };
+}
+
 class StatusBadge extends StatelessWidget {
   const StatusBadge({
     super.key,
@@ -27,47 +60,16 @@ class StatusBadge extends StatelessWidget {
   /// If true, renders smaller and without background card — inline use only.
   final bool compact;
 
-  Color get _dotColor => switch (type) {
-    StatusBadgeType.armed || StatusBadgeType.offline => AppColors.energyRed,
-    StatusBadgeType.idle => AppColors.textTertiary,
-    StatusBadgeType.ble || StatusBadgeType.online => AppColors.energyGreen,
-  };
-
-  Color get _bgColor => switch (type) {
-    StatusBadgeType.armed ||
-    StatusBadgeType.offline => AppColors.surfaceBrandRedTint,
-    StatusBadgeType.idle => AppColors.surfaceContainerHigh,
-    StatusBadgeType.ble ||
-    StatusBadgeType.online => AppColors.surfaceBrandTealTint,
-  };
-
-  /// Only armed, ble, and online states are "active" — their dot should pulse.
-  /// Idle and offline are static states and use a static dot.
-  bool get _isActive => switch (type) {
-    StatusBadgeType.armed ||
-    StatusBadgeType.ble ||
-    StatusBadgeType.online => true,
-    StatusBadgeType.idle || StatusBadgeType.offline => false,
-  };
-
-  String get _defaultLabel => switch (type) {
-    StatusBadgeType.armed => '已设防',
-    StatusBadgeType.idle => '未通电',
-    StatusBadgeType.ble => '蓝牙直连',
-    StatusBadgeType.online => '在线',
-    StatusBadgeType.offline => '离线',
-  };
-
   @override
   Widget build(BuildContext context) {
-    final displayLabel = label ?? _defaultLabel;
+    final displayLabel = label ?? type.defaultLabel;
     final badge = _StatusBadgeVisual(
       displayLabel: displayLabel,
-      dotColor: _dotColor,
-      bgColor: _bgColor,
+      dotColor: type.dotColor,
+      bgColor: type.bgColor,
       showDot: showDot,
       compact: compact,
-      pulsing: _isActive,
+      pulsing: type.isActive,
     );
 
     return Semantics(
