@@ -7,16 +7,7 @@ Uint8List buildQgjLoginFrame({int password = 0, int userId = 0}) {
   view.setUint32(0, password & 0xFFFFFFFF, Endian.big);
   view.setUint32(4, userId & 0xFFFFFFFF, Endian.big);
 
-  final length = payload.length + 2;
-  final frame = Uint8List(4 + 2 + payload.length);
-  frame[0] = 0xA7;
-  frame[1] = 0x00;
-  frame[2] = (length >> 8) & 0xFF;
-  frame[3] = length & 0xFF;
-  frame[4] = (QgjCommandIds.login >> 8) & 0xFF;
-  frame[5] = QgjCommandIds.login & 0xFF;
-  frame.setRange(6, frame.length, payload);
-  return frame;
+  return buildQgjCommand(QgjCommandIds.login, payload);
 }
 
 Uint8List buildQgjCommand(int cmdId, [Uint8List? payload]) {
