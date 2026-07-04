@@ -11,11 +11,13 @@ void main() {
   });
 
   test('loads persisted app preferences before UI reads them', () async {
-    SharedPreferences.setMockInitialValues({
-      'app_language_preference': 'en',
-      'app_distance_unit_preference': 'imperial',
-      'app_respect_text_scale': false,
-    });
+    SharedPreferences.setMockInitialValues(
+      _storedAppPreferences(
+        language: 'en',
+        distanceUnit: 'imperial',
+        respectTextScale: false,
+      ),
+    );
     AppPreferencesService().resetForTest();
 
     final service = AppPreferencesService();
@@ -27,11 +29,13 @@ void main() {
   });
 
   test('coalesces concurrent init calls and preserves loaded values', () async {
-    SharedPreferences.setMockInitialValues({
-      'app_language_preference': 'zh-Hans',
-      'app_distance_unit_preference': 'metric',
-      'app_respect_text_scale': true,
-    });
+    SharedPreferences.setMockInitialValues(
+      _storedAppPreferences(
+        language: 'zh-Hans',
+        distanceUnit: 'metric',
+        respectTextScale: true,
+      ),
+    );
     AppPreferencesService().resetForTest();
 
     final service = AppPreferencesService();
@@ -43,10 +47,9 @@ void main() {
   });
 
   test('falls back to safe defaults for unknown preference values', () async {
-    SharedPreferences.setMockInitialValues({
-      'app_language_preference': 'unknown',
-      'app_distance_unit_preference': 'unknown',
-    });
+    SharedPreferences.setMockInitialValues(
+      _storedAppPreferences(language: 'unknown', distanceUnit: 'unknown'),
+    );
     AppPreferencesService().resetForTest();
 
     final service = AppPreferencesService();
@@ -73,4 +76,16 @@ void main() {
     expect(prefs.getString('app_distance_unit_preference'), 'imperial');
     expect(prefs.getBool('app_respect_text_scale'), isFalse);
   });
+}
+
+Map<String, Object> _storedAppPreferences({
+  required String language,
+  required String distanceUnit,
+  bool? respectTextScale,
+}) {
+  return {
+    'app_language_preference': language,
+    'app_distance_unit_preference': distanceUnit,
+    if (respectTextScale != null) 'app_respect_text_scale': respectTextScale,
+  };
 }
