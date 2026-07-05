@@ -1,78 +1,75 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
+import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/profile_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/snack_finders.dart';
+import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
 import 'helpers/typography.dart';
 import 'helpers/view_size.dart';
 
 void main() {
-  setUp(() {
+  setUp(() async {
+    resetMockPreferences();
     app.officialCloudService.resetForTest();
+    app.vehicleStore.resetForTest();
+    await app.vehicleStore.init();
   });
 
   tearDown(() {
     app.officialCloudService.resetForTest();
+    app.vehicleStore.resetForTest();
   });
 
-  testWidgets('membership entry shows info snack', (tester) async {
+  testWidgets('profile follows official mine page structure', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
+      setTestViewSize(tester, const Size(430, 1800));
+
       await tester.pumpWidget(const TestApp(home: ProfilePage()));
       await tester.pump();
 
-      const membershipLabel = '会员中心，即将上线';
-      final membershipEntry = find.bySemanticsLabel(membershipLabel);
-      expect(membershipEntry, findsOneWidget);
-      expect(
-        find.ancestor(
-          of: find.text('会员中心 · 即将上线'),
-          matching: find.byType(AppPressable),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        tester.getSemantics(membershipEntry),
-        matchesSemantics(
-          label: membershipLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasTapAction: true,
-        ),
-      );
+      expect(find.text('立即登录'), findsOneWidget);
+      expect(find.text('发帖'), findsOneWidget);
+      expect(find.text('关注'), findsOneWidget);
+      expect(find.text('粉丝'), findsOneWidget);
+      expect(find.text('我的积分'), findsOneWidget);
+      expect(find.text('签到中心'), findsOneWidget);
+      expect(find.text('我的车库'), findsOneWidget);
+      expect(find.text('功能中心'), findsOneWidget);
+      expect(find.text('骑行统计'), findsOneWidget);
+      expect(find.text('扫码手表控车'), findsOneWidget);
 
-      tester.semantics.tap(find.semantics.byLabel(membershipLabel));
+      const pointsLabel = '我的积分，赚更多积分';
+      final pointsEntry = find.bySemanticsLabel(pointsLabel);
+      expect(pointsEntry, findsOneWidget);
+      expectMinTouchTargetHeight(tester, pointsEntry);
+
+      tester.semantics.tap(find.semantics.byLabel(pointsLabel));
       await tester.pump();
 
-      expect(find.text('会员服务暂未开放'), findsOneWidget);
+      expect(find.text('我的积分暂未开放'), findsOneWidget);
       expect(snackIcon(Icons.info_outline), findsOneWidget);
     } finally {
       semantics.dispose();
     }
   });
 
-  testWidgets('profile edit action keeps a 44dp touch target', (tester) async {
+  testWidgets('profile login action keeps a 44dp touch target', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
       await tester.pumpWidget(const TestApp(home: ProfilePage()));
       await tester.pump();
 
-      final editAction = find.ancestor(
-        of: find.byIcon(Icons.edit_outlined),
-        matching: find.byType(AppPressable),
-      );
-      expect(editAction, findsOneWidget);
-      expectMinTouchTargetHeight(tester, editAction);
-
       const loginActionLabel = '登录 / 查看车辆';
       final loginAction = find.bySemanticsLabel(loginActionLabel);
       expect(loginAction, findsOneWidget);
+      expectMinTouchTargetHeight(tester, loginAction);
       expect(
         tester.getSemantics(loginAction),
         matchesSemantics(
@@ -131,10 +128,14 @@ void main() {
       await tester.pump();
 
       const unavailableTiles = {
+        '签到中心，连续签到抽盲盒': '签到中心',
+        '我的收藏': '我的收藏',
+        '任务中心': '任务中心',
         '我的订单': '我的订单',
-        '保养预约，附近 3 家门店': '保养预约',
-        '保险服务': '保险服务',
-        '优惠券，3 张可用': '优惠券',
+        '邀请好友': '邀请好友',
+        '优惠券': '优惠券',
+        '骑行统计': '骑行统计',
+        '扫码手表控车': '扫码手表控车',
         '隐私与安全': '隐私与安全',
         '帮助与反馈': '帮助与反馈',
       };
@@ -164,19 +165,40 @@ void main() {
     }
   });
 
-  testWidgets('profile data metrics avoid negative letter spacing', (
+  testWidgets('official mine stats avoid negative letter spacing', (
     tester,
   ) async {
     await tester.pumpWidget(const TestApp(home: ProfilePage()));
     await tester.pump();
 
-    final metricTexts = tester
-        .widgetList<Text>(find.text('--'))
-        .map((text) => text.style?.letterSpacing)
-        .toList();
+    final metricKeys = [
+      'mine-stat-value-发帖',
+      'mine-stat-value-关注',
+      'mine-stat-value-粉丝',
+    ];
+    final metricTexts = [
+      for (final key in metricKeys)
+        tester.widget<Text>(find.byKey(ValueKey(key))).style?.letterSpacing,
+    ];
 
     expect(metricTexts, hasLength(3));
     expect(metricTexts, everyElement(nonNegativeLetterSpacing));
+  });
+
+  testWidgets('garage panel follows local vehicle store', (tester) async {
+    await app.vehicleStore.upsert(
+      id: 'AA:BB:CC:DD:EE:FF',
+      name: '测试车辆',
+      protocol: VehicleProtocol.auto,
+      makeDefault: true,
+    );
+
+    await tester.pumpWidget(const TestApp(home: ProfilePage()));
+    await tester.pump();
+
+    expect(find.text('测试车辆'), findsOneWidget);
+    expect(find.bySemanticsLabel('我的车库，测试车辆'), findsOneWidget);
+    expect(find.text('使用中'), findsOneWidget);
   });
 
   testWidgets('profile logout action exposes semantics and 44dp target', (
@@ -243,7 +265,8 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('138****8888'), findsOneWidget);
+    expect(find.text('立即登录'), findsOneWidget);
+    expect(find.text('登录后同步车辆和消息'), findsOneWidget);
     expect(find.text('188****5678'), findsNothing);
   });
 }

@@ -15,6 +15,7 @@ void main() {
     final semantics = tester.ensureSemantics();
     var vehicleTapped = false;
     var connectTapped = false;
+    var batteryTapped = false;
     var detailTapped = false;
     var messageTapped = false;
 
@@ -28,6 +29,7 @@ void main() {
               vehicleName: '测试车辆',
               onVehicleSwitch: () => vehicleTapped = true,
               onConnect: () => connectTapped = true,
+              onBatteryTap: () => batteryTapped = true,
               onDetail: () => detailTapped = true,
               onMessage: () => messageTapped = true,
             ),
@@ -61,6 +63,21 @@ void main() {
       expect(
         tester.getSemantics(batteryAction),
         matchesSemantics(label: batteryLabel),
+      );
+
+      const batteryDetailLabel = '剩余电量，查看电池信息';
+      final batteryDetailAction = find.bySemanticsLabel(batteryDetailLabel);
+      expect(batteryDetailAction, findsOneWidget);
+      expectMinTouchTargetHeight(tester, batteryDetailAction);
+      expect(
+        tester.getSemantics(batteryDetailAction),
+        matchesSemantics(
+          label: batteryDetailLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
       );
 
       const connectLabel = '点击连接';
@@ -106,12 +123,14 @@ void main() {
       }
 
       tester.semantics.tap(find.semantics.byLabel(vehicleLabel));
+      tester.semantics.tap(find.semantics.byLabel(batteryDetailLabel));
       tester.semantics.tap(find.semantics.byLabel(connectLabel));
       tester.semantics.tap(find.semantics.byLabel('车辆详情'));
       tester.semantics.tap(find.semantics.byLabel('消息'));
 
       expect(vehicleTapped, isTrue);
       expect(connectTapped, isTrue);
+      expect(batteryTapped, isTrue);
       expect(detailTapped, isTrue);
       expect(messageTapped, isTrue);
     } finally {

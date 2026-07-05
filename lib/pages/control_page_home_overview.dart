@@ -381,6 +381,11 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                     builder: (_) => const AddVehiclePage(),
                   ),
                 ),
+                onBatteryTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const BatteryDetailsPage(),
+                  ),
+                ),
                 onDetail: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => const OfficialCloudPage(),

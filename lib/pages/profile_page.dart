@@ -2,22 +2,29 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:tailg_ble_app/theme/app_colors.dart';
+
 import '../main.dart';
+import '../models/official_vehicle.dart';
+import '../models/vehicle_profile.dart';
 import '../services/official_cloud_service.dart';
+import '../theme/app_colors.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/vehicle_stage.dart';
+import 'add_vehicle_page.dart';
 import 'app_preferences_pages.dart';
+import 'garage_page.dart';
 import 'official_cloud_page.dart';
 import 'ota_precheck_page.dart';
 import 'vehicle_message_page.dart';
 
-const _membershipGoldStart = Color(0xFFFFD580);
-const _membershipGoldInk = Color(0xFF5A3A00);
+const _officialInk = Color(0xFF060606);
+const _officialStrong = Color(0xFF1F1F1F);
+const _officialMuted = Color(0xFF807E89);
+const _officialLight = Color(0xFFACABB5);
+const _mineCardRadius = 10.0;
 
-/// v8 Profile / "我的" page.
-///
-/// Current design notes live in `docs/design_system.md`.
+/// Official-style "我的" page.
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -27,47 +34,83 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   StreamSubscription<OfficialCloudState>? _cloudSub;
+  StreamSubscription<List<VehicleProfile>>? _vehicleSub;
   late OfficialCloudState _cloudState;
+  late List<VehicleProfile> _vehicles;
 
   @override
   void initState() {
     super.initState();
     _cloudState = officialCloudService.state;
+    _vehicles = vehicleStore.vehicles;
     _cloudSub = officialCloudService.stateStream.listen((state) {
       if (mounted) setState(() => _cloudState = state);
+    });
+    _vehicleSub = vehicleStore.vehiclesStream.listen((vehicles) {
+      if (mounted) setState(() => _vehicles = vehicles);
     });
   }
 
   @override
   void dispose() {
     _cloudSub?.cancel();
+    _vehicleSub?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final signedIn = _cloudState.signedIn;
-    final phone = signedIn ? _cloudState.phone : null;
+    final officialVehicle = _cloudState.selectedVehicle;
+    final localVehicle = _defaultLocalVehicle();
 
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
+      backgroundColor: AppColors.officialPageBg,
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 40),
+          padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _UserHeader(nickname: null, phone: phone, signedIn: signedIn),
-              const SizedBox(height: 18),
-              const _DataOverview(),
-              const SizedBox(height: 16),
-              const _MembershipBanner(),
-              const SizedBox(height: 24),
-              const _ServiceSection(),
-              const SizedBox(height: 24),
-              const _SettingsSection(),
-              const SizedBox(height: 24),
+              _MineHeader(
+                signedIn: signedIn,
+                phone: signedIn ? _cloudState.phone : null,
+                onProfileTap: () => _handleProfileTap(signedIn),
+                onSettingsTap: () => AppSnack.info(context, '设置项在下方列表'),
+                onMessageTap: () => _openMessages(context),
+              ),
+              const _SocialStats(),
+              const SizedBox(height: 10),
+              _ShortcutPair(onUnavailable: _showUnavailable),
+              const SizedBox(height: 10),
+              _GaragePanel(
+                officialVehicle: officialVehicle,
+                localVehicle: localVehicle,
+                onGarageTap: () => _openGarage(context),
+                onAddVehicle: () => _openAddVehicle(context),
+              ),
+              const SizedBox(height: 10),
+              _FunctionCenter(onUnavailable: _showUnavailable),
+              const SizedBox(height: 10),
+              _MineActionTile(
+                icon: Icons.query_stats_outlined,
+                title: '骑行统计',
+                minHeight: 88,
+                onTap: () => _showUnavailable('骑行统计'),
+              ),
+              const SizedBox(height: 10),
+              _MineActionTile(
+                icon: Icons.watch_outlined,
+                title: '扫码手表控车',
+                minHeight: 70,
+                trailingHelp: true,
+                onTap: () => _showUnavailable('扫码手表控车'),
+              ),
+              const SizedBox(height: 10),
+              _SettingsSection(onUnavailable: _showUnavailable),
+              const SizedBox(height: 14),
               const _LogoutButton(),
             ],
           ),
@@ -75,157 +118,172 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
+  VehicleProfile? _defaultLocalVehicle() {
+    final defaultId = vehicleStore.defaultVehicleId;
+    if (defaultId != null) {
+      for (final vehicle in _vehicles) {
+        if (vehicle.id == defaultId) return vehicle;
+      }
+    }
+    return vehicleStore.defaultVehicle ??
+        (_vehicles.isEmpty ? null : _vehicles.first);
+  }
+
+  void _handleProfileTap(bool signedIn) {
+    if (!signedIn) {
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
+      );
+      return;
+    }
+    AppSnack.info(context, '资料编辑暂未开放');
+  }
+
+  void _openMessages(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const VehicleMessagePage()),
+    );
+  }
+
+  void _openGarage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const GaragePage()),
+    );
+  }
+
+  void _openAddVehicle(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
+    );
+  }
+
+  void _showUnavailable(String label) {
+    AppSnack.info(context, '$label暂未开放');
+  }
 }
 
-// ─── User Header ───────────────────────────────────────────────
+class _MineHeader extends StatelessWidget {
+  const _MineHeader({
+    required this.signedIn,
+    required this.phone,
+    required this.onProfileTap,
+    required this.onSettingsTap,
+    required this.onMessageTap,
+  });
 
-class _UserHeader extends StatelessWidget {
-  const _UserHeader({this.nickname, this.phone, this.signedIn = false});
-  final String? nickname;
-  final String? phone;
   final bool signedIn;
+  final String? phone;
+  final VoidCallback onProfileTap;
+  final VoidCallback onSettingsTap;
+  final VoidCallback onMessageTap;
 
   @override
   Widget build(BuildContext context) {
-    final editActionLabel = signedIn ? '编辑资料' : '登录 / 查看车辆';
-    void handleEditAction() {
-      if (!signedIn) {
-        Navigator.push(
-          context,
-          MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
-        );
-      } else {
-        AppSnack.info(context, '资料编辑暂未开放');
-      }
-    }
+    final name = signedIn ? '台铃用户' : '立即登录';
+    final subtitle = signedIn ? (_maskPhone(phone) ?? '已登录') : '登录后同步车辆和消息';
+    final semanticsLabel = signedIn ? '编辑资料' : '登录 / 查看车辆';
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      child: Row(
+    return Container(
+      height: 176,
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFF7F9FF), AppColors.officialPageBg],
+        ),
+      ),
+      child: Column(
         children: [
-          // Avatar with ring + shadow
-          Container(
-            width: 66,
-            height: 66,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryDark.withValues(alpha: 0.35),
-                  blurRadius: 22,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.energyGreen, AppColors.primaryDark],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.person,
-                    color: Colors.white,
-                    size: 30,
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      width: 2,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              _HeaderIconButton(
+                icon: Icons.settings_outlined,
+                label: '设置',
+                onTap: onSettingsTap,
+              ),
+              const SizedBox(width: 8),
+              _HeaderIconButton(
+                icon: Icons.notifications_none_outlined,
+                label: '消息中心',
+                showDot: true,
+                onTap: onMessageTap,
+              ),
+            ],
           ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        nickname ?? '骑行爱好者',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(AppRadii.pill),
-                        gradient: const LinearGradient(
-                          colors: [_membershipGoldStart, AppColors.accentAmber],
-                        ),
-                      ),
-                      child: const Text(
-                        '黄金会员',
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                          color: _membershipGoldInk,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _maskPhone(phone) ?? '138****8888',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          const SizedBox(height: 8),
           AppPressable(
-            onTap: handleEditAction,
+            onTap: onProfileTap,
             haptic: false,
-            semanticsLabel: editActionLabel,
+            semanticsLabel: semanticsLabel,
             semanticsButton: true,
             semanticsEnabled: true,
-            child: SizedBox(
-              width: AppTouchTargets.min,
-              height: AppTouchTargets.min,
-              child: Center(
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.hairline),
-                    boxShadow: [AppShadows.cardShadow.first],
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 88),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: _officialInk,
+                            letterSpacing: 0,
+                          ),
+                        ),
+                        const SizedBox(height: 9),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: _officialMuted,
+                            letterSpacing: 0,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.edit_outlined,
-                    size: 17,
-                    color: AppColors.textSecondary,
+                  const SizedBox(width: 18),
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x14000000),
+                          blurRadius: 14,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: const CircleAvatar(
+                      backgroundColor: Color(0xFFE9EDF4),
+                      child: Icon(
+                        Icons.person,
+                        color: _officialLight,
+                        size: 44,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
@@ -233,37 +291,50 @@ class _UserHeader extends StatelessWidget {
       ),
     );
   }
-
-  String? _maskPhone(String? phone) {
-    if (phone == null || phone.length < 11) return phone;
-    return '${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}';
-  }
 }
 
-// ─── Data Overview ─────────────────────────────────────────────
+class _HeaderIconButton extends StatelessWidget {
+  const _HeaderIconButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.showDot = false,
+  });
 
-class _DataOverview extends StatelessWidget {
-  const _DataOverview();
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool showDot;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.all(Radius.circular(AppRadii.lg)),
-          boxShadow: AppShadows.elevation1,
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return AppPressable(
+      onTap: onTap,
+      haptic: false,
+      semanticsLabel: label,
+      semanticsButton: true,
+      semanticsEnabled: true,
+      child: SizedBox(
+        width: AppTouchTargets.min,
+        height: AppTouchTargets.min,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            _DataItem(value: '--', unit: 'km', label: '累计里程'),
-            _VerticalDividerWidget(),
-            _DataItem(value: '--', unit: '次', label: '骑行次数'),
-            _VerticalDividerWidget(),
-            _DataItem(value: '--', unit: '天', label: '陪伴天数'),
+            Icon(icon, size: 24, color: _officialStrong),
+            if (showDot)
+              Positioned(
+                right: 11,
+                top: 11,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: AppColors.brandRed,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -271,169 +342,623 @@ class _DataOverview extends StatelessWidget {
   }
 }
 
-class _DataItem extends StatelessWidget {
-  const _DataItem({required this.value, this.unit, required this.label});
+class _SocialStats extends StatelessWidget {
+  const _SocialStats();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 70,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: const Row(
+        children: [
+          Expanded(
+            child: _SocialStat(value: '0', label: '发帖'),
+          ),
+          _StatDivider(),
+          Expanded(
+            child: _SocialStat(value: '0', label: '关注'),
+          ),
+          _StatDivider(),
+          Expanded(
+            child: _SocialStat(value: '0', label: '粉丝'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SocialStat extends StatelessWidget {
+  const _SocialStat({required this.value, required this.label});
+
   final String value;
-  final String? unit;
   final String label;
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 21,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-                letterSpacing: 0,
-              ),
-            ),
-            if (unit != null) ...[
-              const SizedBox(width: 2),
-              Text(
-                unit!,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
-          ],
+        Text(
+          value,
+          key: ValueKey('mine-stat-value-$label'),
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: _officialStrong,
+            letterSpacing: 0,
+          ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
           label,
-          style: const TextStyle(fontSize: 11.5, color: AppColors.textTertiary),
+          style: const TextStyle(
+            fontSize: 13,
+            color: _officialMuted,
+            letterSpacing: 0,
+          ),
         ),
       ],
     );
   }
 }
 
-class _VerticalDividerWidget extends StatelessWidget {
-  const _VerticalDividerWidget();
+class _StatDivider extends StatelessWidget {
+  const _StatDivider();
 
   @override
   Widget build(BuildContext context) {
-    return Container(width: 1, height: 32, color: AppColors.hairline);
+    return Container(width: 1, height: 24, color: const Color(0xFFDCDCDC));
   }
 }
 
-// ─── Membership Banner ─────────────────────────────────────────
+class _ShortcutPair extends StatelessWidget {
+  const _ShortcutPair({required this.onUnavailable});
 
-class _MembershipBanner extends StatelessWidget {
-  const _MembershipBanner();
+  final ValueChanged<String> onUnavailable;
 
   @override
   Widget build(BuildContext context) {
-    void openMembership() => AppSnack.info(context, '会员服务暂未开放');
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: AppPressable(
-        onTap: openMembership,
-        haptic: false,
-        semanticsLabel: '会员中心，即将上线',
-        semanticsButton: true,
-        semanticsEnabled: true,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF222A3A), AppColors.inkBtn],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      child: Row(
+        children: [
+          Expanded(
+            child: _ShortcutCard(
+              icon: Icons.toll_outlined,
+              title: '我的积分',
+              subtitle: '赚更多积分',
+              color: AppColors.accentAmber,
+              onTap: () => onUnavailable('我的积分'),
             ),
-            borderRadius: BorderRadius.circular(AppRadii.lg),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.inkBtn.withValues(alpha: 0.28),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
           ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -30,
-                top: -30,
-                child: Container(
-                  width: 130,
-                  height: 130,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        AppColors.accentAmber.withValues(alpha: 0.3),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Row(
+          const SizedBox(width: 10),
+          Expanded(
+            child: _ShortcutCard(
+              icon: Icons.event_available_outlined,
+              title: '签到中心',
+              subtitle: '连续签到抽盲盒',
+              color: AppColors.brandRed,
+              onTap: () => onUnavailable('签到中心'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShortcutCard extends StatelessWidget {
+  const _ShortcutCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppPressable(
+      onTap: onTap,
+      haptic: false,
+      semanticsLabel: '$title，$subtitle',
+      semanticsButton: true,
+      semanticsEnabled: true,
+      borderRadius: BorderRadius.circular(_mineCardRadius),
+      child: Container(
+        height: 70,
+        padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(_mineCardRadius),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.all(Radius.circular(13)),
-                      gradient: LinearGradient(
-                        colors: [_membershipGoldStart, AppColors.accentAmber],
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.star,
-                      color: _membershipGoldInk,
-                      size: 22,
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: _officialStrong,
+                      letterSpacing: 0,
                     ),
                   ),
-                  const SizedBox(width: 13),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '会员中心 · 即将上线',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: _officialMuted,
+                            letterSpacing: 0,
                           ),
                         ),
-                        SizedBox(height: 2),
-                        Text(
-                          '会员权益加载中，敬请期待',
-                          style: TextStyle(fontSize: 12, color: Colors.white60),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Text(
-                    '查看',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: _membershipGoldStart,
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: _membershipGoldStart,
-                    size: 18,
+                      ),
+                      const Icon(
+                        Icons.chevron_right,
+                        size: 15,
+                        color: _officialMuted,
+                      ),
+                    ],
                   ),
                 ],
               ),
+            ),
+            Icon(icon, color: color, size: 32),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GaragePanel extends StatelessWidget {
+  const _GaragePanel({
+    required this.officialVehicle,
+    required this.localVehicle,
+    required this.onGarageTap,
+    required this.onAddVehicle,
+  });
+
+  final OfficialVehicle? officialVehicle;
+  final VehicleProfile? localVehicle;
+  final VoidCallback onGarageTap;
+  final VoidCallback onAddVehicle;
+
+  bool get _hasVehicle => officialVehicle != null || localVehicle != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final vehicleName =
+        officialVehicle?.displayName ?? localVehicle?.displayName ?? '暂无车辆数据';
+    final battery = officialVehicle?.electricQuantity;
+    final mileage = officialVehicle?.mileage;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: SizedBox(
+        height: 184,
+        child: Stack(
+          children: [
+            Container(
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.brandRed,
+                borderRadius: BorderRadius.circular(_mineCardRadius),
+              ),
+              padding: const EdgeInsets.fromLTRB(18, 15, 18, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '我的车库',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  const Spacer(),
+                  AppPressable(
+                    onTap: onAddVehicle,
+                    haptic: false,
+                    semanticsLabel: '添加设备',
+                    semanticsButton: true,
+                    semanticsEnabled: true,
+                    child: const SizedBox(
+                      height: AppTouchTargets.min,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.add, size: 17, color: Colors.white),
+                          SizedBox(width: 2),
+                          Text(
+                            '添加设备',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: 0,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 45,
+              child: AppPressable(
+                onTap: onGarageTap,
+                haptic: false,
+                semanticsLabel: '我的车库，$vehicleName',
+                semanticsButton: true,
+                semanticsEnabled: true,
+                borderRadius: BorderRadius.circular(_mineCardRadius),
+                child: Container(
+                  height: 139,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(_mineCardRadius),
+                  ),
+                  child: Stack(
+                    children: [
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 154,
+                            height: 139,
+                            child: Padding(
+                              padding: const EdgeInsets.all(13),
+                              child: _VehicleArtwork(hasVehicle: _hasVehicle),
+                            ),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(6, 24, 18, 0),
+                              child: _GarageInfo(
+                                hasVehicle: _hasVehicle,
+                                vehicleName: vehicleName,
+                                battery: battery,
+                                mileage: mileage,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_hasVehicle)
+                        Positioned(
+                          left: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 5,
+                            ),
+                            decoration: const BoxDecoration(
+                              color: AppColors.brandRed,
+                              borderRadius: BorderRadius.only(
+                                topRight: Radius.circular(_mineCardRadius),
+                                bottomLeft: Radius.circular(_mineCardRadius),
+                              ),
+                            ),
+                            child: const Text(
+                              '使用中',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white,
+                                letterSpacing: 0,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _VehicleArtwork extends StatelessWidget {
+  const _VehicleArtwork({required this.hasVehicle});
+
+  final bool hasVehicle;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!hasVehicle) {
+      return CustomPaint(
+        painter: VehicleStagePainter(batteryLevel: 0.0),
+        size: Size(128, 86),
+      );
+    }
+    return Image.asset(
+      'assets/official_tailg/vehicle.png',
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => CustomPaint(
+        painter: VehicleStagePainter(batteryLevel: 0.7),
+        size: Size(128, 86),
+      ),
+    );
+  }
+}
+
+class _GarageInfo extends StatelessWidget {
+  const _GarageInfo({
+    required this.hasVehicle,
+    required this.vehicleName,
+    required this.battery,
+    required this.mileage,
+  });
+
+  final bool hasVehicle;
+  final String vehicleName;
+  final int? battery;
+  final double? mileage;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!hasVehicle) {
+      return const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '暂无车辆数据',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: _officialMuted,
+              letterSpacing: 0,
+            ),
+          ),
+          SizedBox(height: 14),
+          Text(
+            '门店购买或绑定后查看',
+            style: TextStyle(
+              fontSize: 14,
+              color: _officialLight,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                vehicleName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: _officialInk,
+                  letterSpacing: 0,
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right, size: 18, color: _officialMuted),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            _VehicleMetric(
+              value: battery == null ? '--' : '$battery',
+              unit: '%',
+              label: '剩余电量',
+            ),
+            const SizedBox(width: 28),
+            _VehicleMetric(
+              value: mileage == null ? '--' : mileage!.toStringAsFixed(0),
+              unit: 'km',
+              label: '预估里程',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _VehicleMetric extends StatelessWidget {
+  const _VehicleMetric({
+    required this.value,
+    required this.unit,
+    required this.label,
+  });
+
+  final String value;
+  final String unit;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Flexible(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: _officialInk,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 2),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(
+                  unit,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: _officialInk,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              color: _officialLight,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FunctionCenter extends StatelessWidget {
+  const _FunctionCenter({required this.onUnavailable});
+
+  final ValueChanged<String> onUnavailable;
+
+  @override
+  Widget build(BuildContext context) {
+    return _MineSectionShell(
+      height: 112,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(12, 14, 12, 0),
+            child: Text(
+              '功能中心',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: _officialStrong,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Row(
+              children: [
+                _FunctionEntry(
+                  icon: Icons.collections_bookmark_outlined,
+                  label: '我的收藏',
+                  onTap: () => onUnavailable('我的收藏'),
+                ),
+                _FunctionEntry(
+                  icon: Icons.assignment_outlined,
+                  label: '任务中心',
+                  onTap: () => onUnavailable('任务中心'),
+                ),
+                _FunctionEntry(
+                  icon: Icons.receipt_long_outlined,
+                  label: '我的订单',
+                  onTap: () => onUnavailable('我的订单'),
+                ),
+                _FunctionEntry(
+                  icon: Icons.person_add_alt_outlined,
+                  label: '邀请好友',
+                  onTap: () => onUnavailable('邀请好友'),
+                ),
+                _FunctionEntry(
+                  icon: Icons.confirmation_number_outlined,
+                  label: '优惠券',
+                  onTap: () => onUnavailable('优惠券'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FunctionEntry extends StatelessWidget {
+  const _FunctionEntry({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: AppPressable(
+        onTap: onTap,
+        haptic: false,
+        semanticsLabel: label,
+        semanticsButton: true,
+        semanticsEnabled: true,
+        child: SizedBox(
+          height: 60,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 24, color: _officialStrong),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: _officialStrong,
+                  letterSpacing: 0,
+                ),
+              ),
             ],
           ),
         ),
@@ -442,147 +967,85 @@ class _MembershipBanner extends StatelessWidget {
   }
 }
 
-// ─── Service Section ───────────────────────────────────────────
+class _MineActionTile extends StatelessWidget {
+  const _MineActionTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    required this.minHeight,
+    this.trailingHelp = false,
+  });
 
-class _ServiceSection extends StatelessWidget {
-  const _ServiceSection();
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final double minHeight;
+  final bool trailingHelp;
 
   @override
   Widget build(BuildContext context) {
-    void showUnavailable(String label) {
-      AppSnack.info(context, '$label暂未开放');
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _SectionTitle('我的服务'),
-          const SizedBox(height: 10),
-          _ProfileSectionCard(
-            child: Column(
-              children: [
-                _SettingTile(
-                  icon: Icons.receipt_long_outlined,
-                  label: '我的订单',
-                  iconBg: AppColors.accentSky.withValues(alpha: 0.14),
-                  iconColor: AppColors.accentSky,
-                  onTap: () => showUnavailable('我的订单'),
-                ),
-                _DividerTile(),
-                _SettingTile(
-                  icon: Icons.build_outlined,
-                  label: '保养预约',
-                  iconBg: AppColors.energyGreen.withValues(alpha: 0.14),
-                  iconColor: AppColors.primaryDark,
-                  value: '附近 3 家门店',
-                  onTap: () => showUnavailable('保养预约'),
-                ),
-                _DividerTile(),
-                _SettingTile(
-                  icon: Icons.shield_outlined,
-                  label: '保险服务',
-                  iconBg: AppColors.accentViolet.withValues(alpha: 0.14),
-                  iconColor: AppColors.accentViolet,
-                  onTap: () => showUnavailable('保险服务'),
-                ),
-                _DividerTile(),
-                _SettingTile(
-                  icon: Icons.card_giftcard_outlined,
-                  label: '优惠券',
-                  iconBg: AppColors.accentAmber.withValues(alpha: 0.14),
-                  iconColor: AppColors.accentAmber,
-                  badge: '3 张可用',
-                  onTap: () => showUnavailable('优惠券'),
-                ),
-              ],
-            ),
-          ),
-        ],
+    return _MineSectionShell(
+      child: _MineListTile(
+        icon: icon,
+        title: title,
+        minHeight: minHeight,
+        trailingHelp: trailingHelp,
+        onTap: onTap,
       ),
     );
   }
 }
-
-// ─── Settings Section ──────────────────────────────────────────
 
 class _SettingsSection extends StatelessWidget {
-  const _SettingsSection();
+  const _SettingsSection({required this.onUnavailable});
+
+  final ValueChanged<String> onUnavailable;
 
   @override
   Widget build(BuildContext context) {
-    void showUnavailable(String label) {
-      AppSnack.info(context, '$label暂未开放');
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+    return _MineSectionShell(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionTitle('设置'),
-          const SizedBox(height: 10),
-          _ProfileSectionCard(
-            child: Column(
-              children: [
-                _SettingTile(
-                  icon: Icons.notifications_outlined,
-                  label: '消息通知',
-                  iconBg: AppColors.surfaceContainerLow,
-                  iconColor: AppColors.textSecondary,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const VehicleMessagePage(),
-                    ),
-                  ),
-                ),
-                _DividerTile(),
-                _SettingTile(
-                  icon: Icons.lock_outline,
-                  label: '隐私与安全',
-                  iconBg: AppColors.surfaceContainerLow,
-                  iconColor: AppColors.textSecondary,
-                  onTap: () => showUnavailable('隐私与安全'),
-                ),
-                _DividerTile(),
-                _SettingTile(
-                  icon: Icons.system_update_outlined,
-                  label: '固件升级',
-                  iconBg: AppColors.surfaceContainerLow,
-                  iconColor: AppColors.textSecondary,
-                  badge: '新版本',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const OtaPrecheckPage(),
-                    ),
-                  ),
-                ),
-                _DividerTile(),
-                _SettingTile(
-                  icon: Icons.help_outline,
-                  label: '帮助与反馈',
-                  iconBg: AppColors.surfaceContainerLow,
-                  iconColor: AppColors.textSecondary,
-                  onTap: () => showUnavailable('帮助与反馈'),
-                ),
-                _DividerTile(),
-                _SettingTile(
-                  icon: Icons.info_outline,
-                  label: '关于台铃',
-                  iconBg: AppColors.surfaceContainerLow,
-                  iconColor: AppColors.textSecondary,
-                  value: 'v8.0.1',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const AboutAppPage(),
-                    ),
-                  ),
-                ),
-              ],
+          _MineListTile(
+            icon: Icons.notifications_none_outlined,
+            title: '消息通知',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => const VehicleMessagePage(),
+              ),
+            ),
+          ),
+          const _MineDivider(),
+          _MineListTile(
+            icon: Icons.lock_outline,
+            title: '隐私与安全',
+            onTap: () => onUnavailable('隐私与安全'),
+          ),
+          const _MineDivider(),
+          _MineListTile(
+            icon: Icons.system_update_outlined,
+            title: '固件升级',
+            badge: '新版本',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(builder: (_) => const OtaPrecheckPage()),
+            ),
+          ),
+          const _MineDivider(),
+          _MineListTile(
+            icon: Icons.help_outline,
+            title: '帮助与反馈',
+            onTap: () => onUnavailable('帮助与反馈'),
+          ),
+          const _MineDivider(),
+          _MineListTile(
+            icon: Icons.info_outline,
+            title: '关于台铃',
+            value: 'v8.0.1',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(builder: (_) => const AboutAppPage()),
             ),
           ),
         ],
@@ -591,51 +1054,149 @@ class _SettingsSection extends StatelessWidget {
   }
 }
 
-class _ProfileSectionCard extends StatelessWidget {
-  const _ProfileSectionCard({required this.child});
+class _MineSectionShell extends StatelessWidget {
+  const _MineSectionShell({required this.child, this.height});
 
   final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.all(Radius.circular(AppRadii.lg)),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x0F182740),
-            blurRadius: 20,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.title);
-  final String title;
+  final double? height;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textSecondary,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(_mineCardRadius),
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _MineListTile extends StatelessWidget {
+  const _MineListTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.value,
+    this.badge,
+    this.trailingHelp = false,
+    this.minHeight = 70,
+  });
+
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final String? value;
+  final String? badge;
+  final bool trailingHelp;
+  final double minHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final semanticsLabel = [
+      title,
+      if (value != null && value!.isNotEmpty) value!,
+      if (badge != null && badge!.isNotEmpty) badge!,
+    ].join('，');
+
+    return AppPressable(
+      onTap: onTap,
+      haptic: false,
+      semanticsLabel: semanticsLabel,
+      semanticsButton: true,
+      semanticsEnabled: true,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: minHeight),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                child: Icon(icon, size: 28, color: _officialStrong),
+              ),
+              const SizedBox(width: 2),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: _officialStrong,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+              if (value != null) ...[
+                Text(
+                  value!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: _officialMuted,
+                    letterSpacing: 0,
+                  ),
+                ),
+                const SizedBox(width: 6),
+              ],
+              if (badge != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.brandRed,
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                  ),
+                  child: Text(
+                    badge!,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+              ],
+              if (trailingHelp) ...[
+                const Icon(Icons.help_outline, size: 22, color: _officialMuted),
+                const SizedBox(width: 12),
+              ],
+              const Icon(Icons.chevron_right, size: 20, color: _officialMuted),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// ─── Logout Button ─────────────────────────────────────────────
+class _MineDivider extends StatelessWidget {
+  const _MineDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(
+      height: 1,
+      indent: 18,
+      endIndent: 18,
+      thickness: 0.5,
+      color: Color(0xFFE7E7EA),
+    );
+  }
+}
 
 class _LogoutButton extends StatelessWidget {
   const _LogoutButton();
@@ -674,26 +1235,21 @@ class _LogoutButton extends StatelessWidget {
         semanticsLabel: '退出登录',
         semanticsButton: true,
         semanticsEnabled: true,
+        borderRadius: BorderRadius.circular(_mineCardRadius),
         child: Container(
           height: 52,
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadii.md),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF182740).withValues(alpha: 0.06),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(_mineCardRadius),
           ),
           child: const Center(
             child: Text(
               '退出登录',
               style: TextStyle(
                 fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: AppColors.energyRed,
+                fontWeight: FontWeight.w800,
+                color: AppColors.brandRed,
+                letterSpacing: 0,
               ),
             ),
           ),
@@ -703,118 +1259,8 @@ class _LogoutButton extends StatelessWidget {
   }
 }
 
-// ─── Reusable Tile ─────────────────────────────────────────────
-
-class _SettingTile extends StatelessWidget {
-  const _SettingTile({
-    required this.icon,
-    required this.label,
-    required this.iconBg,
-    required this.iconColor,
-    this.value,
-    this.badge,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color iconBg;
-  final Color iconColor;
-  final String? value;
-  final String? badge;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onTap != null;
-    final semanticsLabel = [
-      label,
-      if (value != null && value!.isNotEmpty) value!,
-      if (badge != null && badge!.isNotEmpty) badge!,
-    ].join('，');
-    final tile = InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
-        child: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(AppRadii.sm),
-              ),
-              child: Icon(icon, size: 19, color: iconColor),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-            if (badge != null) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.energyRed,
-                  borderRadius: BorderRadius.circular(AppRadii.pill),
-                ),
-                child: Text(
-                  badge!,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-            ],
-            if (value != null)
-              Text(
-                value!,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            const SizedBox(width: 2),
-            const Icon(
-              Icons.chevron_right,
-              size: 17,
-              color: AppColors.textTertiary,
-            ),
-          ],
-        ),
-      ),
-    );
-    return Semantics(
-      label: semanticsLabel,
-      button: true,
-      enabled: enabled,
-      onTap: onTap,
-      child: ExcludeSemantics(child: tile),
-    );
-  }
-}
-
-class _DividerTile extends StatelessWidget {
-  const _DividerTile();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Divider(
-      height: 1,
-      indent: 18,
-      endIndent: 18,
-      thickness: 0.5,
-      color: AppColors.outlineVariant,
-    );
-  }
+String? _maskPhone(String? phone) {
+  if (phone == null || phone.isEmpty) return null;
+  if (phone.length < 11) return phone;
+  return '${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}';
 }

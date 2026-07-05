@@ -21,6 +21,7 @@ import '../widgets/app_snack.dart';
 import '../widgets/vehicle_stage.dart';
 import '../widgets/control_card.dart';
 import 'add_vehicle_page.dart';
+import 'battery_details_page.dart';
 import 'control_page_hero.dart';
 import 'garage_page.dart';
 import 'location_page.dart';

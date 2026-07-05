@@ -37,6 +37,27 @@ void main() {
     expect(vehicleCenter.dx, lessThan(mineCenter.dx));
   });
 
+  testWidgets('Bottom nav uses official compact bar geometry', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const TailgBleApp());
+    await tester.pump();
+
+    final barFinder = find.byKey(const ValueKey('official-bottom-nav-bar'));
+    final vehicleItemFinder = find.byKey(
+      const ValueKey('official-bottom-nav-item-vehicle'),
+    );
+
+    expect(barFinder, findsOneWidget);
+    expect(vehicleItemFinder, findsOneWidget);
+    expect(tester.getSize(barFinder).height, 65);
+    expect(tester.getSize(vehicleItemFinder).height, 80);
+
+    final barTop = tester.getTopLeft(barFinder).dy;
+    final vehicleTop = tester.getTopLeft(vehicleItemFinder).dy;
+    expect(vehicleTop, closeTo(barTop - 15, 0.1));
+  });
+
   testWidgets('Service tab opens aggregate service hub', (
     WidgetTester tester,
   ) async {

@@ -8,6 +8,33 @@ class _HomeQuickSection extends StatefulWidget {
 }
 
 class _HomeQuickSectionState extends State<_HomeQuickSection> {
+  late final ValueNotifier<OfficialCloudState> _cloudStateNotifier;
+  late final ValueNotifier<List<VehicleProfile>> _vehiclesNotifier;
+  late final StreamSubscription<OfficialCloudState> _cloudStateSub;
+  late final StreamSubscription<List<VehicleProfile>> _vehiclesSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _cloudStateNotifier = ValueNotifier(officialCloudService.state);
+    _vehiclesNotifier = ValueNotifier(vehicleStore.vehicles);
+    _cloudStateSub = officialCloudService.stateStream.listen((state) {
+      if (mounted) _cloudStateNotifier.value = state;
+    });
+    _vehiclesSub = vehicleStore.vehiclesStream.listen((vehicles) {
+      if (mounted) _vehiclesNotifier.value = vehicles;
+    });
+  }
+
+  @override
+  void dispose() {
+    _cloudStateSub.cancel();
+    _vehiclesSub.cancel();
+    _cloudStateNotifier.dispose();
+    _vehiclesNotifier.dispose();
+    super.dispose();
+  }
+
   void _open(BuildContext context, Widget page) {
     Navigator.push(context, MaterialPageRoute<void>(builder: (_) => page));
   }
@@ -18,97 +45,186 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
 
   @override
   Widget build(BuildContext context) {
-    final cloudState = officialCloudService.state;
-    final showGpsBanner = cloudState.selectedVehicle?.hasGpsService != true;
-    final vehicle = cloudState.selectedVehicle;
-    final location = cloudState.vehicleLocation;
-    final showNavigationProjection = _supportsNavigationProjection(vehicle);
-    final showCamera = _supportsCamera(vehicle);
-    final showSmartMeter = _supportsSmartMeter(vehicle);
-    final showBleRenewal = _supportsBleRenewal(vehicle);
-    final showChargingStation = _supportsChargingStation(vehicle);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: [
-          _OfficialMapCard(
-            location: location,
-            onTap: () => _open(context, const LocationPage()),
-          ),
-          if (showNavigationProjection) ...[
-            const SizedBox(height: 10),
-            _OfficialNavigationProjectionCard(
-              onTap: () => _showUnavailable(context, '导航投屏'),
-            ),
-          ],
-          if (showCamera) ...[
-            const SizedBox(height: 10),
-            _OfficialSimpleServiceCard(
-              title: '摄像头',
-              subtitle: '记录车辆周围环境',
-              icon: Icons.videocam_outlined,
-              onTap: () => _showUnavailable(context, '摄像头'),
-            ),
-          ],
-          if (showSmartMeter) ...[
-            const SizedBox(height: 10),
-            _OfficialSmartMeterCard(
-              onTap: () => _showUnavailable(context, '智能仪表'),
-            ),
-          ],
-          const SizedBox(height: 10),
-          _OfficialHistoryCard(
-            todayCount: logService.byCategory(LogCategory.operation).length,
-            onTap: () => _open(
-              context,
-              const LocationPage(initialTab: LocationInitialTab.travel),
-            ),
-          ),
-          if (showGpsBanner) ...[
-            const SizedBox(height: 10),
-            _OfficialGpsBanner(
-              onTap: () => _open(context, const OfficialCloudPage()),
-            ),
-          ],
-          const SizedBox(height: 10),
-          _OfficialSettingsCard(
-            onVehicleSetting: () => _open(context, const VehicleSettingsPage()),
-            onFence: () => _open(
-              context,
-              const LocationPage(initialTab: LocationInitialTab.fence),
-            ),
-            onShare: () => _open(context, const ShareBikePage()),
-          ),
-          const SizedBox(height: 10),
-          _OfficialImageBanner(
-            asset: 'assets/official_tailg/iv_add_sound_effects_set_qgj.webp',
-            semanticsLabel: 'QGJ音效设置',
-            onTap: () => _open(context, const QgjSoundEffectsPage()),
-          ),
-          const SizedBox(height: 10),
-          _OfficialNfcCard(onTap: () => _open(context, const NfcKeyPage())),
-          if (showBleRenewal) ...[
-            const SizedBox(height: 10),
-            _OfficialSimpleServiceCard(
-              title: '蓝牙续费',
-              subtitle: '充值后智能控车',
-              icon: Icons.bluetooth_connected,
-              onTap: () => _open(context, const OfficialCloudPage()),
-            ),
-          ],
-          if (showChargingStation) ...[
-            const SizedBox(height: 10),
-            _OfficialSimpleServiceCard(
-              title: '台铃充电站',
-              subtitle: '查看附近可用充电站',
-              icon: Icons.electrical_services_outlined,
-              onTap: () => _showUnavailable(context, '台铃充电站'),
-            ),
-          ],
-        ],
-      ),
+    return ValueListenableBuilder<OfficialCloudState>(
+      valueListenable: _cloudStateNotifier,
+      builder: (context, cloudState, _) {
+        return ValueListenableBuilder<List<VehicleProfile>>(
+          valueListenable: _vehiclesNotifier,
+          builder: (context, vehicles, __) {
+            final vehicle = cloudState.selectedVehicle;
+            final localVehicle = _defaultLocalVehicle(vehicles);
+            final location = _resolveLocationSummary(
+              cloudState: cloudState,
+              localVehicle: localVehicle,
+            );
+            final showGpsBanner =
+                cloudState.selectedVehicle?.hasGpsService != true;
+            final showNavigationProjection = _supportsNavigationProjection(
+              vehicle,
+            );
+            final showCamera = _supportsCamera(vehicle);
+            final showSmartMeter = _supportsSmartMeter(vehicle);
+            final showBleRenewal = _supportsBleRenewal(vehicle);
+            final showChargingStation = _supportsChargingStation(vehicle);
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  _OfficialMapCard(
+                    location: location,
+                    onTap: () => _open(context, const LocationPage()),
+                  ),
+                  if (showNavigationProjection) ...[
+                    const SizedBox(height: 10),
+                    _OfficialNavigationProjectionCard(
+                      onTap: () => _showUnavailable(context, '导航投屏'),
+                    ),
+                  ],
+                  if (showCamera) ...[
+                    const SizedBox(height: 10),
+                    _OfficialSimpleServiceCard(
+                      title: '摄像头',
+                      subtitle: '记录车辆周围环境',
+                      icon: Icons.videocam_outlined,
+                      onTap: () => _showUnavailable(context, '摄像头'),
+                    ),
+                  ],
+                  if (showSmartMeter) ...[
+                    const SizedBox(height: 10),
+                    _OfficialSmartMeterCard(
+                      onTap: () => _showUnavailable(context, '智能仪表'),
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  _OfficialHistoryCard(
+                    todayCount: logService
+                        .byCategory(LogCategory.operation)
+                        .length,
+                    onTap: () => _open(
+                      context,
+                      const LocationPage(initialTab: LocationInitialTab.travel),
+                    ),
+                  ),
+                  if (showGpsBanner) ...[
+                    const SizedBox(height: 10),
+                    _OfficialGpsBanner(
+                      onTap: () => _open(context, const OfficialCloudPage()),
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  _OfficialSettingsCard(
+                    onVehicleSetting: () =>
+                        _open(context, const VehicleSettingsPage()),
+                    onFence: () => _open(
+                      context,
+                      const LocationPage(initialTab: LocationInitialTab.fence),
+                    ),
+                    onShare: () => _open(context, const ShareBikePage()),
+                  ),
+                  const SizedBox(height: 10),
+                  _OfficialImageBanner(
+                    asset:
+                        'assets/official_tailg/iv_add_sound_effects_set_qgj.webp',
+                    semanticsLabel: 'QGJ音效设置',
+                    onTap: () => _open(context, const QgjSoundEffectsPage()),
+                  ),
+                  const SizedBox(height: 10),
+                  _OfficialNfcCard(
+                    onTap: () => _open(context, const NfcKeyPage()),
+                  ),
+                  if (showBleRenewal) ...[
+                    const SizedBox(height: 10),
+                    _OfficialSimpleServiceCard(
+                      title: '蓝牙续费',
+                      subtitle: '充值后智能控车',
+                      icon: Icons.bluetooth_connected,
+                      onTap: () => _open(context, const OfficialCloudPage()),
+                    ),
+                  ],
+                  if (showChargingStation) ...[
+                    const SizedBox(height: 10),
+                    _OfficialSimpleServiceCard(
+                      title: '台铃充电站',
+                      subtitle: '查看附近可用充电站',
+                      icon: Icons.electrical_services_outlined,
+                      onTap: () => _showUnavailable(context, '台铃充电站'),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
+
+  VehicleProfile? _defaultLocalVehicle(List<VehicleProfile> vehicles) {
+    if (vehicles.isEmpty) return null;
+    final defaultId = vehicleStore.defaultVehicleId;
+    if (defaultId == null) return vehicles.first;
+    for (final vehicle in vehicles) {
+      if (vehicle.id == defaultId) return vehicle;
+    }
+    return vehicles.first;
+  }
+
+  _LocationSummary? _resolveLocationSummary({
+    required OfficialCloudState cloudState,
+    required VehicleProfile? localVehicle,
+  }) {
+    final cloudLocation = cloudState.vehicleLocation;
+    final cloudLat = cloudLocation?.latitude;
+    final cloudLng = cloudLocation?.longitude;
+    if (cloudLat != null && cloudLng != null && !_isZero(cloudLat, cloudLng)) {
+      return _LocationSummary(
+        latitude: cloudLat,
+        longitude: cloudLng,
+        timeLabel: cloudLocation!.bleConnectTime.trim(),
+        address: cloudLocation.bleConnectAddress.trim(),
+        source: '官方停车位置',
+      );
+    }
+    if (cloudLocation?.hasData == true) {
+      return _LocationSummary(
+        latitude: null,
+        longitude: null,
+        timeLabel: cloudLocation!.bleConnectTime.trim(),
+        address: cloudLocation.bleConnectAddress.trim(),
+        source: '官方停车位置',
+      );
+    }
+
+    final officialVehicle = cloudState.selectedVehicle;
+    final vehicleLat = double.tryParse(officialVehicle?.latitude ?? '');
+    final vehicleLng = double.tryParse(officialVehicle?.longitude ?? '');
+    if (vehicleLat != null &&
+        vehicleLng != null &&
+        !_isZero(vehicleLat, vehicleLng)) {
+      return _LocationSummary(
+        latitude: vehicleLat,
+        longitude: vehicleLng,
+        timeLabel: '',
+        address: '',
+        source: '官方车辆状态',
+      );
+    }
+
+    final local = localVehicle?.lastLocation;
+    if (local != null && !_isZero(local.latitude, local.longitude)) {
+      return _LocationSummary(
+        latitude: local.latitude,
+        longitude: local.longitude,
+        timeLabel: _formatLocationDate(local.recordedAt),
+        address: '',
+        source: '本地记录',
+      );
+    }
+    return null;
+  }
+
+  bool _isZero(double latitude, double longitude) =>
+      latitude.abs() < 0.000001 && longitude.abs() < 0.000001;
 
   bool _supportsNavigationProjection(OfficialVehicle? vehicle) =>
       vehicle?.supportsNavigationProjection == true;
@@ -173,7 +289,7 @@ class _OfficialCardSurface extends StatelessWidget {
 class _OfficialMapCard extends StatelessWidget {
   const _OfficialMapCard({required this.location, required this.onTap});
 
-  final OfficialVehicleLocation? location;
+  final _LocationSummary? location;
   final VoidCallback onTap;
 
   @override
@@ -248,17 +364,22 @@ class _OfficialMapCard extends StatelessWidget {
 class _OfficialLocationMeta extends StatelessWidget {
   const _OfficialLocationMeta({required this.location});
 
-  final OfficialVehicleLocation? location;
+  final _LocationSummary? location;
 
   @override
   Widget build(BuildContext context) {
-    final time = location?.bleConnectTime.trim() ?? '';
-    final address = location?.bleConnectAddress.trim() ?? '';
+    final hasLocation = location != null;
+    final time = location?.timeLabel.trim() ?? '';
+    final address = location?.displayText.trim() ?? '';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          time.isEmpty ? '暂无定位时间' : time,
+          time.isEmpty
+              ? hasLocation
+                    ? '定位时间待读取'
+                    : '暂无定位时间'
+              : time,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
@@ -281,6 +402,43 @@ class _OfficialLocationMeta extends StatelessWidget {
       ],
     );
   }
+}
+
+class _LocationSummary {
+  const _LocationSummary({
+    required this.latitude,
+    required this.longitude,
+    required this.timeLabel,
+    required this.address,
+    required this.source,
+  });
+
+  final double? latitude;
+  final double? longitude;
+  final String timeLabel;
+  final String address;
+  final String source;
+
+  String get coordinateText {
+    final lat = latitude;
+    final lng = longitude;
+    if (lat == null || lng == null) return '';
+    return '${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}';
+  }
+
+  String get displayText {
+    final trimmedAddress = address.trim();
+    if (trimmedAddress.isNotEmpty) return trimmedAddress;
+    final coordinates = coordinateText;
+    if (coordinates.isNotEmpty) return coordinates;
+    return '';
+  }
+}
+
+String _formatLocationDate(DateTime value) {
+  String two(int number) => number.toString().padLeft(2, '0');
+  return '${value.year}-${two(value.month)}-${two(value.day)} '
+      '${two(value.hour)}:${two(value.minute)}';
 }
 
 class _OfficialNavigationProjectionCard extends StatelessWidget {

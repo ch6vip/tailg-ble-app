@@ -617,62 +617,108 @@ class _OfficialBottomNav extends StatelessWidget {
   final VoidCallback onVehicle;
   final VoidCallback onMine;
 
+  static const double _barHeight = 65;
+  static const double _prominentItemHeight = 80;
+
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 86,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 3, 20, 7),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _OfficialNavItem(
-                    label: '服务',
-                    asset: 'assets/official_tailg/ic_home_service_unselect.png',
-                    selectedAsset:
-                        'assets/official_tailg/ic_home_service_select.png',
-                    selected: currentIndex == 0,
-                    onTap: onService,
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
+    return SizedBox(
+      height: _prominentItemHeight + bottomInset,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 12,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: SizedBox(
+                  key: const ValueKey('official-bottom-nav-bar'),
+                  height: _barHeight,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final itemWidth = constraints.maxWidth / 3;
+
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned(
+                            left: 0,
+                            bottom: 0,
+                            width: itemWidth,
+                            height: _barHeight,
+                            child: _OfficialNavItem(
+                              itemKey: const ValueKey(
+                                'official-bottom-nav-item-service',
+                              ),
+                              label: '服务',
+                              asset:
+                                  'assets/official_tailg/ic_home_service_unselect.png',
+                              selectedAsset:
+                                  'assets/official_tailg/ic_home_service_select.png',
+                              selected: currentIndex == 0,
+                              onTap: onService,
+                            ),
+                          ),
+                          Positioned(
+                            left: itemWidth,
+                            bottom: 0,
+                            width: itemWidth,
+                            height: _prominentItemHeight,
+                            child: _OfficialNavItem(
+                              itemKey: const ValueKey(
+                                'official-bottom-nav-item-vehicle',
+                              ),
+                              label: '爱车',
+                              asset:
+                                  'assets/official_tailg/ic_home_control_unselect.png',
+                              selectedAsset:
+                                  'assets/official_tailg/ic_home_control_select.png',
+                              selected: currentIndex == 1,
+                              prominent: true,
+                              onTap: onVehicle,
+                            ),
+                          ),
+                          Positioned(
+                            left: itemWidth * 2,
+                            bottom: 0,
+                            width: itemWidth,
+                            height: _barHeight,
+                            child: _OfficialNavItem(
+                              itemKey: const ValueKey(
+                                'official-bottom-nav-item-mine',
+                              ),
+                              label: '我的',
+                              asset:
+                                  'assets/official_tailg/ic_home_mine_unselect.png',
+                              selectedAsset:
+                                  'assets/official_tailg/ic_home_mine_select.png',
+                              selected: currentIndex == 2,
+                              onTap: onMine,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
-                Expanded(
-                  child: _OfficialNavItem(
-                    label: '爱车',
-                    asset: 'assets/official_tailg/ic_home_control_unselect.png',
-                    selectedAsset:
-                        'assets/official_tailg/ic_home_control_select.png',
-                    selected: currentIndex == 1,
-                    prominent: true,
-                    onTap: onVehicle,
-                  ),
-                ),
-                Expanded(
-                  child: _OfficialNavItem(
-                    label: '我的',
-                    asset: 'assets/official_tailg/ic_home_mine_unselect.png',
-                    selectedAsset:
-                        'assets/official_tailg/ic_home_mine_select.png',
-                    selected: currentIndex == 2,
-                    onTap: onMine,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -687,6 +733,7 @@ class _OfficialNavItem extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.prominent = false,
+    this.itemKey,
   });
 
   final String label;
@@ -695,6 +742,7 @@ class _OfficialNavItem extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final bool prominent;
+  final Key? itemKey;
 
   @override
   Widget build(BuildContext context) {
@@ -703,8 +751,10 @@ class _OfficialNavItem extends StatelessWidget {
     final labelColor = active
         ? AppColors.brandRed
         : AppColors.officialTextMuted;
-    final iconSize = prominent && active ? 62.0 : 28.0;
-    final topOffset = prominent && active ? -24.0 : 6.0;
+    final itemHeight = prominent
+        ? _OfficialBottomNav._prominentItemHeight
+        : _OfficialBottomNav._barHeight;
+    final iconSize = prominent ? 46.0 : 24.0;
 
     return Semantics(
       label: label,
@@ -714,43 +764,44 @@ class _OfficialNavItem extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: SizedBox(
-          height: 78,
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.topCenter,
-            children: [
-              Positioned(
-                top: topOffset,
-                child: Image.asset(
-                  displayAsset,
-                  width: iconSize,
-                  height: iconSize,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => Icon(
-                    prominent ? Icons.shield_outlined : Icons.circle_outlined,
-                    size: prominent && active ? 44 : 27,
-                    color: active
-                        ? AppColors.brandRed
-                        : AppColors.officialTextMuted,
+          key: itemKey,
+          height: itemHeight,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    displayAsset,
+                    width: iconSize,
+                    height: iconSize,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Icon(
+                      prominent ? Icons.shield_outlined : Icons.circle_outlined,
+                      size: prominent ? 46 : 24,
+                      color: active
+                          ? AppColors.brandRed
+                          : AppColors.officialTextMuted,
+                    ),
                   ),
-                ),
-              ),
-              Positioned(
-                top: prominent && active ? 40 : 39,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    height: 1,
-                    fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                    letterSpacing: 0,
-                    color: labelColor,
+                  const SizedBox(height: 5),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      height: 1,
+                      fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                      letterSpacing: 0,
+                      color: labelColor,
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

@@ -18,6 +18,7 @@ class ControlPageHero extends StatelessWidget {
     this.connectionVariant,
     this.onVehicleSwitch,
     this.onConnect,
+    this.onBatteryTap,
     this.onDetail,
     this.onMessage,
   });
@@ -45,6 +46,7 @@ class ControlPageHero extends StatelessWidget {
 
   final VoidCallback? onVehicleSwitch;
   final VoidCallback? onConnect;
+  final VoidCallback? onBatteryTap;
   final VoidCallback? onDetail;
   final VoidCallback? onMessage;
 
@@ -100,6 +102,7 @@ class ControlPageHero extends StatelessWidget {
                         connectionLabel: connectionLabel,
                         connectionVariant: connectionVariant,
                         onConnect: onConnect,
+                        onBatteryTap: onBatteryTap,
                       )
                     : _NarrowHeroData(
                         batteryLevel: batteryLevel,
@@ -107,6 +110,7 @@ class ControlPageHero extends StatelessWidget {
                         connectionLabel: connectionLabel,
                         connectionVariant: connectionVariant,
                         onConnect: onConnect,
+                        onBatteryTap: onBatteryTap,
                       ),
               ),
             ],
@@ -218,6 +222,7 @@ class _WideHeroData extends StatelessWidget {
     required this.connectionLabel,
     required this.connectionVariant,
     this.onConnect,
+    this.onBatteryTap,
   });
 
   final int batteryLevel;
@@ -225,13 +230,14 @@ class _WideHeroData extends StatelessWidget {
   final String? connectionLabel;
   final String? connectionVariant;
   final VoidCallback? onConnect;
+  final VoidCallback? onBatteryTap;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _BatteryIconMetric(level: batteryLevel),
+        _BatteryAction(level: batteryLevel, onTap: onBatteryTap),
         const SizedBox(width: 48),
         _RangeMetric(value: displayRange),
         const Spacer(),
@@ -252,6 +258,7 @@ class _NarrowHeroData extends StatelessWidget {
     required this.connectionLabel,
     required this.connectionVariant,
     this.onConnect,
+    this.onBatteryTap,
   });
 
   final int batteryLevel;
@@ -259,6 +266,7 @@ class _NarrowHeroData extends StatelessWidget {
   final String? connectionLabel;
   final String? connectionVariant;
   final VoidCallback? onConnect;
+  final VoidCallback? onBatteryTap;
 
   @override
   Widget build(BuildContext context) {
@@ -268,7 +276,7 @@ class _NarrowHeroData extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _BatteryIconMetric(level: batteryLevel),
+            _BatteryAction(level: batteryLevel, onTap: onBatteryTap),
             const SizedBox(width: 36),
             Expanded(child: _RangeMetric(value: displayRange)),
             _BleConnectPill(
@@ -354,6 +362,30 @@ class _OnlineBadge extends StatelessWidget {
           letterSpacing: 0,
           color: Colors.white,
         ),
+      ),
+    );
+  }
+}
+
+class _BatteryAction extends StatelessWidget {
+  const _BatteryAction({required this.level, this.onTap});
+
+  final int level;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppPressable(
+      key: const ValueKey('control-hero-battery-action'),
+      onTap: onTap,
+      enabled: onTap != null,
+      haptic: false,
+      semanticsLabel: '剩余电量，查看电池信息',
+      semanticsButton: true,
+      semanticsEnabled: onTap != null,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: AppTouchTargets.min),
+        child: _BatteryIconMetric(level: level),
       ),
     );
   }

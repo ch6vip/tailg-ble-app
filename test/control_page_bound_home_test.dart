@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
+import 'package:tailg_ble_app/pages/battery_details_page.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
 import 'package:tailg_ble_app/pages/official_cloud_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
@@ -150,6 +151,53 @@ void main() {
     expect(find.text('历史轨迹'), findsOneWidget);
     expect(find.bySemanticsLabel('可添加GPS'), findsNothing);
     expect(find.text('功能设置'), findsOneWidget);
+  });
+
+  testWidgets('location card falls back to official vehicle coordinates', (
+    tester,
+  ) async {
+    final vehicle = OfficialVehicle.fromJson({
+      'imei': 'IMEI_MAIN',
+      'carId': 'official-location-bike',
+      'btmac': 'AA:BB:CC:DD:EE:FF',
+      'latitude': '31.230400',
+      'longitude': '121.473700',
+    });
+
+    await pumpBoundHome(
+      tester,
+      size: const Size(430, 2200),
+      officialVehicle: vehicle,
+    );
+
+    expect(find.text('31.230400, 121.473700'), findsOneWidget);
+    expect(find.text('暂无车辆定位'), findsNothing);
+  });
+
+  testWidgets('location card updates from local last location stream', (
+    tester,
+  ) async {
+    await pumpBoundHome(tester, size: const Size(430, 2200));
+
+    expect(find.text('暂无定位时间'), findsOneWidget);
+    expect(find.text('暂无车辆定位'), findsOneWidget);
+
+    await VehicleStore().updateLastLocation(
+      'AA:BB:CC:DD:EE:FF',
+      VehicleLocation(
+        latitude: 31.2304,
+        longitude: 121.4737,
+        accuracy: 12,
+        recordedAt: DateTime(2026, 5, 29, 10, 30),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('2026-05-29 10:30'), findsOneWidget);
+    expect(find.text('31.230400, 121.473700'), findsOneWidget);
+    expect(find.text('暂无定位时间'), findsNothing);
+    expect(find.text('暂无车辆定位'), findsNothing);
   });
 
   testWidgets('official vehicle photo is used on control stage', (
@@ -326,6 +374,23 @@ void main() {
     } finally {
       semantics.dispose();
     }
+  });
+
+  testWidgets('battery metric opens battery details page', (tester) async {
+    await pumpBoundHome(tester, size: const Size(430, 2200));
+
+    final batteryAction = find.byKey(
+      const ValueKey('control-hero-battery-action'),
+    );
+    expect(batteryAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, batteryAction);
+
+    await tester.tap(batteryAction);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.byType(BatteryDetailsPage), findsOneWidget);
+    expect(find.text('电池信息'), findsOneWidget);
   });
 
   testWidgets('official manual mode control keeps a 44dp touch target', (
