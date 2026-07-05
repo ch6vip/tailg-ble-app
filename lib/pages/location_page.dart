@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../main.dart'; // P0-6: service locator getters
 
 import '../config/map_tile_config.dart';
+import '../models/geo_coordinate.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
@@ -247,7 +248,9 @@ class _LocationPageState extends State<LocationPage> {
     final cloudLocation = cloudState.vehicleLocation;
     final cloudLat = cloudLocation?.latitude;
     final cloudLng = cloudLocation?.longitude;
-    if (cloudLat != null && cloudLng != null && !_isZero(cloudLat, cloudLng)) {
+    if (cloudLat != null &&
+        cloudLng != null &&
+        !isZeroCoordinate(cloudLat, cloudLng)) {
       return _ResolvedLocation(
         latitude: cloudLat,
         longitude: cloudLng,
@@ -262,7 +265,7 @@ class _LocationPageState extends State<LocationPage> {
     final vehicleLng = double.tryParse(officialVehicle?.longitude ?? '');
     if (vehicleLat != null &&
         vehicleLng != null &&
-        !_isZero(vehicleLat, vehicleLng)) {
+        !isZeroCoordinate(vehicleLat, vehicleLng)) {
       return _ResolvedLocation(
         latitude: vehicleLat,
         longitude: vehicleLng,
@@ -286,9 +289,6 @@ class _LocationPageState extends State<LocationPage> {
     }
     return null;
   }
-
-  bool _isZero(double latitude, double longitude) =>
-      latitude == 0 && longitude == 0;
 
   @override
   Widget build(BuildContext context) {

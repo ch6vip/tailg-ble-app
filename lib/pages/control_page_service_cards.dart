@@ -176,7 +176,9 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
     final cloudLocation = cloudState.vehicleLocation;
     final cloudLat = cloudLocation?.latitude;
     final cloudLng = cloudLocation?.longitude;
-    if (cloudLat != null && cloudLng != null && !_isZero(cloudLat, cloudLng)) {
+    if (cloudLat != null &&
+        cloudLng != null &&
+        !isZeroCoordinate(cloudLat, cloudLng, tolerance: 0.000001)) {
       return _LocationSummary(
         latitude: cloudLat,
         longitude: cloudLng,
@@ -200,7 +202,7 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
     final vehicleLng = double.tryParse(officialVehicle?.longitude ?? '');
     if (vehicleLat != null &&
         vehicleLng != null &&
-        !_isZero(vehicleLat, vehicleLng)) {
+        !isZeroCoordinate(vehicleLat, vehicleLng, tolerance: 0.000001)) {
       return _LocationSummary(
         latitude: vehicleLat,
         longitude: vehicleLng,
@@ -211,7 +213,12 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
     }
 
     final local = localVehicle?.lastLocation;
-    if (local != null && !_isZero(local.latitude, local.longitude)) {
+    if (local != null &&
+        !isZeroCoordinate(
+          local.latitude,
+          local.longitude,
+          tolerance: 0.000001,
+        )) {
       return _LocationSummary(
         latitude: local.latitude,
         longitude: local.longitude,
@@ -222,9 +229,6 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
     }
     return null;
   }
-
-  bool _isZero(double latitude, double longitude) =>
-      latitude.abs() < 0.000001 && longitude.abs() < 0.000001;
 
   bool _supportsNavigationProjection(OfficialVehicle? vehicle) =>
       vehicle?.supportsNavigationProjection == true;

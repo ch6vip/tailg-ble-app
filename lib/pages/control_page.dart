@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
+import '../models/geo_coordinate.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
 import '../services/control_channel_resolver.dart';
