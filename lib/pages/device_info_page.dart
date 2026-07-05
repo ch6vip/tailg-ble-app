@@ -7,6 +7,7 @@ import '../ble/connection_manager.dart' as ble;
 import '../main.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
+import '../services/display_time_formatter.dart';
 import '../services/log_service.dart' as app_log;
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
@@ -595,6 +596,5 @@ String _protocolLabel(ble.ProtocolType protocol) {
 
 String _formatNullableDateTime(DateTime? time) {
   if (time == null) return '--';
-  return '${time.year}-${time.month.toString().padLeft(2, '0')}-${time.day.toString().padLeft(2, '0')} '
-      '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  return formatDateMinuteText(time);
 }

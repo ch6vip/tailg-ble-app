@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../main.dart'; // P0-6: service locator getters
 import '../models/vehicle_profile.dart';
+import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../services/replica_feature_store.dart';
 import '../theme/app_colors.dart';
@@ -955,5 +956,5 @@ String _formatDate(DateTime time) {
 }
 
 String _formatDateTime(DateTime time) {
-  return '${_formatDate(time)} ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  return formatDateMinuteText(time);
 }
