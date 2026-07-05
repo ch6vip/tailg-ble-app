@@ -20,6 +20,9 @@ abstract final class AppMotion {
   /// Toast entrance transition. ~300 ms.
   static const toastEntrance = Duration(milliseconds: 300);
 
+  /// Toast visible period before auto-dismiss. ~1800 ms.
+  static const toastVisible = Duration(milliseconds: 1800);
+
   /// Emphasis / page-level transition. ~350 ms.
   static const emphasis = Duration(milliseconds: 350);
 

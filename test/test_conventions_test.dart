@@ -219,6 +219,22 @@ void main() {
     );
   });
 
+  test('toast timing literals stay in AppMotion', () {
+    final hardcodedToastTiming = RegExp(r'Duration\(milliseconds:\s*1800\)');
+    final offenders = patternOffenders(
+      dartFilesUnder('lib').where(
+        (file) => !_normalizedPath(file.path).endsWith('theme/app_motion.dart'),
+      ),
+      hardcodedToastTiming,
+    );
+
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'Use AppMotion.toastVisible for toast auto-dismiss timing.',
+    );
+  });
+
   test('InkWell widgets are not nested inside another InkWell', () {
     final offenders = <String>[];
 

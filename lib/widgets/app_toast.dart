@@ -45,7 +45,7 @@ class AppToast {
 
     // Auto-dismiss after 1.8 seconds via cancellable Timer
     _dismissTimer?.cancel();
-    _dismissTimer = Timer(const Duration(milliseconds: 1800), () {
+    _dismissTimer = Timer(AppMotion.toastVisible, () {
       if (_showing && _entry == entry) {
         dismiss();
       }

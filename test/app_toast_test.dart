@@ -52,4 +52,23 @@ void main() {
       semantics.dispose();
     }
   });
+
+  testWidgets('toast auto dismisses after visible period', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: AppToast.navigatorKey,
+        home: const Scaffold(body: SizedBox.shrink()),
+      ),
+    );
+
+    AppToast.show('自动关闭');
+    await tester.pump();
+    await tester.pump(AppMotion.toastEntrance);
+
+    expect(find.text('自动关闭'), findsOneWidget);
+
+    await tester.pump(AppMotion.toastVisible);
+
+    expect(find.text('自动关闭'), findsNothing);
+  });
 }
