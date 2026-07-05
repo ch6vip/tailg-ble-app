@@ -17,6 +17,9 @@ abstract final class AppMotion {
   /// Standard transition (fade, slide, colour tween). ~250 ms.
   static const standard = Duration(milliseconds: 250);
 
+  /// Toast entrance transition. ~300 ms.
+  static const toastEntrance = Duration(milliseconds: 300);
+
   /// Emphasis / page-level transition. ~350 ms.
   static const emphasis = Duration(milliseconds: 350);
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tailg_ble_app/theme/app_motion.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'package:tailg_ble_app/widgets/app_toast.dart';
 
@@ -22,7 +23,7 @@ void main() {
 
       AppToast.show('测试 Toast');
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(AppMotion.toastEntrance);
 
       final dismiss = find.byKey(const ValueKey('app-toast-dismiss'));
       expect(dismiss, findsOneWidget);
