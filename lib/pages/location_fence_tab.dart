@@ -142,7 +142,7 @@ class _OfficialFenceSheet extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x26000000),
+            color: _locationElevatedShadow,
             blurRadius: 18,
             offset: Offset(0, -6),
           ),

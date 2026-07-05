@@ -27,6 +27,9 @@ part 'location_fence_tab.dart';
 
 enum LocationInitialTab { map, travel, fence }
 
+const _locationLightShadow = Color(0x14000000);
+const _locationElevatedShadow = Color(0x26000000);
+
 class LocationPage extends StatefulWidget {
   final LocationInitialTab initialTab;
 
@@ -1074,7 +1077,7 @@ class _MapChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.pill),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x14000000),
+            color: _locationLightShadow,
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -1147,7 +1150,7 @@ class _MapCaption extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.card),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x14000000),
+            color: _locationLightShadow,
             blurRadius: 10,
             offset: Offset(0, 2),
           ),

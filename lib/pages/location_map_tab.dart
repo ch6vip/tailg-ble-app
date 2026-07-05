@@ -81,7 +81,7 @@ class _MapMarker extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: const [
               BoxShadow(
-                color: Color(0x26000000),
+                color: _locationElevatedShadow,
                 blurRadius: 8,
                 offset: Offset(0, 3),
               ),
