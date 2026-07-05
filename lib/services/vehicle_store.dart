@@ -191,13 +191,14 @@ class VehicleStore {
     if (normalizedId == null) {
       throw ArgumentError.value(id, 'id', 'Vehicle id must not be blank');
     }
+    final normalizedName = _normalizeName(name);
     final now = DateTime.now();
     final index = _vehicles.indexWhere((vehicle) => vehicle.id == normalizedId);
     late VehicleProfile profile;
     if (index >= 0) {
       final current = _vehicles[index];
       profile = current.copyWith(
-        name: name.trim().isEmpty ? current.name : name.trim(),
+        name: normalizedName ?? current.name,
         protocol: protocol,
         updatedAt: now,
         lastConnectedAt: lastConnectedAt,
@@ -206,7 +207,7 @@ class VehicleStore {
     } else {
       profile = VehicleProfile(
         id: normalizedId,
-        name: name.trim().isEmpty ? '未命名车辆' : name.trim(),
+        name: normalizedName ?? '未命名车辆',
         protocol: protocol,
         createdAt: now,
         updatedAt: now,
@@ -227,12 +228,12 @@ class VehicleStore {
     await init();
     final normalizedId = _normalizeId(id);
     if (normalizedId == null) return;
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return;
+    final normalizedName = _normalizeName(name);
+    if (normalizedName == null) return;
     final index = _vehicles.indexWhere((vehicle) => vehicle.id == normalizedId);
     if (index < 0) return;
     _vehicles[index] = _vehicles[index].copyWith(
-      name: trimmed,
+      name: normalizedName,
       updatedAt: DateTime.now(),
     );
     await _save();
@@ -311,6 +312,11 @@ class VehicleStore {
 
   String? _normalizeId(String? id) {
     final trimmed = id?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
+
+  String? _normalizeName(String? name) {
+    final trimmed = name?.trim();
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
 
