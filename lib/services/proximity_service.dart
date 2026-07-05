@@ -192,8 +192,9 @@ class ProximityService {
     if (_unlockSent) return;
 
     final now = DateTime.now();
-    if (_lastUnlockTime != null &&
-        now.difference(_lastUnlockTime!).inSeconds < _cooldownSeconds) {
+    final lastUnlockTime = _lastUnlockTime;
+    if (lastUnlockTime != null &&
+        now.difference(lastUnlockTime).inSeconds < _cooldownSeconds) {
       return;
     }
 
