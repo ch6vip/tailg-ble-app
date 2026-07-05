@@ -27,9 +27,9 @@ class NfcKeyRecord {
 
   factory NfcKeyRecord.fromJson(Map<String, dynamic> json) {
     return NfcKeyRecord(
-      id: _stringValue(json['id']),
-      name: _stringValue(json['name']).ifEmpty('未命名钥匙'),
-      type: _stringValue(json['type']).ifEmpty('手机'),
+      id: parsePersistedString(json['id']),
+      name: parsePersistedString(json['name']).ifEmpty('未命名钥匙'),
+      type: parsePersistedString(json['type']).ifEmpty('手机'),
       createdAt: parsePersistedDate(json['createdAt']) ?? DateTime.now(),
     );
   }
@@ -70,9 +70,9 @@ class FenceConfig {
   factory FenceConfig.fromJson(Map<String, dynamic> json) {
     return FenceConfig(
       enabled: _boolValue(json['enabled']),
-      latitude: _doubleValue(json['latitude']),
-      longitude: _doubleValue(json['longitude']),
-      radiusMeters: _intValue(json['radiusMeters']) ?? 500,
+      latitude: parsePersistedDouble(json['latitude']),
+      longitude: parsePersistedDouble(json['longitude']),
+      radiusMeters: parsePersistedInt(json['radiusMeters']) ?? 500,
       updatedAt: parsePersistedDate(json['updatedAt']) ?? DateTime.now(),
     );
   }
@@ -100,9 +100,9 @@ class ShareMemberRecord {
 
   factory ShareMemberRecord.fromJson(Map<String, dynamic> json) {
     return ShareMemberRecord(
-      id: _stringValue(json['id']),
-      name: _stringValue(json['name']).ifEmpty('未命名成员'),
-      phone: _stringValue(json['phone']),
+      id: parsePersistedString(json['id']),
+      name: parsePersistedString(json['name']).ifEmpty('未命名成员'),
+      phone: parsePersistedString(json['phone']),
       createdAt: parsePersistedDate(json['createdAt']) ?? DateTime.now(),
     );
   }
@@ -236,10 +236,6 @@ class ReplicaFeatureStore {
   }
 }
 
-String _stringValue(Object? value) {
-  return value?.toString().trim() ?? '';
-}
-
 bool _boolValue(Object? value) {
   if (value is bool) return value;
   if (value is num) return value != 0;
@@ -248,18 +244,6 @@ bool _boolValue(Object? value) {
     return normalized == 'true' || normalized == '1' || normalized == 'yes';
   }
   return false;
-}
-
-double? _doubleValue(Object? value) {
-  if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value.trim());
-  return null;
-}
-
-int? _intValue(Object? value) {
-  if (value is num) return value.toInt();
-  if (value is String) return int.tryParse(value.trim());
-  return null;
 }
 
 extension _EmptyStringFallback on String {

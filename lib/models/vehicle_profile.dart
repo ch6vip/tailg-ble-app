@@ -42,9 +42,9 @@ class VehicleLocation {
 
   factory VehicleLocation.fromJson(Map<String, dynamic> json) {
     return VehicleLocation(
-      latitude: _doubleValue(json['latitude']) ?? 0,
-      longitude: _doubleValue(json['longitude']) ?? 0,
-      accuracy: _doubleValue(json['accuracy']) ?? 0,
+      latitude: parsePersistedDouble(json['latitude']) ?? 0,
+      longitude: parsePersistedDouble(json['longitude']) ?? 0,
+      accuracy: parsePersistedDouble(json['accuracy']) ?? 0,
       recordedAt: parsePersistedDate(json['recordedAt']) ?? DateTime.now(),
     );
   }
@@ -123,33 +123,19 @@ class VehicleProfile {
     final now = DateTime.now();
     final locationJson = json['lastLocation'];
     return VehicleProfile(
-      id: _stringValue(json['id']),
-      name: _stringValue(json['name']),
-      protocol: VehicleProtocol.fromValue(_stringValue(json['protocol'])),
+      id: parsePersistedString(json['id']),
+      name: parsePersistedString(json['name']),
+      protocol: VehicleProtocol.fromValue(
+        parsePersistedString(json['protocol']),
+      ),
       createdAt: parsePersistedDate(json['createdAt']) ?? now,
       updatedAt: parsePersistedDate(json['updatedAt']) ?? now,
       lastConnectedAt: parsePersistedDate(json['lastConnectedAt']),
       lastLocation: locationJson is Map
           ? VehicleLocation.fromJson(Map<String, dynamic>.from(locationJson))
           : null,
-      qgjLoginPassword: _intValue(json['qgjLoginPassword']),
-      qgjUserId: _intValue(json['qgjUserId']),
+      qgjLoginPassword: parsePersistedInt(json['qgjLoginPassword']),
+      qgjUserId: parsePersistedInt(json['qgjUserId']),
     );
   }
-}
-
-String _stringValue(Object? value) {
-  return value?.toString().trim() ?? '';
-}
-
-double? _doubleValue(Object? value) {
-  if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value.trim());
-  return null;
-}
-
-int? _intValue(Object? value) {
-  if (value is num) return value.toInt();
-  if (value is String) return int.tryParse(value.trim());
-  return null;
 }
