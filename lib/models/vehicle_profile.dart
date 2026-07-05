@@ -73,7 +73,7 @@ class VehicleProfile {
     this.qgjUserId,
   });
 
-  String get displayName => name.trim().isEmpty ? '未命名车辆' : name.trim();
+  String get displayName => parsePersistedStringOr(name, '未命名车辆');
   bool get hasQgjCredentials => qgjLoginPassword != null || qgjUserId != null;
 
   static const _sentinel = Object();
