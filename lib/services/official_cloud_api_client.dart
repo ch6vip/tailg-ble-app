@@ -403,8 +403,8 @@ class OfficialCloudApiClient {
   }
 
   String? _shortMessage(String? message) {
-    if (message == null || message.trim().isEmpty) return null;
-    final normalized = message.trim();
+    final normalized = message?.trim();
+    if (normalized == null || normalized.isEmpty) return null;
     if (normalized.length <= 80) return normalized;
     return normalized.substring(0, 80);
   }
