@@ -7,6 +7,7 @@ import '../main.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
 import '../services/official_cloud_service.dart';
+import '../services/sensitive_value_masker.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
@@ -1261,6 +1262,5 @@ class _LogoutButton extends StatelessWidget {
 
 String? _maskPhone(String? phone) {
   if (phone == null || phone.isEmpty) return null;
-  if (phone.length < 11) return phone;
-  return '${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}';
+  return SensitiveValueMasker.phone(phone, minMaskLength: 11);
 }

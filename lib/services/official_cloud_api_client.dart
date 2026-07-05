@@ -42,10 +42,7 @@ class OfficialCloudRedactor {
   }
 
   static String _mask(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return '***';
-    if (trimmed.length <= 6) return '***';
-    return '${trimmed.substring(0, 3)}***${trimmed.substring(trimmed.length - 3)}';
+    return SensitiveValueMasker.compact(value);
   }
 }
 

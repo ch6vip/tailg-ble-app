@@ -4,6 +4,7 @@ import '../ble/connection_manager.dart' as ble;
 import 'control_channel_resolver.dart';
 import 'log_service.dart';
 import 'official_cloud_service.dart';
+import 'sensitive_value_masker.dart';
 import 'vehicle_store.dart';
 
 class DiagnosticExportService {
@@ -196,13 +197,10 @@ class DiagnosticExportService {
   }
 
   String _maskPhone(String phone) {
-    if (phone.length < 7) return 'present';
-    return '${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}';
+    return SensitiveValueMasker.phone(phone, shortValue: 'present');
   }
 
   String _maskId(String value) {
-    if (value.isEmpty) return 'none';
-    if (value.length <= 6) return '***';
-    return '${value.substring(0, 3)}***${value.substring(value.length - 3)}';
+    return SensitiveValueMasker.compact(value, emptyValue: 'none', trim: false);
   }
 }

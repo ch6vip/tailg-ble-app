@@ -1,6 +1,8 @@
 import 'dart:collection';
 import 'dart:async';
 
+import 'sensitive_value_masker.dart';
+
 enum LogLevel { debug, info, warning, error }
 
 enum LogCategory { ble, operation }
@@ -119,9 +121,7 @@ class LogService {
   }
 
   String _mask(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty || trimmed.length <= 6) return '***';
-    return '${trimmed.substring(0, 3)}***${trimmed.substring(trimmed.length - 3)}';
+    return SensitiveValueMasker.compact(value);
   }
 
   void _add(LogEntry entry) {

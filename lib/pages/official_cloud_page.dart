@@ -9,6 +9,7 @@ import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
+import '../services/sensitive_value_masker.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_snack.dart';
@@ -421,8 +422,7 @@ class _SessionCard extends StatelessWidget {
   }
 
   String _maskPhone(String phone) {
-    if (phone.length < 7) return '已登录';
-    return '${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}';
+    return SensitiveValueMasker.phone(phone, shortValue: '已登录');
   }
 }
 
@@ -1020,9 +1020,7 @@ class _SelfCheckResultCard extends StatelessWidget {
 }
 
 String _maskId(String value) {
-  if (value.isEmpty) return '未返回';
-  if (value.length <= 6) return '***';
-  return '${value.substring(0, 3)}***${value.substring(value.length - 3)}';
+  return SensitiveValueMasker.compact(value, emptyValue: '未返回', trim: false);
 }
 
 Future<void> _applyLinkedLocalVehicle(OfficialVehicle vehicle) async {

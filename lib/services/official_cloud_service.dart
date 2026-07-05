@@ -10,6 +10,7 @@ import '../ble/constants.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
 import 'log_service.dart';
+import 'sensitive_value_masker.dart';
 import 'vehicle_store.dart';
 
 part 'official_cloud_api_client.dart';
