@@ -581,7 +581,8 @@ class OfficialVehicleSelfCheck {
   }
 
   String get displayMessage {
-    if (message.trim().isNotEmpty) return message.trim();
+    final text = message.trim();
+    if (text.isNotEmpty) return text;
     if (code != null) return 'code=$code';
     return '自检已返回';
   }
