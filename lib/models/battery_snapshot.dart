@@ -171,8 +171,7 @@ class BatterySnapshot {
           : officialTemperature != null
           ? BatteryDataSource.officialBattery
           : BatteryDataSource.bmsReserved,
-      mileageSource:
-          _cleanText(officialBatteryInfo?.remainingMileage)?.isNotEmpty == true
+      mileageSource: _cleanText(officialBatteryInfo?.remainingMileage) != null
           ? BatteryDataSource.officialBattery
           : vehicleMileage != null
           ? BatteryDataSource.officialVehicle
