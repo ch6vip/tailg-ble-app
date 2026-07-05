@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart';
 
 import '../ble/connection_manager.dart' as ble;
 import 'control_channel_resolver.dart';
+import 'display_time_formatter.dart';
 import 'log_service.dart';
-import 'log_time_formatter.dart';
 import 'official_cloud_service.dart';
 import 'sensitive_value_masker.dart';
 import 'vehicle_store.dart';

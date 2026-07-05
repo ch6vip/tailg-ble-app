@@ -16,4 +16,9 @@ String formatMonthDayMinuteText(DateTime time) {
       '${_twoDigits(time.hour)}:${_twoDigits(time.minute)}';
 }
 
+String formatLogClockTime(DateTime time) {
+  return '${_twoDigits(time.hour)}:${_twoDigits(time.minute)}:'
+      '${_twoDigits(time.second)}';
+}
+
 String _twoDigits(int value) => value.toString().padLeft(2, '0');
