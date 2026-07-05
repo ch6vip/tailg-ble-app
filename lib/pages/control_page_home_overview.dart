@@ -105,6 +105,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
         command: cmd,
         availability: availability,
       );
+      final successMessage = result.successMessage;
       if (result.success) {
         _runBackgroundTask(
           locationService.recordDefaultVehicleLocation(),
@@ -116,8 +117,8 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
         );
         if (!confirmed && mounted) {
           _showSnack(_unconfirmedMessage(cmd), isError: true);
-        } else if (mounted && result.successMessage != null) {
-          _showSnack(result.successMessage!, isError: false);
+        } else if (mounted && successMessage != null) {
+          _showSnack(successMessage, isError: false);
         }
       }
       if (!result.success) {
