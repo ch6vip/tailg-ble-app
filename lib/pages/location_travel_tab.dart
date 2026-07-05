@@ -467,7 +467,7 @@ class _TravelDetailSheet extends StatelessWidget {
                 height: 4,
                 decoration: BoxDecoration(
                   color: AppColors.border,
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
                 ),
               ),
               Padding(

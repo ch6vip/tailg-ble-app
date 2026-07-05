@@ -757,7 +757,7 @@ class _BmsFieldRow extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: source.color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
                   ),
                   child: Text(
                     source.label,

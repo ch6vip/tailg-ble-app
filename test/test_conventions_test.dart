@@ -60,6 +60,22 @@ void main() {
     );
   });
 
+  test('pill radius literals use AppRadii token', () {
+    final hardcodedPillRadius = RegExp(
+      r'(BorderRadius|Radius)\.circular\(\s*999\s*\)',
+    );
+    final offenders = patternOffenders(
+      dartFilesUnder('lib'),
+      hardcodedPillRadius,
+    );
+
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'Use AppRadii.pill for fully rounded pill shapes.',
+    );
+  });
+
   test('widget tests use view size helpers', () {
     final directViewSizeSet = RegExp(r'tester\.view\.physicalSize\s*=');
     final offenders = patternOffenders(
