@@ -12,6 +12,9 @@ import 'official_cloud_page.dart';
 import 'ota_precheck_page.dart';
 import 'vehicle_message_page.dart';
 
+const _membershipGoldStart = Color(0xFFFFD580);
+const _membershipGoldInk = Color(0xFF5A3A00);
+
 /// v8 Profile / "我的" page.
 ///
 /// Current design notes live in `docs/design_system.md`.
@@ -173,7 +176,7 @@ class _UserHeader extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(AppRadii.pill),
                         gradient: const LinearGradient(
-                          colors: [Color(0xFFFFD580), AppColors.accentAmber],
+                          colors: [_membershipGoldStart, AppColors.accentAmber],
                         ),
                       ),
                       child: const Text(
@@ -181,7 +184,7 @@ class _UserHeader extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF5A3A00),
+                          color: _membershipGoldInk,
                         ),
                       ),
                     ),
@@ -385,12 +388,12 @@ class _MembershipBanner extends StatelessWidget {
                     decoration: const BoxDecoration(
                       borderRadius: BorderRadius.all(Radius.circular(13)),
                       gradient: LinearGradient(
-                        colors: [Color(0xFFFFD580), AppColors.accentAmber],
+                        colors: [_membershipGoldStart, AppColors.accentAmber],
                       ),
                     ),
                     child: const Icon(
                       Icons.star,
-                      color: Color(0xFF5A3A00),
+                      color: _membershipGoldInk,
                       size: 22,
                     ),
                   ),
@@ -420,13 +423,13 @@ class _MembershipBanner extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFFFFD580),
+                      color: _membershipGoldStart,
                     ),
                   ),
                   const SizedBox(width: 2),
                   const Icon(
                     Icons.chevron_right,
-                    color: Color(0xFFFFD580),
+                    color: _membershipGoldStart,
                     size: 18,
                   ),
                 ],
