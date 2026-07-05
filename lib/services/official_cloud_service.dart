@@ -1009,8 +1009,9 @@ class OfficialCloudService {
     );
     if (decision == null) return;
 
-    if (decision.linkedLocalVehicleId != null) {
-      await store.setDefault(decision.linkedLocalVehicleId!);
+    final linkedLocalVehicleId = decision.linkedLocalVehicleId;
+    if (linkedLocalVehicleId != null) {
+      await store.setDefault(linkedLocalVehicleId);
       return;
     }
 
