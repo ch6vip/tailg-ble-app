@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../ble/connection_manager.dart' as ble;
 import 'control_channel_resolver.dart';
 import 'log_service.dart';
+import 'log_time_formatter.dart';
 import 'official_cloud_service.dart';
 import 'sensitive_value_masker.dart';
 import 'vehicle_store.dart';
@@ -186,10 +187,7 @@ class DiagnosticExportService {
   }
 
   String _formatEntry(LogEntry entry) {
-    final t =
-        '${entry.time.hour.toString().padLeft(2, '0')}:'
-        '${entry.time.minute.toString().padLeft(2, '0')}:'
-        '${entry.time.second.toString().padLeft(2, '0')}';
+    final t = formatLogClockTime(entry.time);
     final tag = entry.category == LogCategory.ble ? '[BLE]' : '[OP]';
     final level = entry.level.name.toUpperCase();
     return '$t $tag [$level] ${OfficialCloudRedactor.text(entry.message)}'

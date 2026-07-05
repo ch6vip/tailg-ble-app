@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../main.dart';
 import '../services/diagnostic_export_service.dart';
 import '../services/log_service.dart';
+import '../services/log_time_formatter.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
 import '../widgets/app_chrome.dart';
@@ -240,10 +241,7 @@ class _LogTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final timeStr =
-        '${entry.time.hour.toString().padLeft(2, '0')}:'
-        '${entry.time.minute.toString().padLeft(2, '0')}:'
-        '${entry.time.second.toString().padLeft(2, '0')}';
+    final timeStr = formatLogClockTime(entry.time);
     final levelColor = switch (entry.level) {
       LogLevel.debug => AppColors.textTertiary,
       LogLevel.info => AppColors.info,
