@@ -31,10 +31,10 @@ class OfficialCloudAuthParser {
   }
 
   static String extractUserId(Map<String, dynamic> body) {
-    return _findUserId(body)?.toString().trim() ?? '';
+    return _findUserId(body) ?? '';
   }
 
-  static Object? _findUserId(Object? value) {
+  static String? _findUserId(Object? value) {
     if (value is Map) {
       // Only match unambiguous user-id keys. The previous 'id' fallback was
       // too greedy and would match `carId`, `deviceTravelId`, `extendId`,
@@ -42,8 +42,9 @@ class OfficialCloudAuthParser {
       // (or, worse, leaking another user's data).
       for (final key in const ['uid', 'userId']) {
         final candidate = value[key];
-        if (candidate != null && candidate.toString().trim().isNotEmpty) {
-          return candidate;
+        final text = candidate?.toString().trim();
+        if (text != null && text.isNotEmpty) {
+          return text;
         }
       }
       for (final child in value.values) {
