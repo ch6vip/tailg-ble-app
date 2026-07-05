@@ -413,7 +413,7 @@ class _MeterStatusChip extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: const Color(0xFFEFF0F5),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadii.tile),
         ),
         child: Text(
           label,
@@ -862,7 +862,7 @@ class _NfcNote extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: const Color(0xFFEDEEFF),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadii.xs),
       ),
       child: Text(
         label,

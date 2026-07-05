@@ -78,7 +78,7 @@ void main() {
 
   test('common radius literals use AppRadii tokens', () {
     final hardcodedCommonRadius = RegExp(
-      r'(BorderRadius|Radius)\.circular\(\s*(10|12|14|18|20)\s*\)',
+      r'(BorderRadius|Radius)\.circular\(\s*(6|8|10|12|14|18|20)\s*\)',
     );
     final offenders = patternOffenders(
       dartFilesUnder('lib'),
@@ -88,7 +88,8 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'Use AppRadii.sm/card/md/sheet/lg for common rounded corners.',
+      reason:
+          'Use AppRadii.xs/tile/sm/card/md/sheet/lg for common rounded corners.',
     );
   });
 

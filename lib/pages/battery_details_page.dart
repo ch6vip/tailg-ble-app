@@ -340,7 +340,7 @@ class _BatteryReplicaPainter extends CustomPainter {
         12,
         size.height * 0.32,
       ),
-      const Radius.circular(6),
+      const Radius.circular(AppRadii.xs),
     );
     canvas.drawRRect(
       shell.shift(const Offset(0, 4)),
@@ -379,7 +379,7 @@ class _BatteryReplicaPainter extends CustomPainter {
           segmentWidth,
           inner.height,
         ),
-        const Radius.circular(8),
+        const Radius.circular(AppRadii.tile),
       );
       final active = i < activeSegments && value > 0;
       canvas.drawRRect(

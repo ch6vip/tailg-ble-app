@@ -169,14 +169,14 @@ class _ServiceGridTile extends StatelessWidget {
       onTap: onTap,
       semanticsLabel: label,
       semanticsButton: true,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadii.tile),
       pressedBackground: AppColors.surfaceContainerHigh,
       child: Container(
         constraints: const BoxConstraints(minHeight: 96),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadii.tile),
           border: Border.all(color: AppColors.outlineVariant),
         ),
         child: Column(
@@ -229,14 +229,14 @@ class _ServiceListTile extends StatelessWidget {
       onTap: onTap,
       semanticsLabel: title,
       semanticsButton: true,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadii.tile),
       pressedBackground: AppColors.surfaceContainerHigh,
       child: Container(
         constraints: const BoxConstraints(minHeight: 64),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadii.tile),
           border: Border.all(color: AppColors.outlineVariant),
         ),
         child: Row(

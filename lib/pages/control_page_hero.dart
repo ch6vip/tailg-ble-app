@@ -334,7 +334,7 @@ class _OnlineBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: online ? const Color(0xFF31C764) : AppColors.officialTextMuted,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadii.xs),
       ),
       child: Text(
         online ? '在线' : '离线',
