@@ -542,7 +542,7 @@ class VehicleSettingsService {
   }
 
   static String _cmdHex(int cmdId) {
-    return '0x${cmdId.toRadixString(16).padLeft(4, '0')}';
+    return '0x${intToHex4Lower(cmdId)}';
   }
 
   static String _payloadHex(List<int> payload) {

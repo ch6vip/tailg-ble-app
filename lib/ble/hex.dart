@@ -27,6 +27,10 @@ String bytesToSpacedHex(Iterable<int> bytes) {
       .join(' ');
 }
 
+String intToHex4Lower(int n) {
+  return n.toRadixString(16).padLeft(4, '0');
+}
+
 String intToHex2(int n) {
   return (n & 0xff).toRadixString(16).padLeft(2, '0').toUpperCase();
 }

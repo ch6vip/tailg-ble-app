@@ -22,4 +22,11 @@ void main() {
     expect(intToHex2(0x123), '23');
     expect(intToHex2(-1), 'FF');
   });
+
+  test('intToHex4Lower renders lowercase four digit text', () {
+    expect(intToHex4Lower(0), '0000');
+    expect(intToHex4Lower(10), '000a');
+    expect(intToHex4Lower(0xabcd), 'abcd');
+    expect(intToHex4Lower(0x12345), '12345');
+  });
 }
