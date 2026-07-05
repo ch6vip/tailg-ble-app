@@ -303,6 +303,7 @@ class _OptionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final subtitle = this.subtitle;
     final semanticLabel = subtitle == null ? title : '$title，$subtitle';
     return _PreferenceRowPressable(
       semanticLabel: semanticLabel,
@@ -319,7 +320,7 @@ class _OptionRow extends StatelessWidget {
                   Text(title, style: AppTextStyles.itemTitle),
                   if (subtitle != null) ...[
                     const SizedBox(height: 4),
-                    Text(subtitle!, style: AppTextStyles.smallText),
+                    Text(subtitle, style: AppTextStyles.smallText),
                   ],
                 ],
               ),
