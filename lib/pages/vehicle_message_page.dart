@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../main.dart'; // P0-6: service locator getters
+import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
@@ -469,7 +470,7 @@ class _MessageList extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            _formatTime(message.time),
+                            formatMonthDayMinuteText(message.time),
                             style: const TextStyle(
                               fontSize: 11,
                               color: AppColors.textTertiary,
@@ -608,7 +609,7 @@ class _MessageDetailSheet extends StatelessWidget {
               children: [
                 _Tag(text: message.category.label),
                 const SizedBox(width: 8),
-                _Tag(text: _formatTime(message.time)),
+                _Tag(text: formatMonthDayMinuteText(message.time)),
               ],
             ),
             const SizedBox(height: 18),
@@ -676,9 +677,4 @@ enum _VehicleMessageSeverity {
 
   final Color color;
   const _VehicleMessageSeverity(this.color);
-}
-
-String _formatTime(DateTime time) {
-  return '${time.month.toString().padLeft(2, '0')}/${time.day.toString().padLeft(2, '0')} '
-      '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
 }

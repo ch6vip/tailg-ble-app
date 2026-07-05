@@ -22,4 +22,12 @@ void main() {
     expect(formatMonthText(DateTime(2026, 7)), '2026-07');
     expect(formatMonthText(DateTime(2026, 1)), '2026-01');
   });
+
+  test('formatMonthDayMinuteText renders padded compact time text', () {
+    expect(
+      formatMonthDayMinuteText(DateTime(2026, 5, 29, 10, 30)),
+      '05/29 10:30',
+    );
+    expect(formatMonthDayMinuteText(DateTime(2026, 1, 2, 3, 4)), '01/02 03:04');
+  });
 }
