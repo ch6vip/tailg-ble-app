@@ -29,7 +29,8 @@ class ControlCommandResult {
     CommandCode command, {
     required String message,
   }) {
-    final normalizedMessage = message.trim().isEmpty ? 'success' : message;
+    final trimmedMessage = message.trim();
+    final normalizedMessage = trimmedMessage.isEmpty ? 'success' : message;
     return ControlCommandResult._(
       command: command,
       transport: ControlCommandTransport.officialCloud,
