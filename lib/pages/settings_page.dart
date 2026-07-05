@@ -216,7 +216,9 @@ class _AdvancedDiagnosticsPage extends StatelessWidget {
       context: context,
       builder: (context) => SimpleDialog(
         title: const Text('选择协议类型'),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+        ),
         children: [
           _protocolOption(context, '自动识别', '根据服务 UUID 自动判断', true),
           _protocolOption(context, 'Standard (fee5)', '标准台铃协议', false),
@@ -286,7 +288,7 @@ Widget _settingItem({
               height: 38,
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadii.card),
               ),
               child: Icon(icon, size: 20, color: AppColors.primary),
             ),

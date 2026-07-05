@@ -732,7 +732,7 @@ class _SettingTile extends StatelessWidget {
               height: 34,
               decoration: BoxDecoration(
                 color: iconBg,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadii.sm),
               ),
               child: Icon(icon, size: 19, color: iconColor),
             ),

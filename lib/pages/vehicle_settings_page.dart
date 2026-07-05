@@ -42,7 +42,7 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
       context: context,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
       ),
       builder: (context) {
         return AnimatedBuilder(
@@ -68,9 +68,9 @@ class _VehicleSettingsPageState extends State<VehicleSettingsPage> {
                                   alpha: 0.12,
                                 )
                               : AppColors.pageBg,
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(AppRadii.md),
                           child: InkWell(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(AppRadii.md),
                             onTap: canSend && !_controller.sending
                                 ? () => Navigator.pop(context, value)
                                 : null,
@@ -641,9 +641,13 @@ class _QgjRideSettingsPage extends StatelessWidget {
                                       color: selected
                                           ? color.withValues(alpha: 0.14)
                                           : AppColors.pageBg,
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadii.sm,
+                                      ),
                                       child: InkWell(
-                                        borderRadius: BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadii.sm,
+                                        ),
                                         onTap: enabled ? selectMode : null,
                                         child: SizedBox(
                                           height: 46,
@@ -1230,7 +1234,7 @@ class _RowIcon extends StatelessWidget {
       height: 38,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.card),
       ),
       child: Icon(icon, color: color, size: AppIconSizes.md),
     );

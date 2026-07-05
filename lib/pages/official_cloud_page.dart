@@ -366,7 +366,7 @@ class _LoginCardState extends State<_LoginCard> {
       filled: true,
       fillColor: AppColors.surfaceContainerLow,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.card),
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
@@ -647,7 +647,7 @@ class _MissingBleIdentityNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.info.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadii.card),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         child: Row(
@@ -711,9 +711,9 @@ class _StaleLinkNotice extends StatelessWidget {
 
     final notice = Material(
       color: AppColors.warning.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadii.card),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.card),
         onTap: clearStaleLink,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: AppTouchTargets.min),

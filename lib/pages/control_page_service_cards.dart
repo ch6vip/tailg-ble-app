@@ -138,7 +138,7 @@ class _OfficialCardSurface extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadii.md),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF1F1F1F).withValues(alpha: 0.04),
@@ -216,7 +216,7 @@ class _OfficialMapCard extends StatelessWidget {
                 Positioned.fill(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadii.card),
                       border: Border.all(color: const Color(0x0F000000)),
                     ),
                   ),
@@ -294,7 +294,7 @@ class _OfficialNavigationProjectionCard extends StatelessWidget {
             height: double.infinity,
             decoration: BoxDecoration(
               color: const Color(0xFFEFF0F5),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadii.card),
             ),
             child: const Icon(
               Icons.screen_share_outlined,
@@ -383,7 +383,7 @@ class _OfficialSmartMeterCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: const Color(0xFFEFF0F5),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadii.sm),
             ),
             child: const Text(
               '地图导航设置',
@@ -457,7 +457,7 @@ class _OfficialSimpleServiceCard extends StatelessWidget {
             height: double.infinity,
             decoration: BoxDecoration(
               color: const Color(0xFFEFF0F5),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadii.sm),
             ),
             child: Icon(icon, color: AppColors.brandRed),
           ),
@@ -517,7 +517,7 @@ class _OfficialHistoryCard extends StatelessWidget {
             height: double.infinity,
             decoration: BoxDecoration(
               color: const Color(0xFFFFD7B3).withValues(alpha: 0.45),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadii.sm),
             ),
             child: Image.asset(
               'assets/official_tailg/iv_control_histroy_bg.png',
@@ -626,7 +626,7 @@ class _OfficialImageBanner extends StatelessWidget {
       semanticsButton: true,
       semanticsEnabled: true,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadii.md),
         child: Image.asset(
           asset,
           width: double.infinity,

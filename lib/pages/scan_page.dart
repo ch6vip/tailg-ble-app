@@ -523,7 +523,7 @@ class _DeviceCardState extends State<_DeviceCard> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: widget.disabled ? const Color(0xFFF8F8F8) : Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           boxShadow: widget.disabled
               ? AppShadows.elevation1
               : AppShadows.elevation1,
@@ -540,7 +540,7 @@ class _DeviceCardState extends State<_DeviceCard> {
                       )
                     : null,
                 color: isTailg ? null : const Color(0xFFF5F5F5),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadii.card),
               ),
               child: Icon(
                 isTailg ? Icons.electric_bike : Icons.bluetooth_outlined,

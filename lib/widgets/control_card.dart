@@ -203,7 +203,7 @@ class _PanelCommand extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.card),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -309,7 +309,7 @@ class _QuickActionSlot extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: const Color(0xFFEFF0F5),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadii.card),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -329,7 +329,7 @@ class _ReadOnlyRow extends StatelessWidget {
             height: 38,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadii.card),
             ),
             child: Icon(icon, color: color, size: AppIconSizes.md),
           ),

@@ -111,7 +111,7 @@ class AppHeaderAction extends StatelessWidget {
       semanticsLabel: tooltip,
       semanticsButton: true,
       semanticsEnabled: onTap != null,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(AppRadii.sheet),
       pressedBackground: AppColors.primary.withValues(alpha: 0.05),
       child: SizedBox(
         width: AppTouchTargets.min,

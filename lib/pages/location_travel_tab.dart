@@ -457,7 +457,9 @@ class _TravelDetailSheet extends StatelessWidget {
           ),
           decoration: const BoxDecoration(
             color: AppColors.pageBg,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppRadii.lg),
+            ),
           ),
           child: Column(
             children: [

@@ -165,7 +165,7 @@ class _UnboundLogoMark extends StatelessWidget {
           height: 42,
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadii.card),
             boxShadow: AppShadows.cardShadow,
           ),
           child: const Icon(
@@ -304,7 +304,7 @@ class _UnboundBannerState extends State<_UnboundBanner>
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(AppRadii.sheet),
                     boxShadow: const [
                       BoxShadow(
                         color: Color(0x0A000000),
@@ -318,7 +318,7 @@ class _UnboundBannerState extends State<_UnboundBanner>
                       Positioned.fill(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(AppRadii.card),
                             gradient: page.gradient,
                           ),
                         ),
@@ -494,11 +494,11 @@ class _OfficialTextLinkRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final row = Material(
       color: Colors.white.withValues(alpha: 0.72),
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(AppRadii.sheet),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadii.sheet),
         splashColor: AppColors.primary.withValues(alpha: 0.08),
         highlightColor: AppColors.primary.withValues(alpha: 0.05),
         child: ConstrainedBox(

@@ -76,6 +76,22 @@ void main() {
     );
   });
 
+  test('common radius literals use AppRadii tokens', () {
+    final hardcodedCommonRadius = RegExp(
+      r'(BorderRadius|Radius)\.circular\(\s*(10|12|14|18|20)\s*\)',
+    );
+    final offenders = patternOffenders(
+      dartFilesUnder('lib'),
+      hardcodedCommonRadius,
+    );
+
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'Use AppRadii.sm/card/md/sheet/lg for common rounded corners.',
+    );
+  });
+
   test('widget tests use view size helpers', () {
     final directViewSizeSet = RegExp(r'tester\.view\.physicalSize\s*=');
     final offenders = patternOffenders(

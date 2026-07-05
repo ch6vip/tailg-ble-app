@@ -331,7 +331,7 @@ class _BatteryReplicaPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final shell = RRect.fromRectAndRadius(
       Rect.fromLTWH(0, 8, size.width - 12, size.height - 16),
-      const Radius.circular(18),
+      const Radius.circular(AppRadii.sheet),
     );
     final cap = RRect.fromRectAndRadius(
       Rect.fromLTWH(

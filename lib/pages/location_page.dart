@@ -763,7 +763,7 @@ class _LocationDetailCard extends StatelessWidget {
                 height: AppTouchTargets.min,
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(AppRadii.md),
                 ),
                 child: const Icon(
                   Icons.location_on,
@@ -1144,7 +1144,7 @@ class _MapCaption extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.card),
         boxShadow: const [
           BoxShadow(
             color: Color(0x14000000),

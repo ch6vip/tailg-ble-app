@@ -429,7 +429,7 @@ class _CharacteristicRow extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: AppColors.pageBg,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadii.sm),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

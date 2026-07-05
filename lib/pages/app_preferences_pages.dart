@@ -220,7 +220,7 @@ class AboutAppPage extends StatelessWidget {
                           height: 76,
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(AppRadii.sheet),
                           ),
                           child: const Icon(
                             Icons.electric_moped,
@@ -453,7 +453,7 @@ class _RowIcon extends StatelessWidget {
       height: 38,
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.card),
       ),
       child: Icon(icon, color: AppColors.primary, size: AppIconSizes.md),
     );

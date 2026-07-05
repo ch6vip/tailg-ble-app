@@ -161,7 +161,7 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                       filled: true,
                       fillColor: const Color(0xFFF5F5F5),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(AppRadii.sm),
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(

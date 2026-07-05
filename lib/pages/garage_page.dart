@@ -151,7 +151,7 @@ class _VehicleCardState extends State<_VehicleCard> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadii.md),
         boxShadow: AppShadows.elevation1,
         border: isDefault
             ? Border.all(
@@ -167,7 +167,7 @@ class _VehicleCardState extends State<_VehicleCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadii.card),
                 child: Container(
                   width: 100,
                   height: 70,
@@ -204,7 +204,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.primary.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(AppRadii.sm),
                             ),
                             child: const Text(
                               '默认',
