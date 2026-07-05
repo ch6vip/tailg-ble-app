@@ -70,7 +70,7 @@ class AppServices {
       officialCloudService: OfficialCloudService(),
       appPreferencesService: AppPreferencesService(),
       permissionService: AppPermissionService(),
-      homeTabIndex: ValueNotifier<int>(0),
+      homeTabIndex: ValueNotifier<int>(1),
     );
   }
 

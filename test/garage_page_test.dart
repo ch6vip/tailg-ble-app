@@ -12,7 +12,7 @@ void main() {
   setUp(() async {
     resetMockPreferences();
     app.vehicleStore.resetForTest();
-    app.homeTabIndex.value = 3;
+    app.homeTabIndex.value = 2;
     await app.vehicleStore.init();
     await app.vehicleStore.upsert(
       id: 'AA:BB:CC:DD:EE:FF',
@@ -24,7 +24,7 @@ void main() {
 
   tearDown(() {
     app.vehicleStore.resetForTest();
-    app.homeTabIndex.value = 0;
+    app.homeTabIndex.value = 1;
   });
 
   testWidgets('mini vehicle actions keep 44dp touch targets', (tester) async {
@@ -55,7 +55,7 @@ void main() {
 
       tester.semantics.tap(find.semantics.byLabel(locateLabel));
 
-      expect(app.homeTabIndex.value, 1);
+      expect(app.homeTabIndex.value, 0);
     } finally {
       semantics.dispose();
     }

@@ -15,10 +15,8 @@ import 'services/service_locator.dart';
 import 'services/app_preferences_service.dart';
 import 'pages/scan_page.dart';
 import 'pages/control_page.dart';
-import 'pages/location_page.dart';
-import 'pages/garage_page.dart';
-import 'pages/vehicle_message_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/service_hub_page.dart';
 import 'theme/app_colors.dart';
 import 'widgets/app_toast.dart';
 
@@ -450,7 +448,11 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
-  int _currentIndex = 0;
+  static const _serviceTabIndex = 0;
+  static const _vehicleTabIndex = 1;
+  static const _mineTabIndex = 2;
+
+  int _currentIndex = _vehicleTabIndex;
   late AnimationController _pageAnimController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
@@ -476,6 +478,15 @@ class _HomePageState extends State<HomePage>
     _pageAnimController.value = 1.0;
 
     _homeTabIndex = homeTabIndex;
+    final initialTab =
+        _homeTabIndex.value >= _serviceTabIndex &&
+            _homeTabIndex.value <= _mineTabIndex
+        ? _homeTabIndex.value
+        : _vehicleTabIndex;
+    _currentIndex = initialTab;
+    if (_homeTabIndex.value != initialTab) {
+      _homeTabIndex.value = initialTab;
+    }
     _homeTabIndex.addListener(_onExternalTabChanged);
     WidgetsBinding.instance.addObserver(this);
     // Manual mode promises to disable automatic control: stop any in-flight
@@ -535,7 +546,7 @@ class _HomePageState extends State<HomePage>
 
   void _onExternalTabChanged() {
     final index = _homeTabIndex.value;
-    if (index == _currentIndex || index < 0 || index > 3) return;
+    if (index == _currentIndex || index < 0 || index > _mineTabIndex) return;
     setState(() => _currentIndex = index);
     _pageAnimController.forward(from: 0);
   }
@@ -545,12 +556,6 @@ class _HomePageState extends State<HomePage>
     setState(() => _currentIndex = index);
     _pageAnimController.forward(from: 0);
     _homeTabIndex.value = index;
-  }
-
-  void _openMessages() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const VehicleMessagePage()));
   }
 
   @override
@@ -573,19 +578,15 @@ class _HomePageState extends State<HomePage>
             index: _currentIndex,
             children: [
               TickerMode(
-                enabled: _currentIndex == 0,
+                enabled: _currentIndex == _serviceTabIndex,
+                child: const ServiceHubPage(),
+              ),
+              TickerMode(
+                enabled: _currentIndex == _vehicleTabIndex,
                 child: const ControlPage(),
               ),
               TickerMode(
-                enabled: _currentIndex == 1,
-                child: const LocationPage(embedded: true),
-              ),
-              TickerMode(
-                enabled: _currentIndex == 2,
-                child: const GaragePage(embedded: true),
-              ),
-              TickerMode(
-                enabled: _currentIndex == 3,
+                enabled: _currentIndex == _mineTabIndex,
                 child: const ProfilePage(),
               ),
             ],
@@ -595,11 +596,9 @@ class _HomePageState extends State<HomePage>
       extendBody: true,
       bottomNavigationBar: _OfficialBottomNav(
         currentIndex: _currentIndex,
-        onMessage: _openMessages,
-        onGarage: () => _switchTab(2),
-        onVehicle: () => _switchTab(0),
-        onService: () => _switchTab(1),
-        onMine: () => _switchTab(3),
+        onService: () => _switchTab(_serviceTabIndex),
+        onVehicle: () => _switchTab(_vehicleTabIndex),
+        onMine: () => _switchTab(_mineTabIndex),
       ),
     );
   }
@@ -608,18 +607,14 @@ class _HomePageState extends State<HomePage>
 class _OfficialBottomNav extends StatelessWidget {
   const _OfficialBottomNav({
     required this.currentIndex,
-    required this.onMessage,
-    required this.onGarage,
-    required this.onVehicle,
     required this.onService,
+    required this.onVehicle,
     required this.onMine,
   });
 
   final int currentIndex;
-  final VoidCallback onMessage;
-  final VoidCallback onGarage;
-  final VoidCallback onVehicle;
   final VoidCallback onService;
+  final VoidCallback onVehicle;
   final VoidCallback onMine;
 
   @override
@@ -646,22 +641,12 @@ class _OfficialBottomNav extends StatelessWidget {
               children: [
                 Expanded(
                   child: _OfficialNavItem(
-                    label: '消息',
-                    asset: 'assets/official_tailg/ic_rb_circle_unselect.webp',
+                    label: '服务',
+                    asset: 'assets/official_tailg/ic_home_service_unselect.png',
                     selectedAsset:
-                        'assets/official_tailg/ic_rb_circle_select.webp',
-                    selected: false,
-                    onTap: onMessage,
-                  ),
-                ),
-                Expanded(
-                  child: _OfficialNavItem(
-                    label: '车库',
-                    asset: 'assets/official_tailg/ic_rb_shop_unselect.webp',
-                    selectedAsset:
-                        'assets/official_tailg/ic_rb_shop_select.webp',
-                    selected: currentIndex == 2,
-                    onTap: onGarage,
+                        'assets/official_tailg/ic_home_service_select.png',
+                    selected: currentIndex == 0,
+                    onTap: onService,
                   ),
                 ),
                 Expanded(
@@ -670,19 +655,9 @@ class _OfficialBottomNav extends StatelessWidget {
                     asset: 'assets/official_tailg/ic_home_control_unselect.png',
                     selectedAsset:
                         'assets/official_tailg/ic_home_control_select.png',
-                    selected: currentIndex == 0,
+                    selected: currentIndex == 1,
                     prominent: true,
                     onTap: onVehicle,
-                  ),
-                ),
-                Expanded(
-                  child: _OfficialNavItem(
-                    label: '服务',
-                    asset: 'assets/official_tailg/ic_home_service_unselect.png',
-                    selectedAsset:
-                        'assets/official_tailg/ic_home_service_select.png',
-                    selected: currentIndex == 1,
-                    onTap: onService,
                   ),
                 ),
                 Expanded(
@@ -691,7 +666,7 @@ class _OfficialBottomNav extends StatelessWidget {
                     asset: 'assets/official_tailg/ic_home_mine_unselect.png',
                     selectedAsset:
                         'assets/official_tailg/ic_home_mine_select.png',
-                    selected: currentIndex == 3,
+                    selected: currentIndex == 2,
                     onTap: onMine,
                   ),
                 ),

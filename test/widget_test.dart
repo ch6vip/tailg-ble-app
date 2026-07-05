@@ -5,25 +5,51 @@ import 'package:tailg_ble_app/main.dart';
 import 'helpers/view_size.dart';
 
 void main() {
+  setUp(() {
+    homeTabIndex.value = 1;
+  });
+
   testWidgets('App renders home page', (WidgetTester tester) async {
     await tester.pumpWidget(const TailgBleApp());
     await tester.pump(); // Allow combined stream initial emission
     expect(find.text('未绑定车辆'), findsOneWidget);
-    expect(find.text('消息'), findsOneWidget);
-    expect(find.text('车库'), findsOneWidget);
     expect(find.text('爱车'), findsOneWidget);
     expect(find.text('服务'), findsOneWidget);
     expect(find.text('我的'), findsOneWidget);
+    expect(find.text('消息'), findsNothing);
+    expect(find.text('车库'), findsNothing);
   });
 
-  testWidgets('Message nav opens message center', (WidgetTester tester) async {
+  testWidgets('Bottom nav keeps vehicle in the center', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const TailgBleApp());
     await tester.pump();
 
-    await tester.tap(find.text('消息'));
+    final navBar = find.byType(BottomNavigationBar);
+    expect(navBar, findsNothing);
+
+    final serviceCenter = tester.getCenter(find.text('服务'));
+    final vehicleCenter = tester.getCenter(find.text('爱车'));
+    final mineCenter = tester.getCenter(find.text('我的'));
+
+    expect(serviceCenter.dx, lessThan(vehicleCenter.dx));
+    expect(vehicleCenter.dx, lessThan(mineCenter.dx));
+  });
+
+  testWidgets('Service tab opens aggregate service hub', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const TailgBleApp());
+    await tester.pump();
+
+    await tester.tap(find.text('服务'));
     await tester.pumpAndSettle();
 
-    expect(find.text('消息中心'), findsOneWidget);
+    expect(find.text('服务中心'), findsOneWidget);
+    for (final label in ['车辆定位', '历史轨迹', '电子围栏', 'NFC钥匙', '车辆设置', '电池服务']) {
+      expect(find.text(label), findsOneWidget);
+    }
   });
 
   testWidgets('Unbound home stays stable on a narrow surface', (

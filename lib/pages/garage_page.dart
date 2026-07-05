@@ -243,13 +243,13 @@ class _VehicleCardState extends State<_VehicleCard> {
                         _MiniActionButton(
                           icon: Icons.location_on_outlined,
                           label: '定位',
-                          onTap: () => homeTabIndex.value = 1,
+                          onTap: () => homeTabIndex.value = 0,
                         ),
                         const SizedBox(width: 12),
                         _MiniActionButton(
                           icon: Icons.sensors_rounded,
                           label: '控车',
-                          onTap: () => homeTabIndex.value = 0,
+                          onTap: () => homeTabIndex.value = 1,
                         ),
                       ],
                     ),
