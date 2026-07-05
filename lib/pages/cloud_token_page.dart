@@ -33,10 +33,11 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
 
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
+    final savedToken = prefs.getString(_prefKey);
     if (!mounted) return;
     setState(() {
-      _savedToken = prefs.getString(_prefKey);
-      if (_savedToken != null) _controller.text = _savedToken!;
+      _savedToken = savedToken;
+      if (savedToken != null) _controller.text = savedToken;
     });
   }
 
