@@ -299,8 +299,9 @@ class OfficialCloudService {
     if (_initialized) return;
     final initializing = _initializing;
     if (initializing != null) return initializing;
-    _initializing = _loadInitialSession(refreshOnSignedIn: refreshOnSignedIn);
-    return _initializing!;
+    final loading = _loadInitialSession(refreshOnSignedIn: refreshOnSignedIn);
+    _initializing = loading;
+    return loading;
   }
 
   Future<void> _loadInitialSession({required bool refreshOnSignedIn}) async {
