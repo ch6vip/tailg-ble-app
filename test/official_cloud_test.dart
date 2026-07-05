@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -244,6 +245,76 @@ void main() {
         configured.defaultHeaders.containsKey('Forward-ServiceIp'),
         isFalse,
       );
+    });
+  });
+
+  group('OfficialCloudApiClient retry policy', () {
+    test('retries 5xx responses for read requests', () async {
+      var requests = 0;
+      final server = await _startOfficialCloudServer((request) async {
+        requests++;
+        if (requests < 3) {
+          await _writeJsonResponse(request, 502, {'msg': 'gateway busy'});
+          return;
+        }
+        await _writeJsonResponse(request, 200, {
+          'code': '200',
+          'data': {'ok': true},
+        });
+      });
+      addTearDown(server.close);
+
+      final client = OfficialCloudApiClient(
+        config: OfficialCloudApiConfig(
+          apiBase: server.apiBase,
+          retryBaseDelay: Duration.zero,
+        ),
+        log: LogService(),
+      );
+      addTearDown(client.dispose);
+
+      final response = await client.request(
+        'app/read',
+        method: 'POST',
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
+      );
+
+      expect(requests, 3);
+      expect(response.statusCode, 200);
+      expect(response.body['data'], {'ok': true});
+      expect(client.lastRequest?.statusCode, 200);
+      expect(client.lastRequest?.success, isTrue);
+    });
+
+    test('does not retry 5xx responses by default', () async {
+      var requests = 0;
+      final server = await _startOfficialCloudServer((request) async {
+        requests++;
+        await _writeJsonResponse(request, 502, {'msg': 'gateway busy'});
+      });
+      addTearDown(server.close);
+
+      final client = OfficialCloudApiClient(
+        config: OfficialCloudApiConfig(
+          apiBase: server.apiBase,
+          retryBaseDelay: Duration.zero,
+        ),
+        log: LogService(),
+      );
+      addTearDown(client.dispose);
+
+      await expectLater(
+        client.request('app/device/cmd/lock', method: 'POST'),
+        throwsA(
+          isA<OfficialCloudApiException>()
+              .having((e) => e.statusCode, 'statusCode', 502)
+              .having((e) => e.message, 'message', 'gateway busy'),
+        ),
+      );
+
+      expect(requests, 1);
+      expect(client.lastRequest?.statusCode, 502);
+      expect(client.lastRequest?.success, isFalse);
     });
   });
 
@@ -1313,6 +1384,44 @@ void main() {
       expect(record.mileageLabel, '604km');
     });
   });
+}
+
+class _OfficialCloudTestServer {
+  final HttpServer _server;
+
+  const _OfficialCloudTestServer(this._server);
+
+  String get apiBase =>
+      'http://${_server.address.host}:${_server.port}/v1/api/';
+
+  Future<void> close() => _server.close(force: true);
+}
+
+Future<_OfficialCloudTestServer> _startOfficialCloudServer(
+  FutureOr<void> Function(HttpRequest request) handler,
+) async {
+  final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+  server.listen((request) async {
+    try {
+      await handler(request);
+    } catch (e) {
+      request.response.statusCode = 500;
+      request.response.write(jsonEncode({'msg': '$e'}));
+      await request.response.close();
+    }
+  });
+  return _OfficialCloudTestServer(server);
+}
+
+Future<void> _writeJsonResponse(
+  HttpRequest request,
+  int statusCode,
+  Map<String, Object?> body,
+) async {
+  request.response.statusCode = statusCode;
+  request.response.headers.contentType = ContentType.json;
+  request.response.write(jsonEncode(body));
+  await request.response.close();
 }
 
 ControlChannelAvailability _availability({

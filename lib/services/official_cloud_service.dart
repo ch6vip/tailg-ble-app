@@ -267,7 +267,7 @@ class OfficialCloudService {
 
   final _log = LogService();
   final _storage = _OfficialCloudStorage();
-  final _apiClient = _OfficialCloudApiClient(
+  final _apiClient = OfficialCloudApiClient(
     config: const OfficialCloudApiConfig(),
     log: LogService(),
   );
@@ -489,6 +489,7 @@ class OfficialCloudService {
         method: 'POST',
         token: token,
         body: {'phoneMode': _apiClient.config.phoneMode},
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
       );
       _ensureSuccess(response.body, fallback: '获取官方车辆失败');
       if (!_isCurrentSession(token)) return;
@@ -585,6 +586,7 @@ class OfficialCloudService {
         'app/mine/batteryInfo',
         method: 'POST',
         token: token,
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
       );
       _ensureSuccess(response.body, fallback: '获取官方电池信息失败');
       if (!_isCurrentSession(token)) return;
@@ -672,6 +674,7 @@ class OfficialCloudService {
         method: 'POST',
         token: token,
         body: {'carId': vehicle.carId},
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
       );
       _ensureSuccess(response.body, fallback: '获取官方停车位置失败');
       if (!_isCurrentSession(token)) return;
@@ -759,6 +762,7 @@ class OfficialCloudService {
         method: 'POST',
         token: token,
         body: {'carId': vehicle.carId},
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
       );
       _ensureSuccess(response.body, fallback: '获取官方围栏失败');
       if (!_isCurrentSession(token)) return;
@@ -866,6 +870,7 @@ class OfficialCloudService {
         method: 'POST',
         token: token,
         body: {'queryMonth': queryMonth, 'frame': vehicle.frame, 'uid': userId},
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
       );
       _ensureSuccess(response.body, fallback: '获取官方历史轨迹失败');
       if (!_isCurrentSession(token)) return;
@@ -917,6 +922,7 @@ class OfficialCloudService {
         method: 'POST',
         token: token,
         body: {'deviceTravelId': travelId},
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
       );
       _ensureSuccess(response.body, fallback: '获取官方轨迹详情失败');
       if (!_isCurrentSession(token)) return;

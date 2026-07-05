@@ -49,16 +49,35 @@ class OfficialCloudRedactor {
   }
 }
 
-class _OfficialApiResponse {
+class OfficialCloudApiResponse {
   final int statusCode;
   final Map<String, String> headers;
   final Map<String, dynamic> body;
 
-  const _OfficialApiResponse({
+  const OfficialCloudApiResponse({
     required this.statusCode,
     required this.headers,
     required this.body,
   });
+}
+
+class OfficialCloudRetryPolicy {
+  static const transportOnly = OfficialCloudRetryPolicy();
+  static const readRequest = OfficialCloudRetryPolicy(retryServerErrors: true);
+
+  final int maxRetries;
+  final bool retryServerErrors;
+
+  const OfficialCloudRetryPolicy({
+    this.maxRetries = 2,
+    this.retryServerErrors = false,
+  }) : assert(maxRetries >= 0);
+
+  bool canRetryAttempt(int attempt) => attempt < maxRetries;
+
+  bool shouldRetryStatusCode(int statusCode) {
+    return retryServerErrors && statusCode >= 500 && statusCode < 600;
+  }
 }
 
 class OfficialCloudApiConfig {
@@ -123,7 +142,7 @@ class OfficialCloudApiConfig {
   };
 }
 
-class _OfficialCloudApiClient {
+class OfficialCloudApiClient {
   final OfficialCloudApiConfig config;
   final LogService _log;
   OfficialCloudRequestSummary? _lastRequest;
@@ -132,7 +151,7 @@ class _OfficialCloudApiClient {
   // 重做 TCP+TLS 握手。服务为单例、生命周期与 App 一致。
   HttpClient? _client;
 
-  _OfficialCloudApiClient({required this.config, required LogService log})
+  OfficialCloudApiClient({required this.config, required LogService log})
     : _log = log;
 
   OfficialCloudRequestSummary? get lastRequest => _lastRequest;
@@ -150,16 +169,17 @@ class _OfficialCloudApiClient {
     _client = null;
   }
 
-  Future<_OfficialApiResponse> request(
+  Future<OfficialCloudApiResponse> request(
     String path, {
     required String method,
     String? token,
     Map<String, dynamic>? body,
+    OfficialCloudRetryPolicy retryPolicy =
+        OfficialCloudRetryPolicy.transportOnly,
   }) async {
     final client = _sharedClient;
-    const maxRetries = 2;
 
-    for (var attempt = 0; attempt <= maxRetries; attempt++) {
+    for (var attempt = 0; attempt <= retryPolicy.maxRetries; attempt++) {
       final startedAt = DateTime.now();
       try {
         final uri = config.resolve(path);
@@ -176,10 +196,19 @@ class _OfficialCloudApiClient {
 
         final response = await request.close().timeout(
           config.responseTimeout,
-          onTimeout: () => throw const OfficialCloudApiException('请求超时，请检查网络'),
+          onTimeout: () => throw TimeoutException('请求超时，请检查网络'),
         );
         final text = await response.transform(utf8.decoder).join();
-        final decoded = await _decodeBody(text);
+        final decoded = await _decodeBodyForStatus(
+          text,
+          path: path,
+          method: method,
+          startedAt: startedAt,
+          statusCode: response.statusCode,
+          attempt: attempt,
+          retryPolicy: retryPolicy,
+        );
+        if (decoded == null) continue;
         _recordRequest(
           path: path,
           method: method,
@@ -192,19 +221,39 @@ class _OfficialCloudApiClient {
           if (values.isNotEmpty) headers[name.toLowerCase()] = values.first;
         });
         if (response.statusCode < 200 || response.statusCode >= 300) {
+          final message =
+              decoded['msg']?.toString() ?? '官方接口返回 ${response.statusCode}';
+          if (retryPolicy.shouldRetryStatusCode(response.statusCode) &&
+              retryPolicy.canRetryAttempt(attempt)) {
+            await _delayBeforeRetry(
+              path: path,
+              method: method,
+              attempt: attempt,
+              retryPolicy: retryPolicy,
+              message: message,
+              statusCode: response.statusCode,
+            );
+            continue;
+          }
           throw OfficialCloudApiException(
-            decoded['msg']?.toString() ?? '官方接口返回 ${response.statusCode}',
+            message,
             statusCode: response.statusCode,
           );
         }
-        return _OfficialApiResponse(
+        return OfficialCloudApiResponse(
           statusCode: response.statusCode,
           headers: headers,
           body: decoded,
         );
       } on TimeoutException {
-        if (attempt < maxRetries) {
-          await Future<void>.delayed(config.retryDelayForAttempt(attempt));
+        if (retryPolicy.canRetryAttempt(attempt)) {
+          await _delayBeforeRetry(
+            path: path,
+            method: method,
+            attempt: attempt,
+            retryPolicy: retryPolicy,
+            message: '请求超时，请检查网络',
+          );
           continue;
         }
         _recordRequestFailure(
@@ -214,9 +263,15 @@ class _OfficialCloudApiClient {
           message: '请求超时，请检查网络',
         );
         throw const OfficialCloudApiException('请求超时，请检查网络');
-      } on SocketException {
-        if (attempt < maxRetries) {
-          await Future<void>.delayed(config.retryDelayForAttempt(attempt));
+      } on SocketException catch (e) {
+        if (retryPolicy.canRetryAttempt(attempt)) {
+          await _delayBeforeRetry(
+            path: path,
+            method: method,
+            attempt: attempt,
+            retryPolicy: retryPolicy,
+            message: e.message,
+          );
           continue;
         }
         _recordRequestFailure(
@@ -239,6 +294,59 @@ class _OfficialCloudApiClient {
     }
     // Unreachable — the loop always returns or throws.
     throw StateError('Unreachable');
+  }
+
+  Future<Map<String, dynamic>?> _decodeBodyForStatus(
+    String text, {
+    required String path,
+    required String method,
+    required DateTime startedAt,
+    required int statusCode,
+    required int attempt,
+    required OfficialCloudRetryPolicy retryPolicy,
+  }) async {
+    try {
+      return await _decodeBody(text);
+    } on OfficialCloudApiException catch (e) {
+      if (retryPolicy.shouldRetryStatusCode(statusCode) &&
+          retryPolicy.canRetryAttempt(attempt)) {
+        _recordRequestFailure(
+          path: path,
+          method: method,
+          startedAt: startedAt,
+          message: e.message,
+          statusCode: statusCode,
+        );
+        await _delayBeforeRetry(
+          path: path,
+          method: method,
+          attempt: attempt,
+          retryPolicy: retryPolicy,
+          message: e.message,
+          statusCode: statusCode,
+        );
+        return null;
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _delayBeforeRetry({
+    required String path,
+    required String method,
+    required int attempt,
+    required OfficialCloudRetryPolicy retryPolicy,
+    required String message,
+    int? statusCode,
+  }) async {
+    final safePath = OfficialCloudRedactor.requestPath(path);
+    _log.operation(
+      '官方云接口重试',
+      detail:
+          '$method $safePath attempt=${attempt + 1}/${retryPolicy.maxRetries} status=${statusCode?.toString() ?? 'none'} msg=${_shortMessage(message) ?? 'none'}',
+      level: LogLevel.warning,
+    );
+    await Future<void>.delayed(config.retryDelayForAttempt(attempt));
   }
 
   void _recordRequest({
