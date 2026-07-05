@@ -305,21 +305,27 @@ class _TopIconButton extends StatelessWidget {
       semanticsButton: true,
       semanticsEnabled: onTap != null,
       child: SizedBox(
-        width: 30,
-        height: 30,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Center(
-              child: Image.asset(
-                asset,
-                width: 24,
-                height: 24,
-                errorBuilder: (_, __, ___) =>
-                    Icon(fallback, size: 24, color: AppColors.textPrimary),
-              ),
+        width: AppTouchTargets.min,
+        height: AppTouchTargets.min,
+        child: Center(
+          child: SizedBox(
+            width: 30,
+            height: 30,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Center(
+                  child: Image.asset(
+                    asset,
+                    width: 24,
+                    height: 24,
+                    errorBuilder: (_, __, ___) =>
+                        Icon(fallback, size: 24, color: AppColors.textPrimary),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -501,74 +507,79 @@ class _BleConnectPill extends StatelessWidget {
       semanticsLabel: state.text,
       semanticsButton: true,
       semanticsEnabled: onTap != null,
-      child: Container(
-        height: 33,
-        constraints: const BoxConstraints(minWidth: 92),
-        decoration: BoxDecoration(
-          color: state.fallbackBg,
-          borderRadius: BorderRadius.circular(17),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+      child: SizedBox(
+        height: AppTouchTargets.min,
+        child: Center(
+          child: Container(
+            height: 33,
+            constraints: const BoxConstraints(minWidth: 92),
+            decoration: BoxDecoration(
+              color: state.fallbackBg,
+              borderRadius: BorderRadius.circular(17),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.passthrough,
-          children: [
-            Positioned.fill(
-              child: Image.asset(
-                state.backgroundAsset,
-                fit: BoxFit.fill,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 11),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset(
-                    state.iconAsset,
-                    width: 15,
-                    height: 15,
-                    errorBuilder: (_, __, ___) => Icon(
-                      state.connected
-                          ? Icons.bluetooth_connected
-                          : Icons.bluetooth,
-                      size: 15,
-                      color: state.iconColor,
-                    ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              fit: StackFit.passthrough,
+              children: [
+                Positioned.fill(
+                  child: Image.asset(
+                    state.backgroundAsset,
+                    fit: BoxFit.fill,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                   ),
-                  const SizedBox(width: 4),
-                  if ((variant ?? '').trim().isNotEmpty) ...[
-                    Text(
-                      variant!.trim(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0,
-                        color: state.textColor.withValues(alpha: 0.82),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 11),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset(
+                        state.iconAsset,
+                        width: 15,
+                        height: 15,
+                        errorBuilder: (_, __, ___) => Icon(
+                          state.connected
+                              ? Icons.bluetooth_connected
+                              : Icons.bluetooth,
+                          size: 15,
+                          color: state.iconColor,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 3),
-                  ],
-                  Text(
-                    state.text,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0,
-                      color: state.textColor,
-                    ),
+                      const SizedBox(width: 4),
+                      if ((variant ?? '').trim().isNotEmpty) ...[
+                        Text(
+                          variant!.trim(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0,
+                            color: state.textColor.withValues(alpha: 0.82),
+                          ),
+                        ),
+                        const SizedBox(width: 3),
+                      ],
+                      Text(
+                        state.text,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0,
+                          color: state.textColor,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

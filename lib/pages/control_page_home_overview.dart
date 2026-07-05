@@ -371,6 +371,11 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                 online: cloudVehicle?.online ?? true,
                 connectionLabel: connectionLabel,
                 connectionVariant: connectionProtocol,
+                onVehicleSwitch: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const OfficialCloudPage(),
+                  ),
+                ),
                 onConnect: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => const AddVehiclePage(),

@@ -449,6 +449,10 @@ class _ServiceSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    void showUnavailable(String label) {
+      AppSnack.info(context, '$label暂未开放');
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -464,7 +468,7 @@ class _ServiceSection extends StatelessWidget {
                   label: '我的订单',
                   iconBg: AppColors.accentSky.withValues(alpha: 0.14),
                   iconColor: AppColors.accentSky,
-                  onTap: () {},
+                  onTap: () => showUnavailable('我的订单'),
                 ),
                 _DividerTile(),
                 _SettingTile(
@@ -473,7 +477,7 @@ class _ServiceSection extends StatelessWidget {
                   iconBg: AppColors.energyGreen.withValues(alpha: 0.14),
                   iconColor: AppColors.primaryDark,
                   value: '附近 3 家门店',
-                  onTap: () {},
+                  onTap: () => showUnavailable('保养预约'),
                 ),
                 _DividerTile(),
                 _SettingTile(
@@ -481,7 +485,7 @@ class _ServiceSection extends StatelessWidget {
                   label: '保险服务',
                   iconBg: AppColors.accentViolet.withValues(alpha: 0.14),
                   iconColor: AppColors.accentViolet,
-                  onTap: () {},
+                  onTap: () => showUnavailable('保险服务'),
                 ),
                 _DividerTile(),
                 _SettingTile(
@@ -490,7 +494,7 @@ class _ServiceSection extends StatelessWidget {
                   iconBg: AppColors.accentAmber.withValues(alpha: 0.14),
                   iconColor: AppColors.accentAmber,
                   badge: '3 张可用',
-                  onTap: () {},
+                  onTap: () => showUnavailable('优惠券'),
                 ),
               ],
             ),
@@ -508,6 +512,10 @@ class _SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    void showUnavailable(String label) {
+      AppSnack.info(context, '$label暂未开放');
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -536,7 +544,7 @@ class _SettingsSection extends StatelessWidget {
                   label: '隐私与安全',
                   iconBg: AppColors.surfaceContainerLow,
                   iconColor: AppColors.textSecondary,
-                  onTap: () {},
+                  onTap: () => showUnavailable('隐私与安全'),
                 ),
                 _DividerTile(),
                 _SettingTile(
@@ -558,7 +566,7 @@ class _SettingsSection extends StatelessWidget {
                   label: '帮助与反馈',
                   iconBg: AppColors.surfaceContainerLow,
                   iconColor: AppColors.textSecondary,
-                  onTap: () {},
+                  onTap: () => showUnavailable('帮助与反馈'),
                 ),
                 _DividerTile(),
                 _SettingTile(

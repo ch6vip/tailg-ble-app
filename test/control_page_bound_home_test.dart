@@ -8,6 +8,7 @@ import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
+import 'package:tailg_ble_app/pages/official_cloud_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
@@ -254,6 +255,32 @@ void main() {
     expect(find.text('台铃充电站'), findsOneWidget);
   });
 
+  testWidgets('conditional official feature cards show unavailable feedback', (
+    tester,
+  ) async {
+    final vehicle = OfficialVehicle.fromJson({
+      'imei': 'IMEI_MAIN',
+      'carId': 'feature-feedback-bike',
+      'btmac': 'AA:BB:CC:DD:EE:FF',
+      'navigationProjection': '1',
+      'cameraService': true,
+      'smartMeter': {'enabled': true},
+      'chargingStation': 'true',
+    });
+
+    await pumpBoundHome(
+      tester,
+      size: const Size(430, 3200),
+      officialVehicle: vehicle,
+    );
+
+    for (final label in ['导航投屏', '摄像头', '智能仪表', '台铃充电站']) {
+      await tester.tap(find.bySemanticsLabel(label));
+      await tester.pump();
+      expect(find.text('$label暂未开放'), findsOneWidget);
+    }
+  });
+
   testWidgets('official control card exposes default quick actions', (
     tester,
   ) async {
@@ -268,6 +295,37 @@ void main() {
     final edit = find.bySemanticsLabel('编辑快捷功能');
     expect(edit, findsOneWidget);
     expectMinTouchTargetHeight(tester, edit);
+  });
+
+  testWidgets('official hero vehicle switch opens vehicle center', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await pumpBoundHome(tester, size: const Size(430, 2200));
+
+      const vehicleSwitchLabel = '测试车辆，切换车辆';
+      final vehicleSwitch = find.bySemanticsLabel(vehicleSwitchLabel);
+      expect(vehicleSwitch, findsOneWidget);
+      expect(
+        tester.getSemantics(vehicleSwitch),
+        matchesSemantics(
+          label: vehicleSwitchLabel,
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel(vehicleSwitchLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(OfficialCloudPage), findsOneWidget);
+      expect(find.text('我的车辆'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('official manual mode control keeps a 44dp touch target', (

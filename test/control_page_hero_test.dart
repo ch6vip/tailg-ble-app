@@ -15,6 +15,8 @@ void main() {
     final semantics = tester.ensureSemantics();
     var vehicleTapped = false;
     var connectTapped = false;
+    var detailTapped = false;
+    var messageTapped = false;
 
     try {
       await tester.pumpWidget(
@@ -26,6 +28,8 @@ void main() {
               vehicleName: '测试车辆',
               onVehicleSwitch: () => vehicleTapped = true,
               onConnect: () => connectTapped = true,
+              onDetail: () => detailTapped = true,
+              onMessage: () => messageTapped = true,
             ),
           ),
         ),
@@ -62,6 +66,7 @@ void main() {
       const connectLabel = '点击连接';
       final connectAction = find.bySemanticsLabel(connectLabel);
       expect(connectAction, findsOneWidget);
+      expectMinTouchTargetHeight(tester, connectAction);
       expect(
         find.byKey(const ValueKey('control-hero-message-dot')),
         findsNothing,
@@ -84,11 +89,31 @@ void main() {
         ),
       );
 
+      for (final label in ['车辆详情', '消息']) {
+        final action = find.bySemanticsLabel(label);
+        expect(action, findsOneWidget);
+        expectMinTouchTargetHeight(tester, action);
+        expect(
+          tester.getSemantics(action),
+          matchesSemantics(
+            label: label,
+            isButton: true,
+            hasEnabledState: true,
+            isEnabled: true,
+            hasTapAction: true,
+          ),
+        );
+      }
+
       tester.semantics.tap(find.semantics.byLabel(vehicleLabel));
       tester.semantics.tap(find.semantics.byLabel(connectLabel));
+      tester.semantics.tap(find.semantics.byLabel('车辆详情'));
+      tester.semantics.tap(find.semantics.byLabel('消息'));
 
       expect(vehicleTapped, isTrue);
       expect(connectTapped, isTrue);
+      expect(detailTapped, isTrue);
+      expect(messageTapped, isTrue);
     } finally {
       semantics.dispose();
     }

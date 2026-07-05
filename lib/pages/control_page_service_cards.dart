@@ -12,6 +12,10 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
     Navigator.push(context, MaterialPageRoute<void>(builder: (_) => page));
   }
 
+  void _showUnavailable(BuildContext context, String label) {
+    AppSnack.info(context, '$label暂未开放');
+  }
+
   @override
   Widget build(BuildContext context) {
     final cloudState = officialCloudService.state;
@@ -33,7 +37,9 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
           ),
           if (showNavigationProjection) ...[
             const SizedBox(height: 10),
-            _OfficialNavigationProjectionCard(onTap: () {}),
+            _OfficialNavigationProjectionCard(
+              onTap: () => _showUnavailable(context, '导航投屏'),
+            ),
           ],
           if (showCamera) ...[
             const SizedBox(height: 10),
@@ -41,12 +47,14 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
               title: '摄像头',
               subtitle: '记录车辆周围环境',
               icon: Icons.videocam_outlined,
-              onTap: () {},
+              onTap: () => _showUnavailable(context, '摄像头'),
             ),
           ],
           if (showSmartMeter) ...[
             const SizedBox(height: 10),
-            _OfficialSmartMeterCard(onTap: () {}),
+            _OfficialSmartMeterCard(
+              onTap: () => _showUnavailable(context, '智能仪表'),
+            ),
           ],
           const SizedBox(height: 10),
           _OfficialHistoryCard(
@@ -94,7 +102,7 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
               title: '台铃充电站',
               subtitle: '查看附近可用充电站',
               icon: Icons.electrical_services_outlined,
-              onTap: () {},
+              onTap: () => _showUnavailable(context, '台铃充电站'),
             ),
           ],
         ],

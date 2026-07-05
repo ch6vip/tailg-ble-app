@@ -122,6 +122,48 @@ void main() {
     }
   });
 
+  testWidgets('profile placeholder tiles show info snack', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      setTestViewSize(tester, const Size(430, 1800));
+
+      await tester.pumpWidget(const TestApp(home: ProfilePage()));
+      await tester.pump();
+
+      const unavailableTiles = {
+        '我的订单': '我的订单',
+        '保养预约，附近 3 家门店': '保养预约',
+        '保险服务': '保险服务',
+        '优惠券，3 张可用': '优惠券',
+        '隐私与安全': '隐私与安全',
+        '帮助与反馈': '帮助与反馈',
+      };
+
+      for (final entry in unavailableTiles.entries) {
+        final tile = find.bySemanticsLabel(entry.key);
+        expect(tile, findsOneWidget);
+        expect(
+          tester.getSemantics(tile),
+          matchesSemantics(
+            label: entry.key,
+            isButton: true,
+            hasEnabledState: true,
+            isEnabled: true,
+            hasTapAction: true,
+          ),
+        );
+
+        tester.semantics.tap(find.semantics.byLabel(entry.key));
+        await tester.pump();
+
+        expect(find.text('${entry.value}暂未开放'), findsOneWidget);
+        expect(snackIcon(Icons.info_outline), findsOneWidget);
+      }
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('profile data metrics avoid negative letter spacing', (
     tester,
   ) async {
