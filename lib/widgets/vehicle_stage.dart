@@ -2,6 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 
+const _vehicleFrameColor = Color(0xFF2A313D);
+const _vehicleBodyLight = Color(0xFFDFE5EC);
+const _vehicleTireShadow = Color(0xFFC2CAD4);
+const _vehicleAccentDark = Color(0xFF3A434F);
+
 /// Fallback vehicle illustration used only when the official asset cannot be
 /// loaded.
 class VehicleStagePainter extends CustomPainter {
@@ -50,7 +55,7 @@ class VehicleStagePainter extends CustomPainter {
         style: TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.w900,
-          color: const Color(0xFFDFE5EC),
+          color: _vehicleBodyLight,
           letterSpacing: 8,
           fontFamily: 'Arial',
         ),
@@ -65,12 +70,12 @@ class VehicleStagePainter extends CustomPainter {
     final bodyGradient = const LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
-      colors: [Color(0xFFFCFDFE), Color(0xFFDFE5EC)],
+      colors: [Color(0xFFFCFDFE), _vehicleBodyLight],
     );
     final tireGradient = const LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
-      colors: [Color(0xFFE3E8EF), Color(0xFFC2CAD4)],
+      colors: [Color(0xFFE3E8EF), _vehicleTireShadow],
     );
     final enGradient = const LinearGradient(
       begin: Alignment.centerLeft,
@@ -80,7 +85,7 @@ class VehicleStagePainter extends CustomPainter {
 
     // Body stroke color
     final bodyStroke = Paint()
-      ..color = const Color(0xFF2A313D)
+      ..color = _vehicleFrameColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4.5
       ..strokeJoin = StrokeJoin.round;
@@ -99,7 +104,7 @@ class VehicleStagePainter extends CustomPainter {
     canvas.drawPath(
       _cubicPath(46, 116, 80, 80, 118, 104),
       Paint()
-        ..color = const Color(0xFFC2CAD4)
+        ..color = _vehicleTireShadow
         ..style = PaintingStyle.stroke
         ..strokeWidth = 9
         ..strokeCap = StrokeCap.round,
@@ -109,7 +114,7 @@ class VehicleStagePainter extends CustomPainter {
     canvas.drawPath(
       _cubicPath(232, 112, 266, 80, 304, 110),
       Paint()
-        ..color = const Color(0xFFC2CAD4)
+        ..color = _vehicleTireShadow
         ..style = PaintingStyle.stroke
         ..strokeWidth = 9
         ..strokeCap = StrokeCap.round,
@@ -173,7 +178,7 @@ class VehicleStagePainter extends CustomPainter {
       const Offset(150, 124),
       const Offset(214, 124),
       Paint()
-        ..color = const Color(0xFF2A313D)
+        ..color = _vehicleFrameColor
         ..strokeWidth = 9
         ..strokeCap = StrokeCap.round,
     );
@@ -181,7 +186,7 @@ class VehicleStagePainter extends CustomPainter {
       const Offset(156, 124),
       const Offset(210, 124),
       Paint()
-        ..color = const Color(0xFF3A434F)
+        ..color = _vehicleAccentDark
         ..strokeWidth = 3
         ..strokeCap = StrokeCap.round
         ..colorFilter = const ColorFilter.mode(
@@ -214,7 +219,7 @@ class VehicleStagePainter extends CustomPainter {
       ..lineTo(70, 73)
       ..quadraticBezierTo(62, 73, 60, 70)
       ..close();
-    canvas.drawPath(seat, Paint()..color = const Color(0xFF2A313D));
+    canvas.drawPath(seat, Paint()..color = _vehicleFrameColor);
     // Seat stitch line
     canvas.drawLine(
       const Offset(74, 58),
@@ -230,7 +235,7 @@ class VehicleStagePainter extends CustomPainter {
       const Offset(258, 60),
       const Offset(278, 32),
       Paint()
-        ..color = const Color(0xFF2A313D)
+        ..color = _vehicleFrameColor
         ..strokeWidth = 6.5
         ..strokeCap = StrokeCap.round,
     );
@@ -238,7 +243,7 @@ class VehicleStagePainter extends CustomPainter {
       const Offset(266, 32),
       const Offset(296, 27),
       Paint()
-        ..color = const Color(0xFF2A313D)
+        ..color = _vehicleFrameColor
         ..strokeWidth = 8
         ..strokeCap = StrokeCap.round,
     );
@@ -266,7 +271,7 @@ class VehicleStagePainter extends CustomPainter {
       ..lineTo(263, 116)
       ..lineTo(241, 110)
       ..close();
-    canvas.drawPath(headlight, Paint()..color = const Color(0xFF3A434F));
+    canvas.drawPath(headlight, Paint()..color = _vehicleAccentDark);
     canvas.drawOval(
       const Rect.fromLTWH(249, 100, 10, 11),
       Paint()..color = const Color(0xFFFCE7B8),
@@ -285,7 +290,7 @@ class VehicleStagePainter extends CustomPainter {
       Offset(cx, cy),
       30,
       Paint()
-        ..color = const Color(0xFF2A313D)
+        ..color = _vehicleFrameColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = 5.5,
     );
@@ -304,11 +309,7 @@ class VehicleStagePainter extends CustomPainter {
         ..strokeWidth = 2,
     );
     // Axle
-    canvas.drawCircle(
-      Offset(cx, cy),
-      3.6,
-      Paint()..color = const Color(0xFF2A313D),
-    );
+    canvas.drawCircle(Offset(cx, cy), 3.6, Paint()..color = _vehicleFrameColor);
     // Spokes
     final sp = Paint()
       ..color = const Color(0xFFB6BEC9)
