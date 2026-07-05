@@ -328,7 +328,10 @@ class BmsField {
 
   const BmsField(this.label, this.value, {this.unit, required this.source});
 
-  bool get hasValue => value != null && value!.trim().isNotEmpty;
+  bool get hasValue {
+    final text = value?.trim();
+    return text != null && text.isNotEmpty;
+  }
 
   String get displayValue {
     if (!hasValue) return '待读取';
