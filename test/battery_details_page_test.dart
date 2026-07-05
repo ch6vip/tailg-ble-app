@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
+import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/battery_details_page.dart';
+import 'package:tailg_ble_app/services/official_cloud_service.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
@@ -43,5 +45,27 @@ void main() {
     );
     expect(correctionAction, findsOneWidget);
     expectMinTouchTargetHeight(tester, correctionAction);
+  });
+
+  testWidgets('official battery metrics render voltage and temperature', (
+    tester,
+  ) async {
+    setTestViewSize(tester, const Size(430, 1200));
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        batteryInfo: OfficialBatteryInfo.fromJson({
+          'voltage': 52.4,
+          'temperature': 31.2,
+        }),
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: BatteryDetailsPage()));
+    await tester.pump();
+
+    expect(find.text('52.4V'), findsWidgets);
+    expect(find.text('31.2°C'), findsWidgets);
   });
 }

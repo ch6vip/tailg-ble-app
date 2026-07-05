@@ -313,7 +313,8 @@ class _BatteryGlyph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final value = percent == null ? 0.0 : percent!.clamp(0, 100) / 100;
+    final percent = this.percent;
+    final value = percent == null ? 0.0 : percent.clamp(0, 100) / 100;
     return CustomPaint(
       size: const Size(148, 74),
       painter: _BatteryReplicaPainter(value: value, color: color),
@@ -474,15 +475,11 @@ class _OfficialSummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bms = snapshot.bms;
+    final voltage = snapshot.voltage;
     final items = [
       _Metric('预估里程', _withUnit(snapshot.remainingMileage, 'km')),
       _Metric('总里程', _withUnit(snapshot.totalMileage, 'km')),
-      _Metric(
-        '电压',
-        snapshot.voltage == null
-            ? '待读取'
-            : '${snapshot.voltage!.toStringAsFixed(1)}V',
-      ),
+      _Metric('电压', voltage == null ? '待读取' : '${voltage.toStringAsFixed(1)}V'),
       _Metric('电池容量', bms.batteryCapacity ?? '待读取'),
     ];
     return Container(
@@ -520,6 +517,7 @@ class _OfficialMetricGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final temperature = snapshot.temperature;
     final items = [
       _Metric(
         '今日耗电',
@@ -529,9 +527,7 @@ class _OfficialMetricGrid extends StatelessWidget {
       _Metric('循环次数', snapshot.loopCount ?? '待读取', icon: Icons.autorenew),
       _Metric(
         '当前温度',
-        snapshot.temperature == null
-            ? '待读取'
-            : '${snapshot.temperature!.toStringAsFixed(1)}°C',
+        temperature == null ? '待读取' : '${temperature.toStringAsFixed(1)}°C',
         icon: Icons.thermostat,
       ),
       _Metric(
