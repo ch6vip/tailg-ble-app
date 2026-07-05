@@ -28,8 +28,8 @@ class NfcKeyRecord {
   factory NfcKeyRecord.fromJson(Map<String, dynamic> json) {
     return NfcKeyRecord(
       id: parsePersistedString(json['id']),
-      name: parsePersistedString(json['name']).ifEmpty('未命名钥匙'),
-      type: parsePersistedString(json['type']).ifEmpty('手机'),
+      name: parsePersistedStringOr(json['name'], '未命名钥匙'),
+      type: parsePersistedStringOr(json['type'], '手机'),
       createdAt: parsePersistedDate(json['createdAt']) ?? DateTime.now(),
     );
   }
@@ -101,7 +101,7 @@ class ShareMemberRecord {
   factory ShareMemberRecord.fromJson(Map<String, dynamic> json) {
     return ShareMemberRecord(
       id: parsePersistedString(json['id']),
-      name: parsePersistedString(json['name']).ifEmpty('未命名成员'),
+      name: parsePersistedStringOr(json['name'], '未命名成员'),
       phone: parsePersistedString(json['phone']),
       createdAt: parsePersistedDate(json['createdAt']) ?? DateTime.now(),
     );
@@ -234,8 +234,4 @@ class ReplicaFeatureStore {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(key, jsonEncode(records.toList()));
   }
-}
-
-extension _EmptyStringFallback on String {
-  String ifEmpty(String fallback) => isEmpty ? fallback : this;
 }

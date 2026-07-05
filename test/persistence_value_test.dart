@@ -8,6 +8,14 @@ void main() {
     expect(parsePersistedString(123), '123');
   });
 
+  test('parsePersistedStringOr uses fallback for blank values', () {
+    expect(parsePersistedStringOr(null, 'fallback'), 'fallback');
+    expect(parsePersistedStringOr('', 'fallback'), 'fallback');
+    expect(parsePersistedStringOr('   ', 'fallback'), 'fallback');
+    expect(parsePersistedStringOr('  bike  ', 'fallback'), 'bike');
+    expect(parsePersistedStringOr(123, 'fallback'), '123');
+  });
+
   test('parsePersistedDouble preserves previous numeric parsing', () {
     expect(parsePersistedDouble(12), 12.0);
     expect(parsePersistedDouble(12.5), 12.5);

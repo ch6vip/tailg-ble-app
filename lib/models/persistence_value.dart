@@ -2,6 +2,11 @@ String parsePersistedString(Object? value) {
   return value?.toString().trim() ?? '';
 }
 
+String parsePersistedStringOr(Object? value, String fallback) {
+  final parsed = parsePersistedString(value);
+  return parsed.isEmpty ? fallback : parsed;
+}
+
 double? parsePersistedDouble(Object? value) {
   if (value is num) return value.toDouble();
   if (value is String) return double.tryParse(value.trim());
