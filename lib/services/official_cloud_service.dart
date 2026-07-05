@@ -821,7 +821,9 @@ class OfficialCloudService {
       _emit();
       return;
     }
-    final queryMonth = month ?? _state.travelMonth.ifEmpty(_currentMonth);
+    final queryMonth =
+        month ??
+        (_state.travelMonth.isEmpty ? _currentMonth() : _state.travelMonth);
     final refreshKey = 'travel:${vehicle.key}:$queryMonth';
     if (silent &&
         _state.travelMonth == queryMonth &&
@@ -1269,8 +1271,4 @@ class OfficialCloudService {
     _initialized = state.initialized;
     _emit();
   }
-}
-
-extension on String {
-  String ifEmpty(String Function() fallback) => isEmpty ? fallback() : this;
 }
