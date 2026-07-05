@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
+import '../ble/hex.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
@@ -281,7 +282,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                       ),
                                     ),
                                     Text(
-                                      '原始码: 0x${_rawFaultByte!.toRadixString(16).padLeft(2, '0').toUpperCase()}',
+                                      '原始码: 0x${intToHex2(_rawFaultByte!)}',
                                       style: AppTextStyles.smallText,
                                     ),
                                   ],
@@ -357,7 +358,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                 style: const TextStyle(fontSize: 13),
                               ),
                               subtitle: Text(
-                                '0x${r.rawByte.toRadixString(16).padLeft(2, '0').toUpperCase()}',
+                                '0x${intToHex2(r.rawByte)}',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: AppColors.textTertiary,
