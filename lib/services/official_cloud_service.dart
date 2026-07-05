@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../ble/constants.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
+import 'display_time_formatter.dart';
 import 'log_service.dart';
 import 'sensitive_value_masker.dart';
 import 'vehicle_store.dart';
@@ -1234,9 +1235,7 @@ class OfficialCloudService {
   }
 
   String _currentMonth() {
-    final now = DateTime.now();
-    final month = now.month.toString().padLeft(2, '0');
-    return '${now.year}-$month';
+    return formatMonthText(DateTime.now());
   }
 
   void _emit() {

@@ -12,4 +12,9 @@ void main() {
       '2026-01-02 03:04',
     );
   });
+
+  test('formatMonthText renders padded year-month display text', () {
+    expect(formatMonthText(DateTime(2026, 7)), '2026-07');
+    expect(formatMonthText(DateTime(2026, 1)), '2026-01');
+  });
 }

@@ -163,7 +163,7 @@ class _LocationPageState extends State<LocationPage> {
     final state = officialCloudService.state;
     final current = _parseMonth(state.travelMonth) ?? DateTime.now();
     final next = DateTime(current.year, current.month + delta);
-    await _refreshTravelHistory(month: _monthText(next));
+    await _refreshTravelHistory(month: formatMonthText(next));
   }
 
   Future<void> _refreshFenceData() async {
@@ -1255,6 +1255,3 @@ DateTime? _parseMonth(String value) {
   if (year == null || month == null || month < 1 || month > 12) return null;
   return DateTime(year, month);
 }
-
-String _monthText(DateTime value) =>
-    '${value.year}-${value.month.toString().padLeft(2, '0')}';

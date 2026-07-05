@@ -3,4 +3,8 @@ String formatDateMinuteText(DateTime time) {
       '${_twoDigits(time.hour)}:${_twoDigits(time.minute)}';
 }
 
+String formatMonthText(DateTime time) {
+  return '${time.year}-${_twoDigits(time.month)}';
+}
+
 String _twoDigits(int value) => value.toString().padLeft(2, '0');
