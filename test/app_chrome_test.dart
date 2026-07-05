@@ -82,4 +82,21 @@ void main() {
       semantics.dispose();
     }
   });
+
+  testWidgets('AppEmptyState renders optional subtitle', (tester) async {
+    await tester.pumpWidget(
+      const TestApp(
+        home: Scaffold(
+          body: AppEmptyState(
+            icon: Icons.inbox_outlined,
+            title: '暂无记录',
+            subtitle: '车辆连接后会自动显示',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('暂无记录'), findsOneWidget);
+    expect(find.text('车辆连接后会自动显示'), findsOneWidget);
+  });
 }

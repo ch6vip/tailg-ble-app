@@ -104,6 +104,7 @@ class AppHeaderAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tooltip = this.tooltip;
     Widget button = AppPressable(
       onTap: onTap,
       enabled: onTap != null,
@@ -125,7 +126,7 @@ class AppHeaderAction extends StatelessWidget {
     );
     if (tooltip != null) {
       button = Tooltip(
-        message: tooltip!,
+        message: tooltip,
         excludeFromSemantics: true,
         child: button,
       );
@@ -280,6 +281,7 @@ class AppEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final subtitle = this.subtitle;
     return Padding(
       padding: padding,
       child: Column(
@@ -309,7 +311,7 @@ class AppEmptyState extends StatelessWidget {
           if (subtitle != null) ...[
             const SizedBox(height: 6),
             Text(
-              subtitle!,
+              subtitle,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 12,
