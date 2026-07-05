@@ -1098,10 +1098,12 @@ class _MineListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final value = this.value;
+    final badge = this.badge;
     final semanticsLabel = [
       title,
-      if (value != null && value!.isNotEmpty) value!,
-      if (badge != null && badge!.isNotEmpty) badge!,
+      if (value != null && value.isNotEmpty) value,
+      if (badge != null && badge.isNotEmpty) badge,
     ].join('，');
 
     return AppPressable(
@@ -1138,7 +1140,7 @@ class _MineListTile extends StatelessWidget {
               ),
               if (value != null) ...[
                 Text(
-                  value!,
+                  value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -1160,7 +1162,7 @@ class _MineListTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadii.pill),
                   ),
                   child: Text(
-                    badge!,
+                    badge,
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
