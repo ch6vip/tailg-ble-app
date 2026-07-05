@@ -335,7 +335,8 @@ class BmsField {
   }
 
   String get displayValue {
-    if (!hasValue) return '待读取';
-    return unit == null ? value! : '$value$unit';
+    final text = value;
+    if (text == null || text.trim().isEmpty) return '待读取';
+    return unit == null ? text : '$text$unit';
   }
 }
