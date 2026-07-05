@@ -116,12 +116,16 @@ class LogService {
         .replaceAllMapped(_sensitiveKeyValuePattern, (match) {
           return '${match.group(1)}${_mask(match.group(2) ?? '')}${match.group(3)}';
         })
-        .replaceAllMapped(_phonePattern, (match) => _mask(match.group(0)!))
-        .replaceAllMapped(_imeiPattern, (match) => _mask(match.group(0)!));
+        .replaceAllMapped(_phonePattern, _maskMatch)
+        .replaceAllMapped(_imeiPattern, _maskMatch);
   }
 
   String _mask(String value) {
     return SensitiveValueMasker.compact(value);
+  }
+
+  String _maskMatch(Match match) {
+    return _mask(match.group(0) ?? '');
   }
 
   void _add(LogEntry entry) {
