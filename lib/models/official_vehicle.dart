@@ -510,22 +510,22 @@ class OfficialBatteryInfo {
   });
 
   factory OfficialBatteryInfo.fromJson(Map<String, dynamic> json) {
-    final dumpEnergyPercent = _cleanBatteryText(json['dumpEnergyPercent']);
+    final dumpEnergyPercent = _clean(json['dumpEnergyPercent']);
     return OfficialBatteryInfo(
       raw: Map<String, dynamic>.from(json),
       dumpEnergyPercent: dumpEnergyPercent ?? '',
       dumpEnergyPercentLabel:
-          _cleanBatteryText(json['dumpEnergyPercentLabel']) ??
+          _clean(json['dumpEnergyPercentLabel']) ??
           (dumpEnergyPercent == null ? null : '$dumpEnergyPercent%') ??
           '',
-      remainingMileage: _cleanBatteryText(json['remainingMileage']) ?? '',
-      mileage: _cleanBatteryText(json['mileage']) ?? '',
-      capacitance: _cleanBatteryText(json['capacitance']) ?? '',
-      consumePowerPercent: _cleanBatteryText(json['consumePowerPercent']) ?? '',
-      loopCount: _cleanBatteryText(json['loopCount']) ?? '',
-      temperature: _cleanBatteryText(json['temperature']) ?? '',
-      batteryScore: _cleanBatteryText(json['batteryScore']) ?? '',
-      voltage: _cleanBatteryText(json['voltage']) ?? '',
+      remainingMileage: _clean(json['remainingMileage']) ?? '',
+      mileage: _clean(json['mileage']) ?? '',
+      capacitance: _clean(json['capacitance']) ?? '',
+      consumePowerPercent: _clean(json['consumePowerPercent']) ?? '',
+      loopCount: _clean(json['loopCount']) ?? '',
+      temperature: _clean(json['temperature']) ?? '',
+      batteryScore: _clean(json['batteryScore']) ?? '',
+      voltage: _clean(json['voltage']) ?? '',
     );
   }
 
@@ -539,8 +539,6 @@ class OfficialBatteryInfo {
       temperature.isNotEmpty ||
       batteryScore.isNotEmpty ||
       voltage.isNotEmpty;
-
-  static String? _cleanBatteryText(Object? value) => _clean(value);
 }
 
 String? _clean(Object? value) {
