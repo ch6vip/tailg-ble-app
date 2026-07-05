@@ -192,7 +192,8 @@ class BatterySnapshot {
     if (cleaned == null) return null;
     final match = _numberPattern.firstMatch(cleaned);
     if (match == null) return null;
-    return double.tryParse(match.group(0)!);
+    final text = match.group(0);
+    return text == null ? null : double.tryParse(text);
   }
 
   static String? _firstText(List<String?> values) {
