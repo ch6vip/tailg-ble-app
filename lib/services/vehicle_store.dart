@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/persistence_value.dart';
 import '../models/vehicle_profile.dart';
 import 'log_service.dart';
 
@@ -370,8 +371,7 @@ class VehicleStore {
 
   Future<int?> _readSecureInt(String key) async {
     final raw = await _secureStorage.read(key: key);
-    if (raw == null || raw.trim().isEmpty) return null;
-    return int.tryParse(raw.trim());
+    return parsePersistedInt(raw);
   }
 
   String _securePasswordKey(String vehicleId) {
