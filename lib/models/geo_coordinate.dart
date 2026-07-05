@@ -1,3 +1,7 @@
+String formatCoordinateText(double latitude, double longitude) {
+  return '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
+}
+
 bool isZeroCoordinate(
   double latitude,
   double longitude, {

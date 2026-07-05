@@ -427,7 +427,7 @@ class _LocationSummary {
     final lat = latitude;
     final lng = longitude;
     if (lat == null || lng == null) return '';
-    return '${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}';
+    return formatCoordinateText(lat, lng);
   }
 
   String get displayText {

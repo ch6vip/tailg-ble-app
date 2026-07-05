@@ -2,6 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/models/geo_coordinate.dart';
 
 void main() {
+  test('formatCoordinateText renders six decimal coordinate text', () {
+    expect(formatCoordinateText(31.2304, 121.4737), '31.230400, 121.473700');
+    expect(formatCoordinateText(-0.1, 0), '-0.100000, 0.000000');
+  });
+
   test('isZeroCoordinate defaults to exact zero matching', () {
     expect(isZeroCoordinate(0, 0), isTrue);
     expect(isZeroCoordinate(0.0000005, 0), isFalse);

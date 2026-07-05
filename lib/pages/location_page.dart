@@ -1236,8 +1236,7 @@ class _ResolvedLocation {
     required this.source,
   });
 
-  String get coordinateText =>
-      '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
+  String get coordinateText => formatCoordinateText(latitude, longitude);
 }
 
 class _TabItem {

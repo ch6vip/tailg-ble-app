@@ -1,3 +1,4 @@
+import 'geo_coordinate.dart';
 import 'persistence_value.dart';
 
 enum VehicleProtocol {
@@ -30,8 +31,7 @@ class VehicleLocation {
     required this.recordedAt,
   });
 
-  String get coordinateText =>
-      '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
+  String get coordinateText => formatCoordinateText(latitude, longitude);
 
   Map<String, dynamic> toJson() => {
     'latitude': latitude,
