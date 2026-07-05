@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart';
+import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/services/ble_connection_snapshot_guard.dart';
 import 'package:tailg_ble_app/services/auto_connect_service.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
@@ -86,6 +87,26 @@ void main() {
       expect(VehicleStore().vehicles, hasLength(1));
       expect(VehicleStore().defaultVehicle?.id, 'AA:BB:CC:DD:EE:FF');
     });
+
+    test(
+      'saveDevice persists the selected target as the default vehicle',
+      () async {
+        final fixture = BleGuardFixture();
+        addTearDown(fixture.manager.dispose);
+
+        await AutoConnectService().saveDevice(fixture.device);
+
+        final prefs = await SharedPreferences.getInstance();
+        final defaultVehicle = VehicleStore().defaultVehicle;
+        expect(prefs.getString('auto_connect_device_id'), testBleDeviceId);
+        expect(prefs.containsKey('auto_connect_device_name'), isFalse);
+        expect(AutoConnectService().lastDeviceName, isEmpty);
+        expect(defaultVehicle?.id, testBleDeviceId);
+        expect(defaultVehicle?.protocol, VehicleProtocol.auto);
+        expect(defaultVehicle?.displayName, '未命名车辆');
+        expect(defaultVehicle?.lastConnectedAt, isNotNull);
+      },
+    );
   });
 
   group('AutoConnectTargetGuard', () {

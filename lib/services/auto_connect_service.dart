@@ -143,19 +143,21 @@ class AutoConnectService {
   }
 
   Future<void> saveDevice(BluetoothDevice device) async {
-    _lastDeviceId = device.remoteId.toString();
-    _lastDeviceName = device.platformName;
+    final deviceId = device.remoteId.toString();
+    final deviceName = device.platformName;
+    _lastDeviceId = deviceId;
+    _lastDeviceName = deviceName;
     await VehicleStore().upsert(
-      id: _lastDeviceId!,
-      name: _lastDeviceName ?? '未命名车辆',
+      id: deviceId,
+      name: deviceName,
       protocol: VehicleProtocol.auto,
       makeDefault: true,
       lastConnectedAt: DateTime.now(),
     );
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefDeviceId, _lastDeviceId!);
-    if (_lastDeviceName != null && _lastDeviceName!.isNotEmpty) {
-      await prefs.setString(_prefDeviceName, _lastDeviceName!);
+    await prefs.setString(_prefDeviceId, deviceId);
+    if (deviceName.isNotEmpty) {
+      await prefs.setString(_prefDeviceName, deviceName);
     }
   }
 
