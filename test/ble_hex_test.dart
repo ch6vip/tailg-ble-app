@@ -12,6 +12,17 @@ void main() {
     expect(bytesToSpacedHex([0, 10, 255]), '00 0a ff');
   });
 
+  test('intToHex2Lower renders lowercase two digit byte text', () {
+    expect(intToHex2Lower(0), '00');
+    expect(intToHex2Lower(10), '0a');
+    expect(intToHex2Lower(255), 'ff');
+  });
+
+  test('intToHex2Lower masks values to one byte', () {
+    expect(intToHex2Lower(0x123), '23');
+    expect(intToHex2Lower(-1), 'ff');
+  });
+
   test('intToHex2 renders uppercase two digit byte text', () {
     expect(intToHex2(0), '00');
     expect(intToHex2(10), '0A');

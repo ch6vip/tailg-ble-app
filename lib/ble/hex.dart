@@ -22,13 +22,15 @@ String bytesToHex(Uint8List bytes) {
 }
 
 String bytesToSpacedHex(Iterable<int> bytes) {
-  return bytes
-      .map((b) => (b & 0xff).toRadixString(16).padLeft(2, '0'))
-      .join(' ');
+  return bytes.map(intToHex2Lower).join(' ');
 }
 
 String intToHex4Lower(int n) {
   return n.toRadixString(16).padLeft(4, '0');
+}
+
+String intToHex2Lower(int n) {
+  return (n & 0xff).toRadixString(16).padLeft(2, '0');
 }
 
 String intToHex2(int n) {
