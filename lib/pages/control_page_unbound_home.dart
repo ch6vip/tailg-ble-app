@@ -444,7 +444,7 @@ class _OfficialActionButton extends StatelessWidget {
       duration: AppMotion.micro,
       curve: AppMotion.pressCurve,
       background: background,
-      pressedBackground: _officialPressedBg,
+      pressedBackground: AppColors.officialPressedBg,
       borderRadius: BorderRadius.circular(15),
       boxShadow: AppShadows.elevation1,
       haptic: false,

@@ -27,8 +27,6 @@ part 'location_fence_tab.dart';
 
 enum LocationInitialTab { map, travel, fence }
 
-const _officialPressedBg = Color(0xFFE5E5E5);
-
 class LocationPage extends StatefulWidget {
   final LocationInitialTab initialTab;
 
@@ -474,7 +472,9 @@ class _OfficialTabButton extends StatelessWidget {
       onTap: onTap,
       pressedScale: AppMotion.pressScale,
       background: color,
-      pressedBackground: active ? AppColors.primary : _officialPressedBg,
+      pressedBackground: active
+          ? AppColors.primary
+          : AppColors.officialPressedBg,
       borderRadius: BorderRadius.circular(AppRadii.card),
       semanticsLabel: label,
       semanticsButton: true,

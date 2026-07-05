@@ -41,7 +41,6 @@ Color _pageBg(BuildContext context) =>
     ? AppColors.of(context).pageBg
     : AppColors.officialPageBg;
 const _kmPerPercent = 0.65;
-const _officialPressedBg = Color(0xFFE5E5E5);
 
 // 控车确认超时与轮询间隔
 const _controlConfirmTimeout = Duration(seconds: 8);

@@ -302,7 +302,7 @@ class _TravelRecordCard extends StatelessWidget {
       enabled: interactive,
       pressedScale: AppMotion.pressScale,
       background: AppColors.surface,
-      pressedBackground: _officialPressedBg,
+      pressedBackground: AppColors.officialPressedBg,
       borderRadius: BorderRadius.circular(AppRadii.card),
       haptic: false,
       semanticsLabel: semanticsLabel,

@@ -95,7 +95,7 @@ void main() {
 
   test('known color literals use AppColors tokens', () {
     final knownTokenColor = RegExp(
-      r'Color\(0xFF(EFF0F5|E8ECF1|F6F8FB|1B2230|F5A623)\)',
+      r'Color\(0xFF(EFF0F5|E5E5E5|E8ECF1|F6F8FB|1B2230|F5A623)\)',
     );
     final offenders = patternOffenders(
       dartFilesUnder('lib').where(

@@ -37,6 +37,9 @@ abstract final class AppColors {
   /// 官方台铃 App 首页浅灰底色（APK: `ceff0f5`）。
   static const officialPageBg = Color(0xFFEFF0F5);
 
+  /// 官方台铃 App 按压高亮底色。
+  static const officialPressedBg = Color(0xFFE5E5E5);
+
   /// 官方台铃 App 次级文字色（APK: `c807e89`）。
   static const officialTextMuted = Color(0xFF807E89);
 
