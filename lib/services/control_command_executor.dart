@@ -9,15 +9,22 @@ typedef BleCommandSender = Future<bool> Function(CommandCode command);
 typedef CloudCommandSender = Future<String> Function(CommandCode command);
 typedef CommandErrorMessage = String Function(Object error);
 
+const _defaultBleCommandTimeout = Duration(seconds: 15);
+const _defaultCloudCommandTimeout = Duration(seconds: 20);
+
 class ControlCommandExecutor {
   final BleCommandSender sendBleCommand;
   final CloudCommandSender sendCloudCommand;
   final CommandErrorMessage errorMessage;
+  final Duration bleTimeout;
+  final Duration cloudTimeout;
 
   const ControlCommandExecutor({
     required this.sendBleCommand,
     required this.sendCloudCommand,
     this.errorMessage = _defaultErrorMessage,
+    this.bleTimeout = _defaultBleCommandTimeout,
+    this.cloudTimeout = _defaultCloudCommandTimeout,
   });
 
   Future<ControlCommandResult> send({
@@ -43,7 +50,7 @@ class ControlCommandExecutor {
   Future<ControlCommandResult> _sendBle(CommandCode command) async {
     try {
       final success = await sendBleCommand(command).timeout(
-        const Duration(seconds: 15),
+        bleTimeout,
         onTimeout: () => throw TimeoutException('BLE command timed out'),
       );
       if (success) return ControlCommandResult.bleSuccess(command);
@@ -70,7 +77,7 @@ class ControlCommandExecutor {
   Future<ControlCommandResult> _sendCloud(CommandCode command) async {
     try {
       final message = await sendCloudCommand(command).timeout(
-        const Duration(seconds: 20),
+        cloudTimeout,
         onTimeout: () => throw TimeoutException('Cloud command timed out'),
       );
       return ControlCommandResult.cloudSuccess(command, message: message);

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -1131,6 +1132,46 @@ void main() {
       expect(bleResult.failureMessage, '熄火失败');
       expect(cloudResult.success, isFalse);
       expect(cloudResult.failureMessage, '官方错误');
+    });
+
+    test('maps command timeouts to transport failures', () async {
+      final pendingBle = Completer<bool>();
+      final pendingCloud = Completer<String>();
+      final bleExecutor = ControlCommandExecutor(
+        sendBleCommand: (_) => pendingBle.future,
+        sendCloudCommand: (_) => fail('cloud sender should not be called'),
+        bleTimeout: Duration.zero,
+      );
+      final cloudExecutor = ControlCommandExecutor(
+        sendBleCommand: (_) => fail('BLE sender should not be called'),
+        sendCloudCommand: (_) => pendingCloud.future,
+        cloudTimeout: Duration.zero,
+      );
+
+      final bleResult = await bleExecutor.send(
+        command: CommandCode.lock,
+        availability: _availability(
+          channel: OfficialControlChannel.ble,
+          canUseBle: true,
+        ),
+      );
+      final cloudResult = await cloudExecutor.send(
+        command: CommandCode.find,
+        availability: _availability(
+          channel: OfficialControlChannel.officialCloud,
+          canUseCloud: true,
+        ),
+      );
+
+      expect(bleResult.success, isFalse);
+      expect(bleResult.transport, ControlCommandTransport.ble);
+      expect(bleResult.failureMessage, 'BLE command timed out');
+      expect(cloudResult.success, isFalse);
+      expect(cloudResult.transport, ControlCommandTransport.officialCloud);
+      expect(cloudResult.failureMessage, 'Cloud command timed out');
+
+      pendingBle.complete(true);
+      pendingCloud.complete('ok');
     });
   });
 
