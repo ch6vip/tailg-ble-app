@@ -511,13 +511,13 @@ class OfficialBatteryInfo {
 
   factory OfficialBatteryInfo.fromJson(Map<String, dynamic> json) {
     final dumpEnergyPercent = _clean(json['dumpEnergyPercent']);
+    final dumpEnergyPercentLabel =
+        _clean(json['dumpEnergyPercentLabel']) ??
+        (dumpEnergyPercent == null ? '' : '$dumpEnergyPercent%');
     return OfficialBatteryInfo(
       raw: Map<String, dynamic>.from(json),
       dumpEnergyPercent: dumpEnergyPercent ?? '',
-      dumpEnergyPercentLabel:
-          _clean(json['dumpEnergyPercentLabel']) ??
-          (dumpEnergyPercent == null ? null : '$dumpEnergyPercent%') ??
-          '',
+      dumpEnergyPercentLabel: dumpEnergyPercentLabel,
       remainingMileage: _clean(json['remainingMileage']) ?? '',
       mileage: _clean(json['mileage']) ?? '',
       capacitance: _clean(json['capacitance']) ?? '',
