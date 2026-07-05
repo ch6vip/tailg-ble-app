@@ -333,7 +333,7 @@ class _FenceSettingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: BoxConstraints(minHeight: dense ? 44 : 56),
+      constraints: BoxConstraints(minHeight: dense ? AppTouchTargets.min : 56),
       padding: EdgeInsets.symmetric(horizontal: dense ? 0 : 16),
       decoration: dense
           ? null

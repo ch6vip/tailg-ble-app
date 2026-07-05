@@ -479,7 +479,7 @@ class _OfficialTabButton extends StatelessWidget {
       semanticsLabel: label,
       semanticsButton: true,
       semanticsSelected: active,
-      child: SizedBox(height: 44, child: child),
+      child: SizedBox(height: AppTouchTargets.min, child: child),
     );
   }
 }
@@ -759,8 +759,8 @@ class _LocationDetailCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: AppTouchTargets.min,
+                height: AppTouchTargets.min,
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),

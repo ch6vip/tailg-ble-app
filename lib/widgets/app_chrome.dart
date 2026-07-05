@@ -31,7 +31,10 @@ class AppPageHeader extends StatelessWidget {
               ),
               onPressed: () => Navigator.pop(context),
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              constraints: const BoxConstraints(
+                minWidth: AppTouchTargets.min,
+                minHeight: AppTouchTargets.min,
+              ),
               tooltip: '返回',
             ),
             const SizedBox(width: 8),
@@ -111,8 +114,8 @@ class AppHeaderAction extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       pressedBackground: AppColors.primary.withValues(alpha: 0.05),
       child: SizedBox(
-        width: 44,
-        height: 44,
+        width: AppTouchTargets.min,
+        height: AppTouchTargets.min,
         child: Icon(
           icon,
           size: AppIconSizes.md,

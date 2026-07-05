@@ -502,7 +502,7 @@ class _OfficialTextLinkRow extends StatelessWidget {
         splashColor: AppColors.primary.withValues(alpha: 0.08),
         highlightColor: AppColors.primary.withValues(alpha: 0.05),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44),
+          constraints: const BoxConstraints(minHeight: AppTouchTargets.min),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             child: Row(

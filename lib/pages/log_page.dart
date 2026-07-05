@@ -167,7 +167,9 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
               semanticsEnabled: true,
               semanticsSelected: active,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 44),
+                constraints: const BoxConstraints(
+                  minHeight: AppTouchTargets.min,
+                ),
                 child: Column(
                   children: [
                     Padding(

@@ -136,7 +136,7 @@ class _TopBar extends StatelessWidget {
       onTap: onVehicleSwitch,
       behavior: HitTestBehavior.opaque,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 44),
+        constraints: const BoxConstraints(minHeight: AppTouchTargets.min),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -670,7 +670,7 @@ class _MissingBleIdentityNotice extends StatelessWidget {
               ),
             ),
             ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 44),
+              constraints: const BoxConstraints(minHeight: AppTouchTargets.min),
               child: TextButton(
                 onPressed: () => openScanTab(context),
                 style: TextButton.styleFrom(
@@ -716,7 +716,7 @@ class _StaleLinkNotice extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: clearStaleLink,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44),
+          constraints: const BoxConstraints(minHeight: AppTouchTargets.min),
           child: const Padding(
             padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             child: Row(

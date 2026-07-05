@@ -160,8 +160,8 @@ class _ToastWidgetState extends State<_ToastWidget>
                     semanticsButton: true,
                     semanticsEnabled: true,
                     child: const SizedBox(
-                      width: 44,
-                      height: 44,
+                      width: AppTouchTargets.min,
+                      height: AppTouchTargets.min,
                       child: Center(
                         child: Icon(
                           Icons.close,

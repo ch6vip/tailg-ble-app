@@ -374,7 +374,9 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
               semanticsEnabled: true,
               semanticsSelected: active,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 44),
+                constraints: const BoxConstraints(
+                  minHeight: AppTouchTargets.min,
+                ),
                 child: Column(
                   children: [
                     Padding(

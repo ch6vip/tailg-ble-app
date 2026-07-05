@@ -323,8 +323,8 @@ class _RadarWidget extends StatelessWidget {
           },
           child: Center(
             child: Container(
-              width: 44,
-              height: 44,
+              width: AppTouchTargets.min,
+              height: AppTouchTargets.min,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
@@ -531,8 +531,8 @@ class _DeviceCardState extends State<_DeviceCard> {
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: AppTouchTargets.min,
+              height: AppTouchTargets.min,
               decoration: BoxDecoration(
                 gradient: isTailg
                     ? const LinearGradient(

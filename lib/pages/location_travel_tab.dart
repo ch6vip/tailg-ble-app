@@ -98,7 +98,7 @@ class _TravelMonthSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 44,
+      height: AppTouchTargets.min,
       padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: cardDecoration,
       child: Row(
@@ -106,7 +106,10 @@ class _TravelMonthSelector extends StatelessWidget {
           IconButton(
             tooltip: '上个月',
             onPressed: onPreviousMonth,
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            constraints: const BoxConstraints(
+              minWidth: AppTouchTargets.min,
+              minHeight: AppTouchTargets.min,
+            ),
             padding: EdgeInsets.zero,
             icon: const Icon(
               Icons.chevron_left,
@@ -140,7 +143,10 @@ class _TravelMonthSelector extends StatelessWidget {
           IconButton(
             tooltip: '下个月',
             onPressed: onNextMonth,
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            constraints: const BoxConstraints(
+              minWidth: AppTouchTargets.min,
+              minHeight: AppTouchTargets.min,
+            ),
             padding: EdgeInsets.zero,
             icon: const Icon(
               Icons.chevron_right,

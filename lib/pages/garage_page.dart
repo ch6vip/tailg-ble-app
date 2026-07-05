@@ -481,7 +481,10 @@ class _MiniActionButton extends StatelessWidget {
       semanticsButton: true,
       semanticsEnabled: enabled,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+        constraints: const BoxConstraints(
+          minWidth: AppTouchTargets.min,
+          minHeight: AppTouchTargets.min,
+        ),
         child: Center(
           child: Row(
             mainAxisSize: MainAxisSize.min,

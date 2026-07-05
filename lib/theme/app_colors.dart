@@ -393,6 +393,11 @@ abstract final class AppIconSizes {
   static const xl = 48.0;
 }
 
+abstract final class AppTouchTargets {
+  /// Minimum custom control hit target used across compact official-style UI.
+  static const min = 44.0;
+}
+
 abstract final class AppNav {
   static const barBaseHeight = 82.0;
   static const contentBottomPadding = 104.0;

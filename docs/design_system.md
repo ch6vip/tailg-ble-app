@@ -23,7 +23,8 @@
 
 ## Interaction Rules
 
-- Tap targets for custom controls should stay at least 44 px.
+- Tap targets for custom controls should stay at least `AppTouchTargets.min`
+  (44 px).
 - Reusable press feedback should go through `AppPressable` and `AppMotion.pressScale`.
 - Long-press power actions use `AppMotion.longPressHold` and must support pointer-exit cancellation.
 - Snack/toast colors should resolve from the active theme where possible.

@@ -205,8 +205,8 @@ class _UserHeader extends StatelessWidget {
             semanticsButton: true,
             semanticsEnabled: true,
             child: SizedBox(
-              width: 44,
-              height: 44,
+              width: AppTouchTargets.min,
+              height: AppTouchTargets.min,
               child: Center(
                 child: Container(
                   width: 38,

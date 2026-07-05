@@ -183,7 +183,7 @@ class _BatteryHero extends StatelessWidget {
             right: 20,
             top: 14,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 44),
+              constraints: const BoxConstraints(minHeight: AppTouchTargets.min),
               child: TextButton(
                 onPressed: cloudState.batteryInfoLoading ? null : onRefresh,
                 style: TextButton.styleFrom(

@@ -118,8 +118,8 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                           onPressed: _copyToken,
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(
-                            minWidth: 44,
-                            minHeight: 44,
+                            minWidth: AppTouchTargets.min,
+                            minHeight: AppTouchTargets.min,
                           ),
                           tooltip: '复制',
                         ),

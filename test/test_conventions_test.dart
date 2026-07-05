@@ -44,6 +44,22 @@ void main() {
     );
   });
 
+  test('custom touch target literals use AppTouchTargets token', () {
+    final hardcodedTouchTarget = RegExp(
+      r'(minWidth:\s*44|minHeight:\s*44|width:\s*44,\s*|height:\s*44,\s*|SizedBox\(height:\s*44)',
+    );
+    final offenders = patternOffenders(
+      dartFilesUnder('lib'),
+      hardcodedTouchTarget,
+    );
+
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'Use AppTouchTargets.min for compact 44dp custom hit targets.',
+    );
+  });
+
   test('widget tests use view size helpers', () {
     final directViewSizeSet = RegExp(r'tester\.view\.physicalSize\s*=');
     final offenders = patternOffenders(

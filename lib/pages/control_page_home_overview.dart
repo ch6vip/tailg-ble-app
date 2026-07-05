@@ -520,7 +520,7 @@ class _OfficialControlTip extends StatelessWidget {
                     semanticsToggled: !manualModeEnabled,
                     child: SizedBox(
                       width: 78,
-                      height: 44,
+                      height: AppTouchTargets.min,
                       child: Center(
                         child: Image.asset(
                           manualModeEnabled || !bleReady

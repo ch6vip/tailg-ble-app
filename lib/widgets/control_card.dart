@@ -348,8 +348,8 @@ class _QuickEditButton extends StatelessWidget {
         opacity: enabled ? 1.0 : 0.45,
         duration: const Duration(milliseconds: 200),
         child: SizedBox(
-          width: 44,
-          height: 44,
+          width: AppTouchTargets.min,
+          height: AppTouchTargets.min,
           child: Align(
             alignment: Alignment.bottomRight,
             child: Image.asset(
