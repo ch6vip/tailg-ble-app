@@ -1,3 +1,5 @@
+import 'hex.dart';
+
 const _keyMask = 0x5A3C6F91D2E84B7A;
 
 String _obfuscate(String hexKey) {
@@ -9,9 +11,7 @@ String _obfuscate(String hexKey) {
   for (var i = 0; i < hexKey.length; i += 2) {
     final keyByte = int.parse(hexKey.substring(i, i + 2), radix: 16);
     final maskByte = maskBytes[(i ~/ 2) % maskBytes.length];
-    result.write(
-      (keyByte ^ maskByte).toRadixString(16).padLeft(2, '0').toUpperCase(),
-    );
+    result.write(intToHex2(keyByte ^ maskByte));
   }
   return result.toString();
 }
