@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../ble/hex.dart';
+import '../models/persistence_value.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
@@ -44,20 +45,10 @@ class DiagnosticRecord {
 
   factory DiagnosticRecord.fromJson(Map<String, dynamic> json) =>
       DiagnosticRecord(
-        time: _parseTime(json['time']),
-        rawByte: _parseRawByte(json['raw']),
+        time: parsePersistedDate(json['time']) ?? DateTime.now(),
+        rawByte: parsePersistedInt(json['raw']) ?? 0,
         faults: (json['faults'] as List?)?.whereType<String>().toList() ?? [],
       );
-
-  static DateTime _parseTime(Object? value) {
-    return DateTime.tryParse(value?.toString() ?? '') ?? DateTime.now();
-  }
-
-  static int _parseRawByte(Object? value) {
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value.trim()) ?? 0;
-    return 0;
-  }
 
   static DiagnosticRecord? tryParse(String raw) {
     try {
