@@ -48,8 +48,9 @@ class VehicleStore {
     if (_initialized) return;
     final initializing = _initializing;
     if (initializing != null) return initializing;
-    _initializing = _load();
-    return _initializing!;
+    final loading = _load();
+    _initializing = loading;
+    return loading;
   }
 
   Future<void> _load() async {
@@ -325,7 +326,7 @@ class VehicleStore {
   }
 
   Future<void> _save() {
-    _saveQueue = (_saveQueue ?? Future<void>.value())
+    final save = (_saveQueue ?? Future<void>.value())
         .then((_) => _doSave())
         .catchError((Object e) {
           // Isolate save failures so subsequent writes are not poisoned.
@@ -335,7 +336,8 @@ class VehicleStore {
             level: LogLevel.error,
           );
         });
-    return _saveQueue!;
+    _saveQueue = save;
+    return save;
   }
 
   Future<void> _doSave() async {
@@ -353,10 +355,11 @@ class VehicleStore {
             .toList(),
       ),
     );
-    if (_defaultVehicleId == null) {
+    final defaultVehicleId = _defaultVehicleId;
+    if (defaultVehicleId == null) {
       await prefs.remove(_prefDefaultVehicleId);
     } else {
-      await prefs.setString(_prefDefaultVehicleId, _defaultVehicleId!);
+      await prefs.setString(_prefDefaultVehicleId, defaultVehicleId);
     }
   }
 
