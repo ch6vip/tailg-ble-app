@@ -84,7 +84,8 @@ class BatterySnapshot {
   double? get estimatedRangeKm {
     final officialRange = _parseNumber(remainingMileage);
     if (officialRange != null) return officialRange;
-    return percent == null ? null : (percent!.clamp(0, 100) * _kmPerPercent);
+    final value = percent;
+    return value == null ? null : value.clamp(0, 100) * _kmPerPercent;
   }
 
   BmsSnapshot get bms => BmsSnapshot.fromBatterySnapshot(this);
