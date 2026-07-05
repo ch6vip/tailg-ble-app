@@ -6,6 +6,7 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 const _slideHandleFallbackColor = Color(0xFF50515A);
 const _slideHandleFallbackRadius = BorderRadius.all(Radius.circular(9));
+const _quickActionOpacityDuration = Duration(milliseconds: 200);
 
 /// Official Tailg control card: two quick placeholders on the left, the
 /// slide-style power control plus find/lock actions on the right.
@@ -307,7 +308,7 @@ class _QuickActionSlot extends StatelessWidget {
       semanticsEnabled: enabled,
       child: AnimatedOpacity(
         opacity: enabled ? 1.0 : 0.45,
-        duration: const Duration(milliseconds: 200),
+        duration: _quickActionOpacityDuration,
         child: Container(
           alignment: Alignment.center,
           decoration: BoxDecoration(
@@ -349,7 +350,7 @@ class _QuickEditButton extends StatelessWidget {
       semanticsEnabled: enabled,
       child: AnimatedOpacity(
         opacity: enabled ? 1.0 : 0.45,
-        duration: const Duration(milliseconds: 200),
+        duration: _quickActionOpacityDuration,
         child: SizedBox(
           width: AppTouchTargets.min,
           height: AppTouchTargets.min,
