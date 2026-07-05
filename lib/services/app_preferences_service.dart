@@ -72,8 +72,9 @@ class AppPreferencesService {
     if (_initialized) return;
     final initializing = _initializing;
     if (initializing != null) return initializing;
-    _initializing = _load();
-    return _initializing!;
+    final loading = _load();
+    _initializing = loading;
+    return loading;
   }
 
   Future<void> _load() async {
