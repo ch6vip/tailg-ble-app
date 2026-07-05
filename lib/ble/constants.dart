@@ -113,6 +113,7 @@ class BleTimings {
   static const silentLocationThrottle = Duration(seconds: 60);
   static const qgjSearchCountdown = Duration(seconds: 30);
   static const gpsSearchCountdown = Duration(seconds: 6);
+  static const gattOperationTimeout = Duration(seconds: 30);
 
   /// Max time to wait for the device to deliver the token (standard) or QGJ
   /// login response after GATT setup completes. If the state is still

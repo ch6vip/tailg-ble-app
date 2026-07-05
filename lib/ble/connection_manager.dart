@@ -124,7 +124,7 @@ class ConnectionManager {
         final queued = _takeNextGattOperation();
         try {
           final result = await queued.operation().timeout(
-            const Duration(seconds: 30),
+            BleTimings.gattOperationTimeout,
             onTimeout: () =>
                 throw TimeoutException('GATT operation timed out after 30s'),
           );

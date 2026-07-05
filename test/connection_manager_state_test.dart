@@ -29,6 +29,8 @@ void main() {
 
       expect(source, contains('_gattPendingByPriority'));
       expect(source, contains('_takeNextGattOperation()'));
+      expect(source, contains('BleTimings.gattOperationTimeout'));
+      expect(source, isNot(contains('const Duration(seconds: 30)')));
       expect(source, isNot(contains('_gattPending.sort')));
     },
   );
