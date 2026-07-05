@@ -5,12 +5,16 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../ble/connection_manager.dart';
 import '../ble/constants.dart';
+import '../models/vehicle_profile.dart';
 import 'ble_connection_snapshot_guard.dart';
+import 'location_service.dart';
 import 'log_service.dart';
 import 'manual_mode_service.dart';
 import 'vehicle_store.dart';
 
 class ProximityUnlockGuard {
+  static const maxLocationAccuracyMeters = 30.0;
+
   const ProximityUnlockGuard();
 
   bool allowsUnlock({
@@ -18,6 +22,7 @@ class ProximityUnlockGuard {
     required bool manualModeEnabled,
     required String? targetDeviceId,
     required String deviceId,
+    required VehicleLocation? unlockLocation,
     required ConnectionManager manager,
     required BluetoothDevice device,
     required ConnectionManager? currentManager,
@@ -26,6 +31,7 @@ class ProximityUnlockGuard {
     return proximityEnabled &&
         !manualModeEnabled &&
         targetDeviceId == deviceId &&
+        hasUsableUnlockLocation(unlockLocation) &&
         snapshotGuard.allowsReadyTarget(
           startManager: manager,
           currentManager: currentManager,
@@ -35,6 +41,19 @@ class ProximityUnlockGuard {
           expectedDeviceId: deviceId,
           currentState: manager.state,
         );
+  }
+
+  bool hasUsableUnlockLocation(VehicleLocation? location) {
+    final accuracy = location?.accuracy;
+    return accuracy != null &&
+        accuracy > 0 &&
+        accuracy <= maxLocationAccuracyMeters;
+  }
+
+  String locationBlockReason(VehicleLocation? location) {
+    if (location == null) return '定位不可用';
+    if (location.accuracy <= 0) return '定位精度未知';
+    return '定位精度 ${location.accuracy.toStringAsFixed(1)}m 超过 ${maxLocationAccuracyMeters.toStringAsFixed(0)}m';
   }
 }
 
@@ -205,12 +224,25 @@ class ProximityService {
         password: vehicle?.qgjLoginPassword,
         userId: vehicle?.qgjUserId,
       );
+      final unlockLocation = await LocationService().recordVehicleLocation(
+        deviceId,
+      );
+      if (!_unlockGuard.hasUsableUnlockLocation(unlockLocation)) {
+        _unlockSent = false;
+        _log.operation(
+          '感应解锁: 定位精度不足，取消解锁',
+          detail: _unlockGuard.locationBlockReason(unlockLocation),
+          level: LogLevel.warning,
+        );
+        return;
+      }
       await manager.connect(device);
       await Future<void>.delayed(BleTimings.serviceSetupDelay);
       if (_canUnlockConnectedTarget(
         manager: manager,
         device: device,
         deviceId: deviceId,
+        unlockLocation: unlockLocation,
       )) {
         await manager.sendCommand(CommandCode.unlock);
         _log.operation('感应解锁: 解锁成功', level: LogLevel.info);
@@ -231,12 +263,14 @@ class ProximityService {
     required ConnectionManager manager,
     required BluetoothDevice device,
     required String deviceId,
+    required VehicleLocation? unlockLocation,
   }) {
     return _unlockGuard.allowsUnlock(
       proximityEnabled: _enabled,
       manualModeEnabled: ManualModeService().enabled,
       targetDeviceId: _targetDeviceId,
       deviceId: deviceId,
+      unlockLocation: unlockLocation,
       manager: manager,
       device: device,
       currentManager: _connectionManager,

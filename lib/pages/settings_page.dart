@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../main.dart'; // P0-6: service locator getters
 import '../services/app_preferences_service.dart';
+import '../services/proximity_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import 'app_preferences_pages.dart';
@@ -394,7 +395,9 @@ class _ProximityUnlockSettingTile extends StatelessWidget {
         return _settingItem(
           icon: Icons.sensors_outlined,
           title: '感应解锁',
-          subtitle: enabled ? '靠近车辆时自动解锁（RSSI > -75dBm）' : '关闭',
+          subtitle: enabled
+              ? '靠近车辆且定位精度≤${ProximityUnlockGuard.maxLocationAccuracyMeters.toStringAsFixed(0)}m 时自动解锁'
+              : '关闭',
           trailing: _buildToggle(
             label: '感应解锁开关',
             value: enabled,
