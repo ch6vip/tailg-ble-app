@@ -13,6 +13,7 @@ import '../models/geo_coordinate.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
+import '../services/display_time_formatter.dart';
 import '../services/official_cloud_service.dart';
 import '../services/replica_feature_store.dart';
 import '../theme/app_colors.dart';
@@ -282,7 +283,7 @@ class _LocationPageState extends State<LocationPage> {
         latitude: local.latitude,
         longitude: local.longitude,
         accuracy: local.accuracy,
-        timeLabel: _formatDate(local.recordedAt),
+        timeLabel: formatDateMinuteText(local.recordedAt),
         address: '',
         source: '本地记录',
       );
@@ -1244,12 +1245,6 @@ class _TabItem {
   final String label;
 
   const _TabItem(this.icon, this.label);
-}
-
-String _formatDate(DateTime value) {
-  String two(int number) => number.toString().padLeft(2, '0');
-  return '${value.year}-${two(value.month)}-${two(value.day)} '
-      '${two(value.hour)}:${two(value.minute)}';
 }
 
 DateTime? _parseMonth(String value) {

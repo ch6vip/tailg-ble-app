@@ -222,7 +222,7 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
       return _LocationSummary(
         latitude: local.latitude,
         longitude: local.longitude,
-        timeLabel: _formatLocationDate(local.recordedAt),
+        timeLabel: formatDateMinuteText(local.recordedAt),
         address: '',
         source: '本地记录',
       );
@@ -437,12 +437,6 @@ class _LocationSummary {
     if (coordinates.isNotEmpty) return coordinates;
     return '';
   }
-}
-
-String _formatLocationDate(DateTime value) {
-  String two(int number) => number.toString().padLeft(2, '0');
-  return '${value.year}-${two(value.month)}-${two(value.day)} '
-      '${two(value.hour)}:${two(value.minute)}';
 }
 
 class _OfficialNavigationProjectionCard extends StatelessWidget {
