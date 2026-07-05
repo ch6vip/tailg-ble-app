@@ -23,6 +23,9 @@ abstract final class AppMotion {
   /// Toast visible period before auto-dismiss. ~1800 ms.
   static const toastVisible = Duration(milliseconds: 1800);
 
+  /// Page-level tab indicator transition. ~200 ms.
+  static const tabIndicator = Duration(milliseconds: 200);
+
   /// Emphasis / page-level transition. ~350 ms.
   static const emphasis = Duration(milliseconds: 350);
 

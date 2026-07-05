@@ -235,6 +235,26 @@ void main() {
     );
   });
 
+  test('page tab indicator timing stays in AppMotion', () {
+    final hardcodedTabIndicatorTiming = RegExp(
+      r'duration:\s*const\s+Duration\(milliseconds:\s*200\)',
+    );
+    final offenders = patternOffenders(
+      dartFilesUnder('lib/pages').where((file) {
+        final path = _normalizedPath(file.path);
+        return path.endsWith('pages/log_page.dart') ||
+            path.endsWith('pages/vehicle_message_page.dart');
+      }),
+      hardcodedTabIndicatorTiming,
+    );
+
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'Use AppMotion.tabIndicator for page-level tab indicators.',
+    );
+  });
+
   test('InkWell widgets are not nested inside another InkWell', () {
     final offenders = <String>[];
 

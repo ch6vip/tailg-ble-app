@@ -5,6 +5,7 @@ import '../main.dart';
 import '../services/diagnostic_export_service.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
@@ -187,7 +188,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
                       ),
                     ),
                     AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
+                      duration: AppMotion.tabIndicator,
                       height: 2,
                       margin: const EdgeInsets.symmetric(horizontal: 20),
                       decoration: BoxDecoration(
