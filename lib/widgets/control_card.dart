@@ -4,6 +4,9 @@ import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/theme/app_motion.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
+const _slideHandleFallbackColor = Color(0xFF50515A);
+const _slideHandleFallbackRadius = BorderRadius.all(Radius.circular(9));
+
 /// Official Tailg control card: two quick placeholders on the left, the
 /// slide-style power control plus find/lock actions on the right.
 class ControlCard extends StatefulWidget {
@@ -622,8 +625,8 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
                           child: widget.busy
                               ? DecoratedBox(
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF50515A),
-                                    borderRadius: BorderRadius.circular(9),
+                                    color: _slideHandleFallbackColor,
+                                    borderRadius: _slideHandleFallbackRadius,
                                   ),
                                   child: const Padding(
                                     padding: EdgeInsets.all(14),
@@ -638,8 +641,8 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
                                   fit: BoxFit.contain,
                                   errorBuilder: (_, __, ___) => DecoratedBox(
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF50515A),
-                                      borderRadius: BorderRadius.circular(9),
+                                      color: _slideHandleFallbackColor,
+                                      borderRadius: _slideHandleFallbackRadius,
                                     ),
                                     child: Icon(
                                       Icons.power_settings_new,
