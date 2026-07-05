@@ -582,8 +582,9 @@ class _GattCharacteristicInfo {
 }
 
 String _value(String? value) {
-  if (value == null || value.trim().isEmpty) return '--';
-  return value.trim();
+  final text = value?.trim();
+  if (text == null || text.isEmpty) return '--';
+  return text;
 }
 
 String _protocolLabel(ble.ProtocolType protocol) {
