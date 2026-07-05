@@ -172,10 +172,11 @@ class AutoConnectService {
       _log.operation('自动连接: 已开启手动模式，跳过', level: LogLevel.info);
       return;
     }
-    if (!_enabled || _lastDeviceId == null || _connectionManager == null) {
+    final manager = _connectionManager;
+    if (!_enabled || _lastDeviceId == null || manager == null) {
       return;
     }
-    if (_connectionManager!.state != ConnectionState.disconnected) return;
+    if (manager.state != ConnectionState.disconnected) return;
 
     _log.operation('自动连接: 扫描 $_lastDeviceName ($_lastDeviceId)');
 
