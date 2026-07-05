@@ -182,13 +182,13 @@ class _HomeBodyState extends State<_HomeBody> {
       builder: (context, showUnboundHome, _) {
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 260),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
+          switchInCurve: AppMotion.entranceCurve,
+          switchOutCurve: AppMotion.exitCurve,
           transitionBuilder: (child, animation) {
             final curved = CurvedAnimation(
               parent: animation,
-              curve: Curves.easeOutCubic,
-              reverseCurve: Curves.easeInCubic,
+              curve: AppMotion.entranceCurve,
+              reverseCurve: AppMotion.exitCurve,
             );
             return FadeTransition(
               opacity: curved,

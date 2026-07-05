@@ -456,10 +456,10 @@ class _DeviceEntranceState extends State<_DeviceEntrance>
       vsync: this,
     );
     _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.12),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _slide = Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _controller, curve: AppMotion.entranceCurve),
+        );
     _controller.forward();
   }
 
