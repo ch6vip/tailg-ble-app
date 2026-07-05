@@ -474,7 +474,7 @@ class ConnectionManager {
   void _onStandardNotify(List<int> value) {
     if (_disposed) return;
     final data = Uint8List.fromList(value);
-    _log.ble('← 收到数据', detail: _bytesHex(data));
+    _log.ble('← 收到数据', detail: bytesToSpacedHex(data));
     final response = parseResponse(_model.aesKey, data);
     _addResponse(response);
 
@@ -489,7 +489,7 @@ class ConnectionManager {
   void _onQgjNotify(List<int> value) {
     if (_disposed) return;
     final data = Uint8List.fromList(value);
-    _log.ble('← QGJ 响应', detail: _bytesHex(data));
+    _log.ble('← QGJ 响应', detail: bytesToSpacedHex(data));
     final response = parseQgjResponse(data);
     if (response == null) return;
 
@@ -512,7 +512,11 @@ class ConnectionManager {
   void _onQgjGpsNotify(List<int> value) {
     if (_disposed) return;
     if (value.isEmpty) return;
-    _log.ble('← QGJ GPS 通知', detail: _bytesHex(value), level: LogLevel.debug);
+    _log.ble(
+      '← QGJ GPS 通知',
+      detail: bytesToSpacedHex(value),
+      level: LogLevel.debug,
+    );
   }
 
   void _startHeartbeat() {
@@ -977,10 +981,6 @@ class ConnectionManager {
     if (!_disposed) {
       _stateController.add(s);
     }
-  }
-
-  static String _bytesHex(Iterable<int> bytes) {
-    return bytesToSpacedHex(bytes);
   }
 
   void _armReadyWatchdog() {
