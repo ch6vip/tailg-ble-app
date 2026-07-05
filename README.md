@@ -97,7 +97,7 @@ dart tool/check_coverage.dart coverage/lcov.info 40   # 覆盖率阈值
 git config core.hooksPath .husky
 ```
 
-CI（[.github/workflows/build.yml](.github/workflows/build.yml)）：PR 到 `master`、`develop` 时自动执行 `format → analyze → test --coverage → coverage >= 40%`；需要临时 APK 时手动运行该 workflow，门禁通过后构建签名 APK artifact。普通 push 不触发自动编译。
+CI（[.github/workflows/build.yml](.github/workflows/build.yml)）：PR 到 `master`、`develop` 时自动执行 `format → analyze → test --coverage → coverage >= 40%`；push 到 `master`、`develop` 时会先跑同样门禁，随后自动构建签名 APK artifact。需要临时 APK 时也可以手动运行该 workflow。
 
 Release（[.github/workflows/release.yml](.github/workflows/release.yml)）：推送 `v*` tag 或手动触发时执行同样门禁，随后签名构建 APK 并发布 GitHub Release。
 
