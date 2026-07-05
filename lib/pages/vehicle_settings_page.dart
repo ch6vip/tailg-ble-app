@@ -968,9 +968,10 @@ class _NavSettingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
+    final trailingText = this.trailingText;
     final semanticsLabel = [
       title,
-      if (trailingText != null && trailingText!.isNotEmpty) trailingText!,
+      if (trailingText != null && trailingText.isNotEmpty) trailingText,
       subtitle,
     ].join('，');
     return _VehicleSettingInkRow(
@@ -1010,7 +1011,7 @@ class _NavSettingRow extends StatelessWidget {
             if (trailingText != null) ...[
               Flexible(
                 child: Text(
-                  trailingText!,
+                  trailingText,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
@@ -1050,16 +1051,18 @@ class _SwitchSettingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final subtitle = this.subtitle;
+    final onChanged = this.onChanged;
     final enabled = onChanged != null;
     final semanticsLabel = [
       title,
-      if (subtitle != null && subtitle!.isNotEmpty) subtitle!,
+      if (subtitle != null && subtitle.isNotEmpty) subtitle,
       value ? '已开启' : '已关闭',
       if (!enabled) disabledReason ?? _pendingCommandMessage,
     ].join('，');
     void activate() {
-      if (enabled) {
-        onChanged!(!value);
+      if (onChanged != null) {
+        onChanged(!value);
       } else {
         _showInfoSnack(context, disabledReason);
       }
@@ -1095,7 +1098,7 @@ class _SwitchSettingRow extends StatelessWidget {
                     if (subtitle != null) ...[
                       const SizedBox(height: 4),
                       Text(
-                        subtitle!,
+                        subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.smallText,
