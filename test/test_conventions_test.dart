@@ -93,6 +93,25 @@ void main() {
     );
   });
 
+  test('known color literals use AppColors tokens', () {
+    final knownTokenColor = RegExp(
+      r'Color\(0xFF(EFF0F5|E8ECF1|F6F8FB|1B2230|F5A623)\)',
+    );
+    final offenders = patternOffenders(
+      dartFilesUnder('lib').where(
+        (file) => !_normalizedPath(file.path).endsWith('theme/app_colors.dart'),
+      ),
+      knownTokenColor,
+    );
+
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Use the existing AppColors token for known design-system colors.',
+    );
+  });
+
   test('widget tests use view size helpers', () {
     final directViewSizeSet = RegExp(r'tester\.view\.physicalSize\s*=');
     final offenders = patternOffenders(

@@ -634,7 +634,7 @@ class _BlePillState {
       iconAsset: 'assets/official_tailg/ic_control_ble_unclint.png',
       fallbackBg: canConnect
           ? const Color(0xFFFFF1F1)
-          : const Color(0xFFEFF0F5),
+          : AppColors.officialPageBg,
       textColor: canConnect ? AppColors.brandRed : AppColors.officialTextMuted,
       iconColor: AppColors.officialTextMuted,
       connected: false,

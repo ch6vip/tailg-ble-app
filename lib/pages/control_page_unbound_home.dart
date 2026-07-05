@@ -209,7 +209,7 @@ class _UnboundBannerState extends State<_UnboundBanner>
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFFF6F8FB), Color(0xFFEDF1F5), Color(0xFFE6F7F1)],
+        colors: [AppColors.pageBgBot, Color(0xFFEDF1F5), Color(0xFFE6F7F1)],
       ),
       chips: ['蓝牙控车', '云端车辆'],
       caption: '登录官方账号后同步车辆状态',

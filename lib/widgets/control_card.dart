@@ -308,7 +308,7 @@ class _QuickActionSlot extends StatelessWidget {
         child: Container(
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: const Color(0xFFEFF0F5),
+            color: AppColors.officialPageBg,
             borderRadius: BorderRadius.circular(AppRadii.card),
           ),
           child: Column(
@@ -482,7 +482,7 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
     const handleSize = 64.0;
     const handleMargin = 6.0;
     const reservedHandleSpace = handleSize + handleMargin * 2 + 6;
-    const trackColor = Color(0xFFEFF0F5);
+    const trackColor = AppColors.officialPageBg;
     const accentColor = AppColors.brandRed;
     final handleAsset = widget.powered
         ? 'assets/official_tailg/ic_slide_start_tip_anti_r.png'

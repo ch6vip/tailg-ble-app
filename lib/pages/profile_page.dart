@@ -173,7 +173,7 @@ class _UserHeader extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(AppRadii.pill),
                         gradient: const LinearGradient(
-                          colors: [Color(0xFFFFD580), Color(0xFFF5A623)],
+                          colors: [Color(0xFFFFD580), AppColors.accentAmber],
                         ),
                       ),
                       child: const Text(
@@ -345,14 +345,14 @@ class _MembershipBanner extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF222A3A), Color(0xFF1B2230)],
+              colors: [Color(0xFF222A3A), AppColors.inkBtn],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(AppRadii.lg),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF1B2230).withValues(alpha: 0.28),
+                color: AppColors.inkBtn.withValues(alpha: 0.28),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -370,7 +370,7 @@ class _MembershipBanner extends StatelessWidget {
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        const Color(0xFFF5A623).withValues(alpha: 0.3),
+                        AppColors.accentAmber.withValues(alpha: 0.3),
                         Colors.transparent,
                       ],
                     ),
@@ -385,7 +385,7 @@ class _MembershipBanner extends StatelessWidget {
                     decoration: const BoxDecoration(
                       borderRadius: BorderRadius.all(Radius.circular(13)),
                       gradient: LinearGradient(
-                        colors: [Color(0xFFFFD580), Color(0xFFF5A623)],
+                        colors: [Color(0xFFFFD580), AppColors.accentAmber],
                       ),
                     ),
                     child: const Icon(

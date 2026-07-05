@@ -141,7 +141,7 @@ class VehicleStagePainter extends CustomPainter {
         Rect.fromLTWH(barX, barY, barW, barH),
         const Radius.circular(4),
       ),
-      Paint()..color = const Color(0xFFE8ECF1),
+      Paint()..color = AppColors.card3,
     );
     // Filled portion
     if (fillW > 0) {
@@ -249,7 +249,7 @@ class VehicleStagePainter extends CustomPainter {
         const Rect.fromLTWH(252, 40, 22, 15),
         const Radius.circular(4),
       ),
-      Paint()..color = const Color(0xFF1B2230),
+      Paint()..color = AppColors.inkBtn,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -293,7 +293,7 @@ class VehicleStagePainter extends CustomPainter {
     canvas.drawCircle(
       Offset(cx, cy),
       13.5,
-      Paint()..color = const Color(0xFFF6F8FB),
+      Paint()..color = AppColors.pageBgBot,
     );
     canvas.drawCircle(
       Offset(cx, cy),

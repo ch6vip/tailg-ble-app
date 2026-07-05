@@ -293,7 +293,7 @@ class _OfficialNavigationProjectionCard extends StatelessWidget {
             width: 76,
             height: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF0F5),
+              color: AppColors.officialPageBg,
               borderRadius: BorderRadius.circular(AppRadii.card),
             ),
             child: const Icon(
@@ -382,7 +382,7 @@ class _OfficialSmartMeterCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF0F5),
+              color: AppColors.officialPageBg,
               borderRadius: BorderRadius.circular(AppRadii.sm),
             ),
             child: const Text(
@@ -412,7 +412,7 @@ class _MeterStatusChip extends StatelessWidget {
         height: 32,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: const Color(0xFFEFF0F5),
+          color: AppColors.officialPageBg,
           borderRadius: BorderRadius.circular(AppRadii.tile),
         ),
         child: Text(
@@ -456,7 +456,7 @@ class _OfficialSimpleServiceCard extends StatelessWidget {
             width: 76,
             height: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF0F5),
+              color: AppColors.officialPageBg,
               borderRadius: BorderRadius.circular(AppRadii.sm),
             ),
             child: Icon(icon, color: AppColors.brandRed),
