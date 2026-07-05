@@ -62,6 +62,18 @@ class _OfficialApiResponse {
 }
 
 class OfficialCloudApiConfig {
+  static const defaultApiBase = 'https://www.tailgdd.com/v1/api/';
+  static const defaultLoginMacCode = '000000000000';
+  static const defaultPhoneMode = 'SM-G998B';
+  static const defaultForwardServiceIp = '';
+  static const defaultLanguage = 'zh_CN';
+  static const defaultZoneId = 'UTC+08:00';
+  static const defaultApiVersion = '3.0.0';
+  static const defaultUserAgent = 'okhttp/4.9.3';
+  static const defaultConnectTimeout = Duration(seconds: 15);
+  static const defaultResponseTimeout = Duration(seconds: 15);
+  static const defaultRetryBaseDelay = Duration(milliseconds: 500);
+
   final String apiBase;
   final String loginMacCode;
   final String phoneMode;
@@ -75,20 +87,20 @@ class OfficialCloudApiConfig {
   final Duration retryBaseDelay;
 
   const OfficialCloudApiConfig({
-    this.apiBase = 'https://www.tailgdd.com/v1/api/',
-    this.loginMacCode = '000000000000',
-    this.phoneMode = 'SM-G998B',
+    this.apiBase = defaultApiBase,
+    this.loginMacCode = defaultLoginMacCode,
+    this.phoneMode = defaultPhoneMode,
     // Empty by default: callers that genuinely need IP forwarding must set it
     // explicitly. The previous 'localhost' default leaked into production
     // requests and could confuse upstream routing/gateway logic.
-    this.forwardServiceIp = '',
-    this.language = 'zh_CN',
-    this.zoneId = 'UTC+08:00',
-    this.apiVersion = '3.0.0',
-    this.userAgent = 'okhttp/4.9.3',
-    this.connectTimeout = const Duration(seconds: 15),
-    this.responseTimeout = const Duration(seconds: 15),
-    this.retryBaseDelay = const Duration(milliseconds: 500),
+    this.forwardServiceIp = defaultForwardServiceIp,
+    this.language = defaultLanguage,
+    this.zoneId = defaultZoneId,
+    this.apiVersion = defaultApiVersion,
+    this.userAgent = defaultUserAgent,
+    this.connectTimeout = defaultConnectTimeout,
+    this.responseTimeout = defaultResponseTimeout,
+    this.retryBaseDelay = defaultRetryBaseDelay,
   });
 
   Uri resolve(String path) => Uri.parse(apiBase).resolve(path);

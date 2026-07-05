@@ -178,26 +178,65 @@ void main() {
         config.resolve('app/login').toString(),
         'https://www.tailgdd.com/v1/api/app/login',
       );
-      expect(config.loginMacCode, '000000000000');
-      expect(config.phoneMode, 'SM-G998B');
-      expect(config.connectTimeout, const Duration(seconds: 15));
-      expect(config.responseTimeout, const Duration(seconds: 15));
-      expect(config.retryBaseDelay, const Duration(milliseconds: 500));
-      expect(config.retryDelayForAttempt(0), const Duration(milliseconds: 500));
-      expect(config.retryDelayForAttempt(1), const Duration(seconds: 1));
+      expect(config.apiBase, OfficialCloudApiConfig.defaultApiBase);
+      expect(config.loginMacCode, OfficialCloudApiConfig.defaultLoginMacCode);
+      expect(config.phoneMode, OfficialCloudApiConfig.defaultPhoneMode);
+      expect(
+        config.forwardServiceIp,
+        OfficialCloudApiConfig.defaultForwardServiceIp,
+      );
+      expect(config.language, OfficialCloudApiConfig.defaultLanguage);
+      expect(config.zoneId, OfficialCloudApiConfig.defaultZoneId);
+      expect(config.apiVersion, OfficialCloudApiConfig.defaultApiVersion);
+      expect(config.userAgent, OfficialCloudApiConfig.defaultUserAgent);
+      expect(
+        config.connectTimeout,
+        OfficialCloudApiConfig.defaultConnectTimeout,
+      );
+      expect(
+        config.responseTimeout,
+        OfficialCloudApiConfig.defaultResponseTimeout,
+      );
+      expect(
+        config.retryBaseDelay,
+        OfficialCloudApiConfig.defaultRetryBaseDelay,
+      );
+      expect(
+        config.retryDelayForAttempt(0),
+        OfficialCloudApiConfig.defaultRetryBaseDelay,
+      );
+      expect(
+        config.retryDelayForAttempt(1),
+        OfficialCloudApiConfig.defaultRetryBaseDelay * 2,
+      );
       expect(
         config.retryDelayForAttempt(-1),
-        const Duration(milliseconds: 500),
+        OfficialCloudApiConfig.defaultRetryBaseDelay,
       );
       // Forward-Service-Ip is omitted by default (P2-8: was 'localhost' +
       // a duplicate 'Forward-ServiceIp' typo). Only emitted when configured.
       expect(config.defaultHeaders.containsKey('Forward-Service-Ip'), isFalse);
       expect(config.defaultHeaders.containsKey('Forward-ServiceIp'), isFalse);
-      expect(config.defaultHeaders['language'], 'zh_CN');
-      expect(config.defaultHeaders['accept-language'], 'zh_CN');
-      expect(config.defaultHeaders['Zone-id'], 'UTC+08:00');
-      expect(config.defaultHeaders['Api-Version'], '3.0.0');
-      expect(config.defaultHeaders['user-agent'], 'okhttp/4.9.3');
+      expect(
+        config.defaultHeaders['language'],
+        OfficialCloudApiConfig.defaultLanguage,
+      );
+      expect(
+        config.defaultHeaders['accept-language'],
+        OfficialCloudApiConfig.defaultLanguage,
+      );
+      expect(
+        config.defaultHeaders['Zone-id'],
+        OfficialCloudApiConfig.defaultZoneId,
+      );
+      expect(
+        config.defaultHeaders['Api-Version'],
+        OfficialCloudApiConfig.defaultApiVersion,
+      );
+      expect(
+        config.defaultHeaders['user-agent'],
+        OfficialCloudApiConfig.defaultUserAgent,
+      );
 
       const configured = OfficialCloudApiConfig(forwardServiceIp: '10.0.0.1');
       expect(configured.defaultHeaders['Forward-Service-Ip'], '10.0.0.1');
