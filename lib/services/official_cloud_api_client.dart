@@ -32,17 +32,18 @@ class OfficialCloudRedactor {
 
   static String text(String value) {
     return value
-        .replaceAllMapped(_phonePattern, (match) => _mask(match.group(0)!))
-        .replaceAllMapped(_imeiPattern, (match) => _mask(match.group(0)!))
-        .replaceAllMapped(_macPattern, (match) => _mask(match.group(0)!))
-        .replaceAllMapped(
-          _compactMacPattern,
-          (match) => _mask(match.group(0)!),
-        );
+        .replaceAllMapped(_phonePattern, _maskMatch)
+        .replaceAllMapped(_imeiPattern, _maskMatch)
+        .replaceAllMapped(_macPattern, _maskMatch)
+        .replaceAllMapped(_compactMacPattern, _maskMatch);
   }
 
   static String _mask(String value) {
     return SensitiveValueMasker.compact(value);
+  }
+
+  static String _maskMatch(Match match) {
+    return _mask(match.group(0) ?? '');
   }
 }
 
