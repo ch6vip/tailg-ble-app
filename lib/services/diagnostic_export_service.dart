@@ -190,8 +190,9 @@ class DiagnosticExportService {
     final t = formatLogClockTime(entry.time);
     final tag = entry.category == LogCategory.ble ? '[BLE]' : '[OP]';
     final level = entry.level.name.toUpperCase();
+    final detail = entry.detail;
     return '$t $tag [$level] ${OfficialCloudRedactor.text(entry.message)}'
-        '${entry.detail != null ? ' | ${OfficialCloudRedactor.text(entry.detail!)}' : ''}';
+        '${detail == null ? '' : ' | ${OfficialCloudRedactor.text(detail)}'}';
   }
 
   String _maskPhone(String phone) {
