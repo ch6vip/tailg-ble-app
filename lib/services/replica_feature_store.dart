@@ -69,7 +69,7 @@ class FenceConfig {
 
   factory FenceConfig.fromJson(Map<String, dynamic> json) {
     return FenceConfig(
-      enabled: _boolValue(json['enabled']),
+      enabled: parsePersistedBool(json['enabled']),
       latitude: parsePersistedDouble(json['latitude']),
       longitude: parsePersistedDouble(json['longitude']),
       radiusMeters: parsePersistedInt(json['radiusMeters']) ?? 500,
@@ -234,16 +234,6 @@ class ReplicaFeatureStore {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(key, jsonEncode(records.toList()));
   }
-}
-
-bool _boolValue(Object? value) {
-  if (value is bool) return value;
-  if (value is num) return value != 0;
-  if (value is String) {
-    final normalized = value.trim().toLowerCase();
-    return normalized == 'true' || normalized == '1' || normalized == 'yes';
-  }
-  return false;
 }
 
 extension _EmptyStringFallback on String {

@@ -14,6 +14,16 @@ int? parsePersistedInt(Object? value) {
   return null;
 }
 
+bool parsePersistedBool(Object? value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  if (value is String) {
+    final normalized = value.trim().toLowerCase();
+    return normalized == 'true' || normalized == '1' || normalized == 'yes';
+  }
+  return false;
+}
+
 DateTime? parsePersistedDate(Object? value) {
   if (value == null) return null;
   return DateTime.tryParse(value.toString());

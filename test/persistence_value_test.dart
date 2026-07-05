@@ -23,6 +23,24 @@ void main() {
     expect(parsePersistedInt('bad'), isNull);
   });
 
+  test('parsePersistedBool preserves truthy persisted values', () {
+    expect(parsePersistedBool(true), isTrue);
+    expect(parsePersistedBool(1), isTrue);
+    expect(parsePersistedBool(-1), isTrue);
+    expect(parsePersistedBool(' true '), isTrue);
+    expect(parsePersistedBool('YES'), isTrue);
+    expect(parsePersistedBool('1'), isTrue);
+  });
+
+  test('parsePersistedBool falls back to false for falsey values', () {
+    expect(parsePersistedBool(false), isFalse);
+    expect(parsePersistedBool(0), isFalse);
+    expect(parsePersistedBool('false'), isFalse);
+    expect(parsePersistedBool('no'), isFalse);
+    expect(parsePersistedBool('bad'), isFalse);
+    expect(parsePersistedBool(null), isFalse);
+  });
+
   test('parsePersistedDate preserves previous persistence date parsing', () {
     expect(parsePersistedDate(null), isNull);
     expect(parsePersistedDate('bad-date'), isNull);
