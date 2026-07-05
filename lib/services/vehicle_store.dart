@@ -311,12 +311,15 @@ class VehicleStore {
   }
 
   String? _normalizeId(String? id) {
-    final trimmed = id?.trim();
-    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+    return _nonBlankTrimmed(id);
   }
 
   String? _normalizeName(String? name) {
-    final trimmed = name?.trim();
+    return _nonBlankTrimmed(name);
+  }
+
+  String? _nonBlankTrimmed(String? value) {
+    final trimmed = value?.trim();
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
 
