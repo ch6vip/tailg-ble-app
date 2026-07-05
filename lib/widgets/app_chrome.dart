@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../ble/connection_manager.dart' as ble;
 import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
 import 'app_pressable.dart';
 
 class AppPageHeader extends StatelessWidget {
@@ -225,7 +226,7 @@ class _AppSkeletonState extends State<AppSkeleton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1200),
+    duration: AppMotion.pulsePeriod,
   )..repeat(reverse: true);
 
   @override
@@ -241,7 +242,7 @@ class _AppSkeletonState extends State<AppSkeleton>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
-        final t = Curves.easeInOut.transform(_controller.value);
+        final t = AppMotion.pulseCurve.transform(_controller.value);
         return Container(
           width: widget.width,
           height: widget.height,

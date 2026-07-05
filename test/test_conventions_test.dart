@@ -131,6 +131,26 @@ void main() {
     );
   });
 
+  test('pulse animation literals stay in AppMotion', () {
+    final hardcodedPulseLiteral = RegExp(
+      r'(duration:\s*const Duration\(milliseconds:\s*1200\)|begin:\s*0\.75|end:\s*1\.1)',
+    );
+    final offenders = patternOffenders(
+      dartFilesUnder('lib').where(
+        (file) => !_normalizedPath(file.path).endsWith('theme/app_motion.dart'),
+      ),
+      hardcodedPulseLiteral,
+    );
+
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Use AppMotion.pulsePeriod, AppMotion.pulseMin, and '
+          'AppMotion.pulseMax for breathing/pulse animations.',
+    );
+  });
+
   test('InkWell widgets are not nested inside another InkWell', () {
     final offenders = <String>[];
 

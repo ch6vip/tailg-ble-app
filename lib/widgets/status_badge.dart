@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
+import 'package:tailg_ble_app/theme/app_motion.dart';
 
 /// Unified status badge for the v8 Ninebot design system.
 ///
@@ -171,14 +172,11 @@ class _PulsingDotState extends State<_PulsingDot>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
+    _ctrl = AnimationController(vsync: this, duration: AppMotion.pulsePeriod);
     _scale = Tween(
-      begin: 0.75,
-      end: 1.1,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+      begin: AppMotion.pulseMin,
+      end: AppMotion.pulseMax,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: AppMotion.pulseCurve));
     if (widget.pulsing) {
       _ctrl.repeat(reverse: true);
     }

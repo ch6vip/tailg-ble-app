@@ -26,6 +26,9 @@ abstract final class AppMotion {
   /// Long-press hold timeout (power knob). 1200 ms.
   static const longPressHold = Duration(milliseconds: 1200);
 
+  /// Pulse / breathing loop period.
+  static const pulsePeriod = Duration(milliseconds: 1200);
+
   // ── Curves ────────────────────────────────────────────────────────────
 
   /// Default press / release curve — snappy but not abrupt.
