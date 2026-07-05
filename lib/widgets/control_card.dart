@@ -7,9 +7,15 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 const _slideHandleFallbackColor = Color(0xFF50515A);
 const _slideHandleFallbackRadius = BorderRadius.all(Radius.circular(9));
 const _quickActionOpacityDuration = Duration(milliseconds: 200);
+const _quickEditButtonOverflow = 16.0;
+const _quickEditButtonVisualInset = 3.0;
+const _quickEditButtonVisualOffset = Offset(
+  -(_quickEditButtonOverflow + _quickEditButtonVisualInset),
+  -(_quickEditButtonOverflow + _quickEditButtonVisualInset),
+);
 
-/// Official Tailg control card: two quick placeholders on the left, the
-/// slide-style power control plus find/lock actions on the right.
+/// Official Tailg control card: two quick actions on the left, the slide-style
+/// power control plus find/lock actions on the right.
 class ControlCard extends StatefulWidget {
   const ControlCard({
     super.key,
@@ -61,6 +67,8 @@ class _ControlCardState extends State<ControlCard> {
                 height: panelHeight,
                 child: _OfficialQuickSlots(
                   enabled: !busy,
+                  onOpenSeat: widget.onOpenSeat,
+                  onProximityUnlock: widget.onProximityUnlock,
                   onQuickEdit: widget.onQuickEdit,
                 ),
               ),
@@ -236,9 +244,16 @@ class _PanelCommand extends StatelessWidget {
 }
 
 class _OfficialQuickSlots extends StatelessWidget {
-  const _OfficialQuickSlots({required this.enabled, this.onQuickEdit});
+  const _OfficialQuickSlots({
+    required this.enabled,
+    this.onOpenSeat,
+    this.onProximityUnlock,
+    this.onQuickEdit,
+  });
 
   final bool enabled;
+  final VoidCallback? onOpenSeat;
+  final VoidCallback? onProximityUnlock;
   final VoidCallback? onQuickEdit;
 
   @override
@@ -249,9 +264,14 @@ class _OfficialQuickSlots extends StatelessWidget {
         children: [
           Expanded(
             child: _QuickActionSlot(
-              label: '添加快捷功能',
-              enabled: enabled && onQuickEdit != null,
-              onTap: onQuickEdit,
+              label: onOpenSeat == null ? '添加快捷功能' : '打开座桶',
+              asset: onOpenSeat == null
+                  ? 'assets/official_tailg/ic_control_quick_add.webp'
+                  : 'assets/official_tailg/ic_control_iv_chair.png',
+              icon: onOpenSeat == null ? Icons.add : Icons.event_seat_outlined,
+              showLabel: onOpenSeat != null,
+              enabled: enabled && (onOpenSeat ?? onQuickEdit) != null,
+              onTap: onOpenSeat ?? onQuickEdit,
             ),
           ),
           const SizedBox(height: 10),
@@ -261,14 +281,22 @@ class _OfficialQuickSlots extends StatelessWidget {
               children: [
                 Positioned.fill(
                   child: _QuickActionSlot(
-                    label: '添加快捷功能',
-                    enabled: enabled && onQuickEdit != null,
-                    onTap: onQuickEdit,
+                    label: onProximityUnlock == null ? '添加快捷功能' : '感应解锁',
+                    asset: onProximityUnlock == null
+                        ? 'assets/official_tailg/ic_control_quick_add.webp'
+                        : 'assets/official_tailg/ic_control_mode_induction.png',
+                    icon: onProximityUnlock == null
+                        ? Icons.add
+                        : Icons.sensors_outlined,
+                    showLabel: onProximityUnlock != null,
+                    enabled:
+                        enabled && (onProximityUnlock ?? onQuickEdit) != null,
+                    onTap: onProximityUnlock ?? onQuickEdit,
                   ),
                 ),
                 Positioned(
-                  right: 3,
-                  bottom: 3,
+                  right: -_quickEditButtonOverflow,
+                  bottom: -_quickEditButtonOverflow,
                   child: _QuickEditButton(
                     enabled: enabled && onQuickEdit != null,
                     onTap: onQuickEdit,
@@ -286,12 +314,18 @@ class _OfficialQuickSlots extends StatelessWidget {
 class _QuickActionSlot extends StatelessWidget {
   const _QuickActionSlot({
     required this.label,
+    required this.asset,
+    required this.icon,
     required this.enabled,
+    this.showLabel = true,
     this.onTap,
   });
 
   final String label;
+  final String asset;
+  final IconData icon;
   final bool enabled;
+  final bool showLabel;
   final VoidCallback? onTap;
 
   @override
@@ -319,12 +353,31 @@ class _QuickActionSlot extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Image.asset(
-                'assets/official_tailg/ic_control_quick_add.webp',
+                asset,
                 width: 26,
                 height: 26,
                 errorBuilder: (_, __, ___) =>
-                    const Icon(Icons.add, size: 24, color: AppColors.brandRed),
+                    Icon(icon, size: 24, color: AppColors.brandRed),
               ),
+              if (showLabel) ...[
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.officialTextMuted,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -354,16 +407,19 @@ class _QuickEditButton extends StatelessWidget {
         child: SizedBox(
           width: AppTouchTargets.min,
           height: AppTouchTargets.min,
-          child: Align(
-            alignment: Alignment.bottomRight,
-            child: Image.asset(
-              'assets/official_tailg/ic_quick_edit_entrance.webp',
-              width: 22,
-              height: 22,
-              errorBuilder: (_, __, ___) => const Icon(
-                Icons.edit,
-                size: 18,
-                color: AppColors.officialTextMuted,
+          child: Transform.translate(
+            offset: _quickEditButtonVisualOffset,
+            child: Align(
+              alignment: Alignment.bottomRight,
+              child: Image.asset(
+                'assets/official_tailg/ic_quick_edit_entrance.webp',
+                width: 22,
+                height: 22,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.edit,
+                  size: 18,
+                  color: AppColors.officialTextMuted,
+                ),
               ),
             ),
           ),

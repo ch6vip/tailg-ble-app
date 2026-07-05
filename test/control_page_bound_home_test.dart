@@ -254,7 +254,7 @@ void main() {
     expect(find.text('台铃充电站'), findsOneWidget);
   });
 
-  testWidgets('official control card exposes default quick placeholders', (
+  testWidgets('official control card exposes default quick actions', (
     tester,
   ) async {
     await pumpBoundHome(tester, size: const Size(430, 2200));
@@ -262,9 +262,9 @@ void main() {
     for (final label in ['更多功能', '用车人', '超级仪表']) {
       expect(find.text(label), findsNothing);
     }
-    expect(find.text('打开座桶'), findsNothing);
-    expect(find.text('感应解锁'), findsNothing);
-    expect(find.bySemanticsLabel('添加快捷功能'), findsNWidgets(2));
+    expect(find.text('打开座桶'), findsOneWidget);
+    expect(find.text('感应解锁'), findsOneWidget);
+    expect(find.bySemanticsLabel('添加快捷功能'), findsNothing);
     final edit = find.bySemanticsLabel('编辑快捷功能');
     expect(edit, findsOneWidget);
     expectMinTouchTargetHeight(tester, edit);

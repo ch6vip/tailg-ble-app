@@ -8,15 +8,15 @@ import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
 
 void main() {
-  testWidgets('official quick placeholders render', (tester) async {
+  testWidgets('official quick actions render', (tester) async {
     await tester.pumpWidget(
       TestApp(
         home: ControlCard(onOpenSeat: () {}, onProximityUnlock: () {}),
       ),
     );
 
-    expect(find.text('打开座桶'), findsNothing);
-    expect(find.text('感应解锁'), findsNothing);
+    expect(find.text('打开座桶'), findsOneWidget);
+    expect(find.text('感应解锁'), findsOneWidget);
     expect(find.text('更多功能'), findsNothing);
   });
 
@@ -33,7 +33,11 @@ void main() {
       ),
     );
 
-    expect(find.bySemanticsLabel('添加快捷功能'), findsNWidgets(2));
+    for (final label in ['打开座桶', '感应解锁']) {
+      final action = find.bySemanticsLabel(label);
+      expect(action, findsOneWidget);
+      expectMinTouchTargetHeight(tester, action);
+    }
     final edit = find.bySemanticsLabel('编辑快捷功能');
     expect(edit, findsOneWidget);
     expectMinTouchTargetHeight(tester, edit);
@@ -56,8 +60,20 @@ void main() {
         ),
       );
 
-      final placeholders = find.bySemanticsLabel('添加快捷功能');
-      expect(placeholders, findsNWidgets(2));
+      for (final label in ['打开座桶', '感应解锁']) {
+        final action = find.bySemanticsLabel(label);
+        expect(action, findsOneWidget);
+        expect(
+          tester.getSemantics(action),
+          matchesSemantics(
+            label: label,
+            isButton: true,
+            hasEnabledState: true,
+            isEnabled: true,
+            hasTapAction: true,
+          ),
+        );
+      }
 
       final edit = find.bySemanticsLabel('编辑快捷功能');
       expect(edit, findsOneWidget);
@@ -74,6 +90,52 @@ void main() {
     } finally {
       semantics.dispose();
     }
+  });
+
+  testWidgets('quick actions invoke assigned callbacks', (tester) async {
+    var openSeatCount = 0;
+    var proximityUnlockCount = 0;
+    var editCount = 0;
+
+    await tester.pumpWidget(
+      TestApp(
+        home: ControlCard(
+          onOpenSeat: () => openSeatCount++,
+          onProximityUnlock: () => proximityUnlockCount++,
+          onQuickEdit: () => editCount++,
+        ),
+      ),
+    );
+
+    await tester.tap(find.bySemanticsLabel('打开座桶'));
+    await tester.tap(find.bySemanticsLabel('感应解锁'));
+    await tester.tap(find.bySemanticsLabel('编辑快捷功能'));
+    await tester.pumpAndSettle();
+
+    expect(openSeatCount, 1);
+    expect(proximityUnlockCount, 1);
+    expect(editCount, 1);
+  });
+
+  testWidgets('quick actions fall back to placeholders without callbacks', (
+    tester,
+  ) async {
+    var editCount = 0;
+
+    await tester.pumpWidget(
+      TestApp(home: ControlCard(onQuickEdit: () => editCount++)),
+    );
+
+    expect(find.text('打开座桶'), findsNothing);
+    expect(find.text('感应解锁'), findsNothing);
+    final placeholders = find.bySemanticsLabel('添加快捷功能');
+    expect(placeholders, findsNWidgets(2));
+
+    await tester.tap(placeholders.first);
+    await tester.tap(placeholders.last);
+    await tester.pumpAndSettle();
+
+    expect(editCount, 2);
   });
 
   testWidgets('power knob fires after right slide completes', (tester) async {
