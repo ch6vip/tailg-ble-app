@@ -266,10 +266,11 @@ class BikeState {
     final faultLowVoltage = (faults & 0x20) != 0;
 
     final batteryRaw = data.length > 6 ? data[6] : null;
-    final batteryValue = batteryRaw == null ? null : batteryRaw & 0x7F;
-    final batteryPercent = batteryRaw != null && (batteryRaw & 0x80) != 0
-        ? (batteryValue! > 100 ? 100 : batteryValue)
-        : null;
+    int? batteryPercent;
+    if (batteryRaw != null && (batteryRaw & 0x80) != 0) {
+      final value = batteryRaw & 0x7F;
+      batteryPercent = value > 100 ? 100 : value;
+    }
 
     return BikeState(
       isLocked: isLocked,
