@@ -34,5 +34,5 @@ String intToHex2Lower(int n) {
 }
 
 String intToHex2(int n) {
-  return (n & 0xff).toRadixString(16).padLeft(2, '0').toUpperCase();
+  return intToHex2Lower(n).toUpperCase();
 }
