@@ -1,3 +1,5 @@
+import 'persistence_value.dart';
+
 enum VehicleProtocol {
   auto('auto', '自动识别'),
   standard('standard', 'Standard'),
@@ -43,7 +45,7 @@ class VehicleLocation {
       latitude: _doubleValue(json['latitude']) ?? 0,
       longitude: _doubleValue(json['longitude']) ?? 0,
       accuracy: _doubleValue(json['accuracy']) ?? 0,
-      recordedAt: _dateValue(json['recordedAt']) ?? DateTime.now(),
+      recordedAt: parsePersistedDate(json['recordedAt']) ?? DateTime.now(),
     );
   }
 }
@@ -124,9 +126,9 @@ class VehicleProfile {
       id: _stringValue(json['id']),
       name: _stringValue(json['name']),
       protocol: VehicleProtocol.fromValue(_stringValue(json['protocol'])),
-      createdAt: _dateValue(json['createdAt']) ?? now,
-      updatedAt: _dateValue(json['updatedAt']) ?? now,
-      lastConnectedAt: _dateValue(json['lastConnectedAt']),
+      createdAt: parsePersistedDate(json['createdAt']) ?? now,
+      updatedAt: parsePersistedDate(json['updatedAt']) ?? now,
+      lastConnectedAt: parsePersistedDate(json['lastConnectedAt']),
       lastLocation: locationJson is Map
           ? VehicleLocation.fromJson(Map<String, dynamic>.from(locationJson))
           : null,
@@ -150,9 +152,4 @@ int? _intValue(Object? value) {
   if (value is num) return value.toInt();
   if (value is String) return int.tryParse(value.trim());
   return null;
-}
-
-DateTime? _dateValue(Object? value) {
-  if (value == null) return null;
-  return DateTime.tryParse(value.toString());
 }

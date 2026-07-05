@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/persistence_value.dart';
 import 'log_service.dart';
 
 class NfcKeyRecord {
@@ -29,7 +30,7 @@ class NfcKeyRecord {
       id: _stringValue(json['id']),
       name: _stringValue(json['name']).ifEmpty('未命名钥匙'),
       type: _stringValue(json['type']).ifEmpty('手机'),
-      createdAt: _dateValue(json['createdAt']) ?? DateTime.now(),
+      createdAt: parsePersistedDate(json['createdAt']) ?? DateTime.now(),
     );
   }
 
@@ -72,7 +73,7 @@ class FenceConfig {
       latitude: _doubleValue(json['latitude']),
       longitude: _doubleValue(json['longitude']),
       radiusMeters: _intValue(json['radiusMeters']) ?? 500,
-      updatedAt: _dateValue(json['updatedAt']) ?? DateTime.now(),
+      updatedAt: parsePersistedDate(json['updatedAt']) ?? DateTime.now(),
     );
   }
 }
@@ -102,7 +103,7 @@ class ShareMemberRecord {
       id: _stringValue(json['id']),
       name: _stringValue(json['name']).ifEmpty('未命名成员'),
       phone: _stringValue(json['phone']),
-      createdAt: _dateValue(json['createdAt']) ?? DateTime.now(),
+      createdAt: parsePersistedDate(json['createdAt']) ?? DateTime.now(),
     );
   }
 
@@ -259,11 +260,6 @@ int? _intValue(Object? value) {
   if (value is num) return value.toInt();
   if (value is String) return int.tryParse(value.trim());
   return null;
-}
-
-DateTime? _dateValue(Object? value) {
-  if (value == null) return null;
-  return DateTime.tryParse(value.toString());
 }
 
 extension _EmptyStringFallback on String {
