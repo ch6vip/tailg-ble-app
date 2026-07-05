@@ -651,7 +651,7 @@ class RideRecordPage extends StatelessWidget {
                               child: Text(
                                 location == null
                                     ? '暂无最后位置记录'
-                                    : '${location.coordinateText} · ${_formatDateTime(location.recordedAt)}',
+                                    : '${location.coordinateText} · ${formatDateMinuteText(location.recordedAt)}',
                                 style: AppTextStyles.bodyMedium,
                               ),
                             ),
@@ -676,7 +676,7 @@ class RideRecordPage extends StatelessWidget {
                                   title: Text(logs[i].message),
                                   subtitle: Text(
                                     [
-                                      _formatDateTime(logs[i].time),
+                                      formatDateMinuteText(logs[i].time),
                                       if (logs[i].detail != null)
                                         logs[i].detail!,
                                     ].join('  '),
@@ -949,8 +949,4 @@ class _CircleIcon extends StatelessWidget {
       child: Icon(icon, color: color, size: AppIconSizes.md),
     );
   }
-}
-
-String _formatDateTime(DateTime time) {
-  return formatDateMinuteText(time);
 }
