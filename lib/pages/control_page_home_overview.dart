@@ -407,7 +407,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
                   onToggleManualMode: _toggleManualMode,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 5),
               ControlCard(
                 powered: isPowerOn,
                 locked: isArmed,
@@ -478,13 +478,13 @@ class _OfficialControlTip extends StatelessWidget {
       builder: (context, constraints) {
         final pillWidth = (constraints.maxWidth * 0.43).clamp(154.0, 184.0);
         return SizedBox(
-          height: 60,
+          height: 50,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
               Positioned(
                 left: 48,
-                top: 10,
+                top: 2,
                 child: Container(
                   width: pillWidth,
                   height: 38,
@@ -499,7 +499,7 @@ class _OfficialControlTip extends StatelessWidget {
               ),
               Positioned(
                 left: 0,
-                top: -10,
+                top: -20,
                 child: Image.asset(
                   'assets/official_tailg/ic_control_tip_mascot.png',
                   width: 62,
@@ -513,7 +513,7 @@ class _OfficialControlTip extends StatelessWidget {
               ),
               Positioned(
                 right: 0,
-                top: 7,
+                top: 1,
                 child: Tooltip(
                   message: manualModeEnabled ? '手动模式已开启' : '感应模式已开启',
                   child: AppPressable(

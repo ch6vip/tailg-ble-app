@@ -88,7 +88,7 @@ class ControlPageHero extends StatelessWidget {
                 onDetail: onDetail,
                 onMessage: onMessage,
               ),
-              SizedBox(height: wide ? 16 : 12),
+              SizedBox(height: wide ? 10 : 8),
               Semantics(
                 container: true,
                 explicitChildNodes: true,
@@ -232,7 +232,7 @@ class _WideHeroData extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _BatteryIconMetric(level: batteryLevel),
-        const SizedBox(width: 46),
+        const SizedBox(width: 48),
         _RangeMetric(value: displayRange),
         const Spacer(),
         _BleConnectPill(
@@ -269,7 +269,7 @@ class _NarrowHeroData extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _BatteryIconMetric(level: batteryLevel),
-            const SizedBox(width: 34),
+            const SizedBox(width: 36),
             Expanded(child: _RangeMetric(value: displayRange)),
             _BleConnectPill(
               label: connectionLabel,
@@ -377,41 +377,6 @@ class _BatteryIconMetric extends StatelessWidget {
             fontWeight: FontWeight.w700,
             color: AppColors.officialTextMuted,
             letterSpacing: 0,
-          ),
-        ),
-        const SizedBox(height: 8),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                level.toString(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w800,
-                  height: 0.95,
-                  letterSpacing: 0,
-                  color: _officialHeroMetricInk,
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 2, left: 2),
-                child: Text(
-                  '%',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: _officialHeroMetricInk,
-                    letterSpacing: 0,
-                  ),
-                ),
-              ),
-            ],
           ),
         ),
         const SizedBox(height: 10),
