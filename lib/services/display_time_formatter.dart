@@ -1,5 +1,9 @@
+String formatDateText(DateTime time) {
+  return '${time.year}-${_twoDigits(time.month)}-${_twoDigits(time.day)}';
+}
+
 String formatDateMinuteText(DateTime time) {
-  return '${time.year}-${_twoDigits(time.month)}-${_twoDigits(time.day)} '
+  return '${formatDateText(time)} '
       '${_twoDigits(time.hour)}:${_twoDigits(time.minute)}';
 }
 

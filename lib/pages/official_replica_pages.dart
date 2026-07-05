@@ -797,7 +797,7 @@ class _NfcKeyTile extends StatelessWidget {
             : Icons.phone_android,
       ),
       title: Text(record.name),
-      subtitle: Text('${record.type} · ${_formatDate(record.createdAt)}'),
+      subtitle: Text('${record.type} · ${formatDateText(record.createdAt)}'),
       trailing: PopupMenuButton<String>(
         onSelected: (value) => value == 'edit' ? onEdit() : onDelete(),
         itemBuilder: (context) => const [
@@ -827,7 +827,7 @@ class _ShareMemberTile extends StatelessWidget {
       title: Text(member.name),
       subtitle: Text(
         member.phone.isEmpty
-            ? '待邀请 · ${_formatDate(member.createdAt)}'
+            ? '待邀请 · ${formatDateText(member.createdAt)}'
             : '${member.phone} · 待邀请',
       ),
       trailing: PopupMenuButton<String>(
@@ -949,10 +949,6 @@ class _CircleIcon extends StatelessWidget {
       child: Icon(icon, color: color, size: AppIconSizes.md),
     );
   }
-}
-
-String _formatDate(DateTime time) {
-  return '${time.year}-${time.month.toString().padLeft(2, '0')}-${time.day.toString().padLeft(2, '0')}';
 }
 
 String _formatDateTime(DateTime time) {
