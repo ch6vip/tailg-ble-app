@@ -21,6 +21,12 @@ String bytesToHex(Uint8List bytes) {
   return bytes.map(intToHex2).join();
 }
 
+String bytesToSpacedHex(Iterable<int> bytes) {
+  return bytes
+      .map((b) => (b & 0xff).toRadixString(16).padLeft(2, '0'))
+      .join(' ');
+}
+
 String intToHex2(int n) {
   return (n & 0xff).toRadixString(16).padLeft(2, '0').toUpperCase();
 }

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import '../services/log_service.dart';
 import 'constants.dart';
+import 'hex.dart';
 import 'protocol.dart';
 import 'qgj_protocol.dart';
 import 'parser.dart';
@@ -979,7 +980,7 @@ class ConnectionManager {
   }
 
   static String _bytesHex(Iterable<int> bytes) {
-    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
+    return bytesToSpacedHex(bytes);
   }
 
   void _armReadyWatchdog() {

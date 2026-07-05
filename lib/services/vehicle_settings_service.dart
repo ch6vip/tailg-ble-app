@@ -1,5 +1,6 @@
 import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
+import '../ble/hex.dart';
 import '../ble/qgj_protocol.dart';
 import 'log_service.dart';
 
@@ -546,8 +547,6 @@ class VehicleSettingsService {
 
   static String _payloadHex(List<int> payload) {
     if (payload.isEmpty) return 'none';
-    return payload
-        .map((b) => (b & 0xFF).toRadixString(16).padLeft(2, '0'))
-        .join(' ');
+    return bytesToSpacedHex(payload);
   }
 }

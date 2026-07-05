@@ -8,6 +8,10 @@ void main() {
     expect(bytesToHex(Uint8List.fromList([0, 10, 255])), '000AFF');
   });
 
+  test('bytesToSpacedHex renders lowercase spaced byte text', () {
+    expect(bytesToSpacedHex([0, 10, 255]), '00 0a ff');
+  });
+
   test('intToHex2 renders uppercase two digit byte text', () {
     expect(intToHex2(0), '00');
     expect(intToHex2(10), '0A');
