@@ -124,12 +124,8 @@ class OfficialVehicle {
   }
 
   String get displayName {
-    if (carNickName.trim().isNotEmpty) return carNickName.trim();
-    if (carName.trim().isNotEmpty) return carName.trim();
-    if (btname.trim().isNotEmpty) return btname.trim();
-    if (frame.trim().isNotEmpty) return frame.trim();
-    if (imei.trim().isNotEmpty) return imei.trim();
-    return '官方车辆';
+    return _firstNonBlank([carNickName, carName, btname, frame, imei]) ??
+        '官方车辆';
   }
 
   String get normalizedBtmac {
@@ -594,6 +590,14 @@ class OfficialVehicleSelfCheck {
 }
 
 String _stringValue(Object? value) => value?.toString().trim() ?? '';
+
+String? _firstNonBlank(Iterable<String> values) {
+  for (final value in values) {
+    final text = value.trim();
+    if (text.isNotEmpty) return text;
+  }
+  return null;
+}
 
 bool _rawFeatureFlag(Map<String, dynamic> raw, List<String> keys) {
   if (raw.isEmpty) return false;
