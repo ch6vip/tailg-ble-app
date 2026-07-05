@@ -1187,7 +1187,8 @@ class _DetailLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final display = value.trim().isEmpty ? '未返回' : value.trim();
+    final text = value.trim();
+    final display = text.isEmpty ? '未返回' : text;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
