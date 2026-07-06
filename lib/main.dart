@@ -502,13 +502,9 @@ class _HomePageState extends State<HomePage>
           proximityService.setTargetDevice(device.remoteId.toString());
           unawaited(
             () async {
-              await autoConnectService.saveDevice(device);
-              final profile = await vehicleStore.upsert(
-                id: device.remoteId.toString(),
-                name: device.platformName,
+              final profile = await autoConnectService.saveDevice(
+                device,
                 protocol: vehicleProtocolFromBle(connectionManager.protocol),
-                makeDefault: true,
-                lastConnectedAt: DateTime.now(),
               );
               await locationService.recordVehicleLocation(profile.id);
             }().catchError((Object e) {

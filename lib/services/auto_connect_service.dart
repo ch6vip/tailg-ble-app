@@ -144,19 +144,20 @@ class AutoConnectService {
     _enabledController.add(value);
   }
 
-  Future<void> saveDevice(
+  Future<VehicleProfile> saveDevice(
     BluetoothDevice device, {
     DateTime? lastConnectedAt,
+    VehicleProtocol protocol = VehicleProtocol.auto,
   }) async {
     final connectedAt = lastConnectedAt ?? _clock();
     final deviceId = device.remoteId.toString();
     final deviceName = device.platformName;
     _lastDeviceId = deviceId;
     _lastDeviceName = deviceName;
-    await VehicleStore().upsert(
+    final profile = await VehicleStore().upsert(
       id: deviceId,
       name: deviceName,
-      protocol: VehicleProtocol.auto,
+      protocol: protocol,
       makeDefault: true,
       lastConnectedAt: connectedAt,
       savedAt: connectedAt,
@@ -166,6 +167,7 @@ class AutoConnectService {
     if (deviceName.isNotEmpty) {
       await prefs.setString(_prefDeviceName, deviceName);
     }
+    return profile;
   }
 
   Future<void> tryAutoConnect() async {

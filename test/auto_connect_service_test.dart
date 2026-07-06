@@ -95,13 +95,14 @@ void main() {
         final lastConnectedAt = DateTime(2026, 6, 10, 9, 30);
         addTearDown(fixture.manager.dispose);
 
-        await AutoConnectService().saveDevice(
+        final profile = await AutoConnectService().saveDevice(
           fixture.device,
           lastConnectedAt: lastConnectedAt,
         );
 
         final prefs = await SharedPreferences.getInstance();
         final defaultVehicle = VehicleStore().defaultVehicle;
+        expect(profile, same(defaultVehicle));
         expect(prefs.getString('auto_connect_device_id'), testBleDeviceId);
         expect(prefs.containsKey('auto_connect_device_name'), isFalse);
         expect(AutoConnectService().lastDeviceName, isEmpty);
@@ -126,6 +127,19 @@ void main() {
       expect(defaultVehicle?.createdAt, connectedAt);
       expect(defaultVehicle?.updatedAt, connectedAt);
       expect(defaultVehicle?.lastConnectedAt, connectedAt);
+    });
+
+    test('saveDevice persists the selected protocol', () async {
+      final fixture = BleGuardFixture();
+      addTearDown(fixture.manager.dispose);
+
+      final profile = await AutoConnectService().saveDevice(
+        fixture.device,
+        protocol: VehicleProtocol.qgj,
+      );
+
+      expect(profile.protocol, VehicleProtocol.qgj);
+      expect(VehicleStore().defaultVehicle?.protocol, VehicleProtocol.qgj);
     });
   });
 
