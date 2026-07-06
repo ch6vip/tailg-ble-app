@@ -113,6 +113,20 @@ void main() {
         expect(defaultVehicle?.lastConnectedAt, lastConnectedAt);
       },
     );
+
+    test('saveDevice uses service clock for default timestamps', () async {
+      final fixture = BleGuardFixture();
+      final connectedAt = DateTime(2026, 6, 10, 10, 30);
+      addTearDown(fixture.manager.dispose);
+      AutoConnectService().resetForTest(clock: () => connectedAt);
+
+      await AutoConnectService().saveDevice(fixture.device);
+
+      final defaultVehicle = VehicleStore().defaultVehicle;
+      expect(defaultVehicle?.createdAt, connectedAt);
+      expect(defaultVehicle?.updatedAt, connectedAt);
+      expect(defaultVehicle?.lastConnectedAt, connectedAt);
+    });
   });
 
   group('AutoConnectTargetGuard', () {

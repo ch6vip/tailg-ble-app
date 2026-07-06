@@ -76,6 +76,7 @@ class AutoConnectService {
   bool _enabled = false;
   bool _initialized = false;
   Future<void>? _initializing;
+  DateTime Function() _clock = DateTime.now;
   bool get enabled => _enabled;
   String? _lastDeviceId;
   String? _lastDeviceName;
@@ -122,13 +123,14 @@ class AutoConnectService {
     }
   }
 
-  void resetForTest() {
+  void resetForTest({DateTime Function()? clock}) {
     _connectionManager = null;
     _enabled = false;
     _lastDeviceId = null;
     _lastDeviceName = null;
     _initialized = false;
     _initializing = null;
+    _clock = clock ?? DateTime.now;
   }
 
   void dispose() {
@@ -146,7 +148,7 @@ class AutoConnectService {
     BluetoothDevice device, {
     DateTime? lastConnectedAt,
   }) async {
-    final connectedAt = lastConnectedAt ?? DateTime.now();
+    final connectedAt = lastConnectedAt ?? _clock();
     final deviceId = device.remoteId.toString();
     final deviceName = device.platformName;
     _lastDeviceId = deviceId;
