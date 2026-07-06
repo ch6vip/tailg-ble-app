@@ -25,12 +25,18 @@ class NfcKeyRecord {
     'createdAt': createdAt.toIso8601String(),
   };
 
-  factory NfcKeyRecord.fromJson(Map<String, dynamic> json) {
+  factory NfcKeyRecord.fromJson(
+    Map<String, dynamic> json, {
+    DateTime? fallbackNow,
+  }) {
     return NfcKeyRecord(
       id: parsePersistedString(json['id']),
       name: parsePersistedStringOr(json['name'], '未命名钥匙'),
       type: parsePersistedStringOr(json['type'], '手机'),
-      createdAt: parsePersistedDate(json['createdAt']) ?? DateTime.now(),
+      createdAt:
+          parsePersistedDate(json['createdAt']) ??
+          fallbackNow ??
+          DateTime.now(),
     );
   }
 
@@ -67,13 +73,19 @@ class FenceConfig {
     'updatedAt': updatedAt.toIso8601String(),
   };
 
-  factory FenceConfig.fromJson(Map<String, dynamic> json) {
+  factory FenceConfig.fromJson(
+    Map<String, dynamic> json, {
+    DateTime? fallbackNow,
+  }) {
     return FenceConfig(
       enabled: parsePersistedBool(json['enabled']),
       latitude: parsePersistedDouble(json['latitude']),
       longitude: parsePersistedDouble(json['longitude']),
       radiusMeters: parsePersistedInt(json['radiusMeters']) ?? 500,
-      updatedAt: parsePersistedDate(json['updatedAt']) ?? DateTime.now(),
+      updatedAt:
+          parsePersistedDate(json['updatedAt']) ??
+          fallbackNow ??
+          DateTime.now(),
     );
   }
 }
@@ -98,12 +110,18 @@ class ShareMemberRecord {
     'createdAt': createdAt.toIso8601String(),
   };
 
-  factory ShareMemberRecord.fromJson(Map<String, dynamic> json) {
+  factory ShareMemberRecord.fromJson(
+    Map<String, dynamic> json, {
+    DateTime? fallbackNow,
+  }) {
     return ShareMemberRecord(
       id: parsePersistedString(json['id']),
       name: parsePersistedStringOr(json['name'], '未命名成员'),
       phone: parsePersistedString(json['phone']),
-      createdAt: parsePersistedDate(json['createdAt']) ?? DateTime.now(),
+      createdAt:
+          parsePersistedDate(json['createdAt']) ??
+          fallbackNow ??
+          DateTime.now(),
     );
   }
 

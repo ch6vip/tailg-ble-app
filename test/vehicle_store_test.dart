@@ -474,6 +474,24 @@ void main() {
     expect(fence?.updatedAt, updatedAt);
   });
 
+  test('Replica feature records use provided fallback timestamps', () {
+    final fallbackNow = DateTime(2026, 6, 9, 10, 30);
+
+    final nfcKey = NfcKeyRecord.fromJson({
+      'createdAt': 'bad-date',
+    }, fallbackNow: fallbackNow);
+    final member = ShareMemberRecord.fromJson({
+      'createdAt': 'bad-date',
+    }, fallbackNow: fallbackNow);
+    final fence = FenceConfig.fromJson({
+      'updatedAt': 'bad-date',
+    }, fallbackNow: fallbackNow);
+
+    expect(nfcKey.createdAt, fallbackNow);
+    expect(member.createdAt, fallbackNow);
+    expect(fence.updatedAt, fallbackNow);
+  });
+
   test('ReplicaFeatureStore tolerates corrupt persisted config', () async {
     SharedPreferences.setMockInitialValues({
       'replica_nfc_keys': 'not-json',
