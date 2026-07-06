@@ -1421,6 +1421,7 @@ void main() {
       expect(day.hasData, isTrue);
       expect(day.records, hasLength(1));
       expect(day.records.first.deviceTravelId, 'travel-1');
+      expect(day.records.first.raw['min'], '30');
       expect(day.records.first.mileageLabel, '12.5km');
       expect(day.records.first.averageSpeedLabel, '25km/h');
       expect(point.hasCoordinate, isTrue);

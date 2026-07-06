@@ -575,12 +575,16 @@ class OfficialVehicleSelfCheck {
 }
 
 Map<String, dynamic> _rawPayload(Map<String, dynamic> json) {
-  return Map<String, dynamic>.from(json);
+  return _stringKeyedMap(json);
 }
 
 Map<String, dynamic> _dataMap(Object? value) {
-  if (value is Map) return Map<String, dynamic>.from(value);
+  if (value is Map<Object?, Object?>) return _stringKeyedMap(value);
   return const {};
+}
+
+Map<String, dynamic> _stringKeyedMap(Map<Object?, Object?> value) {
+  return Map<String, dynamic>.from(value);
 }
 
 String _stringValue(Object? value) => value?.toString().trim() ?? '';
@@ -663,10 +667,7 @@ List<OfficialTravelRecord> _travelRecords(Object? value) {
   if (value is! List) return const [];
   return value
       .whereType<Map<Object?, Object?>>()
-      .map(
-        (item) =>
-            OfficialTravelRecord.fromJson(Map<String, dynamic>.from(item)),
-      )
+      .map((item) => OfficialTravelRecord.fromJson(_stringKeyedMap(item)))
       .toList(growable: false);
 }
 
