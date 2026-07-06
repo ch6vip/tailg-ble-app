@@ -26,6 +26,14 @@ void main() {
     expect(snapshot.bms.socSource, BatteryDataSource.ble);
   });
 
+  test('BatterySnapshot handles missing bike state without faults', () {
+    final snapshot = BatterySnapshot.fromBikeState(null);
+
+    expect(snapshot.hasData, isFalse);
+    expect(snapshot.faults, isEmpty);
+    expect(snapshot.healthLabel, '等待数据');
+  });
+
   test('BatterySnapshot lists active bike faults in display order', () {
     final snapshot = BatterySnapshot.fromBikeState(
       const BikeState(

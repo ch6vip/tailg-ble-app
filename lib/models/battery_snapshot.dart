@@ -212,6 +212,10 @@ class BatterySnapshot {
 
 List<String> _bikeFaults(BikeState? bikeState) {
   if (bikeState == null) return const [];
+  return _activeBikeFaults(bikeState);
+}
+
+List<String> _activeBikeFaults(BikeState bikeState) {
   return [
     if (bikeState.faultMotor) '电机故障',
     if (bikeState.faultController) '控制器故障',
