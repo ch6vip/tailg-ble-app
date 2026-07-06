@@ -189,6 +189,7 @@ class AutoConnectService {
   Future<void> _tryAutoConnectOnce() async {
     await VehicleStore().init();
     _refreshTarget();
+    await ManualModeService().init();
     if (ManualModeService().enabled) {
       _log.operation('自动连接: 已开启手动模式，跳过', level: LogLevel.info);
       return;

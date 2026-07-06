@@ -6,6 +6,7 @@ import 'package:tailg_ble_app/ble/connection_manager.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/services/ble_connection_snapshot_guard.dart';
 import 'package:tailg_ble_app/services/auto_connect_service.dart';
+import 'package:tailg_ble_app/services/manual_mode_service.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 
 import 'helpers/allowing_snapshot_guard.dart';
@@ -16,6 +17,7 @@ import 'helpers/storage_mocks.dart';
 void main() {
   setUp(() {
     AutoConnectService().resetForTest();
+    ManualModeService().resetForTest();
     VehicleStore().resetForTest();
     resetMockPreferences();
   });
@@ -166,6 +168,18 @@ void main() {
       );
       expect(source, contains('} catch (e) {'));
     });
+
+    test(
+      'tryAutoConnect loads manual mode before checking the guard',
+      () async {
+        SharedPreferences.setMockInitialValues({'manual_mode_enabled': true});
+        ManualModeService().resetForTest();
+
+        await AutoConnectService().tryAutoConnect();
+
+        expect(ManualModeService().enabled, isTrue);
+      },
+    );
   });
 
   group('AutoConnectTargetGuard', () {
