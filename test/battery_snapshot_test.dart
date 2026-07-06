@@ -36,6 +36,23 @@ void main() {
     expect(snapshot.updatedAt, updatedAt);
   });
 
+  test('BatterySnapshot uses injected clock for default timestamps', () {
+    final generatedAt = DateTime(2026, 6, 9, 10, 30);
+    final explicitUpdatedAt = DateTime(2026, 6, 9, 10, 45);
+
+    final defaultTimestamp = BatterySnapshot.fromBikeState(
+      null,
+      clock: () => generatedAt,
+    );
+    final explicitTimestamp = BatterySnapshot.fromSources(
+      updatedAt: explicitUpdatedAt,
+      clock: () => generatedAt,
+    );
+
+    expect(defaultTimestamp.updatedAt, generatedAt);
+    expect(explicitTimestamp.updatedAt, explicitUpdatedAt);
+  });
+
   test('BatterySnapshot lists active bike faults in display order', () {
     final snapshot = BatterySnapshot.fromBikeState(
       const BikeState(

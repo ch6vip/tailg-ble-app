@@ -101,8 +101,13 @@ class BatterySnapshot {
   factory BatterySnapshot.fromBikeState(
     BikeState? state, {
     DateTime? updatedAt,
+    DateTime Function()? clock,
   }) {
-    return BatterySnapshot.fromSources(bikeState: state, updatedAt: updatedAt);
+    return BatterySnapshot.fromSources(
+      bikeState: state,
+      updatedAt: updatedAt,
+      clock: clock,
+    );
   }
 
   factory BatterySnapshot.fromSources({
@@ -110,6 +115,7 @@ class BatterySnapshot {
     OfficialVehicle? officialVehicle,
     OfficialBatteryInfo? officialBatteryInfo,
     DateTime? updatedAt,
+    DateTime Function()? clock,
   }) {
     final faults = _bikeFaults(bikeState);
 
@@ -145,7 +151,7 @@ class BatterySnapshot {
       temperature: temperature,
       signalStrength: bikeState?.signalStrength,
       faults: faults,
-      updatedAt: updatedAt ?? DateTime.now(),
+      updatedAt: updatedAt ?? (clock ?? DateTime.now)(),
       remainingMileage: remainingMileage,
       totalMileage: totalMileage,
       capacitance: _cleanText(officialBatteryInfo?.capacitance),
