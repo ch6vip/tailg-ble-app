@@ -121,7 +121,6 @@ class VehicleProfile {
 
   factory VehicleProfile.fromJson(Map<String, dynamic> json) {
     final now = DateTime.now();
-    final locationJson = json['lastLocation'];
     return VehicleProfile(
       id: parsePersistedString(json['id']),
       name: parsePersistedString(json['name']),
@@ -131,11 +130,14 @@ class VehicleProfile {
       createdAt: parsePersistedDate(json['createdAt']) ?? now,
       updatedAt: parsePersistedDate(json['updatedAt']) ?? now,
       lastConnectedAt: parsePersistedDate(json['lastConnectedAt']),
-      lastLocation: locationJson is Map
-          ? VehicleLocation.fromJson(Map<String, dynamic>.from(locationJson))
-          : null,
+      lastLocation: _vehicleLocation(json['lastLocation']),
       qgjLoginPassword: parsePersistedInt(json['qgjLoginPassword']),
       qgjUserId: parsePersistedInt(json['qgjUserId']),
     );
   }
+}
+
+VehicleLocation? _vehicleLocation(Object? value) {
+  if (value is! Map) return null;
+  return VehicleLocation.fromJson(Map<String, dynamic>.from(value));
 }

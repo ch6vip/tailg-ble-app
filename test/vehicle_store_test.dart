@@ -235,6 +235,21 @@ void main() {
     expect(store.defaultVehicle?.qgjUserId, 789);
   });
 
+  test('VehicleStore ignores non-map persisted lastLocation', () async {
+    SharedPreferences.setMockInitialValues({
+      'vehicle_profiles':
+          '[{"id":"AA:BB:CC:DD:EE:FF","name":"有效车辆","lastLocation":42}]',
+      'vehicle_default_id': 'AA:BB:CC:DD:EE:FF',
+    });
+    VehicleStore().resetForTest();
+
+    final store = VehicleStore();
+    await store.init();
+
+    expect(store.vehicles, hasLength(1));
+    expect(store.defaultVehicle?.lastLocation, isNull);
+  });
+
   test(
     'VehicleStore migrates legacy QGJ credentials to secure storage and scrubs prefs',
     () async {
