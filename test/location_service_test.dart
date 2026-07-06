@@ -11,6 +11,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
+    LocationService().resetForTest();
     VehicleStore().resetForTest();
     resetMockStorage();
   });
@@ -18,7 +19,9 @@ void main() {
   test(
     'recordDefaultVehicleLocation initializes vehicle store before lookup',
     () async {
-      final recordedAt = DateTime.now().toIso8601String();
+      final now = DateTime(2026, 6, 20, 9, 30);
+      LocationService().resetForTest(clock: () => now);
+      final recordedAt = now.toIso8601String();
       SharedPreferences.setMockInitialValues(_storedVehiclePrefs(recordedAt));
       VehicleStore().resetForTest();
 
@@ -32,7 +35,9 @@ void main() {
   test(
     'recordVehicleLocation normalizes ids before cached throttle lookup',
     () async {
-      final recordedAt = DateTime.now().toIso8601String();
+      final now = DateTime(2026, 6, 20, 9, 30);
+      LocationService().resetForTest(clock: () => now);
+      final recordedAt = now.toIso8601String();
       SharedPreferences.setMockInitialValues(_storedVehiclePrefs(recordedAt));
       VehicleStore().resetForTest();
 

@@ -23,6 +23,12 @@ class LocationService {
 
   final _log = LogService();
   final _lastSilentCaptures = <String, DateTime>{};
+  DateTime Function() _clock = DateTime.now;
+
+  void resetForTest({DateTime Function()? clock}) {
+    _lastSilentCaptures.clear();
+    _clock = clock ?? DateTime.now;
+  }
 
   Future<VehicleLocation> captureCurrentLocation({
     bool requestPermission = false,
@@ -45,7 +51,7 @@ class LocationService {
       latitude: position.latitude,
       longitude: position.longitude,
       accuracy: position.accuracy,
-      recordedAt: DateTime.now(),
+      recordedAt: _clock(),
     );
   }
 
@@ -92,7 +98,7 @@ class LocationService {
   }) {
     if (requestPermission) return null;
 
-    final now = DateTime.now();
+    final now = _clock();
     final lastCapture = _lastSilentCaptures[vehicleId];
     if (lastCapture != null &&
         now.difference(lastCapture) < silentCaptureThrottle) {

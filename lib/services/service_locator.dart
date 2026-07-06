@@ -110,6 +110,10 @@ class AppServices {
       old.manualModeService.resetForTest,
     );
     await _runCleanup(
+      'locationService.resetForTest',
+      old.locationService.resetForTest,
+    );
+    await _runCleanup(
       'vehicleStore.resetForTest',
       old.vehicleStore.resetForTest,
     );
