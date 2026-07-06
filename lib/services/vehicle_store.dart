@@ -26,6 +26,7 @@ class VehicleStore {
   bool _initialized = false;
   Future<void>? _initializing;
   Future<void>? _saveQueue;
+  DateTime Function() _clock = DateTime.now;
 
   VehicleStore._internal({
     FlutterSecureStorage secureStorage = const FlutterSecureStorage(
@@ -74,12 +75,13 @@ class VehicleStore {
     }
   }
 
-  void resetForTest() {
+  void resetForTest({DateTime Function()? clock}) {
     _vehicles.clear();
     _defaultVehicleId = null;
     _initialized = false;
     _initializing = null;
     _saveQueue = null;
+    _clock = clock ?? DateTime.now;
   }
 
   List<VehicleProfile> _decodeVehicles(String? raw) {
@@ -210,7 +212,7 @@ class VehicleStore {
       throw ArgumentError.value(id, 'id', 'Vehicle id must not be blank');
     }
     final normalizedName = _normalizeName(name);
-    final now = savedAt ?? DateTime.now();
+    final now = _savedAt(savedAt);
     final index = _vehicles.indexWhere((vehicle) => vehicle.id == normalizedId);
     late VehicleProfile profile;
     if (index >= 0) {
@@ -252,7 +254,7 @@ class VehicleStore {
     if (index < 0) return;
     _vehicles[index] = _vehicles[index].copyWith(
       name: normalizedName,
-      updatedAt: savedAt ?? DateTime.now(),
+      updatedAt: _savedAt(savedAt),
     );
     await _save();
   }
@@ -269,7 +271,7 @@ class VehicleStore {
     if (index < 0) return;
     _vehicles[index] = _vehicles[index].copyWith(
       lastLocation: location,
-      updatedAt: savedAt ?? DateTime.now(),
+      updatedAt: _savedAt(savedAt),
     );
     await _save();
   }
@@ -304,7 +306,7 @@ class VehicleStore {
       );
     }
     _vehicles[index] = current.copyWith(
-      updatedAt: savedAt ?? DateTime.now(),
+      updatedAt: _savedAt(savedAt),
       qgjLoginPassword: clear ? null : password,
       qgjUserId: clear ? null : userId,
     );
@@ -345,6 +347,8 @@ class VehicleStore {
     final trimmed = value?.trim();
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
+
+  DateTime _savedAt(DateTime? savedAt) => savedAt ?? _clock();
 
   Future<void> _save() {
     final save = (_saveQueue ?? Future<void>.value())

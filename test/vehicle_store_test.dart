@@ -410,6 +410,51 @@ void main() {
     expect(store.defaultVehicleId, isNull);
   });
 
+  test('VehicleStore uses its clock for default write timestamps', () async {
+    final timestamps = [
+      DateTime(2026, 6, 10, 10),
+      DateTime(2026, 6, 10, 11),
+      DateTime(2026, 6, 10, 12),
+      DateTime(2026, 6, 10, 13),
+    ];
+    var timestampIndex = 0;
+    VehicleStore().resetForTest(clock: () => timestamps[timestampIndex++]);
+
+    final store = VehicleStore();
+    await store.init();
+
+    final created = await store.upsert(id: 'AA:BB:CC:DD:EE:FF', name: '测试车辆');
+
+    expect(created.createdAt, timestamps[0]);
+    expect(created.updatedAt, timestamps[0]);
+
+    await store.rename(created.id, '通勤车');
+
+    expect(store.defaultVehicle?.createdAt, timestamps[0]);
+    expect(store.defaultVehicle?.updatedAt, timestamps[1]);
+
+    await store.updateLastLocation(
+      created.id,
+      VehicleLocation(
+        latitude: 31.2304,
+        longitude: 121.4737,
+        accuracy: 12,
+        recordedAt: DateTime(2026, 6, 10, 12, 30),
+      ),
+    );
+
+    expect(store.defaultVehicle?.updatedAt, timestamps[2]);
+
+    await store.updateQgjCredentials(
+      id: created.id,
+      password: 123456,
+      userId: 789,
+    );
+
+    expect(store.defaultVehicle?.updatedAt, timestamps[3]);
+    expect(timestampIndex, timestamps.length);
+  });
+
   test('VehicleStore remove clears secure QGJ credentials', () async {
     final store = VehicleStore();
     const secureStorage = FlutterSecureStorage();
