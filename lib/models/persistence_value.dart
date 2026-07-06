@@ -39,7 +39,11 @@ List<Map<String, dynamic>> parsePersistedMapList(Object? value) {
 
 Iterable<Object?> _persistedListItems(Object? value) {
   if (value is! List) return const [];
-  return value.cast<Object?>();
+  final items = <Object?>[];
+  for (final item in value) {
+    items.add(item);
+  }
+  return items;
 }
 
 double? parsePersistedDouble(Object? value) {
