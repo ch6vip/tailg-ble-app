@@ -73,6 +73,14 @@ class DiagnosticRecord {
         .toList();
   }
 
+  static List<String> encodeHistory(Iterable<DiagnosticRecord> records) {
+    final ordered = records.toList(growable: false);
+    return ordered.reversed
+        .take(20)
+        .map((record) => jsonEncode(record.toJson()))
+        .toList();
+  }
+
   static Map<String, dynamic>? _decodedRecordMap(Object? decoded) {
     if (decoded is! Map) return null;
     return Map<String, dynamic>.from(decoded);
@@ -110,10 +118,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
 
   Future<void> _saveHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    final data = _history.reversed
-        .take(20)
-        .map((r) => jsonEncode(r.toJson()))
-        .toList();
+    final data = DiagnosticRecord.encodeHistory(_history);
     await prefs.setStringList('diagnostic_history', data);
   }
 

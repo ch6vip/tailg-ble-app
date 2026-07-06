@@ -43,6 +43,26 @@ void main() {
     expect(records.first.faults, ['转把故障']);
   });
 
+  test('DiagnosticRecord encodes history in persisted order with limit', () {
+    final records = List.generate(
+      22,
+      (index) => DiagnosticRecord(
+        time: DateTime(2026, 6, 9, 10, index),
+        rawByte: index,
+        faults: ['故障 $index'],
+      ),
+    );
+
+    final encoded = DiagnosticRecord.encodeHistory(records);
+    final decoded = encoded
+        .map((raw) => jsonDecode(raw) as Map<String, dynamic>)
+        .toList();
+
+    expect(encoded, hasLength(20));
+    expect(decoded.first['raw'], 21);
+    expect(decoded.last['raw'], 2);
+  });
+
   test('DiagnosticRecord falls back for partially malformed fields', () {
     final record = DiagnosticRecord.fromJson({
       'time': 'bad-time',
