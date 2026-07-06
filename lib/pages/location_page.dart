@@ -80,6 +80,7 @@ class _LocationPageState extends State<LocationPage> {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _refreshOfficial(silent: true);
     });
   }

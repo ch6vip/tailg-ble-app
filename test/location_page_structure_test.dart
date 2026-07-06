@@ -50,6 +50,26 @@ void main() {
     );
   });
 
+  test('LocationPage skips post-frame refresh after unmount', () {
+    final source = readSource('lib/pages/location_page.dart');
+    final callbackIndex = source.indexOf(
+      'WidgetsBinding.instance.addPostFrameCallback',
+    );
+    final mountedGuardIndex = source.indexOf(
+      'if (!mounted) return;',
+      callbackIndex,
+    );
+    final refreshIndex = source.indexOf(
+      '_refreshOfficial(silent: true);',
+      callbackIndex,
+    );
+
+    expect(callbackIndex, greaterThanOrEqualTo(0));
+    expect(mountedGuardIndex, greaterThanOrEqualTo(0));
+    expect(refreshIndex, greaterThanOrEqualTo(0));
+    expect(mountedGuardIndex, lessThan(refreshIndex));
+  });
+
   testWidgets('LocationPage segmented tabs keep 44dp touch targets', (
     tester,
   ) async {
