@@ -32,6 +32,28 @@ void main() {
     expect(mountedGuardIndex, lessThan(resultGuardIndex));
   });
 
+  test('share member edit stops after dialog when page is unmounted', () {
+    final source = readSource('lib/pages/official_replica_pages.dart');
+    final editStart = source.indexOf('Future<void> _editMember');
+    final disposeIndex = source.indexOf(
+      'phoneController.dispose();',
+      editStart,
+    );
+    final mountedGuardIndex = source.indexOf(
+      'if (!mounted) return;',
+      disposeIndex,
+    );
+    final resultGuardIndex = source.indexOf(
+      'if (result == null) return;',
+      disposeIndex,
+    );
+
+    expect(editStart, greaterThanOrEqualTo(0));
+    expect(disposeIndex, greaterThan(editStart));
+    expect(mountedGuardIndex, greaterThan(disposeIndex));
+    expect(mountedGuardIndex, lessThan(resultGuardIndex));
+  });
+
   setUp(() {
     resetMockPreferences();
     LogService().clear();

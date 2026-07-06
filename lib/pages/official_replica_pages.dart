@@ -493,6 +493,7 @@ class _ShareBikePageState extends State<ShareBikePage> {
     );
     nameController.dispose();
     phoneController.dispose();
+    if (!mounted) return;
     if (result == null) return;
     final next = [..._members];
     final index = next.indexWhere((item) => item.id == result.id);
