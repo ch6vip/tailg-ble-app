@@ -9,9 +9,9 @@ void main() {
 
   test('redacts sensitive values from messages and details', () {
     log.operation(
-      'sync phone=18886120851 imei=860123456789377 token=abcdef123456',
+      'sync phone=18886120851 imei=860123456789377 token=abcdef123456 userId=user-secret password=qgj-secret',
       detail:
-          '{"phone":"18886120851","imei":"860123456789377","token":"abcdef123456","authorization":"raw-secret-token"} Bearer bearer-secret-token',
+          '{"phone":"18886120851","imei":"860123456789377","token":"abcdef123456","authorization":"raw-secret-token","frame":"L12345678901234567","mac":"AA:BB:CC:DD:EE:FF"} Bearer bearer-secret-token',
     );
 
     final entry = log.all.single;
@@ -19,19 +19,27 @@ void main() {
     expect(entry.message, contains('phone=188***851'));
     expect(entry.message, contains('imei=860***377'));
     expect(entry.message, contains('token=abc***456'));
+    expect(entry.message, contains('userId=use***ret'));
+    expect(entry.message, contains('password=qgj***ret'));
     expect(entry.message, isNot(contains('18886120851')));
     expect(entry.message, isNot(contains('860123456789377')));
     expect(entry.message, isNot(contains('abcdef123456')));
+    expect(entry.message, isNot(contains('user-secret')));
+    expect(entry.message, isNot(contains('qgj-secret')));
 
     expect(entry.detail, contains('"phone":"188***851"'));
     expect(entry.detail, contains('"imei":"860***377"'));
     expect(entry.detail, contains('"token":"abc***456"'));
     expect(entry.detail, contains('"authorization":"raw***ken"'));
+    expect(entry.detail, contains('"frame":"L12***567"'));
+    expect(entry.detail, contains('"mac":"AA:***:FF"'));
     expect(entry.detail, contains('Bearer bea***ken'));
     expect(entry.detail, isNot(contains('18886120851')));
     expect(entry.detail, isNot(contains('860123456789377')));
     expect(entry.detail, isNot(contains('abcdef123456')));
     expect(entry.detail, isNot(contains('raw-secret-token')));
+    expect(entry.detail, isNot(contains('L12345678901234567')));
+    expect(entry.detail, isNot(contains('AA:BB:CC:DD:EE:FF')));
     expect(entry.detail, isNot(contains('bearer-secret-token')));
   });
 

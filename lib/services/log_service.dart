@@ -121,7 +121,7 @@ class LogService {
     caseSensitive: false,
   );
   static final RegExp _sensitiveKeyValuePattern = RegExp(
-    r'''(["']?\b(?:phone|token|imei|carId|uid|btmac)\b["']?\s*[:=]\s*["']?)([^"'\s,&}]+)(["']?)''',
+    r'''(["']?\b(?:phone|token|imei|carId|uid|userId|password|frame|btmac|mac)\b["']?\s*[:=]\s*["']?)([^"'\s,&}]+)(["']?)''',
     caseSensitive: false,
   );
   static final RegExp _authorizationValuePattern = RegExp(
