@@ -759,6 +759,25 @@ void main() {
       },
     );
 
+    test('normalizes persisted vehicle links on load', () async {
+      SharedPreferences.setMockInitialValues({
+        'official_cloud_vehicle_links': jsonEncode({
+          ' official-1 ': ' local-1 ',
+          '': 'local-empty-key',
+          'official-empty-value': ' ',
+          'official-2': 123,
+        }),
+      });
+
+      final service = OfficialCloudService();
+      await service.init();
+
+      expect(service.state.localVehicleLinks, {
+        'official-1': 'local-1',
+        'official-2': '123',
+      });
+    });
+
     test(
       'restores cached carControlInfo with login session before refresh',
       () async {

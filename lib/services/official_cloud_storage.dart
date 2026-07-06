@@ -161,11 +161,7 @@ class _OfficialCloudStorage {
     try {
       final decoded = jsonDecode(raw);
       if (decoded is Map) {
-        return OfficialCloudVehicleLinks.normalize(
-          decoded.map(
-            (key, value) => MapEntry(key.toString(), value.toString()),
-          ),
-        );
+        return _decodeLinkMap(decoded);
       }
       _log.operation(
         '官云本地车辆关联数据格式异常，已忽略',
@@ -181,6 +177,12 @@ class _OfficialCloudStorage {
       return {};
     }
     return {};
+  }
+
+  Map<String, String> _decodeLinkMap(Map<Object?, Object?> decoded) {
+    return OfficialCloudVehicleLinks.normalize(
+      decoded.map((key, value) => MapEntry(key.toString(), value.toString())),
+    );
   }
 
   List<OfficialVehicle> _decodeCarControlInfo(String? raw) {
