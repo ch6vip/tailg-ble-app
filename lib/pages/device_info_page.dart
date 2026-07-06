@@ -235,6 +235,7 @@ class _VehicleProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final location = vehicle?.lastLocation;
+    final officialVehicle = this.officialVehicle;
     return AppCard(
       padding: EdgeInsets.zero,
       child: Column(
@@ -253,13 +254,13 @@ class _VehicleProfileCard extends StatelessWidget {
           _InfoRow(label: '协议偏好', value: vehicle?.protocol.label ?? '自动识别'),
           if (officialVehicle != null) ...[
             const _InsetDivider(),
-            _InfoRow(label: '官方在线', value: officialVehicle!.onlineLabel),
+            _InfoRow(label: '官方在线', value: officialVehicle.onlineLabel),
             const _InsetDivider(),
             _InfoRow(
               label: '官方电量',
-              value: officialVehicle!.electricQuantity == null
+              value: officialVehicle.electricQuantity == null
                   ? '--'
-                  : '${officialVehicle!.electricQuantity}%',
+                  : '${officialVehicle.electricQuantity}%',
             ),
           ],
           const _InsetDivider(),
