@@ -2,10 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/pages/scan_page.dart';
 
+import 'helpers/source_scan.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
 
 void main() {
+  test('ScanPage uses injectable clock for manual bind timestamp', () {
+    final source = readSource('lib/pages/scan_page.dart');
+
+    expect(source, contains('final DateTime Function()? clock;'));
+    expect(source, contains('widget.clock ?? DateTime.now'));
+    expect(source, isNot(contains('lastConnectedAt: DateTime.now()')));
+  });
+
   testWidgets('ScanFab exposes enabled scan semantics and target size', (
     tester,
   ) async {

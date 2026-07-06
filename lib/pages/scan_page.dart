@@ -13,7 +13,9 @@ import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 
 class ScanPage extends StatefulWidget {
-  const ScanPage({super.key});
+  final DateTime Function()? clock;
+
+  const ScanPage({super.key, this.clock});
 
   @override
   State<ScanPage> createState() => _ScanPageState();
@@ -139,7 +141,7 @@ class _ScanPageState extends State<ScanPage>
         name: device.platformName,
         protocol: vehicleProtocolFromBle(manager.protocol),
         makeDefault: true,
-        lastConnectedAt: DateTime.now(),
+        lastConnectedAt: (widget.clock ?? DateTime.now)(),
       );
       applyVehicleBleCredentials(profile);
       unawaited(locationService.recordVehicleLocation(profile.id));
