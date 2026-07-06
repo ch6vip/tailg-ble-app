@@ -14,6 +14,8 @@ import 'vehicle_store.dart';
 
 class ProximityUnlockGuard {
   static const maxLocationAccuracyMeters = 30.0;
+  static const minUnlockRssi = -75;
+  static const unlockCooldown = Duration(seconds: 30);
 
   const ProximityUnlockGuard();
 
@@ -50,6 +52,17 @@ class ProximityUnlockGuard {
         accuracy <= maxLocationAccuracyMeters;
   }
 
+  bool allowsNearbyUnlock({
+    required int rssi,
+    required DateTime now,
+    required DateTime? lastUnlockTime,
+  }) {
+    final inCooldown =
+        lastUnlockTime != null &&
+        now.difference(lastUnlockTime) < unlockCooldown;
+    return !inCooldown && rssi >= minUnlockRssi;
+  }
+
   String locationBlockReason(VehicleLocation? location) {
     if (location == null) return '定位不可用';
     if (location.accuracy <= 0) return '定位精度未知';
@@ -74,8 +87,6 @@ class ProximityService {
   bool _initialized = false;
   Future<void>? _initializing;
 
-  static const _rssiThreshold = -75;
-  static const _cooldownSeconds = 30;
   static const _prefKey = 'proximity_unlock_enabled';
 
   bool _enabled = false;
@@ -192,25 +203,25 @@ class ProximityService {
     if (_unlockSent) return;
 
     final now = DateTime.now();
-    final lastUnlockTime = _lastUnlockTime;
-    if (lastUnlockTime != null &&
-        now.difference(lastUnlockTime).inSeconds < _cooldownSeconds) {
+    if (!_unlockGuard.allowsNearbyUnlock(
+      rssi: result.rssi,
+      now: now,
+      lastUnlockTime: _lastUnlockTime,
+    )) {
       return;
     }
 
-    if (result.rssi >= _rssiThreshold) {
-      _unlockSent = true;
-      _lastUnlockTime = now;
-      stop();
-      _log.operation('感应解锁: RSSI=${result.rssi}dBm，触发解锁', level: LogLevel.info);
-      _connectAndUnlock(result.device).catchError((Object e) {
-        _log.operation(
-          '感应解锁: 未捕获异常',
-          detail: e.toString(),
-          level: LogLevel.error,
-        );
-      });
-    }
+    _unlockSent = true;
+    _lastUnlockTime = now;
+    stop();
+    _log.operation('感应解锁: RSSI=${result.rssi}dBm，触发解锁', level: LogLevel.info);
+    _connectAndUnlock(result.device).catchError((Object e) {
+      _log.operation(
+        '感应解锁: 未捕获异常',
+        detail: e.toString(),
+        level: LogLevel.error,
+      );
+    });
   }
 
   Future<void> _connectAndUnlock(BluetoothDevice device) async {

@@ -125,6 +125,38 @@ void main() {
       '定位精度 45.0m 超过 30m',
     );
   });
+
+  test('ProximityUnlockGuard allows nearby unlock outside cooldown', () {
+    const guard = ProximityUnlockGuard();
+    final now = DateTime(2026, 6, 9, 10, 30);
+
+    expect(
+      guard.allowsNearbyUnlock(
+        rssi: -75,
+        now: now,
+        lastUnlockTime: now.subtract(const Duration(seconds: 30)),
+      ),
+      isTrue,
+    );
+  });
+
+  test('ProximityUnlockGuard blocks weak RSSI and active cooldowns', () {
+    const guard = ProximityUnlockGuard();
+    final now = DateTime(2026, 6, 9, 10, 30);
+
+    expect(
+      guard.allowsNearbyUnlock(rssi: -76, now: now, lastUnlockTime: null),
+      isFalse,
+    );
+    expect(
+      guard.allowsNearbyUnlock(
+        rssi: -60,
+        now: now,
+        lastUnlockTime: now.subtract(const Duration(seconds: 29)),
+      ),
+      isFalse,
+    );
+  });
 }
 
 VehicleLocation _location({required double accuracy}) {
