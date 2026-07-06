@@ -170,7 +170,8 @@ void main() {
         'vehicle_profiles':
             '[{"id":"","name":"空 ID"},'
             '{"id":"AA:BB:CC:DD:EE:FF","name":"有效车辆","protocol":"qgj"},'
-            '42]',
+            '42,'
+            'null]',
         'vehicle_default_id': 'missing',
       });
       VehicleStore().resetForTest();
@@ -196,6 +197,7 @@ void main() {
         containsAll(<String>[
           'Skipped vehicle profile with blank id',
           'Skipped vehicle profile entry with type int',
+          'Skipped vehicle profile entry with type Null',
         ]),
       );
     },

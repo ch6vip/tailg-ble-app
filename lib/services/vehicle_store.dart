@@ -100,27 +100,30 @@ class VehicleStore {
 
     final vehicles = <VehicleProfile>[];
     for (final item in decoded) {
-      if (item is! Map) {
-        _logDecodeWarning(
-          'Skipped vehicle profile entry with type ${item.runtimeType}',
-        );
-        continue;
-      }
-      try {
-        final vehicle = VehicleProfile.fromJson(
-          Map<String, dynamic>.from(item),
-        );
-        if (vehicle.id.isEmpty) {
-          _logDecodeWarning('Skipped vehicle profile with blank id');
-          continue;
-        }
-        vehicles.add(vehicle);
-      } catch (e) {
-        _logDecodeWarning('Skipped vehicle parse error: $e');
-        continue;
-      }
+      final vehicle = _decodeVehicle(item);
+      if (vehicle != null) vehicles.add(vehicle);
     }
     return vehicles;
+  }
+
+  VehicleProfile? _decodeVehicle(Object? item) {
+    if (item is! Map) {
+      _logDecodeWarning(
+        'Skipped vehicle profile entry with type ${item.runtimeType}',
+      );
+      return null;
+    }
+    try {
+      final vehicle = VehicleProfile.fromJson(Map<String, dynamic>.from(item));
+      if (vehicle.id.isEmpty) {
+        _logDecodeWarning('Skipped vehicle profile with blank id');
+        return null;
+      }
+      return vehicle;
+    } catch (e) {
+      _logDecodeWarning('Skipped vehicle parse error: $e');
+      return null;
+    }
   }
 
   void _logDecodeWarning(String detail) {
