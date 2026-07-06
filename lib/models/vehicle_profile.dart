@@ -48,10 +48,7 @@ class VehicleLocation {
       latitude: parsePersistedDouble(json['latitude']) ?? 0,
       longitude: parsePersistedDouble(json['longitude']) ?? 0,
       accuracy: parsePersistedDouble(json['accuracy']) ?? 0,
-      recordedAt:
-          parsePersistedDate(json['recordedAt']) ??
-          fallbackRecordedAt ??
-          DateTime.now(),
+      recordedAt: _vehicleTimestamp(json['recordedAt'], fallbackRecordedAt),
     );
   }
 }
@@ -136,8 +133,8 @@ class VehicleProfile {
       protocol: VehicleProtocol.fromValue(
         parsePersistedString(json['protocol']),
       ),
-      createdAt: parsePersistedDate(json['createdAt']) ?? now,
-      updatedAt: parsePersistedDate(json['updatedAt']) ?? now,
+      createdAt: _vehicleTimestamp(json['createdAt'], now),
+      updatedAt: _vehicleTimestamp(json['updatedAt'], now),
       lastConnectedAt: parsePersistedDate(json['lastConnectedAt']),
       lastLocation: _vehicleLocation(json['lastLocation'], fallbackNow: now),
       qgjLoginPassword: parsePersistedInt(json['qgjLoginPassword']),
@@ -151,4 +148,8 @@ VehicleLocation? _vehicleLocation(Object? value, {DateTime? fallbackNow}) {
   return json == null
       ? null
       : VehicleLocation.fromJson(json, fallbackRecordedAt: fallbackNow);
+}
+
+DateTime _vehicleTimestamp(Object? value, DateTime? fallback) {
+  return parsePersistedDate(value) ?? fallback ?? DateTime.now();
 }
