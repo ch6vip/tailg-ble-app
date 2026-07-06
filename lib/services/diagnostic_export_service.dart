@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../ble/connection_manager.dart' as ble;
+import '../models/official_vehicle.dart';
 import 'control_channel_resolver.dart';
 import 'display_time_formatter.dart';
 import 'log_service.dart';
@@ -70,46 +71,8 @@ class DiagnosticExportService {
       'Selected vehicle: ${vehicle?.displayName ?? 'none'}',
     ];
 
-    if (vehicle != null) {
-      final linkedId = state.linkedLocalVehicleId(vehicle.key);
-      lines.add('Selected key: ${_maskId(vehicle.key)}');
-      lines.add(
-        'Linked local vehicle: ${linkedId == null ? 'none' : _maskId(linkedId)}',
-      );
-      lines.add('Online: ${vehicle.online}');
-      lines.add('Defence: ${vehicle.defenceLabel}');
-      lines.add('ACC: ${vehicle.powerLabel}');
-      lines.add(
-        'Official vehicle battery: ${vehicle.electricQuantity?.toString() ?? '--'}%',
-      );
-      lines.add(
-        'Official vehicle voltage: ${vehicle.voltage?.toString() ?? '--'}V',
-      );
-      lines.add('ModelType: ${vehicle.modelType?.toString() ?? 'none'}');
-      lines.add('Command IMEI: ${_maskId(vehicle.commandImei)}');
-      lines.add('IMEI: ${_maskId(vehicle.imei)}');
-      lines.add('GPS IMEI: ${_maskId(vehicle.imeiGps)}');
-      lines.add('BT name: ${vehicle.btname.isEmpty ? 'none' : vehicle.btname}');
-      lines.add('BT MAC: ${_maskId(vehicle.btmac)}');
-      lines.add(
-        'Location: ${vehicle.latitude.isEmpty || vehicle.longitude.isEmpty ? 'none' : 'present (hidden)'}',
-      );
-    }
-
-    final batteryInfo = state.batteryInfo;
-    if (batteryInfo != null) {
-      lines.add(
-        'Official battery detail: ${batteryInfo.dumpEnergyPercentLabel.isEmpty ? 'none' : batteryInfo.dumpEnergyPercentLabel}',
-      );
-      lines.add(
-        'Official battery detail voltage: ${batteryInfo.voltage.isEmpty ? 'none' : '${batteryInfo.voltage}V'}',
-      );
-      lines.add(
-        'Official battery detail temperature: ${batteryInfo.temperature.isEmpty ? 'none' : '${batteryInfo.temperature}C'}',
-      );
-    } else {
-      lines.add('Official battery detail: none');
-    }
+    lines.addAll(_buildSelectedVehicleLines(state));
+    lines.addAll(_buildOfficialBatteryLines(state.batteryInfo));
 
     if (state.error != null) {
       lines.add('Error: ${state.error}');
@@ -129,6 +92,39 @@ class DiagnosticExportService {
       lines.add('Last request time: ${lastRequest.at.toIso8601String()}');
     }
     return lines.join('\n');
+  }
+
+  List<String> _buildSelectedVehicleLines(OfficialCloudState state) {
+    final vehicle = state.selectedVehicle;
+    if (vehicle == null) return const <String>[];
+
+    final linkedId = state.linkedLocalVehicleId(vehicle.key);
+    return [
+      'Selected key: ${_maskId(vehicle.key)}',
+      'Linked local vehicle: ${linkedId == null ? 'none' : _maskId(linkedId)}',
+      'Online: ${vehicle.online}',
+      'Defence: ${vehicle.defenceLabel}',
+      'ACC: ${vehicle.powerLabel}',
+      'Official vehicle battery: ${vehicle.electricQuantity?.toString() ?? '--'}%',
+      'Official vehicle voltage: ${vehicle.voltage?.toString() ?? '--'}V',
+      'ModelType: ${vehicle.modelType?.toString() ?? 'none'}',
+      'Command IMEI: ${_maskId(vehicle.commandImei)}',
+      'IMEI: ${_maskId(vehicle.imei)}',
+      'GPS IMEI: ${_maskId(vehicle.imeiGps)}',
+      'BT name: ${vehicle.btname.isEmpty ? 'none' : vehicle.btname}',
+      'BT MAC: ${_maskId(vehicle.btmac)}',
+      'Location: ${vehicle.latitude.isEmpty || vehicle.longitude.isEmpty ? 'none' : 'present (hidden)'}',
+    ];
+  }
+
+  List<String> _buildOfficialBatteryLines(OfficialBatteryInfo? batteryInfo) {
+    if (batteryInfo == null) return const ['Official battery detail: none'];
+
+    return [
+      'Official battery detail: ${batteryInfo.dumpEnergyPercentLabel.isEmpty ? 'none' : batteryInfo.dumpEnergyPercentLabel}',
+      'Official battery detail voltage: ${batteryInfo.voltage.isEmpty ? 'none' : '${batteryInfo.voltage}V'}',
+      'Official battery detail temperature: ${batteryInfo.temperature.isEmpty ? 'none' : '${batteryInfo.temperature}C'}',
+    ];
   }
 
   String _buildHeader() {
