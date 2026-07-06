@@ -114,7 +114,7 @@ class VehicleStore {
       return null;
     }
     try {
-      final vehicle = VehicleProfile.fromJson(Map<String, dynamic>.from(item));
+      final vehicle = VehicleProfile.fromJson(_decodeVehicleMap(item));
       if (vehicle.id.isEmpty) {
         _logDecodeWarning('Skipped vehicle profile with blank id');
         return null;
@@ -124,6 +124,10 @@ class VehicleStore {
       _logDecodeWarning('Skipped vehicle parse error: $e');
       return null;
     }
+  }
+
+  Map<String, dynamic> _decodeVehicleMap(Map<Object?, Object?> item) {
+    return Map<String, dynamic>.from(item);
   }
 
   void _logDecodeWarning(String detail) {

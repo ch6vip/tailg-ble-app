@@ -114,6 +114,23 @@ void main() {
     expect(reloadedStore.defaultVehicle?.protocol, VehicleProtocol.standard);
   });
 
+  test('VehicleStore restores persisted vehicle profile maps', () async {
+    SharedPreferences.setMockInitialValues({
+      'vehicle_profiles':
+          '[{"id":"AA:BB:CC:DD:EE:FF","name":"有效车辆","protocol":"qgj"}]',
+      'vehicle_default_id': 'AA:BB:CC:DD:EE:FF',
+    });
+    VehicleStore().resetForTest();
+
+    final store = VehicleStore();
+    await store.init();
+
+    expect(store.vehicles, hasLength(1));
+    expect(store.defaultVehicle?.id, 'AA:BB:CC:DD:EE:FF');
+    expect(store.defaultVehicle?.displayName, '有效车辆');
+    expect(store.defaultVehicle?.protocol, VehicleProtocol.qgj);
+  });
+
   test('VehicleStore tolerates corrupt persisted vehicle data', () async {
     SharedPreferences.setMockInitialValues({
       'vehicle_profiles': 'not-json',
