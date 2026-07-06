@@ -665,10 +665,13 @@ bool _boolValue(Object? value) {
 
 List<OfficialTravelRecord> _travelRecords(Object? value) {
   if (value is! List) return const [];
-  return value
-      .whereType<Map<Object?, Object?>>()
-      .map((item) => OfficialTravelRecord.fromJson(_stringKeyedMap(item)))
-      .toList(growable: false);
+  return _travelRecordMaps(
+    value,
+  ).map(OfficialTravelRecord.fromJson).toList(growable: false);
+}
+
+Iterable<Map<String, dynamic>> _travelRecordMaps(List<Object?> value) {
+  return value.whereType<Map<Object?, Object?>>().map(_stringKeyedMap);
 }
 
 int? _intOrNull(Object? value) {

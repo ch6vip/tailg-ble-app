@@ -1523,6 +1523,16 @@ void main() {
       expect(point.longitude, 104.1);
     });
 
+    test('ignores non-list official travel record payloads', () {
+      final day = OfficialTravelDay.fromJson({
+        'travelDate': '2026-06-01',
+        'deviceTravelDtoList': {'deviceTravelId': 'travel-ignored'},
+      });
+
+      expect(day.hasData, isTrue);
+      expect(day.records, isEmpty);
+    });
+
     test('rounds raw float trip speeds/mileage for display', () {
       final day = OfficialTravelDay.fromJson({
         'travelDate': '2026-06-01',
