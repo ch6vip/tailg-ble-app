@@ -440,7 +440,9 @@ class OfficialCloudApiClient {
   }
 
   Map<String, dynamic> _decodedResponseMap(Object? decoded) {
-    if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    if (decoded is Map<Object?, Object?>) {
+      return _officialCloudPayloadMap(decoded);
+    }
     throw const OfficialCloudApiException('服务器返回数据格式不正确');
   }
 

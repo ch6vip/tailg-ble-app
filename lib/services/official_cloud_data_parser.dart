@@ -37,7 +37,9 @@ class OfficialCloudDataParser {
   }
 
   static Map<String, dynamic> _map(Object? data) {
-    return data is Map<Object?, Object?> ? _stringKeyedMap(data) : const {};
+    return data is Map<Object?, Object?>
+        ? _officialCloudPayloadMap(data)
+        : const {};
   }
 
   static Iterable<Map<String, dynamic>> _maps(
@@ -48,15 +50,9 @@ class OfficialCloudDataParser {
   }
 
   static Iterable<Map<String, dynamic>> _payloadMaps(Iterable<Object?> items) {
-    return items.whereType<Map<Object?, Object?>>().map(_payloadMap);
-  }
-
-  static Map<String, dynamic> _payloadMap(Map<Object?, Object?> data) {
-    return _stringKeyedMap(data);
-  }
-
-  static Map<String, dynamic> _stringKeyedMap(Map<Object?, Object?> data) {
-    return Map<String, dynamic>.from(data);
+    return items.whereType<Map<Object?, Object?>>().map(
+      _officialCloudPayloadMap,
+    );
   }
 
   static Iterable<Object?> _payloadItems(
@@ -77,4 +73,8 @@ class OfficialCloudDataParser {
         vehicle.carName.isNotEmpty ||
         vehicle.frame.isNotEmpty;
   }
+}
+
+Map<String, dynamic> _officialCloudPayloadMap(Map<Object?, Object?> data) {
+  return Map<String, dynamic>.from(data);
 }
