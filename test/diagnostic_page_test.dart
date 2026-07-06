@@ -92,6 +92,31 @@ void main() {
     expect(LogService().all.where((entry) => entry.message == '诊断失败'), isEmpty);
   });
 
+  testWidgets('diagnostic failures do not expose raw exception text', (
+    tester,
+  ) async {
+    resetMockPreferences();
+    _overrideConnectionManager(
+      _FailingDiagnosticConnectionManager(
+        Exception('feb3 token=raw-secret device=AABBCCDDEEFF'),
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: DiagnosticPage()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('一键诊断'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('诊断失败，请稍后重试'), findsOneWidget);
+    expect(find.textContaining('raw-secret'), findsNothing);
+    expect(find.textContaining('AABBCCDDEEFF'), findsNothing);
+    expect(
+      LogService().all.where((entry) => entry.message == '诊断失败'),
+      isNotEmpty,
+    );
+  });
+
   testWidgets('diagnostic history displays the newest 10 persisted records', (
     tester,
   ) async {
@@ -170,4 +195,20 @@ class _PendingDiagnosticConnectionManager extends ble.ConnectionManager {
       _completer.complete(data);
     }
   }
+}
+
+class _FailingDiagnosticConnectionManager extends ble.ConnectionManager {
+  _FailingDiagnosticConnectionManager(this._error);
+
+  final Object _error;
+
+  @override
+  ble.ConnectionState get state => ble.ConnectionState.ready;
+
+  @override
+  Stream<ble.ConnectionState> get stateStream =>
+      Stream<ble.ConnectionState>.empty();
+
+  @override
+  Future<List<int>?> readFeb3() => Future<List<int>?>.error(_error);
 }

@@ -246,7 +246,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
     } catch (e) {
       _log.operation('诊断失败', detail: e.toString(), level: LogLevel.error);
       if (mounted) {
-        AppSnack.error(context, '诊断失败: $e');
+        AppSnack.error(context, '诊断失败，请稍后重试');
       }
     } finally {
       if (mounted) setState(() => _scanning = false);
