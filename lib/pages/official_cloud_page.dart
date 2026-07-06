@@ -904,6 +904,7 @@ class _OfficialVehicleSelfCheckPageState
   @override
   Widget build(BuildContext context) {
     final error = _error;
+    final result = _result;
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
@@ -952,8 +953,8 @@ class _OfficialVehicleSelfCheckPageState
                   style: const TextStyle(color: AppColors.danger, fontSize: 13),
                 ),
               )
-            else if (_result != null)
-              _SelfCheckResultCard(result: _result!)
+            else if (result != null)
+              _SelfCheckResultCard(result: result)
             else
               const AppCard(
                 child: Text(

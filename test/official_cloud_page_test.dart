@@ -19,6 +19,14 @@ void main() {
     expect(source, contains('_syncInputState'));
   });
 
+  test('self-check result branch uses a promoted local result', () {
+    final source = readSource('lib/pages/official_cloud_page.dart');
+
+    expect(source, contains('final result = _result;'));
+    expect(source, contains('_SelfCheckResultCard(result: result)'));
+    expect(source, isNot(contains('_SelfCheckResultCard(result: _result!)')));
+  });
+
   setUp(() {
     resetMockPreferences();
     app.vehicleStore.resetForTest();
