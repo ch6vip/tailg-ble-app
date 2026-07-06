@@ -135,7 +135,7 @@ class VehicleStore {
   }
 
   Map<String, dynamic> _decodeVehicleMap(Map<Object?, Object?> item) {
-    return Map<String, dynamic>.from(item);
+    return parsePersistedMap(item)!;
   }
 
   void _logDecodeWarning(String detail) {

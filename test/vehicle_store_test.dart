@@ -131,6 +131,26 @@ void main() {
     expect(store.defaultVehicle?.protocol, VehicleProtocol.qgj);
   });
 
+  test('VehicleStore restores persisted profile location maps', () async {
+    SharedPreferences.setMockInitialValues({
+      'vehicle_profiles':
+          '[{"id":"AA:BB:CC:DD:EE:FF","name":"有效车辆",'
+          '"lastLocation":{"latitude":"31.2304","longitude":"121.4737",'
+          '"accuracy":"12","recordedAt":"2026-06-09T10:30:00.000"}}]',
+      'vehicle_default_id': 'AA:BB:CC:DD:EE:FF',
+    });
+    VehicleStore().resetForTest();
+
+    final store = VehicleStore();
+    await store.init();
+
+    final location = store.defaultVehicle?.lastLocation;
+    expect(location?.latitude, 31.2304);
+    expect(location?.longitude, 121.4737);
+    expect(location?.accuracy, 12);
+    expect(location?.recordedAt, DateTime(2026, 6, 9, 10, 30));
+  });
+
   test('VehicleStore tolerates corrupt persisted vehicle data', () async {
     SharedPreferences.setMockInitialValues({
       'vehicle_profiles': 'not-json',
