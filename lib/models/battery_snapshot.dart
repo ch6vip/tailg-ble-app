@@ -121,6 +121,9 @@ class BatterySnapshot {
     final vehicleVoltage = officialVehicle?.voltage;
     final officialTemperature = _parseNumber(officialBatteryInfo?.temperature);
     final vehicleMileage = officialVehicle?.mileage;
+    final officialRemainingMileage = _cleanText(
+      officialBatteryInfo?.remainingMileage,
+    );
 
     final rawPercent =
         bikeState?.batteryPercent ?? officialPercent ?? vehiclePercent;
@@ -128,7 +131,7 @@ class BatterySnapshot {
     final voltage = bikeState?.voltage ?? officialVoltage ?? vehicleVoltage;
     final temperature = bikeState?.temperature ?? officialTemperature;
     final remainingMileage = _firstText([
-      officialBatteryInfo?.remainingMileage,
+      officialRemainingMileage,
       _estimatedMileageText(percent),
     ]);
     final totalMileage = _firstText([
@@ -151,32 +154,25 @@ class BatterySnapshot {
       batteryScore: _cleanText(officialBatteryInfo?.batteryScore),
       officialVehicle: officialVehicle,
       officialBatteryInfo: officialBatteryInfo,
-      percentSource: bikeState?.batteryPercent != null
-          ? BatteryDataSource.ble
-          : officialPercent != null
-          ? BatteryDataSource.officialBattery
-          : vehiclePercent != null
-          ? BatteryDataSource.officialVehicle
-          : BatteryDataSource.bmsReserved,
-      voltageSource: bikeState?.voltage != null
-          ? BatteryDataSource.ble
-          : officialVoltage != null
-          ? BatteryDataSource.officialBattery
-          : vehicleVoltage != null
-          ? BatteryDataSource.officialVehicle
-          : BatteryDataSource.bmsReserved,
-      temperatureSource: bikeState?.temperature != null
-          ? BatteryDataSource.ble
-          : officialTemperature != null
-          ? BatteryDataSource.officialBattery
-          : BatteryDataSource.bmsReserved,
-      mileageSource: _cleanText(officialBatteryInfo?.remainingMileage) != null
-          ? BatteryDataSource.officialBattery
-          : vehicleMileage != null
-          ? BatteryDataSource.officialVehicle
-          : percent != null
-          ? BatteryDataSource.ble
-          : BatteryDataSource.bmsReserved,
+      percentSource: _dataSource(
+        bleValue: bikeState?.batteryPercent,
+        officialBatteryValue: officialPercent,
+        officialVehicleValue: vehiclePercent,
+      ),
+      voltageSource: _dataSource(
+        bleValue: bikeState?.voltage,
+        officialBatteryValue: officialVoltage,
+        officialVehicleValue: vehicleVoltage,
+      ),
+      temperatureSource: _dataSource(
+        bleValue: bikeState?.temperature,
+        officialBatteryValue: officialTemperature,
+      ),
+      mileageSource: _mileageSource(
+        officialRemainingMileage: officialRemainingMileage,
+        vehicleMileage: vehicleMileage,
+        percent: percent,
+      ),
     );
   }
 
@@ -212,6 +208,30 @@ class BatterySnapshot {
     final value = percent?.clamp(0, 100).toDouble();
     return value == null ? null : (value * _kmPerPercent).toStringAsFixed(1);
   }
+}
+
+BatteryDataSource _dataSource({
+  Object? bleValue,
+  Object? officialBatteryValue,
+  Object? officialVehicleValue,
+}) {
+  if (bleValue != null) return BatteryDataSource.ble;
+  if (officialBatteryValue != null) return BatteryDataSource.officialBattery;
+  if (officialVehicleValue != null) return BatteryDataSource.officialVehicle;
+  return BatteryDataSource.bmsReserved;
+}
+
+BatteryDataSource _mileageSource({
+  required String? officialRemainingMileage,
+  required double? vehicleMileage,
+  required int? percent,
+}) {
+  if (officialRemainingMileage != null) {
+    return BatteryDataSource.officialBattery;
+  }
+  if (vehicleMileage != null) return BatteryDataSource.officialVehicle;
+  if (percent != null) return BatteryDataSource.ble;
+  return BatteryDataSource.bmsReserved;
 }
 
 List<String> _bikeFaults(BikeState? bikeState) {

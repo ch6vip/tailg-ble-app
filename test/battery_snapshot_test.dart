@@ -152,6 +152,50 @@ void main() {
     },
   );
 
+  test('BatterySnapshot selects mileage source by available data', () {
+    final officialBattery = OfficialBatteryInfo.fromJson({
+      'remainingMileage': '45',
+    });
+
+    final fromOfficialBattery = BatterySnapshot.fromSources(
+      officialBatteryInfo: officialBattery,
+      officialVehicle: _officialVehicle(mileage: 1234.5),
+    );
+    expect(fromOfficialBattery.remainingMileage, '45');
+    expect(
+      fromOfficialBattery.mileageSource,
+      BatteryDataSource.officialBattery,
+    );
+
+    final fromOfficialVehicle = BatterySnapshot.fromSources(
+      officialVehicle: _officialVehicle(mileage: 1234.5),
+    );
+    expect(fromOfficialVehicle.remainingMileage, isNull);
+    expect(fromOfficialVehicle.totalMileage, '1234.5');
+    expect(
+      fromOfficialVehicle.mileageSource,
+      BatteryDataSource.officialVehicle,
+    );
+
+    final fromBlePercent = BatterySnapshot.fromBikeState(
+      const BikeState(isLocked: true, isPowerOn: false, batteryPercent: 80),
+    );
+    expect(fromBlePercent.remainingMileage, '52.0');
+    expect(fromBlePercent.mileageSource, BatteryDataSource.ble);
+  });
+
+  test('BatterySnapshot falls back to reserved sources without data', () {
+    final snapshot = BatterySnapshot.fromBikeState(
+      null,
+      updatedAt: DateTime(2026, 6, 9, 10, 30),
+    );
+
+    expect(snapshot.percentSource, BatteryDataSource.bmsReserved);
+    expect(snapshot.voltageSource, BatteryDataSource.bmsReserved);
+    expect(snapshot.temperatureSource, BatteryDataSource.bmsReserved);
+    expect(snapshot.mileageSource, BatteryDataSource.bmsReserved);
+  });
+
   test('BikeState compares by value', () {
     const first = BikeState(
       isLocked: true,
