@@ -138,6 +138,11 @@ class VehicleProfile {
 }
 
 VehicleLocation? _vehicleLocation(Object? value) {
+  final json = _vehicleLocationJson(value);
+  return json == null ? null : VehicleLocation.fromJson(json);
+}
+
+Map<String, dynamic>? _vehicleLocationJson(Object? value) {
   if (value is! Map) return null;
-  return VehicleLocation.fromJson(Map<String, dynamic>.from(value));
+  return Map<String, dynamic>.from(value);
 }

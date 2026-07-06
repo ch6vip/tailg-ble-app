@@ -1,0 +1,33 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:tailg_ble_app/models/vehicle_profile.dart';
+
+void main() {
+  group('VehicleProfile', () {
+    test('decodes persisted last location maps', () {
+      final profile = VehicleProfile.fromJson({
+        'id': 'AA:BB:CC:DD:EE:FF',
+        'lastLocation': {
+          'latitude': '31.2304',
+          'longitude': '121.4737',
+          'accuracy': '12',
+          'recordedAt': '2026-06-09T10:30:00.000',
+        },
+      });
+
+      expect(profile.lastLocation, isNotNull);
+      expect(profile.lastLocation?.latitude, 31.2304);
+      expect(profile.lastLocation?.longitude, 121.4737);
+      expect(profile.lastLocation?.accuracy, 12);
+      expect(profile.lastLocation?.recordedAt, DateTime(2026, 6, 9, 10, 30));
+    });
+
+    test('ignores non-map persisted last locations', () {
+      final profile = VehicleProfile.fromJson({
+        'id': 'AA:BB:CC:DD:EE:FF',
+        'lastLocation': 42,
+      });
+
+      expect(profile.lastLocation, isNull);
+    });
+  });
+}
