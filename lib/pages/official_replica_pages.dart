@@ -587,11 +587,7 @@ class RideRecordPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final logs = logService
-        .byCategory(LogCategory.operation)
-        .reversed
-        .take(_recentLogLimit)
-        .toList(growable: false);
+    final logs = _recentOperationLogs();
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
@@ -691,6 +687,18 @@ class RideRecordPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<LogEntry> _recentOperationLogs() {
+    final logs = logService.byCategory(LogCategory.operation);
+    final firstIncluded = logs.length > _recentLogLimit
+        ? logs.length - _recentLogLimit
+        : 0;
+    final entries = <LogEntry>[];
+    for (var i = logs.length - 1; i >= firstIncluded; i--) {
+      entries.add(logs[i]);
+    }
+    return entries;
   }
 
   String _logSubtitle(LogEntry entry) {
