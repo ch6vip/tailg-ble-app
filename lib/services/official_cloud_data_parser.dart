@@ -76,5 +76,5 @@ class OfficialCloudDataParser {
 }
 
 Map<String, dynamic> _officialCloudPayloadMap(Map<Object?, Object?> data) {
-  return Map<String, dynamic>.from(data);
+  return parsePersistedMap(data)!;
 }

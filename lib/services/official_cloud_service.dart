@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../ble/constants.dart';
 import '../models/official_vehicle.dart';
+import '../models/persistence_value.dart';
 import '../models/vehicle_profile.dart';
 import 'display_time_formatter.dart';
 import 'log_service.dart';

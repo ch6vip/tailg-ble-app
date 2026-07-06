@@ -1,4 +1,5 @@
 import '../ble/constants.dart';
+import 'persistence_value.dart';
 
 enum OfficialCloudCommand {
   lock('lock', CommandCode.lock),
@@ -584,7 +585,7 @@ Map<String, dynamic> _dataMap(Object? value) {
 }
 
 Map<String, dynamic> _stringKeyedMap(Map<Object?, Object?> value) {
-  return Map<String, dynamic>.from(value);
+  return parsePersistedMap(value)!;
 }
 
 String _stringValue(Object? value) => value?.toString().trim() ?? '';
