@@ -369,10 +369,12 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
                                   onPressed: _lastLocation == null
                                       ? null
                                       : () {
-                                          _latController.text = _lastLocation!
+                                          final lastLocation = _lastLocation;
+                                          if (lastLocation == null) return;
+                                          _latController.text = lastLocation
                                               .latitude
                                               .toStringAsFixed(6);
-                                          _lngController.text = _lastLocation!
+                                          _lngController.text = lastLocation
                                               .longitude
                                               .toStringAsFixed(6);
                                         },
