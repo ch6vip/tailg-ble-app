@@ -7,11 +7,31 @@ import 'package:tailg_ble_app/services/replica_feature_store.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 
 import 'helpers/snack_finders.dart';
+import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/view_size.dart';
 
 void main() {
+  test('Nfc key edit stops after dialog when page is unmounted', () {
+    final source = readSource('lib/pages/official_replica_pages.dart');
+    final editStart = source.indexOf('Future<void> _editKey');
+    final disposeIndex = source.indexOf('nameController.dispose();', editStart);
+    final mountedGuardIndex = source.indexOf(
+      'if (!mounted) return;',
+      disposeIndex,
+    );
+    final resultGuardIndex = source.indexOf(
+      'if (result == null) return;',
+      disposeIndex,
+    );
+
+    expect(editStart, greaterThanOrEqualTo(0));
+    expect(disposeIndex, greaterThan(editStart));
+    expect(mountedGuardIndex, greaterThan(disposeIndex));
+    expect(mountedGuardIndex, lessThan(resultGuardIndex));
+  });
+
   setUp(() {
     resetMockPreferences();
     LogService().clear();

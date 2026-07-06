@@ -103,6 +103,7 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
       },
     );
     nameController.dispose();
+    if (!mounted) return;
     if (result == null) return;
     final next = [..._records];
     final index = next.indexWhere((item) => item.id == result.id);
