@@ -25,20 +25,24 @@ class ManualModeService {
   Stream<bool> get enabledStream => _enabledController.stream;
 
   Future<void> init() async {
-    if (_initialized) return;
+    return _ensureInitialized(emitInitialValue: true);
+  }
+
+  Future<void> _ensureInitialized({required bool emitInitialValue}) {
+    if (_initialized) return Future<void>.value();
     final initializing = _initializing;
     if (initializing != null) return initializing;
-    final loading = _load();
+    final loading = _load(emitInitialValue: emitInitialValue);
     _initializing = loading;
     return loading;
   }
 
-  Future<void> _load() async {
+  Future<void> _load({required bool emitInitialValue}) async {
     final prefs = await SharedPreferences.getInstance();
     try {
       _enabled = prefs.getBool(_prefKey) ?? false;
       _initialized = true;
-      _emitEnabled();
+      if (emitInitialValue) _emitEnabled();
     } finally {
       _initializing = null;
     }
@@ -54,6 +58,7 @@ class ManualModeService {
   }
 
   Future<void> setEnabled(bool value) async {
+    await _ensureInitialized(emitInitialValue: false);
     if (_enabled == value) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefKey, value);

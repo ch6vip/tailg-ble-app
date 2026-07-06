@@ -47,6 +47,21 @@ void main() {
     expect(service.enabled, isTrue);
   });
 
+  test(
+    'setEnabled loads persisted state before skipping unchanged values',
+    () async {
+      SharedPreferences.setMockInitialValues({'manual_mode_enabled': true});
+      ManualModeService().resetForTest();
+
+      final service = ManualModeService();
+      await service.setEnabled(false);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(service.enabled, isFalse);
+      expect(prefs.getBool('manual_mode_enabled'), isFalse);
+    },
+  );
+
   test('resetForTest restores stream after dispose', () async {
     final service = ManualModeService();
 
