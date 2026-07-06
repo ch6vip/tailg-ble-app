@@ -92,7 +92,7 @@ class OfficialVehicle {
   }
 
   Map<String, dynamic> toJson() {
-    final json = _rawPayloadCopy(raw);
+    final json = _rawPayload(raw);
     json.addAll({
       'imei': imei,
       'imeiGps': imeiGps,
@@ -576,10 +576,6 @@ class OfficialVehicleSelfCheck {
 
 Map<String, dynamic> _rawPayload(Map<String, dynamic> json) {
   return _stringKeyedMap(json);
-}
-
-Map<String, dynamic> _rawPayloadCopy(Map<String, dynamic> raw) {
-  return Map<String, dynamic>.from(raw);
 }
 
 Map<String, dynamic> _dataMap(Object? value) {

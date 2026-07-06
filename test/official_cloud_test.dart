@@ -139,6 +139,7 @@ void main() {
       final json = vehicle.toJson();
       json['customFlag'] = 'changed';
 
+      expect(identical(json, vehicle.raw), isFalse);
       expect(vehicle.raw['customFlag'], 'raw');
       expect(vehicle.toJson()['customFlag'], 'raw');
     });
