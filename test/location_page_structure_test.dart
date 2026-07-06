@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
@@ -201,6 +202,10 @@ void main() {
       'carId': 'official-map-bike',
       'bleConnectAddress': '停车点',
     });
+    final fence = OfficialFenceData.fromJson({
+      'fenceRadius': '5',
+      'fenceSwitch': '1',
+    });
 
     await tester.pumpWidget(const TestApp(home: LocationPage(embedded: true)));
     await tester.pump();
@@ -212,6 +217,7 @@ void main() {
         vehicles: [vehicle],
         selectedVehicleKey: vehicle.key,
         vehicleLocation: location,
+        fenceData: fence,
       ),
     );
     await tester.pump();
@@ -220,6 +226,8 @@ void main() {
     expect(find.text('停车点'), findsWidgets);
     expect(find.text('官方停车位置'), findsWidgets);
     expect(find.text('2026-05-29 10:00:00'), findsOneWidget);
+    expect(find.text('已开启'), findsOneWidget);
+    expect(find.byType(CircleLayer), findsOneWidget);
   });
 
   testWidgets('LocationPage fence sheet renders local fallback and error', (

@@ -519,6 +519,8 @@ class _MapPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final activeFence = fence;
+    final activeLocation = location;
     final mapPoints = _mapPoints(location, points);
     final center = _mapCenter(location, mapPoints);
     final cameraFit = mapPoints.length >= 2
@@ -568,20 +570,22 @@ class _MapPanel extends StatelessWidget {
                     tileProvider: CachedTileProvider(),
                     tileDisplay: const TileDisplay.instantaneous(),
                   ),
-                if (fence?.hasData == true && location != null)
+                if (activeFence != null &&
+                    activeFence.hasData &&
+                    activeLocation != null)
                   CircleLayer(
                     circles: [
                       CircleMarker(
                         point: center,
-                        radius: fence!.radiusMeters ?? 300,
+                        radius: activeFence.radiusMeters ?? 300,
                         useRadiusInMeter: true,
                         color:
-                            (fence!.enabled
+                            (activeFence.enabled
                                     ? AppColors.success
                                     : AppColors.warning)
                                 .withValues(alpha: 0.12),
                         borderColor:
-                            (fence!.enabled
+                            (activeFence.enabled
                                     ? AppColors.success
                                     : AppColors.warning)
                                 .withValues(alpha: 0.55),
@@ -603,14 +607,14 @@ class _MapPanel extends StatelessWidget {
                   ),
                 MarkerLayer(
                   markers: [
-                    if (location != null)
+                    if (activeLocation != null)
                       Marker(
                         point: center,
                         width: 48,
                         height: 58,
                         alignment: Alignment.topCenter,
                         child: _MapMarker(
-                          color: fence?.enabled == false
+                          color: activeFence?.enabled == false
                               ? AppColors.warning
                               : AppColors.primary,
                         ),
@@ -676,21 +680,21 @@ class _MapPanel extends StatelessWidget {
                     : '${MapTileConfig.providerLabel} · 位置',
               ),
             ),
-            if (fence?.hasData == true)
+            if (activeFence != null && activeFence.hasData)
               Positioned(
                 right: 14,
                 top: 14,
                 child: _MapChip(
                   icon: Icons.radar_outlined,
-                  label: fence!.statusLabel,
+                  label: activeFence.statusLabel,
                 ),
               ),
-            if (location != null)
+            if (activeLocation != null)
               Positioned(
                 left: 14,
                 right: 14,
                 bottom: 14,
-                child: _MapCaption(location: location!),
+                child: _MapCaption(location: activeLocation),
               ),
           ],
         ),
