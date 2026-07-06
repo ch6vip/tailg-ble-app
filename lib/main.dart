@@ -492,9 +492,11 @@ class _HomePageState extends State<HomePage>
     // Manual mode promises to disable automatic control: stop any in-flight
     // proximity scan the moment it is switched on.
     _manualModeSub = manualModeService.enabledStream.listen((enabled) {
+      if (!mounted) return;
       if (enabled) proximityService.stop();
     });
     _stateSub = connectionManager.stateStream.listen((state) {
+      if (!mounted) return;
       if (state == ble.ConnectionState.ready) {
         proximityService.onConnected();
         final device = connectionManager.device;

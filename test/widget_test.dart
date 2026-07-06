@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart';
 
+import 'helpers/source_scan.dart';
 import 'helpers/view_size.dart';
 
 void main() {
@@ -85,4 +86,29 @@ void main() {
     expect(find.text('未绑定车辆'), findsOneWidget);
     expect(find.text('绑定设备'), findsOneWidget);
   });
+
+  test('HomePage stream callbacks ignore events after unmount', () {
+    final source = readSource('lib/main.dart');
+    final manualModeListener = _listenerBlock(
+      source,
+      'manualModeService.enabledStream.listen',
+    );
+    final connectionListener = _listenerBlock(
+      source,
+      'connectionManager.stateStream.listen',
+    );
+
+    expect(manualModeListener, contains('if (!mounted) return;'));
+    expect(connectionListener, contains('if (!mounted) return;'));
+  });
+}
+
+String _listenerBlock(String source, String listenerStart) {
+  final start = source.indexOf(listenerStart);
+  expect(start, isNot(-1), reason: 'Missing $listenerStart');
+
+  final end = source.indexOf('});', start);
+  expect(end, isNot(-1), reason: 'Missing end of $listenerStart block');
+
+  return source.substring(start, end + 3);
 }
