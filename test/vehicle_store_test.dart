@@ -25,6 +25,8 @@ void main() {
     final savedAt = DateTime(2026, 5, 28, 10);
     final renamedAt = DateTime(2026, 5, 28, 10, 32);
     final locationUpdatedAt = DateTime(2026, 5, 28, 10, 36);
+    final credentialsUpdatedAt = DateTime(2026, 5, 28, 10, 40);
+    final credentialsClearedAt = DateTime(2026, 5, 28, 10, 45);
 
     final vehicle = await store.upsert(
       id: 'AA:BB:CC:DD:EE:FF',
@@ -69,6 +71,7 @@ void main() {
       id: vehicle.id,
       password: 123456,
       userId: 789,
+      savedAt: credentialsUpdatedAt,
     );
     final prefs = await SharedPreferences.getInstance();
     final secureStorage = const FlutterSecureStorage();
@@ -76,6 +79,8 @@ void main() {
 
     expect(store.defaultVehicle?.qgjLoginPassword, 123456);
     expect(store.defaultVehicle?.qgjUserId, 789);
+    expect(store.defaultVehicle?.createdAt, savedAt);
+    expect(store.defaultVehicle?.updatedAt, credentialsUpdatedAt);
     expect(persistedVehicles.contains('qgjLoginPassword'), isFalse);
     expect(persistedVehicles.contains('qgjUserId'), isFalse);
     expect(
@@ -87,9 +92,15 @@ void main() {
       '789',
     );
 
-    await store.updateQgjCredentials(id: vehicle.id, clear: true);
+    await store.updateQgjCredentials(
+      id: vehicle.id,
+      clear: true,
+      savedAt: credentialsClearedAt,
+    );
 
     expect(store.defaultVehicle?.hasQgjCredentials, isFalse);
+    expect(store.defaultVehicle?.createdAt, savedAt);
+    expect(store.defaultVehicle?.updatedAt, credentialsClearedAt);
     expect(
       await secureStorage.read(key: 'vehicle_qgj_password:${vehicle.id}'),
       isNull,

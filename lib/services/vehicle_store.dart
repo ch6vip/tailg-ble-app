@@ -279,6 +279,7 @@ class VehicleStore {
     int? password,
     int? userId,
     bool clear = false,
+    DateTime? savedAt,
   }) async {
     await init();
     final normalizedId = _normalizeId(id);
@@ -303,7 +304,7 @@ class VehicleStore {
       );
     }
     _vehicles[index] = current.copyWith(
-      updatedAt: DateTime.now(),
+      updatedAt: savedAt ?? DateTime.now(),
       qgjLoginPassword: clear ? null : password,
       qgjUserId: clear ? null : userId,
     );
