@@ -162,7 +162,7 @@ class _ScanPageState extends State<ScanPage>
     } catch (e) {
       logService.ble('连接绑定设备失败', detail: e.toString(), level: LogLevel.error);
       if (mounted) {
-        AppSnack.error(context, '连接失败: $e');
+        AppSnack.error(context, '连接失败，请稍后重试');
       }
     } finally {
       if (mounted) {

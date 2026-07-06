@@ -38,6 +38,21 @@ void main() {
     expect(cancelIsScan, lessThan(disposeResultsNotifier));
   });
 
+  test('ScanPage does not expose raw connection exceptions in snack text', () {
+    final source = readSource('lib/pages/scan_page.dart');
+    final catchStart = source.indexOf("logService.ble('连接绑定设备失败'");
+    final catchEnd = source.indexOf('    } finally {', catchStart);
+
+    expect(catchStart, greaterThanOrEqualTo(0));
+    expect(catchEnd, greaterThan(catchStart));
+
+    final catchSource = source.substring(catchStart, catchEnd);
+
+    expect(catchSource, contains('detail: e.toString()'));
+    expect(catchSource, contains("AppSnack.error(context, '连接失败，请稍后重试')"));
+    expect(catchSource, isNot(contains("'连接失败: \$e'")));
+  });
+
   testWidgets('ScanFab exposes enabled scan semantics and target size', (
     tester,
   ) async {
