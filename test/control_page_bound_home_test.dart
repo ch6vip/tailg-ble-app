@@ -26,6 +26,7 @@ void main() {
     Size? size,
     String name = '测试车辆',
     OfficialVehicle? officialVehicle,
+    OfficialVehicleLocation? officialLocation,
   }) async {
     resetMockPreferences();
     app.proximityService.resetForTest();
@@ -46,6 +47,7 @@ void main() {
           token: 'token',
           vehicles: [officialVehicle],
           selectedVehicleKey: officialVehicle.key,
+          vehicleLocation: officialLocation,
         ),
       );
     }
@@ -172,6 +174,33 @@ void main() {
 
     expect(find.text('31.230400, 121.473700'), findsOneWidget);
     expect(find.text('暂无车辆定位'), findsNothing);
+  });
+
+  testWidgets('location card renders official parking location', (
+    tester,
+  ) async {
+    final vehicle = OfficialVehicle.fromJson({
+      'imei': 'IMEI_MAIN',
+      'carId': 'official-parking-bike',
+      'btmac': 'AA:BB:CC:DD:EE:FF',
+    });
+    final location = OfficialVehicleLocation.fromJson({
+      'bleConnectTime': '2026-05-29 10:00:00',
+      'bleConnectLat': '31.230400',
+      'bleConnectLng': '121.473700',
+      'carId': 'official-parking-bike',
+      'bleConnectAddress': '停车点',
+    });
+
+    await pumpBoundHome(
+      tester,
+      size: const Size(430, 2200),
+      officialVehicle: vehicle,
+      officialLocation: location,
+    );
+
+    expect(find.text('2026-05-29 10:00:00'), findsOneWidget);
+    expect(find.text('停车点'), findsOneWidget);
   });
 
   testWidgets('location card updates from local last location stream', (

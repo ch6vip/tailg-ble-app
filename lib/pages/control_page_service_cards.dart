@@ -174,27 +174,29 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
     required VehicleProfile? localVehicle,
   }) {
     final cloudLocation = cloudState.vehicleLocation;
-    final cloudLat = cloudLocation?.latitude;
-    final cloudLng = cloudLocation?.longitude;
-    if (cloudLat != null &&
-        cloudLng != null &&
-        !isZeroCoordinate(cloudLat, cloudLng, tolerance: 0.000001)) {
-      return _LocationSummary(
-        latitude: cloudLat,
-        longitude: cloudLng,
-        timeLabel: cloudLocation!.bleConnectTime.trim(),
-        address: cloudLocation.bleConnectAddress.trim(),
-        source: '官方停车位置',
-      );
-    }
-    if (cloudLocation?.hasData == true) {
-      return _LocationSummary(
-        latitude: null,
-        longitude: null,
-        timeLabel: cloudLocation!.bleConnectTime.trim(),
-        address: cloudLocation.bleConnectAddress.trim(),
-        source: '官方停车位置',
-      );
+    if (cloudLocation != null) {
+      final cloudLat = cloudLocation.latitude;
+      final cloudLng = cloudLocation.longitude;
+      if (cloudLat != null &&
+          cloudLng != null &&
+          !isZeroCoordinate(cloudLat, cloudLng, tolerance: 0.000001)) {
+        return _LocationSummary(
+          latitude: cloudLat,
+          longitude: cloudLng,
+          timeLabel: cloudLocation.bleConnectTime.trim(),
+          address: cloudLocation.bleConnectAddress.trim(),
+          source: '官方停车位置',
+        );
+      }
+      if (cloudLocation.hasData) {
+        return _LocationSummary(
+          latitude: null,
+          longitude: null,
+          timeLabel: cloudLocation.bleConnectTime.trim(),
+          address: cloudLocation.bleConnectAddress.trim(),
+          source: '官方停车位置',
+        );
+      }
     }
 
     final officialVehicle = cloudState.selectedVehicle;
