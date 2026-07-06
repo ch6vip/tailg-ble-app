@@ -105,10 +105,12 @@ class DiagnosticRecord {
   }
 
   static List<String> encodeHistory(Iterable<DiagnosticRecord> records) {
-    return _reverseHistoryOrder(records)
-        .take(persistedHistoryLimit)
-        .map((record) => jsonEncode(record.toJson()))
-        .toList();
+    final encoded = <String>[];
+    for (final record in _reverseHistoryOrder(records)) {
+      if (encoded.length >= persistedHistoryLimit) break;
+      encoded.add(jsonEncode(record.toJson()));
+    }
+    return encoded;
   }
 
   static List<DiagnosticRecord> _reverseHistoryOrder(
