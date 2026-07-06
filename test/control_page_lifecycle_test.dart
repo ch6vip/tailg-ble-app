@@ -34,6 +34,13 @@ void main() {
     expect(source, isNot(contains('StreamBuilder<dynamic>(')));
   });
 
+  test('Home overview uses monotonic control confirmation timeout', () {
+    final source = readSource('lib/pages/control_page_home_overview.dart');
+
+    expect(source, contains('Stopwatch()..start()'));
+    expect(source, isNot(contains('DateTime.now()')));
+  });
+
   setUp(() {
     resetMockStorage();
   });

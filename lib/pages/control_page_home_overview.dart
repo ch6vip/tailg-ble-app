@@ -194,20 +194,24 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   ) async {
     if (!_needsStateConfirmation(command)) return true;
 
-    final deadline = DateTime.now().add(_controlConfirmTimeout);
+    final confirmationTimer = Stopwatch()..start();
     while (mounted && !_disposed) {
       if (!_isConfirmationTargetActive(context)) return false;
       if (_isCommandConfirmed(command, context)) return true;
-      if (DateTime.now().isAfter(deadline)) return false;
+      if (_isConfirmationTimedOut(confirmationTimer)) return false;
 
       await _refreshStateForConfirmation(command, context);
       if (!_isConfirmationTargetActive(context)) return false;
       if (_isCommandConfirmed(command, context)) return true;
-      if (DateTime.now().isAfter(deadline)) return false;
+      if (_isConfirmationTimedOut(confirmationTimer)) return false;
 
       await Future<void>.delayed(_controlConfirmPollDelay);
     }
     return false;
+  }
+
+  bool _isConfirmationTimedOut(Stopwatch timer) {
+    return timer.elapsed > _controlConfirmTimeout;
   }
 
   bool _isCommandConfirmed(
