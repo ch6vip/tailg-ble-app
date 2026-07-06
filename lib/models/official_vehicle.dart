@@ -564,11 +564,7 @@ class OfficialVehicleSelfCheck {
 
   bool get hasData => data != null;
 
-  Map<String, dynamic> get dataMap {
-    final value = data;
-    if (value is Map) return Map<String, dynamic>.from(value);
-    return const {};
-  }
+  Map<String, dynamic> get dataMap => _dataMap(data);
 
   String get displayMessage {
     final text = message.trim();
@@ -580,6 +576,11 @@ class OfficialVehicleSelfCheck {
 
 Map<String, dynamic> _rawPayload(Map<String, dynamic> json) {
   return Map<String, dynamic>.from(json);
+}
+
+Map<String, dynamic> _dataMap(Object? value) {
+  if (value is Map) return Map<String, dynamic>.from(value);
+  return const {};
 }
 
 String _stringValue(Object? value) => value?.toString().trim() ?? '';

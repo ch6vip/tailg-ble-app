@@ -1341,6 +1341,13 @@ void main() {
       expect(result.displayMessage, '成功');
       expect(result.dataMap['voltage'], 52.6);
       expect(result.raw['msg'], '成功');
+
+      final nonMap = OfficialVehicleSelfCheck.fromResponse({
+        'code': 500,
+        'data': 'not-map',
+      });
+      expect(nonMap.dataMap, isEmpty);
+      expect(nonMap.displayMessage, 'code=500');
     });
   });
 
