@@ -416,16 +416,24 @@ class OfficialCloudApiClient {
 
   Future<Map<String, dynamic>> _decodeBody(String text) async {
     if (text.trim().isEmpty) return <String, dynamic>{};
+    final decoded = await _decodeJson(text);
+    return _decodedResponseMap(decoded);
+  }
+
+  Future<Object?> _decodeJson(String text) async {
     try {
-      final decoded = text.length > _isolateDecodeThreshold
+      return text.length > _isolateDecodeThreshold
           ? await compute<String, Object?>(jsonDecode, text)
           : jsonDecode(text);
-      if (decoded is Map) return Map<String, dynamic>.from(decoded);
     } on Object {
       throw OfficialCloudApiException(
         '服务器返回非 JSON 数据: ${_responseBodyExcerpt(text)}',
       );
     }
+  }
+
+  Map<String, dynamic> _decodedResponseMap(Object? decoded) {
+    if (decoded is Map) return Map<String, dynamic>.from(decoded);
     throw const OfficialCloudApiException('服务器返回数据格式不正确');
   }
 

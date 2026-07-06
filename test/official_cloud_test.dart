@@ -342,6 +342,33 @@ void main() {
         ),
       );
     });
+
+    test('rejects JSON responses that are not objects', () async {
+      final server = await _startOfficialCloudServer((request) async {
+        request.response.statusCode = 200;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode(['ok']));
+        await request.response.close();
+      });
+      addTearDown(server.close);
+
+      final client = OfficialCloudApiClient(
+        config: OfficialCloudApiConfig(apiBase: server.apiBase),
+        log: LogService(),
+      );
+      addTearDown(client.dispose);
+
+      await expectLater(
+        client.request('app/read', method: 'GET'),
+        throwsA(
+          isA<OfficialCloudApiException>().having(
+            (e) => e.message,
+            'message',
+            '服务器返回数据格式不正确',
+          ),
+        ),
+      );
+    });
   });
 
   group('OfficialCloudApiException', () {
