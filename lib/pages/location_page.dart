@@ -34,6 +34,7 @@ const _locationElevatedShadow = Color(0x26000000);
 
 class LocationPage extends StatefulWidget {
   final LocationInitialTab initialTab;
+  final DateTime Function()? clock;
 
   /// When hosted as a bottom-nav tab there is no route to pop back to, so the
   /// header back button is hidden. Pushed instances keep the default back arrow.
@@ -42,6 +43,7 @@ class LocationPage extends StatefulWidget {
   const LocationPage({
     super.key,
     this.initialTab = LocationInitialTab.map,
+    this.clock,
     this.embedded = false,
   });
 
@@ -161,9 +163,13 @@ class _LocationPageState extends State<LocationPage> {
 
   Future<void> _changeTravelMonth(int delta) async {
     final state = officialCloudService.state;
-    final current = _parseMonth(state.travelMonth) ?? DateTime.now();
+    final current = _parseMonth(state.travelMonth) ?? _now();
     final next = DateTime(current.year, current.month + delta);
     await _refreshTravelHistory(month: formatMonthText(next));
+  }
+
+  DateTime _now() {
+    return (widget.clock ?? DateTime.now)();
   }
 
   Future<void> _refreshFenceData() async {

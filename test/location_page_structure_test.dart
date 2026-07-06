@@ -151,6 +151,47 @@ void main() {
     expectMinTouchTargetHeight(tester, previousMonth);
   });
 
+  testWidgets('LocationPage travel month fallback uses injected clock', (
+    tester,
+  ) async {
+    resetMockPreferences();
+    app.officialCloudService.resetForTest();
+    addTearDown(app.officialCloudService.resetForTest);
+    setTestViewSize(tester, const Size(430, 1200));
+
+    final vehicle = OfficialVehicle.fromJson({
+      'carId': 'official-travel-bike',
+      'carName': '测试车辆',
+    });
+
+    await tester.pumpWidget(
+      TestApp(
+        home: LocationPage(
+          initialTab: LocationInitialTab.travel,
+          embedded: true,
+          clock: () => DateTime(2026, 7, 15),
+        ),
+      ),
+    );
+    await tester.pump();
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        userId: '',
+        vehicles: [vehicle],
+        selectedVehicleKey: vehicle.key,
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('上个月'));
+    await tester.pump();
+
+    expect(app.officialCloudService.state.travelMonth, '2026-06');
+    expect(find.text('2026-06'), findsOneWidget);
+  });
+
   testWidgets('LocationPage travel tab renders cloud error details', (
     tester,
   ) async {
