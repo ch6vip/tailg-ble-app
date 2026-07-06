@@ -302,7 +302,10 @@ void main() {
 
     test('records request summary with injected clock', () async {
       final server = await _startOfficialCloudServer((request) async {
-        await _writeJsonResponse(request, 200, {'code': '200', 'msg': 'ok'});
+        await _writeJsonResponse(request, 200, {
+          'code': '200',
+          'msg': 'ok userId=user-secret password=qgj-secret',
+        });
       });
       addTearDown(server.close);
 
@@ -322,6 +325,7 @@ void main() {
       expect(summary, isNotNull);
       expect(summary!.elapsed, const Duration(milliseconds: 150));
       expect(summary.at, completedAt);
+      expect(summary.message, 'ok userId=use***ret password=qgj***ret');
     });
 
     test('does not retry 5xx responses by default', () async {
@@ -472,15 +476,15 @@ void main() {
     test('masks sensitive request path values and diagnostic text', () {
       expect(
         OfficialCloudRedactor.requestPath(
-          'app/getCode?phone=18886120851&imei=860123456789377&btmac=aabbccddeeff',
+          'app/getCode?phone=18886120851&imei=860123456789377&btmac=aabbccddeeff&userId=user-secret&password=qgj-secret&mac=AA:BB:CC:DD:EE:FF',
         ),
-        'app/getCode?phone=188***851&imei=860***377&btmac=aab***eff',
+        'app/getCode?phone=188***851&imei=860***377&btmac=aab***eff&userId=use***ret&password=qgj***ret&mac=AA:***:FF',
       );
       expect(
         OfficialCloudRedactor.text(
-          'phone=18886120851 imei=860123456789377 mac=AA:BB:CC:DD:EE:FF compact=aabbccddeeff',
+          'phone=18886120851 imei=860123456789377 mac=AA:BB:CC:DD:EE:FF compact=aabbccddeeff userId=user-secret password=qgj-secret authorization=raw-secret-token Bearer bearer-secret-token frame=L12345678901234567',
         ),
-        'phone=188***851 imei=860***377 mac=AA:***:FF compact=aab***eff',
+        'phone=188***851 imei=860***377 mac=AA:***:FF compact=aab***eff userId=use***ret password=qgj***ret authorization=raw***ken Bearer bea***ken frame=L12***567',
       );
     });
   });

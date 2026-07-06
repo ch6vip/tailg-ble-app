@@ -12,7 +12,19 @@ class OfficialCloudApiException implements Exception {
 
 class OfficialCloudRedactor {
   static final RegExp _sensitiveQueryPattern = RegExp(
-    r'(?<=\b(?:phone|token|authorization|imei|carId|uid|frame|btmac)=)[^&\s]+',
+    r'(?<=\b(?:phone|token|authorization|imei|carId|uid|userId|password|frame|btmac|mac)=)[^&\s]+',
+    caseSensitive: false,
+  );
+  static final RegExp _authorizationValuePattern = RegExp(
+    r'''(["']?\bauthorization\b["']?\s*[:=]\s*["']?)(?!Bearer\b)([^"'\s,&}]+)(["']?)''',
+    caseSensitive: false,
+  );
+  static final RegExp _bearerTokenPattern = RegExp(
+    r'\bBearer\s+([A-Za-z0-9._~+/=-]+)',
+    caseSensitive: false,
+  );
+  static final RegExp _sensitiveKeyValuePattern = RegExp(
+    r'''(["']?\b(?:phone|token|imei|carId|uid|userId|password|frame|btmac|mac)\b["']?\s*[:=]\s*["']?)([^"'\s,&}]+)(["']?)''',
     caseSensitive: false,
   );
   static final RegExp _phonePattern = RegExp(r'\b1\d{10}\b');
@@ -32,6 +44,15 @@ class OfficialCloudRedactor {
 
   static String text(String value) {
     return value
+        .replaceAllMapped(_bearerTokenPattern, (match) {
+          return 'Bearer ${_mask(match.group(1) ?? '')}';
+        })
+        .replaceAllMapped(_authorizationValuePattern, (match) {
+          return '${match.group(1)}${_mask(match.group(2) ?? '')}${match.group(3)}';
+        })
+        .replaceAllMapped(_sensitiveKeyValuePattern, (match) {
+          return '${match.group(1)}${_mask(match.group(2) ?? '')}${match.group(3)}';
+        })
         .replaceAllMapped(_phonePattern, _maskMatch)
         .replaceAllMapped(_imeiPattern, _maskMatch)
         .replaceAllMapped(_macPattern, _maskMatch)
@@ -413,8 +434,9 @@ class OfficialCloudApiClient {
   String? _shortMessage(String? message) {
     final normalized = message?.trim();
     if (normalized == null || normalized.isEmpty) return null;
-    if (normalized.length <= 80) return normalized;
-    return normalized.substring(0, 80);
+    final redacted = OfficialCloudRedactor.text(normalized);
+    if (redacted.length <= 80) return redacted;
+    return redacted.substring(0, 80);
   }
 
   // 超过该阈值的响应体丢到后台 isolate 解析，避免大 JSON 阻塞 UI 线程；
@@ -447,8 +469,9 @@ class OfficialCloudApiClient {
   }
 
   String _responseBodyExcerpt(String text) {
-    final end = text.length < 80 ? text.length : 80;
-    return text.substring(0, end);
+    final redacted = OfficialCloudRedactor.text(text);
+    final end = redacted.length < 80 ? redacted.length : 80;
+    return redacted.substring(0, end);
   }
 }
 
