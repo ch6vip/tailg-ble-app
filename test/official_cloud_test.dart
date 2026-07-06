@@ -532,8 +532,9 @@ void main() {
 
   group('OfficialCloudDataParser', () {
     test('parses vehicle payload from list or single map', () {
+      final vehicleJson = {'carId': 'car-1', 'carNickName': 'A'};
       final list = OfficialCloudDataParser.vehicles([
-        {'carId': 'car-1', 'carNickName': 'A'},
+        vehicleJson,
         {'carId': '', 'carNickName': 'invalid'},
         'ignored',
       ]);
@@ -542,9 +543,11 @@ void main() {
         'carNickName': 'B',
       });
       final invalidSingle = OfficialCloudDataParser.vehicles('ignored');
+      vehicleJson['carNickName'] = 'mutated';
 
       expect(list, hasLength(1));
       expect(list.first.displayName, 'A');
+      expect(list.first.raw['carNickName'], 'A');
       expect(single, hasLength(1));
       expect(single.first.displayName, 'B');
       expect(invalidSingle, isEmpty);

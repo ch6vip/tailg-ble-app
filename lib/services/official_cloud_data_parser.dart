@@ -48,7 +48,11 @@ class OfficialCloudDataParser {
   }
 
   static Iterable<Map<String, dynamic>> _payloadMaps(Iterable<Object?> items) {
-    return items.whereType<Map<Object?, Object?>>().map(_stringKeyedMap);
+    return items.whereType<Map<Object?, Object?>>().map(_payloadMap);
+  }
+
+  static Map<String, dynamic> _payloadMap(Map<Object?, Object?> data) {
+    return _stringKeyedMap(data);
   }
 
   static Map<String, dynamic> _stringKeyedMap(Map<Object?, Object?> data) {
