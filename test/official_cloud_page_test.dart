@@ -127,6 +127,33 @@ void main() {
     expect(find.text('官方服务异常'), findsOneWidget);
   });
 
+  testWidgets('self-check page renders local validation errors', (
+    tester,
+  ) async {
+    setTestViewSize(tester, const Size(430, 1200));
+    final vehicle = OfficialVehicle.fromJson({
+      'carId': 'official-without-imei',
+      'carName': '缺少 IMEI 车辆',
+    });
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        userId: 'user-1',
+        vehicles: [vehicle],
+        selectedVehicleKey: vehicle.key,
+      ),
+    );
+
+    await tester.pumpWidget(
+      TestApp(home: OfficialVehicleSelfCheckPage(vehicle: vehicle)),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('当前车辆缺少官方 IMEI，无法云端自检'), findsOneWidget);
+  });
+
   testWidgets('signed in page presents vehicle center first', (tester) async {
     setTestViewSize(tester, const Size(430, 1200));
 

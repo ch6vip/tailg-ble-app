@@ -903,6 +903,7 @@ class _OfficialVehicleSelfCheckPageState
 
   @override
   Widget build(BuildContext context) {
+    final error = _error;
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
@@ -943,11 +944,11 @@ class _OfficialVehicleSelfCheckPageState
             const SizedBox(height: 12),
             if (_loading)
               const AppCard(child: Center(child: CircularProgressIndicator()))
-            else if (_error != null)
+            else if (error != null)
               AppCard(
                 color: AppColors.danger.withValues(alpha: 0.08),
                 child: Text(
-                  _error!,
+                  error,
                   style: const TextStyle(color: AppColors.danger, fontSize: 13),
                 ),
               )
