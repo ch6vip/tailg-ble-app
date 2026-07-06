@@ -204,7 +204,8 @@ class ReplicaFeatureStore {
       return null;
     }
     try {
-      return decode(Map<String, dynamic>.from(item));
+      final payload = parsePersistedMap(item);
+      return payload == null ? null : decode(payload);
     } catch (e) {
       _logWarning('ReplicaFeatureStore: decode list item failed', e);
       return null;
@@ -218,7 +219,8 @@ class ReplicaFeatureStore {
 
   Map<String, dynamic>? _decodeMapPayload(Object? decoded) {
     if (decoded == null) return null;
-    if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    final payload = parsePersistedMap(decoded);
+    if (payload != null) return payload;
     _logWarning(
       'ReplicaFeatureStore: expected map payload',
       decoded.runtimeType,

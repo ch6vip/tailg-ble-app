@@ -413,6 +413,47 @@ void main() {
     expect(store.defaultVehicle?.displayName, '有效车辆');
   });
 
+  test('ReplicaFeatureStore restores saved records and config', () async {
+    final store = ReplicaFeatureStore();
+    final createdAt = DateTime(2026, 6, 9, 10);
+    final updatedAt = DateTime(2026, 6, 9, 11);
+
+    await store.saveNfcKeys([
+      NfcKeyRecord(id: 'nfc-1', name: '主钥匙', type: '卡片', createdAt: createdAt),
+    ]);
+    await store.saveShareMembers([
+      ShareMemberRecord(
+        id: 'share-1',
+        name: '家人',
+        phone: '18800001111',
+        createdAt: createdAt,
+      ),
+    ]);
+    await store.saveFenceConfig(
+      FenceConfig(
+        enabled: true,
+        latitude: 31.2304,
+        longitude: 121.4737,
+        radiusMeters: 800,
+        updatedAt: updatedAt,
+      ),
+    );
+
+    final nfcKeys = await store.loadNfcKeys();
+    final members = await store.loadShareMembers();
+    final fence = await store.loadFenceConfig();
+
+    expect(nfcKeys.single.name, '主钥匙');
+    expect(nfcKeys.single.createdAt, createdAt);
+    expect(members.single.phone, '18800001111');
+    expect(members.single.createdAt, createdAt);
+    expect(fence?.enabled, isTrue);
+    expect(fence?.latitude, 31.2304);
+    expect(fence?.longitude, 121.4737);
+    expect(fence?.radiusMeters, 800);
+    expect(fence?.updatedAt, updatedAt);
+  });
+
   test('ReplicaFeatureStore tolerates corrupt persisted config', () async {
     SharedPreferences.setMockInitialValues({
       'replica_nfc_keys': 'not-json',
