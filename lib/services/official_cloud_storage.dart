@@ -159,15 +159,7 @@ class _OfficialCloudStorage {
   Map<String, String> _decodeLinks(String? raw) {
     if (raw == null || raw.isEmpty) return {};
     try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map) {
-        return _decodeLinkMap(decoded);
-      }
-      _log.operation(
-        '官云本地车辆关联数据格式异常，已忽略',
-        detail: 'Expected JSON object, got ${decoded.runtimeType}',
-        level: LogLevel.warning,
-      );
+      return _decodeLinkPayload(jsonDecode(raw));
     } catch (e) {
       _log.operation(
         '官云本地车辆关联数据损坏，已忽略',
@@ -176,6 +168,15 @@ class _OfficialCloudStorage {
       );
       return {};
     }
+  }
+
+  Map<String, String> _decodeLinkPayload(Object? decoded) {
+    if (decoded is Map) return _decodeLinkMap(decoded);
+    _log.operation(
+      '官云本地车辆关联数据格式异常，已忽略',
+      detail: 'Expected JSON object, got ${decoded.runtimeType}',
+      level: LogLevel.warning,
+    );
     return {};
   }
 

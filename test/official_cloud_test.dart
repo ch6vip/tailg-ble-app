@@ -820,6 +820,26 @@ void main() {
       },
     );
 
+    test(
+      'logs corrupt persisted vehicle links and loads empty links',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'official_cloud_vehicle_links': '{',
+        });
+
+        final service = OfficialCloudService();
+        await service.init();
+
+        expect(service.state.localVehicleLinks, isEmpty);
+        final warning = LogService().all.singleWhere(
+          (entry) =>
+              entry.message == '官云本地车辆关联数据损坏，已忽略' &&
+              entry.level == LogLevel.warning,
+        );
+        expect(warning.detail, contains('FormatException'));
+      },
+    );
+
     test('normalizes persisted vehicle links on load', () async {
       SharedPreferences.setMockInitialValues({
         'official_cloud_vehicle_links': jsonEncode({
