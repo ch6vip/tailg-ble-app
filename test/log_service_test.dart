@@ -4,8 +4,8 @@ import 'package:tailg_ble_app/services/log_service.dart';
 void main() {
   final log = LogService();
 
-  setUp(log.clear);
-  tearDown(log.clear);
+  setUp(log.resetForTest);
+  tearDown(log.resetForTest);
 
   test('redacts sensitive values from messages and details', () {
     log.operation(
@@ -60,6 +60,15 @@ void main() {
     final time = DateTime(2026, 6, 9, 10, 30);
 
     log.operation('timestamped', time: time);
+
+    expect(log.all.single.time, time);
+  });
+
+  test('uses injected default log entry time', () {
+    final time = DateTime(2026, 6, 9, 10, 45);
+    log.resetForTest(clock: () => time);
+
+    log.operation('timestamped');
 
     expect(log.all.single.time, time);
   });

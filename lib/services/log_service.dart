@@ -31,6 +31,7 @@ class LogService {
   static const _maxEntries = 2000;
   final _logs = Queue<LogEntry>();
   int _evictedCount = 0;
+  DateTime Function() _clock = DateTime.now;
 
   // Broadcast stream so UI pages can subscribe and rebuild on new entries
   // instead of polling with empty setState(() {}) (P3-12).
@@ -42,6 +43,11 @@ class LogService {
 
   List<LogEntry> byCategory(LogCategory cat) =>
       _logs.where((e) => e.category == cat).toList();
+
+  void resetForTest({DateTime Function()? clock}) {
+    clear();
+    _clock = clock ?? DateTime.now;
+  }
 
   void ble(
     String message, {
@@ -86,7 +92,7 @@ class LogService {
   }) {
     final redactedMessage = _redactSensitiveText(message);
     return LogEntry(
-      time: time ?? DateTime.now(),
+      time: time ?? _clock(),
       level: level,
       category: category,
       message: redactedMessage,
