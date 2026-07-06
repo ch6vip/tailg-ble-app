@@ -114,7 +114,12 @@ class DiagnosticRecord {
   static List<DiagnosticRecord> _reverseHistoryOrder(
     Iterable<DiagnosticRecord> records,
   ) {
-    return records.toList(growable: false).reversed.toList();
+    final source = records.toList(growable: false);
+    final ordered = <DiagnosticRecord>[];
+    for (var index = source.length - 1; index >= 0; index--) {
+      ordered.add(source[index]);
+    }
+    return ordered;
   }
 }
 
