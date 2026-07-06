@@ -234,6 +234,14 @@ class AutoConnectService {
         );
         if (!completer.isCompleted) completer.complete();
         return;
+      } catch (e) {
+        _log.operation(
+          '自动连接: 扫描启动失败',
+          detail: e.toString(),
+          level: LogLevel.warning,
+        );
+        if (!completer.isCompleted) completer.complete();
+        return;
       }
       await completer.future;
     } finally {

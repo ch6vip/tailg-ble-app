@@ -10,6 +10,7 @@ import 'package:tailg_ble_app/services/vehicle_store.dart';
 
 import 'helpers/allowing_snapshot_guard.dart';
 import 'helpers/ble_guard_fixtures.dart';
+import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 
 void main() {
@@ -140,6 +141,17 @@ void main() {
 
       expect(profile.protocol, VehicleProtocol.qgj);
       expect(VehicleStore().defaultVehicle?.protocol, VehicleProtocol.qgj);
+    });
+
+    test('scan startup failures complete the auto connect attempt', () {
+      final source = readSource('lib/services/auto_connect_service.dart');
+
+      expect(source, contains('自动连接: 扫描启动失败'));
+      expect(
+        source,
+        contains('if (!completer.isCompleted) completer.complete();'),
+      );
+      expect(source, contains('} catch (e) {'));
     });
   });
 
