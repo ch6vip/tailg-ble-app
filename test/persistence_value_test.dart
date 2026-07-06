@@ -45,6 +45,13 @@ void main() {
     expect(parsePersistedMap(42), isNull);
   });
 
+  test('parsePersistedMap rejects non-string map keys', () {
+    expect(
+      () => parsePersistedMap(<Object?, Object?>{1: 'value'}),
+      throwsA(isA<FormatException>()),
+    );
+  });
+
   test('parsePersistedMapList copies map entries and ignores non-maps', () {
     final sourceMap = <Object?, Object?>{'latitude': '31.2304'};
     final parsed = parsePersistedMapList([

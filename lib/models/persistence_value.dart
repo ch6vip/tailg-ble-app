@@ -17,7 +17,15 @@ List<String> parsePersistedStringList(Object? value) {
 
 Map<String, dynamic>? parsePersistedMap(Object? value) {
   if (value is! Map) return null;
-  return Map<String, dynamic>.from(value);
+  final parsed = <String, dynamic>{};
+  for (final entry in value.entries) {
+    final key = entry.key;
+    if (key is! String) {
+      throw FormatException('Persisted map keys must be strings', key);
+    }
+    parsed[key] = entry.value;
+  }
+  return parsed;
 }
 
 List<Map<String, dynamic>> parsePersistedMapList(Object? value) {
