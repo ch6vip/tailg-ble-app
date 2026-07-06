@@ -29,5 +29,22 @@ void main() {
 
       expect(profile.lastLocation, isNull);
     });
+
+    test('copies persisted last location map before decoding', () {
+      final lastLocation = <String, Object?>{
+        'latitude': '31.2304',
+        'longitude': '121.4737',
+        'accuracy': '12',
+        'recordedAt': '2026-06-09T10:30:00.000',
+      };
+
+      final profile = VehicleProfile.fromJson({
+        'id': 'AA:BB:CC:DD:EE:FF',
+        'lastLocation': lastLocation,
+      });
+      lastLocation['latitude'] = '0';
+
+      expect(profile.lastLocation?.latitude, 31.2304);
+    });
   });
 }

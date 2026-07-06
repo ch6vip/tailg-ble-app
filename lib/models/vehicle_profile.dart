@@ -144,5 +144,9 @@ VehicleLocation? _vehicleLocation(Object? value) {
 
 Map<String, dynamic>? _vehicleLocationJson(Object? value) {
   if (value is! Map) return null;
+  return _vehicleLocationPayload(value);
+}
+
+Map<String, dynamic> _vehicleLocationPayload(Map<Object?, Object?> value) {
   return Map<String, dynamic>.from(value);
 }
