@@ -13,13 +13,15 @@ class DiagnosticExportService {
   final LogService logService;
   final VehicleStore vehicleStore;
   final OfficialCloudService officialCloudService;
+  final DateTime Function()? _clock;
 
   const DiagnosticExportService({
     required this.connectionManager,
     required this.logService,
     required this.vehicleStore,
     required this.officialCloudService,
-  });
+    DateTime Function()? clock,
+  }) : _clock = clock;
 
   String buildReport(List<LogEntry> entries) {
     return [
@@ -124,10 +126,14 @@ class DiagnosticExportService {
   String _buildHeader() {
     return [
       '# Tailg BLE Diagnostic Report',
-      'Generated: ${DateTime.now().toIso8601String()}',
+      'Generated: ${_now().toIso8601String()}',
       'Platform: ${defaultTargetPlatform.name}',
       'Mode: ${kReleaseMode ? 'release' : 'debug/profile'}',
     ].join('\n');
+  }
+
+  DateTime _now() {
+    return (_clock ?? DateTime.now)();
   }
 
   String _buildVehicleSection() {
