@@ -17,6 +17,9 @@ void main() {
     expect(record!.rawByte, 33);
     expect(record.faults, ['欠压保护']);
     expect(DiagnosticRecord.tryParse('not-json'), isNull);
+  });
+
+  test('DiagnosticRecord ignores non-object decoded history entries', () {
     expect(DiagnosticRecord.tryParse('42'), isNull);
     expect(DiagnosticRecord.tryParse('["bad-entry"]'), isNull);
   });

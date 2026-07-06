@@ -60,8 +60,13 @@ class DiagnosticRecord {
   }
 
   static DiagnosticRecord? _fromDecoded(Object? decoded) {
+    final json = _decodedRecordMap(decoded);
+    return json == null ? null : DiagnosticRecord.fromJson(json);
+  }
+
+  static Map<String, dynamic>? _decodedRecordMap(Object? decoded) {
     if (decoded is! Map) return null;
-    return DiagnosticRecord.fromJson(Map<String, dynamic>.from(decoded));
+    return Map<String, dynamic>.from(decoded);
   }
 }
 
