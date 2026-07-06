@@ -16,11 +16,13 @@ void main() {
     resetMockPreferences();
     LogService().clear();
     VehicleStore().resetForTest();
+    ReplicaFeatureStore().resetForTest();
   });
 
   tearDown(() {
     LogService().clear();
     VehicleStore().resetForTest();
+    ReplicaFeatureStore().resetForTest();
   });
 
   testWidgets('electric fence save validates coordinates with info snack', (

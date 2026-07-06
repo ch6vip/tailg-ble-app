@@ -159,6 +159,16 @@ class ReplicaFeatureStore {
     await _saveList(_prefNfcKeys, records.map((record) => record.toJson()));
   }
 
+  NfcKeyRecord createNfcKey({required String name, required String type}) {
+    final now = _clock();
+    return NfcKeyRecord(
+      id: makeId(now: now),
+      name: name,
+      type: type,
+      createdAt: now,
+    );
+  }
+
   Future<FenceConfig?> loadFenceConfig() async {
     final raw = (await SharedPreferences.getInstance()).getString(
       _prefFenceConfig,
@@ -173,6 +183,21 @@ class ReplicaFeatureStore {
     await prefs.setString(_prefFenceConfig, jsonEncode(config.toJson()));
   }
 
+  FenceConfig createFenceConfig({
+    required bool enabled,
+    required double latitude,
+    required double longitude,
+    required int radiusMeters,
+  }) {
+    return FenceConfig(
+      enabled: enabled,
+      latitude: latitude,
+      longitude: longitude,
+      radiusMeters: radiusMeters,
+      updatedAt: _clock(),
+    );
+  }
+
   Future<List<ShareMemberRecord>> loadShareMembers() async {
     final raw = (await SharedPreferences.getInstance()).getString(
       _prefShareMembers,
@@ -184,6 +209,19 @@ class ReplicaFeatureStore {
     await _saveList(
       _prefShareMembers,
       records.map((record) => record.toJson()),
+    );
+  }
+
+  ShareMemberRecord createShareMember({
+    required String name,
+    required String phone,
+  }) {
+    final now = _clock();
+    return ShareMemberRecord(
+      id: makeId(now: now),
+      name: name,
+      phone: phone,
+      createdAt: now,
     );
   }
 

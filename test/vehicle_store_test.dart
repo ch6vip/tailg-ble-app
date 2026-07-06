@@ -583,6 +583,33 @@ void main() {
     expect(secondSuffix, firstSuffix + 1);
   });
 
+  test('ReplicaFeatureStore creates local records with its clock', () {
+    final timestamps = [
+      DateTime(2026, 6, 9, 10, 50),
+      DateTime(2026, 6, 9, 10, 55),
+      DateTime(2026, 6, 9, 11),
+    ];
+    var timestampIndex = 0;
+    final store = ReplicaFeatureStore();
+    store.resetForTest(clock: () => timestamps[timestampIndex++]);
+
+    final nfcKey = store.createNfcKey(name: '主钥匙', type: '手机');
+    final fence = store.createFenceConfig(
+      enabled: true,
+      latitude: 31.2304,
+      longitude: 121.4737,
+      radiusMeters: 800,
+    );
+    final member = store.createShareMember(name: '家人', phone: '18800001111');
+
+    expect(nfcKey.createdAt, timestamps[0]);
+    expect(nfcKey.id, startsWith('${timestamps[0].microsecondsSinceEpoch}_'));
+    expect(fence.updatedAt, timestamps[1]);
+    expect(member.createdAt, timestamps[2]);
+    expect(member.id, startsWith('${timestamps[2].microsecondsSinceEpoch}_'));
+    expect(timestampIndex, timestamps.length);
+  });
+
   test('ReplicaFeatureStore tolerates corrupt persisted config', () async {
     SharedPreferences.setMockInitialValues({
       'replica_nfc_keys': 'not-json',

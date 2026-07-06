@@ -90,12 +90,7 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
                     Navigator.pop(
                       context,
                       record == null
-                          ? NfcKeyRecord(
-                              id: _store.makeId(),
-                              name: name,
-                              type: type,
-                              createdAt: DateTime.now(),
-                            )
+                          ? _store.createNfcKey(name: name, type: type)
                           : record.copyWith(name: name, type: type),
                     );
                   },
@@ -256,12 +251,11 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
       return;
     }
     await _store.saveFenceConfig(
-      FenceConfig(
+      _store.createFenceConfig(
         enabled: _enabled,
         latitude: latitude,
         longitude: longitude,
         radiusMeters: radius,
-        updatedAt: DateTime.now(),
       ),
     );
     if (!mounted) return;
@@ -481,11 +475,9 @@ class _ShareBikePageState extends State<ShareBikePage> {
               Navigator.pop(
                 context,
                 member == null
-                    ? ShareMemberRecord(
-                        id: _store.makeId(),
+                    ? _store.createShareMember(
                         name: name,
                         phone: phoneController.text.trim(),
-                        createdAt: DateTime.now(),
                       )
                     : member.copyWith(
                         name: name,
