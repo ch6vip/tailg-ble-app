@@ -558,7 +558,8 @@ class _TravelDetailSheet extends StatelessWidget {
   static _ResolvedLocation? _lastResolvedPoint(
     List<OfficialTravelPoint> points,
   ) {
-    for (final point in points.reversed) {
+    for (var index = points.length - 1; index >= 0; index--) {
+      final point = points[index];
       final latitude = point.latitude;
       final longitude = point.longitude;
       if (latitude == null || longitude == null) continue;

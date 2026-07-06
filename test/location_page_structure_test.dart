@@ -522,6 +522,85 @@ void main() {
     expect(find.text('31.012, 121.012'), findsOneWidget);
     expect(find.text('31.013, 121.013'), findsNothing);
   });
+
+  testWidgets('LocationPage travel detail skips trailing zero endpoint', (
+    tester,
+  ) async {
+    resetMockPreferences();
+    app.officialCloudService.resetForTest();
+    addTearDown(app.officialCloudService.resetForTest);
+    setTestViewSize(tester, const Size(430, 3000));
+
+    const travelRecord = OfficialTravelRecord(
+      raw: {},
+      hours: '0',
+      carName: '测试车辆',
+      averageSpeed: '25',
+      deviceTravelId: 'travel-1',
+      sec: '0',
+      min: '15',
+      travelDate: '2026-07-01',
+      imei: '',
+      days: '',
+      startTime: '08:00',
+      endTime: '08:15',
+      mileage: '12.5',
+      frame: '',
+      maxSpeed: '',
+    );
+    const travelDay = OfficialTravelDay(
+      raw: {},
+      sec: '',
+      hours: '',
+      min: '',
+      travelDate: '2026-07-01',
+      totalTime: '15m',
+      records: [travelRecord],
+      days: '',
+      totalMileage: '12.5',
+    );
+    final points = [
+      for (var index = 1; index <= 12; index++) _travelPoint(index),
+      const OfficialTravelPoint(
+        raw: <String, dynamic>{},
+        lng: '0',
+        heading: '',
+        starsNum: '',
+        lat: '0',
+        reportTime: '08:13',
+        speed: '',
+      ),
+    ];
+    final travelState = OfficialCloudState.initial().copyWith(
+      initialized: true,
+      token: 'token',
+      userId: 'uid',
+      travelMonth: '2026-07',
+      travelDays: [travelDay],
+      travelDetails: {'travel-1': points},
+    );
+
+    await tester.pumpWidget(
+      const TestApp(
+        home: LocationPage(
+          initialTab: LocationInitialTab.travel,
+          embedded: true,
+        ),
+      ),
+    );
+    await tester.pump();
+    app.officialCloudService.setStateForTest(travelState);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+
+    await tester.ensureVisible(find.text('12.5km'));
+    await tester.pump();
+    await tester.tap(find.text('12.5km'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('31.012000, 121.012000'), findsOneWidget);
+    expect(find.text('0.000000, 0.000000'), findsNothing);
+  });
 }
 
 OfficialTravelPoint _travelPoint(int index) {
