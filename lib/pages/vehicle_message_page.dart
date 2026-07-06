@@ -80,17 +80,26 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
   }
 
   List<_VehicleMessage> _buildMessages() {
-    final entries = _log.all.reversed
-        .take(_recentLogLimit)
-        .toList(growable: false);
     final messages = <_VehicleMessage>[];
-    for (final entry in entries) {
+    for (final entry in _recentLogEntries()) {
       final message = _mapEntry(entry);
       if (message != null) {
         messages.add(message);
       }
     }
     return messages;
+  }
+
+  List<LogEntry> _recentLogEntries() {
+    final logs = _log.all;
+    final firstIncluded = logs.length > _recentLogLimit
+        ? logs.length - _recentLogLimit
+        : 0;
+    final entries = <LogEntry>[];
+    for (var i = logs.length - 1; i >= firstIncluded; i--) {
+      entries.add(logs[i]);
+    }
+    return entries;
   }
 
   _VehicleMessage? _mapEntry(LogEntry entry) {
