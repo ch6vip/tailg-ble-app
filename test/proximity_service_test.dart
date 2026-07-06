@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/services/ble_connection_snapshot_guard.dart';
+import 'package:tailg_ble_app/services/manual_mode_service.dart';
 import 'package:tailg_ble_app/services/proximity_service.dart';
 
 import 'helpers/allowing_snapshot_guard.dart';
@@ -13,6 +14,7 @@ import 'helpers/storage_mocks.dart';
 void main() {
   setUp(() {
     ProximityService().resetForTest();
+    ManualModeService().resetForTest();
     resetMockPreferences();
   });
 
@@ -49,6 +51,17 @@ void main() {
 
     await expectLater(event, completion(isTrue));
     expect(service.enabled, isTrue);
+  });
+
+  test('ProximityService loads manual mode before starting scan', () async {
+    SharedPreferences.setMockInitialValues({'manual_mode_enabled': true});
+    ManualModeService().resetForTest();
+
+    final service = ProximityService();
+    service.setTargetDevice(testBleDeviceId);
+    await service.setEnabled(true);
+
+    expect(ManualModeService().enabled, isTrue);
   });
 
   test('ProximityService uses injected clock for nearby unlock cooldown', () {
