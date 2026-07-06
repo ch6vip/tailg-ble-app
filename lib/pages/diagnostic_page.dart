@@ -195,9 +195,9 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
 
   @override
   Widget build(BuildContext context) {
-    final hasResult = _rawFaultByte != null;
+    final rawFaultByte = _rawFaultByte;
     final activeFaults = _currentFaults.where((f) => f.active).toList();
-    final allClear = hasResult && activeFaults.isEmpty;
+    final allClear = rawFaultByte != null && activeFaults.isEmpty;
     return StreamBuilder<ble.ConnectionState>(
       stream: connectionManager.stateStream,
       initialData: connectionManager.state,
@@ -239,7 +239,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                           minimumSize: const Size.fromHeight(52),
                         ),
                       ),
-                      if (hasResult) ...[
+                      if (rawFaultByte != null) ...[
                         const SizedBox(height: 20),
                         AppCard(
                           margin: EdgeInsets.zero,
@@ -273,7 +273,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                       ),
                                     ),
                                     Text(
-                                      '原始码: 0x${intToHex2(_rawFaultByte!)}',
+                                      '原始码: 0x${intToHex2(rawFaultByte)}',
                                       style: AppTextStyles.smallText,
                                     ),
                                   ],
