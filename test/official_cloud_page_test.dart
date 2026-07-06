@@ -115,6 +115,18 @@ void main() {
     expectMinTouchTargetHeight(tester, scanAction);
   });
 
+  testWidgets('page renders official cloud error details', (tester) async {
+    setTestViewSize(tester, const Size(430, 1200));
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(initialized: true, error: '官方服务异常'),
+    );
+
+    await tester.pumpWidget(const TestApp(home: OfficialCloudPage()));
+    await tester.pump();
+
+    expect(find.text('官方服务异常'), findsOneWidget);
+  });
+
   testWidgets('signed in page presents vehicle center first', (tester) async {
     setTestViewSize(tester, const Size(430, 1200));
 

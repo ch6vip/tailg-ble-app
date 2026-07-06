@@ -139,6 +139,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
           initialData: officialCloudService.state,
           builder: (context, snapshot) {
             final state = snapshot.data ?? officialCloudService.state;
+            final error = state.error;
             return ListView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.only(
@@ -171,12 +172,12 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
                   const SizedBox(height: 14),
                   _SessionCard(state: state),
                 ],
-                if (state.error != null) ...[
+                if (error != null) ...[
                   const SizedBox(height: 14),
                   AppCard(
                     color: AppColors.danger.withValues(alpha: 0.08),
                     child: Text(
-                      state.error!,
+                      error,
                       style: const TextStyle(
                         color: AppColors.danger,
                         fontSize: 13,
