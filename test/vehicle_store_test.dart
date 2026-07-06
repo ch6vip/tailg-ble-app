@@ -349,20 +349,28 @@ void main() {
   test('VehicleStore normalizes ids at write and lookup boundaries', () async {
     final store = VehicleStore();
     await store.init();
+    final createdAt = DateTime(2026, 6, 10, 10);
+    final updatedAt = DateTime(2026, 6, 10, 11);
 
     final created = await store.upsert(
       id: '  AA:BB:CC:DD:EE:FF  ',
       name: '测试车辆',
       makeDefault: true,
+      savedAt: createdAt,
     );
     final updated = await store.upsert(
       id: 'AA:BB:CC:DD:EE:FF',
       name: '更新车辆',
       protocol: VehicleProtocol.qgj,
+      savedAt: updatedAt,
     );
 
     expect(created.id, 'AA:BB:CC:DD:EE:FF');
+    expect(created.createdAt, createdAt);
+    expect(created.updatedAt, createdAt);
     expect(updated.id, 'AA:BB:CC:DD:EE:FF');
+    expect(updated.createdAt, createdAt);
+    expect(updated.updatedAt, updatedAt);
     expect(store.vehicles, hasLength(1));
     expect(store.defaultVehicleId, 'AA:BB:CC:DD:EE:FF');
     expect(store.defaultVehicle?.displayName, '更新车辆');

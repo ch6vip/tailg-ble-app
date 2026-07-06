@@ -202,6 +202,7 @@ class VehicleStore {
     VehicleProtocol protocol = VehicleProtocol.auto,
     bool makeDefault = false,
     DateTime? lastConnectedAt,
+    DateTime? savedAt,
   }) async {
     await init();
     final normalizedId = _normalizeId(id);
@@ -209,7 +210,7 @@ class VehicleStore {
       throw ArgumentError.value(id, 'id', 'Vehicle id must not be blank');
     }
     final normalizedName = _normalizeName(name);
-    final now = DateTime.now();
+    final now = savedAt ?? DateTime.now();
     final index = _vehicles.indexWhere((vehicle) => vehicle.id == normalizedId);
     late VehicleProfile profile;
     if (index >= 0) {
