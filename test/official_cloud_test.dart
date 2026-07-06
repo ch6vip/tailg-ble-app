@@ -1101,6 +1101,30 @@ void main() {
       expect(service.state.vehicles, isEmpty);
       expect(service.state.selectedVehicle, isNull);
     });
+
+    test('uses injected clock for missing uid travel month', () async {
+      final vehicle = OfficialVehicle.fromJson({
+        'carId': 'car-4',
+        'carNickName': '轨迹车',
+        'frame': 'FRAME-4',
+      });
+      final service = OfficialCloudService();
+      service.resetForTest(clock: () => DateTime(2026, 7, 6, 10));
+      service.setStateForTest(
+        OfficialCloudState.initial().copyWith(
+          initialized: true,
+          token: 'token',
+          vehicles: [vehicle],
+          selectedVehicleKey: vehicle.key,
+        ),
+      );
+
+      await service.refreshTravelHistory();
+
+      expect(service.state.travelMonth, '2026-07');
+      expect(service.state.travelDays, isEmpty);
+      expect(service.state.travelError, '官方登录未返回 uid，无法读取历史轨迹');
+    });
   });
 
   group('ControlChannelResolver', () {

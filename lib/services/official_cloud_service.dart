@@ -274,6 +274,7 @@ class OfficialCloudService {
     config: const OfficialCloudApiConfig(),
     log: LogService(),
   );
+  DateTime Function() _clock = DateTime.now;
   StreamController<OfficialCloudState> _stateController =
       StreamController<OfficialCloudState>.broadcast();
   OfficialCloudState _state = OfficialCloudState.initial();
@@ -1202,11 +1203,11 @@ class OfficialCloudService {
   bool _shouldUseRecentRefresh(String key) {
     final refreshedAt = _lastSuccessfulRefresh[key];
     if (refreshedAt == null) return false;
-    return DateTime.now().difference(refreshedAt) < _silentRefreshTtl;
+    return _clock().difference(refreshedAt) < _silentRefreshTtl;
   }
 
   void _markRefreshSuccess(String key) {
-    _lastSuccessfulRefresh[key] = DateTime.now();
+    _lastSuccessfulRefresh[key] = _clock();
   }
 
   void _clearRefreshCache() {
@@ -1240,7 +1241,7 @@ class OfficialCloudService {
   }
 
   String _currentMonth() {
-    return formatMonthText(DateTime.now());
+    return formatMonthText(_clock());
   }
 
   void _emit() {
@@ -1257,10 +1258,11 @@ class OfficialCloudService {
 
   /// Resets the service state so it can be re-used after [dispose()].
   /// Used by [AppServices.reset()] to support hot restart and testing.
-  void resetForTest() {
+  void resetForTest({DateTime Function()? clock}) {
     _disposed = false;
     _initialized = false;
     _initializing = null;
+    _clock = clock ?? DateTime.now;
     // Create a fresh state controller if the old one was closed
     if (_stateController.isClosed) {
       _stateController = StreamController<OfficialCloudState>.broadcast();
