@@ -64,10 +64,9 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     final history = prefs.getStringList('diagnostic_history');
     expect(history, hasLength(1));
-    expect(
-      jsonDecode(history!.single),
-      containsPair('time', '2026-06-09T10:30:00.000'),
-    );
+    final record = jsonDecode(history!.single) as Map<String, dynamic>;
+    expect(record, containsPair('time', '2026-06-09T10:30:00.000'));
+    expect(record, containsPair('faults', ['电机故障', '欠压保护']));
   });
 
   testWidgets('diagnostic history displays the newest 10 persisted records', (

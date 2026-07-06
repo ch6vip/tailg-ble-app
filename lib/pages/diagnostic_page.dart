@@ -223,7 +223,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
       if (data.length < 6) throw Exception('数据不完整 (${data.length} bytes)');
       final faultByte = data[5];
       final faults = _parseFaults(faultByte);
-      final activeFaults = faults.where((f) => f.active).toList();
+      final activeFaults = _activeFaults(faults);
       setState(() {
         _rawFaultByte = faultByte;
         _currentFaults = faults;
@@ -231,7 +231,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
       final record = DiagnosticRecord(
         time: (widget.clock ?? DateTime.now)(),
         rawByte: faultByte,
-        faults: activeFaults.map((f) => f.name).toList(),
+        faults: _faultNames(activeFaults),
       );
       _history.insert(0, record);
       await _saveHistory();
@@ -253,7 +253,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
   @override
   Widget build(BuildContext context) {
     final rawFaultByte = _rawFaultByte;
-    final activeFaults = _currentFaults.where((f) => f.active).toList();
+    final activeFaults = _activeFaults(_currentFaults);
     final allClear = rawFaultByte != null && activeFaults.isEmpty;
     return StreamBuilder<ble.ConnectionState>(
       stream: connectionManager.stateStream,
@@ -432,5 +432,21 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
         );
       },
     );
+  }
+
+  List<FaultInfo> _activeFaults(Iterable<FaultInfo> faults) {
+    final activeFaults = <FaultInfo>[];
+    for (final fault in faults) {
+      if (fault.active) activeFaults.add(fault);
+    }
+    return activeFaults;
+  }
+
+  List<String> _faultNames(Iterable<FaultInfo> faults) {
+    final names = <String>[];
+    for (final fault in faults) {
+      names.add(fault.name);
+    }
+    return names;
   }
 }
