@@ -932,6 +932,27 @@ void main() {
       expect(warning.detail, 'type=List<dynamic>');
     });
 
+    test('logs corrupt cached carControlInfo with login session', () async {
+      SharedPreferences.setMockInitialValues({
+        'official_cloud_token': 'cached-token',
+        'official_cloud_phone': '18800001111',
+        'official_cloud_user_id': 'user-1',
+        'carControlInfo': '{',
+      });
+
+      final service = OfficialCloudService();
+      await service.initForTest();
+
+      expect(service.state.signedIn, isTrue);
+      expect(service.state.vehicles, isEmpty);
+      final warning = LogService().all.singleWhere(
+        (entry) =>
+            entry.message == '官云车辆控制缓存损坏，已忽略' &&
+            entry.level == LogLevel.warning,
+      );
+      expect(warning.detail, contains('FormatException'));
+    });
+
     test('selectVehicle persists official carControlInfo cache', () async {
       final vehicle = OfficialVehicle.fromJson({
         'carId': 'car-2',
