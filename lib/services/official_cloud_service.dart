@@ -1196,8 +1196,10 @@ class OfficialCloudService {
   }
 
   String _errorMessage(Object e) {
-    if (e is OfficialCloudApiException) return e.message;
-    return e.toString();
+    if (e is OfficialCloudApiException) {
+      return OfficialCloudRedactor.text(e.message);
+    }
+    return OfficialCloudRedactor.text(e.toString());
   }
 
   bool _shouldUseRecentRefresh(String key) {

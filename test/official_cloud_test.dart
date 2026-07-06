@@ -482,6 +482,27 @@ void main() {
         ),
       );
     });
+
+    test('redacts generic error messages before publishing state', () {
+      final source = readSource('lib/services/official_cloud_service.dart');
+      final methodStart = source.indexOf('String _errorMessage(Object e)');
+      final methodEnd = source.indexOf(
+        '  bool _shouldUseRecentRefresh',
+        methodStart,
+      );
+
+      expect(methodStart, greaterThanOrEqualTo(0));
+      expect(methodEnd, greaterThan(methodStart));
+
+      final methodSource = source.substring(methodStart, methodEnd);
+
+      expect(methodSource, contains('OfficialCloudRedactor.text(e.message)'));
+      expect(
+        methodSource,
+        contains('OfficialCloudRedactor.text(e.toString())'),
+      );
+      expect(methodSource, isNot(contains('return e.toString();')));
+    });
   });
 
   group('OfficialCloudLoginValidator', () {
