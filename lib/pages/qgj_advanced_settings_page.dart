@@ -11,7 +11,9 @@ import '../widgets/app_chrome.dart';
 import '../widgets/app_snack.dart';
 
 class QgjAdvancedSettingsPage extends StatefulWidget {
-  const QgjAdvancedSettingsPage({super.key});
+  final DateTime Function()? clock;
+
+  const QgjAdvancedSettingsPage({super.key, this.clock});
 
   @override
   State<QgjAdvancedSettingsPage> createState() =>
@@ -72,9 +74,10 @@ class _QgjAdvancedSettingsPageState extends State<QgjAdvancedSettingsPage> {
 
   String _buildSnapshotReport(VehicleAdvancedSettingsSnapshot snapshot) {
     final device = connectionManager.device;
+    final generatedAt = (widget.clock ?? DateTime.now)();
     return [
       '# QGJ Advanced Settings Read-only Result',
-      'Generated: ${DateTime.now().toIso8601String()}',
+      'Generated: ${generatedAt.toIso8601String()}',
       'State: ${connectionManager.state.name}',
       'Protocol: ${connectionManager.protocol.name}',
       'Device: ${device?.platformName ?? 'none'}',

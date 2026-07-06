@@ -6,9 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart' as ble;
 import 'package:tailg_ble_app/ble/constants.dart';
 import 'package:tailg_ble_app/ble/qgj_protocol.dart';
+import 'package:tailg_ble_app/pages/qgj_advanced_settings_page.dart';
 import 'package:tailg_ble_app/pages/vehicle_settings_page.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
 
+import 'helpers/platform_mocks.dart';
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
@@ -205,6 +207,61 @@ void main() {
     );
     expect(find.bySemanticsLabel('震动灵敏度，高，车辆被触碰 报警音提示'), findsOneWidget);
   });
+
+  testWidgets('advanced settings report uses injected generated timestamp', (
+    tester,
+  ) async {
+    final fakeConnection = _ReadyQgjConnectionManager();
+    final currentServices = AppServices.instance;
+    AppServices.override(
+      AppServices(
+        connectionManager: fakeConnection,
+        proximityService: currentServices.proximityService,
+        autoConnectService: currentServices.autoConnectService,
+        manualModeService: currentServices.manualModeService,
+        locationService: currentServices.locationService,
+        logService: currentServices.logService,
+        vehicleStore: currentServices.vehicleStore,
+        officialCloudService: currentServices.officialCloudService,
+        appPreferencesService: currentServices.appPreferencesService,
+        permissionService: currentServices.permissionService,
+        homeTabIndex: ValueNotifier<int>(currentServices.homeTabIndex.value),
+      ),
+    );
+    addTearDown(AppServices.reset);
+    mockClipboardWrites();
+    addTearDown(clearPlatformChannelMock);
+
+    await tester.pumpWidget(
+      TestApp(
+        home: QgjAdvancedSettingsPage(
+          clock: () => DateTime(2026, 6, 10, 8, 45),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('刷新'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('复制结果'));
+    await tester.pumpAndSettle();
+
+    expect(
+      fakeConnection.requestedCommands,
+      contains(QgjCommandIds.autoLockTimeGet),
+    );
+    expect(clipboardWrites, hasLength(1));
+    expect(
+      clipboardWrites.single,
+      contains('# QGJ Advanced Settings Read-only Result'),
+    );
+    expect(
+      clipboardWrites.single,
+      contains('Generated: 2026-06-10T08:45:00.000'),
+    );
+    expect(clipboardWrites.single, contains('Auto lock: 开启'));
+    expect(clipboardWrites.single, contains('Auto lock raw seconds: 45'));
+  });
 }
 
 class _ReadyQgjConnectionManager extends ble.ConnectionManager {
@@ -236,6 +293,16 @@ class _ReadyQgjConnectionManager extends ble.ConnectionManager {
       QgjCommandIds.lightSensorGet => [0x00],
       QgjCommandIds.soundAdjustGet => <int>[],
       QgjCommandIds.vibrateSensitivityGet => [0x55],
+      QgjCommandIds.autoLockTimeGet => [0x00, 0x2D],
+      QgjCommandIds.powerOnAutoLockTimeGet => [0x00, 0x3C],
+      QgjCommandIds.proximityStatusGet => [0x01],
+      QgjCommandIds.proximityDistanceGet => [0x02],
+      QgjCommandIds.handlebarLockGet => [0x01],
+      QgjCommandIds.postureDetectionGet => [0x00],
+      QgjCommandIds.hidStatusGet => [QgjHidModes.openWithAutoLock],
+      QgjCommandIds.safeLockGet => [0x01],
+      QgjCommandIds.kickstandGet => [0x00],
+      QgjCommandIds.seatSensorGet => [0x01],
       _ => null,
     };
     if (responsePayload == null) return null;
