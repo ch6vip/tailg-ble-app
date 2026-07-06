@@ -98,14 +98,18 @@ class BatterySnapshot {
     return '正常';
   }
 
-  factory BatterySnapshot.fromBikeState(BikeState? state) {
-    return BatterySnapshot.fromSources(bikeState: state);
+  factory BatterySnapshot.fromBikeState(
+    BikeState? state, {
+    DateTime? updatedAt,
+  }) {
+    return BatterySnapshot.fromSources(bikeState: state, updatedAt: updatedAt);
   }
 
   factory BatterySnapshot.fromSources({
     BikeState? bikeState,
     OfficialVehicle? officialVehicle,
     OfficialBatteryInfo? officialBatteryInfo,
+    DateTime? updatedAt,
   }) {
     final faults = _bikeFaults(bikeState);
 
@@ -138,7 +142,7 @@ class BatterySnapshot {
       temperature: temperature,
       signalStrength: bikeState?.signalStrength,
       faults: faults,
-      updatedAt: DateTime.now(),
+      updatedAt: updatedAt ?? DateTime.now(),
       remainingMileage: remainingMileage,
       totalMileage: totalMileage,
       capacitance: _cleanText(officialBatteryInfo?.capacitance),
