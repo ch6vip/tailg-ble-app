@@ -9,6 +9,7 @@ import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
+import 'helpers/view_size.dart';
 
 void main() {
   test('VehicleMessagePage does not use empty setState refreshes', () {
@@ -38,6 +39,23 @@ void main() {
     await tester.pump();
 
     expect(find.text('发送指令'), findsOneWidget);
+  });
+
+  testWidgets('message list keeps the most recent 80 matching log entries', (
+    tester,
+  ) async {
+    setTestViewSize(tester, const Size(430, 12000));
+
+    for (var index = 1; index <= 81; index++) {
+      app.logService.operation('发送指令 $index');
+    }
+
+    await tester.pumpWidget(const TestApp(home: VehicleMessagePage()));
+    await tester.pump();
+
+    expect(find.text('发送指令 81'), findsOneWidget);
+    expect(find.text('发送指令 2'), findsOneWidget);
+    expect(find.text('发送指令 1'), findsNothing);
   });
 
   testWidgets('custom tabs keep 44dp touch targets', (tester) async {

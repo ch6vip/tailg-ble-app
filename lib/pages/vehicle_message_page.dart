@@ -23,6 +23,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
     with SingleTickerProviderStateMixin {
   static const _prefReadIds = 'vehicle_message_read_ids';
   static const _prefHiddenIds = 'vehicle_message_hidden_ids';
+  static const _recentLogLimit = 80;
 
   late final TabController _tabController;
   final _log = logService;
@@ -79,7 +80,9 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
   }
 
   List<_VehicleMessage> _buildMessages() {
-    final entries = _log.all.reversed.take(80).toList(growable: false);
+    final entries = _log.all.reversed
+        .take(_recentLogLimit)
+        .toList(growable: false);
     final messages = <_VehicleMessage>[];
     for (final entry in entries) {
       final message = _mapEntry(entry);
