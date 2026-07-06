@@ -84,6 +84,7 @@ class ProximityService {
   bool _unlockSent = false;
   String? _targetDeviceId;
   DateTime? _lastUnlockTime;
+  DateTime Function() _clock = DateTime.now;
   bool _initialized = false;
   Future<void>? _initializing;
 
@@ -93,6 +94,8 @@ class ProximityService {
   bool get enabled => _enabled;
   @visibleForTesting
   String? get targetDeviceId => _targetDeviceId;
+  @visibleForTesting
+  DateTime? get lastUnlockTime => _lastUnlockTime;
 
   final _enabledController = StreamController<bool>.broadcast();
   Stream<bool> get enabledStream => _enabledController.stream;
@@ -199,10 +202,13 @@ class ProximityService {
     _unlockSent = false;
   }
 
+  @visibleForTesting
+  void handleTargetFoundForTest(ScanResult result) => _onTargetFound(result);
+
   void _onTargetFound(ScanResult result) {
     if (_unlockSent) return;
 
-    final now = DateTime.now();
+    final now = _clock();
     if (!_unlockGuard.allowsNearbyUnlock(
       rssi: result.rssi,
       now: now,
@@ -296,7 +302,7 @@ class ProximityService {
     _enabledController.close();
   }
 
-  void resetForTest() {
+  void resetForTest({DateTime Function()? clock}) {
     _connectionManager = null;
     _scanSub = null;
     _scanning = false;
@@ -306,5 +312,6 @@ class ProximityService {
     _enabled = false;
     _initialized = false;
     _initializing = null;
+    _clock = clock ?? DateTime.now;
   }
 }

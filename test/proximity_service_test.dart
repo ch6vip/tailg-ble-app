@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
@@ -35,6 +36,25 @@ void main() {
     service.setTargetDevice('   ');
 
     expect(service.targetDeviceId, isNull);
+  });
+
+  test('ProximityService uses injected clock for nearby unlock cooldown', () {
+    final fixture = BleGuardFixture();
+    final now = DateTime(2026, 6, 9, 10, 30);
+    addTearDown(fixture.manager.dispose);
+    ProximityService().resetForTest(clock: () => now);
+
+    final service = ProximityService();
+    service.handleTargetFoundForTest(
+      ScanResult(
+        device: fixture.device,
+        advertisementData: _advertisementData(),
+        rssi: ProximityUnlockGuard.minUnlockRssi,
+        timeStamp: now,
+      ),
+    );
+
+    expect(service.lastUnlockTime, now);
   });
 
   test('ProximityUnlockGuard blocks unlock when manual mode is enabled', () {
@@ -157,6 +177,18 @@ void main() {
       isFalse,
     );
   });
+}
+
+AdvertisementData _advertisementData() {
+  return AdvertisementData(
+    advName: '',
+    txPowerLevel: null,
+    appearance: null,
+    connectable: true,
+    manufacturerData: const <int, List<int>>{},
+    serviceData: const <Guid, List<int>>{},
+    serviceUuids: const <Guid>[],
+  );
 }
 
 VehicleLocation _location({required double accuracy}) {
