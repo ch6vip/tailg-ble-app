@@ -1344,14 +1344,15 @@ void main() {
 
   group('Official map replica models', () {
     test('parses official parking location and fence fields', () {
-      final location = OfficialVehicleLocation.fromJson({
+      final locationJson = {
         'extendId': 'ext-1',
         'bleConnectTime': '2026-05-29 10:00:00',
         'bleConnectLat': '25.123456',
         'bleConnectLng': '104.654321',
         'carId': 'car-1',
         'bleConnectAddress': '停车点',
-      });
+      };
+      final location = OfficialVehicleLocation.fromJson(locationJson);
       final fence = OfficialFenceData.fromJson({
         'fenceRadius': '5',
         'fenceRadiusMax': '10',
@@ -1360,10 +1361,12 @@ void main() {
         'fenceTimeFr': '08:00',
         'fenceTimeTo': '22:00',
       });
+      locationJson['bleConnectAddress'] = 'mutated';
 
       expect(location.hasData, isTrue);
       expect(location.latitude, 25.123456);
       expect(location.longitude, 104.654321);
+      expect(location.raw['bleConnectAddress'], '停车点');
       expect(fence.enabled, isTrue);
       expect(fence.statusLabel, '已开启');
       expect(fence.radiusLabel, '500m');
