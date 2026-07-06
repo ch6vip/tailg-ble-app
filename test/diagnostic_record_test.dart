@@ -18,6 +18,7 @@ void main() {
     expect(record.faults, ['欠压保护']);
     expect(DiagnosticRecord.tryParse('not-json'), isNull);
     expect(DiagnosticRecord.tryParse('42'), isNull);
+    expect(DiagnosticRecord.tryParse('["bad-entry"]'), isNull);
   });
 
   test('DiagnosticRecord falls back for partially malformed fields', () {
