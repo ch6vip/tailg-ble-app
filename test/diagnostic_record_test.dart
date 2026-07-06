@@ -24,6 +24,14 @@ void main() {
     expect(DiagnosticRecord.tryParse('["bad-entry"]'), isNull);
   });
 
+  test('DiagnosticRecord parses object history entries with fallbacks', () {
+    final record = DiagnosticRecord.tryParse('{}');
+
+    expect(record, isNotNull);
+    expect(record!.rawByte, 0);
+    expect(record.faults, isEmpty);
+  });
+
   test('DiagnosticRecord parses history in display order', () {
     final records = DiagnosticRecord.parseHistory([
       jsonEncode({

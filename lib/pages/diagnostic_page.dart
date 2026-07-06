@@ -60,7 +60,7 @@ class DiagnosticRecord {
   }
 
   static DiagnosticRecord? _fromDecoded(Object? decoded) {
-    final json = _decodedRecordMap(decoded);
+    final json = parsePersistedMap(decoded);
     return json == null ? null : DiagnosticRecord.fromJson(json);
   }
 
@@ -79,11 +79,6 @@ class DiagnosticRecord {
         .take(20)
         .map((record) => jsonEncode(record.toJson()))
         .toList();
-  }
-
-  static Map<String, dynamic>? _decodedRecordMap(Object? decoded) {
-    if (decoded is! Map) return null;
-    return Map<String, dynamic>.from(decoded);
   }
 }
 
