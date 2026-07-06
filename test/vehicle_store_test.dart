@@ -492,6 +492,21 @@ void main() {
     expect(fence.updatedAt, fallbackNow);
   });
 
+  test('ReplicaFeatureStore makeId uses provided timestamp', () {
+    final store = ReplicaFeatureStore();
+    final generatedAt = DateTime(2026, 6, 9, 10, 45);
+    final prefix = '${generatedAt.microsecondsSinceEpoch}_';
+
+    final first = store.makeId(now: generatedAt);
+    final second = store.makeId(now: generatedAt);
+    final firstSuffix = int.parse(first.substring(prefix.length));
+    final secondSuffix = int.parse(second.substring(prefix.length));
+
+    expect(first, startsWith(prefix));
+    expect(second, startsWith(prefix));
+    expect(secondSuffix, firstSuffix + 1);
+  });
+
   test('ReplicaFeatureStore tolerates corrupt persisted config', () async {
     SharedPreferences.setMockInitialValues({
       'replica_nfc_keys': 'not-json',

@@ -190,9 +190,9 @@ class ReplicaFeatureStore {
     );
   }
 
-  String makeId() {
+  String makeId({DateTime? now}) {
     _idCounter++;
-    return '${DateTime.now().microsecondsSinceEpoch}_$_idCounter';
+    return '${(now ?? DateTime.now()).microsecondsSinceEpoch}_$_idCounter';
   }
 
   List<T> _decodeList<T>(String? raw, T Function(Map<String, dynamic>) decode) {
