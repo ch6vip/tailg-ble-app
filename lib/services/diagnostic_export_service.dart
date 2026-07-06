@@ -75,7 +75,7 @@ class DiagnosticExportService {
     lines.addAll(_buildOfficialBatteryLines(state.batteryInfo));
 
     if (state.error != null) {
-      lines.add('Error: ${state.error}');
+      lines.add('Error: ${OfficialCloudRedactor.text(state.error!)}');
     }
     final lastRequest = officialCloudService.lastRequest;
     if (lastRequest != null) {

@@ -129,4 +129,44 @@ void main() {
       expect(lines, contains('Official battery detail temperature: 31.2C'));
     },
   );
+
+  test('DiagnosticExportService redacts official cloud error details', () {
+    final connectionManager = ble.ConnectionManager();
+    addTearDown(connectionManager.dispose);
+    LogService().clear();
+    VehicleStore().resetForTest();
+    OfficialCloudService().resetForTest();
+    addTearDown(LogService().clear);
+    addTearDown(VehicleStore().resetForTest);
+    addTearDown(OfficialCloudService().resetForTest);
+
+    OfficialCloudService().setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        error:
+            'sync failed token=abcdef123456 userId=user-secret password=qgj-secret',
+      ),
+    );
+    final service = DiagnosticExportService(
+      connectionManager: connectionManager,
+      logService: LogService(),
+      vehicleStore: VehicleStore(),
+      officialCloudService: OfficialCloudService(),
+      clock: () => DateTime(2026, 6, 1, 8, 30),
+    );
+
+    final report = service.buildReport(const []);
+
+    expect(
+      report,
+      contains(
+        'Error: sync failed token=abc***456 userId=use***ret '
+        'password=qgj***ret',
+      ),
+    );
+    expect(report, isNot(contains('abcdef123456')));
+    expect(report, isNot(contains('user-secret')));
+    expect(report, isNot(contains('qgj-secret')));
+  });
 }
