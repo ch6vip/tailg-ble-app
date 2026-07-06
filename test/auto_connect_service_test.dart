@@ -143,6 +143,19 @@ void main() {
       expect(VehicleStore().defaultVehicle?.protocol, VehicleProtocol.qgj);
     });
 
+    test('resetForTest restores stream after dispose', () async {
+      final service = AutoConnectService();
+
+      service.dispose();
+      service.resetForTest();
+
+      final event = service.enabledStream.first;
+      await service.setEnabled(true);
+
+      await expectLater(event, completion(isTrue));
+      expect(service.enabled, isTrue);
+    });
+
     test('scan startup failures complete the auto connect attempt', () {
       final source = readSource('lib/services/auto_connect_service.dart');
 

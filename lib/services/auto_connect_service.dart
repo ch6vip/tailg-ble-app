@@ -82,7 +82,8 @@ class AutoConnectService {
   String? _lastDeviceName;
   String? get lastDeviceName => _lastDeviceName;
 
-  final _enabledController = StreamController<bool>.broadcast();
+  StreamController<bool> _enabledController =
+      StreamController<bool>.broadcast();
   Stream<bool> get enabledStream => _enabledController.stream;
 
   Future<void> init(ConnectionManager manager) async {
@@ -117,13 +118,16 @@ class AutoConnectService {
       }
       _refreshTarget();
       _initialized = true;
-      _enabledController.add(_enabled);
+      _emitEnabled();
     } finally {
       _initializing = null;
     }
   }
 
   void resetForTest({DateTime Function()? clock}) {
+    if (_enabledController.isClosed) {
+      _enabledController = StreamController<bool>.broadcast();
+    }
     _connectionManager = null;
     _enabled = false;
     _lastDeviceId = null;
@@ -134,14 +138,22 @@ class AutoConnectService {
   }
 
   void dispose() {
-    _enabledController.close();
+    if (!_enabledController.isClosed) {
+      _enabledController.close();
+    }
   }
 
   Future<void> setEnabled(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefEnabled, value);
     _enabled = value;
-    _enabledController.add(value);
+    _emitEnabled();
+  }
+
+  void _emitEnabled() {
+    if (!_enabledController.isClosed) {
+      _enabledController.add(_enabled);
+    }
   }
 
   Future<VehicleProfile> saveDevice(
