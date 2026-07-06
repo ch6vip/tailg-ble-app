@@ -53,11 +53,10 @@ void main() {
     await tester.pumpWidget(
       TestApp(home: DiagnosticPage(clock: () => DateTime(2026, 6, 9, 10, 30))),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('一键诊断'));
-    await tester.pump();
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('检测到 2 个故障'), findsOneWidget);
     expect(find.text('原始码: 0x21'), findsOneWidget);

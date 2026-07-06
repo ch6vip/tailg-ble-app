@@ -69,20 +69,24 @@ class DiagnosticRecord {
   }
 
   static List<DiagnosticRecord> parseHistory(Iterable<String> entries) {
-    return entries
+    final parsedRecords = entries
         .map(DiagnosticRecord.tryParse)
         .whereType<DiagnosticRecord>()
-        .toList()
-        .reversed
-        .toList();
+        .toList(growable: false);
+    return _reverseHistoryOrder(parsedRecords);
   }
 
   static List<String> encodeHistory(Iterable<DiagnosticRecord> records) {
-    final ordered = records.toList(growable: false);
-    return ordered.reversed
+    return _reverseHistoryOrder(records)
         .take(persistedHistoryLimit)
         .map((record) => jsonEncode(record.toJson()))
         .toList();
+  }
+
+  static List<DiagnosticRecord> _reverseHistoryOrder(
+    Iterable<DiagnosticRecord> records,
+  ) {
+    return records.toList(growable: false).reversed.toList();
   }
 }
 
