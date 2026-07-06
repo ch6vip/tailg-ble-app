@@ -221,6 +221,10 @@ RidingMode? parseQgjRidingMode(List<int> data) {
 List<int>? buildQgjRidingModeFrame(List<int> readback, RidingMode mode) {
   final status = extractFcc1StatusBytes(readback);
   if (status == null) return null;
+  return _qgjRidingModeFrame(status, mode);
+}
+
+List<int> _qgjRidingModeFrame(List<int> status, RidingMode mode) {
   final state2 = (status[1] & 0xF8) | mode.qgjPodgValue;
   return [0x00, 0x07, 0x00, 0x02, status[0], state2, status[2]];
 }

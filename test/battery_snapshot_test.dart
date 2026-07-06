@@ -228,6 +228,13 @@ void main() {
     expect(parseQgjRidingMode(frame!), RidingMode.eco);
   });
 
+  test('QGJ riding mode frame rejects incomplete fcc1 state', () {
+    final incomplete = [0x00, 0x07, 0x00, 0x02, 0xA0, 0xF8];
+
+    expect(buildQgjRidingModeFrame(incomplete, RidingMode.sport), isNull);
+    expect(parseQgjRidingMode(incomplete), isNull);
+  });
+
   test('QGJ login frame carries password and user id', () {
     final frame = buildQgjLoginFrame(password: 0x01020304, userId: 0x05060708);
 
