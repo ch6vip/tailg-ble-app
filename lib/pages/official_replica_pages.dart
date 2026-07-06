@@ -674,13 +674,7 @@ class RideRecordPage extends StatelessWidget {
                                 ListTile(
                                   leading: const Icon(Icons.history),
                                   title: Text(logs[i].message),
-                                  subtitle: Text(
-                                    [
-                                      formatDateMinuteText(logs[i].time),
-                                      if (logs[i].detail != null)
-                                        logs[i].detail!,
-                                    ].join('  '),
-                                  ),
+                                  subtitle: Text(_logSubtitle(logs[i])),
                                 ),
                                 if (i != logs.length - 1)
                                   const Divider(
@@ -701,6 +695,14 @@ class RideRecordPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _logSubtitle(LogEntry entry) {
+    final detail = entry.detail;
+    return [
+      formatDateMinuteText(entry.time),
+      if (detail != null) detail,
+    ].join('  ');
   }
 }
 
