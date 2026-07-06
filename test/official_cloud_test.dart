@@ -864,6 +864,26 @@ void main() {
       },
     );
 
+    test(
+      'logs decoded null persisted vehicle links as a shape warning',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'official_cloud_vehicle_links': 'null',
+        });
+
+        final service = OfficialCloudService();
+        await service.init();
+
+        expect(service.state.localVehicleLinks, isEmpty);
+        final warning = LogService().all.singleWhere(
+          (entry) =>
+              entry.message == '官云本地车辆关联数据格式异常，已忽略' &&
+              entry.level == LogLevel.warning,
+        );
+        expect(warning.detail, 'Expected JSON object, got Null');
+      },
+    );
+
     test('normalizes persisted vehicle links on load', () async {
       SharedPreferences.setMockInitialValues({
         'official_cloud_vehicle_links': jsonEncode({
@@ -955,6 +975,30 @@ void main() {
       );
       expect(warning.detail, 'type=List<dynamic>');
     });
+
+    test(
+      'logs decoded null cached carControlInfo with login session',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'official_cloud_token': 'cached-token',
+          'official_cloud_phone': '18800001111',
+          'official_cloud_user_id': 'user-1',
+          'carControlInfo': 'null',
+        });
+
+        final service = OfficialCloudService();
+        await service.initForTest();
+
+        expect(service.state.signedIn, isTrue);
+        expect(service.state.vehicles, isEmpty);
+        final warning = LogService().all.singleWhere(
+          (entry) =>
+              entry.message == '官云车辆控制缓存无有效车辆，已忽略' &&
+              entry.level == LogLevel.warning,
+        );
+        expect(warning.detail, 'type=Null');
+      },
+    );
 
     test('logs corrupt cached carControlInfo with login session', () async {
       SharedPreferences.setMockInitialValues({

@@ -31,6 +31,7 @@ class _OfficialCloudStorage {
   static const _prefVehicleLinks = 'official_cloud_vehicle_links';
   static const _prefUserId = 'official_cloud_user_id';
   static const _prefCarControlInfo = 'carControlInfo';
+  static final Object _decodeFailed = Object();
 
   final FlutterSecureStorage _secureStorage;
   final LogService _log;
@@ -158,16 +159,9 @@ class _OfficialCloudStorage {
 
   Map<String, String> _decodeLinks(String? raw) {
     if (raw == null || raw.isEmpty) return {};
-    try {
-      return _decodeLinkPayload(jsonDecode(raw));
-    } catch (e) {
-      _log.operation(
-        '官云本地车辆关联数据损坏，已忽略',
-        detail: e.toString(),
-        level: LogLevel.warning,
-      );
-      return {};
-    }
+    final decoded = _decodeStoredJson(raw, '官云本地车辆关联数据损坏，已忽略');
+    if (identical(decoded, _decodeFailed)) return {};
+    return _decodeLinkPayload(decoded);
   }
 
   Map<String, String> _decodeLinkPayload(Object? decoded) {
@@ -188,15 +182,21 @@ class _OfficialCloudStorage {
 
   List<OfficialVehicle> _decodeCarControlInfo(String? raw) {
     if (raw == null || raw.isEmpty) return const <OfficialVehicle>[];
+    final decoded = _decodeStoredJson(raw, '官云车辆控制缓存损坏，已忽略');
+    if (identical(decoded, _decodeFailed)) return const <OfficialVehicle>[];
+    return _decodeCarControlPayload(decoded);
+  }
+
+  Object? _decodeStoredJson(String raw, String warningMessage) {
     try {
-      return _decodeCarControlPayload(jsonDecode(raw));
+      return jsonDecode(raw);
     } catch (e) {
       _log.operation(
-        '官云车辆控制缓存损坏，已忽略',
+        warningMessage,
         detail: e.toString(),
         level: LogLevel.warning,
       );
-      return const <OfficialVehicle>[];
+      return _decodeFailed;
     }
   }
 
