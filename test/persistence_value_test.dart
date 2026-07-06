@@ -34,6 +34,17 @@ void main() {
     expect(parsed, ['欠压保护']);
   });
 
+  test('parsePersistedMap copies map payloads and ignores non-maps', () {
+    final source = <Object?, Object?>{'latitude': '31.2304'};
+
+    final parsed = parsePersistedMap(source);
+    source['latitude'] = '0';
+
+    expect(parsed, {'latitude': '31.2304'});
+    expect(parsePersistedMap(null), isNull);
+    expect(parsePersistedMap(42), isNull);
+  });
+
   test('parsePersistedDouble preserves previous numeric parsing', () {
     expect(parsePersistedDouble(12), 12.0);
     expect(parsePersistedDouble(12.5), 12.5);

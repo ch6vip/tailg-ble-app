@@ -11,6 +11,11 @@ List<String> parsePersistedStringList(Object? value) {
   return _persistedStringItems(value).toList();
 }
 
+Map<String, dynamic>? parsePersistedMap(Object? value) {
+  if (value is! Map) return null;
+  return Map<String, dynamic>.from(value);
+}
+
 Iterable<String> _persistedStringItems(Object? value) {
   return _persistedListItems(value).whereType<String>();
 }

@@ -138,15 +138,6 @@ class VehicleProfile {
 }
 
 VehicleLocation? _vehicleLocation(Object? value) {
-  final json = _vehicleLocationJson(value);
+  final json = parsePersistedMap(value);
   return json == null ? null : VehicleLocation.fromJson(json);
-}
-
-Map<String, dynamic>? _vehicleLocationJson(Object? value) {
-  if (value is! Map) return null;
-  return _vehicleLocationPayload(value);
-}
-
-Map<String, dynamic> _vehicleLocationPayload(Map<Object?, Object?> value) {
-  return Map<String, dynamic>.from(value);
 }
