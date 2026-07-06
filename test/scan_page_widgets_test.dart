@@ -15,6 +15,14 @@ void main() {
     expect(source, isNot(contains('lastConnectedAt: DateTime.now()')));
   });
 
+  test('ScanPage handles manual scan startup failures', () {
+    final source = readSource('lib/pages/scan_page.dart');
+
+    expect(source, contains('on PlatformException catch'));
+    expect(source, contains('手动扫描启动失败'));
+    expect(source, contains('扫描启动失败，请检查蓝牙权限'));
+  });
+
   testWidgets('ScanFab exposes enabled scan semantics and target size', (
     tester,
   ) async {

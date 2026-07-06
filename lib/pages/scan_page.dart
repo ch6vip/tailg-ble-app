@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import '../ble/constants.dart';
 import '../main.dart';
@@ -95,7 +96,17 @@ class _ScanPageState extends State<ScanPage>
       AppSnack.info(context, '请先开启蓝牙');
       return;
     }
-    await FlutterBluePlus.startScan(timeout: BleTimings.manualScanTimeout);
+    try {
+      await FlutterBluePlus.startScan(timeout: BleTimings.manualScanTimeout);
+    } on PlatformException catch (e) {
+      logService.ble('手动扫描启动失败', detail: e.toString(), level: LogLevel.warning);
+      if (!mounted) return;
+      AppSnack.error(context, '扫描启动失败，请检查蓝牙权限');
+    } catch (e) {
+      logService.ble('手动扫描启动失败', detail: e.toString(), level: LogLevel.warning);
+      if (!mounted) return;
+      AppSnack.error(context, '扫描启动失败，请稍后重试');
+    }
   }
 
   void _stopScan() {
