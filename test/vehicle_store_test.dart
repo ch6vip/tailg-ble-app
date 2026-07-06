@@ -137,6 +137,20 @@ void main() {
     expect(reloadedStore.defaultVehicle?.protocol, VehicleProtocol.standard);
   });
 
+  test('VehicleStore resetForTest restores stream after dispose', () async {
+    final store = VehicleStore();
+
+    store.dispose();
+    store.resetForTest();
+    await store.init();
+
+    final event = store.vehiclesStream.first;
+    await store.upsert(id: 'AA:BB:CC:DD:EE:FF', name: '测试车辆');
+
+    await expectLater(event, completion(hasLength(1)));
+    expect(store.vehicles.single.id, 'AA:BB:CC:DD:EE:FF');
+  });
+
   test('VehicleStore restores persisted vehicle profile maps', () async {
     SharedPreferences.setMockInitialValues({
       'vehicle_profiles':

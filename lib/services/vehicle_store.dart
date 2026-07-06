@@ -18,7 +18,7 @@ class VehicleStore {
   static const _secureQgjUserIdPrefix = 'vehicle_qgj_user_id:';
   static final Object _decodeFailed = Object();
 
-  final _vehiclesController =
+  StreamController<List<VehicleProfile>> _vehiclesController =
       StreamController<List<VehicleProfile>>.broadcast();
   final FlutterSecureStorage _secureStorage;
   final List<VehicleProfile> _vehicles = [];
@@ -76,6 +76,9 @@ class VehicleStore {
   }
 
   void resetForTest({DateTime Function()? clock}) {
+    if (_vehiclesController.isClosed) {
+      _vehiclesController = StreamController<List<VehicleProfile>>.broadcast();
+    }
     _vehicles.clear();
     _defaultVehicleId = null;
     _initialized = false;
@@ -411,10 +414,14 @@ class VehicleStore {
   }
 
   void _emit() {
-    _vehiclesController.add(List.unmodifiable(_vehicles));
+    if (!_vehiclesController.isClosed) {
+      _vehiclesController.add(List.unmodifiable(_vehicles));
+    }
   }
 
   void dispose() {
-    _vehiclesController.close();
+    if (!_vehiclesController.isClosed) {
+      _vehiclesController.close();
+    }
   }
 }
