@@ -382,6 +382,16 @@ void main() {
     expect(await store.loadNfcKeys(), isEmpty);
     expect(await store.loadFenceConfig(), isNull);
     expect(await store.loadShareMembers(), isEmpty);
+
+    final messages = LogService().all.map((entry) => entry.message).toList();
+    expect(
+      messages,
+      containsAll(<String>[
+        'ReplicaFeatureStore: JSON decode failed',
+        'ReplicaFeatureStore: decode map failed',
+        'ReplicaFeatureStore: expected list payload',
+      ]),
+    );
   });
 
   test('ReplicaFeatureStore logs malformed persisted payload shapes', () async {

@@ -213,6 +213,10 @@ class ReplicaFeatureStore {
 
   Map<String, dynamic>? _decodeMap(String? raw) {
     final decoded = _decodeJson(raw, 'ReplicaFeatureStore: decode map failed');
+    return _decodeMapPayload(decoded);
+  }
+
+  Map<String, dynamic>? _decodeMapPayload(Object? decoded) {
     if (decoded == null) return null;
     if (decoded is Map) return Map<String, dynamic>.from(decoded);
     _logWarning(
