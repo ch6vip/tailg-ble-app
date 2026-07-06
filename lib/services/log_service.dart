@@ -38,11 +38,21 @@ class LogService {
   final _controller = StreamController<void>.broadcast();
   Stream<void> get changes => _controller.stream;
 
-  List<LogEntry> get all => _logs.toList();
+  List<LogEntry> get all => _snapshot();
   int get evictedCount => _evictedCount;
 
-  List<LogEntry> byCategory(LogCategory cat) =>
-      _logs.where((e) => e.category == cat).toList();
+  List<LogEntry> byCategory(LogCategory cat) {
+    return _snapshot(category: cat);
+  }
+
+  List<LogEntry> _snapshot({LogCategory? category}) {
+    final entries = <LogEntry>[];
+    for (final entry in _logs) {
+      if (category != null && entry.category != category) continue;
+      entries.add(entry);
+    }
+    return entries;
+  }
 
   void resetForTest({DateTime Function()? clock}) {
     clear();

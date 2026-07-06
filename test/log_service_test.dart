@@ -56,6 +56,20 @@ void main() {
     expect(operationEntry.message, 'operation token=abc***456');
   });
 
+  test('returns detached log snapshots', () {
+    log.ble('ble entry');
+    log.operation('operation entry');
+
+    final allEntries = log.all;
+    final operationEntries = log.byCategory(LogCategory.operation);
+
+    allEntries.clear();
+    operationEntries.clear();
+
+    expect(log.all, hasLength(2));
+    expect(log.byCategory(LogCategory.operation), hasLength(1));
+  });
+
   test('uses provided log entry time', () {
     final time = DateTime(2026, 6, 9, 10, 30);
 
