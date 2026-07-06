@@ -47,7 +47,7 @@ class DiagnosticRecord {
       DiagnosticRecord(
         time: parsePersistedDate(json['time']) ?? DateTime.now(),
         rawByte: parsePersistedInt(json['raw']) ?? 0,
-        faults: (json['faults'] as List?)?.whereType<String>().toList() ?? [],
+        faults: parsePersistedStringList(json['faults']),
       );
 
   static DiagnosticRecord? tryParse(String raw) {

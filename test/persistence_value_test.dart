@@ -16,6 +16,15 @@ void main() {
     expect(parsePersistedStringOr(123, 'fallback'), '123');
   });
 
+  test('parsePersistedStringList keeps only string list entries', () {
+    expect(parsePersistedStringList(null), isEmpty);
+    expect(parsePersistedStringList('not-list'), isEmpty);
+    expect(parsePersistedStringList(['欠压保护', 1, null, '电机故障']), [
+      '欠压保护',
+      '电机故障',
+    ]);
+  });
+
   test('parsePersistedDouble preserves previous numeric parsing', () {
     expect(parsePersistedDouble(12), 12.0);
     expect(parsePersistedDouble(12.5), 12.5);

@@ -7,6 +7,11 @@ String parsePersistedStringOr(Object? value, String fallback) {
   return parsed.isEmpty ? fallback : parsed;
 }
 
+List<String> parsePersistedStringList(Object? value) {
+  if (value is! List) return [];
+  return value.whereType<String>().toList();
+}
+
 double? parsePersistedDouble(Object? value) {
   if (value is num) return value.toDouble();
   if (value is String) return double.tryParse(value.trim());
