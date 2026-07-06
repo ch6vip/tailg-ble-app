@@ -208,6 +208,47 @@ void main() {
     expect(find.bySemanticsLabel('震动灵敏度，高，车辆被触碰 报警音提示'), findsOneWidget);
   });
 
+  testWidgets('refresh completion is ignored after settings page unmount', (
+    tester,
+  ) async {
+    final fakeConnection = _DelayedReadyQgjConnectionManager();
+    final currentServices = AppServices.instance;
+    AppServices.override(
+      AppServices(
+        connectionManager: fakeConnection,
+        proximityService: currentServices.proximityService,
+        autoConnectService: currentServices.autoConnectService,
+        manualModeService: currentServices.manualModeService,
+        locationService: currentServices.locationService,
+        logService: currentServices.logService,
+        vehicleStore: currentServices.vehicleStore,
+        officialCloudService: currentServices.officialCloudService,
+        appPreferencesService: currentServices.appPreferencesService,
+        permissionService: currentServices.permissionService,
+        homeTabIndex: ValueNotifier<int>(currentServices.homeTabIndex.value),
+      ),
+    );
+    addTearDown(AppServices.reset);
+
+    await tester.pumpWidget(const TestApp(home: VehicleSettingsPage()));
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('刷新设置'));
+    await tester.pump();
+
+    expect(
+      fakeConnection.requestedCommands,
+      contains(QgjCommandIds.lightSensorGet),
+    );
+
+    await tester.pumpWidget(const TestApp(home: SizedBox.shrink()));
+    fakeConnection.completeDelayedResponse(payload: [0x00]);
+    await tester.pump();
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('advanced settings report uses injected generated timestamp', (
     tester,
   ) async {
@@ -264,6 +305,34 @@ void main() {
   });
 }
 
+class _DelayedReadyQgjConnectionManager extends _ReadyQgjConnectionManager {
+  final _delayedResponse = Completer<QgjResponse?>();
+  int? _delayedCommandId;
+
+  @override
+  Future<QgjResponse?> sendQgjCommand(
+    int cmdId, [
+    List<int> payload = const [],
+  ]) {
+    requestedCommands.add(cmdId);
+    if (_delayedCommandId == null) {
+      _delayedCommandId = cmdId;
+      return _delayedResponse.future;
+    }
+    return Future.value(responseForCommand(cmdId));
+  }
+
+  void completeDelayedResponse({required List<int> payload}) {
+    _delayedResponse.complete(
+      QgjResponse(
+        cmdId: _delayedCommandId!,
+        payload: Uint8List.fromList(payload),
+        success: true,
+      ),
+    );
+  }
+}
+
 class _ReadyQgjConnectionManager extends ble.ConnectionManager {
   final _stateController = StreamController<ble.ConnectionState>.broadcast();
   final List<int> requestedCommands = [];
@@ -289,6 +358,10 @@ class _ReadyQgjConnectionManager extends ble.ConnectionManager {
     List<int> payload = const [],
   ]) async {
     requestedCommands.add(cmdId);
+    return responseForCommand(cmdId);
+  }
+
+  QgjResponse? responseForCommand(int cmdId) {
     final responsePayload = switch (cmdId) {
       QgjCommandIds.lightSensorGet => [0x00],
       QgjCommandIds.soundAdjustGet => <int>[],

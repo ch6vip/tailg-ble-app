@@ -754,11 +754,18 @@ class _VehicleSettingsController extends ChangeNotifier {
   int sensitivityLevel = 3;
   RidingMode ridingMode = connectionManager.ridingMode;
   bool sending = false;
+  bool _disposed = false;
 
   _VehicleSettingsController() {
     _settingsService = VehicleSettingsService(
       connectionManager: connectionManager,
     );
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 
   bool get allMainSoundsEnabled =>
@@ -857,7 +864,7 @@ class _VehicleSettingsController extends ChangeNotifier {
       }
       ridingMode = connectionManager.ridingMode;
       unawaited(locationService.recordDefaultVehicleLocation());
-      notifyListeners();
+      _notifyListenersIfActive();
       return _SettingsActionResult.success('骑行模式已切换为 ${ridingMode.label}');
     } finally {
       _setSending(false);
@@ -877,7 +884,7 @@ class _VehicleSettingsController extends ChangeNotifier {
         _applySnapshot(snapshot);
       } else {
         fallback();
-        notifyListeners();
+        _notifyListenersIfActive();
       }
       return _SettingsActionResult.success(successMessage);
     } on VehicleSettingsException catch (e) {
@@ -905,12 +912,17 @@ class _VehicleSettingsController extends ChangeNotifier {
     if (sensitivityValue != null) {
       sensitivityLevel = sensitivityValueToLevel(sensitivityValue);
     }
-    notifyListeners();
+    _notifyListenersIfActive();
   }
 
   void _setSending(bool value) {
     if (sending == value) return;
     sending = value;
+    _notifyListenersIfActive();
+  }
+
+  void _notifyListenersIfActive() {
+    if (_disposed) return;
     notifyListeners();
   }
 }
