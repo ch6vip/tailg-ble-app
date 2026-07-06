@@ -125,8 +125,9 @@ class VehicleProfile {
   factory VehicleProfile.fromJson(
     Map<String, dynamic> json, {
     DateTime? fallbackNow,
+    DateTime Function()? clock,
   }) {
-    final now = fallbackNow ?? DateTime.now();
+    final now = fallbackNow ?? (clock ?? DateTime.now)();
     return VehicleProfile(
       id: parsePersistedString(json['id']),
       name: parsePersistedString(json['name']),
