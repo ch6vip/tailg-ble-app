@@ -107,13 +107,7 @@ class BatterySnapshot {
     OfficialVehicle? officialVehicle,
     OfficialBatteryInfo? officialBatteryInfo,
   }) {
-    final faults = <String>[];
-    if (bikeState != null) {
-      if (bikeState.faultMotor) faults.add('电机故障');
-      if (bikeState.faultController) faults.add('控制器故障');
-      if (bikeState.faultBrake) faults.add('刹车故障');
-      if (bikeState.faultLowVoltage) faults.add('欠压保护');
-    }
+    final faults = _bikeFaults(bikeState);
 
     final officialPercent = _parsePercent(
       officialBatteryInfo?.dumpEnergyPercent,
@@ -214,6 +208,16 @@ class BatterySnapshot {
     final value = percent?.clamp(0, 100).toDouble();
     return value == null ? null : (value * _kmPerPercent).toStringAsFixed(1);
   }
+}
+
+List<String> _bikeFaults(BikeState? bikeState) {
+  if (bikeState == null) return const [];
+  return [
+    if (bikeState.faultMotor) '电机故障',
+    if (bikeState.faultController) '控制器故障',
+    if (bikeState.faultBrake) '刹车故障',
+    if (bikeState.faultLowVoltage) '欠压保护',
+  ];
 }
 
 class BmsSnapshot {

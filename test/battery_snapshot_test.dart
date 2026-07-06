@@ -26,6 +26,22 @@ void main() {
     expect(snapshot.bms.socSource, BatteryDataSource.ble);
   });
 
+  test('BatterySnapshot lists active bike faults in display order', () {
+    final snapshot = BatterySnapshot.fromBikeState(
+      const BikeState(
+        isLocked: true,
+        isPowerOn: false,
+        faultMotor: true,
+        faultController: true,
+        faultBrake: true,
+        faultLowVoltage: true,
+      ),
+    );
+
+    expect(snapshot.faults, ['电机故障', '控制器故障', '刹车故障', '欠压保护']);
+    expect(snapshot.healthLabel, '异常');
+  });
+
   test('BmsSnapshot exposes official field structure without fake values', () {
     final snapshot = BatterySnapshot.fromBikeState(
       const BikeState(
