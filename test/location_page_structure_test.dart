@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
@@ -179,6 +180,42 @@ void main() {
 
     expect(find.text('历史轨迹暂不可用'), findsOneWidget);
     expect(find.text('官方服务异常'), findsOneWidget);
+  });
+
+  testWidgets('LocationPage fence sheet renders local fallback and error', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'replica_fence_config':
+          '{"enabled":true,"latitude":31.2304,"longitude":121.4737,"radiusMeters":800,"updatedAt":"2026-07-03T12:30:00.000"}',
+    });
+    app.officialCloudService.resetForTest();
+    addTearDown(app.officialCloudService.resetForTest);
+    setTestViewSize(tester, const Size(430, 1200));
+
+    await tester.pumpWidget(
+      const TestApp(
+        home: LocationPage(
+          initialTab: LocationInitialTab.fence,
+          embedded: true,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        userId: 'uid',
+        fenceError: '围栏服务异常',
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+
+    expect(find.text('本地围栏：已开启 · 800m'), findsOneWidget);
+    expect(find.text('围栏服务异常'), findsOneWidget);
   });
 
   testWidgets('LocationPage meta values avoid negative letter spacing', (

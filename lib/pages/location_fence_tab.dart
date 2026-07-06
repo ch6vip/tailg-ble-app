@@ -119,6 +119,8 @@ class _OfficialFenceSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localFence = this.localFence;
+    final error = this.error;
     final enabled = fence?.enabled ?? localFence?.enabled ?? false;
     final radius = fence?.radiusMeters ?? localFence?.radiusMeters.toDouble();
     final minRadius = _radiusMeters(fence?.fenceRadiusMin) ?? 100;
@@ -257,14 +259,14 @@ class _OfficialFenceSheet extends StatelessWidget {
           if (localFence != null && fence?.hasData != true) ...[
             const SizedBox(height: 8),
             Text(
-              '本地围栏：${localFence!.enabled ? '已开启' : '已关闭'} · ${localFence!.radiusMeters}m',
+              '本地围栏：${localFence.enabled ? '已开启' : '已关闭'} · ${localFence.radiusMeters}m',
               style: AppTextStyles.caption,
             ),
           ],
           if (error != null) ...[
             const SizedBox(height: 8),
             Text(
-              error!,
+              error,
               style: const TextStyle(fontSize: 12, color: AppColors.warning),
             ),
           ],
