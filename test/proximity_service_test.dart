@@ -38,6 +38,19 @@ void main() {
     expect(service.targetDeviceId, isNull);
   });
 
+  test('ProximityService resetForTest restores stream after dispose', () async {
+    final service = ProximityService();
+
+    service.dispose();
+    service.resetForTest();
+
+    final event = service.enabledStream.first;
+    await service.setEnabled(true);
+
+    await expectLater(event, completion(isTrue));
+    expect(service.enabled, isTrue);
+  });
+
   test('ProximityService uses injected clock for nearby unlock cooldown', () {
     final fixture = BleGuardFixture();
     final now = DateTime(2026, 6, 9, 10, 30);

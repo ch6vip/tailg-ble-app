@@ -97,7 +97,8 @@ class ProximityService {
   @visibleForTesting
   DateTime? get lastUnlockTime => _lastUnlockTime;
 
-  final _enabledController = StreamController<bool>.broadcast();
+  StreamController<bool> _enabledController =
+      StreamController<bool>.broadcast();
   Stream<bool> get enabledStream => _enabledController.stream;
 
   Future<void> init(ConnectionManager manager) async {
@@ -115,7 +116,7 @@ class ProximityService {
       final prefs = await SharedPreferences.getInstance();
       _enabled = prefs.getBool(_prefKey) ?? false;
       _initialized = true;
-      _enabledController.add(_enabled);
+      _emitEnabled();
     } finally {
       _initializing = null;
     }
@@ -125,11 +126,17 @@ class ProximityService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefKey, value);
     _enabled = value;
-    _enabledController.add(value);
+    _emitEnabled();
     if (value) {
       await start();
     } else {
       stop();
+    }
+  }
+
+  void _emitEnabled() {
+    if (!_enabledController.isClosed) {
+      _enabledController.add(_enabled);
     }
   }
 
@@ -299,10 +306,15 @@ class ProximityService {
 
   void dispose() {
     stop();
-    _enabledController.close();
+    if (!_enabledController.isClosed) {
+      _enabledController.close();
+    }
   }
 
   void resetForTest({DateTime Function()? clock}) {
+    if (_enabledController.isClosed) {
+      _enabledController = StreamController<bool>.broadcast();
+    }
     _connectionManager = null;
     _scanSub = null;
     _scanning = false;
