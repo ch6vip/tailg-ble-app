@@ -247,19 +247,21 @@ class _LocationPageState extends State<LocationPage> {
   }) {
     final officialVehicle = cloudState.selectedVehicle;
     final cloudLocation = cloudState.vehicleLocation;
-    final cloudLat = cloudLocation?.latitude;
-    final cloudLng = cloudLocation?.longitude;
-    if (cloudLat != null &&
-        cloudLng != null &&
-        !isZeroCoordinate(cloudLat, cloudLng)) {
-      return _ResolvedLocation(
-        latitude: cloudLat,
-        longitude: cloudLng,
-        accuracy: 0,
-        timeLabel: cloudLocation!.bleConnectTime,
-        address: cloudLocation.bleConnectAddress,
-        source: '官方停车位置',
-      );
+    if (cloudLocation != null) {
+      final cloudLat = cloudLocation.latitude;
+      final cloudLng = cloudLocation.longitude;
+      if (cloudLat != null &&
+          cloudLng != null &&
+          !isZeroCoordinate(cloudLat, cloudLng)) {
+        return _ResolvedLocation(
+          latitude: cloudLat,
+          longitude: cloudLng,
+          accuracy: 0,
+          timeLabel: cloudLocation.bleConnectTime,
+          address: cloudLocation.bleConnectAddress,
+          source: '官方停车位置',
+        );
+      }
     }
 
     final vehicleLat = double.tryParse(officialVehicle?.latitude ?? '');

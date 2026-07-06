@@ -182,6 +182,46 @@ void main() {
     expect(find.text('官方服务异常'), findsOneWidget);
   });
 
+  testWidgets('LocationPage map tab renders official parking location', (
+    tester,
+  ) async {
+    resetMockPreferences();
+    app.officialCloudService.resetForTest();
+    addTearDown(app.officialCloudService.resetForTest);
+    setTestViewSize(tester, const Size(430, 1400));
+
+    final vehicle = OfficialVehicle.fromJson({
+      'carId': 'official-map-bike',
+      'carName': '测试车辆',
+    });
+    final location = OfficialVehicleLocation.fromJson({
+      'bleConnectTime': '2026-05-29 10:00:00',
+      'bleConnectLat': '31.230400',
+      'bleConnectLng': '121.473700',
+      'carId': 'official-map-bike',
+      'bleConnectAddress': '停车点',
+    });
+
+    await tester.pumpWidget(const TestApp(home: LocationPage(embedded: true)));
+    await tester.pump();
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        userId: 'uid',
+        vehicles: [vehicle],
+        selectedVehicleKey: vehicle.key,
+        vehicleLocation: location,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+
+    expect(find.text('停车点'), findsWidgets);
+    expect(find.text('官方停车位置'), findsWidgets);
+    expect(find.text('2026-05-29 10:00:00'), findsOneWidget);
+  });
+
   testWidgets('LocationPage fence sheet renders local fallback and error', (
     tester,
   ) async {
