@@ -235,8 +235,10 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   String _errorMessage(Object e) {
-    if (e is OfficialCloudApiException) return e.message;
-    return e.toString();
+    if (e is OfficialCloudApiException) {
+      return OfficialCloudRedactor.text(e.message);
+    }
+    return OfficialCloudRedactor.text(e.toString());
   }
 
   void _showSnack(String message, {bool isError = false}) {

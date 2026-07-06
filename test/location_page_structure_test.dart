@@ -70,6 +70,21 @@ void main() {
     expect(mountedGuardIndex, lessThan(refreshIndex));
   });
 
+  test('LocationPage redacts page-level error messages', () {
+    final source = readSource('lib/pages/location_page.dart');
+    final helperStart = source.indexOf('String _errorMessage(Object e)');
+    final helperEnd = source.indexOf('  void _showSnack', helperStart);
+
+    expect(helperStart, greaterThanOrEqualTo(0));
+    expect(helperEnd, greaterThan(helperStart));
+
+    final helperSource = source.substring(helperStart, helperEnd);
+
+    expect(helperSource, contains('OfficialCloudRedactor.text(e.message)'));
+    expect(helperSource, contains('OfficialCloudRedactor.text(e.toString())'));
+    expect(helperSource, isNot(contains('return e.toString();')));
+  });
+
   testWidgets('LocationPage segmented tabs keep 44dp touch targets', (
     tester,
   ) async {
