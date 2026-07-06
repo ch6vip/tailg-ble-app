@@ -1505,24 +1505,21 @@ void main() {
     });
 
     test('parses official travel list and track points', () {
+      final recordJson = {
+        'deviceTravelId': 'travel-1',
+        'travelDate': '2026-05-29',
+        'startTime': '10:00',
+        'endTime': '10:30',
+        'mileage': '12.5',
+        'averageSpeed': '25',
+        'maxSpeed': '42',
+        'min': '30',
+      };
       final day = OfficialTravelDay.fromJson({
         'travelDate': '2026-05-29',
         'totalTime': '1800',
         'totalMileage': '12.5',
-        'deviceTravelDtoList': [
-          42,
-          'bad-entry',
-          {
-            'deviceTravelId': 'travel-1',
-            'travelDate': '2026-05-29',
-            'startTime': '10:00',
-            'endTime': '10:30',
-            'mileage': '12.5',
-            'averageSpeed': '25',
-            'maxSpeed': '42',
-            'min': '30',
-          },
-        ],
+        'deviceTravelDtoList': [42, 'bad-entry', recordJson],
       });
       final point = OfficialTravelPoint.fromJson({
         'lat': '25.1',
@@ -1532,6 +1529,7 @@ void main() {
         'starsNum': '8',
         'reportTime': '2026-05-29 10:01:00',
       });
+      recordJson['min'] = 'mutated';
 
       expect(day.hasData, isTrue);
       expect(day.records, hasLength(1));

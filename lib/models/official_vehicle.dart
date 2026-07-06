@@ -675,7 +675,11 @@ List<OfficialTravelRecord> _travelRecords(Object? value) {
 }
 
 Iterable<Map<String, dynamic>> _travelRecordMaps(List<Object?> value) {
-  return value.whereType<Map<Object?, Object?>>().map(_stringKeyedMap);
+  return value.whereType<Map<Object?, Object?>>().map(_travelRecordPayload);
+}
+
+Map<String, dynamic> _travelRecordPayload(Map<Object?, Object?> value) {
+  return _stringKeyedMap(value);
 }
 
 int? _intOrNull(Object? value) {
