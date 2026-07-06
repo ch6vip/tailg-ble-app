@@ -573,6 +573,14 @@ void main() {
       expect(points, hasLength(1));
       expect(points.first.hasCoordinate, isTrue);
     });
+
+    test('ignores non-map list payload items', () {
+      final days = OfficialCloudDataParser.travelDays(['ignored', 42, null]);
+      final points = OfficialCloudDataParser.travelPoints(['ignored', 42]);
+
+      expect(days, isEmpty);
+      expect(points, isEmpty);
+    });
   });
 
   group('OfficialCloudVehicleMapper', () {

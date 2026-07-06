@@ -44,10 +44,11 @@ class OfficialCloudDataParser {
     Object? data, {
     bool wrapSingle = false,
   }) {
-    return _payloadItems(
-      data,
-      wrapSingle: wrapSingle,
-    ).whereType<Map<Object?, Object?>>().map(_stringKeyedMap);
+    return _payloadMaps(_payloadItems(data, wrapSingle: wrapSingle));
+  }
+
+  static Iterable<Map<String, dynamic>> _payloadMaps(Iterable<Object?> items) {
+    return items.whereType<Map<Object?, Object?>>().map(_stringKeyedMap);
   }
 
   static Map<String, dynamic> _stringKeyedMap(Map<Object?, Object?> data) {
