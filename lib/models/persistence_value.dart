@@ -16,6 +16,16 @@ Map<String, dynamic>? parsePersistedMap(Object? value) {
   return Map<String, dynamic>.from(value);
 }
 
+List<Map<String, dynamic>> parsePersistedMapList(Object? value) {
+  return _persistedMapItems(value).toList(growable: false);
+}
+
+Iterable<Map<String, dynamic>> _persistedMapItems(Object? value) {
+  return _persistedListItems(
+    value,
+  ).map(parsePersistedMap).whereType<Map<String, dynamic>>();
+}
+
 Iterable<String> _persistedStringItems(Object? value) {
   return _persistedListItems(value).whereType<String>();
 }

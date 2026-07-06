@@ -46,19 +46,10 @@ class OfficialCloudDataParser {
     Object? data, {
     bool wrapSingle = false,
   }) {
-    return _payloadMaps(_payloadItems(data, wrapSingle: wrapSingle));
+    return parsePersistedMapList(_payloadItems(data, wrapSingle: wrapSingle));
   }
 
-  static Iterable<Map<String, dynamic>> _payloadMaps(Iterable<Object?> items) {
-    return items.whereType<Map<Object?, Object?>>().map(
-      _officialCloudPayloadMap,
-    );
-  }
-
-  static Iterable<Object?> _payloadItems(
-    Object? data, {
-    required bool wrapSingle,
-  }) {
+  static List<Object?> _payloadItems(Object? data, {required bool wrapSingle}) {
     if (data is List) return data.cast<Object?>();
     if (wrapSingle && data != null) return <Object?>[data];
     return const <Object?>[];

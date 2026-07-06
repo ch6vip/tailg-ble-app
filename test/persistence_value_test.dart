@@ -45,6 +45,23 @@ void main() {
     expect(parsePersistedMap(42), isNull);
   });
 
+  test('parsePersistedMapList copies map entries and ignores non-maps', () {
+    final sourceMap = <Object?, Object?>{'latitude': '31.2304'};
+    final parsed = parsePersistedMapList([
+      sourceMap,
+      'ignored',
+      {'longitude': '121.4737'},
+    ]);
+    sourceMap['latitude'] = '0';
+
+    expect(parsed, [
+      {'latitude': '31.2304'},
+      {'longitude': '121.4737'},
+    ]);
+    expect(parsePersistedMapList(null), isEmpty);
+    expect(parsePersistedMapList({'latitude': '31.2304'}), isEmpty);
+  });
+
   test('parsePersistedDouble preserves previous numeric parsing', () {
     expect(parsePersistedDouble(12), 12.0);
     expect(parsePersistedDouble(12.5), 12.5);
