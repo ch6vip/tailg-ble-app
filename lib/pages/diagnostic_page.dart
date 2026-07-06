@@ -47,7 +47,7 @@ class DiagnosticRecord {
     Map<String, dynamic> json, {
     DateTime? fallbackNow,
   }) => DiagnosticRecord(
-    time: parsePersistedDate(json['time']) ?? fallbackNow ?? DateTime.now(),
+    time: parsePersistedDateOr(json['time'], fallbackNow),
     rawByte: parsePersistedInt(json['raw']) ?? 0,
     faults: parsePersistedStringList(json['faults']),
   );

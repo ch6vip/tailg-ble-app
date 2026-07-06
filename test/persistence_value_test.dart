@@ -104,4 +104,14 @@ void main() {
     );
     expect(parsePersistedDate(789), isNull);
   });
+
+  test('parsePersistedDateOr uses parsed dates before fallback values', () {
+    final fallback = DateTime(2026, 6, 9, 10, 30);
+
+    expect(
+      parsePersistedDateOr('2026-06-09T11:30:00.000', fallback),
+      DateTime(2026, 6, 9, 11, 30),
+    );
+    expect(parsePersistedDateOr('bad-date', fallback), fallback);
+  });
 }

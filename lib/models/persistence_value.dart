@@ -61,3 +61,7 @@ DateTime? parsePersistedDate(Object? value) {
   if (value == null) return null;
   return DateTime.tryParse(value.toString());
 }
+
+DateTime parsePersistedDateOr(Object? value, DateTime? fallback) {
+  return parsePersistedDate(value) ?? fallback ?? DateTime.now();
+}
