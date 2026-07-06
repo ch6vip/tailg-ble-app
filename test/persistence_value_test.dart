@@ -58,6 +58,7 @@ void main() {
       {'latitude': '31.2304'},
       {'longitude': '121.4737'},
     ]);
+    expect(() => parsed.add({'ignored': true}), throwsUnsupportedError);
     expect(parsePersistedMapList(null), isEmpty);
     expect(parsePersistedMapList({'latitude': '31.2304'}), isEmpty);
   });

@@ -8,7 +8,11 @@ String parsePersistedStringOr(Object? value, String fallback) {
 }
 
 List<String> parsePersistedStringList(Object? value) {
-  return _persistedStringItems(value).toList();
+  final strings = <String>[];
+  for (final item in _persistedListItems(value)) {
+    if (item is String) strings.add(item);
+  }
+  return strings;
 }
 
 Map<String, dynamic>? parsePersistedMap(Object? value) {
@@ -17,17 +21,12 @@ Map<String, dynamic>? parsePersistedMap(Object? value) {
 }
 
 List<Map<String, dynamic>> parsePersistedMapList(Object? value) {
-  return _persistedMapItems(value).toList(growable: false);
-}
-
-Iterable<Map<String, dynamic>> _persistedMapItems(Object? value) {
-  return _persistedListItems(
-    value,
-  ).map(parsePersistedMap).whereType<Map<String, dynamic>>();
-}
-
-Iterable<String> _persistedStringItems(Object? value) {
-  return _persistedListItems(value).whereType<String>();
+  final maps = <Map<String, dynamic>>[];
+  for (final item in _persistedListItems(value)) {
+    final parsed = parsePersistedMap(item);
+    if (parsed != null) maps.add(parsed);
+  }
+  return maps.toList(growable: false);
 }
 
 Iterable<Object?> _persistedListItems(Object? value) {
