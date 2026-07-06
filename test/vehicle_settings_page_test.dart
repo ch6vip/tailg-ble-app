@@ -1,6 +1,13 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tailg_ble_app/ble/connection_manager.dart' as ble;
+import 'package:tailg_ble_app/ble/constants.dart';
+import 'package:tailg_ble_app/ble/qgj_protocol.dart';
 import 'package:tailg_ble_app/pages/vehicle_settings_page.dart';
+import 'package:tailg_ble_app/services/service_locator.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/test_app.dart';
@@ -161,4 +168,86 @@ void main() {
       semantics.dispose();
     }
   });
+
+  testWidgets('refresh applies sensitivity snapshot to row label', (
+    tester,
+  ) async {
+    final fakeConnection = _ReadyQgjConnectionManager();
+    final currentServices = AppServices.instance;
+    AppServices.override(
+      AppServices(
+        connectionManager: fakeConnection,
+        proximityService: currentServices.proximityService,
+        autoConnectService: currentServices.autoConnectService,
+        manualModeService: currentServices.manualModeService,
+        locationService: currentServices.locationService,
+        logService: currentServices.logService,
+        vehicleStore: currentServices.vehicleStore,
+        officialCloudService: currentServices.officialCloudService,
+        appPreferencesService: currentServices.appPreferencesService,
+        permissionService: currentServices.permissionService,
+        homeTabIndex: ValueNotifier<int>(currentServices.homeTabIndex.value),
+      ),
+    );
+    addTearDown(AppServices.reset);
+
+    await tester.pumpWidget(const TestApp(home: VehicleSettingsPage()));
+    await tester.pump();
+
+    expect(find.bySemanticsLabel('震动灵敏度，中，车辆被触碰 报警音提示'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('刷新设置'));
+    await tester.pumpAndSettle();
+
+    expect(
+      fakeConnection.requestedCommands,
+      contains(QgjCommandIds.vibrateSensitivityGet),
+    );
+    expect(find.bySemanticsLabel('震动灵敏度，高，车辆被触碰 报警音提示'), findsOneWidget);
+  });
+}
+
+class _ReadyQgjConnectionManager extends ble.ConnectionManager {
+  final _stateController = StreamController<ble.ConnectionState>.broadcast();
+  final List<int> requestedCommands = [];
+
+  @override
+  Stream<ble.ConnectionState> get stateStream => _stateController.stream;
+
+  @override
+  ble.ConnectionState get state => ble.ConnectionState.ready;
+
+  @override
+  ble.ProtocolType get protocol => ble.ProtocolType.qgj;
+
+  @override
+  ble.ProtocolType get lastKnownProtocol => ble.ProtocolType.qgj;
+
+  @override
+  RidingMode get ridingMode => RidingMode.standard;
+
+  @override
+  Future<QgjResponse?> sendQgjCommand(
+    int cmdId, [
+    List<int> payload = const [],
+  ]) async {
+    requestedCommands.add(cmdId);
+    final responsePayload = switch (cmdId) {
+      QgjCommandIds.lightSensorGet => [0x00],
+      QgjCommandIds.soundAdjustGet => <int>[],
+      QgjCommandIds.vibrateSensitivityGet => [0x55],
+      _ => null,
+    };
+    if (responsePayload == null) return null;
+    return QgjResponse(
+      cmdId: cmdId,
+      payload: Uint8List.fromList(responsePayload),
+      success: true,
+    );
+  }
+
+  @override
+  Future<void> dispose() async {
+    await _stateController.close();
+  }
 }

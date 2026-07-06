@@ -901,8 +901,9 @@ class _VehicleSettingsController extends ChangeNotifier {
     lockSound = snapshot.lockSound ?? lockSound;
     unlockSound = snapshot.unlockSound ?? unlockSound;
     speedSound = snapshot.speedSound ?? speedSound;
-    if (snapshot.sensitivityValue != null) {
-      sensitivityLevel = sensitivityValueToLevel(snapshot.sensitivityValue!);
+    final sensitivityValue = snapshot.sensitivityValue;
+    if (sensitivityValue != null) {
+      sensitivityLevel = sensitivityValueToLevel(sensitivityValue);
     }
     notifyListeners();
   }
