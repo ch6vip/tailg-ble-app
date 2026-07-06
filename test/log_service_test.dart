@@ -87,6 +87,17 @@ void main() {
     expect(log.all.single.time, time);
   });
 
+  test('resetForTest restores changes stream after dispose', () async {
+    log.dispose();
+    log.resetForTest();
+
+    final event = log.changes.first;
+    log.operation('restored stream');
+
+    await expectLater(event, completes);
+    expect(log.all.single.message, 'restored stream');
+  });
+
   test('keeps the latest 2000 log entries', () {
     for (var i = 0; i < 2001; i++) {
       log.operation('entry $i');

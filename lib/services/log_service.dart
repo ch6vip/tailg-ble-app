@@ -35,7 +35,7 @@ class LogService {
 
   // Broadcast stream so UI pages can subscribe and rebuild on new entries
   // instead of polling with empty setState(() {}) (P3-12).
-  final _controller = StreamController<void>.broadcast();
+  StreamController<void> _controller = StreamController<void>.broadcast();
   Stream<void> get changes => _controller.stream;
 
   List<LogEntry> get all => _snapshot();
@@ -55,6 +55,9 @@ class LogService {
   }
 
   void resetForTest({DateTime Function()? clock}) {
+    if (_controller.isClosed) {
+      _controller = StreamController<void>.broadcast();
+    }
     clear();
     _clock = clock ?? DateTime.now;
   }
@@ -185,6 +188,8 @@ class LogService {
   }
 
   void dispose() {
-    _controller.close();
+    if (!_controller.isClosed) {
+      _controller.close();
+    }
   }
 }
