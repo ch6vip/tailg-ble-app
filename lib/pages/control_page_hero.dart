@@ -498,6 +498,7 @@ class _BleConnectPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = _BlePillState.fromLabel(label, onTap != null);
+    final variant = this.variant?.trim();
     return AppPressable(
       onTap: onTap,
       haptic: false,
@@ -550,9 +551,9 @@ class _BleConnectPill extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      if ((variant ?? '').trim().isNotEmpty) ...[
+                      if (variant != null && variant.isNotEmpty) ...[
                         Text(
-                          variant!.trim(),
+                          variant,
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
