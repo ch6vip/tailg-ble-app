@@ -16,6 +16,7 @@ class VehicleStore {
   static const _prefDefaultVehicleId = 'vehicle_default_id';
   static const _secureQgjPasswordPrefix = 'vehicle_qgj_password:';
   static const _secureQgjUserIdPrefix = 'vehicle_qgj_user_id:';
+  static final Object _decodeFailed = Object();
 
   final _vehiclesController =
       StreamController<List<VehicleProfile>>.broadcast();
@@ -83,13 +84,8 @@ class VehicleStore {
 
   List<VehicleProfile> _decodeVehicles(String? raw) {
     if (raw == null || raw.isEmpty) return const [];
-    final Object? decoded;
-    try {
-      decoded = jsonDecode(raw);
-    } catch (e) {
-      _logDecodeWarning('Failed to decode persisted vehicle profiles: $e');
-      return const [];
-    }
+    final decoded = _decodeVehiclePayload(raw);
+    if (identical(decoded, _decodeFailed)) return const [];
     if (decoded is! List) {
       _logDecodeWarning(
         'Expected persisted vehicle profiles to be a list, '
@@ -97,7 +93,19 @@ class VehicleStore {
       );
       return const [];
     }
+    return _decodeVehicleList(decoded);
+  }
 
+  Object? _decodeVehiclePayload(String raw) {
+    try {
+      return jsonDecode(raw);
+    } catch (e) {
+      _logDecodeWarning('Failed to decode persisted vehicle profiles: $e');
+      return _decodeFailed;
+    }
+  }
+
+  List<VehicleProfile> _decodeVehicleList(Iterable<Object?> decoded) {
     final vehicles = <VehicleProfile>[];
     for (final item in decoded) {
       final vehicle = _decodeVehicle(item);

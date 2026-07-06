@@ -181,6 +181,32 @@ void main() {
   });
 
   test(
+    'VehicleStore logs decoded null vehicle payloads as shape warnings',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'vehicle_profiles': 'null',
+        'vehicle_default_id': 'AA:BB:CC:DD:EE:FF',
+      });
+      VehicleStore().resetForTest();
+
+      final store = VehicleStore();
+      await store.init();
+
+      expect(store.vehicles, isEmpty);
+      expect(store.defaultVehicleId, isNull);
+      final warning = LogService().all.singleWhere(
+        (entry) =>
+            entry.message == 'VehicleStore' && entry.level == LogLevel.warning,
+      );
+      expect(
+        warning.detail,
+        contains('Expected persisted vehicle profiles to be a list'),
+      );
+      expect(warning.detail, contains('Null'));
+    },
+  );
+
+  test(
     'VehicleStore skips malformed entries and normalizes default id',
     () async {
       SharedPreferences.setMockInitialValues({
