@@ -589,6 +589,8 @@ class _ShareBikePageState extends State<ShareBikePage> {
 }
 
 class RideRecordPage extends StatelessWidget {
+  static const _recentLogLimit = 12;
+
   const RideRecordPage({super.key});
 
   @override
@@ -596,7 +598,7 @@ class RideRecordPage extends StatelessWidget {
     final logs = logService
         .byCategory(LogCategory.operation)
         .reversed
-        .take(12)
+        .take(_recentLogLimit)
         .toList(growable: false);
     return Scaffold(
       backgroundColor: AppColors.pageBg,

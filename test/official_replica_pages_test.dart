@@ -9,6 +9,7 @@ import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'helpers/snack_finders.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
+import 'helpers/view_size.dart';
 
 void main() {
   setUp(() {
@@ -87,5 +88,21 @@ void main() {
 
     expect(find.text('测试操作'), findsOneWidget);
     expect(find.textContaining('耗时 12ms'), findsOneWidget);
+  });
+
+  testWidgets('ride record page keeps the newest 12 operation logs', (
+    tester,
+  ) async {
+    setTestViewSize(tester, const Size(430, 2400));
+    for (var index = 1; index <= 13; index++) {
+      LogService().operation('操作 $index');
+    }
+
+    await tester.pumpWidget(const TestApp(home: RideRecordPage()));
+    await tester.pump();
+
+    expect(find.text('操作 13'), findsOneWidget);
+    expect(find.text('操作 2'), findsOneWidget);
+    expect(find.text('操作 1'), findsNothing);
   });
 }
