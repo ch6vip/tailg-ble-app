@@ -76,8 +76,9 @@ void main() {
       'time': 'bad-time',
       'raw': 'bad-raw',
       'faults': [1, '电机故障'],
-    });
+    }, fallbackNow: DateTime(2026, 6, 9, 10, 30));
 
+    expect(record.time, DateTime(2026, 6, 9, 10, 30));
     expect(record.rawByte, 0);
     expect(record.faults, ['电机故障']);
   });

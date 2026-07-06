@@ -43,12 +43,14 @@ class DiagnosticRecord {
     'faults': faults,
   };
 
-  factory DiagnosticRecord.fromJson(Map<String, dynamic> json) =>
-      DiagnosticRecord(
-        time: parsePersistedDate(json['time']) ?? DateTime.now(),
-        rawByte: parsePersistedInt(json['raw']) ?? 0,
-        faults: parsePersistedStringList(json['faults']),
-      );
+  factory DiagnosticRecord.fromJson(
+    Map<String, dynamic> json, {
+    DateTime? fallbackNow,
+  }) => DiagnosticRecord(
+    time: parsePersistedDate(json['time']) ?? fallbackNow ?? DateTime.now(),
+    rawByte: parsePersistedInt(json['raw']) ?? 0,
+    faults: parsePersistedStringList(json['faults']),
+  );
 
   static DiagnosticRecord? tryParse(String raw) {
     try {
