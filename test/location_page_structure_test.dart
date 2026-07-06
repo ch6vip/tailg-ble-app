@@ -230,6 +230,31 @@ void main() {
     expect(find.byType(CircleLayer), findsOneWidget);
   });
 
+  testWidgets('LocationPage map tab renders cloud location error', (
+    tester,
+  ) async {
+    resetMockPreferences();
+    app.officialCloudService.resetForTest();
+    addTearDown(app.officialCloudService.resetForTest);
+    setTestViewSize(tester, const Size(430, 1200));
+
+    await tester.pumpWidget(const TestApp(home: LocationPage(embedded: true)));
+    await tester.pump();
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        userId: 'uid',
+        vehicleLocationError: '定位服务异常',
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+
+    expect(find.text('官方车辆暂无坐标'), findsOneWidget);
+    expect(find.text('定位服务异常'), findsOneWidget);
+  });
+
   testWidgets('LocationPage fence sheet renders local fallback and error', (
     tester,
   ) async {

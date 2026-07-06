@@ -751,12 +751,13 @@ class _LocationDetailCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = vehicleName ?? '未绑定车辆';
-    final hasLocation = location != null;
-    final addressText = !hasLocation
+    final activeLocation = location;
+    final errorText = error;
+    final addressText = activeLocation == null
         ? (signedIn ? '官方车辆暂无坐标' : '暂无位置记录')
-        : location!.address.isNotEmpty
-        ? location!.address
-        : location!.coordinateText;
+        : activeLocation.address.isNotEmpty
+        ? activeLocation.address
+        : activeLocation.coordinateText;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -799,40 +800,40 @@ class _LocationDetailCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.bodyMedium.copyWith(height: 1.35),
                     ),
-                    if (hasLocation) ...[
+                    if (activeLocation != null) ...[
                       const SizedBox(height: 8),
-                      _LocationStatusTag(source: location!.source),
+                      _LocationStatusTag(source: activeLocation.source),
                     ],
                   ],
                 ),
               ),
             ],
           ),
-          if (hasLocation) ...[
+          if (activeLocation != null) ...[
             const SizedBox(height: 16),
             // ── 三个数据格:来源 / 时间 / 精度（全部真实字段）──
             Row(
               children: [
                 Expanded(
                   child: _LocationMetaBox(
-                    value: location!.source,
+                    value: activeLocation.source,
                     label: '定位来源',
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _LocationMetaBox(
-                    value: location!.timeLabel.isEmpty
+                    value: activeLocation.timeLabel.isEmpty
                         ? '待读取'
-                        : location!.timeLabel,
+                        : activeLocation.timeLabel,
                     label: '最近更新',
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _LocationMetaBox(
-                    value: location!.accuracy > 0
-                        ? '±${location!.accuracy.toStringAsFixed(0)}m'
+                    value: activeLocation.accuracy > 0
+                        ? '±${activeLocation.accuracy.toStringAsFixed(0)}m'
                         : '—',
                     label: '定位精度',
                   ),
@@ -840,10 +841,10 @@ class _LocationDetailCard extends StatelessWidget {
               ],
             ),
           ],
-          if (error != null) ...[
+          if (errorText != null) ...[
             const SizedBox(height: 12),
             Text(
-              error!,
+              errorText,
               style: const TextStyle(fontSize: 12, color: AppColors.warning),
             ),
           ],
