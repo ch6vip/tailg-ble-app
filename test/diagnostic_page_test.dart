@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -69,6 +70,28 @@ void main() {
     expect(record, containsPair('faults', ['电机故障', '欠压保护']));
   });
 
+  testWidgets('diagnostic read completion is ignored after unmount', (
+    tester,
+  ) async {
+    resetMockPreferences();
+    final manager = _PendingDiagnosticConnectionManager();
+    _overrideConnectionManager(manager);
+
+    await tester.pumpWidget(const TestApp(home: DiagnosticPage()));
+    await tester.pump();
+
+    await tester.tap(find.text('一键诊断'));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+
+    manager.complete([0, 0, 0, 0, 0, 0x21]);
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(LogService().all.where((entry) => entry.message == '诊断失败'), isEmpty);
+  });
+
   testWidgets('diagnostic history displays the newest 10 persisted records', (
     tester,
   ) async {
@@ -127,4 +150,24 @@ class _DiagnosticConnectionManager extends ble.ConnectionManager {
 
   @override
   Future<List<int>?> readFeb3() async => _feb3Data;
+}
+
+class _PendingDiagnosticConnectionManager extends ble.ConnectionManager {
+  final _completer = Completer<List<int>?>();
+
+  @override
+  ble.ConnectionState get state => ble.ConnectionState.ready;
+
+  @override
+  Stream<ble.ConnectionState> get stateStream =>
+      Stream<ble.ConnectionState>.empty();
+
+  @override
+  Future<List<int>?> readFeb3() => _completer.future;
+
+  void complete(List<int>? data) {
+    if (!_completer.isCompleted) {
+      _completer.complete(data);
+    }
+  }
 }

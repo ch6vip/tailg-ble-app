@@ -221,6 +221,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
     _log.operation('开始故障诊断');
     try {
       final data = await connectionManager.readFeb3();
+      if (!mounted) return;
       if (data == null) throw Exception('feb3 特征未找到');
       if (data.length < 6) throw Exception('数据不完整 (${data.length} bytes)');
       final faultByte = data[5];
