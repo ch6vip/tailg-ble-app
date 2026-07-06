@@ -24,6 +24,7 @@ void main() {
     await store.init();
     final savedAt = DateTime(2026, 5, 28, 10);
     final renamedAt = DateTime(2026, 5, 28, 10, 32);
+    final locationUpdatedAt = DateTime(2026, 5, 28, 10, 36);
 
     final vehicle = await store.upsert(
       id: 'AA:BB:CC:DD:EE:FF',
@@ -54,12 +55,15 @@ void main() {
         accuracy: 12,
         recordedAt: DateTime(2026, 5, 28, 10, 35),
       ),
+      savedAt: locationUpdatedAt,
     );
 
     expect(
       store.defaultVehicle?.lastLocation?.coordinateText,
       '31.230400, 121.473700',
     );
+    expect(store.defaultVehicle?.createdAt, savedAt);
+    expect(store.defaultVehicle?.updatedAt, locationUpdatedAt);
 
     await store.updateQgjCredentials(
       id: vehicle.id,

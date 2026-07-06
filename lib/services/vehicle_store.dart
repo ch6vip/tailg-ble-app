@@ -257,7 +257,11 @@ class VehicleStore {
     await _save();
   }
 
-  Future<void> updateLastLocation(String id, VehicleLocation location) async {
+  Future<void> updateLastLocation(
+    String id,
+    VehicleLocation location, {
+    DateTime? savedAt,
+  }) async {
     await init();
     final normalizedId = _normalizeId(id);
     if (normalizedId == null) return;
@@ -265,7 +269,7 @@ class VehicleStore {
     if (index < 0) return;
     _vehicles[index] = _vehicles[index].copyWith(
       lastLocation: location,
-      updatedAt: DateTime.now(),
+      updatedAt: savedAt ?? DateTime.now(),
     );
     await _save();
   }
