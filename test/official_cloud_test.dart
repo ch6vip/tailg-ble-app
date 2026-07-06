@@ -475,11 +475,13 @@ void main() {
         'carId': 'car-2',
         'carNickName': 'B',
       });
+      final invalidSingle = OfficialCloudDataParser.vehicles('ignored');
 
       expect(list, hasLength(1));
       expect(list.first.displayName, 'A');
       expect(single, hasLength(1));
       expect(single.first.displayName, 'B');
+      expect(invalidSingle, isEmpty);
     });
 
     test('returns empty detail models for missing map payloads', () {

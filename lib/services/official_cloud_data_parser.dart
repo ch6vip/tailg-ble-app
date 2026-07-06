@@ -44,14 +44,19 @@ class OfficialCloudDataParser {
     Object? data, {
     bool wrapSingle = false,
   }) {
-    final Iterable<Object?> items = data is List
-        ? data.cast<Object?>()
-        : wrapSingle && data != null
-        ? <Object?>[data]
-        : const <Object?>[];
-    return items.whereType<Map<Object?, Object?>>().map(
-      Map<String, dynamic>.from,
-    );
+    return _payloadItems(
+      data,
+      wrapSingle: wrapSingle,
+    ).whereType<Map<Object?, Object?>>().map(Map<String, dynamic>.from);
+  }
+
+  static Iterable<Object?> _payloadItems(
+    Object? data, {
+    required bool wrapSingle,
+  }) {
+    if (data is List) return data.cast<Object?>();
+    if (wrapSingle && data != null) return <Object?>[data];
+    return const <Object?>[];
   }
 
   static bool _hasVehicleIdentity(OfficialVehicle vehicle) {
