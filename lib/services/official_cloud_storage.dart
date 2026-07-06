@@ -184,7 +184,7 @@ class _OfficialCloudStorage {
     if (raw == null || raw.isEmpty) return const <OfficialVehicle>[];
     final decoded = _decodeStoredJson(raw, '官云车辆控制缓存损坏，已忽略');
     if (identical(decoded, _decodeFailed)) return const <OfficialVehicle>[];
-    return _decodeCarControlPayload(decoded);
+    return _decodeCachedVehicles(decoded);
   }
 
   Object? _decodeStoredJson(String raw, String warningMessage) {
@@ -198,10 +198,6 @@ class _OfficialCloudStorage {
       );
       return _decodeFailed;
     }
-  }
-
-  List<OfficialVehicle> _decodeCarControlPayload(Object? decoded) {
-    return _decodeCachedVehicles(decoded);
   }
 
   List<OfficialVehicle> _decodeCachedVehicles(Object? decoded) {
