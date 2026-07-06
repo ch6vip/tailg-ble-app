@@ -144,6 +144,12 @@ class ReplicaFeatureStore {
   static const _prefFenceConfig = 'replica_fence_config';
   static const _prefShareMembers = 'replica_share_members';
   static int _idCounter = 0;
+  DateTime Function() _clock = DateTime.now;
+
+  void resetForTest({DateTime Function()? clock}) {
+    _clock = clock ?? DateTime.now;
+    _idCounter = 0;
+  }
 
   void _logWarning(String message, Object error) {
     LogService().operation(
@@ -168,7 +174,7 @@ class ReplicaFeatureStore {
     );
     final decoded = _decodeMap(raw);
     if (decoded == null) return null;
-    return FenceConfig.fromJson(decoded);
+    return FenceConfig.fromJson(decoded, fallbackNow: _clock());
   }
 
   Future<void> saveFenceConfig(FenceConfig config) async {
@@ -192,10 +198,13 @@ class ReplicaFeatureStore {
 
   String makeId({DateTime? now}) {
     _idCounter++;
-    return '${(now ?? DateTime.now()).microsecondsSinceEpoch}_$_idCounter';
+    return '${(now ?? _clock()).microsecondsSinceEpoch}_$_idCounter';
   }
 
-  List<T> _decodeList<T>(String? raw, T Function(Map<String, dynamic>) decode) {
+  List<T> _decodeList<T>(
+    String? raw,
+    T Function(Map<String, dynamic>, {DateTime? fallbackNow}) decode,
+  ) {
     final decoded = _decodeJson(raw, 'ReplicaFeatureStore: JSON decode failed');
     if (decoded == null) return [];
     if (decoded is! List) {
@@ -206,14 +215,19 @@ class ReplicaFeatureStore {
       return [];
     }
     final records = <T>[];
+    final fallbackNow = _clock();
     for (final item in decoded) {
-      final record = _decodeListItem(item, decode);
+      final record = _decodeListItem(item, decode, fallbackNow);
       if (record != null) records.add(record);
     }
     return records;
   }
 
-  T? _decodeListItem<T>(Object? item, T Function(Map<String, dynamic>) decode) {
+  T? _decodeListItem<T>(
+    Object? item,
+    T Function(Map<String, dynamic>, {DateTime? fallbackNow}) decode,
+    DateTime fallbackNow,
+  ) {
     if (item is! Map) {
       _logWarning(
         'ReplicaFeatureStore: skipped list item with type',
@@ -223,7 +237,7 @@ class ReplicaFeatureStore {
     }
     try {
       final payload = parsePersistedMap(item);
-      return payload == null ? null : decode(payload);
+      return payload == null ? null : decode(payload, fallbackNow: fallbackNow);
     } catch (e) {
       _logWarning('ReplicaFeatureStore: decode list item failed', e);
       return null;

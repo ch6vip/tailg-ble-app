@@ -11,6 +11,7 @@ import 'helpers/storage_mocks.dart';
 void main() {
   setUp(() {
     VehicleStore().resetForTest();
+    ReplicaFeatureStore().resetForTest();
     LogService().clear();
     resetMockStorage();
   });
@@ -586,6 +587,7 @@ void main() {
   });
 
   test('ReplicaFeatureStore keeps recoverable malformed records', () async {
+    final fallbackNow = DateTime(2026, 6, 9, 10, 30);
     SharedPreferences.setMockInitialValues({
       'replica_nfc_keys':
           '[42,{"id":123,"name":456,"type":789,"createdAt":"bad-date"}]',
@@ -598,18 +600,21 @@ void main() {
     });
 
     final store = ReplicaFeatureStore();
+    store.resetForTest(clock: () => fallbackNow);
 
     final nfcKeys = await store.loadNfcKeys();
     expect(nfcKeys, hasLength(1));
     expect(nfcKeys.first.id, '123');
     expect(nfcKeys.first.name, '456');
     expect(nfcKeys.first.type, '789');
+    expect(nfcKeys.first.createdAt, fallbackNow);
 
     final members = await store.loadShareMembers();
     expect(members, hasLength(1));
     expect(members.first.id, '123');
     expect(members.first.name, '456');
     expect(members.first.phone, '18800001111');
+    expect(members.first.createdAt, fallbackNow);
 
     final fence = await store.loadFenceConfig();
     expect(fence, isNotNull);
@@ -617,6 +622,7 @@ void main() {
     expect(fence.latitude, 31.2304);
     expect(fence.longitude, 121.4737);
     expect(fence.radiusMeters, 800);
+    expect(fence.updatedAt, fallbackNow);
     expect(
       LogService().all.map((entry) => entry.message),
       contains('ReplicaFeatureStore: skipped list item with type'),
