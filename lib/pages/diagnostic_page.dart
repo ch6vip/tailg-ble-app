@@ -48,29 +48,58 @@ class DiagnosticRecord {
   factory DiagnosticRecord.fromJson(
     Map<String, dynamic> json, {
     DateTime? fallbackNow,
+    DateTime Function()? clock,
   }) => DiagnosticRecord(
-    time: parsePersistedDateOr(json['time'], fallbackNow),
+    time: parsePersistedDateOr(json['time'], fallbackNow, clock: clock),
     rawByte: parsePersistedInt(json['raw']) ?? 0,
     faults: parsePersistedStringList(json['faults']),
   );
 
-  static DiagnosticRecord? tryParse(String raw) {
+  static DiagnosticRecord? tryParse(
+    String raw, {
+    DateTime? fallbackNow,
+    DateTime Function()? clock,
+  }) {
     try {
-      return _fromDecoded(jsonDecode(raw));
+      return _fromDecoded(
+        jsonDecode(raw),
+        fallbackNow: fallbackNow,
+        clock: clock,
+      );
     } on Object {
       // One corrupt history entry should not hide later diagnostic records.
       return null;
     }
   }
 
-  static DiagnosticRecord? _fromDecoded(Object? decoded) {
+  static DiagnosticRecord? _fromDecoded(
+    Object? decoded, {
+    DateTime? fallbackNow,
+    DateTime Function()? clock,
+  }) {
     final json = parsePersistedMap(decoded);
-    return json == null ? null : DiagnosticRecord.fromJson(json);
+    return json == null
+        ? null
+        : DiagnosticRecord.fromJson(
+            json,
+            fallbackNow: fallbackNow,
+            clock: clock,
+          );
   }
 
-  static List<DiagnosticRecord> parseHistory(Iterable<String> entries) {
+  static List<DiagnosticRecord> parseHistory(
+    Iterable<String> entries, {
+    DateTime? fallbackNow,
+    DateTime Function()? clock,
+  }) {
     final parsedRecords = entries
-        .map(DiagnosticRecord.tryParse)
+        .map(
+          (raw) => DiagnosticRecord.tryParse(
+            raw,
+            fallbackNow: fallbackNow,
+            clock: clock,
+          ),
+        )
         .whereType<DiagnosticRecord>()
         .toList(growable: false);
     return _reverseHistoryOrder(parsedRecords);

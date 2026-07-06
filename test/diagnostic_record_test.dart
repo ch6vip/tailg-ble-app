@@ -82,4 +82,24 @@ void main() {
     expect(record.rawByte, 0);
     expect(record.faults, ['电机故障']);
   });
+
+  test('DiagnosticRecord uses injected clock for malformed timestamps', () {
+    final generatedAt = DateTime(2026, 6, 9, 10, 30);
+
+    final record = DiagnosticRecord.fromJson({
+      'time': 'bad-time',
+    }, clock: () => generatedAt);
+
+    expect(record.time, generatedAt);
+  });
+
+  test('DiagnosticRecord parseHistory passes injected clock to records', () {
+    final generatedAt = DateTime(2026, 6, 9, 10, 30);
+
+    final records = DiagnosticRecord.parseHistory([
+      jsonEncode({'time': 'bad-time', 'raw': 1}),
+    ], clock: () => generatedAt);
+
+    expect(records.single.time, generatedAt);
+  });
 }
