@@ -1335,6 +1335,8 @@ void main() {
         'totalTime': '1800',
         'totalMileage': '12.5',
         'deviceTravelDtoList': [
+          42,
+          'bad-entry',
           {
             'deviceTravelId': 'travel-1',
             'travelDate': '2026-05-29',

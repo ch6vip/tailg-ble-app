@@ -323,7 +323,6 @@ class OfficialTravelDay {
   });
 
   factory OfficialTravelDay.fromJson(Map<String, dynamic> json) {
-    final list = json['deviceTravelDtoList'];
     return OfficialTravelDay(
       raw: Map<String, dynamic>.from(json),
       sec: _clean(json['sec']) ?? '',
@@ -331,16 +330,7 @@ class OfficialTravelDay {
       min: _clean(json['min']) ?? '',
       travelDate: _clean(json['travelDate']) ?? '',
       totalTime: _clean(json['totalTime']) ?? '',
-      records: list is List
-          ? list
-                .whereType<Map<Object?, Object?>>()
-                .map(
-                  (item) => OfficialTravelRecord.fromJson(
-                    Map<String, dynamic>.from(item),
-                  ),
-                )
-                .toList(growable: false)
-          : const [],
+      records: _travelRecords(json['deviceTravelDtoList']),
       days: _clean(json['days']) ?? '',
       totalMileage: _clean(json['totalMileage']) ?? '',
     );
@@ -662,6 +652,17 @@ bool _boolValue(Object? value) {
   if (value is num) return value != 0;
   final text = value?.toString().toLowerCase();
   return text == 'true' || text == '1';
+}
+
+List<OfficialTravelRecord> _travelRecords(Object? value) {
+  if (value is! List) return const [];
+  return value
+      .whereType<Map<Object?, Object?>>()
+      .map(
+        (item) =>
+            OfficialTravelRecord.fromJson(Map<String, dynamic>.from(item)),
+      )
+      .toList(growable: false);
 }
 
 int? _intOrNull(Object? value) {
