@@ -46,5 +46,20 @@ void main() {
 
       expect(profile.lastLocation?.latitude, 31.2304);
     });
+
+    test('uses provided fallback time for malformed timestamps', () {
+      final fallbackNow = DateTime(2026, 6, 9, 10, 30);
+
+      final profile = VehicleProfile.fromJson({
+        'id': 'AA:BB:CC:DD:EE:FF',
+        'createdAt': 'bad-date',
+        'updatedAt': 'bad-date',
+        'lastLocation': {'recordedAt': 'bad-date'},
+      }, fallbackNow: fallbackNow);
+
+      expect(profile.createdAt, fallbackNow);
+      expect(profile.updatedAt, fallbackNow);
+      expect(profile.lastLocation?.recordedAt, fallbackNow);
+    });
   });
 }

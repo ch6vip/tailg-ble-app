@@ -40,12 +40,18 @@ class VehicleLocation {
     'recordedAt': recordedAt.toIso8601String(),
   };
 
-  factory VehicleLocation.fromJson(Map<String, dynamic> json) {
+  factory VehicleLocation.fromJson(
+    Map<String, dynamic> json, {
+    DateTime? fallbackRecordedAt,
+  }) {
     return VehicleLocation(
       latitude: parsePersistedDouble(json['latitude']) ?? 0,
       longitude: parsePersistedDouble(json['longitude']) ?? 0,
       accuracy: parsePersistedDouble(json['accuracy']) ?? 0,
-      recordedAt: parsePersistedDate(json['recordedAt']) ?? DateTime.now(),
+      recordedAt:
+          parsePersistedDate(json['recordedAt']) ??
+          fallbackRecordedAt ??
+          DateTime.now(),
     );
   }
 }
@@ -119,8 +125,11 @@ class VehicleProfile {
     'qgjUserId': qgjUserId,
   };
 
-  factory VehicleProfile.fromJson(Map<String, dynamic> json) {
-    final now = DateTime.now();
+  factory VehicleProfile.fromJson(
+    Map<String, dynamic> json, {
+    DateTime? fallbackNow,
+  }) {
+    final now = fallbackNow ?? DateTime.now();
     return VehicleProfile(
       id: parsePersistedString(json['id']),
       name: parsePersistedString(json['name']),
@@ -130,14 +139,16 @@ class VehicleProfile {
       createdAt: parsePersistedDate(json['createdAt']) ?? now,
       updatedAt: parsePersistedDate(json['updatedAt']) ?? now,
       lastConnectedAt: parsePersistedDate(json['lastConnectedAt']),
-      lastLocation: _vehicleLocation(json['lastLocation']),
+      lastLocation: _vehicleLocation(json['lastLocation'], fallbackNow: now),
       qgjLoginPassword: parsePersistedInt(json['qgjLoginPassword']),
       qgjUserId: parsePersistedInt(json['qgjUserId']),
     );
   }
 }
 
-VehicleLocation? _vehicleLocation(Object? value) {
+VehicleLocation? _vehicleLocation(Object? value, {DateTime? fallbackNow}) {
   final json = parsePersistedMap(value);
-  return json == null ? null : VehicleLocation.fromJson(json);
+  return json == null
+      ? null
+      : VehicleLocation.fromJson(json, fallbackRecordedAt: fallbackNow);
 }
