@@ -149,6 +149,38 @@ void main() {
     expectMinTouchTargetHeight(tester, previousMonth);
   });
 
+  testWidgets('LocationPage travel tab renders cloud error details', (
+    tester,
+  ) async {
+    resetMockPreferences();
+    app.officialCloudService.resetForTest();
+    addTearDown(app.officialCloudService.resetForTest);
+    setTestViewSize(tester, const Size(430, 1200));
+
+    await tester.pumpWidget(
+      const TestApp(
+        home: LocationPage(
+          initialTab: LocationInitialTab.travel,
+          embedded: true,
+        ),
+      ),
+    );
+    await tester.pump();
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        userId: 'uid',
+        travelError: '官方服务异常',
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+
+    expect(find.text('历史轨迹暂不可用'), findsOneWidget);
+    expect(find.text('官方服务异常'), findsOneWidget);
+  });
+
   testWidgets('LocationPage meta values avoid negative letter spacing', (
     tester,
   ) async {

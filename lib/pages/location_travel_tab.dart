@@ -15,6 +15,7 @@ class _TravelTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final travelError = cloudState.travelError;
     final records = [for (final day in cloudState.travelDays) ...day.records];
     final dateGroups = cloudState.travelDays
         .where((day) => day.records.isNotEmpty || day.hasData)
@@ -47,11 +48,11 @@ class _TravelTab extends StatelessWidget {
               title: '未登录官方账号',
               subtitle: '登录后才能读取官方历史轨迹。',
             )
-          else if (cloudState.travelError != null)
+          else if (travelError != null)
             _EmptyCard(
               icon: Icons.info_outline,
               title: '历史轨迹暂不可用',
-              subtitle: cloudState.travelError!,
+              subtitle: travelError,
             )
           else if (records.isEmpty)
             const _EmptyCard(
