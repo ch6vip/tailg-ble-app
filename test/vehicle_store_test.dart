@@ -394,7 +394,7 @@ void main() {
   test('ReplicaFeatureStore keeps recoverable malformed records', () async {
     SharedPreferences.setMockInitialValues({
       'replica_nfc_keys':
-          '[{"id":123,"name":456,"type":789,"createdAt":"bad-date"}]',
+          '[42,{"id":123,"name":456,"type":789,"createdAt":"bad-date"}]',
       'replica_share_members':
           '[{"id":123,"name":456,"phone":18800001111,"createdAt":"bad-date"}]',
       'replica_fence_config':
@@ -423,5 +423,9 @@ void main() {
     expect(fence.latitude, 31.2304);
     expect(fence.longitude, 121.4737);
     expect(fence.radiusMeters, 800);
+    expect(
+      LogService().all.map((entry) => entry.message),
+      contains('ReplicaFeatureStore: skipped list item with type'),
+    );
   });
 }

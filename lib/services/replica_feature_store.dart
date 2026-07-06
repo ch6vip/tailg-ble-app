@@ -189,21 +189,26 @@ class ReplicaFeatureStore {
     }
     final records = <T>[];
     for (final item in decoded) {
-      if (item is! Map) {
-        _logWarning(
-          'ReplicaFeatureStore: skipped list item with type',
-          item.runtimeType,
-        );
-        continue;
-      }
-      try {
-        records.add(decode(Map<String, dynamic>.from(item)));
-      } catch (e) {
-        _logWarning('ReplicaFeatureStore: decode list item failed', e);
-        continue;
-      }
+      final record = _decodeListItem(item, decode);
+      if (record != null) records.add(record);
     }
     return records;
+  }
+
+  T? _decodeListItem<T>(Object? item, T Function(Map<String, dynamic>) decode) {
+    if (item is! Map) {
+      _logWarning(
+        'ReplicaFeatureStore: skipped list item with type',
+        item.runtimeType,
+      );
+      return null;
+    }
+    try {
+      return decode(Map<String, dynamic>.from(item));
+    } catch (e) {
+      _logWarning('ReplicaFeatureStore: decode list item failed', e);
+      return null;
+    }
   }
 
   Map<String, dynamic>? _decodeMap(String? raw) {
