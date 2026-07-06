@@ -828,6 +828,29 @@ void main() {
       expect(service.state.selectedVehicle, isNull);
     });
 
+    test('logs invalid cached carControlInfo with login session', () async {
+      SharedPreferences.setMockInitialValues({
+        'official_cloud_token': 'cached-token',
+        'official_cloud_phone': '18800001111',
+        'official_cloud_user_id': 'user-1',
+        'carControlInfo': jsonEncode([
+          {'carNickName': '无标识缓存车'},
+        ]),
+      });
+
+      final service = OfficialCloudService();
+      await service.initForTest();
+
+      expect(service.state.signedIn, isTrue);
+      expect(service.state.vehicles, isEmpty);
+      final warning = LogService().all.singleWhere(
+        (entry) =>
+            entry.message == '官云车辆控制缓存无有效车辆，已忽略' &&
+            entry.level == LogLevel.warning,
+      );
+      expect(warning.detail, 'type=List<dynamic>');
+    });
+
     test('selectVehicle persists official carControlInfo cache', () async {
       final vehicle = OfficialVehicle.fromJson({
         'carId': 'car-2',

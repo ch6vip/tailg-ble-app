@@ -189,13 +189,7 @@ class _OfficialCloudStorage {
     if (raw == null || raw.isEmpty) return const <OfficialVehicle>[];
     try {
       final decoded = jsonDecode(raw);
-      final vehicles = OfficialCloudDataParser.vehicles(decoded);
-      if (vehicles.isNotEmpty) return vehicles;
-      _log.operation(
-        '官云车辆控制缓存无有效车辆，已忽略',
-        detail: 'type=${decoded.runtimeType}',
-        level: LogLevel.warning,
-      );
+      return _decodeCachedVehicles(decoded);
     } catch (e) {
       _log.operation(
         '官云车辆控制缓存损坏，已忽略',
@@ -204,6 +198,16 @@ class _OfficialCloudStorage {
       );
       return const <OfficialVehicle>[];
     }
+  }
+
+  List<OfficialVehicle> _decodeCachedVehicles(Object? decoded) {
+    final vehicles = OfficialCloudDataParser.vehicles(decoded);
+    if (vehicles.isNotEmpty) return vehicles;
+    _log.operation(
+      '官云车辆控制缓存无有效车辆，已忽略',
+      detail: 'type=${decoded.runtimeType}',
+      level: LogLevel.warning,
+    );
     return const <OfficialVehicle>[];
   }
 }
