@@ -33,9 +33,17 @@ class DiagnosticExportService {
       '',
       _buildBleSection(),
       '',
-      '## Logs (${entries.length})${logService.evictedCount > 0 ? ' [${logService.evictedCount} older entries evicted]' : ''}',
+      _buildLogSectionHeading(entries.length),
       ...entries.map(_formatEntry),
     ].join('\n');
+  }
+
+  String _buildLogSectionHeading(int entryCount) {
+    final evictedCount = logService.evictedCount;
+    final evictedSuffix = evictedCount > 0
+        ? ' [$evictedCount older entries evicted]'
+        : '';
+    return '## Logs ($entryCount)$evictedSuffix';
   }
 
   String _buildOfficialCloudSection() {

@@ -30,4 +30,31 @@ void main() {
     expect(lines[0], '# Tailg BLE Diagnostic Report');
     expect(lines[1], 'Generated: ${generatedAt.toIso8601String()}');
   });
+
+  test('DiagnosticExportService includes evicted log count in heading', () {
+    final connectionManager = ble.ConnectionManager();
+    addTearDown(connectionManager.dispose);
+    LogService().clear();
+    VehicleStore().resetForTest();
+    OfficialCloudService().resetForTest();
+    addTearDown(LogService().clear);
+    addTearDown(VehicleStore().resetForTest);
+    addTearDown(OfficialCloudService().resetForTest);
+
+    final logService = LogService();
+    for (var index = 0; index < 2001; index++) {
+      logService.operation('entry $index');
+    }
+    final service = DiagnosticExportService(
+      connectionManager: connectionManager,
+      logService: logService,
+      vehicleStore: VehicleStore(),
+      officialCloudService: OfficialCloudService(),
+      clock: () => DateTime(2026, 6, 1, 8, 30),
+    );
+
+    final lines = service.buildReport(logService.all).split('\n');
+
+    expect(lines, contains('## Logs (2000) [1 older entries evicted]'));
+  });
 }
