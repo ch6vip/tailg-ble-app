@@ -129,6 +129,19 @@ void main() {
         'smartMeter': {'enabled': true},
       });
     });
+
+    test('serializes official raw fields without exposing stored raw map', () {
+      final vehicle = OfficialVehicle.fromJson({
+        'carId': 'car-1',
+        'customFlag': 'raw',
+      });
+
+      final json = vehicle.toJson();
+      json['customFlag'] = 'changed';
+
+      expect(vehicle.raw['customFlag'], 'raw');
+      expect(vehicle.toJson()['customFlag'], 'raw');
+    });
   });
 
   group('OfficialCloudCommand', () {
