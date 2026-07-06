@@ -488,10 +488,16 @@ void main() {
       final batteryInfo = OfficialCloudDataParser.batteryInfo(null);
       final location = OfficialCloudDataParser.vehicleLocation('invalid');
       final fence = OfficialCloudDataParser.fenceData(null);
+      final parsedLocation = OfficialCloudDataParser.vehicleLocation({
+        'bleConnectLat': '25.1',
+        'bleConnectLng': '104.1',
+      });
 
       expect(batteryInfo.hasData, isFalse);
       expect(location.hasData, isFalse);
       expect(fence.hasData, isFalse);
+      expect(parsedLocation.hasData, isTrue);
+      expect(parsedLocation.latitude, 25.1);
     });
 
     test('filters travel days and points without usable data', () {

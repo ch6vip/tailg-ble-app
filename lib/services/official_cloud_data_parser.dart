@@ -37,7 +37,7 @@ class OfficialCloudDataParser {
   }
 
   static Map<String, dynamic> _map(Object? data) {
-    return data is Map ? Map<String, dynamic>.from(data) : const {};
+    return data is Map<Object?, Object?> ? _stringKeyedMap(data) : const {};
   }
 
   static Iterable<Map<String, dynamic>> _maps(
@@ -47,7 +47,11 @@ class OfficialCloudDataParser {
     return _payloadItems(
       data,
       wrapSingle: wrapSingle,
-    ).whereType<Map<Object?, Object?>>().map(Map<String, dynamic>.from);
+    ).whereType<Map<Object?, Object?>>().map(_stringKeyedMap);
+  }
+
+  static Map<String, dynamic> _stringKeyedMap(Map<Object?, Object?> data) {
+    return Map<String, dynamic>.from(data);
   }
 
   static Iterable<Object?> _payloadItems(
