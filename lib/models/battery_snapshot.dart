@@ -287,46 +287,69 @@ class BmsSnapshot {
     );
   }
 
-  List<BmsField> get fields => [
+  List<BmsField> get fields => _bmsFields(this);
+}
+
+List<BmsField> _bmsFields(BmsSnapshot snapshot) {
+  return [
     BmsField(
       '估算容量',
-      estimateBatteryCapacity,
+      snapshot.estimateBatteryCapacity,
       source: BatteryDataSource.officialBattery,
     ),
-    BmsField('SOC', soc, unit: '%', source: socSource),
-    BmsField('SOH', soh, unit: '%', source: BatteryDataSource.bmsReserved),
-    BmsField('当前电压', currentBatteryVoltage, unit: 'V', source: voltageSource),
+    BmsField('SOC', snapshot.soc, unit: '%', source: snapshot.socSource),
+    BmsField(
+      'SOH',
+      snapshot.soh,
+      unit: '%',
+      source: BatteryDataSource.bmsReserved,
+    ),
+    BmsField(
+      '当前电压',
+      snapshot.currentBatteryVoltage,
+      unit: 'V',
+      source: snapshot.voltageSource,
+    ),
     BmsField(
       '充电状态',
-      batteryChargeStatus,
+      snapshot.batteryChargeStatus,
       source: BatteryDataSource.bmsReserved,
     ),
     BmsField(
       '电池容量',
-      batteryCapacity,
+      snapshot.batteryCapacity,
       source: BatteryDataSource.officialBattery,
     ),
     BmsField(
       '电池电流',
-      batteryCurrent,
+      snapshot.batteryCurrent,
       unit: 'A',
       source: BatteryDataSource.bmsReserved,
     ),
     BmsField(
       '环境温度',
-      ambientTemperature,
+      snapshot.ambientTemperature,
       unit: '°C',
       source: BatteryDataSource.bmsReserved,
     ),
     BmsField(
       '循环次数',
-      batteryCyclesNum,
+      snapshot.batteryCyclesNum,
       source: BatteryDataSource.officialBattery,
     ),
-    BmsField('电池温度', batteryTemperature, unit: '°C', source: temperatureSource),
-    BmsField('电池类型', batteryType, source: BatteryDataSource.bmsReserved),
-    BmsField('硬件版本', hwVer, source: BatteryDataSource.bmsReserved),
-    BmsField('软件版本', swVer, source: BatteryDataSource.bmsReserved),
+    BmsField(
+      '电池温度',
+      snapshot.batteryTemperature,
+      unit: '°C',
+      source: snapshot.temperatureSource,
+    ),
+    BmsField(
+      '电池类型',
+      snapshot.batteryType,
+      source: BatteryDataSource.bmsReserved,
+    ),
+    BmsField('硬件版本', snapshot.hwVer, source: BatteryDataSource.bmsReserved),
+    BmsField('软件版本', snapshot.swVer, source: BatteryDataSource.bmsReserved),
   ];
 }
 

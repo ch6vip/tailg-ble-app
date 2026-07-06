@@ -80,6 +80,8 @@ void main() {
     expect(fields[1].displayValue, '80%');
     expect(fields[3].displayValue, '48.5V');
     expect(fields[8].displayValue, '待读取');
+    fields.removeLast();
+    expect(snapshot.bms.fields, hasLength(13));
   });
 
   test('BatterySnapshot uses official cloud vehicle as fallback', () {
