@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
+import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/profile_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
@@ -199,6 +200,29 @@ void main() {
     expect(find.text('测试车辆'), findsOneWidget);
     expect(find.bySemanticsLabel('我的车库，测试车辆'), findsOneWidget);
     expect(find.text('使用中'), findsOneWidget);
+  });
+
+  testWidgets('garage panel renders official vehicle mileage', (tester) async {
+    final vehicle = OfficialVehicle.fromJson({
+      'carId': 'official-1',
+      'carNickName': '官方车',
+      'mileage': 48.4,
+    });
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        vehicles: [vehicle],
+        selectedVehicleKey: vehicle.key,
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: ProfilePage()));
+    await tester.pump();
+
+    expect(find.bySemanticsLabel('我的车库，官方车'), findsOneWidget);
+    expect(find.text('48'), findsOneWidget);
+    expect(find.text('预估里程'), findsOneWidget);
   });
 
   testWidgets('profile logout action exposes semantics and 44dp target', (

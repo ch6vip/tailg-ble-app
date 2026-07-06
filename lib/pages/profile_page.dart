@@ -728,6 +728,7 @@ class _GarageInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mileage = this.mileage;
     if (!hasVehicle) {
       return const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -785,7 +786,7 @@ class _GarageInfo extends StatelessWidget {
             ),
             const SizedBox(width: 28),
             _VehicleMetric(
-              value: mileage == null ? '--' : mileage!.toStringAsFixed(0),
+              value: mileage == null ? '--' : mileage.toStringAsFixed(0),
               unit: 'km',
               label: '预估里程',
             ),
