@@ -319,6 +319,16 @@ class ReplicaFeatureStore {
     Iterable<Map<String, dynamic>> records,
   ) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(key, jsonEncode(records.toList()));
+    await prefs.setString(key, jsonEncode(_materializeRecords(records)));
+  }
+
+  List<Map<String, dynamic>> _materializeRecords(
+    Iterable<Map<String, dynamic>> records,
+  ) {
+    final materialized = <Map<String, dynamic>>[];
+    for (final record in records) {
+      materialized.add(record);
+    }
+    return materialized;
   }
 }
