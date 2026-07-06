@@ -27,6 +27,8 @@ class FaultInfo {
 }
 
 class DiagnosticRecord {
+  static const persistedHistoryLimit = 20;
+
   final DateTime time;
   final int rawByte;
   final List<String> faults;
@@ -78,7 +80,7 @@ class DiagnosticRecord {
   static List<String> encodeHistory(Iterable<DiagnosticRecord> records) {
     final ordered = records.toList(growable: false);
     return ordered.reversed
-        .take(20)
+        .take(persistedHistoryLimit)
         .map((record) => jsonEncode(record.toJson()))
         .toList();
   }

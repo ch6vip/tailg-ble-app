@@ -66,7 +66,7 @@ void main() {
         .map((raw) => jsonDecode(raw) as Map<String, dynamic>)
         .toList();
 
-    expect(encoded, hasLength(20));
+    expect(encoded, hasLength(DiagnosticRecord.persistedHistoryLimit));
     expect(decoded.first['raw'], 21);
     expect(decoded.last['raw'], 2);
   });
