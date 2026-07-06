@@ -146,6 +146,7 @@ class AutoConnectService {
     BluetoothDevice device, {
     DateTime? lastConnectedAt,
   }) async {
+    final connectedAt = lastConnectedAt ?? DateTime.now();
     final deviceId = device.remoteId.toString();
     final deviceName = device.platformName;
     _lastDeviceId = deviceId;
@@ -155,7 +156,8 @@ class AutoConnectService {
       name: deviceName,
       protocol: VehicleProtocol.auto,
       makeDefault: true,
-      lastConnectedAt: lastConnectedAt ?? DateTime.now(),
+      lastConnectedAt: connectedAt,
+      savedAt: connectedAt,
     );
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefDeviceId, deviceId);

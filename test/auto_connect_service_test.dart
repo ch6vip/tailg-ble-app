@@ -108,6 +108,8 @@ void main() {
         expect(defaultVehicle?.id, testBleDeviceId);
         expect(defaultVehicle?.protocol, VehicleProtocol.auto);
         expect(defaultVehicle?.displayName, '未命名车辆');
+        expect(defaultVehicle?.createdAt, lastConnectedAt);
+        expect(defaultVehicle?.updatedAt, lastConnectedAt);
         expect(defaultVehicle?.lastConnectedAt, lastConnectedAt);
       },
     );
