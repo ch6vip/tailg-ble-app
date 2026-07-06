@@ -316,6 +316,32 @@ void main() {
       expect(client.lastRequest?.statusCode, 502);
       expect(client.lastRequest?.success, isFalse);
     });
+
+    test('reports non-JSON response body excerpt', () async {
+      final server = await _startOfficialCloudServer((request) async {
+        request.response.statusCode = 200;
+        request.response.write('plain text response');
+        await request.response.close();
+      });
+      addTearDown(server.close);
+
+      final client = OfficialCloudApiClient(
+        config: OfficialCloudApiConfig(apiBase: server.apiBase),
+        log: LogService(),
+      );
+      addTearDown(client.dispose);
+
+      await expectLater(
+        client.request('app/read', method: 'GET'),
+        throwsA(
+          isA<OfficialCloudApiException>().having(
+            (e) => e.message,
+            'message',
+            '服务器返回非 JSON 数据: plain text response',
+          ),
+        ),
+      );
+    });
   });
 
   group('OfficialCloudApiException', () {

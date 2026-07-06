@@ -422,12 +422,16 @@ class OfficialCloudApiClient {
           : jsonDecode(text);
       if (decoded is Map) return Map<String, dynamic>.from(decoded);
     } on Object {
-      final end = text.length < 80 ? text.length : 80;
       throw OfficialCloudApiException(
-        '服务器返回非 JSON 数据: ${text.substring(0, end)}',
+        '服务器返回非 JSON 数据: ${_responseBodyExcerpt(text)}',
       );
     }
     throw const OfficialCloudApiException('服务器返回数据格式不正确');
+  }
+
+  String _responseBodyExcerpt(String text) {
+    final end = text.length < 80 ? text.length : 80;
+    return text.substring(0, end);
   }
 }
 
