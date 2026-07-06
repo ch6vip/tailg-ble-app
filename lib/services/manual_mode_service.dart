@@ -20,7 +20,8 @@ class ManualModeService {
   Future<void>? _initializing;
   bool get enabled => _enabled;
 
-  final _enabledController = StreamController<bool>.broadcast();
+  StreamController<bool> _enabledController =
+      StreamController<bool>.broadcast();
   Stream<bool> get enabledStream => _enabledController.stream;
 
   Future<void> init() async {
@@ -37,13 +38,16 @@ class ManualModeService {
     try {
       _enabled = prefs.getBool(_prefKey) ?? false;
       _initialized = true;
-      _enabledController.add(_enabled);
+      _emitEnabled();
     } finally {
       _initializing = null;
     }
   }
 
   void resetForTest() {
+    if (_enabledController.isClosed) {
+      _enabledController = StreamController<bool>.broadcast();
+    }
     _enabled = false;
     _initialized = false;
     _initializing = null;
@@ -54,10 +58,18 @@ class ManualModeService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefKey, value);
     _enabled = value;
-    _enabledController.add(value);
+    _emitEnabled();
+  }
+
+  void _emitEnabled() {
+    if (!_enabledController.isClosed) {
+      _enabledController.add(_enabled);
+    }
   }
 
   void dispose() {
-    _enabledController.close();
+    if (!_enabledController.isClosed) {
+      _enabledController.close();
+    }
   }
 }

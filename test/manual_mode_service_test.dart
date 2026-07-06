@@ -46,4 +46,17 @@ void main() {
 
     expect(service.enabled, isTrue);
   });
+
+  test('resetForTest restores stream after dispose', () async {
+    final service = ManualModeService();
+
+    service.dispose();
+    service.resetForTest();
+
+    final event = service.enabledStream.first;
+    await service.setEnabled(true);
+
+    await expectLater(event, completion(isTrue));
+    expect(service.enabled, isTrue);
+  });
 }
