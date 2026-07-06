@@ -47,11 +47,12 @@ class AppPreferencesService {
   static const _prefDistanceUnit = 'app_distance_unit_preference';
   static const _prefRespectTextScale = 'app_respect_text_scale';
 
-  final _languageController =
+  StreamController<AppLanguagePreference> _languageController =
       StreamController<AppLanguagePreference>.broadcast();
-  final _distanceUnitController =
+  StreamController<DistanceUnitPreference> _distanceUnitController =
       StreamController<DistanceUnitPreference>.broadcast();
-  final _respectTextScaleController = StreamController<bool>.broadcast();
+  StreamController<bool> _respectTextScaleController =
+      StreamController<bool>.broadcast();
 
   AppLanguagePreference _language = AppLanguagePreference.system;
   DistanceUnitPreference _distanceUnit = DistanceUnitPreference.metric;
@@ -95,6 +96,16 @@ class AppPreferencesService {
   }
 
   void resetForTest() {
+    if (_languageController.isClosed) {
+      _languageController = StreamController<AppLanguagePreference>.broadcast();
+    }
+    if (_distanceUnitController.isClosed) {
+      _distanceUnitController =
+          StreamController<DistanceUnitPreference>.broadcast();
+    }
+    if (_respectTextScaleController.isClosed) {
+      _respectTextScaleController = StreamController<bool>.broadcast();
+    }
     _language = AppLanguagePreference.system;
     _distanceUnit = DistanceUnitPreference.metric;
     _respectTextScale = true;
@@ -157,8 +168,14 @@ class AppPreferencesService {
   }
 
   void dispose() {
-    _languageController.close();
-    _distanceUnitController.close();
-    _respectTextScaleController.close();
+    if (!_languageController.isClosed) {
+      _languageController.close();
+    }
+    if (!_distanceUnitController.isClosed) {
+      _distanceUnitController.close();
+    }
+    if (!_respectTextScaleController.isClosed) {
+      _respectTextScaleController.close();
+    }
   }
 }

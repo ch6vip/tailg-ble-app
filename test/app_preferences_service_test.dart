@@ -76,6 +76,29 @@ void main() {
     expect(prefs.getString('app_distance_unit_preference'), 'imperial');
     expect(prefs.getBool('app_respect_text_scale'), isFalse);
   });
+
+  test('resetForTest restores streams after dispose', () async {
+    final service = AppPreferencesService();
+
+    service.dispose();
+    service.resetForTest();
+    await service.init();
+
+    final languageEvent = service.languageStream.first;
+    await service.setLanguage(AppLanguagePreference.english);
+    await expectLater(languageEvent, completion(AppLanguagePreference.english));
+
+    final distanceUnitEvent = service.distanceUnitStream.first;
+    await service.setDistanceUnit(DistanceUnitPreference.imperial);
+    await expectLater(
+      distanceUnitEvent,
+      completion(DistanceUnitPreference.imperial),
+    );
+
+    final textScaleEvent = service.respectTextScaleStream.first;
+    await service.setRespectSystemTextScale(false);
+    await expectLater(textScaleEvent, completion(isFalse));
+  });
 }
 
 Map<String, Object> _storedAppPreferences({
