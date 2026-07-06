@@ -43,9 +43,20 @@ class LogService {
   List<LogEntry> byCategory(LogCategory cat) =>
       _logs.where((e) => e.category == cat).toList();
 
-  void ble(String message, {String? detail, LogLevel level = LogLevel.debug}) {
+  void ble(
+    String message, {
+    String? detail,
+    LogLevel level = LogLevel.debug,
+    DateTime? time,
+  }) {
     _add(
-      _redactedEntry(LogCategory.ble, message, detail: detail, level: level),
+      _redactedEntry(
+        LogCategory.ble,
+        message,
+        detail: detail,
+        level: level,
+        time: time,
+      ),
     );
   }
 
@@ -53,6 +64,7 @@ class LogService {
     String message, {
     String? detail,
     LogLevel level = LogLevel.info,
+    DateTime? time,
   }) {
     _add(
       _redactedEntry(
@@ -60,6 +72,7 @@ class LogService {
         message,
         detail: detail,
         level: level,
+        time: time,
       ),
     );
   }
@@ -69,10 +82,11 @@ class LogService {
     String message, {
     String? detail,
     required LogLevel level,
+    DateTime? time,
   }) {
     final redactedMessage = _redactSensitiveText(message);
     return LogEntry(
-      time: DateTime.now(),
+      time: time ?? DateTime.now(),
       level: level,
       category: category,
       message: redactedMessage,

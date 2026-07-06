@@ -56,6 +56,14 @@ void main() {
     expect(operationEntry.message, 'operation token=abc***456');
   });
 
+  test('uses provided log entry time', () {
+    final time = DateTime(2026, 6, 9, 10, 30);
+
+    log.operation('timestamped', time: time);
+
+    expect(log.all.single.time, time);
+  });
+
   test('keeps the latest 2000 log entries', () {
     for (var i = 0; i < 2001; i++) {
       log.operation('entry $i');
