@@ -95,6 +95,17 @@ void main() {
     expect(source, contains('if (identical(_cmdAckCompleter, completer))'));
   });
 
+  test('QGJ command ACK notifications ignore completed completers', () {
+    final source = readSource('lib/ble/connection_manager.dart');
+
+    expect(source, contains('final completer = _cmdAckCompleter;'));
+    expect(
+      source,
+      contains('if (completer != null && !completer.isCompleted)'),
+    );
+    expect(source, contains('completer.complete(response.success);'));
+  });
+
   testWidgets('ready watchdog disconnects stale connected state', (
     tester,
   ) async {

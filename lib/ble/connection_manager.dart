@@ -499,8 +499,11 @@ class ConnectionManager {
       _setState(ConnectionState.ready);
       _startHeartbeat();
     } else if (response.cmdId == QgjCommandIds.setStatus) {
-      _cmdAckCompleter?.complete(response.success);
+      final completer = _cmdAckCompleter;
       _cmdAckCompleter = null;
+      if (completer != null && !completer.isCompleted) {
+        completer.complete(response.success);
+      }
     }
 
     final completer = _qgjResponseCompleters.remove(response.cmdId);
