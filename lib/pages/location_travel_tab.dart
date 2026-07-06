@@ -1,5 +1,7 @@
 part of 'location_page.dart';
 
+const _travelDetailPointPreviewLimit = 12;
+
 class _TravelTab extends StatelessWidget {
   final OfficialCloudState cloudState;
   final Future<void> Function() onRefresh;
@@ -521,7 +523,7 @@ class _TravelDetailSheet extends StatelessWidget {
                       )
                     else
                       ...points
-                          .take(12)
+                          .take(_travelDetailPointPreviewLimit)
                           .map((point) => _PointRow(point: point)),
                   ],
                 ),

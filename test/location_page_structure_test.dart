@@ -411,6 +411,90 @@ void main() {
       semantics.dispose();
     }
   });
+
+  testWidgets('LocationPage travel detail previews first 12 track points', (
+    tester,
+  ) async {
+    resetMockPreferences();
+    app.officialCloudService.resetForTest();
+    addTearDown(app.officialCloudService.resetForTest);
+    setTestViewSize(tester, const Size(430, 3000));
+
+    const travelRecord = OfficialTravelRecord(
+      raw: {},
+      hours: '0',
+      carName: '测试车辆',
+      averageSpeed: '25',
+      deviceTravelId: 'travel-1',
+      sec: '0',
+      min: '15',
+      travelDate: '2026-07-01',
+      imei: '',
+      days: '',
+      startTime: '08:00',
+      endTime: '08:15',
+      mileage: '12.5',
+      frame: '',
+      maxSpeed: '',
+    );
+    const travelDay = OfficialTravelDay(
+      raw: {},
+      sec: '',
+      hours: '',
+      min: '',
+      travelDate: '2026-07-01',
+      totalTime: '15m',
+      records: [travelRecord],
+      days: '',
+      totalMileage: '12.5',
+    );
+    final points = List.generate(13, (index) => _travelPoint(index + 1));
+    final travelState = OfficialCloudState.initial().copyWith(
+      initialized: true,
+      token: 'token',
+      userId: 'uid',
+      travelMonth: '2026-07',
+      travelDays: [travelDay],
+      travelDetails: {'travel-1': points},
+    );
+
+    await tester.pumpWidget(
+      const TestApp(
+        home: LocationPage(
+          initialTab: LocationInitialTab.travel,
+          embedded: true,
+        ),
+      ),
+    );
+    await tester.pump();
+    app.officialCloudService.setStateForTest(travelState);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+
+    await tester.ensureVisible(find.text('12.5km'));
+    await tester.pump();
+    await tester.tap(find.text('12.5km'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('13'), findsOneWidget);
+    expect(find.text('31.001, 121.001'), findsOneWidget);
+    expect(find.text('31.012, 121.012'), findsOneWidget);
+    expect(find.text('31.013, 121.013'), findsNothing);
+  });
+}
+
+OfficialTravelPoint _travelPoint(int index) {
+  final suffix = index.toString().padLeft(3, '0');
+  final minute = index.toString().padLeft(2, '0');
+  return OfficialTravelPoint(
+    raw: const <String, dynamic>{},
+    lng: '121.$suffix',
+    heading: '',
+    starsNum: '',
+    lat: '31.$suffix',
+    reportTime: '08:$minute',
+    speed: '',
+  );
 }
 
 String _listenerBlock(String source, String listenerStart) {
