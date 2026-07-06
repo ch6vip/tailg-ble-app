@@ -14,6 +14,7 @@ import 'package:tailg_ble_app/services/control_command_result.dart';
 import 'package:tailg_ble_app/services/log_service.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 
+import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 
 void main() {
@@ -456,6 +457,30 @@ void main() {
         isFalse,
       );
       expect(OfficialCloudResponseCode.isSuccessBody({'msg': '成功'}), isFalse);
+    });
+  });
+
+  group('OfficialCloudService errors', () {
+    test('redacts business failure messages before throwing', () {
+      final source = readSource('lib/services/official_cloud_service.dart');
+      final methodStart = source.indexOf('void _ensureSuccess(');
+      final methodEnd = source.indexOf('  void _setLoading(', methodStart);
+
+      expect(methodStart, greaterThanOrEqualTo(0));
+      expect(methodEnd, greaterThan(methodStart));
+
+      final methodSource = source.substring(methodStart, methodEnd);
+
+      expect(methodSource, contains('OfficialCloudRedactor.text('));
+      expect(
+        methodSource,
+        isNot(
+          contains(
+            'throw OfficialCloudApiException(\n'
+            '        msg == null || msg.isEmpty ? fallback : msg,',
+          ),
+        ),
+      );
     });
   });
 

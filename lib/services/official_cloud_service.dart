@@ -1178,7 +1178,7 @@ class OfficialCloudService {
     final msg = body['msg']?.toString();
     if (!OfficialCloudResponseCode.isSuccessBody(body)) {
       throw OfficialCloudApiException(
-        msg == null || msg.isEmpty ? fallback : msg,
+        OfficialCloudRedactor.text(msg == null || msg.isEmpty ? fallback : msg),
       );
     }
   }
