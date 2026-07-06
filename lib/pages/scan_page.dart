@@ -70,11 +70,11 @@ class _ScanPageState extends State<ScanPage>
 
   @override
   void dispose() {
-    _radarController.dispose();
     _throttle?.cancel();
-    _resultsNotifier.dispose();
     _scanResultsSub?.cancel();
     _isScanSub?.cancel();
+    _resultsNotifier.dispose();
+    _radarController.dispose();
     super.dispose();
   }
 

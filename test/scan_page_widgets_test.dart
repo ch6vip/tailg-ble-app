@@ -23,6 +23,21 @@ void main() {
     expect(source, contains('扫描启动失败，请检查蓝牙权限'));
   });
 
+  test('ScanPage cancels scan subscriptions before disposing notifiers', () {
+    final source = readSource('lib/pages/scan_page.dart');
+    final cancelScanResults = source.indexOf('_scanResultsSub?.cancel();');
+    final cancelIsScan = source.indexOf('_isScanSub?.cancel();');
+    final disposeResultsNotifier = source.indexOf(
+      '_resultsNotifier.dispose();',
+    );
+
+    expect(cancelScanResults, greaterThanOrEqualTo(0));
+    expect(cancelIsScan, greaterThanOrEqualTo(0));
+    expect(disposeResultsNotifier, greaterThanOrEqualTo(0));
+    expect(cancelScanResults, lessThan(disposeResultsNotifier));
+    expect(cancelIsScan, lessThan(disposeResultsNotifier));
+  });
+
   testWidgets('ScanFab exposes enabled scan semantics and target size', (
     tester,
   ) async {
