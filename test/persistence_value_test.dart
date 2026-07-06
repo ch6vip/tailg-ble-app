@@ -114,4 +114,13 @@ void main() {
     );
     expect(parsePersistedDateOr('bad-date', fallback), fallback);
   });
+
+  test('parsePersistedDateOr uses injected clock for final fallback', () {
+    final generatedAt = DateTime(2026, 6, 9, 10, 30);
+
+    expect(
+      parsePersistedDateOr('bad-date', null, clock: () => generatedAt),
+      generatedAt,
+    );
+  });
 }
