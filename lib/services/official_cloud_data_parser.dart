@@ -50,7 +50,13 @@ class OfficialCloudDataParser {
   }
 
   static List<Object?> _payloadItems(Object? data, {required bool wrapSingle}) {
-    if (data is List) return data.cast<Object?>();
+    if (data is List) {
+      final items = <Object?>[];
+      for (final item in data) {
+        items.add(item);
+      }
+      return items;
+    }
     if (wrapSingle && data != null) return <Object?>[data];
     return const <Object?>[];
   }
