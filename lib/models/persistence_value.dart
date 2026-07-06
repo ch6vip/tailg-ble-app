@@ -8,7 +8,11 @@ String parsePersistedStringOr(Object? value, String fallback) {
 }
 
 List<String> parsePersistedStringList(Object? value) {
-  return _persistedListItems(value).whereType<String>().toList();
+  return _persistedStringItems(value).toList();
+}
+
+Iterable<String> _persistedStringItems(Object? value) {
+  return _persistedListItems(value).whereType<String>();
 }
 
 Iterable<Object?> _persistedListItems(Object? value) {
