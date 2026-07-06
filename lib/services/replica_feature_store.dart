@@ -33,10 +33,7 @@ class NfcKeyRecord {
       id: parsePersistedString(json['id']),
       name: parsePersistedStringOr(json['name'], '未命名钥匙'),
       type: parsePersistedStringOr(json['type'], '手机'),
-      createdAt:
-          parsePersistedDate(json['createdAt']) ??
-          fallbackNow ??
-          DateTime.now(),
+      createdAt: _replicaTimestamp(json['createdAt'], fallbackNow),
     );
   }
 
@@ -82,10 +79,7 @@ class FenceConfig {
       latitude: parsePersistedDouble(json['latitude']),
       longitude: parsePersistedDouble(json['longitude']),
       radiusMeters: parsePersistedInt(json['radiusMeters']) ?? 500,
-      updatedAt:
-          parsePersistedDate(json['updatedAt']) ??
-          fallbackNow ??
-          DateTime.now(),
+      updatedAt: _replicaTimestamp(json['updatedAt'], fallbackNow),
     );
   }
 }
@@ -118,10 +112,7 @@ class ShareMemberRecord {
       id: parsePersistedString(json['id']),
       name: parsePersistedStringOr(json['name'], '未命名成员'),
       phone: parsePersistedString(json['phone']),
-      createdAt:
-          parsePersistedDate(json['createdAt']) ??
-          fallbackNow ??
-          DateTime.now(),
+      createdAt: _replicaTimestamp(json['createdAt'], fallbackNow),
     );
   }
 
@@ -133,6 +124,10 @@ class ShareMemberRecord {
       createdAt: createdAt,
     );
   }
+}
+
+DateTime _replicaTimestamp(Object? value, DateTime? fallbackNow) {
+  return parsePersistedDate(value) ?? fallbackNow ?? DateTime.now();
 }
 
 class ReplicaFeatureStore {
