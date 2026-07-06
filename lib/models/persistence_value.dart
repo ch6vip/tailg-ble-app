@@ -8,8 +8,12 @@ String parsePersistedStringOr(Object? value, String fallback) {
 }
 
 List<String> parsePersistedStringList(Object? value) {
-  if (value is! List) return [];
-  return value.whereType<String>().toList();
+  return _persistedListItems(value).whereType<String>().toList();
+}
+
+Iterable<Object?> _persistedListItems(Object? value) {
+  if (value is! List) return const [];
+  return value.cast<Object?>();
 }
 
 double? parsePersistedDouble(Object? value) {

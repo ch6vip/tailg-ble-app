@@ -25,6 +25,15 @@ void main() {
     ]);
   });
 
+  test('parsePersistedStringList returns a detached list', () {
+    final source = ['欠压保护'];
+    final parsed = parsePersistedStringList(source);
+
+    source.add('电机故障');
+
+    expect(parsed, ['欠压保护']);
+  });
+
   test('parsePersistedDouble preserves previous numeric parsing', () {
     expect(parsePersistedDouble(12), 12.0);
     expect(parsePersistedDouble(12.5), 12.5);
