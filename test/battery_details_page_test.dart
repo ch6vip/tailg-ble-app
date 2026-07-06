@@ -6,6 +6,7 @@ import 'package:tailg_ble_app/pages/battery_details_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 
 import 'helpers/snack_finders.dart';
+import 'helpers/source_scan.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
 import 'helpers/view_size.dart';
@@ -13,6 +14,34 @@ import 'helpers/view_size.dart';
 void main() {
   setUp(() {
     app.officialCloudService.resetForTest();
+  });
+
+  test('BatteryDetailsPage redacts refresh failure snack messages', () {
+    final source = readSource('lib/pages/battery_details_page.dart');
+    final refreshStart = source.indexOf('Future<void> _refreshOfficialBattery');
+    final helperStart = source.indexOf(
+      'String _errorMessage(Object e)',
+      refreshStart,
+    );
+    final helperEnd = source.indexOf('class _BatteryHero', helperStart);
+
+    expect(refreshStart, greaterThanOrEqualTo(0));
+    expect(helperStart, greaterThan(refreshStart));
+    expect(helperEnd, greaterThan(helperStart));
+
+    final refreshSource = source.substring(refreshStart, helperStart);
+    final helperSource = source.substring(helperStart, helperEnd);
+
+    expect(
+      refreshSource,
+      contains('AppSnack.error(context, _errorMessage(e))'),
+    );
+    expect(
+      refreshSource,
+      isNot(contains('AppSnack.error(context, e.toString())')),
+    );
+    expect(helperSource, contains('OfficialCloudRedactor.text(e.message)'));
+    expect(helperSource, contains('OfficialCloudRedactor.text(e.toString())'));
   });
 
   testWidgets('refreshing battery details while signed out shows info snack', (

@@ -96,8 +96,15 @@ class BatteryDetailsPage extends StatelessWidget {
         level: LogLevel.warning,
       );
       if (!context.mounted) return;
-      AppSnack.error(context, e.toString());
+      AppSnack.error(context, _errorMessage(e));
     }
+  }
+
+  String _errorMessage(Object e) {
+    if (e is OfficialCloudApiException) {
+      return OfficialCloudRedactor.text(e.message);
+    }
+    return OfficialCloudRedactor.text(e.toString());
   }
 }
 
