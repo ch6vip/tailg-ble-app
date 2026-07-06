@@ -143,14 +143,19 @@ class OfficialCloudApiConfig {
 class OfficialCloudApiClient {
   final OfficialCloudApiConfig config;
   final LogService _log;
+  final DateTime Function() _clock;
   OfficialCloudRequestSummary? _lastRequest;
 
   // 复用单个 HttpClient 以启用 keep-alive / 连接池，避免每次请求
   // 重做 TCP+TLS 握手。服务为单例、生命周期与 App 一致。
   HttpClient? _client;
 
-  OfficialCloudApiClient({required this.config, required LogService log})
-    : _log = log;
+  OfficialCloudApiClient({
+    required this.config,
+    required LogService log,
+    DateTime Function()? clock,
+  }) : _log = log,
+       _clock = clock ?? DateTime.now;
 
   OfficialCloudRequestSummary? get lastRequest => _lastRequest;
 
@@ -178,7 +183,7 @@ class OfficialCloudApiClient {
     final client = _sharedClient;
 
     for (var attempt = 0; attempt <= retryPolicy.maxRetries; attempt++) {
-      final startedAt = DateTime.now();
+      final startedAt = _clock();
       try {
         final uri = config.resolve(path);
         final request = await client.openUrl(method, uri);
@@ -354,7 +359,8 @@ class OfficialCloudApiClient {
     required int statusCode,
     required Map<String, dynamic> body,
   }) {
-    final elapsed = DateTime.now().difference(startedAt);
+    final completedAt = _clock();
+    final elapsed = completedAt.difference(startedAt);
     final safePath = OfficialCloudRedactor.requestPath(path);
     final code = body['code']?.toString();
     final msg = _shortMessage(body['msg']?.toString());
@@ -366,7 +372,7 @@ class OfficialCloudApiClient {
       message: msg,
       elapsed: elapsed,
       success: statusCode >= 200 && statusCode < 300,
-      at: DateTime.now(),
+      at: completedAt,
     );
     _log.operation(
       '官方云接口返回',
@@ -383,7 +389,8 @@ class OfficialCloudApiClient {
     required String message,
     int? statusCode,
   }) {
-    final elapsed = DateTime.now().difference(startedAt);
+    final completedAt = _clock();
+    final elapsed = completedAt.difference(startedAt);
     final safePath = OfficialCloudRedactor.requestPath(path);
     _lastRequest = OfficialCloudRequestSummary(
       path: safePath,
@@ -393,7 +400,7 @@ class OfficialCloudApiClient {
       message: _shortMessage(message),
       elapsed: elapsed,
       success: false,
-      at: DateTime.now(),
+      at: completedAt,
     );
     _log.operation(
       '官方云接口失败',

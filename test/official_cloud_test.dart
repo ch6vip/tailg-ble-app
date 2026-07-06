@@ -300,6 +300,30 @@ void main() {
       expect(client.lastRequest?.success, isTrue);
     });
 
+    test('records request summary with injected clock', () async {
+      final server = await _startOfficialCloudServer((request) async {
+        await _writeJsonResponse(request, 200, {'code': '200', 'msg': 'ok'});
+      });
+      addTearDown(server.close);
+
+      final startedAt = DateTime(2026, 6, 1, 8);
+      final completedAt = startedAt.add(const Duration(milliseconds: 150));
+      final clockTimes = [startedAt, completedAt];
+      final client = OfficialCloudApiClient(
+        config: OfficialCloudApiConfig(apiBase: server.apiBase),
+        log: LogService(),
+        clock: () => clockTimes.removeAt(0),
+      );
+      addTearDown(client.dispose);
+
+      await client.request('app/read', method: 'GET');
+
+      final summary = client.lastRequest;
+      expect(summary, isNotNull);
+      expect(summary!.elapsed, const Duration(milliseconds: 150));
+      expect(summary.at, completedAt);
+    });
+
     test('does not retry 5xx responses by default', () async {
       var requests = 0;
       final server = await _startOfficialCloudServer((request) async {
