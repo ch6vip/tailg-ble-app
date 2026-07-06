@@ -568,6 +568,24 @@ void main() {
     expect(fence.updatedAt, fallbackNow);
   });
 
+  test('Replica feature records use injected clock fallback', () {
+    final generatedAt = DateTime(2026, 6, 9, 10, 35);
+
+    final nfcKey = NfcKeyRecord.fromJson({
+      'createdAt': 'bad-date',
+    }, clock: () => generatedAt);
+    final member = ShareMemberRecord.fromJson({
+      'createdAt': 'bad-date',
+    }, clock: () => generatedAt);
+    final fence = FenceConfig.fromJson({
+      'updatedAt': 'bad-date',
+    }, clock: () => generatedAt);
+
+    expect(nfcKey.createdAt, generatedAt);
+    expect(member.createdAt, generatedAt);
+    expect(fence.updatedAt, generatedAt);
+  });
+
   test('ReplicaFeatureStore makeId uses provided timestamp', () {
     final store = ReplicaFeatureStore();
     final generatedAt = DateTime(2026, 6, 9, 10, 45);

@@ -28,12 +28,17 @@ class NfcKeyRecord {
   factory NfcKeyRecord.fromJson(
     Map<String, dynamic> json, {
     DateTime? fallbackNow,
+    DateTime Function()? clock,
   }) {
     return NfcKeyRecord(
       id: parsePersistedString(json['id']),
       name: parsePersistedStringOr(json['name'], '未命名钥匙'),
       type: parsePersistedStringOr(json['type'], '手机'),
-      createdAt: parsePersistedDateOr(json['createdAt'], fallbackNow),
+      createdAt: parsePersistedDateOr(
+        json['createdAt'],
+        fallbackNow,
+        clock: clock,
+      ),
     );
   }
 
@@ -73,13 +78,18 @@ class FenceConfig {
   factory FenceConfig.fromJson(
     Map<String, dynamic> json, {
     DateTime? fallbackNow,
+    DateTime Function()? clock,
   }) {
     return FenceConfig(
       enabled: parsePersistedBool(json['enabled']),
       latitude: parsePersistedDouble(json['latitude']),
       longitude: parsePersistedDouble(json['longitude']),
       radiusMeters: parsePersistedInt(json['radiusMeters']) ?? 500,
-      updatedAt: parsePersistedDateOr(json['updatedAt'], fallbackNow),
+      updatedAt: parsePersistedDateOr(
+        json['updatedAt'],
+        fallbackNow,
+        clock: clock,
+      ),
     );
   }
 }
@@ -107,12 +117,17 @@ class ShareMemberRecord {
   factory ShareMemberRecord.fromJson(
     Map<String, dynamic> json, {
     DateTime? fallbackNow,
+    DateTime Function()? clock,
   }) {
     return ShareMemberRecord(
       id: parsePersistedString(json['id']),
       name: parsePersistedStringOr(json['name'], '未命名成员'),
       phone: parsePersistedString(json['phone']),
-      createdAt: parsePersistedDateOr(json['createdAt'], fallbackNow),
+      createdAt: parsePersistedDateOr(
+        json['createdAt'],
+        fallbackNow,
+        clock: clock,
+      ),
     );
   }
 
