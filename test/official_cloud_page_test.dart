@@ -27,6 +27,27 @@ void main() {
     expect(source, isNot(contains('_SelfCheckResultCard(result: _result!)')));
   });
 
+  test('page error helpers redact generic exception text', () {
+    final source = readSource('lib/pages/official_cloud_page.dart');
+    final helperStarts = RegExp(
+      r'String _errorMessage\(Object e\)',
+    ).allMatches(source).map((match) => match.start).toList();
+
+    expect(helperStarts, hasLength(2));
+    for (final start in helperStarts) {
+      final end = source.indexOf('\n  @override', start);
+      expect(end, greaterThan(start));
+      final helperSource = source.substring(start, end);
+
+      expect(helperSource, contains('OfficialCloudRedactor.text(e.message)'));
+      expect(
+        helperSource,
+        contains('OfficialCloudRedactor.text(e.toString())'),
+      );
+      expect(helperSource, isNot(contains('return e.toString();')));
+    }
+  });
+
   setUp(() {
     resetMockPreferences();
     app.vehicleStore.resetForTest();

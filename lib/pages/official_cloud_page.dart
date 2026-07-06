@@ -125,8 +125,10 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
   }
 
   String _errorMessage(Object e) {
-    if (e is OfficialCloudApiException) return e.message;
-    return e.toString();
+    if (e is OfficialCloudApiException) {
+      return OfficialCloudRedactor.text(e.message);
+    }
+    return OfficialCloudRedactor.text(e.toString());
   }
 
   @override
@@ -897,8 +899,10 @@ class _OfficialVehicleSelfCheckPageState
   }
 
   String _errorMessage(Object e) {
-    if (e is OfficialCloudApiException) return e.message;
-    return e.toString();
+    if (e is OfficialCloudApiException) {
+      return OfficialCloudRedactor.text(e.message);
+    }
+    return OfficialCloudRedactor.text(e.toString());
   }
 
   @override
