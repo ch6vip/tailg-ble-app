@@ -200,12 +200,16 @@ class QgjControlOpCodes {
 
 List<int>? extractFcc1StatusBytes(List<int> data) {
   if (data.length >= 11) {
-    return [data[8], data[9], data[10]];
+    return _fcc1StatusBytes(data, 8);
   }
   if (data.length >= 7 && data[0] == 0x00 && data[1] == 0x07) {
-    return [data[4], data[5], data[6]];
+    return _fcc1StatusBytes(data, 4);
   }
   return null;
+}
+
+List<int> _fcc1StatusBytes(List<int> data, int start) {
+  return [data[start], data[start + 1], data[start + 2]];
 }
 
 RidingMode? parseQgjRidingMode(List<int> data) {

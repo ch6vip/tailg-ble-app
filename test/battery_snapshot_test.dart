@@ -209,6 +209,25 @@ void main() {
     expect(parseQgjRidingMode(frame!), RidingMode.sport);
   });
 
+  test('QGJ riding mode frame reads long fcc1 status notifications', () {
+    final frame = buildQgjRidingModeFrame([
+      0x85,
+      0x08,
+      0x4A,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0xB0,
+      0xFA,
+      0x06,
+    ], RidingMode.eco);
+
+    expect(frame, [0x00, 0x07, 0x00, 0x02, 0xB0, 0xF9, 0x06]);
+    expect(parseQgjRidingMode(frame!), RidingMode.eco);
+  });
+
   test('QGJ login frame carries password and user id', () {
     final frame = buildQgjLoginFrame(password: 0x01020304, userId: 0x05060708);
 
