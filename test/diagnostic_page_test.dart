@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart' as ble;
 import 'package:tailg_ble_app/pages/diagnostic_page.dart';
 import 'package:tailg_ble_app/services/app_preferences_service.dart';
@@ -46,7 +49,9 @@ void main() {
       _DiagnosticConnectionManager([0, 0, 0, 0, 0, 0x21]),
     );
 
-    await tester.pumpWidget(const TestApp(home: DiagnosticPage()));
+    await tester.pumpWidget(
+      TestApp(home: DiagnosticPage(clock: () => DateTime(2026, 6, 9, 10, 30))),
+    );
     await tester.pump();
 
     await tester.tap(find.text('一键诊断'));
@@ -56,6 +61,13 @@ void main() {
     expect(find.text('检测到 2 个故障'), findsOneWidget);
     expect(find.text('原始码: 0x21'), findsOneWidget);
     expect(find.text('电机故障'), findsOneWidget);
+    final prefs = await SharedPreferences.getInstance();
+    final history = prefs.getStringList('diagnostic_history');
+    expect(history, hasLength(1));
+    expect(
+      jsonDecode(history!.single),
+      containsPair('time', '2026-06-09T10:30:00.000'),
+    );
   });
 }
 

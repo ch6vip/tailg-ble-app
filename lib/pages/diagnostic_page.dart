@@ -85,7 +85,9 @@ class DiagnosticRecord {
 }
 
 class DiagnosticPage extends StatefulWidget {
-  const DiagnosticPage({super.key});
+  final DateTime Function()? clock;
+
+  const DiagnosticPage({super.key, this.clock});
 
   @override
   State<DiagnosticPage> createState() => _DiagnosticPageState();
@@ -186,7 +188,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
         _currentFaults = faults;
       });
       final record = DiagnosticRecord(
-        time: DateTime.now(),
+        time: (widget.clock ?? DateTime.now)(),
         rawByte: faultByte,
         faults: activeFaults.map((f) => f.name).toList(),
       );
