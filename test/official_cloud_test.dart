@@ -332,7 +332,9 @@ void main() {
       var requests = 0;
       final server = await _startOfficialCloudServer((request) async {
         requests++;
-        await _writeJsonResponse(request, 502, {'msg': 'gateway busy'});
+        await _writeJsonResponse(request, 502, {
+          'msg': 'gateway busy userId=user-secret password=qgj-secret',
+        });
       });
       addTearDown(server.close);
 
@@ -350,13 +352,21 @@ void main() {
         throwsA(
           isA<OfficialCloudApiException>()
               .having((e) => e.statusCode, 'statusCode', 502)
-              .having((e) => e.message, 'message', 'gateway busy'),
+              .having(
+                (e) => e.message,
+                'message',
+                'gateway busy userId=use***ret password=qgj***ret',
+              ),
         ),
       );
 
       expect(requests, 1);
       expect(client.lastRequest?.statusCode, 502);
       expect(client.lastRequest?.success, isFalse);
+      expect(
+        client.lastRequest?.message,
+        'gateway busy userId=use***ret password=qgj***ret',
+      );
     });
 
     test('reports non-JSON response body excerpt', () async {

@@ -245,8 +245,9 @@ class OfficialCloudApiClient {
           if (values.isNotEmpty) headers[name.toLowerCase()] = values.first;
         });
         if (response.statusCode < 200 || response.statusCode >= 300) {
-          final message =
-              decoded['msg']?.toString() ?? '官方接口返回 ${response.statusCode}';
+          final message = OfficialCloudRedactor.text(
+            decoded['msg']?.toString() ?? '官方接口返回 ${response.statusCode}',
+          );
           if (retryPolicy.shouldRetryStatusCode(response.statusCode) &&
               retryPolicy.canRetryAttempt(attempt)) {
             await _delayBeforeRetry(
