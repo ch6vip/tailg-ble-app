@@ -673,14 +673,19 @@ class ConnectionManager {
       if (frame == null) return false;
 
       final success = await runGattOperation(() async {
-        _cmdAckCompleter = Completer<bool>();
-        await _feb1Char!.write(frame.toList(), withoutResponse: false);
-        final result = await _cmdAckCompleter!.future.timeout(
-          BleTimings.commandAckTimeout,
-          onTimeout: () => false,
-        );
-        _cmdAckCompleter = null;
-        return result;
+        final completer = Completer<bool>();
+        _cmdAckCompleter = completer;
+        try {
+          await _feb1Char!.write(frame.toList(), withoutResponse: false);
+          return await completer.future.timeout(
+            BleTimings.commandAckTimeout,
+            onTimeout: () => false,
+          );
+        } finally {
+          if (identical(_cmdAckCompleter, completer)) {
+            _cmdAckCompleter = null;
+          }
+        }
       }, priority: GattOperationPriority.high);
 
       if (success) {

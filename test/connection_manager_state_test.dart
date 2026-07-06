@@ -87,6 +87,14 @@ void main() {
     await responseExpectation;
   });
 
+  test('QGJ command ACK waits on a local completer and clears it safely', () {
+    final source = readSource('lib/ble/connection_manager.dart');
+
+    expect(source, contains('final completer = Completer<bool>();'));
+    expect(source, contains('return await completer.future.timeout'));
+    expect(source, contains('if (identical(_cmdAckCompleter, completer))'));
+  });
+
   testWidgets('ready watchdog disconnects stale connected state', (
     tester,
   ) async {
