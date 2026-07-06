@@ -92,9 +92,13 @@ void main() {
       'saveDevice persists the selected target as the default vehicle',
       () async {
         final fixture = BleGuardFixture();
+        final lastConnectedAt = DateTime(2026, 6, 10, 9, 30);
         addTearDown(fixture.manager.dispose);
 
-        await AutoConnectService().saveDevice(fixture.device);
+        await AutoConnectService().saveDevice(
+          fixture.device,
+          lastConnectedAt: lastConnectedAt,
+        );
 
         final prefs = await SharedPreferences.getInstance();
         final defaultVehicle = VehicleStore().defaultVehicle;
@@ -104,7 +108,7 @@ void main() {
         expect(defaultVehicle?.id, testBleDeviceId);
         expect(defaultVehicle?.protocol, VehicleProtocol.auto);
         expect(defaultVehicle?.displayName, '未命名车辆');
-        expect(defaultVehicle?.lastConnectedAt, isNotNull);
+        expect(defaultVehicle?.lastConnectedAt, lastConnectedAt);
       },
     );
   });

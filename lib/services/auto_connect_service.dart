@@ -142,7 +142,10 @@ class AutoConnectService {
     _enabledController.add(value);
   }
 
-  Future<void> saveDevice(BluetoothDevice device) async {
+  Future<void> saveDevice(
+    BluetoothDevice device, {
+    DateTime? lastConnectedAt,
+  }) async {
     final deviceId = device.remoteId.toString();
     final deviceName = device.platformName;
     _lastDeviceId = deviceId;
@@ -152,7 +155,7 @@ class AutoConnectService {
       name: deviceName,
       protocol: VehicleProtocol.auto,
       makeDefault: true,
-      lastConnectedAt: DateTime.now(),
+      lastConnectedAt: lastConnectedAt ?? DateTime.now(),
     );
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefDeviceId, deviceId);
