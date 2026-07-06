@@ -43,6 +43,19 @@ void main() {
     expect(entry.detail, '<redacted login frame, 4 bytes>');
   });
 
+  test('keeps log categories and default levels while redacting', () {
+    log.ble('ble phone=18886120851');
+    log.operation('operation token=abcdef123456');
+
+    final bleEntry = log.byCategory(LogCategory.ble).single;
+    final operationEntry = log.byCategory(LogCategory.operation).single;
+
+    expect(bleEntry.level, LogLevel.debug);
+    expect(bleEntry.message, 'ble phone=188***851');
+    expect(operationEntry.level, LogLevel.info);
+    expect(operationEntry.message, 'operation token=abc***456');
+  });
+
   test('keeps the latest 2000 log entries', () {
     for (var i = 0; i < 2001; i++) {
       log.operation('entry $i');

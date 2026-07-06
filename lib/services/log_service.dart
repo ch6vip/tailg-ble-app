@@ -44,15 +44,8 @@ class LogService {
       _logs.where((e) => e.category == cat).toList();
 
   void ble(String message, {String? detail, LogLevel level = LogLevel.debug}) {
-    final redactedMessage = _redactSensitiveText(message);
     _add(
-      LogEntry(
-        time: DateTime.now(),
-        level: level,
-        category: LogCategory.ble,
-        message: redactedMessage,
-        detail: _redactDetail(message, detail),
-      ),
+      _redactedEntry(LogCategory.ble, message, detail: detail, level: level),
     );
   }
 
@@ -61,15 +54,29 @@ class LogService {
     String? detail,
     LogLevel level = LogLevel.info,
   }) {
-    final redactedMessage = _redactSensitiveText(message);
     _add(
-      LogEntry(
-        time: DateTime.now(),
+      _redactedEntry(
+        LogCategory.operation,
+        message,
+        detail: detail,
         level: level,
-        category: LogCategory.operation,
-        message: redactedMessage,
-        detail: _redactDetail(message, detail),
       ),
+    );
+  }
+
+  LogEntry _redactedEntry(
+    LogCategory category,
+    String message, {
+    String? detail,
+    required LogLevel level,
+  }) {
+    final redactedMessage = _redactSensitiveText(message);
+    return LogEntry(
+      time: DateTime.now(),
+      level: level,
+      category: category,
+      message: redactedMessage,
+      detail: _redactDetail(message, detail),
     );
   }
 
