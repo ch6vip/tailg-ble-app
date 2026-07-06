@@ -64,6 +64,15 @@ class DiagnosticRecord {
     return json == null ? null : DiagnosticRecord.fromJson(json);
   }
 
+  static List<DiagnosticRecord> parseHistory(Iterable<String> entries) {
+    return entries
+        .map(DiagnosticRecord.tryParse)
+        .whereType<DiagnosticRecord>()
+        .toList()
+        .reversed
+        .toList();
+  }
+
   static Map<String, dynamic>? _decodedRecordMap(Object? decoded) {
     if (decoded is! Map) return null;
     return Map<String, dynamic>.from(decoded);
@@ -95,12 +104,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
     final data = prefs.getStringList('diagnostic_history') ?? [];
     if (!mounted) return;
     setState(() {
-      _history = data
-          .map(DiagnosticRecord.tryParse)
-          .whereType<DiagnosticRecord>()
-          .toList()
-          .reversed
-          .toList();
+      _history = DiagnosticRecord.parseHistory(data);
     });
   }
 
