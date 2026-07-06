@@ -242,7 +242,7 @@ class VehicleStore {
     return profile;
   }
 
-  Future<void> rename(String id, String name) async {
+  Future<void> rename(String id, String name, {DateTime? savedAt}) async {
     await init();
     final normalizedId = _normalizeId(id);
     if (normalizedId == null) return;
@@ -252,7 +252,7 @@ class VehicleStore {
     if (index < 0) return;
     _vehicles[index] = _vehicles[index].copyWith(
       name: normalizedName,
-      updatedAt: DateTime.now(),
+      updatedAt: savedAt ?? DateTime.now(),
     );
     await _save();
   }

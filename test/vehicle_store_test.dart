@@ -22,6 +22,8 @@ void main() {
   test('VehicleStore saves default vehicle and renames it', () async {
     final store = VehicleStore();
     await store.init();
+    final savedAt = DateTime(2026, 5, 28, 10);
+    final renamedAt = DateTime(2026, 5, 28, 10, 32);
 
     final vehicle = await store.upsert(
       id: 'AA:BB:CC:DD:EE:FF',
@@ -29,15 +31,20 @@ void main() {
       protocol: VehicleProtocol.qgj,
       makeDefault: true,
       lastConnectedAt: DateTime(2026, 5, 28, 10, 30),
+      savedAt: savedAt,
     );
 
     expect(vehicle.id, 'AA:BB:CC:DD:EE:FF');
     expect(store.defaultVehicle?.displayName, '测试车辆');
     expect(store.defaultVehicle?.protocol, VehicleProtocol.qgj);
+    expect(store.defaultVehicle?.createdAt, savedAt);
+    expect(store.defaultVehicle?.updatedAt, savedAt);
 
-    await store.rename(vehicle.id, '通勤车');
+    await store.rename(vehicle.id, '通勤车', savedAt: renamedAt);
 
     expect(store.defaultVehicle?.displayName, '通勤车');
+    expect(store.defaultVehicle?.createdAt, savedAt);
+    expect(store.defaultVehicle?.updatedAt, renamedAt);
 
     await store.updateLastLocation(
       vehicle.id,
