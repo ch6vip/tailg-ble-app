@@ -217,4 +217,20 @@ void main() {
     );
     expect(manager.resetCharacteristicsForTest, returnsNormally);
   });
+
+  test('disposed manager rejects new GATT operations', () async {
+    final manager = ConnectionManager();
+    var called = false;
+
+    await manager.dispose();
+
+    await expectLater(
+      manager.runGattOperation(() async {
+        called = true;
+        return 'should-not-run';
+      }),
+      throwsStateError,
+    );
+    expect(called, isFalse);
+  });
 }

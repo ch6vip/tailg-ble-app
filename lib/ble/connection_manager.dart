@@ -111,6 +111,9 @@ class ConnectionManager {
     Future<T> Function() operation, {
     GattOperationPriority priority = GattOperationPriority.normal,
   }) {
+    if (_disposed) {
+      return Future<T>.error(StateError('ConnectionManager disposed'));
+    }
     final queued = _QueuedGattOperation<T>(operation, priority);
     _gattPendingByPriority[priority]!.add(queued);
     _drainGattQueue();
