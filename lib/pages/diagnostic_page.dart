@@ -92,16 +92,15 @@ class DiagnosticRecord {
     DateTime? fallbackNow,
     DateTime Function()? clock,
   }) {
-    final parsedRecords = entries
-        .map(
-          (raw) => DiagnosticRecord.tryParse(
-            raw,
-            fallbackNow: fallbackNow,
-            clock: clock,
-          ),
-        )
-        .whereType<DiagnosticRecord>()
-        .toList(growable: false);
+    final parsedRecords = <DiagnosticRecord>[];
+    for (final raw in entries) {
+      final record = DiagnosticRecord.tryParse(
+        raw,
+        fallbackNow: fallbackNow,
+        clock: clock,
+      );
+      if (record != null) parsedRecords.add(record);
+    }
     return _reverseHistoryOrder(parsedRecords);
   }
 

@@ -51,6 +51,23 @@ void main() {
     expect(records.first.faults, ['转把故障']);
   });
 
+  test('DiagnosticRecord parseHistory returns growable display history', () {
+    final records = DiagnosticRecord.parseHistory([
+      jsonEncode({'time': '2026-06-09T10:30:00.000', 'raw': 1}),
+    ]);
+
+    records.insert(
+      0,
+      DiagnosticRecord(
+        time: DateTime(2026, 6, 9, 10, 31),
+        rawByte: 2,
+        faults: const [],
+      ),
+    );
+
+    expect(records.map((record) => record.rawByte), [2, 1]);
+  });
+
   test('DiagnosticRecord encodes history in persisted order with limit', () {
     final records = List.generate(
       22,
