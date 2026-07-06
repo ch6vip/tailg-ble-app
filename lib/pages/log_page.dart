@@ -242,6 +242,7 @@ class _LogTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final timeStr = formatLogClockTime(entry.time);
+    final detail = entry.detail;
     final levelColor = switch (entry.level) {
       LogLevel.debug => AppColors.textTertiary,
       LogLevel.info => AppColors.info,
@@ -286,11 +287,11 @@ class _LogTile extends StatelessWidget {
                       height: 1.4,
                     ),
                   ),
-                  if (entry.detail != null)
+                  if (detail != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
-                        entry.detail!,
+                        detail,
                         style: const TextStyle(
                           fontSize: 11,
                           color: AppColors.textSecondary,

@@ -55,6 +55,16 @@ void main() {
     expect(find.text('测试操作'), findsOneWidget);
   });
 
+  testWidgets('log entries render optional details', (tester) async {
+    app.logService.operation('测试操作', detail: '耗时 12ms');
+
+    await tester.pumpWidget(const TestApp(home: LogPage()));
+    await tester.pump();
+
+    expect(find.text('测试操作'), findsOneWidget);
+    expect(find.text('耗时 12ms'), findsOneWidget);
+  });
+
   testWidgets('custom tabs keep 44dp touch targets', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
