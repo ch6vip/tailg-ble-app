@@ -19,6 +19,7 @@ import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'helpers/snack_finders.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
+import 'helpers/view_size.dart';
 
 void main() {
   tearDown(() async {
@@ -68,6 +69,31 @@ void main() {
       jsonDecode(history!.single),
       containsPair('time', '2026-06-09T10:30:00.000'),
     );
+  });
+
+  testWidgets('diagnostic history displays the newest 10 persisted records', (
+    tester,
+  ) async {
+    setTestViewSize(tester, const Size(430, 2400));
+    final persisted = List.generate(11, (index) {
+      final raw = index + 1;
+      return jsonEncode(
+        DiagnosticRecord(
+          time: DateTime(2026, 6, 9, 10, raw),
+          rawByte: raw,
+          faults: ['故障 $raw'],
+        ).toJson(),
+      );
+    });
+    SharedPreferences.setMockInitialValues({'diagnostic_history': persisted});
+
+    await tester.pumpWidget(const TestApp(home: DiagnosticPage()));
+    await tester.pump();
+
+    expect(find.text('历史记录'), findsOneWidget);
+    expect(find.text('故障 11'), findsOneWidget);
+    expect(find.text('故障 2'), findsOneWidget);
+    expect(find.text('故障 1'), findsNothing);
   });
 }
 

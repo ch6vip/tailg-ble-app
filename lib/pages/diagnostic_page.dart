@@ -96,6 +96,8 @@ class DiagnosticPage extends StatefulWidget {
 }
 
 class _DiagnosticPageState extends State<DiagnosticPage> {
+  static const _displayHistoryLimit = 10;
+
   final _log = logService;
   bool _scanning = false;
   List<FaultInfo> _currentFaults = [];
@@ -343,7 +345,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         const SizedBox(height: 8),
-                        ..._history.take(10).map((r) {
+                        ..._history.take(_displayHistoryLimit).map((r) {
                           final timeStr =
                               '${r.time.month}/${r.time.day} '
                               '${r.time.hour.toString().padLeft(2, '0')}:${r.time.minute.toString().padLeft(2, '0')}';
