@@ -169,6 +169,29 @@ void main() {
       expect(source, contains('} catch (e) {'));
     });
 
+    test('tryAutoConnect snapshots target id before scan listener starts', () {
+      final source = readSource('lib/services/auto_connect_service.dart');
+      final methodStart = source.indexOf('Future<void> _tryAutoConnectOnce()');
+      final targetSnapshot = source.indexOf(
+        'final targetDeviceId = _lastDeviceId;',
+        methodStart,
+      );
+      final listenerStart = source.indexOf(
+        'FlutterBluePlus.scanResults.listen',
+        methodStart,
+      );
+      final listenerEnd = source.indexOf('      });', listenerStart);
+
+      expect(methodStart, greaterThanOrEqualTo(0));
+      expect(targetSnapshot, greaterThan(methodStart));
+      expect(listenerStart, greaterThan(targetSnapshot));
+      expect(listenerEnd, greaterThan(listenerStart));
+
+      final listenerSource = source.substring(listenerStart, listenerEnd);
+      expect(listenerSource, contains('== targetDeviceId'));
+      expect(listenerSource, isNot(contains('== _lastDeviceId')));
+    });
+
     test(
       'tryAutoConnect loads manual mode before checking the guard',
       () async {

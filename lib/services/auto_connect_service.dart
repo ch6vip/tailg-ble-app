@@ -195,12 +195,14 @@ class AutoConnectService {
       return;
     }
     final manager = _connectionManager;
-    if (!_enabled || _lastDeviceId == null || manager == null) {
+    final targetDeviceId = _lastDeviceId;
+    final targetDeviceName = _lastDeviceName;
+    if (!_enabled || targetDeviceId == null || manager == null) {
       return;
     }
     if (manager.state != ConnectionState.disconnected) return;
 
-    _log.operation('自动连接: 扫描 $_lastDeviceName ($_lastDeviceId)');
+    _log.operation('自动连接: 扫描 $targetDeviceName ($targetDeviceId)');
 
     StreamSubscription<List<ScanResult>>? scanSub;
     Timer? timeout;
@@ -208,7 +210,7 @@ class AutoConnectService {
     try {
       scanSub = FlutterBluePlus.scanResults.listen((results) {
         for (final r in results) {
-          if (r.device.remoteId.toString() == _lastDeviceId) {
+          if (r.device.remoteId.toString() == targetDeviceId) {
             scanSub?.cancel();
             timeout?.cancel();
             FlutterBluePlus.stopScan();
