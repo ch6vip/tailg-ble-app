@@ -218,6 +218,12 @@ class ProximityService {
   void handleTargetFoundForTest(ScanResult result) => _onTargetFound(result);
 
   void _onTargetFound(ScanResult result) {
+    final deviceId = result.device.remoteId.toString();
+    if (!_enabled ||
+        ManualModeService().enabled ||
+        _targetDeviceId != deviceId) {
+      return;
+    }
     if (_unlockSent) return;
 
     final now = _clock();

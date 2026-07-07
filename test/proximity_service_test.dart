@@ -171,13 +171,38 @@ void main() {
     expect(connectCall, greaterThan(targetGuard));
   });
 
-  test('ProximityService uses injected clock for nearby unlock cooldown', () {
+  test('ProximityService ignores target hits after unlock is disabled', () {
     final fixture = BleGuardFixture();
     final now = DateTime(2026, 6, 9, 10, 30);
     addTearDown(fixture.manager.dispose);
     ProximityService().resetForTest(clock: () => now);
 
     final service = ProximityService();
+    service.setTargetDevice(testBleDeviceId);
+
+    service.handleTargetFoundForTest(
+      ScanResult(
+        device: fixture.device,
+        advertisementData: _advertisementData(),
+        rssi: ProximityUnlockGuard.minUnlockRssi,
+        timeStamp: now,
+      ),
+    );
+
+    expect(service.lastUnlockTime, isNull);
+  });
+
+  test('ProximityService uses injected clock for nearby unlock cooldown', () async {
+    SharedPreferences.setMockInitialValues({'proximity_unlock_enabled': true});
+    final fixture = BleGuardFixture();
+    final now = DateTime(2026, 6, 9, 10, 30);
+    addTearDown(fixture.manager.dispose);
+    ProximityService().resetForTest(clock: () => now);
+
+    final service = ProximityService();
+    await service.init(fixture.manager);
+    service.setTargetDevice(testBleDeviceId);
+
     service.handleTargetFoundForTest(
       ScanResult(
         device: fixture.device,
