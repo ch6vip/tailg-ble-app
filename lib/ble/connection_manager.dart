@@ -666,6 +666,9 @@ class ConnectionManager {
   @visibleForTesting
   void resetDisconnectHandledForTest() => _disconnectHandled = false;
 
+  @visibleForTesting
+  Future<void> handleDisconnectedForTest() => _onDisconnected();
+
   Future<bool> sendCommand(CommandCode cmd) async {
     if (_state != ConnectionState.ready) return false;
 
@@ -807,6 +810,7 @@ class ConnectionManager {
     _log.ble('设备断开连接', level: LogLevel.warning);
     _cancelHeartbeat();
     _completePendingOperations(StateError('QGJ disconnected'));
+    _completePendingGattOperations(StateError('BLE disconnected'));
     await _notifySub?.cancel();
     _notifySub = null;
     await _gpsNotifySub?.cancel();

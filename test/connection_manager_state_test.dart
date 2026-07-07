@@ -130,6 +130,34 @@ void main() {
     expect(manager.disconnectHandledForTest, isTrue);
   });
 
+  test('unexpected disconnect completes active GATT operation', () async {
+    final manager = ConnectionManager();
+    final operationStarted = Completer<void>();
+    final releaseOperation = Completer<void>();
+    addTearDown(manager.dispose);
+
+    final active = manager.runGattOperation(() async {
+      operationStarted.complete();
+      await releaseOperation.future;
+      return 'done';
+    });
+    await operationStarted.future;
+
+    final activeError = active.then<Object?>(
+      (_) => null,
+      onError: (Object error, StackTrace stackTrace) => error,
+    );
+
+    await manager.handleDisconnectedForTest();
+    await expectLater(
+      activeError.timeout(const Duration(milliseconds: 50)),
+      completion(isA<StateError>()),
+    );
+
+    releaseOperation.complete();
+    await Future<void>.delayed(Duration.zero);
+  });
+
   testWidgets('ready watchdog is disarmed after ready transition', (
     tester,
   ) async {
