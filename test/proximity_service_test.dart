@@ -96,6 +96,30 @@ void main() {
     expect(enabledGuardIndex, lessThan(startScanIndex));
   });
 
+  test('ProximityService rechecks scanning state after manual mode init', () {
+    final source = readSource('lib/services/proximity_service.dart');
+    final methodStart = source.indexOf('Future<void> start() async');
+    final initIndex = source.indexOf(
+      'await ManualModeService().init();',
+      methodStart,
+    );
+    final scanningGuardIndex = source.indexOf(
+      'if (_scanning) return;',
+      initIndex + 1,
+    );
+    final scanningStartIndex = source.indexOf('_scanning = true;', initIndex);
+    final startScanIndex = source.indexOf(
+      'FlutterBluePlus.startScan(',
+      initIndex,
+    );
+
+    expect(methodStart, greaterThanOrEqualTo(0));
+    expect(initIndex, greaterThan(methodStart));
+    expect(scanningGuardIndex, greaterThan(initIndex));
+    expect(scanningGuardIndex, lessThan(scanningStartIndex));
+    expect(scanningGuardIndex, lessThan(startScanIndex));
+  });
+
   test('ProximityService snapshots target id before scan listener starts', () {
     final source = readSource('lib/services/proximity_service.dart');
     final methodStart = source.indexOf('Future<void> start() async');

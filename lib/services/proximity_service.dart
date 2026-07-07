@@ -149,6 +149,7 @@ class ProximityService {
     if (!_enabled || _targetDeviceId == null || _scanning) return;
     await ManualModeService().init();
     if (!_enabled || _targetDeviceId == null) return;
+    if (_scanning) return;
     if (ManualModeService().enabled) return;
     if (_connectionManager?.state == ConnectionState.ready) return;
 
