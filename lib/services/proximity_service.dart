@@ -271,8 +271,13 @@ class ProximityService {
         deviceId: deviceId,
         unlockLocation: unlockLocation,
       )) {
-        await manager.sendCommand(CommandCode.unlock);
-        _log.operation('感应解锁: 解锁成功', level: LogLevel.info);
+        final unlocked = await manager.sendCommand(CommandCode.unlock);
+        if (unlocked) {
+          _log.operation('感应解锁: 解锁成功', level: LogLevel.info);
+        } else {
+          _unlockSent = false;
+          _log.operation('感应解锁: 解锁指令失败', level: LogLevel.warning);
+        }
       } else {
         _unlockSent = false;
       }

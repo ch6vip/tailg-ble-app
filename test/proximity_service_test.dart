@@ -1,11 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart';
+import 'package:tailg_ble_app/ble/constants.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/services/ble_connection_snapshot_guard.dart';
+import 'package:tailg_ble_app/services/location_service.dart';
+import 'package:tailg_ble_app/services/log_service.dart';
 import 'package:tailg_ble_app/services/manual_mode_service.dart';
 import 'package:tailg_ble_app/services/proximity_service.dart';
+import 'package:tailg_ble_app/services/vehicle_store.dart';
 
 import 'helpers/allowing_snapshot_guard.dart';
 import 'helpers/ble_guard_fixtures.dart';
@@ -15,6 +21,9 @@ void main() {
   setUp(() {
     ProximityService().resetForTest();
     ManualModeService().resetForTest();
+    LocationService().resetForTest();
+    VehicleStore().resetForTest();
+    LogService().clear();
     resetMockPreferences();
   });
 
@@ -82,6 +91,63 @@ void main() {
 
     expect(service.lastUnlockTime, now);
   });
+
+  test(
+    'ProximityService does not log success when unlock command fails',
+    () async {
+      final now = DateTime(2026, 6, 9, 10, 30);
+      SharedPreferences.setMockInitialValues({
+        'proximity_unlock_enabled': true,
+      });
+      LocationService().resetForTest(clock: () => now);
+      ProximityService().resetForTest(clock: () => now);
+      final device = BluetoothDevice(
+        remoteId: const DeviceIdentifier(testBleDeviceId),
+      );
+      final manager = _UnlockResultConnectionManager(
+        device: device,
+        unlockResult: false,
+      );
+      addTearDown(manager.dispose);
+
+      await VehicleStore().upsert(
+        id: testBleDeviceId,
+        name: '测试车辆',
+        makeDefault: true,
+        savedAt: now,
+      );
+      await VehicleStore().updateLastLocation(
+        testBleDeviceId,
+        _location(accuracy: 8, recordedAt: now),
+        savedAt: now,
+      );
+
+      final service = ProximityService();
+      await service.init(manager);
+      service.setTargetDevice(testBleDeviceId);
+
+      service.handleTargetFoundForTest(
+        ScanResult(
+          device: device,
+          advertisementData: _advertisementData(),
+          rssi: ProximityUnlockGuard.minUnlockRssi,
+          timeStamp: now,
+        ),
+      );
+
+      await manager.unlockAttempted.future.timeout(const Duration(seconds: 2));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        LogService().all.where((entry) => entry.message == '感应解锁: 解锁成功'),
+        isEmpty,
+      );
+      expect(
+        LogService().all.where((entry) => entry.message == '感应解锁: 解锁指令失败'),
+        isNotEmpty,
+      );
+    },
+  );
 
   test('ProximityUnlockGuard blocks unlock when manual mode is enabled', () {
     const guard = ProximityUnlockGuard();
@@ -217,11 +283,43 @@ AdvertisementData _advertisementData() {
   );
 }
 
-VehicleLocation _location({required double accuracy}) {
+VehicleLocation _location({required double accuracy, DateTime? recordedAt}) {
   return VehicleLocation(
     latitude: 31.2304,
     longitude: 121.4737,
     accuracy: accuracy,
-    recordedAt: DateTime(2026),
+    recordedAt: recordedAt ?? DateTime(2026),
   );
+}
+
+class _UnlockResultConnectionManager extends ConnectionManager {
+  _UnlockResultConnectionManager({
+    required BluetoothDevice device,
+    required this.unlockResult,
+  }) : _device = device;
+
+  final BluetoothDevice _device;
+  final bool unlockResult;
+  final unlockAttempted = Completer<void>();
+  bool _connected = false;
+
+  @override
+  ConnectionState get state =>
+      _connected ? ConnectionState.ready : ConnectionState.disconnected;
+
+  @override
+  BluetoothDevice? get device => _connected ? _device : null;
+
+  @override
+  Future<void> connect(BluetoothDevice device) async {
+    _connected = true;
+  }
+
+  @override
+  Future<bool> sendCommand(CommandCode cmd) async {
+    if (cmd == CommandCode.unlock && !unlockAttempted.isCompleted) {
+      unlockAttempted.complete();
+    }
+    return unlockResult;
+  }
 }
