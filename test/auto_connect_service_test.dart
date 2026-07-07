@@ -208,6 +208,27 @@ void main() {
       expect(connectCall, greaterThan(enabledGuard));
     });
 
+    test('tryAutoConnect rechecks manual mode before connecting', () {
+      final source = readSource('lib/services/auto_connect_service.dart');
+      final methodStart = source.indexOf('Future<void> _tryAutoConnectOnce()');
+      final listenerStart = source.indexOf(
+        'FlutterBluePlus.scanResults.listen',
+        methodStart,
+      );
+      final enabledGuard = source.indexOf('if (!_enabled) {', listenerStart);
+      final manualGuard = source.indexOf(
+        'if (ManualModeService().enabled) {',
+        listenerStart,
+      );
+      final connectCall = source.indexOf('_doConnect(r.device)', listenerStart);
+
+      expect(methodStart, greaterThanOrEqualTo(0));
+      expect(listenerStart, greaterThan(methodStart));
+      expect(enabledGuard, greaterThan(listenerStart));
+      expect(manualGuard, greaterThan(enabledGuard));
+      expect(connectCall, greaterThan(manualGuard));
+    });
+
     test(
       'tryAutoConnect loads manual mode before checking the guard',
       () async {

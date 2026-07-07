@@ -218,6 +218,13 @@ class AutoConnectService {
               if (!completer.isCompleted) completer.complete();
               return;
             }
+            if (ManualModeService().enabled) {
+              scanSub?.cancel();
+              timeout?.cancel();
+              FlutterBluePlus.stopScan();
+              if (!completer.isCompleted) completer.complete();
+              return;
+            }
             scanSub?.cancel();
             timeout?.cancel();
             FlutterBluePlus.stopScan();
