@@ -119,6 +119,34 @@ void main() {
     expect(listenerSource, isNot(contains('== _targetDeviceId')));
   });
 
+  test('ProximityService rechecks unlock state before connecting', () {
+    final source = readSource('lib/services/proximity_service.dart');
+    final methodStart = source.indexOf(
+      'Future<void> _connectAndUnlock(BluetoothDevice device) async',
+    );
+    final locationGuard = source.indexOf(
+      'if (!_unlockGuard.hasUsableUnlockLocation(unlockLocation))',
+      methodStart,
+    );
+    final enabledGuard = source.indexOf('if (!_enabled ||', locationGuard);
+    final manualGuard = source.indexOf(
+      'ManualModeService().enabled',
+      enabledGuard,
+    );
+    final targetGuard = source.indexOf(
+      '_targetDeviceId != deviceId',
+      enabledGuard,
+    );
+    final connectCall = source.indexOf('await manager.connect(device);');
+
+    expect(methodStart, greaterThanOrEqualTo(0));
+    expect(locationGuard, greaterThan(methodStart));
+    expect(enabledGuard, greaterThan(locationGuard));
+    expect(manualGuard, greaterThan(enabledGuard));
+    expect(targetGuard, greaterThan(enabledGuard));
+    expect(connectCall, greaterThan(targetGuard));
+  });
+
   test('ProximityService uses injected clock for nearby unlock cooldown', () {
     final fixture = BleGuardFixture();
     final now = DateTime(2026, 6, 9, 10, 30);

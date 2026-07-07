@@ -266,6 +266,12 @@ class ProximityService {
         );
         return;
       }
+      if (!_enabled ||
+          ManualModeService().enabled ||
+          _targetDeviceId != deviceId) {
+        _unlockSent = false;
+        return;
+      }
       await manager.connect(device);
       await Future<void>.delayed(BleTimings.serviceSetupDelay);
       if (_canUnlockConnectedTarget(
