@@ -23,6 +23,26 @@ void main() {
     );
   });
 
+  test('user-visible messages do not expose raw exception text', () {
+    final rawExceptionInVisibleText = RegExp(
+      r'(AppSnack\.(?:error|info|success)\([^\n;]*(?:\$e|e\.toString\(\))'
+      r'|SnackBar\([^\n;]*(?:\$e|e\.toString\(\))'
+      r'|Text\([^\n;]*(?:\$e|e\.toString\(\)))',
+    );
+    final offenders = patternOffenders(
+      dartFilesUnder('lib'),
+      rawExceptionInVisibleText,
+    );
+
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Use stable user-facing copy for SnackBar/Text messages; keep raw '
+          'exception details in LogService where redaction is centralized.',
+    );
+  });
+
   test('touch target height assertions use helper', () {
     final directTouchTargetAssertion = RegExp(
       r'tester\.getSize\([^)]+\)\.height,\s*greaterThanOrEqualTo\(44\)',

@@ -4,7 +4,7 @@ import '../theme/app_colors.dart';
 /// 统一的 SnackBar 提示封装，避免 30+ 处 ScaffoldMessenger 调用散落各页。
 ///
 /// 调用：
-///   AppSnack.error(context, '连接失败：$e');
+///   AppSnack.error(context, '连接失败，请稍后重试');
 ///   AppSnack.success(context, '已保存');
 ///   AppSnack.info(context, '正在重新连接...');
 abstract final class AppSnack {
