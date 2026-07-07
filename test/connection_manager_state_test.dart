@@ -203,6 +203,29 @@ void main() {
     await responseExpectation;
   });
 
+  test('dispose completes active GATT operation immediately', () async {
+    final manager = ConnectionManager();
+    final operationStarted = Completer<void>();
+    final releaseOperation = Completer<void>();
+
+    final active = manager.runGattOperation(() async {
+      operationStarted.complete();
+      await releaseOperation.future;
+      return 'done';
+    });
+
+    await operationStarted.future;
+    final activeExpectation = expectLater(
+      active.timeout(const Duration(milliseconds: 50)),
+      throwsStateError,
+    );
+    await manager.dispose();
+    await activeExpectation;
+
+    releaseOperation.complete();
+    await Future<void>.delayed(Duration.zero);
+  });
+
   test('dispose is idempotent and ignores later state publications', () {
     final manager = ConnectionManager();
 

@@ -78,6 +78,7 @@ class ConnectionManager {
   _gattPendingByPriority = {
     for (final priority in GattOperationPriority.values) priority: [],
   };
+  _QueuedGattOperation<dynamic>? _activeGattOperation;
   bool _gattRunning = false;
 
   final _stateController = StreamController<ConnectionState>.broadcast();
@@ -126,6 +127,7 @@ class ConnectionManager {
     () async {
       while (_hasPendingGattOperations) {
         final queued = _takeNextGattOperation();
+        _activeGattOperation = queued;
         try {
           final result = await queued.operation().timeout(
             BleTimings.gattOperationTimeout,
@@ -138,6 +140,10 @@ class ConnectionManager {
         } catch (e, st) {
           if (!queued.completer.isCompleted) {
             queued.completer.completeError(e, st);
+          }
+        } finally {
+          if (identical(_activeGattOperation, queued)) {
+            _activeGattOperation = null;
           }
         }
       }
@@ -960,6 +966,10 @@ class ConnectionManager {
   }
 
   void _completePendingGattOperations(Object error) {
+    final active = _activeGattOperation;
+    if (active != null && !active.completer.isCompleted) {
+      active.completer.completeError(error);
+    }
     for (final queue in _gattPendingByPriority.values) {
       for (final queued in queue) {
         if (!queued.completer.isCompleted) {
