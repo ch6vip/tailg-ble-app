@@ -95,6 +95,30 @@ void main() {
     expect(source, contains('if (identical(_cmdAckCompleter, completer))'));
   });
 
+  test('QGJ command ACK replaces stale completers before waiting', () {
+    final source = readSource('lib/ble/connection_manager.dart');
+    final sendCommandStart = source.indexOf(
+      'Future<bool> sendCommand(CommandCode cmd) async',
+    );
+    final previousCompleter = source.indexOf(
+      'final previous = _cmdAckCompleter;',
+      sendCommandStart,
+    );
+    final previousComplete = source.indexOf(
+      'previous.complete(false);',
+      previousCompleter,
+    );
+    final newCompleter = source.indexOf(
+      'final completer = Completer<bool>();',
+      previousComplete,
+    );
+
+    expect(sendCommandStart, greaterThanOrEqualTo(0));
+    expect(previousCompleter, greaterThan(sendCommandStart));
+    expect(previousComplete, greaterThan(previousCompleter));
+    expect(newCompleter, greaterThan(previousComplete));
+  });
+
   test('QGJ command ACK notifications ignore completed completers', () {
     final source = readSource('lib/ble/connection_manager.dart');
 

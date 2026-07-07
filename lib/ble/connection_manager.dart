@@ -688,6 +688,10 @@ class ConnectionManager {
       if (frame == null) return false;
 
       final success = await runGattOperation(() async {
+        final previous = _cmdAckCompleter;
+        if (previous != null && !previous.isCompleted) {
+          previous.complete(false);
+        }
         final completer = Completer<bool>();
         _cmdAckCompleter = completer;
         try {
