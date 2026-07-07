@@ -30,7 +30,7 @@ class _OtaPrecheckPageState extends State<OtaPrecheckPage> {
   }
 
   Future<void> _runCheck() async {
-    if (connectionManager.state == ble.ConnectionState.disconnected) return;
+    if (connectionManager.state != ble.ConnectionState.ready) return;
     setState(() => _loading = true);
     try {
       final device = connectionManager.device;
