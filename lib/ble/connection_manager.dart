@@ -978,6 +978,7 @@ class ConnectionManager {
     if (active != null && !active.completer.isCompleted) {
       active.completer.completeError(error);
     }
+    _activeGattOperation = null;
     for (final queue in _gattPendingByPriority.values) {
       for (final queued in queue) {
         if (!queued.completer.isCompleted) {

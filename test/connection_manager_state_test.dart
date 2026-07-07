@@ -308,4 +308,28 @@ void main() {
     );
     expect(called, isFalse);
   });
+
+  test('GATT cleanup clears active operation reference', () {
+    final source = readSource('lib/ble/connection_manager.dart');
+    final cleanupStart = source.indexOf(
+      'void _completePendingGattOperations(Object error)',
+    );
+    final activeComplete = source.indexOf(
+      'active.completer.completeError(error);',
+      cleanupStart,
+    );
+    final clearActive = source.indexOf(
+      '_activeGattOperation = null;',
+      activeComplete,
+    );
+    final pendingLoop = source.indexOf(
+      'for (final queue in _gattPendingByPriority.values)',
+      cleanupStart,
+    );
+
+    expect(cleanupStart, greaterThanOrEqualTo(0));
+    expect(activeComplete, greaterThan(cleanupStart));
+    expect(clearActive, greaterThan(activeComplete));
+    expect(clearActive, lessThan(pendingLoop));
+  });
 }
