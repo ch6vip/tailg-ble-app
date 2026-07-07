@@ -15,6 +15,7 @@ import 'package:tailg_ble_app/services/vehicle_store.dart';
 
 import 'helpers/allowing_snapshot_guard.dart';
 import 'helpers/ble_guard_fixtures.dart';
+import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 
 void main() {
@@ -71,6 +72,28 @@ void main() {
     await service.setEnabled(true);
 
     expect(ManualModeService().enabled, isTrue);
+  });
+
+  test('ProximityService rechecks switch state after manual mode init', () {
+    final source = readSource('lib/services/proximity_service.dart');
+    final initIndex = source.indexOf('await ManualModeService().init();');
+    final enabledGuardIndex = source.indexOf(
+      'if (!_enabled || _targetDeviceId == null) return;',
+      initIndex + 1,
+    );
+    final manualGuardIndex = source.indexOf(
+      'if (ManualModeService().enabled) return;',
+      initIndex,
+    );
+    final startScanIndex = source.indexOf(
+      'FlutterBluePlus.startScan(',
+      initIndex,
+    );
+
+    expect(initIndex, greaterThanOrEqualTo(0));
+    expect(enabledGuardIndex, greaterThan(initIndex));
+    expect(enabledGuardIndex, lessThan(manualGuardIndex));
+    expect(enabledGuardIndex, lessThan(startScanIndex));
   });
 
   test('ProximityService uses injected clock for nearby unlock cooldown', () {

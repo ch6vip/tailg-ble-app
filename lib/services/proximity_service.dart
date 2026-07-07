@@ -148,6 +148,7 @@ class ProximityService {
   Future<void> start() async {
     if (!_enabled || _targetDeviceId == null || _scanning) return;
     await ManualModeService().init();
+    if (!_enabled || _targetDeviceId == null) return;
     if (ManualModeService().enabled) return;
     if (_connectionManager?.state == ConnectionState.ready) return;
 
