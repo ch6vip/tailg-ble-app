@@ -152,13 +152,15 @@ class ProximityService {
     if (ManualModeService().enabled) return;
     if (_connectionManager?.state == ConnectionState.ready) return;
 
+    final targetDeviceId = _targetDeviceId;
+    if (targetDeviceId == null) return;
     _unlockSent = false;
     _scanning = true;
     _log.operation('感应解锁: 开始扫描', level: LogLevel.info);
 
     _scanSub = FlutterBluePlus.scanResults.listen((results) {
       for (final r in results) {
-        if (r.device.remoteId.toString() == _targetDeviceId) {
+        if (r.device.remoteId.toString() == targetDeviceId) {
           _onTargetFound(r);
           break;
         }

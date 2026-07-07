@@ -96,6 +96,29 @@ void main() {
     expect(enabledGuardIndex, lessThan(startScanIndex));
   });
 
+  test('ProximityService snapshots target id before scan listener starts', () {
+    final source = readSource('lib/services/proximity_service.dart');
+    final methodStart = source.indexOf('Future<void> start() async');
+    final targetSnapshot = source.indexOf(
+      'final targetDeviceId = _targetDeviceId;',
+      methodStart,
+    );
+    final listenerStart = source.indexOf(
+      'FlutterBluePlus.scanResults.listen',
+      methodStart,
+    );
+    final listenerEnd = source.indexOf('    });', listenerStart);
+
+    expect(methodStart, greaterThanOrEqualTo(0));
+    expect(targetSnapshot, greaterThan(methodStart));
+    expect(listenerStart, greaterThan(targetSnapshot));
+    expect(listenerEnd, greaterThan(listenerStart));
+
+    final listenerSource = source.substring(listenerStart, listenerEnd);
+    expect(listenerSource, contains('== targetDeviceId'));
+    expect(listenerSource, isNot(contains('== _targetDeviceId')));
+  });
+
   test('ProximityService uses injected clock for nearby unlock cooldown', () {
     final fixture = BleGuardFixture();
     final now = DateTime(2026, 6, 9, 10, 30);
