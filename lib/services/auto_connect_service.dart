@@ -211,6 +211,13 @@ class AutoConnectService {
       scanSub = FlutterBluePlus.scanResults.listen((results) {
         for (final r in results) {
           if (r.device.remoteId.toString() == targetDeviceId) {
+            if (!_enabled) {
+              scanSub?.cancel();
+              timeout?.cancel();
+              FlutterBluePlus.stopScan();
+              if (!completer.isCompleted) completer.complete();
+              return;
+            }
             scanSub?.cancel();
             timeout?.cancel();
             FlutterBluePlus.stopScan();
