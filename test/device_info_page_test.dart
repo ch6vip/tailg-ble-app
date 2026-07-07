@@ -5,6 +5,7 @@ import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/device_info_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 
+import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/view_size.dart';
@@ -47,5 +48,22 @@ void main() {
     expect(find.text('车辆在线'), findsOneWidget);
     expect(find.text('官方电量'), findsOneWidget);
     expect(find.text('88%'), findsOneWidget);
+  });
+
+  test('device info waits for ready state before reading GATT data', () {
+    final source = readSource('lib/pages/device_info_page.dart');
+    final methodStart = source.indexOf('Future<void> _refresh() async');
+    final readyGuard = source.indexOf(
+      'if (connectionManager.state != ble.ConnectionState.ready) {',
+      methodStart,
+    );
+    final gattRead = source.indexOf(
+      'connectionManager.runGattOperation',
+      methodStart,
+    );
+
+    expect(methodStart, greaterThanOrEqualTo(0));
+    expect(readyGuard, greaterThan(methodStart));
+    expect(gattRead, greaterThan(readyGuard));
   });
 }

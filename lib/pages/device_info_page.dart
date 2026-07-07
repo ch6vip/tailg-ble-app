@@ -31,6 +31,11 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
   }
 
   Future<void> _refresh() async {
+    if (connectionManager.state != ble.ConnectionState.ready) {
+      if (!mounted) return;
+      setState(() => _deviceInfo = const _GattDeviceInfo());
+      return;
+    }
     final device = connectionManager.device;
     final services = device?.servicesList ?? const <BluetoothService>[];
     if (services.isEmpty) {
