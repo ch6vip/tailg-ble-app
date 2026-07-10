@@ -464,8 +464,8 @@ class OfficialCloudService {
       travelDetails: const {},
       travelDetailLoading: false,
       travelDetailError: null,
-      vehicleMessages: const [],
-      systemMessages: const [],
+      vehicleMessages: [],
+      systemMessages: [],
       messagesLoading: false,
       messagesError: null,
     );
