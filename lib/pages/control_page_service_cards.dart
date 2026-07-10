@@ -64,7 +64,6 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
             );
             final showCamera = _supportsCamera(vehicle);
             final showSmartMeter = _supportsSmartMeter(vehicle);
-            final showBleRenewal = _supportsBleRenewal(vehicle);
             final showChargingStation = _supportsChargingStation(vehicle);
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -132,15 +131,6 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
                   _OfficialNfcCard(
                     onTap: () => _open(context, const NfcKeyPage()),
                   ),
-                  if (showBleRenewal) ...[
-                    const SizedBox(height: 10),
-                    _OfficialSimpleServiceCard(
-                      title: '蓝牙续费',
-                      subtitle: '充值后智能控车',
-                      icon: Icons.bluetooth_connected,
-                      onTap: () => _open(context, const OfficialCloudPage()),
-                    ),
-                  ],
                   if (showChargingStation) ...[
                     const SizedBox(height: 10),
                     _OfficialSimpleServiceCard(
@@ -238,8 +228,6 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
       vehicle?.supportsCamera == true;
   bool _supportsSmartMeter(OfficialVehicle? vehicle) =>
       vehicle?.supportsSmartMeter == true;
-  bool _supportsBleRenewal(OfficialVehicle? vehicle) =>
-      vehicle?.supportsBleRenewal == true;
   bool _supportsChargingStation(OfficialVehicle? vehicle) =>
       vehicle?.supportsChargingStation == true;
 }
@@ -540,7 +528,7 @@ class _OfficialSmartMeterCard extends StatelessWidget {
               SizedBox(width: 8),
               _MeterStatusChip('WiFi'),
               SizedBox(width: 8),
-              _MeterStatusChip('蓝牙'),
+              _MeterStatusChip('云端'),
             ],
           ),
           const Spacer(),

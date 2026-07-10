@@ -326,7 +326,7 @@ void main() {
     expect(find.text('导航投屏'), findsOneWidget);
     expect(find.text('摄像头'), findsOneWidget);
     expect(find.text('智能仪表'), findsOneWidget);
-    expect(find.text('蓝牙续费'), findsOneWidget);
+    expect(find.text('蓝牙续费'), findsNothing);
     expect(find.text('台铃充电站'), findsOneWidget);
   });
 

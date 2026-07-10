@@ -59,70 +59,11 @@ void main() {
     app.officialCloudService.resetForTest();
   });
 
-  testWidgets('stale direct-connect notice keeps a 44dp touch target', (
-    tester,
-  ) async {
-    final semantics = tester.ensureSemantics();
-    try {
-      setTestViewSize(tester, const Size(430, 1200));
-
-      final vehicle = OfficialVehicle.fromJson({
-        'carId': 'official-1',
-        'carName': '测试车辆',
-        'btmac': 'AABBCCDDEEFF',
-      });
-      app.officialCloudService.setStateForTest(
-        OfficialCloudState.initial().copyWith(
-          initialized: true,
-          token: 'token',
-          phone: '18812345678',
-          userId: 'user-1',
-          vehicles: [vehicle],
-          selectedVehicleKey: vehicle.key,
-          localVehicleLinks: {vehicle.key: 'missing-local-id'},
-        ),
-      );
-
-      await tester.pumpWidget(const TestApp(home: OfficialCloudPage()));
-
-      final staleNotice = find.ancestor(
-        of: find.text('近场连接车辆已不可用，点击清理'),
-        matching: find.byWidgetPredicate(
-          (widget) =>
-              widget is InkWell &&
-              widget.borderRadius == BorderRadius.circular(12),
-        ),
-      );
-      expect(staleNotice, findsOneWidget);
-      expectMinTouchTargetHeight(tester, staleNotice);
-
-      const staleNoticeLabel = '近场连接车辆已不可用，点击清理';
-      final staleNoticeSemantics = find.bySemanticsLabel(staleNoticeLabel);
-      expect(staleNoticeSemantics, findsOneWidget);
-      expect(
-        tester.getSemantics(staleNoticeSemantics),
-        matchesSemantics(
-          label: staleNoticeLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasTapAction: true,
-        ),
-      );
-    } finally {
-      semantics.dispose();
-    }
-  });
-
-  testWidgets('near-field link action keeps a 44dp touch target', (
+  testWidgets('vehicle detail action keeps a 44dp touch target', (
     tester,
   ) async {
     setTestViewSize(tester, const Size(430, 1200));
 
-    // After BLE removal, the vehicle card always exposes a "近场连接"
-    // OutlinedButton.icon (the old missing-BLE-identity notice was deleted).
-    // OutlinedButton.icon builds a private subclass, so match with `is`
-    // instead of find.byType(OutlinedButton) which uses runtimeType equality.
     final vehicle = OfficialVehicle.fromJson({
       'carId': 'official-1',
       'carName': '测试车辆',
@@ -142,14 +83,12 @@ void main() {
     await tester.pump();
 
     expect(find.text('测试车辆'), findsOneWidget);
-    expect(find.text('近场连接'), findsOneWidget);
-
-    final linkAction = find.ancestor(
-      of: find.text('近场连接'),
+    final detailAction = find.ancestor(
+      of: find.text('详情'),
       matching: find.byWidgetPredicate((widget) => widget is OutlinedButton),
     );
-    expect(linkAction, findsOneWidget);
-    expectMinTouchTargetHeight(tester, linkAction);
+    expect(detailAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, detailAction);
   });
 
   testWidgets('page renders official cloud error details', (tester) async {

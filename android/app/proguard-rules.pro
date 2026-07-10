@@ -6,12 +6,6 @@
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
 
-# flutter_blue_plus
--keep class com.lib.flutter_blue_plus.** { *; }
-
-# permission_handler
--keep class com.baseflow.permissionhandler.** { *; }
-
 # geolocator
 -keep class com.baseflow.geolocator.** { *; }
 

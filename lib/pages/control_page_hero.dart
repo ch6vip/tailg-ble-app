@@ -241,7 +241,7 @@ class _WideHeroData extends StatelessWidget {
         const SizedBox(width: 48),
         _RangeMetric(value: displayRange),
         const Spacer(),
-        _BleConnectPill(
+        _CloudConnectPill(
           label: connectionLabel,
           variant: connectionVariant,
           onTap: onConnect,
@@ -279,7 +279,7 @@ class _NarrowHeroData extends StatelessWidget {
             _BatteryAction(level: batteryLevel, onTap: onBatteryTap),
             const SizedBox(width: 36),
             Expanded(child: _RangeMetric(value: displayRange)),
-            _BleConnectPill(
+            _CloudConnectPill(
               label: connectionLabel,
               variant: connectionVariant,
               onTap: onConnect,
@@ -488,8 +488,8 @@ class _RangeMetric extends StatelessWidget {
   }
 }
 
-class _BleConnectPill extends StatelessWidget {
-  const _BleConnectPill({required this.label, this.variant, this.onTap});
+class _CloudConnectPill extends StatelessWidget {
+  const _CloudConnectPill({required this.label, this.variant, this.onTap});
 
   final String? label;
   final String? variant;
@@ -497,7 +497,7 @@ class _BleConnectPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = _BlePillState.fromLabel(label, onTap != null);
+    final state = _CloudPillState.fromLabel(label, onTap != null);
     final variant = this.variant?.trim();
     return AppPressable(
       onTap: onTap,
@@ -544,8 +544,8 @@ class _BleConnectPill extends StatelessWidget {
                         height: 15,
                         errorBuilder: (_, __, ___) => Icon(
                           state.connected
-                              ? Icons.bluetooth_connected
-                              : Icons.bluetooth,
+                              ? Icons.cloud_done_outlined
+                              : Icons.cloud_outlined,
                           size: 15,
                           color: state.iconColor,
                         ),
@@ -584,8 +584,8 @@ class _BleConnectPill extends StatelessWidget {
   }
 }
 
-class _BlePillState {
-  const _BlePillState({
+class _CloudPillState {
+  const _CloudPillState({
     required this.text,
     required this.backgroundAsset,
     required this.iconAsset,
@@ -603,7 +603,7 @@ class _BlePillState {
   final Color iconColor;
   final bool connected;
 
-  static _BlePillState fromLabel(String? label, bool canConnect) {
+  static _CloudPillState fromLabel(String? label, bool canConnect) {
     final normalized = label?.trim();
     final connected = normalized == '已连接';
     final pending =
@@ -616,7 +616,7 @@ class _BlePillState {
         ? '点击连接'
         : '未连接';
     if (connected) {
-      return const _BlePillState(
+      return const _CloudPillState(
         text: '已连接',
         backgroundAsset: 'assets/official_tailg/ic_control_ble_bg_connect.png',
         iconAsset: 'assets/official_tailg/ic_control_ble_clint.png',
@@ -627,7 +627,7 @@ class _BlePillState {
       );
     }
     if (pending) {
-      return _BlePillState(
+      return _CloudPillState(
         text: text,
         backgroundAsset:
             'assets/official_tailg/ic_control_ble_bg_can_connect.png',
@@ -638,7 +638,7 @@ class _BlePillState {
         connected: false,
       );
     }
-    return _BlePillState(
+    return _CloudPillState(
       text: text,
       backgroundAsset: canConnect
           ? 'assets/official_tailg/ic_control_ble_bg_can_connect.png'

@@ -218,7 +218,7 @@ class _LogList extends StatelessWidget {
         child: AppEmptyState(
           icon: Icons.receipt_long_outlined,
           title: '暂无日志',
-          subtitle: '蓝牙连接、控车与诊断操作的运行日志会显示在这里。',
+          subtitle: '云端控车与诊断操作的运行日志会显示在这里。',
         ),
       );
     }

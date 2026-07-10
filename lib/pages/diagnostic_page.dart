@@ -147,7 +147,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        '实时故障诊断需要蓝牙连接，当前仅显示历史记录',
+                        '实时故障诊断暂不可用，当前仅显示历史记录',
                         style: TextStyle(
                           fontSize: 13,
                           color: AppColors.textSecondary,

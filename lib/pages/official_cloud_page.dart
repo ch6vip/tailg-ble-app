@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 
 import '../main.dart';
 import '../models/official_vehicle.dart';
-import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../services/sensitive_value_masker.dart';
@@ -440,12 +439,6 @@ class _VehicleListCard extends StatefulWidget {
 
 class _VehicleListCardState extends State<_VehicleListCard> {
   @override
-  void initState() {
-    super.initState();
-    _pruneStaleLocalLinks();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final state = widget.state;
     if (state.loading && state.vehicles.isEmpty) {
@@ -466,11 +459,6 @@ class _VehicleListCardState extends State<_VehicleListCard> {
       }).toList(),
     );
   }
-
-  void _pruneStaleLocalLinks() {
-    final validIds = vehicleStore.vehicles.map((vehicle) => vehicle.id).toSet();
-    unawaited(officialCloudService.pruneLocalVehicleLinks(validIds));
-  }
 }
 
 class _OfficialVehicleCard extends StatelessWidget {
@@ -481,16 +469,6 @@ class _OfficialVehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localVehicles = vehicleStore.vehicles;
-    final linkedId = officialCloudService.state.linkedLocalVehicleId(
-      vehicle.key,
-    );
-    final linkedVehicle = linkedId == null
-        ? null
-        : _findLocalVehicle(localVehicles, linkedId);
-    final linked = linkedVehicle != null;
-    final staleLinked = linkedId != null && linkedId.isNotEmpty && !linked;
-    final linkLabel = linked ? '更换近场连接' : '近场连接';
     return AppCard(
       color: selected
           ? AppColors.primary.withValues(alpha: 0.08)
@@ -499,7 +477,6 @@ class _OfficialVehicleCard extends StatelessWidget {
         onTap: () async {
           HapticFeedback.selectionClick();
           await officialCloudService.selectVehicle(vehicle);
-          await _applyLinkedLocalVehicle(vehicle);
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -558,145 +535,22 @@ class _OfficialVehicleCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) =>
-                            OfficialVehicleDetailPage(vehicle: vehicle),
-                      ),
-                    ),
-                    icon: const Icon(Icons.info_outline, size: AppIconSizes.sm),
-                    label: const Text('详情'),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => OfficialVehicleDetailPage(vehicle: vehicle),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Builder(
-                    builder: (context) {
-                      void openLinkPage() => Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (_) =>
-                              OfficialVehicleLinkPage(vehicle: vehicle),
-                        ),
-                      );
-                      if (linked) {
-                        return OutlinedButton.icon(
-                          onPressed: openLinkPage,
-                          icon: const Icon(
-                            Icons.bluetooth_connected,
-                            size: AppIconSizes.sm,
-                          ),
-                          label: Text(linkLabel),
-                        );
-                      }
-                      return OutlinedButton.icon(
-                        onPressed: openLinkPage,
-                        icon: const Icon(
-                          Icons.bluetooth_searching,
-                          size: AppIconSizes.sm,
-                        ),
-                        label: Text(linkLabel),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-            if (linked) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.check_circle_outline,
-                    size: AppIconSizes.sm,
-                    color: AppColors.success,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      '已开启近场连接：${linkedVehicle.displayName}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.smallText,
-                    ),
-                  ),
-                ],
+                icon: const Icon(Icons.info_outline, size: AppIconSizes.sm),
+                label: const Text('详情'),
               ),
-            ] else if (staleLinked) ...[
-              const SizedBox(height: 8),
-              _StaleLinkNotice(vehicle: vehicle),
-            ],
+            ),
           ],
         ),
       ),
-    );
-  }
-}
-
-VehicleProfile? _findLocalVehicle(List<VehicleProfile> vehicles, String id) {
-  for (final vehicle in vehicles) {
-    if (vehicle.id == id) return vehicle;
-  }
-  return null;
-}
-
-class _StaleLinkNotice extends StatelessWidget {
-  final OfficialVehicle vehicle;
-
-  const _StaleLinkNotice({required this.vehicle});
-
-  @override
-  Widget build(BuildContext context) {
-    const label = '近场连接车辆已不可用，点击清理';
-    Future<void> clearStaleLink() async {
-      await officialCloudService.unlinkLocalVehicle(vehicle.key);
-      if (context.mounted) {
-        AppSnack.success(context, '已清理失效直连车辆');
-      }
-    }
-
-    final notice = Material(
-      color: AppColors.warning.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(AppRadii.card),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        onTap: clearStaleLink,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: AppTouchTargets.min),
-          child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.link_off,
-                  size: AppIconSizes.sm,
-                  color: AppColors.warning,
-                ),
-                SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    '近场连接车辆已不可用，点击清理',
-                    style: TextStyle(fontSize: 12, color: AppColors.warning),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-    return Semantics(
-      label: label,
-      button: true,
-      enabled: true,
-      onTap: clearStaleLink,
-      child: ExcludeSemantics(child: notice),
     );
   }
 }
@@ -771,8 +625,6 @@ class OfficialVehicleDetailPage extends StatelessWidget {
                     '里程',
                     vehicle.mileage == null ? '未返回' : '${vehicle.mileage} km',
                   ),
-                  _DetailLine('蓝牙名', vehicle.btname),
-                  _DetailLine('蓝牙 MAC', _maskId(vehicle.btmac)),
                   _DetailLine('经度', vehicle.longitude),
                   _DetailLine('纬度', vehicle.latitude),
                 ],
@@ -977,135 +829,6 @@ class _SelfCheckResultCard extends StatelessWidget {
 
 String _maskId(String value) {
   return SensitiveValueMasker.compact(value, emptyValue: '未返回', trim: false);
-}
-
-Future<void> _applyLinkedLocalVehicle(OfficialVehicle vehicle) async {
-  final localId = officialCloudService.state.linkedLocalVehicleId(vehicle.key);
-  if (localId == null || localId.isEmpty) return;
-  for (final local in vehicleStore.vehicles) {
-    if (local.id == localId) {
-      await _applyLocalVehicle(local);
-      return;
-    }
-  }
-}
-
-Future<void> _applyLocalVehicle(VehicleProfile local) async {
-  await vehicleStore.setDefault(local.id);
-}
-
-class OfficialVehicleLinkPage extends StatelessWidget {
-  final OfficialVehicle vehicle;
-
-  const OfficialVehicleLinkPage({super.key, required this.vehicle});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
-        child: StreamBuilder<OfficialCloudState>(
-          stream: officialCloudService.stateStream,
-          initialData: officialCloudService.state,
-          builder: (context, snapshot) {
-            final state = snapshot.data ?? officialCloudService.state;
-            final linkedId = state.linkedLocalVehicleId(vehicle.key);
-            return StreamBuilder<List<VehicleProfile>>(
-              stream: vehicleStore.vehiclesStream,
-              initialData: vehicleStore.vehicles,
-              builder: (context, vehiclesSnapshot) {
-                final vehicles =
-                    vehiclesSnapshot.data ?? const <VehicleProfile>[];
-                return ListView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.only(
-                    bottom: AppNav.contentBottomPadding,
-                  ),
-                  children: [
-                    AppPageHeader(title: '近场连接'),
-                    const SizedBox(height: 12),
-                    AppCard(
-                      child: Text(
-                        '可选配置：靠近车辆时使用近场连接控车，网络不可用时也能保留基础控车能力。',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          height: 1.45,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (vehicles.isEmpty)
-                      const AppCard(
-                        child: Text(
-                          '暂无近场连接车辆。远程控车可继续使用官方车辆；需要靠近车辆使用时请先添加车辆。',
-                          style: TextStyle(color: AppColors.textSecondary),
-                        ),
-                      )
-                    else
-                      ...vehicles.map((local) {
-                        final selected = linkedId == local.id;
-                        return AppCard(
-                          margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                          child: ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: Icon(
-                              selected
-                                  ? Icons.radio_button_checked
-                                  : Icons.radio_button_off,
-                              color: selected
-                                  ? AppColors.primary
-                                  : AppColors.textTertiary,
-                            ),
-                            title: Text(local.displayName),
-                            subtitle: Text(
-                              '${local.protocol.label} · ${local.id}',
-                            ),
-                            onTap: () async {
-                              await officialCloudService.linkLocalVehicle(
-                                officialVehicleKey: vehicle.key,
-                                localVehicleId: local.id,
-                              );
-                              await _applyLocalVehicle(local);
-                              if (context.mounted) {
-                                AppSnack.success(context, '已开启近场连接');
-                              }
-                            },
-                          ),
-                        );
-                      }),
-                    if (linkedId != null) ...[
-                      const SizedBox(height: 4),
-                      AppCard(
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () async {
-                              await officialCloudService.unlinkLocalVehicle(
-                                vehicle.key,
-                              );
-                              if (context.mounted) {
-                                AppSnack.success(context, '已取消关联');
-                              }
-                            },
-                            icon: const Icon(
-                              Icons.link_off,
-                              size: AppIconSizes.md,
-                            ),
-                            label: const Text('取消关联'),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                );
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
 }
 
 class _StatusChip extends StatelessWidget {
