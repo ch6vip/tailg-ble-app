@@ -47,7 +47,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
     });
     _cloudSub = officialCloudService.stateStream.listen((_) {
       if (!mounted) return;
-      setState(() {});
+      setState(_syncFromCloudState);
     });
     unawaited(_bootstrap());
   }
@@ -62,6 +62,10 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
   Future<void> _bootstrap() async {
     await _loadMessageState();
     await _refreshMessages(force: true);
+  }
+
+  void _syncFromCloudState() {
+    // Rebuild against the latest OfficialCloudState snapshot.
   }
 
   Future<void> _loadMessageState() async {
