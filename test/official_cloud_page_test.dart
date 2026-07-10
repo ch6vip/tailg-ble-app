@@ -114,14 +114,16 @@ void main() {
     }
   });
 
-  testWidgets('missing direct-connect action keeps a 44dp touch target', (
+  testWidgets('near-field link action keeps a 44dp touch target', (
     tester,
   ) async {
     setTestViewSize(tester, const Size(430, 1200));
 
+    // After BLE removal, the vehicle card always exposes a "近场连接"
+    // OutlinedButton (the old missing-BLE-identity notice was deleted).
     final vehicle = OfficialVehicle.fromJson({
-      'carId': 'official-without-ble',
-      'carName': '未返回蓝牙车辆',
+      'carId': 'official-1',
+      'carName': '测试车辆',
     });
     app.officialCloudService.setStateForTest(
       OfficialCloudState.initial().copyWith(
@@ -135,13 +137,11 @@ void main() {
     );
 
     await tester.pumpWidget(const TestApp(home: OfficialCloudPage()));
+    await tester.pump();
 
-    final scanAction = find.ancestor(
-      of: find.text('近场连接'),
-      matching: find.byType(OutlinedButton),
-    );
-    expect(scanAction, findsOneWidget);
-    expectMinTouchTargetHeight(tester, scanAction);
+    final linkAction = find.widgetWithText(OutlinedButton, '近场连接');
+    expect(linkAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, linkAction);
   });
 
   testWidgets('page renders official cloud error details', (tester) async {

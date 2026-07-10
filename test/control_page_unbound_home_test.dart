@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/add_vehicle_page.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
+import 'package:tailg_ble_app/pages/garage_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
@@ -173,6 +175,7 @@ void main() {
   testWidgets('binding help text link opens garage page', (tester) async {
     resetMockPreferences();
     VehicleStore().resetForTest();
+    app.officialCloudService.resetForTest();
     await VehicleStore().init();
 
     applyTestViewSize(tester, const Size(430, 2200));
@@ -181,6 +184,8 @@ void main() {
       await tester.pump();
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
+      VehicleStore().resetForTest();
+      app.officialCloudService.resetForTest();
     });
 
     await tester.pumpWidget(const TestApp(home: ControlPage()));
@@ -190,9 +195,13 @@ void main() {
     expect(find.text('绑定说明'), findsOneWidget);
 
     await tester.tap(find.text('绑定说明'));
+    // Banner auto-advance timers prevent pumpAndSettle from finishing.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
 
-    expect(find.text('绑定说明'), findsWidgets);
+    // GaragePage is pushed on top; previous route is offstage so "绑定说明"
+    // is no longer hittable. Assert the destination page instead.
+    expect(find.byType(GaragePage), findsOneWidget);
+    expect(find.text('我的车库'), findsOneWidget);
   });
 }
