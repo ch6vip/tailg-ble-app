@@ -1,6 +1,5 @@
 import 'package:geolocator/geolocator.dart';
 
-import '../models/command_types.dart';
 import '../models/vehicle_profile.dart';
 import 'log_service.dart';
 import 'permission_service.dart';
@@ -19,7 +18,7 @@ class LocationService {
   factory LocationService() => _instance;
   LocationService._();
 
-  static const silentCaptureThrottle = BleTimings.silentLocationThrottle;
+  static const silentCaptureThrottle = Duration(seconds: 60);
 
   final _log = LogService();
   final _lastSilentCaptures = <String, DateTime>{};
@@ -43,7 +42,7 @@ class LocationService {
     final position = await Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        timeLimit: BleTimings.locationCaptureTimeout,
+        timeLimit: Duration(seconds: 8),
       ),
     );
 

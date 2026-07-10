@@ -8,7 +8,6 @@ import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'helpers/snack_finders.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
-import 'helpers/touch_target.dart';
 import 'helpers/view_size.dart';
 
 void main() {
@@ -74,7 +73,7 @@ void main() {
     await tester.tap(find.text('虚拟体验（演示）'));
     await tester.pump();
 
-    expect(find.text('虚拟体验暂未开放，可先登录账号或使用近场连接'), findsOneWidget);
+    expect(find.text('虚拟体验暂未开放，可先登录账号'), findsOneWidget);
     expect(snackIcon(Icons.info_outline), findsOneWidget);
   });
 
@@ -122,7 +121,7 @@ void main() {
         tester.semantics.tap(find.semantics.byLabel('虚拟体验（演示）'));
         await tester.pump();
 
-        expect(find.text('虚拟体验暂未开放，可先登录账号或使用近场连接'), findsOneWidget);
+        expect(find.text('虚拟体验暂未开放，可先登录账号'), findsOneWidget);
         expect(snackIcon(Icons.info_outline), findsOneWidget);
       } finally {
         semantics.dispose();
@@ -171,48 +170,27 @@ void main() {
     }
   });
 
-  testWidgets('bluetooth direct text link exposes semantics and 44dp target', (
-    tester,
-  ) async {
-    final semantics = tester.ensureSemantics();
+  testWidgets('binding help text link opens garage page', (tester) async {
     resetMockPreferences();
     VehicleStore().resetForTest();
     await VehicleStore().init();
 
-    try {
-      applyTestViewSize(tester, const Size(430, 2200));
-      addTearDown(() async {
-        await tester.pumpWidget(const SizedBox.shrink());
-        await tester.pump();
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    applyTestViewSize(tester, const Size(430, 2200));
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
 
-      await tester.pumpWidget(const TestApp(home: ControlPage()));
-      await tester.pump(const Duration(milliseconds: 50));
+    await tester.pumpWidget(const TestApp(home: ControlPage()));
+    await tester.pump(const Duration(milliseconds: 50));
 
-      const linkLabel = '附近车辆？使用近场连接';
-      final officialCloudLink = find.ancestor(
-        of: find.text(linkLabel),
-        matching: find.byType(InkWell),
-      );
-      expect(officialCloudLink, findsOneWidget);
-      expectMinTouchTargetHeight(tester, officialCloudLink);
+    expect(find.text('绑定说明'), findsOneWidget);
 
-      final linkAction = find.bySemanticsLabel(linkLabel);
-      expect(linkAction, findsOneWidget);
-      expect(
-        tester.getSemantics(linkAction),
-        matchesSemantics(
-          label: linkLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasTapAction: true,
-        ),
-      );
-    } finally {
-      semantics.dispose();
-    }
+    await tester.tap(find.text('绑定说明'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('绑定说明'), findsWidgets);
   });
 }

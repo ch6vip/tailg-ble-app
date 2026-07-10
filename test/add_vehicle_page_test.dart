@@ -22,7 +22,7 @@ void main() {
       '输入车架号/IMEI，手动填写车辆识别信息',
       '门店购车绑定，通过门店或购车记录完成绑定',
       '我的车辆，登录后自动显示账号下已绑定车辆',
-      '近场连接，靠近车辆时用于近场控车',
+      '绑定帮助，查看绑定说明和常见问题',
     ]) {
       final action = find.bySemanticsLabel(label);
       expect(action, findsOneWidget);

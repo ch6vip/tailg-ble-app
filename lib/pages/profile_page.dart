@@ -1079,7 +1079,6 @@ class _MineListTile extends StatelessWidget {
     required this.title,
     required this.onTap,
     this.value,
-    this.badge,
     this.trailingHelp = false,
     this.minHeight = 70,
   });
@@ -1088,18 +1087,15 @@ class _MineListTile extends StatelessWidget {
   final String title;
   final VoidCallback onTap;
   final String? value;
-  final String? badge;
   final bool trailingHelp;
   final double minHeight;
 
   @override
   Widget build(BuildContext context) {
     final value = this.value;
-    final badge = this.badge;
     final semanticsLabel = [
       title,
       if (value != null && value.isNotEmpty) value,
-      if (badge != null && badge.isNotEmpty) badge,
     ].join('，');
 
     return AppPressable(
@@ -1143,28 +1139,6 @@ class _MineListTile extends StatelessWidget {
                     fontSize: 13,
                     color: _officialMuted,
                     letterSpacing: 0,
-                  ),
-                ),
-                const SizedBox(width: 6),
-              ],
-              if (badge != null) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.brandRed,
-                    borderRadius: BorderRadius.circular(AppRadii.pill),
-                  ),
-                  child: Text(
-                    badge,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      letterSpacing: 0,
-                    ),
                   ),
                 ),
                 const SizedBox(width: 6),

@@ -365,8 +365,7 @@ void main() {
       expect(find.text(label), findsNothing);
     }
     expect(find.text('打开座桶'), findsOneWidget);
-    expect(find.text('感应解锁'), findsOneWidget);
-    expect(find.bySemanticsLabel('添加快捷功能'), findsNothing);
+    expect(find.text('添加快捷功能'), findsOneWidget);
     final edit = find.bySemanticsLabel('编辑快捷功能');
     expect(edit, findsOneWidget);
     expectMinTouchTargetHeight(tester, edit);

@@ -68,6 +68,25 @@ class DiagnosticRecord {
       return null;
     }
   }
+
+  static List<DiagnosticRecord> parseHistory(
+    List<String> rawEntries, {
+    DateTime Function()? clock,
+  }) {
+    final records = <DiagnosticRecord>[];
+    for (final raw in rawEntries) {
+      final record = tryParse(raw, clock: clock);
+      if (record != null) records.add(record);
+    }
+    records.sort((a, b) => b.time.compareTo(a.time));
+    return records;
+  }
+
+  static List<String> encodeHistory(List<DiagnosticRecord> records) {
+    final sorted = [...records]..sort((a, b) => b.time.compareTo(a.time));
+    final limited = sorted.take(persistedHistoryLimit).toList();
+    return limited.map((r) => jsonEncode(r.toJson())).toList();
+  }
 }
 
 class DiagnosticPage extends StatefulWidget {

@@ -11,7 +11,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   final _commandExecutor = ControlCommandExecutor(
     sendCloudCommand: officialCloudService.sendCommand,
   );
-  final _confirmationGuard = const ControlCommandConfirmationGuard();
   bool _busy = false;
   bool _disposed = false;
 
@@ -198,11 +197,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
         level: LogLevel.warning,
       );
     }
-  }
-
-  void _toggleManualMode() {
-    manualModeService.setEnabled(!_manualModeEnabled);
-    HapticFeedback.selectionClick();
   }
 
   @override
