@@ -699,7 +699,7 @@ class OfficialCloudService {
     final token = _state.token;
     if (token.isEmpty) return;
     const refreshKey = 'batteryInfo';
-    if (!force && silent && _shouldUseRecentRefresh(refreshKey)) return;
+    if (silent && _shouldUseRecentRefresh(refreshKey)) return;
     final inFlight = _inFlightRefreshes[refreshKey];
     if (silent && inFlight != null) return inFlight;
 
