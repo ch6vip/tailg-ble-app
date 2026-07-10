@@ -871,7 +871,7 @@ class _CoulombMeterCardState extends State<_CoulombMeterCard> {
       await connectionManager.sendCommand(CommandCode.powerOn);
       await Future<void>.delayed(const Duration(milliseconds: 300));
       await connectionManager.writeFbb2('D0018A00');
-    } catch (_) {
+    } catch (e) {
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -885,7 +885,7 @@ class _CoulombMeterCardState extends State<_CoulombMeterCard> {
       await connectionManager.writeFbb2(cmd);
       await Future<void>.delayed(const Duration(milliseconds: 500));
       await _readSocState();
-    } catch (_) {
+    } catch (e) {
       if (mounted) setState(() => _toggling = false);
     }
   }
