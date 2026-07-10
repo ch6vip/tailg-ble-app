@@ -924,10 +924,7 @@ class _CoulombMeterCardState extends State<_CoulombMeterCard> {
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
-            '开启后可自学习电量（铅酸电池适用，锂电不可用）',
-            style: AppTextStyles.bodySmall,
-          ),
+          const Text('开启后可自学习电量（铅酸电池适用，锂电不可用）', style: AppTextStyles.bodySmall),
           const SizedBox(height: 12),
           if (_socEnabled != null)
             Row(
@@ -945,10 +942,7 @@ class _CoulombMeterCardState extends State<_CoulombMeterCard> {
               ],
             )
           else
-            Text(
-              '点击刷新按钮读取状态',
-              style: AppTextStyles.caption,
-            ),
+            Text('点击刷新按钮读取状态', style: AppTextStyles.caption),
         ],
       ),
     );
