@@ -44,7 +44,7 @@ void main() {
   });
 
   test('keeps QGJ login frame details fully redacted', () {
-    log.ble('QGJ 登录', detail: '01 02 03 04');
+    log.connection('QGJ 登录', detail: '01 02 03 04');
 
     final entry = log.all.single;
 
@@ -52,20 +52,20 @@ void main() {
   });
 
   test('keeps log categories and default levels while redacting', () {
-    log.ble('ble phone=18886120851');
+    log.connection('connection phone=18886120851');
     log.operation('operation token=abcdef123456');
 
-    final bleEntry = log.byCategory(LogCategory.ble).single;
+    final connEntry = log.byCategory(LogCategory.connection).single;
     final operationEntry = log.byCategory(LogCategory.operation).single;
 
-    expect(bleEntry.level, LogLevel.debug);
-    expect(bleEntry.message, 'ble phone=188***851');
+    expect(connEntry.level, LogLevel.debug);
+    expect(connEntry.message, 'connection phone=188***851');
     expect(operationEntry.level, LogLevel.info);
     expect(operationEntry.message, 'operation token=abc***456');
   });
 
   test('returns detached log snapshots', () {
-    log.ble('ble entry');
+    log.connection('connection entry');
     log.operation('operation entry');
 
     final allEntries = log.all;

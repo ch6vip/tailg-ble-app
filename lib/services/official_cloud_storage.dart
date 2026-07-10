@@ -59,7 +59,7 @@ class _OfficialCloudStorage {
           : _decodeCarControlInfo(prefs.getString(_prefCarControlInfo)),
       controlChannel: OfficialControlChannel.values.firstWhere(
         (item) => item.name == channelName,
-        orElse: () => OfficialControlChannel.automatic,
+        orElse: () => OfficialControlChannel.officialCloud,
       ),
       localVehicleLinks: _decodeLinks(prefs.getString(_prefVehicleLinks)),
     );

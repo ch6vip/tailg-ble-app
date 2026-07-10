@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../main.dart';
-import '../ble/connection_manager.dart' as ble;
-import '../ble/constants.dart';
+import '../models/command_types.dart';
 import '../models/geo_coordinate.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
@@ -108,24 +107,15 @@ class _HomeBody extends StatefulWidget {
 }
 
 class _HomeBodyState extends State<_HomeBody> {
-  // P0-4: 移除合并流，改用 ValueNotifier 驱动 showUnboundHome，
-  // 三个子区域各自 StreamBuilder 精准订阅，避免整页重建。
-  StreamSubscription<ble.ConnectionState>? _subConn;
   StreamSubscription<List<VehicleProfile>>? _subVehicles;
   StreamSubscription<OfficialCloudState>? _subCloud;
   late final ValueNotifier<bool> _showUnboundHome;
-  late final ValueNotifier<bool> _connectionLostHint;
-  bool _disposed = false; // P0-3: dispose 竞态保护
+  bool _disposed = false;
 
   @override
   void initState() {
     super.initState();
     _showUnboundHome = ValueNotifier<bool>(_computeShowUnboundHome());
-    _connectionLostHint = ValueNotifier<bool>(_computeConnectionLostHint());
-    _subConn = connectionManager.stateStream.listen((_) {
-      if (_disposed) return;
-      _updateDerived();
-    });
     _subVehicles = vehicleStore.vehiclesStream.listen((_) {
       if (_disposed) return;
       _updateDerived();
@@ -142,39 +132,22 @@ class _HomeBodyState extends State<_HomeBody> {
     final cloudState = officialCloudService.state;
     final hasCloudVehicle =
         cloudState.signedIn && cloudState.selectedVehicle != null;
-    final hasTransientDevice =
-        connectionManager.device != null ||
-        connectionManager.state != ble.ConnectionState.disconnected;
-    return !hasLocalVehicle && !hasCloudVehicle && !hasTransientDevice;
-  }
-
-  bool _computeConnectionLostHint() {
-    return connectionManager.device != null &&
-        vehicleStore.vehicles.isEmpty &&
-        !officialCloudService.state.signedIn;
+    return !hasLocalVehicle && !hasCloudVehicle;
   }
 
   void _updateDerived() {
     final nextShow = _computeShowUnboundHome();
-    final nextLost = _computeConnectionLostHint();
     if (_showUnboundHome.value != nextShow) _showUnboundHome.value = nextShow;
-    if (_connectionLostHint.value != nextLost) {
-      _connectionLostHint.value = nextLost;
-    }
   }
 
   @override
   void dispose() {
-    // P0-3: 先置标志，再同步取消，防止回调向已关闭的流发射。
     _disposed = true;
-    _subConn?.cancel();
     _subVehicles?.cancel();
     _subCloud?.cancel();
-    _subConn = null;
     _subVehicles = null;
     _subCloud = null;
     _showUnboundHome.dispose();
-    _connectionLostHint.dispose();
     super.dispose();
   }
 
@@ -205,24 +178,12 @@ class _HomeBodyState extends State<_HomeBody> {
             );
           },
           child: showUnboundHome
-              ? ValueListenableBuilder<bool>(
-                  // P0-4: _UnboundVehicleHome 只依赖 connectionLostHint
-                  valueListenable: _connectionLostHint,
-                  builder: (context, lost, _) =>
-                      _UnboundVehicleHome(connectionLost: lost),
-                )
+              ? const _UnboundVehicleHome()
               : Column(
                   key: const ValueKey('bound-home'),
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // P0-4: _HomeTopSection 独立订阅 connState，
-                    // vehicles/cloud 流变化时不重建
-                    StreamBuilder<ble.ConnectionState>(
-                      stream: connectionManager.stateStream,
-                      initialData: connectionManager.state,
-                      builder: (context, snap) =>
-                          _HomeTopSection(connState: snap.data!),
-                    ),
+                    const _HomeTopSection(),
                     const SizedBox(height: 14),
                     const _HomeQuickSection(),
                     const SizedBox(height: 20),

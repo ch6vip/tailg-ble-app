@@ -1,6 +1,6 @@
 import 'package:flutter/animation.dart';
 
-/// Centralised motion tokens for the Tailg BLE app.
+/// Centralised motion tokens for the Tailg app.
 ///
 /// Current design notes live in `docs/design_system.md`.
 /// Replace hardcoded `Duration` / `Curve` literals with these constants

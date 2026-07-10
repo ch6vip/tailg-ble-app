@@ -5,7 +5,7 @@ import 'sensitive_value_masker.dart';
 
 enum LogLevel { debug, info, warning, error }
 
-enum LogCategory { ble, operation }
+enum LogCategory { connection, operation }
 
 class LogEntry {
   final DateTime time;
@@ -62,7 +62,7 @@ class LogService {
     _clock = clock ?? DateTime.now;
   }
 
-  void ble(
+  void connection(
     String message, {
     String? detail,
     LogLevel level = LogLevel.debug,
@@ -70,7 +70,7 @@ class LogService {
   }) {
     _add(
       _redactedEntry(
-        LogCategory.ble,
+        LogCategory.connection,
         message,
         detail: detail,
         level: level,
@@ -113,9 +113,8 @@ class LogService {
     );
   }
 
-  /// Redacts sensitive BLE login payloads before they hit the in-memory log
-  /// ring buffer (P2-4). Previously the raw QGJ login frame — which carries
-  /// password/userId — was logged verbatim and could be exported/shared.
+  /// Redacts sensitive login payloads before they hit the in-memory log
+  /// ring buffer (P2-4).
   static final RegExp _qgjLoginHint = RegExp(
     r'(登录|login|QGJ 登录)',
     caseSensitive: false,

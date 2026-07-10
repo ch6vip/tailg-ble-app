@@ -1,4 +1,4 @@
-import '../ble/constants.dart';
+import '../models/command_types.dart';
 
 class ControlCommandPolicyResult {
   final bool allowed;

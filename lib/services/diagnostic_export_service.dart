@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-import '../ble/connection_manager.dart' as ble;
 import '../models/official_vehicle.dart';
 import 'control_channel_resolver.dart';
 import 'display_time_formatter.dart';
@@ -10,14 +9,12 @@ import 'sensitive_value_masker.dart';
 import 'vehicle_store.dart';
 
 class DiagnosticExportService {
-  final ble.ConnectionManager connectionManager;
   final LogService logService;
   final VehicleStore vehicleStore;
   final OfficialCloudService officialCloudService;
   final DateTime Function()? _clock;
 
   const DiagnosticExportService({
-    required this.connectionManager,
     required this.logService,
     required this.vehicleStore,
     required this.officialCloudService,
@@ -31,8 +28,6 @@ class DiagnosticExportService {
       _buildVehicleSection(),
       '',
       _buildOfficialCloudSection(),
-      '',
-      _buildBleSection(),
       '',
       _buildLogSectionHeading(entries.length),
       ...entries.map(_formatEntry),
@@ -50,11 +45,7 @@ class DiagnosticExportService {
   String _buildOfficialCloudSection() {
     final state = officialCloudService.state;
     final vehicle = state.selectedVehicle;
-    final availability = ControlChannelResolver.resolve(
-      cloudState: state,
-      bleReady: connectionManager.state == ble.ConnectionState.ready,
-      defaultVehicleId: vehicleStore.defaultVehicleId,
-    );
+    final availability = ControlChannelResolver.resolve(cloudState: state);
     final lines = [
       '## Official Cloud',
       'Initialized: ${state.initialized}',
@@ -64,8 +55,6 @@ class DiagnosticExportService {
       'Vehicles: ${state.vehicles.length}',
       'Control channel: ${state.controlChannel.label}',
       'Effective control channel: ${availability.effectiveChannelLabel}',
-      'BLE control available: ${availability.canUseBle}',
-      'BLE unavailable reason: ${availability.bleUnavailableReason.isEmpty ? 'none' : availability.bleUnavailableReason}',
       'Cloud control available: ${availability.canUseCloud}',
       'Cloud unavailable reason: ${availability.cloudUnavailableReason.isEmpty ? 'none' : availability.cloudUnavailableReason}',
       'Selected vehicle: ${vehicle?.displayName ?? 'none'}',
@@ -129,7 +118,7 @@ class DiagnosticExportService {
 
   String _buildHeader() {
     return [
-      '# Tailg BLE Diagnostic Report',
+      '# Tailg Diagnostic Report',
       'Generated: ${_now().toIso8601String()}',
       'Platform: ${defaultTargetPlatform.name}',
       'Mode: ${kReleaseMode ? 'release' : 'debug/profile'}',
@@ -150,7 +139,6 @@ class DiagnosticExportService {
       'Default ID: ${_maskId(vehicle.id)}',
       'Name: ${vehicle.displayName}',
       'Protocol: ${vehicle.protocol.label}',
-      'QGJ credentials: ${vehicle.hasQgjCredentials ? 'custom' : 'default'}',
       'Last connected: ${vehicle.lastConnectedAt?.toIso8601String() ?? 'none'}',
     ];
     if (location != null) {
@@ -159,46 +147,9 @@ class DiagnosticExportService {
     return lines.join('\n');
   }
 
-  String _buildBleSection() {
-    final device = connectionManager.device;
-    final protocol = connectionManager.protocol;
-    final lastKnownProtocol = connectionManager.lastKnownProtocol;
-    final protocolText = protocol != ble.ProtocolType.unknown
-        ? protocol.name
-        : lastKnownProtocol != ble.ProtocolType.unknown
-        ? '${lastKnownProtocol.name} (last known)'
-        : protocol.name;
-    final lines = [
-      '## BLE',
-      'State: ${connectionManager.state.name}',
-      'Protocol: $protocolText',
-      'Device: ${device?.platformName ?? 'none'}',
-      'Remote ID: ${device?.remoteId.toString() ?? 'none'}',
-      'Token: ${connectionManager.token == null ? 'none' : 'present'}',
-      'QGJ login: password=${connectionManager.qgjLoginPassword == 0 ? 'default' : 'custom'}, userId=${connectionManager.qgjUserId == 0 ? 'default' : 'custom'}',
-    ];
-
-    if (device != null) {
-      for (final service in device.servicesList) {
-        lines.add('Service: ${service.serviceUuid}');
-        for (final c in service.characteristics) {
-          final props = [
-            if (c.properties.read) 'read',
-            if (c.properties.write) 'write',
-            if (c.properties.writeWithoutResponse) 'writeWithoutResponse',
-            if (c.properties.notify) 'notify',
-            if (c.properties.indicate) 'indicate',
-          ].join(',');
-          lines.add('  Char: ${c.characteristicUuid} [$props]');
-        }
-      }
-    }
-    return lines.join('\n');
-  }
-
   String _formatEntry(LogEntry entry) {
     final t = formatLogClockTime(entry.time);
-    final tag = entry.category == LogCategory.ble ? '[BLE]' : '[OP]';
+    final tag = entry.category == LogCategory.connection ? '[CONN]' : '[OP]';
     final level = entry.level.name.toUpperCase();
     final detail = entry.detail;
     return '$t $tag [$level] ${OfficialCloudRedactor.text(entry.message)}'

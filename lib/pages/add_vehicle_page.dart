@@ -75,10 +75,10 @@ class AddVehiclePage extends StatelessWidget {
             AppCard(
               padding: EdgeInsets.zero,
               child: _AddVehicleAction(
-                icon: Icons.bluetooth_searching,
-                title: '近场连接',
-                subtitle: '靠近车辆时用于近场控车',
-                onTap: () => openScanTab(context),
+                icon: Icons.help_outline,
+                title: '绑定帮助',
+                subtitle: '查看绑定说明和常见问题',
+                onTap: () => _showPending(context, '绑定帮助'),
               ),
             ),
           ],

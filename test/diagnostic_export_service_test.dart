@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tailg_ble_app/ble/connection_manager.dart' as ble;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/services/diagnostic_export_service.dart';
 import 'package:tailg_ble_app/services/log_service.dart';
@@ -8,8 +7,6 @@ import 'package:tailg_ble_app/services/vehicle_store.dart';
 
 void main() {
   test('DiagnosticExportService uses injected report time', () async {
-    final connectionManager = ble.ConnectionManager();
-    addTearDown(connectionManager.dispose);
     LogService().clear();
     VehicleStore().resetForTest();
     OfficialCloudService().resetForTest();
@@ -19,7 +16,6 @@ void main() {
 
     final generatedAt = DateTime(2026, 6, 1, 8, 30);
     final service = DiagnosticExportService(
-      connectionManager: connectionManager,
       logService: LogService(),
       vehicleStore: VehicleStore(),
       officialCloudService: OfficialCloudService(),
@@ -28,13 +24,11 @@ void main() {
 
     final lines = service.buildReport(const []).split('\n');
 
-    expect(lines[0], '# Tailg BLE Diagnostic Report');
+    expect(lines[0], '# Tailg Diagnostic Report');
     expect(lines[1], 'Generated: ${generatedAt.toIso8601String()}');
   });
 
   test('DiagnosticExportService includes evicted log count in heading', () {
-    final connectionManager = ble.ConnectionManager();
-    addTearDown(connectionManager.dispose);
     LogService().clear();
     VehicleStore().resetForTest();
     OfficialCloudService().resetForTest();
@@ -47,7 +41,6 @@ void main() {
       logService.operation('entry $index');
     }
     final service = DiagnosticExportService(
-      connectionManager: connectionManager,
       logService: logService,
       vehicleStore: VehicleStore(),
       officialCloudService: OfficialCloudService(),
@@ -62,8 +55,6 @@ void main() {
   test(
     'DiagnosticExportService includes selected official vehicle details',
     () {
-      final connectionManager = ble.ConnectionManager();
-      addTearDown(connectionManager.dispose);
       LogService().clear();
       VehicleStore().resetForTest();
       OfficialCloudService().resetForTest();
@@ -102,7 +93,6 @@ void main() {
         ),
       );
       final service = DiagnosticExportService(
-        connectionManager: connectionManager,
         logService: LogService(),
         vehicleStore: VehicleStore(),
         officialCloudService: OfficialCloudService(),
@@ -131,8 +121,6 @@ void main() {
   );
 
   test('DiagnosticExportService redacts official cloud error details', () {
-    final connectionManager = ble.ConnectionManager();
-    addTearDown(connectionManager.dispose);
     LogService().clear();
     VehicleStore().resetForTest();
     OfficialCloudService().resetForTest();
@@ -149,7 +137,6 @@ void main() {
       ),
     );
     final service = DiagnosticExportService(
-      connectionManager: connectionManager,
       logService: LogService(),
       vehicleStore: VehicleStore(),
       officialCloudService: OfficialCloudService(),

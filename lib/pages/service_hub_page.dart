@@ -5,7 +5,6 @@ import '../widgets/app_chrome.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import 'battery_details_page.dart';
-import 'device_info_page.dart';
 import 'diagnostic_page.dart';
 import 'location_page.dart';
 import 'official_cloud_page.dart';
@@ -123,13 +122,6 @@ class ServiceHubPage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
-                  _ServiceListTile(
-                    icon: Icons.directions_bike_outlined,
-                    title: '设备信息',
-                    subtitle: '查看车辆档案、蓝牙服务和固件信息',
-                    onTap: () => _open(context, const DeviceInfoPage()),
-                  ),
-                  const SizedBox(height: 10),
                   _ServiceListTile(
                     icon: Icons.support_agent_outlined,
                     title: '售后服务',

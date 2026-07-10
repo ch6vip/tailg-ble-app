@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../main.dart'; // P0-6: service locator getters
+import '../main.dart';
 import '../services/app_preferences_service.dart';
-import '../services/proximity_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import 'app_preferences_pages.dart';
@@ -11,8 +10,6 @@ import 'diagnostic_page.dart';
 import 'official_cloud_page.dart';
 import 'garage_page.dart';
 import 'battery_details_page.dart';
-import 'device_info_page.dart';
-import 'ota_precheck_page.dart';
 import 'vehicle_message_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -58,7 +55,7 @@ class _SettingsPageState extends State<SettingsPage> {
               _settingItem(
                 icon: Icons.garage_outlined,
                 title: '车辆管理',
-                subtitle: '我的车辆、近场连接和默认车辆',
+                subtitle: '我的车辆和默认车辆',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute<void>(builder: (_) => const GaragePage()),
@@ -100,8 +97,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
               ),
-              const _AutoConnectSettingTile(),
-              const _ProximityUnlockSettingTile(),
             ]),
             const AppSectionLabel('通用'),
             _group(const [
@@ -158,34 +153,6 @@ class _AdvancedDiagnosticsPage extends StatelessWidget {
             const SizedBox(height: 12),
             _group([
               _settingItem(
-                icon: Icons.directions_bike_outlined,
-                title: '车辆信息',
-                subtitle: '车辆档案、近场设备、服务和固件信息',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const DeviceInfoPage(),
-                  ),
-                ),
-              ),
-              _settingItem(
-                icon: Icons.system_update_alt,
-                title: 'OTA 前置检测',
-                subtitle: '协议、设备信息、固件版本和升级风险检查',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const OtaPrecheckPage(),
-                  ),
-                ),
-              ),
-              _settingItem(
-                icon: Icons.swap_horiz,
-                title: '协议类型',
-                subtitle: '自动识别',
-                onTap: () => _showProtocolDialog(context),
-              ),
-              _settingItem(
                 icon: Icons.health_and_safety_outlined,
                 title: '故障诊断',
                 subtitle: '读取车辆错误码',
@@ -199,7 +166,7 @@ class _AdvancedDiagnosticsPage extends StatelessWidget {
               _settingItem(
                 icon: Icons.article_outlined,
                 title: '日志',
-                subtitle: '查看近场通信和操作记录',
+                subtitle: '查看操作记录',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute<void>(builder: (_) => const LogPage()),
@@ -209,40 +176,6 @@ class _AdvancedDiagnosticsPage extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  void _showProtocolDialog(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: const Text('选择协议类型'),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.lg),
-        ),
-        children: [
-          _protocolOption(context, '自动识别', '根据服务 UUID 自动判断', true),
-          _protocolOption(context, 'Standard (fee5)', '标准台铃协议', false),
-          _protocolOption(context, 'QGJ (feb0)', '骑管家协议', false),
-        ],
-      ),
-    );
-  }
-
-  Widget _protocolOption(
-    BuildContext context,
-    String title,
-    String subtitle,
-    bool selected,
-  ) {
-    return ListTile(
-      leading: Icon(
-        selected ? Icons.radio_button_checked : Icons.radio_button_off,
-        color: selected ? AppColors.primary : AppColors.textTertiary,
-      ),
-      title: Text(title, style: const TextStyle(fontSize: 15)),
-      subtitle: Text(subtitle, style: AppTextStyles.caption),
-      onTap: () => Navigator.pop(context),
     );
   }
 }
@@ -351,62 +284,6 @@ Widget _buildToggle({
     onTap: () => onChanged(!value),
     child: ExcludeSemantics(child: toggle),
   );
-}
-
-class _AutoConnectSettingTile extends StatelessWidget {
-  const _AutoConnectSettingTile();
-
-  static final _service = autoConnectService;
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<bool>(
-      stream: _service.enabledStream,
-      initialData: _service.enabled,
-      builder: (context, snapshot) {
-        final enabled = snapshot.data ?? false;
-        return _settingItem(
-          icon: Icons.bluetooth_outlined,
-          title: '自动连接',
-          subtitle: enabled ? '打开 app 时自动连接上次的设备' : '关闭',
-          trailing: _buildToggle(
-            label: '自动连接开关',
-            value: enabled,
-            onChanged: _service.setEnabled,
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _ProximityUnlockSettingTile extends StatelessWidget {
-  const _ProximityUnlockSettingTile();
-
-  static final _service = proximityService;
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<bool>(
-      stream: _service.enabledStream,
-      initialData: _service.enabled,
-      builder: (context, snapshot) {
-        final enabled = snapshot.data ?? false;
-        return _settingItem(
-          icon: Icons.sensors_outlined,
-          title: '感应解锁',
-          subtitle: enabled
-              ? '靠近车辆且定位精度≤${ProximityUnlockGuard.maxLocationAccuracyMeters.toStringAsFixed(0)}m 时自动解锁'
-              : '关闭',
-          trailing: _buildToggle(
-            label: '感应解锁开关',
-            value: enabled,
-            onChanged: _service.setEnabled,
-          ),
-        );
-      },
-    );
-  }
 }
 
 class _LanguageSettingTile extends StatelessWidget {

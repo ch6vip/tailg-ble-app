@@ -16,7 +16,6 @@ import 'add_vehicle_page.dart';
 import 'app_preferences_pages.dart';
 import 'garage_page.dart';
 import 'official_cloud_page.dart';
-import 'ota_precheck_page.dart';
 import 'vehicle_message_page.dart';
 
 const _officialInk = Color(0xFF060606);
@@ -1028,11 +1027,7 @@ class _SettingsSection extends StatelessWidget {
           _MineListTile(
             icon: Icons.system_update_outlined,
             title: '固件升级',
-            badge: '新版本',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(builder: (_) => const OtaPrecheckPage()),
-            ),
+            onTap: () => onUnavailable('固件升级'),
           ),
           const _MineDivider(),
           _MineListTile(

@@ -1,6 +1,6 @@
-import '../ble/constants.dart';
+import '../models/command_types.dart';
 
-enum ControlCommandTransport { ble, officialCloud, unavailable }
+enum ControlCommandTransport { officialCloud, unavailable }
 
 class ControlCommandResult {
   final CommandCode command;
@@ -16,14 +16,6 @@ class ControlCommandResult {
     this.successMessage,
     this.failureMessage,
   });
-
-  factory ControlCommandResult.bleSuccess(CommandCode command) {
-    return ControlCommandResult._(
-      command: command,
-      transport: ControlCommandTransport.ble,
-      success: true,
-    );
-  }
 
   factory ControlCommandResult.cloudSuccess(
     CommandCode command, {
@@ -57,17 +49,13 @@ class ControlCommandResult {
 
   factory ControlCommandResult.failure(
     CommandCode command, {
-    required ControlCommandTransport transport,
     required String message,
   }) {
     return ControlCommandResult._(
       command: command,
-      transport: transport,
+      transport: ControlCommandTransport.officialCloud,
       success: false,
       failureMessage: message,
     );
   }
-
-  bool get shouldRefreshBikeState =>
-      success && transport == ControlCommandTransport.ble;
 }

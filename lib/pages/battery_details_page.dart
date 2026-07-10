@@ -1,8 +1,5 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
-import '../ble/constants.dart';
 import '../main.dart';
 import '../models/battery_snapshot.dart';
 import '../services/log_service.dart';
@@ -16,69 +13,57 @@ class BatteryDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<BikeState?>(
-      stream: connectionManager.bikeStateStream,
-      initialData: connectionManager.latestBikeState,
-      builder: (context, bikeSnapshot) {
-        return StreamBuilder<OfficialCloudState>(
-          stream: officialCloudService.stateStream,
-          initialData: officialCloudService.state,
-          builder: (context, cloudSnapshot) {
-            final cloudState = cloudSnapshot.data ?? officialCloudService.state;
-            final data = BatterySnapshot.fromSources(
-              bikeState: bikeSnapshot.data,
-              officialVehicle: cloudState.signedIn
-                  ? cloudState.selectedVehicle
-                  : null,
-              officialBatteryInfo: cloudState.batteryInfo,
-            );
-            return Scaffold(
-              backgroundColor: AppColors.pageBg,
-              body: SafeArea(
-                child: RefreshIndicator(
-                  onRefresh: () => _refreshOfficialBattery(context),
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(
-                      parent: BouncingScrollPhysics(),
-                    ),
-                    padding: const EdgeInsets.only(bottom: 24),
-                    children: [
-                      _BatteryHero(
-                        snapshot: data,
-                        cloudState: cloudState,
-                        onRefresh: cloudState.signedIn
-                            ? () => _refreshOfficialBattery(context)
-                            : null,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                        child: Column(
-                          children: [
-                            _SourceStrip(
-                              snapshot: data,
-                              cloudState: cloudState,
-                            ),
-                            const SizedBox(height: 14),
-                            _OfficialSummaryRow(snapshot: data),
-                            const SizedBox(height: 14),
-                            _OfficialMetricGrid(snapshot: data),
-                            const SizedBox(height: 14),
-                            _FaultCard(snapshot: data),
-                            const SizedBox(height: 14),
-                            _BmsDetailsCard(snapshot: data),
-                            const SizedBox(height: 14),
-                            const _CoulombMeterCard(),
-                            const SizedBox(height: 14),
-                            const _BatteryReadOnlyCard(),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+    return StreamBuilder<OfficialCloudState>(
+      stream: officialCloudService.stateStream,
+      initialData: officialCloudService.state,
+      builder: (context, cloudSnapshot) {
+        final cloudState = cloudSnapshot.data ?? officialCloudService.state;
+        final data = BatterySnapshot.fromSources(
+          officialVehicle: cloudState.signedIn
+              ? cloudState.selectedVehicle
+              : null,
+          officialBatteryInfo: cloudState.batteryInfo,
+        );
+        return Scaffold(
+          backgroundColor: AppColors.pageBg,
+          body: SafeArea(
+            child: RefreshIndicator(
+              onRefresh: () => _refreshOfficialBattery(context),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
                 ),
+                padding: const EdgeInsets.only(bottom: 24),
+                children: [
+                  _BatteryHero(
+                    snapshot: data,
+                    cloudState: cloudState,
+                    onRefresh: cloudState.signedIn
+                        ? () => _refreshOfficialBattery(context)
+                        : null,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                    child: Column(
+                      children: [
+                        _SourceStrip(snapshot: data, cloudState: cloudState),
+                        const SizedBox(height: 14),
+                        _OfficialSummaryRow(snapshot: data),
+                        const SizedBox(height: 14),
+                        _OfficialMetricGrid(snapshot: data),
+                        const SizedBox(height: 14),
+                        _FaultCard(snapshot: data),
+                        const SizedBox(height: 14),
+                        _BmsDetailsCard(snapshot: data),
+                        const SizedBox(height: 14),
+                        const _BatteryReadOnlyCard(),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            );
-          },
+            ),
+          ),
         );
       },
     );
@@ -307,9 +292,6 @@ class _BatteryHero extends StatelessWidget {
   static String _vehicleName(BatterySnapshot snapshot) {
     final vehicle = snapshot.officialVehicle;
     if (vehicle != null) return vehicle.displayName;
-    final device = connectionManager.device;
-    final name = device?.platformName.trim();
-    if (name != null && name.isNotEmpty) return name;
     return '当前车辆';
   }
 }
@@ -800,10 +782,6 @@ class _BmsFieldRow extends StatelessWidget {
       return const _SourceChip('待同步', AppColors.warning);
     }
     return switch (field.source) {
-      BatteryDataSource.ble => const _SourceChip(
-        '车辆实时状态',
-        AppColors.textSecondary,
-      ),
       BatteryDataSource.officialVehicle => const _SourceChip(
         '车辆状态',
         AppColors.success,
@@ -825,128 +803,6 @@ class _SourceChip {
   final Color color;
 
   const _SourceChip(this.label, this.color);
-}
-
-class _CoulombMeterCard extends StatefulWidget {
-  const _CoulombMeterCard();
-
-  @override
-  State<_CoulombMeterCard> createState() => _CoulombMeterCardState();
-}
-
-class _CoulombMeterCardState extends State<_CoulombMeterCard> {
-  StreamSubscription<String>? _fbb2Sub;
-  bool _loading = false;
-  bool? _socEnabled;
-  bool _toggling = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _fbb2Sub = connectionManager.fbb2Stream.listen(_onFbb2Data);
-  }
-
-  @override
-  void dispose() {
-    _fbb2Sub?.cancel();
-    super.dispose();
-  }
-
-  void _onFbb2Data(String hex) {
-    final upper = hex.toUpperCase();
-    if (upper.length == 24 && upper.startsWith('D0010A08')) {
-      final statusByte = int.parse(upper.substring(10, 12), radix: 16);
-      final bit0 = (statusByte >> 7) & 1;
-      setState(() {
-        _socEnabled = bit0 == 1;
-        _loading = false;
-        _toggling = false;
-      });
-    }
-  }
-
-  Future<void> _readSocState() async {
-    setState(() => _loading = true);
-    try {
-      await connectionManager.sendCommand(CommandCode.powerOn);
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      await connectionManager.writeFbb2('D0018A00');
-    } catch (e) {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _toggleSoc(bool enable) async {
-    setState(() => _toggling = true);
-    try {
-      await connectionManager.sendCommand(CommandCode.powerOn);
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      final cmd = enable ? 'D0018A020600' : 'D0018A020500';
-      await connectionManager.writeFbb2(cmd);
-      await Future<void>.delayed(const Duration(milliseconds: 500));
-      await _readSocState();
-    } catch (e) {
-      if (mounted) setState(() => _toggling = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: cardDecoration,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.battery_charging_full,
-                size: AppIconSizes.md,
-                color: AppColors.primary,
-              ),
-              const SizedBox(width: 8),
-              const Text('库仑计 (SOC自学习)', style: AppTextStyles.itemTitle),
-              const Spacer(),
-              if (_loading || _toggling)
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                IconButton(
-                  icon: const Icon(Icons.refresh, size: 20),
-                  onPressed: _readSocState,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Text('开启后可自学习电量（铅酸电池适用，锂电不可用）', style: AppTextStyles.bodySmall),
-          const SizedBox(height: 12),
-          if (_socEnabled != null)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _socEnabled! ? '已开启' : '已关闭',
-                  style: AppTextStyles.valueText,
-                ),
-                Switch(
-                  value: _socEnabled!,
-                  activeColor: AppColors.primary,
-                  onChanged: _toggling ? null : _toggleSoc,
-                ),
-              ],
-            )
-          else
-            Text('点击刷新按钮读取状态', style: AppTextStyles.caption),
-        ],
-      ),
-    );
-  }
 }
 
 class _BatteryReadOnlyCard extends StatelessWidget {

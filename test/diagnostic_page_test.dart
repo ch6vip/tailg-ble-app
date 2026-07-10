@@ -1,23 +1,12 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tailg_ble_app/ble/connection_manager.dart' as ble;
 import 'package:tailg_ble_app/pages/diagnostic_page.dart';
-import 'package:tailg_ble_app/services/app_preferences_service.dart';
-import 'package:tailg_ble_app/services/auto_connect_service.dart';
-import 'package:tailg_ble_app/services/location_service.dart';
 import 'package:tailg_ble_app/services/log_service.dart';
-import 'package:tailg_ble_app/services/manual_mode_service.dart';
-import 'package:tailg_ble_app/services/official_cloud_service.dart';
-import 'package:tailg_ble_app/services/permission_service.dart';
-import 'package:tailg_ble_app/services/proximity_service.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
-import 'package:tailg_ble_app/services/vehicle_store.dart';
 
-import 'helpers/snack_finders.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/view_size.dart';
@@ -29,99 +18,11 @@ void main() {
     resetMockPreferences();
   });
 
-  testWidgets(
-    'diagnostic action shows info snack when vehicle is disconnected',
-    (tester) async {
-      resetMockPreferences();
-
-      await tester.pumpWidget(const TestApp(home: DiagnosticPage()));
-      await tester.pump();
-
-      await tester.tap(find.text('一键诊断'));
-      await tester.pump();
-
-      expect(find.text('请先连接车辆'), findsOneWidget);
-      expect(snackIcon(Icons.info_outline), findsOneWidget);
-    },
-  );
-
-  testWidgets('diagnostic result renders raw fault code', (tester) async {
-    resetMockPreferences();
-    _overrideConnectionManager(
-      _DiagnosticConnectionManager([0, 0, 0, 0, 0, 0x21]),
-    );
-
-    await tester.pumpWidget(
-      TestApp(home: DiagnosticPage(clock: () => DateTime(2026, 6, 9, 10, 30))),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('一键诊断'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('检测到 2 个故障'), findsOneWidget);
-    expect(find.text('原始码: 0x21'), findsOneWidget);
-    expect(find.text('电机故障'), findsOneWidget);
-    final prefs = await SharedPreferences.getInstance();
-    final history = prefs.getStringList('diagnostic_history');
-    expect(history, hasLength(1));
-    final record = jsonDecode(history!.single) as Map<String, dynamic>;
-    expect(record, containsPair('time', '2026-06-09T10:30:00.000'));
-    expect(record, containsPair('faults', ['电机故障', '欠压保护']));
-  });
-
-  testWidgets('diagnostic read completion is ignored after unmount', (
-    tester,
-  ) async {
-    resetMockPreferences();
-    final manager = _PendingDiagnosticConnectionManager();
-    _overrideConnectionManager(manager);
-
-    await tester.pumpWidget(const TestApp(home: DiagnosticPage()));
-    await tester.pump();
-
-    await tester.tap(find.text('一键诊断'));
-    await tester.pump();
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-
-    manager.complete([0, 0, 0, 0, 0, 0x21]);
-    await tester.pump();
-
-    expect(tester.takeException(), isNull);
-    expect(LogService().all.where((entry) => entry.message == '诊断失败'), isEmpty);
-  });
-
-  testWidgets('diagnostic failures do not expose raw exception text', (
-    tester,
-  ) async {
-    resetMockPreferences();
-    _overrideConnectionManager(
-      _FailingDiagnosticConnectionManager(
-        Exception('feb3 token=raw-secret device=AABBCCDDEEFF'),
-      ),
-    );
-
-    await tester.pumpWidget(const TestApp(home: DiagnosticPage()));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('一键诊断'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('诊断失败，请稍后重试'), findsOneWidget);
-    expect(find.textContaining('raw-secret'), findsNothing);
-    expect(find.textContaining('AABBCCDDEEFF'), findsNothing);
-    expect(
-      LogService().all.where((entry) => entry.message == '诊断失败'),
-      isNotEmpty,
-    );
-  });
-
-  testWidgets('diagnostic history displays the newest 10 persisted records', (
+  testWidgets('diagnostic page renders persisted fault records', (
     tester,
   ) async {
     setTestViewSize(tester, const Size(430, 2400));
-    final persisted = List.generate(11, (index) {
+    final persisted = List.generate(3, (index) {
       final raw = index + 1;
       return jsonEncode(
         DiagnosticRecord(
@@ -136,79 +37,20 @@ void main() {
     await tester.pumpWidget(const TestApp(home: DiagnosticPage()));
     await tester.pump();
 
-    expect(find.text('历史记录'), findsOneWidget);
-    expect(find.text('故障 11'), findsOneWidget);
+    expect(find.text('故障诊断'), findsOneWidget);
+    expect(find.text('故障 1'), findsOneWidget);
     expect(find.text('故障 2'), findsOneWidget);
-    expect(find.text('故障 1'), findsNothing);
+    expect(find.text('故障 3'), findsOneWidget);
   });
-}
 
-void _overrideConnectionManager(ble.ConnectionManager connectionManager) {
-  AppServices.override(
-    AppServices(
-      connectionManager: connectionManager,
-      proximityService: ProximityService(),
-      autoConnectService: AutoConnectService(),
-      manualModeService: ManualModeService(),
-      locationService: LocationService(),
-      logService: LogService(),
-      vehicleStore: VehicleStore(),
-      officialCloudService: OfficialCloudService(),
-      appPreferencesService: AppPreferencesService(),
-      permissionService: AppPermissionService(),
-      homeTabIndex: ValueNotifier<int>(1),
-    ),
-  );
-}
+  testWidgets('diagnostic page shows empty state without records', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
 
-class _DiagnosticConnectionManager extends ble.ConnectionManager {
-  _DiagnosticConnectionManager(this._feb3Data);
+    await tester.pumpWidget(const TestApp(home: DiagnosticPage()));
+    await tester.pump();
 
-  final List<int> _feb3Data;
-
-  @override
-  ble.ConnectionState get state => ble.ConnectionState.ready;
-
-  @override
-  Stream<ble.ConnectionState> get stateStream =>
-      Stream<ble.ConnectionState>.empty();
-
-  @override
-  Future<List<int>?> readFeb3() async => _feb3Data;
-}
-
-class _PendingDiagnosticConnectionManager extends ble.ConnectionManager {
-  final _completer = Completer<List<int>?>();
-
-  @override
-  ble.ConnectionState get state => ble.ConnectionState.ready;
-
-  @override
-  Stream<ble.ConnectionState> get stateStream =>
-      Stream<ble.ConnectionState>.empty();
-
-  @override
-  Future<List<int>?> readFeb3() => _completer.future;
-
-  void complete(List<int>? data) {
-    if (!_completer.isCompleted) {
-      _completer.complete(data);
-    }
-  }
-}
-
-class _FailingDiagnosticConnectionManager extends ble.ConnectionManager {
-  _FailingDiagnosticConnectionManager(this._error);
-
-  final Object _error;
-
-  @override
-  ble.ConnectionState get state => ble.ConnectionState.ready;
-
-  @override
-  Stream<ble.ConnectionState> get stateStream =>
-      Stream<ble.ConnectionState>.empty();
-
-  @override
-  Future<List<int>?> readFeb3() => Future<List<int>?>.error(_error);
+    expect(find.text('暂无诊断记录'), findsOneWidget);
+  });
 }

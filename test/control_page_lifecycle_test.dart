@@ -16,22 +16,6 @@ void main() {
     expect(source, isNot(contains('_combinedStream')));
     expect(source, isNot(contains('StreamController<List<dynamic>>')));
     expect(source, isNot(contains('StreamSubscription<dynamic>')));
-    expect(
-      RegExp(
-        r'StreamBuilder<ble\.ConnectionState>\(',
-      ).allMatches(source).length,
-      greaterThanOrEqualTo(1),
-      reason:
-          '_HomeTopSection should keep a typed connection-state subscription '
-          'instead of sharing one combined home stream.',
-    );
-  });
-
-  test('Home overview keeps bike state stream typed', () {
-    final source = readSource('lib/pages/control_page_home_overview.dart');
-
-    expect(source, contains('StreamBuilder<BikeState?>('));
-    expect(source, isNot(contains('StreamBuilder<dynamic>(')));
   });
 
   test('Home overview uses monotonic control confirmation timeout', () {

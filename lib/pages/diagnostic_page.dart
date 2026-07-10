@@ -1,14 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../main.dart';
-import '../ble/connection_manager.dart' as ble;
-import '../ble/hex.dart';
 import '../models/persistence_value.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
-import '../widgets/app_snack.dart';
 
 class FaultInfo {
   final int code;
@@ -61,86 +57,31 @@ class DiagnosticRecord {
     DateTime Function()? clock,
   }) {
     try {
-      return _fromDecoded(
-        jsonDecode(raw),
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) return null;
+      return DiagnosticRecord.fromJson(
+        decoded,
         fallbackNow: fallbackNow,
         clock: clock,
       );
     } on Object {
-      // One corrupt history entry should not hide later diagnostic records.
       return null;
     }
-  }
-
-  static DiagnosticRecord? _fromDecoded(
-    Object? decoded, {
-    DateTime? fallbackNow,
-    DateTime Function()? clock,
-  }) {
-    final json = parsePersistedMap(decoded);
-    return json == null
-        ? null
-        : DiagnosticRecord.fromJson(
-            json,
-            fallbackNow: fallbackNow,
-            clock: clock,
-          );
-  }
-
-  static List<DiagnosticRecord> parseHistory(
-    Iterable<String> entries, {
-    DateTime? fallbackNow,
-    DateTime Function()? clock,
-  }) {
-    final parsedRecords = <DiagnosticRecord>[];
-    for (final raw in entries) {
-      final record = DiagnosticRecord.tryParse(
-        raw,
-        fallbackNow: fallbackNow,
-        clock: clock,
-      );
-      if (record != null) parsedRecords.add(record);
-    }
-    return _reverseHistoryOrder(parsedRecords);
-  }
-
-  static List<String> encodeHistory(Iterable<DiagnosticRecord> records) {
-    final encoded = <String>[];
-    for (final record in _reverseHistoryOrder(records)) {
-      if (encoded.length >= persistedHistoryLimit) break;
-      encoded.add(jsonEncode(record.toJson()));
-    }
-    return encoded;
-  }
-
-  static List<DiagnosticRecord> _reverseHistoryOrder(
-    Iterable<DiagnosticRecord> records,
-  ) {
-    final source = records.toList(growable: false);
-    final ordered = <DiagnosticRecord>[];
-    for (var index = source.length - 1; index >= 0; index--) {
-      ordered.add(source[index]);
-    }
-    return ordered;
   }
 }
 
 class DiagnosticPage extends StatefulWidget {
-  final DateTime Function()? clock;
-
   const DiagnosticPage({super.key, this.clock});
+
+  final DateTime Function()? clock;
 
   @override
   State<DiagnosticPage> createState() => _DiagnosticPageState();
 }
 
 class _DiagnosticPageState extends State<DiagnosticPage> {
-  static const _displayHistoryLimit = 10;
-
-  final _log = logService;
-  bool _scanning = false;
-  List<FaultInfo> _currentFaults = [];
-  int? _rawFaultByte;
+  static const _historyKey = 'diagnostic_history';
+  final _log = LogService();
   List<DiagnosticRecord> _history = [];
 
   @override
@@ -150,306 +91,134 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
   }
 
   Future<void> _loadHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getStringList('diagnostic_history') ?? [];
-    if (!mounted) return;
-    setState(() {
-      _history = DiagnosticRecord.parseHistory(data);
-    });
-  }
-
-  Future<void> _saveHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = DiagnosticRecord.encodeHistory(_history);
-    await prefs.setStringList('diagnostic_history', data);
-  }
-
-  List<FaultInfo> _parseFaults(int faultByte) {
-    return [
-      FaultInfo(
-        code: 0x01,
-        name: '电机故障',
-        description: '电机运行异常或线路断开',
-        icon: Icons.settings_suggest,
-        active: (faultByte & 0x01) != 0,
-      ),
-      FaultInfo(
-        code: 0x02,
-        name: '转把故障',
-        description: '转把信号异常或接触不良',
-        icon: Icons.rotate_right,
-        active: (faultByte & 0x02) != 0,
-      ),
-      FaultInfo(
-        code: 0x04,
-        name: '控制器故障',
-        description: '控制器通信异常',
-        icon: Icons.memory,
-        active: (faultByte & 0x04) != 0,
-      ),
-      FaultInfo(
-        code: 0x08,
-        name: '电机缺相',
-        description: '电机相线接触不良或断开',
-        icon: Icons.electrical_services,
-        active: (faultByte & 0x08) != 0,
-      ),
-      FaultInfo(
-        code: 0x10,
-        name: '刹车故障',
-        description: '刹车传感器异常或常闭',
-        icon: Icons.do_not_disturb,
-        active: (faultByte & 0x10) != 0,
-      ),
-      FaultInfo(
-        code: 0x20,
-        name: '欠压保护',
-        description: '电池电压过低，请及时充电',
-        icon: Icons.battery_alert,
-        active: (faultByte & 0x20) != 0,
-      ),
-    ];
-  }
-
-  // PLACEHOLDER_DIAGNOSTIC_METHODS
-  Future<void> _runDiagnostic() async {
-    if (connectionManager.state != ble.ConnectionState.ready) {
-      AppSnack.info(context, '请先连接车辆');
-      return;
-    }
-    setState(() => _scanning = true);
-    _log.operation('开始故障诊断');
     try {
-      final data = await connectionManager.readFeb3();
-      if (!mounted) return;
-      if (data == null) throw Exception('feb3 特征未找到');
-      if (data.length < 6) throw Exception('数据不完整 (${data.length} bytes)');
-      final faultByte = data[5];
-      final faults = _parseFaults(faultByte);
-      final activeFaults = _activeFaults(faults);
-      setState(() {
-        _rawFaultByte = faultByte;
-        _currentFaults = faults;
-      });
-      final record = DiagnosticRecord(
-        time: (widget.clock ?? DateTime.now)(),
-        rawByte: faultByte,
-        faults: _faultNames(activeFaults),
-      );
-      _history.insert(0, record);
-      await _saveHistory();
-      _log.operation(
-        '诊断完成',
-        detail:
-            'raw=0x${faultByte.toRadixString(16)}, 故障数=${activeFaults.length}',
-      );
-    } catch (e) {
-      _log.operation('诊断失败', detail: e.toString(), level: LogLevel.error);
-      if (mounted) {
-        AppSnack.error(context, '诊断失败，请稍后重试');
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getStringList(_historyKey) ?? [];
+      final records = <DiagnosticRecord>[];
+      for (final entry in raw) {
+        final record = DiagnosticRecord.tryParse(
+          entry,
+          clock: widget.clock,
+        );
+        if (record != null) records.add(record);
       }
-    } finally {
-      if (mounted) setState(() => _scanning = false);
+      if (mounted) setState(() => _history = records);
+    } catch (e) {
+      _log.operation('加载诊断历史失败', detail: '$e', level: LogLevel.warning);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final rawFaultByte = _rawFaultByte;
-    final activeFaults = _activeFaults(_currentFaults);
-    final allClear = rawFaultByte != null && activeFaults.isEmpty;
-    return StreamBuilder<ble.ConnectionState>(
-      stream: connectionManager.stateStream,
-      initialData: connectionManager.state,
-      builder: (context, snapshot) {
-        final connState = snapshot.data ?? ble.ConnectionState.disconnected;
-        return Scaffold(
-          backgroundColor: AppColors.pageBg,
-          body: SafeArea(
-            child: Column(
-              children: [
-                const AppPageHeader(title: '故障诊断'),
-                ConnectionStatusBanner(
-                  state: connState,
-                  onScanTap: () => openScanTab(context),
-                ),
-                Expanded(
-                  child: ListView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                    children: [
-                      FilledButton.icon(
-                        onPressed: _scanning ? null : _runDiagnostic,
-                        icon: _scanning
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.search,
-                                size: AppIconSizes.lg,
-                                semanticLabel: '诊断',
-                              ),
-                        label: Text(_scanning ? '诊断中...' : '一键诊断'),
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(52),
+    return Scaffold(
+      backgroundColor: AppColors.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const AppPageHeader(title: '故障诊断'),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: AppCard(
+                margin: EdgeInsets.zero,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: AppColors.textTertiary,
+                      size: 20,
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        '实时故障诊断需要蓝牙连接，当前仅显示历史记录',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
                         ),
                       ),
-                      if (rawFaultByte != null) ...[
-                        const SizedBox(height: 20),
-                        AppCard(
-                          margin: EdgeInsets.zero,
-                          color: allClear
-                              ? AppColors.success.withValues(alpha: 0.08)
-                              : AppColors.danger.withValues(alpha: 0.08),
-                          child: Row(
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              child: _history.isEmpty
+                  ? const AppEmptyState(
+                      icon: Icons.health_and_safety_outlined,
+                      title: '暂无诊断记录',
+                      subtitle: '历史诊断记录将在此显示',
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                      itemCount: _history.length,
+                      itemBuilder: (context, index) {
+                        final record = _history[index];
+                        final hasFaults = record.faults.isNotEmpty;
+                        return AppCard(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                allClear ? Icons.check_circle : Icons.warning,
-                                color: allClear
-                                    ? AppColors.success
-                                    : AppColors.danger,
-                                size: AppIconSizes.lg,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      allClear
-                                          ? '车辆状态正常'
-                                          : '检测到 ${activeFaults.length} 个故障',
+                              Row(
+                                children: [
+                                  Icon(
+                                    hasFaults
+                                        ? Icons.warning
+                                        : Icons.check_circle,
+                                    color: hasFaults
+                                        ? AppColors.danger
+                                        : AppColors.success,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      hasFaults
+                                          ? '发现 ${record.faults.length} 个故障'
+                                          : '车辆状态正常',
                                       style: TextStyle(
-                                        fontSize: 16,
+                                        fontSize: 14,
                                         fontWeight: FontWeight.w600,
-                                        color: allClear
-                                            ? AppColors.success
-                                            : AppColors.danger,
+                                        color: hasFaults
+                                            ? AppColors.danger
+                                            : AppColors.success,
                                       ),
                                     ),
-                                    Text(
-                                      '原始码: 0x${intToHex2(rawFaultByte)}',
-                                      style: AppTextStyles.smallText,
+                                  ),
+                                  Text(
+                                    _formatTime(record.time),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textTertiary,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
+                              if (hasFaults) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  record.faults.join('、'),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        ..._currentFaults.map(
-                          (f) => AppCard(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: EdgeInsets.zero,
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: f.active
-                                    ? AppColors.danger.withValues(alpha: 0.15)
-                                    : AppColors.success.withValues(alpha: 0.15),
-                                child: Icon(
-                                  f.icon,
-                                  color: f.active
-                                      ? AppColors.danger
-                                      : AppColors.success,
-                                  size: AppIconSizes.md,
-                                ),
-                              ),
-                              title: Text(f.name),
-                              subtitle: Text(
-                                f.description,
-                                style: AppTextStyles.caption,
-                              ),
-                              trailing: Text(
-                                f.active ? '异常' : '正常',
-                                style: TextStyle(
-                                  color: f.active
-                                      ? AppColors.danger
-                                      : AppColors.success,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                      if (_history.isNotEmpty) ...[
-                        const SizedBox(height: 24),
-                        Text(
-                          '历史记录',
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        ..._history.take(_displayHistoryLimit).map((r) {
-                          final timeStr =
-                              '${r.time.month}/${r.time.day} '
-                              '${r.time.hour.toString().padLeft(2, '0')}:${r.time.minute.toString().padLeft(2, '0')}';
-                          final hasFaults = r.faults.isNotEmpty;
-                          return AppCard(
-                            margin: const EdgeInsets.only(bottom: 6),
-                            padding: EdgeInsets.zero,
-                            child: ListTile(
-                              dense: true,
-                              leading: Icon(
-                                hasFaults
-                                    ? Icons.warning_amber
-                                    : Icons.check_circle_outline,
-                                color: hasFaults
-                                    ? AppColors.warning
-                                    : AppColors.success,
-                                size: AppIconSizes.md,
-                              ),
-                              title: Text(
-                                hasFaults ? r.faults.join('、') : '无故障',
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                              subtitle: Text(
-                                '0x${intToHex2(r.rawByte)}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textTertiary,
-                                ),
-                              ),
-                              trailing: Text(
-                                timeStr,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textTertiary,
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+                        );
+                      },
+                    ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
-  List<FaultInfo> _activeFaults(Iterable<FaultInfo> faults) {
-    final activeFaults = <FaultInfo>[];
-    for (final fault in faults) {
-      if (fault.active) activeFaults.add(fault);
-    }
-    return activeFaults;
-  }
-
-  List<String> _faultNames(Iterable<FaultInfo> faults) {
-    final names = <String>[];
-    for (final fault in faults) {
-      names.add(fault.name);
-    }
-    return names;
+  String _formatTime(DateTime time) {
+    return '${time.month}/${time.day} '
+        '${time.hour.toString().padLeft(2, '0')}:'
+        '${time.minute.toString().padLeft(2, '0')}';
   }
 }

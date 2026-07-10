@@ -1,12 +1,7 @@
 part of 'control_page.dart';
 
 class _UnboundVehicleHome extends StatelessWidget {
-  const _UnboundVehicleHome({this.connectionLost = false});
-
-  /// When true, the user previously had a BLE connection but vehicles are
-  /// currently unavailable — likely a connectivity glitch rather than a
-  /// first-launch empty state.
-  final bool connectionLost;
+  const _UnboundVehicleHome();
 
   void _showSnack(BuildContext context, String message) {
     AppSnack.info(context, message);
@@ -30,123 +25,64 @@ class _UnboundVehicleHome extends StatelessWidget {
           child: _UnboundLogoMark(),
         ),
         const SizedBox(height: 54),
-        if (connectionLost) ...[
-          // Connection-lost variant: show retry CTA instead of full intro
-          const SizedBox(height: 20),
-          Container(
-            width: 80,
-            height: 80,
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceBrandAmberTint,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.bluetooth_disabled,
-              size: 40,
-              color: AppColors.energyAmber,
-            ),
+        const Text(
+          '未绑定车辆',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 36,
+            height: 1.05,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
           ),
-          const Text(
-            '连接已中断',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 28,
-              height: 1.05,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          '登录官方账号后可使用控车、定位、轨迹和电池服务',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 14,
+            height: 1.35,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
           ),
-          const SizedBox(height: 10),
-          Text(
-            '之前连接的设备暂时不可用\n请靠近车辆后重试',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              height: 1.35,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 28),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: _OfficialActionButton(
-              label: '重新连接',
-              foreground: Colors.white,
-              background: AppColors.primary,
-              onTap: () => openScanTab(context),
-            ),
-          ),
-        ] else ...[
-          // Normal first-launch empty state
-          const Text(
-            '未绑定车辆',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 36,
-              height: 1.05,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            '登录官方账号或绑定车辆后可使用控车、定位、轨迹和电池服务',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              height: 1.35,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-        if (!connectionLost) ...[
-          const SizedBox(height: 22),
-          const _UnboundBanner(),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: Column(
-              children: [
-                _OfficialActionButton(
-                  label: '绑定设备',
-                  foreground: Colors.white,
-                  background: AppColors.primary,
-                  onTap: () => _openAddVehicle(context),
+        ),
+        const SizedBox(height: 22),
+        const _UnboundBanner(),
+        const SizedBox(height: 20),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Column(
+            children: [
+              _OfficialActionButton(
+                label: '绑定设备',
+                foreground: Colors.white,
+                background: AppColors.primary,
+                onTap: () => _openAddVehicle(context),
+              ),
+              const SizedBox(height: 12),
+              _OfficialActionButton(
+                label: '虚拟体验（演示）',
+                foreground: AppColors.textSecondary,
+                background: AppColors.surface,
+                onTap: () => _showSnack(context, '虚拟体验暂未开放，可先登录账号'),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(builder: (_) => const GaragePage()),
                 ),
-                const SizedBox(height: 12),
-                _OfficialActionButton(
-                  label: '虚拟体验（演示）',
-                  foreground: AppColors.textSecondary,
-                  background: AppColors.surface,
-                  onTap: () => _showSnack(context, '虚拟体验暂未开放，可先登录账号或使用近场连接'),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(builder: (_) => const GaragePage()),
-                  ),
-                  child: const Text(
-                    '绑定说明',
-                    style: TextStyle(
-                      color: AppColors.textTertiary,
-                      fontWeight: FontWeight.w700,
-                    ),
+                child: const Text(
+                  '绑定说明',
+                  style: TextStyle(
+                    color: AppColors.textTertiary,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 8),
-                _OfficialTextLinkRow(
-                  icon: Icons.bluetooth_searching,
-                  label: '附近车辆？使用近场连接',
-                  onTap: () => openScanTab(context),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
         const SizedBox(height: 20),
       ],
     );
@@ -211,7 +147,7 @@ class _UnboundBannerState extends State<_UnboundBanner>
         end: Alignment.bottomRight,
         colors: [AppColors.pageBgBot, Color(0xFFEDF1F5), Color(0xFFE6F7F1)],
       ),
-      chips: ['蓝牙控车', '云端车辆'],
+      chips: ['远程控车', '云端车辆'],
       caption: '登录官方账号后同步车辆状态',
     ),
     _BannerPage(

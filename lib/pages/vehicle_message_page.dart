@@ -104,53 +104,8 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
 
   _VehicleMessage? _mapEntry(LogEntry entry) {
     final lower = '${entry.message} ${entry.detail ?? ''}'.toLowerCase();
-    final isBle = entry.category == LogCategory.ble;
     final isOp = entry.category == LogCategory.operation;
 
-    if (isBle && lower.contains('重连成功')) {
-      return _VehicleMessage(
-        id: _makeId(entry),
-        title: '车辆已恢复连接',
-        subtitle: entry.detail ?? '蓝牙连接已恢复，设备服务重新就绪。',
-        time: entry.time,
-        icon: Icons.bluetooth_connected,
-        category: _VehicleMessageCategory.system,
-        severity: _VehicleMessageSeverity.info,
-      );
-    }
-    if (isBle && lower.contains('设备断开连接')) {
-      return _VehicleMessage(
-        id: _makeId(entry),
-        title: '车辆连接中断',
-        subtitle: '车辆蓝牙连接已断开，正在尝试重连。',
-        time: entry.time,
-        icon: Icons.bluetooth_disabled,
-        category: _VehicleMessageCategory.system,
-        severity: _VehicleMessageSeverity.warning,
-      );
-    }
-    if (isBle && lower.contains('连接失败')) {
-      return _VehicleMessage(
-        id: _makeId(entry),
-        title: '车辆连接失败',
-        subtitle: entry.detail ?? entry.message,
-        time: entry.time,
-        icon: Icons.error_outline,
-        category: _VehicleMessageCategory.system,
-        severity: _VehicleMessageSeverity.error,
-      );
-    }
-    if (isBle && lower.contains('心跳连续失败')) {
-      return _VehicleMessage(
-        id: _makeId(entry),
-        title: '通信状态异常',
-        subtitle: entry.detail ?? entry.message,
-        time: entry.time,
-        icon: Icons.sync_problem,
-        category: _VehicleMessageCategory.device,
-        severity: _VehicleMessageSeverity.warning,
-      );
-    }
     if (isOp && lower.contains('指令失败')) {
       return _VehicleMessage(
         id: _makeId(entry),

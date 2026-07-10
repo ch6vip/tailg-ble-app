@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../main.dart';
-import '../ble/connection_manager.dart' as ble;
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_snack.dart';
@@ -52,25 +50,15 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
   }
 
   Future<void> _copyToken() async {
-    final token = _savedToken ?? connectionManager.token;
+    final token = _savedToken;
     if (token == null || token.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: token));
     if (!mounted) return;
     AppSnack.success(context, '已复制到剪贴板');
   }
 
-  void _useCurrentToken() {
-    final token = connectionManager.token;
-    if (token != null && token.isNotEmpty) {
-      _controller.text = token;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final currentToken = connectionManager.token;
-    final isConnected = connectionManager.state == ble.ConnectionState.ready;
-
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
@@ -79,37 +67,33 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
           children: [
             const AppPageHeader(title: '云端 Token'),
             const SizedBox(height: 20),
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '当前连接 Token',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          isConnected && currentToken != null
-                              ? currentToken
-                              : '未连接',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontFamily: 'monospace',
-                            color: isConnected
-                                ? AppColors.textPrimary
-                                : AppColors.textTertiary,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+            if (_savedToken != null)
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '已保存 Token',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textTertiary,
                       ),
-                      if (isConnected && currentToken != null)
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _savedToken!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontFamily: 'monospace',
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                         IconButton(
                           icon: Icon(
                             Icons.copy,
@@ -124,11 +108,11 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                           ),
                           tooltip: '复制',
                         ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
             const SizedBox(height: 16),
             AppCard(
               child: Column(
@@ -172,30 +156,15 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      if (isConnected)
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _useCurrentToken,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.primary,
-                              side: const BorderSide(color: AppColors.primary),
-                            ),
-                            child: const Text('使用当前'),
-                          ),
-                        ),
-                      if (isConnected) const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: _saveToken,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                          ),
-                          child: const Text('保存'),
-                        ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _saveToken,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
                       ),
-                    ],
+                      child: const Text('保存'),
+                    ),
                   ),
                 ],
               ),

@@ -558,10 +558,6 @@ class _OfficialVehicleCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            if (!vehicle.hasBleIdentity) ...[
-              const SizedBox(height: 2),
-              const _MissingBleIdentityNotice(),
-            ],
             const SizedBox(height: 10),
             Row(
               children: [
@@ -636,53 +632,6 @@ class _OfficialVehicleCard extends StatelessWidget {
               const SizedBox(height: 8),
               _StaleLinkNotice(vehicle: vehicle),
             ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MissingBleIdentityNotice extends StatelessWidget {
-  const _MissingBleIdentityNotice();
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.info.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(AppRadii.card),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(
-              Icons.bluetooth_searching,
-              size: AppIconSizes.sm,
-              color: AppColors.info,
-            ),
-            const SizedBox(width: 6),
-            const Expanded(
-              child: Text(
-                '该车辆暂未返回近场连接信息，远程控车不受影响。需要靠近车辆使用时，可添加近场连接车辆。',
-                style: TextStyle(
-                  fontSize: 12,
-                  height: 1.35,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-            ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: AppTouchTargets.min),
-              child: TextButton(
-                onPressed: () => openScanTab(context),
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                ),
-                child: const Text('近场连接'),
-              ),
-            ),
           ],
         ),
       ),
@@ -1043,7 +992,6 @@ Future<void> _applyLinkedLocalVehicle(OfficialVehicle vehicle) async {
 
 Future<void> _applyLocalVehicle(VehicleProfile local) async {
   await vehicleStore.setDefault(local.id);
-  applyVehicleBleCredentials(local);
 }
 
 class OfficialVehicleLinkPage extends StatelessWidget {

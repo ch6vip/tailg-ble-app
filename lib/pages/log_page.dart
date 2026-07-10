@@ -51,7 +51,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
   List<LogEntry> _getEntries(int tabIndex) {
     return switch (tabIndex) {
       0 => _log.all,
-      1 => _log.byCategory(LogCategory.ble),
+      1 => _log.byCategory(LogCategory.connection),
       2 => _log.byCategory(LogCategory.operation),
       _ => _log.all,
     };
@@ -69,7 +69,6 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
       return;
     }
     final report = DiagnosticExportService(
-      connectionManager: connectionManager,
       logService: _log,
       vehicleStore: vehicleStore,
       officialCloudService: officialCloudService,
@@ -148,7 +147,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
   }
 
   Widget _buildTabs() {
-    const tabs = ['全部', 'BLE', '操作'];
+    const tabs = ['全部', '连接', '操作'];
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       decoration: const BoxDecoration(

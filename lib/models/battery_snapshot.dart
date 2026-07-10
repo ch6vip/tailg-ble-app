@@ -1,8 +1,6 @@
-import '../ble/constants.dart';
 import 'official_vehicle.dart';
 
 enum BatteryDataSource {
-  ble('BLE feb3 已确认'),
   officialVehicle('官方车辆状态'),
   officialBattery('官方电池接口'),
   bmsReserved('官方字段预留');
@@ -98,27 +96,12 @@ class BatterySnapshot {
     return '正常';
   }
 
-  factory BatterySnapshot.fromBikeState(
-    BikeState? state, {
-    DateTime? updatedAt,
-    DateTime Function()? clock,
-  }) {
-    return BatterySnapshot.fromSources(
-      bikeState: state,
-      updatedAt: updatedAt,
-      clock: clock,
-    );
-  }
-
   factory BatterySnapshot.fromSources({
-    BikeState? bikeState,
     OfficialVehicle? officialVehicle,
     OfficialBatteryInfo? officialBatteryInfo,
     DateTime? updatedAt,
     DateTime Function()? clock,
   }) {
-    final faults = _bikeFaults(bikeState);
-
     final officialPercent = _parsePercent(
       officialBatteryInfo?.dumpEnergyPercent,
     );
@@ -131,11 +114,9 @@ class BatterySnapshot {
       officialBatteryInfo?.remainingMileage,
     );
 
-    final rawPercent =
-        bikeState?.batteryPercent ?? officialPercent ?? vehiclePercent;
-    final percent = rawPercent?.clamp(0, 100);
-    final voltage = bikeState?.voltage ?? officialVoltage ?? vehicleVoltage;
-    final temperature = bikeState?.temperature ?? officialTemperature;
+    final percent = (officialPercent ?? vehiclePercent)?.clamp(0, 100);
+    final voltage = officialVoltage ?? vehicleVoltage;
+    final temperature = officialTemperature;
     final remainingMileage = _firstText([
       officialRemainingMileage,
       _estimatedMileageText(percent),
@@ -149,8 +130,8 @@ class BatterySnapshot {
       percent: percent,
       voltage: voltage,
       temperature: temperature,
-      signalStrength: bikeState?.signalStrength,
-      faults: faults,
+      signalStrength: null,
+      faults: const [],
       updatedAt: updatedAt ?? (clock ?? DateTime.now)(),
       remainingMileage: remainingMileage,
       totalMileage: totalMileage,
@@ -161,19 +142,14 @@ class BatterySnapshot {
       officialVehicle: officialVehicle,
       officialBatteryInfo: officialBatteryInfo,
       percentSource: _dataSource(
-        bleValue: bikeState?.batteryPercent,
         officialBatteryValue: officialPercent,
         officialVehicleValue: vehiclePercent,
       ),
       voltageSource: _dataSource(
-        bleValue: bikeState?.voltage,
         officialBatteryValue: officialVoltage,
         officialVehicleValue: vehicleVoltage,
       ),
-      temperatureSource: _dataSource(
-        bleValue: bikeState?.temperature,
-        officialBatteryValue: officialTemperature,
-      ),
+      temperatureSource: _dataSource(officialBatteryValue: officialTemperature),
       mileageSource: _mileageSource(
         officialRemainingMileage: officialRemainingMileage,
         vehicleMileage: vehicleMileage,
@@ -217,11 +193,9 @@ class BatterySnapshot {
 }
 
 BatteryDataSource _dataSource({
-  Object? bleValue,
   Object? officialBatteryValue,
   Object? officialVehicleValue,
 }) {
-  if (bleValue != null) return BatteryDataSource.ble;
   if (officialBatteryValue != null) return BatteryDataSource.officialBattery;
   if (officialVehicleValue != null) return BatteryDataSource.officialVehicle;
   return BatteryDataSource.bmsReserved;
@@ -236,22 +210,7 @@ BatteryDataSource _mileageSource({
     return BatteryDataSource.officialBattery;
   }
   if (vehicleMileage != null) return BatteryDataSource.officialVehicle;
-  if (percent != null) return BatteryDataSource.ble;
   return BatteryDataSource.bmsReserved;
-}
-
-List<String> _bikeFaults(BikeState? bikeState) {
-  if (bikeState == null) return const [];
-  return _activeBikeFaults(bikeState);
-}
-
-List<String> _activeBikeFaults(BikeState bikeState) {
-  return [
-    if (bikeState.faultMotor) '电机故障',
-    if (bikeState.faultController) '控制器故障',
-    if (bikeState.faultBrake) '刹车故障',
-    if (bikeState.faultLowVoltage) '欠压保护',
-  ];
 }
 
 class BmsSnapshot {

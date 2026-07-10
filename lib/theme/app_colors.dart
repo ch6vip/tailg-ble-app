@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Light-mode color tokens for the Tailg BLE app.
+/// Light-mode color tokens for the Tailg app.
 ///
 /// Use [AppColors.of] to resolve the correct token set for the current
 /// [ThemeMode], or reference static members directly when you are certain
@@ -26,8 +26,8 @@ abstract final class AppColors {
   static const success = Color(0xFF00A896);
   static const warning = Color(0xFFFF9800);
   static const danger = Color(0xFFFF5252);
-  // 信息提示色统一为极简高端 teal（原 #2196F3 蓝已下线）。类别色冲突处
-  // （骑行模式 standard、电池 BLE 来源 chip）已就地改用其它 token 以保持区分。
+  // 信息提示色统一为极简高端 teal（原 #2196F3 蓝已下线）。
+  // 类别色冲突处已就地改用其它 token 以保持区分。
   static const info = Color(0xFF00A896);
   static const navInactive = Color(0xFF929292);
 

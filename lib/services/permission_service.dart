@@ -1,5 +1,4 @@
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class PermissionCheckResult {
   final bool granted;
@@ -14,22 +13,6 @@ class AppPermissionService {
   static final AppPermissionService _instance = AppPermissionService._();
   factory AppPermissionService() => _instance;
   AppPermissionService._();
-
-  Future<PermissionCheckResult> requestBleScanPermissions() async {
-    final statuses = await [
-      Permission.bluetoothScan,
-      Permission.bluetoothConnect,
-      Permission.location,
-    ].request();
-    final blocked = statuses.values.any(
-      (status) =>
-          status.isDenied || status.isPermanentlyDenied || status.isRestricted,
-    );
-    if (blocked) {
-      return const PermissionCheckResult.denied('请授予蓝牙和定位权限后再扫描');
-    }
-    return const PermissionCheckResult.granted();
-  }
 
   Future<PermissionCheckResult> ensureLocationPermission({
     required bool request,

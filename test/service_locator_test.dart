@@ -1,16 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tailg_ble_app/ble/connection_manager.dart' as ble;
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/services/app_preferences_service.dart';
-import 'package:tailg_ble_app/services/auto_connect_service.dart';
 import 'package:tailg_ble_app/services/location_service.dart';
 import 'package:tailg_ble_app/services/log_service.dart';
 import 'package:tailg_ble_app/services/manual_mode_service.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/services/permission_service.dart';
-import 'package:tailg_ble_app/services/proximity_service.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 
@@ -27,10 +24,6 @@ void main() {
   });
 
   test('top-level service getters delegate to AppServices.instance', () {
-    expect(
-      identical(app.connectionManager, AppServices.instance.connectionManager),
-      isTrue,
-    );
     expect(identical(app.logService, AppServices.instance.logService), isTrue);
     expect(
       identical(app.permissionService, AppServices.instance.permissionService),
@@ -43,75 +36,28 @@ void main() {
   });
 
   test('override swaps the whole graph and reset restores it', () async {
-    final original = AppServices.instance.connectionManager;
+    final originalLogService = AppServices.instance.logService;
 
-    final injected = ble.ConnectionManager();
     AppServices.override(
       AppServices(
-        connectionManager: injected,
-        proximityService: ProximityService(),
-        autoConnectService: AutoConnectService(),
         manualModeService: ManualModeService(),
         locationService: LocationService(),
         logService: LogService(),
         vehicleStore: VehicleStore(),
         officialCloudService: OfficialCloudService(),
-        appPreferencesService: AppPreferencesService(), // P0-6
+        appPreferencesService: AppPreferencesService(),
         permissionService: AppPermissionService(),
         homeTabIndex: ValueNotifier<int>(2),
       ),
     );
 
-    expect(identical(app.connectionManager, injected), isTrue);
     expect(app.homeTabIndex.value, 2);
 
     await AppServices.reset();
     // After reset the graph is rebuilt, so it is neither the injected fake nor
     // (necessarily) the pre-test instance.
-    expect(identical(app.connectionManager, injected), isFalse);
-    expect(app.connectionManager, isA<ble.ConnectionManager>());
-    expect(original, isA<ble.ConnectionManager>());
-  });
-
-  test('reset reports cleanup failures and still restores graph', () async {
-    final messages = <String>[];
-    final previousDebugPrint = debugPrint;
-    debugPrint = (String? message, {int? wrapWidth}) {
-      if (message != null) messages.add(message);
-    };
-
-    try {
-      final injected = _ThrowingConnectionManager();
-      AppServices.override(
-        AppServices(
-          connectionManager: injected,
-          proximityService: ProximityService(),
-          autoConnectService: AutoConnectService(),
-          manualModeService: ManualModeService(),
-          locationService: LocationService(),
-          logService: LogService(),
-          vehicleStore: VehicleStore(),
-          officialCloudService: OfficialCloudService(),
-          appPreferencesService: AppPreferencesService(),
-          permissionService: AppPermissionService(),
-          homeTabIndex: ValueNotifier<int>(0),
-        ),
-      );
-
-      await AppServices.reset();
-
-      expect(identical(app.connectionManager, injected), isFalse);
-      expect(
-        messages.any(
-          (message) =>
-              message.contains('connectionManager.dispose') &&
-              message.contains('dispose failed'),
-        ),
-        isTrue,
-      );
-    } finally {
-      debugPrint = previousDebugPrint;
-    }
+    expect(app.homeTabIndex.value, 1);
+    expect(originalLogService, isA<LogService>());
   });
 
   test(
@@ -154,11 +100,4 @@ void main() {
       expect(emitted.token, 'token-after-reset');
     },
   );
-}
-
-class _ThrowingConnectionManager extends ble.ConnectionManager {
-  @override
-  Future<void> dispose() async {
-    throw StateError('dispose failed');
-  }
 }

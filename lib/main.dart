@@ -1,10 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'ble/connection_manager.dart' as ble;
-import 'models/vehicle_profile.dart';
-import 'services/proximity_service.dart';
-import 'services/auto_connect_service.dart';
 import 'services/manual_mode_service.dart';
 import 'services/location_service.dart';
 import 'services/log_service.dart';
@@ -13,22 +9,12 @@ import 'services/permission_service.dart';
 import 'services/vehicle_store.dart';
 import 'services/service_locator.dart';
 import 'services/app_preferences_service.dart';
-import 'pages/scan_page.dart';
 import 'pages/control_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/service_hub_page.dart';
 import 'theme/app_colors.dart';
 import 'widgets/app_toast.dart';
 
-// App-wide services now live in the [AppServices] container (see
-// service_locator.dart). These top-level getters preserve the existing call
-// sites while routing every lookup through the single injectable graph, so
-// tests can override the whole set via [AppServices.override].
-ble.ConnectionManager get connectionManager =>
-    AppServices.instance.connectionManager;
-ProximityService get proximityService => AppServices.instance.proximityService;
-AutoConnectService get autoConnectService =>
-    AppServices.instance.autoConnectService;
 ManualModeService get manualModeService =>
     AppServices.instance.manualModeService;
 LocationService get locationService => AppServices.instance.locationService;
@@ -37,49 +23,19 @@ VehicleStore get vehicleStore => AppServices.instance.vehicleStore;
 OfficialCloudService get officialCloudService =>
     AppServices.instance.officialCloudService;
 AppPreferencesService get appPreferencesService =>
-    AppServices.instance.appPreferencesService; // P0-6
+    AppServices.instance.appPreferencesService;
 AppPermissionService get permissionService =>
     AppServices.instance.permissionService;
 
-/// App-wide home tab index, owned by [AppServices] so tests can swap the whole
-/// service graph without leaving a separate mutable singleton behind.
 ValueNotifier<int> get homeTabIndex => AppServices.instance.homeTabIndex;
-
-void applyVehicleBleCredentials(VehicleProfile? vehicle) {
-  connectionManager.setQgjCredentials(
-    password: vehicle?.qgjLoginPassword,
-    userId: vehicle?.qgjUserId,
-  );
-}
-
-VehicleProtocol vehicleProtocolFromBle(ble.ProtocolType protocol) {
-  return switch (protocol) {
-    ble.ProtocolType.standard => VehicleProtocol.standard,
-    ble.ProtocolType.qgj => VehicleProtocol.qgj,
-    ble.ProtocolType.unknown => VehicleProtocol.auto,
-  };
-}
-
-void openScanTab(BuildContext context) {
-  Navigator.of(
-    context,
-  ).push(MaterialPageRoute<void>(builder: (_) => const ScanPage()));
-}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await appPreferencesService.init(); // P0-6
+    await appPreferencesService.init();
     await vehicleStore.init();
     await officialCloudService.init();
-    final defaultVehicle = vehicleStore.defaultVehicle;
-    if (defaultVehicle != null) {
-      applyVehicleBleCredentials(defaultVehicle);
-      proximityService.setTargetDevice(defaultVehicle.id);
-    }
-    await proximityService.init(connectionManager);
-    await autoConnectService.init(connectionManager);
     await manualModeService.init();
   } catch (e, st) {
     debugPrint('Startup initialization failed: $e\n$st');
@@ -457,8 +413,6 @@ class _HomePageState extends State<HomePage>
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
   late final ValueNotifier<int> _homeTabIndex;
-  StreamSubscription<ble.ConnectionState>? _stateSub;
-  StreamSubscription<bool>? _manualModeSub;
 
   @override
   void initState() {
@@ -489,53 +443,10 @@ class _HomePageState extends State<HomePage>
     }
     _homeTabIndex.addListener(_onExternalTabChanged);
     WidgetsBinding.instance.addObserver(this);
-    // Manual mode promises to disable automatic control: stop any in-flight
-    // proximity scan the moment it is switched on.
-    _manualModeSub = manualModeService.enabledStream.listen((enabled) {
-      if (!mounted) return;
-      if (enabled) proximityService.stop();
-    });
-    _stateSub = connectionManager.stateStream.listen((state) {
-      if (!mounted) return;
-      if (state == ble.ConnectionState.ready) {
-        proximityService.onConnected();
-        final device = connectionManager.device;
-        if (device != null) {
-          proximityService.setTargetDevice(device.remoteId.toString());
-          unawaited(
-            () async {
-              final profile = await autoConnectService.saveDevice(
-                device,
-                protocol: vehicleProtocolFromBle(connectionManager.protocol),
-              );
-              await locationService.recordVehicleLocation(profile.id);
-            }().catchError((Object e) {
-              logService.operation(
-                '连接后同步车辆信息失败',
-                detail: e.toString(),
-                level: LogLevel.warning,
-              );
-            }),
-          );
-        }
-      }
-    });
-
-    unawaited(
-      autoConnectService.tryAutoConnect().catchError((Object e) {
-        logService.operation(
-          '自动连接启动失败',
-          detail: e.toString(),
-          level: LogLevel.warning,
-        );
-      }),
-    );
   }
 
   @override
   void dispose() {
-    _stateSub?.cancel();
-    _manualModeSub?.cancel();
     _homeTabIndex.removeListener(_onExternalTabChanged);
     _pageAnimController.dispose();
     WidgetsBinding.instance.removeObserver(this);
@@ -557,13 +468,7 @@ class _HomePageState extends State<HomePage>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      proximityService.onAppResumed();
-    } else if (state == AppLifecycleState.paused) {
-      proximityService.onAppPaused();
-    }
-  }
+  void didChangeAppLifecycleState(AppLifecycleState state) {}
 
   @override
   Widget build(BuildContext context) {

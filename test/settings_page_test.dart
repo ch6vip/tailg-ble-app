@@ -11,14 +11,10 @@ import 'helpers/view_size.dart';
 void main() {
   setUp(() {
     resetMockPreferences();
-    app.autoConnectService.resetForTest();
-    app.proximityService.resetForTest();
     app.appPreferencesService.resetForTest();
   });
 
   tearDown(() {
-    app.autoConnectService.resetForTest();
-    app.proximityService.resetForTest();
     app.appPreferencesService.resetForTest();
   });
 
@@ -29,7 +25,7 @@ void main() {
     await tester.pump();
 
     final switches = find.byType(Switch);
-    expect(switches, findsNWidgets(3));
+    expect(switches, findsNWidgets(1));
     for (final element in switches.evaluate()) {
       expectMinTouchTargetHeight(tester, find.byWidget(element.widget));
     }
@@ -43,54 +39,6 @@ void main() {
     try {
       await tester.pumpWidget(const TestApp(home: SettingsPage()));
       await tester.pump();
-
-      const autoConnectLabel = '自动连接开关';
-      final autoConnectSwitch = find.bySemanticsLabel(autoConnectLabel);
-      expect(autoConnectSwitch, findsOneWidget);
-      expect(
-        tester.getSemantics(autoConnectSwitch),
-        matchesSemantics(
-          label: autoConnectLabel,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasToggledState: true,
-          isToggled: false,
-          hasTapAction: true,
-        ),
-      );
-
-      final autoEnabled = app.autoConnectService.enabledStream.firstWhere(
-        (value) => value,
-      );
-      tester.semantics.tap(find.semantics.byLabel(autoConnectLabel));
-      await autoEnabled;
-      await tester.pump();
-
-      expect(app.autoConnectService.enabled, isTrue);
-
-      const proximityLabel = '感应解锁开关';
-      final proximitySwitch = find.bySemanticsLabel(proximityLabel);
-      expect(proximitySwitch, findsOneWidget);
-      expect(
-        tester.getSemantics(proximitySwitch),
-        matchesSemantics(
-          label: proximityLabel,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasToggledState: true,
-          isToggled: false,
-          hasTapAction: true,
-        ),
-      );
-
-      final proximityEnabled = app.proximityService.enabledStream.firstWhere(
-        (value) => value,
-      );
-      tester.semantics.tap(find.semantics.byLabel(proximityLabel));
-      await proximityEnabled;
-      await tester.pump();
-
-      expect(app.proximityService.enabled, isTrue);
 
       const textScaleLabel = '跟随系统字号开关';
       await tester.scrollUntilVisible(

@@ -1,4 +1,4 @@
-import '../ble/constants.dart';
+import 'command_types.dart';
 import 'persistence_value.dart';
 
 enum OfficialCloudCommand {

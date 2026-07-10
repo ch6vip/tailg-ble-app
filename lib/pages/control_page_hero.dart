@@ -41,7 +41,7 @@ class ControlPageHero extends StatelessWidget {
   /// Connection status label from the control channel.
   final String? connectionLabel;
 
-  /// Official header has separate BLE views for protocol variants.
+  /// Official header has separate views for protocol variants.
   final String? connectionVariant;
 
   final VoidCallback? onVehicleSwitch;

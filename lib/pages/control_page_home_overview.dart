@@ -1,36 +1,23 @@
 part of 'control_page.dart';
 
-/// Official home top section: hero, vehicle stage, status tip, and control
-/// card.
-///
-/// Owns the homepage control execution surface: power, find, lock, and the
-/// official mode toggle.
 class _HomeTopSection extends StatefulWidget {
-  final ble.ConnectionState connState;
-
-  const _HomeTopSection({required this.connState});
+  const _HomeTopSection();
 
   @override
   State<_HomeTopSection> createState() => _HomeTopSectionState();
 }
 
 class _HomeTopSectionState extends State<_HomeTopSection> {
-  // ── Control execution pipeline (migrated from _ControlAreaState) ───
-
   final _commandExecutor = ControlCommandExecutor(
-    sendBleCommand: connectionManager.sendCommand,
     sendCloudCommand: officialCloudService.sendCommand,
   );
   final _confirmationGuard = const ControlCommandConfirmationGuard();
   bool _busy = false;
   bool _disposed = false;
 
-  // ── Manual-mode toggle state ──────────────────────────────────────
-
   bool _manualModeEnabled = false;
   StreamSubscription<bool>? _manualModeSub;
-
-  // ── Lifecycle ──────────────────────────────────────────────────────
+  StreamSubscription<OfficialCloudState>? _cloudSub;
 
   @override
   void initState() {
@@ -39,40 +26,29 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     _manualModeSub = manualModeService.enabledStream.listen((v) {
       if (mounted) setState(() => _manualModeEnabled = v);
     });
+    _cloudSub = officialCloudService.stateStream.listen((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
     _disposed = true;
     _manualModeSub?.cancel();
+    _cloudSub?.cancel();
     super.dispose();
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────
-
-  bool get _isBleReady => widget.connState == ble.ConnectionState.ready;
-
   bool _currentIsPowerOn() {
-    final availability = _controlAvailability();
-    final useBleState =
-        availability.canUseBle &&
-        officialCloudService.state.controlChannel !=
-            OfficialControlChannel.officialCloud;
-    return useBleState
-        ? connectionManager.latestBikeState?.isPowerOn ?? false
-        : officialCloudService.state.selectedVehicle?.isPowerOn ?? false;
+    return officialCloudService.state.selectedVehicle?.isPowerOn ?? false;
   }
 
   ControlChannelAvailability _controlAvailability() {
     return ControlChannelResolver.resolve(
       cloudState: officialCloudService.state,
-      bleReady: _isBleReady,
-      defaultVehicleId: vehicleStore.defaultVehicleId,
       busy: _busy,
     );
   }
-
-  // ── Control execution ──────────────────────────────────────────────
 
   Future<void> _sendPower() async {
     final isPowerOn = _currentIsPowerOn();
@@ -96,25 +72,18 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     HapticFeedback.mediumImpact();
     try {
       final availability = _controlAvailability();
-      final pending = PendingControlCommandConfirmationContext(
-        defaultVehicleId: vehicleStore.defaultVehicleId,
-        bleDeviceId: connectionManager.device?.remoteId.toString(),
-        officialVehicleKey: officialCloudService.state.selectedVehicle?.key,
-      );
-      final result = await _commandExecutor.send(
-        command: cmd,
-        availability: availability,
-      );
+      if (!availability.enabled) {
+        _showSnack(availability.disabledReason, isError: true);
+        return;
+      }
+      final result = await _commandExecutor.send(command: cmd);
       final successMessage = result.successMessage;
       if (result.success) {
         _runBackgroundTask(
           locationService.recordDefaultVehicleLocation(),
           failureMessage: '控车后记录车辆位置失败',
         );
-        final confirmed = await _waitForCommandConfirmation(
-          cmd,
-          pending.forTransport(result.transport),
-        );
+        final confirmed = await _waitForCommandConfirmation(cmd);
         if (!confirmed && mounted) {
           _showSnack(_unconfirmedMessage(cmd), isError: true);
         } else if (mounted && successMessage != null) {
@@ -176,8 +145,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     };
   }
 
-  // ── Command confirmation ───────────────────────────────────────────
-
   bool _needsStateConfirmation(CommandCode command) {
     return switch (command) {
       CommandCode.lock ||
@@ -188,115 +155,49 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     };
   }
 
-  Future<bool> _waitForCommandConfirmation(
-    CommandCode command,
-    ControlCommandConfirmationContext context,
-  ) async {
+  Future<bool> _waitForCommandConfirmation(CommandCode command) async {
     if (!_needsStateConfirmation(command)) return true;
 
     final confirmationTimer = Stopwatch()..start();
     while (mounted && !_disposed) {
-      if (!_isConfirmationTargetActive(context)) return false;
-      if (_isCommandConfirmed(command, context)) return true;
-      if (_isConfirmationTimedOut(confirmationTimer)) return false;
+      if (_isCommandConfirmed(command)) return true;
+      if (confirmationTimer.elapsed > _controlConfirmTimeout) return false;
 
-      await _refreshStateForConfirmation(command, context);
-      if (!_isConfirmationTargetActive(context)) return false;
-      if (_isCommandConfirmed(command, context)) return true;
-      if (_isConfirmationTimedOut(confirmationTimer)) return false;
+      await _refreshStateForConfirmation();
+      if (_isCommandConfirmed(command)) return true;
+      if (confirmationTimer.elapsed > _controlConfirmTimeout) return false;
 
       await Future<void>.delayed(_controlConfirmPollDelay);
     }
     return false;
   }
 
-  bool _isConfirmationTimedOut(Stopwatch timer) {
-    return timer.elapsed > _controlConfirmTimeout;
-  }
-
-  bool _isCommandConfirmed(
-    CommandCode command,
-    ControlCommandConfirmationContext context,
-  ) {
-    if (!_isConfirmationTargetActive(context)) return false;
-    return switch (context.transport) {
-      ControlCommandTransport.ble => _isBleCommandConfirmed(command),
-      ControlCommandTransport.officialCloud => _isCloudCommandConfirmed(
-        command,
-      ),
-      ControlCommandTransport.unavailable => false,
-    };
-  }
-
-  bool _isBleCommandConfirmed(CommandCode command) {
-    final state = connectionManager.latestBikeState;
-    if (state == null) return false;
-    return _matchesTargetState(
-      command: command,
-      isLocked: state.isLocked,
-      isPowerOn: state.isPowerOn,
-    );
-  }
-
-  bool _isCloudCommandConfirmed(CommandCode command) {
+  bool _isCommandConfirmed(CommandCode command) {
     final vehicle = officialCloudService.state.selectedVehicle;
     if (vehicle == null) return false;
-    return _matchesTargetState(
-      command: command,
-      isLocked: vehicle.isLocked,
-      isPowerOn: vehicle.isPowerOn,
-    );
-  }
-
-  bool _matchesTargetState({
-    required CommandCode command,
-    required bool isLocked,
-    required bool isPowerOn,
-  }) {
     return switch (command) {
-      CommandCode.lock => isLocked,
-      CommandCode.unlock => !isLocked,
-      CommandCode.powerOn => isPowerOn,
-      CommandCode.powerOff => !isPowerOn,
+      CommandCode.lock => vehicle.isLocked,
+      CommandCode.unlock => !vehicle.isLocked,
+      CommandCode.powerOn => vehicle.isPowerOn,
+      CommandCode.powerOff => !vehicle.isPowerOn,
       _ => true,
     };
   }
 
-  Future<void> _refreshStateForConfirmation(
-    CommandCode command,
-    ControlCommandConfirmationContext context,
-  ) async {
+  Future<void> _refreshStateForConfirmation() async {
     try {
-      if (!_isConfirmationTargetActive(context)) return;
-      switch (context.transport) {
-        case ControlCommandTransport.ble:
-          await connectionManager.refreshBikeState();
-        case ControlCommandTransport.officialCloud:
-          await officialCloudService.refreshVehicles(
-            silent: true,
-            refreshReplicaDetails: false,
-            force: true,
-          );
-        case ControlCommandTransport.unavailable:
-          return;
-      }
+      await officialCloudService.refreshVehicles(
+        silent: true,
+        refreshReplicaDetails: false,
+        force: true,
+      );
     } catch (e) {
       logService.operation(
-        '控车后确认车辆状态失败: ${command.label}',
+        '控车后确认车辆状态失败',
         detail: e.toString(),
         level: LogLevel.warning,
       );
     }
-  }
-
-  bool _isConfirmationTargetActive(ControlCommandConfirmationContext context) {
-    return _confirmationGuard.allows(
-      context: context,
-      currentDefaultVehicleId: vehicleStore.defaultVehicleId,
-      currentBleDeviceId: connectionManager.device?.remoteId.toString(),
-      currentOfficialVehicleKey:
-          officialCloudService.state.selectedVehicle?.key,
-    );
   }
 
   void _toggleManualMode() {
@@ -304,183 +205,104 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     HapticFeedback.selectionClick();
   }
 
-  Future<void> _enableProximityUnlock() async {
-    if (_busy) return;
-    final targetId =
-        connectionManager.device?.remoteId.toString() ??
-        vehicleStore.defaultVehicleId;
-    if (targetId != null && targetId.trim().isNotEmpty) {
-      proximityService.setTargetDevice(targetId);
-    }
-    if (manualModeService.enabled) {
-      await manualModeService.setEnabled(false);
-    }
-    await proximityService.setEnabled(true);
-    if (mounted) {
-      _showSnack('感应解锁已开启', isError: false);
-    }
-  }
-
-  // ── Build ──────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<BikeState?>(
-      stream: connectionManager.bikeStateStream,
-      initialData: connectionManager.latestBikeState,
-      builder: (context, snapshot) {
-        final BikeState? bike = snapshot.data;
-        final cloudVehicle = officialCloudService.state.selectedVehicle;
-        // Prefer BLE battery, fallback to cloud electricQuantity
-        final int? rawPercent =
-            bike?.batteryPercent ?? cloudVehicle?.electricQuantity;
-        final soc = _normalizePercent(rawPercent) ?? 0;
-        // Prefer cloud mileage, fallback to estimated range
-        final cloudMileage = cloudVehicle?.mileage;
-        final range = cloudMileage != null
-            ? cloudMileage.round()
-            : (soc * _kmPerPercent).round();
-        // Prefer BLE lock/power, fallback to cloud
-        final bool? isArmed = bike?.isLocked ?? cloudVehicle?.isLocked;
-        final bool isPowerOn =
-            bike?.isPowerOn ?? cloudVehicle?.isPowerOn ?? false;
-        final vehicleName =
-            connectionManager.device?.platformName ??
-            vehicleStore.defaultVehicle?.displayName ??
-            '我的车辆';
-        final connectionLabel = widget.connState.label;
-        final connectionProtocol = _connectionProtocolLabel();
-        final statusText = _officialTipText(
-          connState: widget.connState,
-          cloudVehicle: cloudVehicle,
-          manualModeEnabled: _manualModeEnabled,
-        );
-        final topPadding = MediaQuery.paddingOf(context).top + 18;
-        return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.officialPageBg,
-            image: DecorationImage(
-              image: AssetImage('assets/official_tailg/iv_bg_control.png'),
-              fit: BoxFit.fitWidth,
-              alignment: Alignment.topCenter,
+    final cloudVehicle = officialCloudService.state.selectedVehicle;
+    final int? rawPercent = cloudVehicle?.electricQuantity;
+    final soc = _normalizePercent(rawPercent) ?? 0;
+    final cloudMileage = cloudVehicle?.mileage;
+    final range = cloudMileage != null
+        ? cloudMileage.round()
+        : (soc * _kmPerPercent).round();
+    final bool? isArmed = cloudVehicle?.isLocked;
+    final bool isPowerOn = cloudVehicle?.isPowerOn ?? false;
+    final vehicleName =
+        vehicleStore.defaultVehicle?.displayName ?? '我的车辆';
+    final statusText = cloudVehicle?.onlineLabel ?? '等待连接';
+    final topPadding = MediaQuery.paddingOf(context).top + 18;
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.officialPageBg,
+        image: DecorationImage(
+          image: AssetImage('assets/official_tailg/iv_bg_control.png'),
+          fit: BoxFit.fitWidth,
+          alignment: Alignment.topCenter,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: topPadding),
+          ControlPageHero(
+            batteryLevel: soc,
+            rangeKm: range,
+            vehicleName: cloudVehicle?.displayName ?? vehicleName,
+            online: cloudVehicle?.online ?? true,
+            connectionLabel: '官方云端',
+            connectionVariant: '',
+            onVehicleSwitch: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const OfficialCloudPage(),
+              ),
+            ),
+            onConnect: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const AddVehiclePage(),
+              ),
+            ),
+            onBatteryTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const BatteryDetailsPage(),
+              ),
+            ),
+            onDetail: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const OfficialCloudPage(),
+              ),
+            ),
+            onMessage: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const VehicleMessagePage(),
+              ),
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: topPadding),
-              ControlPageHero(
-                batteryLevel: soc,
-                rangeKm: range,
-                vehicleName: cloudVehicle?.displayName ?? vehicleName,
-                online: cloudVehicle?.online ?? true,
-                connectionLabel: connectionLabel,
-                connectionVariant: connectionProtocol,
-                onVehicleSwitch: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const OfficialCloudPage(),
-                  ),
-                ),
-                onConnect: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const AddVehiclePage(),
-                  ),
-                ),
-                onBatteryTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const BatteryDetailsPage(),
-                  ),
-                ),
-                onDetail: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const OfficialCloudPage(),
-                  ),
-                ),
-                onMessage: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const VehicleMessagePage(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 5),
-              VehicleStage(
-                batteryLevel: soc / 100.0,
-                height: 200,
-                imageUrl: cloudVehicle?.carPhoto,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _OfficialControlTip(
-                  bleReady: _isBleReady,
-                  statusText: statusText,
-                  manualModeEnabled: _manualModeEnabled,
-                  onToggleManualMode: _toggleManualMode,
-                ),
-              ),
-              const SizedBox(height: 5),
-              ControlCard(
-                powered: isPowerOn,
-                locked: isArmed,
-                busy: _busy,
-                onPowerOn: _sendPower,
-                onFind: () => _sendCommand(CommandCode.find),
-                onLock: () => _sendCommand(CommandCode.lock),
-                onUnlock: () => _sendCommand(CommandCode.unlock),
-                onOpenSeat: () => _sendCommand(CommandCode.openSeat),
-                onProximityUnlock: () => unawaited(_enableProximityUnlock()),
-                onQuickEdit: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const VehicleSettingsPage(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
+          const SizedBox(height: 5),
+          VehicleStage(
+            batteryLevel: soc / 100.0,
+            height: 200,
+            imageUrl: cloudVehicle?.carPhoto,
           ),
-        );
-      },
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: _OfficialControlTip(statusText: statusText),
+          ),
+          const SizedBox(height: 5),
+          ControlCard(
+            powered: isPowerOn,
+            locked: isArmed,
+            busy: _busy,
+            onPowerOn: _sendPower,
+            onFind: () => _sendCommand(CommandCode.find),
+            onLock: () => _sendCommand(CommandCode.lock),
+            onUnlock: () => _sendCommand(CommandCode.unlock),
+            onOpenSeat: () => _sendCommand(CommandCode.openSeat),
+            onQuickEdit: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const VehicleSettingsPage(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 }
 
-String _connectionProtocolLabel() {
-  final protocol = connectionManager.protocol != ble.ProtocolType.unknown
-      ? connectionManager.protocol
-      : connectionManager.lastKnownProtocol;
-  return switch (protocol) {
-    ble.ProtocolType.qgj => 'QGJ',
-    ble.ProtocolType.standard => 'BLE',
-    ble.ProtocolType.unknown => '',
-  };
-}
-
-String _officialTipText({
-  required ble.ConnectionState connState,
-  required OfficialVehicle? cloudVehicle,
-  required bool manualModeEnabled,
-}) {
-  return switch (connState) {
-    ble.ConnectionState.ready when manualModeEnabled => '手动模式控车',
-    ble.ConnectionState.ready => '蓝牙已连接',
-    ble.ConnectionState.connected => '蓝牙加载中',
-    ble.ConnectionState.connecting => '蓝牙连接中',
-    ble.ConnectionState.reconnecting => '蓝牙重连中',
-    ble.ConnectionState.disconnected => cloudVehicle?.onlineLabel ?? '等待连接',
-  };
-}
-
 class _OfficialControlTip extends StatelessWidget {
-  const _OfficialControlTip({
-    required this.bleReady,
-    required this.statusText,
-    required this.manualModeEnabled,
-    required this.onToggleManualMode,
-  });
+  const _OfficialControlTip({required this.statusText});
 
-  final bool bleReady;
   final String statusText;
-  final bool manualModeEnabled;
-  final VoidCallback onToggleManualMode;
 
   @override
   Widget build(BuildContext context) {
@@ -518,51 +340,6 @@ class _OfficialControlTip extends StatelessWidget {
                     radius: 31,
                     backgroundColor: Colors.white,
                     child: Icon(Icons.smart_toy_outlined),
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 0,
-                top: 1,
-                child: Tooltip(
-                  message: manualModeEnabled ? '手动模式已开启' : '感应模式已开启',
-                  child: AppPressable(
-                    onTap: onToggleManualMode,
-                    haptic: false,
-                    semanticsLabel: manualModeEnabled ? '手动模式' : '感应模式',
-                    semanticsButton: true,
-                    semanticsEnabled: true,
-                    semanticsToggled: !manualModeEnabled,
-                    child: SizedBox(
-                      width: 78,
-                      height: AppTouchTargets.min,
-                      child: Center(
-                        child: Image.asset(
-                          manualModeEnabled || !bleReady
-                              ? 'assets/official_tailg/ic_control_mode_hand.png'
-                              : 'assets/official_tailg/ic_control_mode_induction.png',
-                          width: 74,
-                          height: 38,
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 74,
-                            height: 38,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(19),
-                            ),
-                            child: Icon(
-                              manualModeEnabled || !bleReady
-                                  ? Icons.touch_app
-                                  : Icons.sensors,
-                              size: 20,
-                              color: AppColors.brandRed,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                   ),
                 ),
               ),

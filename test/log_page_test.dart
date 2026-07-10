@@ -70,12 +70,12 @@ void main() {
     try {
       await tester.pumpWidget(const TestApp(home: LogPage()));
 
-      final bleTab = find.ancestor(
-        of: find.text('BLE'),
+      final connTab = find.ancestor(
+        of: find.text('连接'),
         matching: find.byType(AppPressable),
       );
-      expect(bleTab, findsOneWidget);
-      expectMinTouchTargetHeight(tester, bleTab);
+      expect(connTab, findsOneWidget);
+      expectMinTouchTargetHeight(tester, connTab);
 
       const allLabel = '全部';
       final allTabSemantics = find.bySemanticsLabel(allLabel);
@@ -92,12 +92,12 @@ void main() {
         ),
       );
 
-      const bleLabel = 'BLE';
-      final bleTabSemantics = find.bySemanticsLabel(bleLabel);
+      const connLabel = '连接';
+      final connTabSemantics = find.bySemanticsLabel(connLabel);
       expect(
-        tester.getSemantics(bleTabSemantics),
+        tester.getSemantics(connTabSemantics),
         matchesSemantics(
-          label: bleLabel,
+          label: connLabel,
           isButton: true,
           hasEnabledState: true,
           isEnabled: true,
@@ -107,13 +107,13 @@ void main() {
         ),
       );
 
-      tester.semantics.tap(find.semantics.byLabel(bleLabel));
+      tester.semantics.tap(find.semantics.byLabel(connLabel));
       await tester.pumpAndSettle();
 
       expect(
-        tester.getSemantics(bleTabSemantics),
+        tester.getSemantics(connTabSemantics),
         matchesSemantics(
-          label: bleLabel,
+          label: connLabel,
           isButton: true,
           hasEnabledState: true,
           isEnabled: true,

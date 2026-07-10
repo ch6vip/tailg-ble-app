@@ -188,7 +188,6 @@ class AboutAppPage extends StatelessWidget {
   Future<void> _copyDiagnosticReport(BuildContext context) async {
     // P0-6: 直接使用 main.dart 顶层 getter logService，无需局部变量
     final report = DiagnosticExportService(
-      connectionManager: connectionManager,
       logService: logService,
       vehicleStore: vehicleStore,
       officialCloudService: officialCloudService,

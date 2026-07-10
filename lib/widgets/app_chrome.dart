@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../ble/connection_manager.dart' as ble;
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
 import 'app_pressable.dart';
@@ -132,79 +131,6 @@ class AppHeaderAction extends StatelessWidget {
       );
     }
     return button;
-  }
-}
-
-class ConnectionStatusBanner extends StatelessWidget {
-  final ble.ConnectionState state;
-  final VoidCallback? onScanTap;
-
-  const ConnectionStatusBanner({
-    super.key,
-    required this.state,
-    this.onScanTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final ready = state == ble.ConnectionState.ready;
-    final connecting =
-        state == ble.ConnectionState.connecting ||
-        state == ble.ConnectionState.reconnecting;
-    final color = ready
-        ? AppColors.success
-        : connecting
-        ? AppColors.warning
-        : AppColors.textTertiary;
-    final title = state.label;
-    final subtitle = ready
-        ? '可以读取状态并写入车辆设置'
-        : connecting
-        ? '请保持手机靠近车辆'
-        : '连接车辆后才能执行此页面操作';
-
-    return AppCard(
-      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      color: color.withValues(alpha: 0.08),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              ready ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
-              color: color,
-              size: AppIconSizes.sm,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(subtitle, style: AppTextStyles.smallText),
-              ],
-            ),
-          ),
-          if (!ready && onScanTap != null)
-            TextButton(onPressed: onScanTap, child: const Text('去扫描')),
-        ],
-      ),
-    );
   }
 }
 

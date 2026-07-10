@@ -24,7 +24,6 @@ class ControlCard extends StatefulWidget {
     this.onLock,
     this.onUnlock,
     this.onOpenSeat,
-    this.onProximityUnlock,
     this.onQuickEdit,
     this.powered = false,
     this.locked,
@@ -36,7 +35,6 @@ class ControlCard extends StatefulWidget {
   final VoidCallback? onLock;
   final VoidCallback? onUnlock;
   final VoidCallback? onOpenSeat;
-  final VoidCallback? onProximityUnlock;
   final VoidCallback? onQuickEdit;
   final bool powered;
   final bool? locked;
@@ -68,7 +66,6 @@ class _ControlCardState extends State<ControlCard> {
                 child: _OfficialQuickSlots(
                   enabled: !busy,
                   onOpenSeat: widget.onOpenSeat,
-                  onProximityUnlock: widget.onProximityUnlock,
                   onQuickEdit: widget.onQuickEdit,
                 ),
               ),
@@ -247,13 +244,11 @@ class _OfficialQuickSlots extends StatelessWidget {
   const _OfficialQuickSlots({
     required this.enabled,
     this.onOpenSeat,
-    this.onProximityUnlock,
     this.onQuickEdit,
   });
 
   final bool enabled;
   final VoidCallback? onOpenSeat;
-  final VoidCallback? onProximityUnlock;
   final VoidCallback? onQuickEdit;
 
   @override
@@ -281,17 +276,12 @@ class _OfficialQuickSlots extends StatelessWidget {
               children: [
                 Positioned.fill(
                   child: _QuickActionSlot(
-                    label: onProximityUnlock == null ? '添加快捷功能' : '感应解锁',
-                    asset: onProximityUnlock == null
-                        ? 'assets/official_tailg/ic_control_quick_add.webp'
-                        : 'assets/official_tailg/ic_control_mode_induction.png',
-                    icon: onProximityUnlock == null
-                        ? Icons.add
-                        : Icons.sensors_outlined,
-                    showLabel: onProximityUnlock != null,
-                    enabled:
-                        enabled && (onProximityUnlock ?? onQuickEdit) != null,
-                    onTap: onProximityUnlock ?? onQuickEdit,
+                    label: '添加快捷功能',
+                    asset: 'assets/official_tailg/ic_control_quick_add.webp',
+                    icon: Icons.add,
+                    showLabel: false,
+                    enabled: enabled && onQuickEdit != null,
+                    onTap: onQuickEdit,
                   ),
                 ),
                 Positioned(

@@ -1,6 +1,6 @@
 import 'package:geolocator/geolocator.dart';
 
-import '../ble/constants.dart';
+import '../models/command_types.dart';
 import '../models/vehicle_profile.dart';
 import 'log_service.dart';
 import 'permission_service.dart';

@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../ble/constants.dart';
+import '../models/command_types.dart';
 import '../models/official_vehicle.dart';
 import '../models/persistence_value.dart';
 import '../models/vehicle_profile.dart';
@@ -24,8 +24,6 @@ part 'official_cloud_vehicle_sync.dart';
 part 'official_cloud_storage.dart';
 
 enum OfficialControlChannel {
-  automatic('自动', '优先 BLE，未连接时走官方云端'),
-  ble('BLE', '只使用本地蓝牙直连'),
   officialCloud('官方云端', '使用官方账号远程控车');
 
   final String label;
@@ -148,7 +146,7 @@ class OfficialCloudState {
     error: null,
     vehicles: [],
     selectedVehicleKey: null,
-    controlChannel: OfficialControlChannel.automatic,
+    controlChannel: OfficialControlChannel.officialCloud,
     localVehicleLinks: {},
     batteryInfo: null,
     batteryInfoLoading: false,

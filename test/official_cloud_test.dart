@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tailg_ble_app/ble/constants.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/services/control_channel_resolver.dart';
@@ -1188,92 +1187,21 @@ void main() {
   });
 
   group('ControlChannelResolver', () {
-    test('enables linked BLE channel when ready and local vehicle matches', () {
-      final state = _cloudState(
-        channel: OfficialControlChannel.ble,
-        signedIn: true,
-        withVehicle: true,
-        links: const {'official-1': 'local-1'},
-      );
-
-      final availability = ControlChannelResolver.resolve(
-        cloudState: state,
-        bleReady: true,
-        defaultVehicleId: 'local-1',
-      );
-
-      expect(availability.canUseBle, isTrue);
-      expect(availability.enabled, isTrue);
-      expect(availability.willUseBle, isTrue);
-    });
-
-    test('disables BLE channel when linked local vehicle differs', () {
-      final state = _cloudState(
-        channel: OfficialControlChannel.ble,
-        signedIn: true,
-        withVehicle: true,
-        links: const {'official-1': 'local-1'},
-      );
-
-      final availability = ControlChannelResolver.resolve(
-        cloudState: state,
-        bleReady: true,
-        defaultVehicleId: 'other-local',
-      );
-
-      expect(availability.canUseBle, isFalse);
-      expect(availability.enabled, isFalse);
-      expect(availability.bleUnavailableReason, '默认本地车辆与官方车辆关联不一致');
-      expect(availability.disabledReason, '默认本地车辆与官方车辆关联不一致');
-    });
-
-    test('disables BLE channel when disconnected', () {
-      final state = _cloudState(channel: OfficialControlChannel.ble);
-
-      final availability = ControlChannelResolver.resolve(
-        cloudState: state,
-        bleReady: false,
-        defaultVehicleId: null,
-      );
-
-      expect(availability.canUseBle, isFalse);
-      expect(availability.enabled, isFalse);
-      expect(availability.effectiveChannelLabel, '不可用');
-      expect(availability.bleUnavailableReason, 'BLE 未连接或协议未就绪');
-      expect(availability.disabledReason, 'BLE 未连接或协议未就绪');
-    });
-
     test(
       'enables official cloud only when signed in with a selected vehicle',
       () {
         final available = ControlChannelResolver.resolve(
-          cloudState: _cloudState(
-            channel: OfficialControlChannel.officialCloud,
-            signedIn: true,
-            withVehicle: true,
-          ),
-          bleReady: false,
-          defaultVehicleId: null,
+          cloudState: _cloudState(signedIn: true, withVehicle: true),
         );
         final missingVehicle = ControlChannelResolver.resolve(
-          cloudState: _cloudState(
-            channel: OfficialControlChannel.officialCloud,
-            signedIn: true,
-          ),
-          bleReady: false,
-          defaultVehicleId: null,
+          cloudState: _cloudState(signedIn: true),
         );
         final signedOut = ControlChannelResolver.resolve(
-          cloudState: _cloudState(
-            channel: OfficialControlChannel.officialCloud,
-          ),
-          bleReady: false,
-          defaultVehicleId: null,
+          cloudState: _cloudState(),
         );
 
         expect(available.enabled, isTrue);
         expect(available.effectiveChannelLabel, '官方云端');
-        expect(available.willUseBle, isFalse);
         expect(missingVehicle.enabled, isFalse);
         expect(missingVehicle.disabledReason, '官方账号未选择车辆');
         expect(signedOut.enabled, isFalse);
@@ -1281,75 +1209,19 @@ void main() {
       },
     );
 
-    test('automatic channel prefers BLE and falls back to official cloud', () {
-      final state = _cloudState(
-        signedIn: true,
-        withVehicle: true,
-        links: const {'official-1': 'local-1'},
-      );
-
-      final bleAvailable = ControlChannelResolver.resolve(
-        cloudState: state,
-        bleReady: true,
-        defaultVehicleId: 'local-1',
-      );
-      final cloudFallback = ControlChannelResolver.resolve(
-        cloudState: state,
-        bleReady: false,
-        defaultVehicleId: 'local-1',
-      );
-
-      expect(bleAvailable.enabled, isTrue);
-      expect(bleAvailable.effectiveChannelLabel, 'BLE');
-      expect(bleAvailable.willUseBle, isTrue);
-      expect(cloudFallback.enabled, isTrue);
-      expect(cloudFallback.effectiveChannelLabel, '官方云端');
-      expect(cloudFallback.willUseBle, isFalse);
-    });
-
-    test('automatic channel disables when BLE and cloud are unavailable', () {
-      final availability = ControlChannelResolver.resolve(
-        cloudState: _cloudState(),
-        bleReady: false,
-        defaultVehicleId: null,
-      );
-
-      expect(availability.enabled, isFalse);
-      expect(availability.willUseBle, isFalse);
-      expect(availability.bleUnavailableReason, 'BLE 未连接或协议未就绪');
-      expect(availability.cloudUnavailableReason, '请先登录官方账号');
-      expect(availability.disabledReason, 'BLE：BLE 未连接或协议未就绪；云端：请先登录官方账号');
-    });
-
     test('busy state disables an otherwise available route', () {
       final availability = ControlChannelResolver.resolve(
-        cloudState: _cloudState(
-          channel: OfficialControlChannel.ble,
-          signedIn: true,
-          withVehicle: true,
-          links: const {'official-1': 'local-1'},
-        ),
-        bleReady: true,
-        defaultVehicleId: 'local-1',
+        cloudState: _cloudState(signedIn: true, withVehicle: true),
         busy: true,
       );
 
-      expect(availability.canUseBle, isTrue);
+      expect(availability.canUseCloud, isTrue);
       expect(availability.enabled, isFalse);
     });
   });
 
   group('ControlCommandResult', () {
-    test('marks successful BLE commands as bike-state refreshable', () {
-      final result = ControlCommandResult.bleSuccess(CommandCode.lock);
-
-      expect(result.success, isTrue);
-      expect(result.transport, ControlCommandTransport.ble);
-      expect(result.shouldRefreshBikeState, isTrue);
-      expect(result.failureMessage, isNull);
-    });
-
-    test('keeps cloud success message without requesting BLE refresh', () {
+    test('keeps cloud success message', () {
       final result = ControlCommandResult.cloudSuccess(
         CommandCode.find,
         message: 'success',
@@ -1357,24 +1229,22 @@ void main() {
 
       expect(result.success, isTrue);
       expect(result.transport, ControlCommandTransport.officialCloud);
-      expect(result.shouldRefreshBikeState, isFalse);
       expect(result.successMessage, '寻车已完成');
     });
 
     test('carries unavailable and failed command messages', () {
       final unavailable = ControlCommandResult.unavailable(
         CommandCode.unlock,
-        'BLE 未连接',
+        '云端不可用',
       );
       final failed = ControlCommandResult.failure(
         CommandCode.powerOn,
-        transport: ControlCommandTransport.ble,
         message: '命令发送失败',
       );
 
       expect(unavailable.success, isFalse);
       expect(unavailable.transport, ControlCommandTransport.unavailable);
-      expect(unavailable.failureMessage, 'BLE 未连接');
+      expect(unavailable.failureMessage, '云端不可用');
       expect(failed.success, isFalse);
       expect(failed.failureMessage, '命令发送失败');
     });
@@ -1423,46 +1293,16 @@ void main() {
   });
 
   group('ControlCommandExecutor', () {
-    test('uses BLE sender for an available BLE route', () async {
+    test('uses official cloud sender for a command', () async {
       final calls = <CommandCode>[];
       final executor = ControlCommandExecutor(
-        sendBleCommand: (command) async {
-          calls.add(command);
-          return true;
-        },
-        sendCloudCommand: (_) => fail('cloud sender should not be called'),
-      );
-
-      final result = await executor.send(
-        command: CommandCode.lock,
-        availability: _availability(
-          channel: OfficialControlChannel.ble,
-          canUseBle: true,
-        ),
-      );
-
-      expect(result.success, isTrue);
-      expect(result.transport, ControlCommandTransport.ble);
-      expect(calls, [CommandCode.lock]);
-    });
-
-    test('uses official cloud sender for an available cloud route', () async {
-      final calls = <CommandCode>[];
-      final executor = ControlCommandExecutor(
-        sendBleCommand: (_) => fail('BLE sender should not be called'),
         sendCloudCommand: (command) async {
           calls.add(command);
           return 'ok';
         },
       );
 
-      final result = await executor.send(
-        command: CommandCode.find,
-        availability: _availability(
-          channel: OfficialControlChannel.officialCloud,
-          canUseCloud: true,
-        ),
-      );
+      final result = await executor.send(command: CommandCode.find);
 
       expect(result.success, isTrue);
       expect(result.transport, ControlCommandTransport.officialCloud);
@@ -1470,138 +1310,31 @@ void main() {
       expect(calls, [CommandCode.find]);
     });
 
-    test('automatic route prefers BLE before official cloud', () async {
-      final calls = <String>[];
+    test('maps official cloud exception to failure', () async {
       final executor = ControlCommandExecutor(
-        sendBleCommand: (command) async {
-          calls.add('ble:${command.name}');
-          return true;
-        },
-        sendCloudCommand: (command) async {
-          calls.add('cloud:${command.name}');
-          return 'ok';
-        },
-      );
-
-      final result = await executor.send(
-        command: CommandCode.powerOn,
-        availability: _availability(canUseBle: true, canUseCloud: true),
-      );
-
-      expect(result.transport, ControlCommandTransport.ble);
-      expect(calls, ['ble:powerOn']);
-    });
-
-    test(
-      'automatic route falls back to official cloud when BLE is unavailable',
-      () async {
-        final calls = <String>[];
-        final executor = ControlCommandExecutor(
-          sendBleCommand: (command) async {
-            calls.add('ble:${command.name}');
-            return true;
-          },
-          sendCloudCommand: (command) async {
-            calls.add('cloud:${command.name}');
-            return 'ok';
-          },
-        );
-
-        final result = await executor.send(
-          command: CommandCode.unlock,
-          availability: _availability(canUseCloud: true),
-        );
-
-        expect(result.transport, ControlCommandTransport.officialCloud);
-        expect(calls, ['cloud:unlock']);
-      },
-    );
-
-    test('unavailable route does not call any sender', () async {
-      final executor = ControlCommandExecutor(
-        sendBleCommand: (_) => fail('BLE sender should not be called'),
-        sendCloudCommand: (_) => fail('cloud sender should not be called'),
-      );
-
-      final result = await executor.send(
-        command: CommandCode.lock,
-        availability: _availability(disabledReason: '不可用'),
-      );
-
-      expect(result.success, isFalse);
-      expect(result.transport, ControlCommandTransport.unavailable);
-      expect(result.failureMessage, '不可用');
-    });
-
-    test('maps BLE false and official cloud exception to failures', () async {
-      final bleExecutor = ControlCommandExecutor(
-        sendBleCommand: (_) async => false,
-        sendCloudCommand: (_) => fail('cloud sender should not be called'),
-      );
-      final cloudExecutor = ControlCommandExecutor(
-        sendBleCommand: (_) => fail('BLE sender should not be called'),
         sendCloudCommand: (_) async =>
             throw const OfficialCloudApiException('官方错误'),
       );
 
-      final bleResult = await bleExecutor.send(
-        command: CommandCode.powerOff,
-        availability: _availability(
-          channel: OfficialControlChannel.ble,
-          canUseBle: true,
-        ),
-      );
-      final cloudResult = await cloudExecutor.send(
-        command: CommandCode.powerOff,
-        availability: _availability(
-          channel: OfficialControlChannel.officialCloud,
-          canUseCloud: true,
-        ),
-      );
+      final result = await executor.send(command: CommandCode.powerOff);
 
-      expect(bleResult.success, isFalse);
-      expect(bleResult.failureMessage, '熄火失败');
-      expect(cloudResult.success, isFalse);
-      expect(cloudResult.failureMessage, '官方错误');
+      expect(result.success, isFalse);
+      expect(result.failureMessage, '官方错误');
     });
 
     test('maps command timeouts to transport failures', () async {
-      final pendingBle = Completer<bool>();
       final pendingCloud = Completer<String>();
-      final bleExecutor = ControlCommandExecutor(
-        sendBleCommand: (_) => pendingBle.future,
-        sendCloudCommand: (_) => fail('cloud sender should not be called'),
-        bleTimeout: Duration.zero,
-      );
-      final cloudExecutor = ControlCommandExecutor(
-        sendBleCommand: (_) => fail('BLE sender should not be called'),
+      final executor = ControlCommandExecutor(
         sendCloudCommand: (_) => pendingCloud.future,
         cloudTimeout: Duration.zero,
       );
 
-      final bleResult = await bleExecutor.send(
-        command: CommandCode.lock,
-        availability: _availability(
-          channel: OfficialControlChannel.ble,
-          canUseBle: true,
-        ),
-      );
-      final cloudResult = await cloudExecutor.send(
-        command: CommandCode.find,
-        availability: _availability(
-          channel: OfficialControlChannel.officialCloud,
-          canUseCloud: true,
-        ),
-      );
+      final result = await executor.send(command: CommandCode.find);
 
-      expect(bleResult.success, isFalse);
-      expect(bleResult.transport, ControlCommandTransport.ble);
-      expect(bleResult.failureMessage, 'BLE command timed out');
-      expect(cloudResult.success, isFalse);
-      expect(cloudResult.transport, ControlCommandTransport.officialCloud);
-      expect(cloudResult.failureMessage, 'Cloud command timed out');
+      expect(result.success, isFalse);
+      expect(result.transport, ControlCommandTransport.officialCloud);
+      expect(result.failureMessage, 'Cloud command timed out');
 
-      pendingBle.complete(true);
       pendingCloud.complete('ok');
     });
   });
@@ -1766,37 +1499,9 @@ Future<void> _writeJsonResponse(
   await request.response.close();
 }
 
-ControlChannelAvailability _availability({
-  OfficialControlChannel channel = OfficialControlChannel.automatic,
-  bool canUseBle = false,
-  bool canUseCloud = false,
-  String disabledReason = '请连接 BLE 或登录官方账号后再控车',
-}) {
-  final willUseBle =
-      channel == OfficialControlChannel.ble ||
-      (channel == OfficialControlChannel.automatic && canUseBle);
-  return ControlChannelAvailability(
-    channel: channel,
-    canUseBle: canUseBle,
-    canUseCloud: canUseCloud,
-    enabled: canUseBle || canUseCloud,
-    willUseBle: willUseBle,
-    effectiveChannelLabel: willUseBle
-        ? 'BLE'
-        : canUseCloud
-        ? '官方云端'
-        : '不可用',
-    bleUnavailableReason: canUseBle ? '' : 'BLE 未连接或协议未就绪',
-    cloudUnavailableReason: canUseCloud ? '' : '请先登录官方账号',
-    disabledReason: disabledReason,
-  );
-}
-
 OfficialCloudState _cloudState({
-  OfficialControlChannel channel = OfficialControlChannel.automatic,
   bool signedIn = false,
   bool withVehicle = false,
-  Map<String, String> links = const {},
 }) {
   final vehicle = OfficialVehicle.fromJson({
     'carId': 'official-1',
@@ -1806,7 +1511,5 @@ OfficialCloudState _cloudState({
     token: signedIn ? 'token' : '',
     vehicles: withVehicle ? [vehicle] : const <OfficialVehicle>[],
     selectedVehicleKey: withVehicle ? vehicle.key : null,
-    controlChannel: channel,
-    localVehicleLinks: links,
   );
 }

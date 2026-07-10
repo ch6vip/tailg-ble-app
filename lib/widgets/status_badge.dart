@@ -5,33 +5,33 @@ import 'package:tailg_ble_app/theme/app_motion.dart';
 /// Unified status badge for the v8 Ninebot design system.
 ///
 /// Mirrors the HTML `.chip` style:
-/// - [StatusBadgeType.armed]  → red dot + "已设防"
-/// - [StatusBadgeType.idle]   → grey dot + "未通电"
-/// - [StatusBadgeType.ble]    → teal dot + "近场连接"
-/// - [StatusBadgeType.online] → teal "在线"
-/// - [StatusBadgeType.offline]→ red "离线"
-enum StatusBadgeType { armed, idle, ble, online, offline }
+/// - [StatusBadgeType.armed]     → red dot + "已设防"
+/// - [StatusBadgeType.idle]      → grey dot + "未通电"
+/// - [StatusBadgeType.connected] → teal dot + "已连接"
+/// - [StatusBadgeType.online]    → teal "在线"
+/// - [StatusBadgeType.offline]   → red "离线"
+enum StatusBadgeType { armed, idle, connected, online, offline }
 
 extension _StatusBadgeTypeTokens on StatusBadgeType {
   Color get dotColor => switch (this) {
     StatusBadgeType.armed || StatusBadgeType.offline => AppColors.energyRed,
     StatusBadgeType.idle => AppColors.textTertiary,
-    StatusBadgeType.ble || StatusBadgeType.online => AppColors.energyGreen,
+    StatusBadgeType.connected ||
+    StatusBadgeType.online => AppColors.energyGreen,
   };
 
   Color get bgColor => switch (this) {
     StatusBadgeType.armed ||
     StatusBadgeType.offline => AppColors.surfaceBrandRedTint,
     StatusBadgeType.idle => AppColors.surfaceContainerHigh,
-    StatusBadgeType.ble ||
+    StatusBadgeType.connected ||
     StatusBadgeType.online => AppColors.surfaceBrandTealTint,
   };
 
-  /// Only armed, ble, and online states are "active" — their dot should pulse.
-  /// Idle and offline are static states and use a static dot.
+  /// Armed, connected, and online states are "active" — their dot should pulse.
   bool get isActive => switch (this) {
     StatusBadgeType.armed ||
-    StatusBadgeType.ble ||
+    StatusBadgeType.connected ||
     StatusBadgeType.online => true,
     StatusBadgeType.idle || StatusBadgeType.offline => false,
   };
@@ -39,7 +39,7 @@ extension _StatusBadgeTypeTokens on StatusBadgeType {
   String get defaultLabel => switch (this) {
     StatusBadgeType.armed => '已设防',
     StatusBadgeType.idle => '未通电',
-    StatusBadgeType.ble => '近场连接',
+    StatusBadgeType.connected => '已连接',
     StatusBadgeType.online => '在线',
     StatusBadgeType.offline => '离线',
   };

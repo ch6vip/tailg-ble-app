@@ -179,9 +179,7 @@ void main() {
     }
   });
 
-  testWidgets('ble connection pill follows official status labels', (
-    tester,
-  ) async {
+  testWidgets('connection pill follows official status labels', (tester) async {
     Future<void> pump(String? label) async {
       await tester.pumpWidget(
         TestApp(

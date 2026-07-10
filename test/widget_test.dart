@@ -88,18 +88,13 @@ void main() {
   });
 
   test('HomePage stream callbacks ignore events after unmount', () {
-    final source = readSource('lib/main.dart');
+    final source = readSource('lib/pages/control_page_home_overview.dart');
     final manualModeListener = _listenerBlock(
       source,
       'manualModeService.enabledStream.listen',
     );
-    final connectionListener = _listenerBlock(
-      source,
-      'connectionManager.stateStream.listen',
-    );
 
-    expect(manualModeListener, contains('if (!mounted) return;'));
-    expect(connectionListener, contains('if (!mounted) return;'));
+    expect(manualModeListener, contains('if (mounted)'));
   });
 }
 

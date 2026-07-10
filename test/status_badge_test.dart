@@ -32,7 +32,7 @@ void main() {
               children: [
                 StatusBadge(type: StatusBadgeType.armed),
                 StatusBadge(type: StatusBadgeType.idle),
-                StatusBadge(type: StatusBadgeType.ble),
+                StatusBadge(type: StatusBadgeType.connected),
                 StatusBadge(type: StatusBadgeType.online),
                 StatusBadge(type: StatusBadgeType.offline),
               ],
@@ -43,7 +43,7 @@ void main() {
 
       expect(find.bySemanticsLabel('车辆状态：已设防'), findsOneWidget);
       expect(find.bySemanticsLabel('车辆状态：未通电'), findsOneWidget);
-      expect(find.bySemanticsLabel('车辆状态：近场连接'), findsOneWidget);
+      expect(find.bySemanticsLabel('车辆状态：已连接'), findsOneWidget);
       expect(find.bySemanticsLabel('车辆状态：在线'), findsOneWidget);
       expect(find.bySemanticsLabel('车辆状态：离线'), findsOneWidget);
     } finally {

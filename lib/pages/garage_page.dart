@@ -45,7 +45,6 @@ class GaragePage extends StatelessWidget {
                   if (vehicles.isEmpty) {
                     return _EmptyGarage(
                       onAddVehicle: () => _openOfficialVehicles(context),
-                      onDirectConnect: () => _openScan(context),
                     );
                   }
                   final defaultVehicleId =
@@ -73,10 +72,6 @@ class GaragePage extends StatelessWidget {
     );
   }
 
-  void _openScan(BuildContext context) {
-    openScanTab(context);
-  }
-
   void _openOfficialVehicles(BuildContext context) {
     Navigator.push(
       context,
@@ -87,11 +82,7 @@ class GaragePage extends StatelessWidget {
 
 class _EmptyGarage extends StatelessWidget {
   final VoidCallback onAddVehicle;
-  final VoidCallback onDirectConnect;
-  const _EmptyGarage({
-    required this.onAddVehicle,
-    required this.onDirectConnect,
-  });
+  const _EmptyGarage({required this.onAddVehicle});
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +93,7 @@ class _EmptyGarage extends StatelessWidget {
           const AppEmptyState(
             icon: Icons.electric_bike_outlined,
             title: '还没有绑定车辆',
-            subtitle: '登录账号后会显示已绑定车辆，也可添加附近车辆用于近场连接。',
+            subtitle: '登录账号后会显示已绑定车辆。',
             padding: EdgeInsets.symmetric(horizontal: 40, vertical: 0),
           ),
           const SizedBox(height: 20),
@@ -114,16 +105,6 @@ class _EmptyGarage extends StatelessWidget {
               semanticLabel: '添加车辆',
             ),
             label: const Text('添加车辆'),
-          ),
-          const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: onDirectConnect,
-            icon: const Icon(
-              Icons.bluetooth_searching,
-              size: AppIconSizes.md,
-              semanticLabel: '近场连接',
-            ),
-            label: const Text('近场连接'),
           ),
         ],
       ),
@@ -236,7 +217,7 @@ class _VehicleCardState extends State<_VehicleCard> {
                     Row(
                       children: [
                         const StatusBadge(
-                          type: StatusBadgeType.ble,
+                          type: StatusBadgeType.connected,
                           compact: true,
                         ),
                         const Spacer(),
@@ -286,9 +267,6 @@ class _VehicleCardState extends State<_VehicleCard> {
       await _showQgjCredentialsDialog(context);
     } else if (value == 'default') {
       await vehicleStore.setDefault(vehicle.id);
-      if (!mounted) return;
-      proximityService.setTargetDevice(vehicle.id);
-      applyVehicleBleCredentials(vehicleStore.defaultVehicle);
     } else if (value == 'delete') {
       if (!mounted) return;
       await _confirmDelete(context);
@@ -376,10 +354,6 @@ class _VehicleCardState extends State<_VehicleCard> {
       userId: result.userId,
       clear: result.clear,
     );
-    if (!mounted) return;
-    if (vehicleStore.defaultVehicle?.id == vehicle.id) {
-      applyVehicleBleCredentials(vehicleStore.defaultVehicle);
-    }
   }
 
   int? _parseUint32(String value) {
@@ -440,11 +414,6 @@ class _VehicleCardState extends State<_VehicleCard> {
     if (!mounted) return;
     if (confirmed == true) {
       await vehicleStore.remove(vehicle.id);
-      final defaultVehicle = vehicleStore.defaultVehicle;
-      if (defaultVehicle != null) {
-        proximityService.setTargetDevice(defaultVehicle.id);
-        applyVehicleBleCredentials(defaultVehicle);
-      }
     }
   }
 }
