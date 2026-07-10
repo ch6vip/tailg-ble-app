@@ -192,28 +192,33 @@ void main() {
     expect(service.lastUnlockTime, isNull);
   });
 
-  test('ProximityService uses injected clock for nearby unlock cooldown', () async {
-    SharedPreferences.setMockInitialValues({'proximity_unlock_enabled': true});
-    final fixture = BleGuardFixture();
-    final now = DateTime(2026, 6, 9, 10, 30);
-    addTearDown(fixture.manager.dispose);
-    ProximityService().resetForTest(clock: () => now);
+  test(
+    'ProximityService uses injected clock for nearby unlock cooldown',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'proximity_unlock_enabled': true,
+      });
+      final fixture = BleGuardFixture();
+      final now = DateTime(2026, 6, 9, 10, 30);
+      addTearDown(fixture.manager.dispose);
+      ProximityService().resetForTest(clock: () => now);
 
-    final service = ProximityService();
-    await service.init(fixture.manager);
-    service.setTargetDevice(testBleDeviceId);
+      final service = ProximityService();
+      await service.init(fixture.manager);
+      service.setTargetDevice(testBleDeviceId);
 
-    service.handleTargetFoundForTest(
-      ScanResult(
-        device: fixture.device,
-        advertisementData: _advertisementData(),
-        rssi: ProximityUnlockGuard.minUnlockRssi,
-        timeStamp: now,
-      ),
-    );
+      service.handleTargetFoundForTest(
+        ScanResult(
+          device: fixture.device,
+          advertisementData: _advertisementData(),
+          rssi: ProximityUnlockGuard.minUnlockRssi,
+          timeStamp: now,
+        ),
+      );
 
-    expect(service.lastUnlockTime, now);
-  });
+      expect(service.lastUnlockTime, now);
+    },
+  );
 
   test(
     'ProximityService does not log success when unlock command fails',
