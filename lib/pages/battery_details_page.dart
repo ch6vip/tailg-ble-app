@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../models/battery_snapshot.dart';
+import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
@@ -48,6 +49,8 @@ class BatteryDetailsPage extends StatelessWidget {
                       children: [
                         _SourceStrip(snapshot: data, cloudState: cloudState),
                         const SizedBox(height: 14),
+                        _BatterySyncCard(cloudState: cloudState),
+                        const SizedBox(height: 14),
                         _OfficialSummaryRow(snapshot: data),
                         const SizedBox(height: 14),
                         _OfficialMetricGrid(snapshot: data),
@@ -75,7 +78,14 @@ class BatteryDetailsPage extends StatelessWidget {
       return;
     }
     try {
-      await officialCloudService.refreshBatteryInfo();
+      await officialCloudService.refreshBatteryInfo(force: true);
+      if (!context.mounted) return;
+      final info = officialCloudService.state.batteryInfo;
+      if (info?.hasData == true) {
+        AppSnack.success(context, '电池信息已同步');
+      } else {
+        AppSnack.info(context, '已同步，当前暂无电池明细');
+      }
     } catch (e) {
       logService.operation(
         '官方电池信息刷新失败',
@@ -408,7 +418,13 @@ class _SourceStrip extends StatelessWidget {
         : signedIn
         ? '电池数据已同步'
         : '登录官方账号后可同步更多电池数据';
-    final subtitle = error ?? '电池维护、校准和升级请前往官方服务渠道处理';
+    final subtitle =
+        error ??
+        (loading
+            ? '正在向官方电池服务请求最新数据'
+            : signedIn
+            ? '电量、电压、温度来自官方电池接口；维护、校准请前往官方服务渠道'
+            : '登录后可读取电量、电压、温度与 BMS 明细');
     final color = error != null
         ? AppColors.warning
         : loading

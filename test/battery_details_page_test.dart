@@ -97,4 +97,20 @@ void main() {
     expect(find.text('52.4V'), findsWidgets);
     expect(find.text('31.2°C'), findsWidgets);
   });
+  testWidgets('signed-in battery page shows last sync age', (tester) async {
+    setTestViewSize(tester, const Size(430, 1200));
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        batteryInfo: OfficialBatteryInfo.fromJson({'voltage': 52.4}),
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: BatteryDetailsPage()));
+    await tester.pump();
+
+    expect(find.text('最后同步'), findsOneWidget);
+    expect(find.textContaining('同步'), findsWidgets);
+  });
 }

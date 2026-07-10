@@ -310,6 +310,7 @@ class OfficialCloudService {
   OfficialCloudState get state => _state;
   OfficialCloudRequestSummary? get lastRequest => _apiClient.lastRequest;
   DateTime? get lastVehiclesRefreshAt => _lastSuccessfulRefresh['vehicles'];
+  DateTime? get lastBatteryRefreshAt => _lastSuccessfulRefresh['batteryInfo'];
 
   Future<void> init() => _init(refreshOnSignedIn: true);
 
@@ -695,11 +696,14 @@ class OfficialCloudService {
     _emit();
   }
 
-  Future<void> refreshBatteryInfo({bool silent = false}) async {
+  Future<void> refreshBatteryInfo({
+    bool silent = false,
+    bool force = false,
+  }) async {
     final token = _state.token;
     if (token.isEmpty) return;
     const refreshKey = 'batteryInfo';
-    if (silent && _shouldUseRecentRefresh(refreshKey)) return;
+    if (!force && silent && _shouldUseRecentRefresh(refreshKey)) return;
     final inFlight = _inFlightRefreshes[refreshKey];
     if (silent && inFlight != null) return inFlight;
 
