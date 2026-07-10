@@ -8,10 +8,11 @@
 
 1. [项目 README](../README.md)：开发环境、快速开始、当前能力摘要。
 2. [功能清单](../FEATURES.md)：当前 cloud-only 能力与已移除项。
-3. [当前设计系统索引](design_system.md)：主题 token、交互规则和页面模式。
-4. [第一批功能真机验证清单](first_batch_verification.md)：真机测试步骤（需按 cloud-only 调整执行）。
-5. [Android 构建说明](android_build_notes.md)：Windows/Android 构建问题。
-6. [GitHub Actions 指南](github_actions_guide.md)：CI/CD 与 Secrets。
+3. [Cloud-only 对齐进度](cloud_only_alignment_progress.md)：**当前主线**，P0/P1 任务与验收。
+4. [当前设计系统索引](design_system.md)：主题 token、交互规则和页面模式。
+5. [第一批功能真机验证清单](first_batch_verification.md)：真机测试步骤（需按 cloud-only 调整执行）。
+6. [Android 构建说明](android_build_notes.md)：Windows/Android 构建问题。
+7. [GitHub Actions 指南](github_actions_guide.md)：CI/CD 与 Secrets。
 
 ## 文档分类
 
@@ -19,6 +20,7 @@
 | --- | --- | --- | --- |
 | 项目入口 | [README](../README.md) | 当前 | 项目说明与启动 |
 | 功能状态 | [FEATURES](../FEATURES.md) | 当前 | cloud-only 能力清单 |
+| 对齐进度 | [cloud_only_alignment_progress](cloud_only_alignment_progress.md) | **当前主线** | P0 任务看板与验收 |
 | 设计系统 | [design_system](design_system.md) | 当前 | 主题与交互 |
 | 真机验证 | [first_batch_verification](first_batch_verification.md) | 部分过时 | 需按云端路径执行 |
 | 构建说明 | [android_build_notes](android_build_notes.md) | 当前 | Android 构建 |
