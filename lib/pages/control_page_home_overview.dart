@@ -14,17 +14,11 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   bool _busy = false;
   bool _disposed = false;
 
-  bool _manualModeEnabled = false;
-  StreamSubscription<bool>? _manualModeSub;
   StreamSubscription<OfficialCloudState>? _cloudSub;
 
   @override
   void initState() {
     super.initState();
-    _manualModeEnabled = manualModeService.enabled;
-    _manualModeSub = manualModeService.enabledStream.listen((v) {
-      if (mounted) setState(() => _manualModeEnabled = v);
-    });
     _cloudSub = officialCloudService.stateStream.listen((_) {
       if (mounted) setState(() {});
     });
@@ -33,7 +27,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   @override
   void dispose() {
     _disposed = true;
-    _manualModeSub?.cancel();
     _cloudSub?.cancel();
     super.dispose();
   }
