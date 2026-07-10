@@ -1218,6 +1218,19 @@ void main() {
 
       expect(availability.canUseCloud, isTrue);
       expect(availability.enabled, isFalse);
+      expect(availability.disabledReason, '正在执行控车指令，请稍候');
+      expect(availability.disabledReason, isNot(contains('请登录官方账号并选择车辆后再控车')));
+    });
+
+    test('busy state keeps signed-out reason when cloud is unavailable', () {
+      final availability = ControlChannelResolver.resolve(
+        cloudState: _cloudState(),
+        busy: true,
+      );
+
+      expect(availability.canUseCloud, isFalse);
+      expect(availability.enabled, isFalse);
+      expect(availability.disabledReason, '请先登录官方账号');
     });
   });
 

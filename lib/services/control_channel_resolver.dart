@@ -29,14 +29,23 @@ class ControlChannelResolver {
         : _cloudUnavailableReason(cloudState);
     final enabled = !busy && canUseCloud;
 
+    // Prefer the real cloud-unavailable reason. Only fall back to a generic
+    // prompt when cloud itself is ready but the control surface is temporarily
+    // blocked (e.g. another command is still in flight).
+    final disabledReason = !canUseCloud
+        ? (cloudUnavailableReason.isEmpty
+              ? '请登录官方账号并选择车辆后再控车'
+              : cloudUnavailableReason)
+        : busy
+        ? '正在执行控车指令，请稍候'
+        : '';
+
     return ControlChannelAvailability(
       canUseCloud: canUseCloud,
       enabled: enabled,
       effectiveChannelLabel: enabled ? '官方云端' : '不可用',
       cloudUnavailableReason: cloudUnavailableReason,
-      disabledReason: cloudUnavailableReason.isEmpty
-          ? '请登录官方账号并选择车辆后再控车'
-          : cloudUnavailableReason,
+      disabledReason: disabledReason,
     );
   }
 
