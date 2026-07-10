@@ -76,6 +76,32 @@ class _ControlPageState extends State<ControlPage>
   }
 
   @override
+  void initState() {
+    super.initState();
+    // First mount of the control shell (app start / page recreate).
+    _refreshOnVisible();
+  }
+
+  void _refreshOnVisible() {
+    if (!officialCloudService.state.signedIn) return;
+    // Align with official ControlFragment.onResume: refresh car status when
+    // the control page becomes active again.
+    unawaited(_refreshVehiclesSilently());
+  }
+
+  Future<void> _refreshVehiclesSilently() async {
+    try {
+      await officialCloudService.refreshVehicles(silent: true, force: true);
+    } catch (e) {
+      logService.operation(
+        '控车页可见时官方车辆刷新失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
     // 静态外壳只构建一次；仅随数据变化的内容下沉到 [_HomeBody]，

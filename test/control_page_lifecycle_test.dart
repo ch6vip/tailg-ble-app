@@ -25,6 +25,20 @@ void main() {
     expect(source, isNot(contains('DateTime.now()')));
   });
 
+  test('ControlPage refreshes official vehicle status when first shown', () {
+    final source = readSource('lib/pages/control_page.dart');
+
+    expect(source, contains('refreshVehicles(silent: true, force: true)'));
+    expect(source, contains('_refreshOnVisible'));
+  });
+
+  test('HomePage refreshes official vehicle status on app resume', () {
+    final source = readSource('lib/main.dart');
+
+    expect(source, contains('AppLifecycleState.resumed'));
+    expect(source, contains('refreshVehicles(silent: true, force: true)'));
+  });
+
   setUp(() {
     resetMockStorage();
   });
