@@ -29,10 +29,10 @@ String formatRelativeSyncText(DateTime? time, {DateTime Function()? clock}) {
   final now = (clock ?? DateTime.now)();
   final seconds = now.difference(time).inSeconds;
   if (seconds < 15) return '刚刚同步';
-  if (seconds < 60) return '${seconds}秒前同步';
+  if (seconds < 60) return '$seconds秒前同步';
   final minutes = now.difference(time).inMinutes;
-  if (minutes < 60) return '${minutes}分钟前同步';
+  if (minutes < 60) return '$minutes分钟前同步';
   final hours = now.difference(time).inHours;
-  if (hours < 24) return '${hours}小时前同步';
-  return formatMonthDayMinuteText(time) + ' 同步';
+  if (hours < 24) return '$hours小时前同步';
+  return '${formatMonthDayMinuteText(time)} 同步';
 }

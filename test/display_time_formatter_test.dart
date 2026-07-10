@@ -35,4 +35,37 @@ void main() {
     expect(formatLogClockTime(DateTime(2026, 7, 5, 1, 2, 3)), '01:02:03');
     expect(formatLogClockTime(DateTime(2026, 7, 5, 12, 30, 59)), '12:30:59');
   });
+
+  test('formatRelativeSyncText covers recent ages', () {
+    final now = DateTime(2026, 7, 11, 12, 0, 0);
+    expect(formatRelativeSyncText(null, clock: () => now), '尚未同步');
+    expect(
+      formatRelativeSyncText(
+        now.subtract(const Duration(seconds: 5)),
+        clock: () => now,
+      ),
+      '刚刚同步',
+    );
+    expect(
+      formatRelativeSyncText(
+        now.subtract(const Duration(seconds: 40)),
+        clock: () => now,
+      ),
+      '40秒前同步',
+    );
+    expect(
+      formatRelativeSyncText(
+        now.subtract(const Duration(minutes: 3)),
+        clock: () => now,
+      ),
+      '3分钟前同步',
+    );
+    expect(
+      formatRelativeSyncText(
+        now.subtract(const Duration(hours: 2)),
+        clock: () => now,
+      ),
+      '2小时前同步',
+    );
+  });
 }
