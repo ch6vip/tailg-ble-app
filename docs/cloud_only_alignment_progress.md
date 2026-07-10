@@ -133,14 +133,26 @@ P0-4 电池页增强
 
 | ID | 项 | 状态 | 备注 |
 | --- | --- | --- | --- |
-| P0-1 | 官方消息中心 | **待开始** | 替换本地日志伪装消息 |
+| P0-1 | 官方消息中心 | **进行中** | 替换本地日志伪装消息；接口规格已对齐官方 |
 | P0-2 | 控车状态可信 | **部分完成** | 自动刷新/busy 文案已做；缺最后同步时间与反馈统一 |
 | P0-3 | 定位轨迹围栏打磨 | **待开始** | 接口已有，体验待补 |
 | P0-4 | 电池信息增强 | **待开始** | 基础页已有 |
 
 ### 进度统计
 - P0 完成：约 **20%**（自动刷新 + busy 修复计入 P0-2）
-- 下一动作：**P0-1 官方消息接入**
+- 当前动作：**P0-1 官方消息接入（实现中）**
+
+### P0-1 接口规格（来自官方反编译）
+
+| 用途 | 方法 | 路径 | Body |
+| --- | --- | --- | --- |
+| 车辆消息 | POST | `app/msg/pageOfCarMsg` | `uid`, `pageSize`, `nowPageIndex` |
+| 系统消息 | POST | `app/msg/pageOfSysMsg` | `pageSize`, `nowPageIndex` |
+| 清空消息 | POST | `app/msg/delMsg` | 无 body（二期） |
+
+车辆消息 record 关键字段：`msgId` / `title` / `content` / `sendTime` / `messageCode` / `carId`  
+系统消息 record 关键字段：`sysMessageRecordId` / `title` / `content` / `sendTime` / `messageCode` / `url`  
+分页外壳：`records` / `current` / `pages` / `total` / `size`
 
 ---
 
