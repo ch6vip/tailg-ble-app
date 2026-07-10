@@ -36,6 +36,32 @@ class OfficialCloudDataParser {
         .toList(growable: false);
   }
 
+  static List<OfficialCloudMessage> vehicleMessages(Object? data) {
+    return _pageRecords(data)
+        .map(OfficialCloudMessage.vehicle)
+        .where(
+          (message) => message.title.isNotEmpty || message.content.isNotEmpty,
+        )
+        .toList(growable: false);
+  }
+
+  static List<OfficialCloudMessage> systemMessages(Object? data) {
+    return _pageRecords(data)
+        .map(OfficialCloudMessage.system)
+        .where(
+          (message) => message.title.isNotEmpty || message.content.isNotEmpty,
+        )
+        .toList(growable: false);
+  }
+
+  static Iterable<Map<String, dynamic>> _pageRecords(Object? data) {
+    if (data is Map) {
+      final records = data['records'] ?? data['list'] ?? data['rows'];
+      return _maps(records);
+    }
+    return _maps(data);
+  }
+
   static Map<String, dynamic> _map(Object? data) {
     return data is Map<Object?, Object?>
         ? _officialCloudPayloadMap(data)

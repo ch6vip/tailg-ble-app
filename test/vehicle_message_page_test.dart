@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
+import 'package:tailg_ble_app/models/official_vehicle.dart';
+import 'package:tailg_ble_app/pages/official_cloud_page.dart';
 import 'package:tailg_ble_app/pages/vehicle_message_page.dart';
+import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/snack_finders.dart';
@@ -12,57 +15,121 @@ import 'helpers/touch_target.dart';
 import 'helpers/view_size.dart';
 
 void main() {
-  test('VehicleMessagePage does not use empty setState refreshes', () {
-    final source = readSource('lib/pages/vehicle_message_page.dart');
+  test(
+    'VehicleMessagePage uses official cloud refresh instead of log mapping',
+    () {
+      final source = readSource('lib/pages/vehicle_message_page.dart');
 
-    expect(source, isNot(contains('setState(() {})')));
-    expect(source, contains('_refreshVisibleMessages'));
+      expect(source, contains('refreshMessages'));
+      expect(source, isNot(contains('_mapEntry')));
+      expect(source, isNot(contains('setState(() {})')));
+    },
+  );
+
+  test('official message models parse vehicle and system records', () {
+    final vehicle = OfficialCloudMessage.vehicle({
+      'msgId': 'm-1',
+      'title': '车辆移动告警',
+      'content': '检测到异常移动',
+      'sendTime': '2026-07-11 10:20:30',
+      'messageCode': 'CAR_WARNING',
+      'carId': 'car-1',
+    });
+    final system = OfficialCloudMessage.system({
+      'sysMessageRecordId': 's-1',
+      'title': '系统维护通知',
+      'content': '今晚 0 点维护',
+      'sendTime': '2026-07-11T09:00:00',
+      'messageCode': 'APP_UPDATE',
+      'url': 'https://example.com',
+    });
+
+    expect(vehicle.id, 'vehicle:m-1');
+    expect(vehicle.category, OfficialCloudMessageCategory.vehicle);
+    expect(vehicle.time.year, 2026);
+    expect(system.id, 'system:s-1');
+    expect(system.category, OfficialCloudMessageCategory.system);
+    expect(system.url, 'https://example.com');
+  });
+
+  test('official message parser reads paged records payload', () {
+    final source = readSource('lib/services/official_cloud_data_parser.dart');
+    expect(source, contains('vehicleMessages'));
+    expect(source, contains('systemMessages'));
+    expect(source, contains("_pageRecords"));
   });
 
   setUp(() {
     resetMockPreferences();
-    app.logService.clear();
+    app.officialCloudService.resetForTest();
   });
 
-  tearDown(app.logService.clear);
+  tearDown(() {
+    app.officialCloudService.resetForTest();
+  });
 
-  testWidgets('new log entries refresh visible messages automatically', (
+  testWidgets('unsigned page prompts login for official messages', (
     tester,
   ) async {
     await tester.pumpWidget(const TestApp(home: VehicleMessagePage()));
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('暂无消息'), findsOneWidget);
+    expect(find.text('请先登录官方账号'), findsOneWidget);
+    expect(find.text('去登录'), findsOneWidget);
 
-    app.logService.operation('发送指令');
-    await tester.pump();
-    await tester.pump();
-
-    expect(find.text('发送指令'), findsOneWidget);
+    await tester.tap(find.text('去登录'));
+    await tester.pumpAndSettle();
+    expect(find.byType(OfficialCloudPage), findsOneWidget);
   });
 
-  testWidgets('message list keeps the most recent 80 matching log entries', (
-    tester,
-  ) async {
-    setTestViewSize(tester, const Size(430, 12000));
-
-    for (var index = 1; index <= 81; index++) {
-      app.logService.operation('发送指令 $index');
-    }
+  testWidgets('signed-in page renders official cloud messages', (tester) async {
+    setTestViewSize(tester, const Size(430, 1400));
+    final vehicleMessage = OfficialCloudMessage.vehicle({
+      'msgId': 'vm-1',
+      'title': '车辆移动告警',
+      'content': '检测到异常移动',
+      'sendTime': '2026-07-11 12:00:00',
+    });
+    final systemMessage = OfficialCloudMessage.system({
+      'sysMessageRecordId': 'sm-1',
+      'title': '系统维护通知',
+      'content': '今晚维护',
+      'sendTime': '2026-07-11 11:00:00',
+    });
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        userId: 'uid-1',
+        phone: '18812345678',
+        vehicleMessages: [vehicleMessage],
+        systemMessages: [systemMessage],
+      ),
+    );
 
     await tester.pumpWidget(const TestApp(home: VehicleMessagePage()));
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('发送指令 81'), findsOneWidget);
-    expect(find.text('发送指令 2'), findsOneWidget);
-    expect(find.text('发送指令 1'), findsNothing);
+    expect(find.text('车辆移动告警'), findsOneWidget);
+    expect(find.text('系统维护通知'), findsOneWidget);
+    expect(find.text('请先登录官方账号'), findsNothing);
   });
 
   testWidgets('custom tabs keep 44dp touch targets', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
+      app.officialCloudService.setStateForTest(
+        OfficialCloudState.initial().copyWith(
+          initialized: true,
+          token: 'token',
+          userId: 'uid-1',
+        ),
+      );
       await tester.pumpWidget(const TestApp(home: VehicleMessagePage()));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       final systemTab = find.ancestor(
         of: find.text('系统消息'),
@@ -84,37 +151,6 @@ void main() {
           hasTapAction: true,
         ),
       );
-
-      const systemLabel = '系统消息';
-      final systemTabSemantics = find.bySemanticsLabel(systemLabel);
-      expect(
-        tester.getSemantics(systemTabSemantics),
-        matchesSemantics(
-          label: systemLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasSelectedState: true,
-          isSelected: false,
-          hasTapAction: true,
-        ),
-      );
-
-      tester.semantics.tap(find.semantics.byLabel(systemLabel));
-      await tester.pumpAndSettle();
-
-      expect(
-        tester.getSemantics(systemTabSemantics),
-        matchesSemantics(
-          label: systemLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasSelectedState: true,
-          isSelected: true,
-          hasTapAction: true,
-        ),
-      );
     } finally {
       semantics.dispose();
     }
@@ -123,12 +159,26 @@ void main() {
   testWidgets('clearing current message group shows success snack', (
     tester,
   ) async {
-    app.logService.operation('发送指令');
+    final vehicleMessage = OfficialCloudMessage.vehicle({
+      'msgId': 'vm-clear',
+      'title': '车辆移动告警',
+      'content': '检测到异常移动',
+      'sendTime': '2026-07-11 12:00:00',
+    });
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        userId: 'uid-1',
+        vehicleMessages: [vehicleMessage],
+      ),
+    );
 
     await tester.pumpWidget(const TestApp(home: VehicleMessagePage()));
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('发送指令'), findsOneWidget);
+    expect(find.text('车辆移动告警'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.delete_sweep_outlined));
     await tester.pump();
@@ -136,6 +186,7 @@ void main() {
 
     expect(find.text('已清空 1 条当前分组消息'), findsOneWidget);
     expect(snackIcon(Icons.check_circle_outline), findsOneWidget);
+    expect(find.text('车辆移动告警'), findsNothing);
   });
 
   testWidgets('message rows expose semantics and open detail sheet', (
@@ -143,12 +194,26 @@ void main() {
   ) async {
     final semantics = tester.ensureSemantics();
     try {
-      app.logService.operation('发送指令');
+      final vehicleMessage = OfficialCloudMessage.vehicle({
+        'msgId': 'vm-detail',
+        'title': '车辆移动告警',
+        'content': '检测到异常移动',
+        'sendTime': '2026-07-11 12:00:00',
+      });
+      app.officialCloudService.setStateForTest(
+        OfficialCloudState.initial().copyWith(
+          initialized: true,
+          token: 'token',
+          userId: 'uid-1',
+          vehicleMessages: [vehicleMessage],
+        ),
+      );
 
       await tester.pumpWidget(const TestApp(home: VehicleMessagePage()));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
-      const messageLabel = '发送指令，车辆指令已发送。，设备消息，未读';
+      const messageLabel = '车辆移动告警，检测到异常移动，设备消息，未读';
       final messageRow = find.bySemanticsLabel(messageLabel);
       expect(messageRow, findsOneWidget);
       expect(

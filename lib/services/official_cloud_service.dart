@@ -107,6 +107,10 @@ class OfficialCloudState {
   final Map<String, List<OfficialTravelPoint>> travelDetails;
   final bool travelDetailLoading;
   final String? travelDetailError;
+  final List<OfficialCloudMessage> vehicleMessages;
+  final List<OfficialCloudMessage> systemMessages;
+  final bool messagesLoading;
+  final String? messagesError;
 
   const OfficialCloudState({
     required this.initialized,
@@ -135,6 +139,10 @@ class OfficialCloudState {
     required this.travelDetails,
     required this.travelDetailLoading,
     required this.travelDetailError,
+    required this.vehicleMessages,
+    required this.systemMessages,
+    required this.messagesLoading,
+    required this.messagesError,
   });
 
   factory OfficialCloudState.initial() => const OfficialCloudState(
@@ -164,6 +172,10 @@ class OfficialCloudState {
     travelDetails: {},
     travelDetailLoading: false,
     travelDetailError: null,
+    vehicleMessages: const [],
+    systemMessages: const [],
+    messagesLoading: false,
+    messagesError: null,
   );
 
   bool get signedIn => token.isNotEmpty;
@@ -208,6 +220,10 @@ class OfficialCloudState {
     Map<String, List<OfficialTravelPoint>>? travelDetails,
     bool? travelDetailLoading,
     Object? travelDetailError = _sentinel,
+    List<OfficialCloudMessage>? vehicleMessages,
+    List<OfficialCloudMessage>? systemMessages,
+    bool? messagesLoading,
+    Object? messagesError = _sentinel,
   }) {
     return OfficialCloudState(
       initialized: initialized ?? this.initialized,
@@ -255,6 +271,12 @@ class OfficialCloudState {
       travelDetailError: identical(travelDetailError, _sentinel)
           ? this.travelDetailError
           : travelDetailError as String?,
+      vehicleMessages: vehicleMessages ?? this.vehicleMessages,
+      systemMessages: systemMessages ?? this.systemMessages,
+      messagesLoading: messagesLoading ?? this.messagesLoading,
+      messagesError: identical(messagesError, _sentinel)
+          ? this.messagesError
+          : messagesError as String?,
     );
   }
 
@@ -442,6 +464,10 @@ class OfficialCloudService {
       travelDetails: const {},
       travelDetailLoading: false,
       travelDetailError: null,
+      vehicleMessages: const [],
+      systemMessages: const [],
+      messagesLoading: false,
+      messagesError: null,
     );
     _emit();
     _log.operation('官方云已退出登录');
@@ -529,6 +555,126 @@ class OfficialCloudService {
       rethrow;
     } finally {
       if (!silent && _isCurrentSession(token)) _setLoading(false);
+    }
+  }
+
+  Future<void> refreshMessages({
+    bool silent = false,
+    bool force = false,
+    int pageSize = 20,
+    int pageIndex = 1,
+  }) async {
+    final token = _state.token;
+    if (token.isEmpty) {
+      throw const OfficialCloudApiException('请先登录官方账号');
+    }
+    const refreshKey = 'messages';
+    if (!force && silent && _shouldUseRecentRefresh(refreshKey)) return;
+    final inFlight = _inFlightRefreshes[refreshKey];
+    if (silent && inFlight != null) return inFlight;
+
+    late Future<void> refresh;
+    refresh = _refreshMessagesNow(
+      silent: silent,
+      refreshKey: refreshKey,
+      token: token,
+      pageSize: pageSize,
+      pageIndex: pageIndex,
+    );
+    _inFlightRefreshes[refreshKey] = refresh;
+    try {
+      await refresh;
+    } finally {
+      if (identical(_inFlightRefreshes[refreshKey], refresh)) {
+        _inFlightRefreshes.remove(refreshKey);
+      }
+    }
+  }
+
+  Future<void> _refreshMessagesNow({
+    required bool silent,
+    required String refreshKey,
+    required String token,
+    required int pageSize,
+    required int pageIndex,
+  }) async {
+    if (!silent) {
+      _state = _state.copyWith(messagesLoading: true, messagesError: null);
+      _emit();
+    }
+    try {
+      final userId = _state.userId.trim();
+      final vehicleBody = <String, Object?>{
+        'pageSize': pageSize,
+        'nowPageIndex': pageIndex,
+      };
+      if (userId.isNotEmpty) {
+        vehicleBody['uid'] = userId;
+      }
+      final systemBody = <String, Object?>{
+        'pageSize': pageSize,
+        'nowPageIndex': pageIndex,
+      };
+
+      final responses = await Future.wait([
+        _apiClient.request(
+          'app/msg/pageOfCarMsg',
+          method: 'POST',
+          token: token,
+          body: vehicleBody,
+          retryPolicy: OfficialCloudRetryPolicy.readRequest,
+        ),
+        _apiClient.request(
+          'app/msg/pageOfSysMsg',
+          method: 'POST',
+          token: token,
+          body: systemBody,
+          retryPolicy: OfficialCloudRetryPolicy.readRequest,
+        ),
+      ]);
+      if (!_isCurrentSession(token)) return;
+
+      final vehicleResponse = responses[0];
+      final systemResponse = responses[1];
+      _ensureSuccess(vehicleResponse.body, fallback: '获取车辆消息失败');
+      _ensureSuccess(systemResponse.body, fallback: '获取系统消息失败');
+
+      final vehicleMessages = OfficialCloudDataParser.vehicleMessages(
+        vehicleResponse.body['data'],
+      );
+      final systemMessages = OfficialCloudDataParser.systemMessages(
+        systemResponse.body['data'],
+      );
+      _state = _state.copyWith(
+        vehicleMessages: vehicleMessages,
+        systemMessages: systemMessages,
+        messagesLoading: false,
+        messagesError: null,
+      );
+      _emit();
+      _log.operation(
+        '官方消息已刷新',
+        detail:
+            'vehicle=${vehicleMessages.length} system=${systemMessages.length}',
+      );
+      _markRefreshSuccess(refreshKey);
+    } catch (e) {
+      if (!_isCurrentSession(token)) return;
+      await _handleAuthFailureIfNeeded(e);
+      if (_state.signedIn) {
+        final message = _errorMessage(e);
+        _state = _state.copyWith(
+          messagesLoading: false,
+          messagesError: message,
+        );
+        _emit();
+      }
+      rethrow;
+    } finally {
+      if (!silent && _isCurrentSession(token) && _state.messagesLoading) {
+        _state = _state.copyWith(messagesLoading: false);
+        _emit();
+      }
     }
   }
 

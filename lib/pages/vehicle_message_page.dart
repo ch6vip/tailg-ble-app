@@ -3,14 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../main.dart'; // P0-6: service locator getters
+import '../main.dart';
+import '../models/official_vehicle.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
+import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
+import 'official_cloud_page.dart';
 
 class VehicleMessagePage extends StatefulWidget {
   const VehicleMessagePage({super.key});
@@ -23,14 +26,15 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
     with SingleTickerProviderStateMixin {
   static const _prefReadIds = 'vehicle_message_read_ids';
   static const _prefHiddenIds = 'vehicle_message_hidden_ids';
-  static const _recentLogLimit = 80;
 
   late final TabController _tabController;
-  final _log = logService;
-  StreamSubscription<void>? _logSub;
+  StreamSubscription<OfficialCloudState>? _cloudSub;
   int _activeTab = 0;
   final Set<String> _readIds = {};
   final Set<String> _hiddenIds = {};
+  var _loading = false;
+  String? _error;
+  var _initialized = false;
 
   @override
   void initState() {
@@ -41,21 +45,90 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
         setState(() => _activeTab = _tabController.index);
       }
     });
-    _logSub = _log.changes.listen((_) {
-      _refreshVisibleMessages();
+    _cloudSub = officialCloudService.stateStream.listen((_) {
+      if (!mounted) return;
+      setState(() {});
     });
-    _loadMessageState();
+    unawaited(_bootstrap());
   }
 
   @override
   void dispose() {
-    _logSub?.cancel();
+    _cloudSub?.cancel();
     _tabController.dispose();
     super.dispose();
   }
 
+  Future<void> _bootstrap() async {
+    await _loadMessageState();
+    await _refreshMessages(force: true);
+  }
+
+  Future<void> _loadMessageState() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _readIds
+        ..clear()
+        ..addAll(prefs.getStringList(_prefReadIds) ?? const []);
+      _hiddenIds
+        ..clear()
+        ..addAll(prefs.getStringList(_prefHiddenIds) ?? const []);
+    });
+  }
+
+  Future<void> _saveMessageState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_prefReadIds, _readIds.toList());
+    await prefs.setStringList(_prefHiddenIds, _hiddenIds.toList());
+  }
+
+  Future<void> _refreshMessages({bool force = false}) async {
+    if (!officialCloudService.state.signedIn) {
+      setState(() {
+        _initialized = true;
+        _loading = false;
+        _error = null;
+      });
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await officialCloudService.refreshMessages(force: force);
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _initialized = true;
+        _error = officialCloudService.state.messagesError;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is OfficialCloudApiException
+          ? e.message
+          : OfficialCloudRedactor.text(e.toString());
+      setState(() {
+        _loading = false;
+        _initialized = true;
+        _error = message;
+      });
+      logService.operation(
+        '官方消息刷新失败',
+        detail: message,
+        level: LogLevel.warning,
+      );
+    }
+  }
+
   List<_VehicleMessage> _visibleMessages() {
-    return _buildMessages()
+    final state = officialCloudService.state;
+    final messages = <_VehicleMessage>[
+      ...state.vehicleMessages.map(_mapCloudMessage),
+      ...state.systemMessages.map(_mapCloudMessage),
+    ]..sort((a, b) => b.time.compareTo(a.time));
+    return messages
         .where((message) => !_hiddenIds.contains(message.id))
         .toList(growable: false);
   }
@@ -79,117 +152,51 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
     };
   }
 
-  List<_VehicleMessage> _buildMessages() {
-    final messages = <_VehicleMessage>[];
-    for (final entry in _recentLogEntries()) {
-      final message = _mapEntry(entry);
-      if (message != null) {
-        messages.add(message);
+  _VehicleMessage _mapCloudMessage(OfficialCloudMessage message) {
+    final isSystem = message.category == OfficialCloudMessageCategory.system;
+    final lower = '${message.title} ${message.content}'.toLowerCase();
+    final severity = _severityFor(lower);
+    return _VehicleMessage(
+      id: message.id,
+      title: message.title,
+      subtitle: message.content.isEmpty ? '暂无详细内容' : message.content,
+      time: message.time,
+      icon: isSystem ? Icons.campaign_outlined : _iconFor(lower, severity),
+      category: isSystem
+          ? _VehicleMessageCategory.system
+          : _VehicleMessageCategory.device,
+      severity: severity,
+    );
+  }
+
+  _VehicleMessageSeverity _severityFor(String lower) {
+    if (lower.contains('故障') ||
+        lower.contains('报警') ||
+        lower.contains('异常') ||
+        lower.contains('失败') ||
+        lower.contains('warning') ||
+        lower.contains('error')) {
+      if (lower.contains('故障') ||
+          lower.contains('error') ||
+          lower.contains('报警')) {
+        return _VehicleMessageSeverity.error;
       }
+      return _VehicleMessageSeverity.warning;
     }
-    return messages;
+    return _VehicleMessageSeverity.info;
   }
 
-  List<LogEntry> _recentLogEntries() {
-    final logs = _log.all;
-    final firstIncluded = logs.length > _recentLogLimit
-        ? logs.length - _recentLogLimit
-        : 0;
-    final entries = <LogEntry>[];
-    for (var i = logs.length - 1; i >= firstIncluded; i--) {
-      entries.add(logs[i]);
+  IconData _iconFor(String lower, _VehicleMessageSeverity severity) {
+    if (lower.contains('位置') || lower.contains('定位')) {
+      return Icons.location_on_outlined;
     }
-    return entries;
-  }
-
-  _VehicleMessage? _mapEntry(LogEntry entry) {
-    final lower = '${entry.message} ${entry.detail ?? ''}'.toLowerCase();
-    final isOp = entry.category == LogCategory.operation;
-
-    if (isOp && lower.contains('指令失败')) {
-      return _VehicleMessage(
-        id: _makeId(entry),
-        title: '控车指令失败',
-        subtitle: entry.detail ?? entry.message,
-        time: entry.time,
-        icon: Icons.warning_amber_rounded,
-        category: _VehicleMessageCategory.device,
-        severity: _VehicleMessageSeverity.error,
-      );
+    if (lower.contains('电') || lower.contains('电池')) {
+      return Icons.battery_alert_outlined;
     }
-    if (isOp && lower.contains('诊断完成')) {
-      return _VehicleMessage(
-        id: _makeId(entry),
-        title: '故障诊断已完成',
-        subtitle: entry.detail ?? entry.message,
-        time: entry.time,
-        icon: Icons.health_and_safety_outlined,
-        category: _VehicleMessageCategory.device,
-        severity: _VehicleMessageSeverity.info,
-      );
+    if (severity == _VehicleMessageSeverity.error) {
+      return Icons.warning_amber_rounded;
     }
-    if (isOp && lower.contains('记录车辆位置失败')) {
-      return _VehicleMessage(
-        id: _makeId(entry),
-        title: '位置记录失败',
-        subtitle: entry.detail ?? entry.message,
-        time: entry.time,
-        icon: Icons.location_off,
-        category: _VehicleMessageCategory.device,
-        severity: _VehicleMessageSeverity.warning,
-      );
-    }
-    if (isOp && lower.contains('记录车辆位置')) {
-      return _VehicleMessage(
-        id: _makeId(entry),
-        title: '车辆位置已更新',
-        subtitle: entry.detail ?? entry.message,
-        time: entry.time,
-        icon: Icons.location_on_outlined,
-        category: _VehicleMessageCategory.device,
-        severity: _VehicleMessageSeverity.info,
-      );
-    }
-    if (isOp && lower.contains('发送指令')) {
-      return _VehicleMessage(
-        id: _makeId(entry),
-        title: entry.message,
-        subtitle: entry.detail ?? '车辆指令已发送。',
-        time: entry.time,
-        icon: Icons.tune,
-        category: _VehicleMessageCategory.device,
-        severity: _VehicleMessageSeverity.info,
-      );
-    }
-    return null;
-  }
-
-  String _makeId(LogEntry entry) {
-    return '${entry.time.microsecondsSinceEpoch}_${entry.message}_${entry.detail ?? ''}';
-  }
-
-  void _refreshVisibleMessages() {
-    if (!mounted) return;
-    setState(() => _activeTab = _tabController.index);
-  }
-
-  Future<void> _loadMessageState() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _readIds
-        ..clear()
-        ..addAll(prefs.getStringList(_prefReadIds) ?? const []);
-      _hiddenIds
-        ..clear()
-        ..addAll(prefs.getStringList(_prefHiddenIds) ?? const []);
-    });
-  }
-
-  Future<void> _saveMessageState() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_prefReadIds, _readIds.toList());
-    await prefs.setStringList(_prefHiddenIds, _hiddenIds.toList());
+    return Icons.two_wheeler_outlined;
   }
 
   Future<void> _markReadAll() async {
@@ -231,7 +238,10 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
 
   @override
   Widget build(BuildContext context) {
-    final visibleMessages = _visibleMessages();
+    final signedIn = officialCloudService.state.signedIn;
+    final visibleMessages = signedIn
+        ? _visibleMessages()
+        : const <_VehicleMessage>[];
     final tabMessages = List.generate(
       3,
       (index) => _messagesForTab(index, visibleMessages),
@@ -252,7 +262,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
               actions: [
                 IconButton(
                   tooltip: '全部已读',
-                  onPressed: all.isEmpty ? null : _markReadAll,
+                  onPressed: !signedIn || all.isEmpty ? null : _markReadAll,
                   icon: Stack(
                     clipBehavior: Clip.none,
                     children: [
@@ -284,7 +294,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
                 ),
                 IconButton(
                   tooltip: '清空当前分组',
-                  onPressed: currentMessages.isEmpty
+                  onPressed: !signedIn || currentMessages.isEmpty
                       ? null
                       : _clearCurrentMessages,
                   icon: const Icon(
@@ -294,29 +304,100 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
                 ),
                 IconButton(
                   tooltip: '刷新',
-                  // LogService.changes auto-refreshes new messages; keep this
-                  // as a manual force-rebuild for persisted read/hidden state.
-                  onPressed: _refreshVisibleMessages,
+                  onPressed: _loading
+                      ? null
+                      : () => _refreshMessages(force: true),
                   icon: const Icon(Icons.refresh),
                 ),
               ],
             ),
             _buildTabs(),
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  for (final messages in tabMessages)
-                    _MessageList(
-                      messages: messages,
-                      readIds: _readIds,
-                      onOpen: _openMessage,
-                    ),
-                ],
-              ),
+              child: _buildBody(signedIn: signedIn, tabMessages: tabMessages),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildBody({
+    required bool signedIn,
+    required List<List<_VehicleMessage>> tabMessages,
+  }) {
+    if (!signedIn) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const AppEmptyState(
+                icon: Icons.lock_outline,
+                title: '请先登录官方账号',
+                subtitle: '登录后可同步官方车辆消息与系统通知。',
+                padding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const OfficialCloudPage(),
+                    ),
+                  );
+                },
+                child: const Text('去登录'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_loading && !_initialized) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null && tabMessages[0].isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppEmptyState(
+                icon: Icons.wifi_off_outlined,
+                title: '消息加载失败',
+                subtitle: _error!,
+                padding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _loading
+                    ? null
+                    : () => _refreshMessages(force: true),
+                child: const Text('重试'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => _refreshMessages(force: true),
+      color: AppColors.primary,
+      child: TabBarView(
+        controller: _tabController,
+        children: [
+          for (final messages in tabMessages)
+            _MessageList(
+              messages: messages,
+              readIds: _readIds,
+              onOpen: _openMessage,
+            ),
+        ],
       ),
     );
   }
@@ -396,11 +477,18 @@ class _MessageList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (messages.isEmpty) {
-      return const _EmptyMessageState();
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        children: const [SizedBox(height: 120), _EmptyMessageState()],
+      );
     }
 
     return ListView.builder(
-      physics: const BouncingScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
       padding: const EdgeInsets.only(bottom: 24),
       itemCount: messages.length,
       itemBuilder: (context, index) {
@@ -603,7 +691,7 @@ class _EmptyMessageState extends StatelessWidget {
       child: AppEmptyState(
         icon: Icons.mark_email_unread_outlined,
         title: '暂无消息',
-        subtitle: '车辆断连、重连、故障诊断、控车失败等事件会在这里汇总。',
+        subtitle: '官方车辆告警、系统通知会显示在这里。',
       ),
     );
   }
