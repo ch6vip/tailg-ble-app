@@ -75,7 +75,7 @@ void main() {
     await tester.tap(find.text('虚拟体验（演示）'));
     await tester.pump();
 
-    expect(find.text('虚拟体验暂未开放，可先登录账号'), findsOneWidget);
+    expect(find.text('虚拟体验暂未开放，可先登录账号使用官方云端控车'), findsOneWidget);
     expect(snackIcon(Icons.info_outline), findsOneWidget);
   });
 
@@ -123,7 +123,7 @@ void main() {
         tester.semantics.tap(find.semantics.byLabel('虚拟体验（演示）'));
         await tester.pump();
 
-        expect(find.text('虚拟体验暂未开放，可先登录账号'), findsOneWidget);
+        expect(find.text('虚拟体验暂未开放，可先登录账号使用官方云端控车'), findsOneWidget);
         expect(snackIcon(Icons.info_outline), findsOneWidget);
       } finally {
         semantics.dispose();

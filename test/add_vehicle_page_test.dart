@@ -18,11 +18,11 @@ void main() {
     await tester.pump();
 
     for (final label in [
-      '扫码绑定，扫描车身二维码添加车辆',
-      '输入车架号/IMEI，手动填写车辆识别信息',
-      '门店购车绑定，通过门店或购车记录完成绑定',
+      '扫码绑定，暂未开放，请先登录同步车辆',
+      '输入车架号/IMEI，暂未开放，请先登录同步车辆',
+      '门店购车绑定，暂未开放，请先登录同步车辆',
       '我的车辆，登录后自动显示账号下已绑定车辆',
-      '绑定帮助，查看绑定说明和常见问题',
+      '绑定帮助，暂未开放，请先登录同步车辆',
     ]) {
       final action = find.bySemanticsLabel(label);
       expect(action, findsOneWidget);

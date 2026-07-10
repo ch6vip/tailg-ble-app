@@ -129,7 +129,7 @@ class OfficialVehicle {
         '官方车辆';
   }
 
-  String get normalizedBtmac {
+  String get normalizedDeviceMac {
     final compact = btmac.replaceAll(_btmacSeparatorPattern, '').toUpperCase();
     if (compact.length != 12) return '';
     final pairs = <String>[];
@@ -139,7 +139,7 @@ class OfficialVehicle {
     return pairs.join(':');
   }
 
-  bool get hasBleIdentity => normalizedBtmac.isNotEmpty;
+  bool get hasDeviceMac => normalizedDeviceMac.isNotEmpty;
 
   bool get hasGpsService {
     final type = modelType;
@@ -174,7 +174,7 @@ class OfficialVehicle {
     'sqService',
   ]);
 
-  bool get supportsBleRenewal => _rawFeatureFlag(raw, const [
+  bool get supportsServiceRenewal => _rawFeatureFlag(raw, const [
     'bleRenewal',
     'bluetoothRenewal',
     'bleRecharge',

@@ -8,7 +8,6 @@ import 'battery_details_page.dart';
 import 'diagnostic_page.dart';
 import 'location_page.dart';
 import 'official_cloud_page.dart';
-import 'official_replica_pages.dart';
 import 'vehicle_settings_page.dart';
 
 class ServiceHubPage extends StatelessWidget {
@@ -85,7 +84,7 @@ class ServiceHubPage extends StatelessWidget {
                         icon: Icons.nfc,
                         label: 'NFC钥匙',
                         color: AppColors.success,
-                        onTap: () => _open(context, const NfcKeyPage()),
+                        onTap: () => _showUnavailable(context, 'NFC钥匙'),
                       ),
                       _ServiceGridTile(
                         icon: Icons.tune,
@@ -135,6 +134,10 @@ class ServiceHubPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static void _showUnavailable(BuildContext context, String label) {
+    AppSnack.info(context, '$label暂未开放，可先使用官方云端控车');
   }
 
   static void _open(BuildContext context, Widget page) {

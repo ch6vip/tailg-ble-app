@@ -64,7 +64,7 @@ class _UnboundVehicleHome extends StatelessWidget {
                 label: '虚拟体验（演示）',
                 foreground: AppColors.textSecondary,
                 background: AppColors.surface,
-                onTap: () => _showSnack(context, '虚拟体验暂未开放，可先登录账号'),
+                onTap: () => _showSnack(context, '虚拟体验暂未开放，可先登录账号使用官方云端控车'),
               ),
               const SizedBox(height: 8),
               TextButton(

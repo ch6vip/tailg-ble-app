@@ -1,5 +1,5 @@
 # ───────────────────────────────────────────
-# Tailg BLE App — 独立 Release 工作流
+# Tailg Cloud App — 独立 Release 工作流
 # ───────────────────────────────────────────
 # 仅当推送 v* 标签时触发，创建 GitHub Release 并附带 APK 构建产物。
 # 此工作流独立于主 CI/CD Pipeline，可在 CI 失败时手动补发 Release。
@@ -27,6 +27,7 @@ permissions:
 env:
   FLUTTER_VERSION: '3.32.1'
   APK_RELEASE_PATH: build/app/outputs/flutter-apk/app-release.apk
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   # ═══════════════════════════════════
@@ -38,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
@@ -66,7 +67,7 @@ jobs:
         run: dart tool/check_coverage.dart coverage/lcov.info 40
 
       - name: Cache Gradle
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.gradle/caches
@@ -116,10 +117,10 @@ jobs:
 
       # ── 创建/更新 GitHub Release ──
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: "Tailg BLE v${{ steps.version.outputs.app_version }} (${{ steps.version.outputs.tag }})"
+          name: "Tailg Cloud v${{ steps.version.outputs.app_version }} (${{ steps.version.outputs.tag }})"
           files: |
             ${{ env.APK_RELEASE_PATH }}
             ${{ env.APK_RELEASE_PATH }}.sha256
@@ -136,7 +137,7 @@ jobs:
 
             1. 下载 `app-release.apk`
             2. 在 Android 设备上启用「允许安装未知来源应用」
-            3. 安装后运行，授予蓝牙和位置权限
+            3. 安装后运行，登录官方账号；定位相关功能需授予位置权限
 
             ## :pushpin: 变更说明
 

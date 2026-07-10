@@ -40,21 +40,21 @@ class AddVehiclePage extends StatelessWidget {
                   _AddVehicleAction(
                     icon: Icons.qr_code_scanner,
                     title: '扫码绑定',
-                    subtitle: '扫描车身二维码添加车辆',
+                    subtitle: '暂未开放，请先登录同步车辆',
                     onTap: () => _showPending(context, '扫码绑定'),
                   ),
                   const _InsetDivider(),
                   _AddVehicleAction(
                     icon: Icons.confirmation_number_outlined,
                     title: '输入车架号/IMEI',
-                    subtitle: '手动填写车辆识别信息',
+                    subtitle: '暂未开放，请先登录同步车辆',
                     onTap: () => _showPending(context, '手动绑定'),
                   ),
                   const _InsetDivider(),
                   _AddVehicleAction(
                     icon: Icons.storefront_outlined,
                     title: '门店购车绑定',
-                    subtitle: '通过门店或购车记录完成绑定',
+                    subtitle: '暂未开放，请先登录同步车辆',
                     onTap: () => _showPending(context, '门店绑定'),
                   ),
                 ],
@@ -76,7 +76,7 @@ class AddVehiclePage extends StatelessWidget {
               child: _AddVehicleAction(
                 icon: Icons.help_outline,
                 title: '绑定帮助',
-                subtitle: '查看绑定说明和常见问题',
+                subtitle: '暂未开放，请先登录同步车辆',
                 onTap: () => _showPending(context, '绑定帮助'),
               ),
             ),

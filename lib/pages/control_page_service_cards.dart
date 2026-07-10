@@ -40,7 +40,7 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
   }
 
   void _showUnavailable(BuildContext context, String label) {
-    AppSnack.info(context, '$label暂未开放');
+    AppSnack.info(context, '$label暂未开放，可先使用官方云端控车');
   }
 
   @override
@@ -83,7 +83,7 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
                     const SizedBox(height: 10),
                     _OfficialSimpleServiceCard(
                       title: '摄像头',
-                      subtitle: '记录车辆周围环境',
+                      subtitle: '暂未开放，敬请期待',
                       icon: Icons.videocam_outlined,
                       onTap: () => _showUnavailable(context, '摄像头'),
                     ),
@@ -118,24 +118,24 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
                       context,
                       const LocationPage(initialTab: LocationInitialTab.fence),
                     ),
-                    onShare: () => _open(context, const ShareBikePage()),
+                    onShare: () => _showUnavailable(context, '共享车辆'),
                   ),
                   const SizedBox(height: 10),
                   _OfficialImageBanner(
                     asset:
                         'assets/official_tailg/iv_add_sound_effects_set_qgj.webp',
                     semanticsLabel: 'QGJ音效设置',
-                    onTap: () => _open(context, const QgjSoundEffectsPage()),
+                    onTap: () => _showUnavailable(context, 'QGJ音效设置'),
                   ),
                   const SizedBox(height: 10),
                   _OfficialNfcCard(
-                    onTap: () => _open(context, const NfcKeyPage()),
+                    onTap: () => _showUnavailable(context, 'NFC钥匙'),
                   ),
                   if (showChargingStation) ...[
                     const SizedBox(height: 10),
                     _OfficialSimpleServiceCard(
                       title: '台铃充电站',
-                      subtitle: '查看附近可用充电站',
+                      subtitle: '暂未开放，敬请期待',
                       icon: Icons.electrical_services_outlined,
                       onTap: () => _showUnavailable(context, '台铃充电站'),
                     ),
@@ -472,7 +472,7 @@ class _OfficialNavigationProjectionCard extends StatelessWidget {
                 ),
                 SizedBox(height: 6),
                 Text(
-                  '调节仪表显示连接二维码，扫码投屏导航',
+                  '暂未开放：官方云端模式下不可用',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -540,7 +540,7 @@ class _OfficialSmartMeterCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadii.sm),
             ),
             child: const Text(
-              '地图导航设置',
+              '暂未开放',
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.officialTextMuted,

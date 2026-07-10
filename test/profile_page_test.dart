@@ -54,7 +54,7 @@ void main() {
       tester.semantics.tap(find.semantics.byLabel(pointsLabel));
       await tester.pump();
 
-      expect(find.text('我的积分暂未开放'), findsOneWidget);
+      expect(find.text('我的积分暂未开放，可先使用官方云端控车'), findsOneWidget);
       expect(snackIcon(Icons.info_outline), findsOneWidget);
     } finally {
       semantics.dispose();
@@ -158,7 +158,7 @@ void main() {
         tester.semantics.tap(find.semantics.byLabel(entry.key));
         await tester.pump();
 
-        expect(find.text('${entry.value}暂未开放'), findsOneWidget);
+        expect(find.text('${entry.value}暂未开放，可先使用官方云端控车'), findsOneWidget);
         expect(snackIcon(Icons.info_outline), findsOneWidget);
       }
     } finally {

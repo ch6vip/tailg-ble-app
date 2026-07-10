@@ -48,8 +48,8 @@ void main() {
       expect(vehicle.voltage, 52.5);
       expect(vehicle.mileage, 12.5);
       expect(vehicle.commandImei, 'IMEI_GPS');
-      expect(vehicle.normalizedBtmac, 'AA:BB:CC:DD:EE:FF');
-      expect(vehicle.hasBleIdentity, isTrue);
+      expect(vehicle.normalizedDeviceMac, 'AA:BB:CC:DD:EE:FF');
+      expect(vehicle.hasDeviceMac, isTrue);
       expect(vehicle.hasGpsService, isTrue);
     });
 
@@ -67,15 +67,15 @@ void main() {
     test('normalizes compact official bluetooth mac', () {
       final vehicle = OfficialVehicle.fromJson({'btmac': 'aabbccddeeff'});
 
-      expect(vehicle.normalizedBtmac, 'AA:BB:CC:DD:EE:FF');
-      expect(vehicle.hasBleIdentity, isTrue);
+      expect(vehicle.normalizedDeviceMac, 'AA:BB:CC:DD:EE:FF');
+      expect(vehicle.hasDeviceMac, isTrue);
     });
 
     test('rejects invalid official bluetooth mac', () {
       final vehicle = OfficialVehicle.fromJson({'btmac': 'not-a-mac'});
 
-      expect(vehicle.normalizedBtmac, isEmpty);
-      expect(vehicle.hasBleIdentity, isFalse);
+      expect(vehicle.normalizedDeviceMac, isEmpty);
+      expect(vehicle.hasDeviceMac, isFalse);
     });
 
     test('parses official feature flags for conditional control modules', () {
@@ -90,7 +90,7 @@ void main() {
       expect(vehicle.supportsNavigationProjection, isTrue);
       expect(vehicle.supportsCamera, isTrue);
       expect(vehicle.supportsSmartMeter, isTrue);
-      expect(vehicle.supportsBleRenewal, isTrue);
+      expect(vehicle.supportsServiceRenewal, isTrue);
       expect(vehicle.supportsChargingStation, isTrue);
     });
 
@@ -106,7 +106,7 @@ void main() {
       expect(vehicle.supportsNavigationProjection, isFalse);
       expect(vehicle.supportsCamera, isFalse);
       expect(vehicle.supportsSmartMeter, isFalse);
-      expect(vehicle.supportsBleRenewal, isFalse);
+      expect(vehicle.supportsServiceRenewal, isFalse);
       expect(vehicle.supportsChargingStation, isFalse);
     });
 

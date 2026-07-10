@@ -352,7 +352,7 @@ void main() {
     for (final label in ['导航投屏', '摄像头', '智能仪表', '台铃充电站']) {
       await tester.tap(find.bySemanticsLabel(label));
       await tester.pump();
-      expect(find.text('$label暂未开放'), findsOneWidget);
+      expect(find.text('$label暂未开放，可先使用官方云端控车'), findsOneWidget);
     }
   });
 

@@ -18,7 +18,7 @@ class OfficialCloudVehicleMapper {
   static OfficialCloudVehicleProfileData? profileFromOfficialVehicle(
     OfficialVehicle vehicle,
   ) {
-    final id = vehicle.normalizedBtmac;
+    final id = vehicle.normalizedDeviceMac;
     if (id.isEmpty) return null;
     return OfficialCloudVehicleProfileData(
       id: id,
