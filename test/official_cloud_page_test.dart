@@ -120,7 +120,9 @@ void main() {
     setTestViewSize(tester, const Size(430, 1200));
 
     // After BLE removal, the vehicle card always exposes a "近场连接"
-    // OutlinedButton (the old missing-BLE-identity notice was deleted).
+    // OutlinedButton.icon (the old missing-BLE-identity notice was deleted).
+    // OutlinedButton.icon builds a private subclass, so match with `is`
+    // instead of find.byType(OutlinedButton) which uses runtimeType equality.
     final vehicle = OfficialVehicle.fromJson({
       'carId': 'official-1',
       'carName': '测试车辆',
@@ -139,7 +141,13 @@ void main() {
     await tester.pumpWidget(const TestApp(home: OfficialCloudPage()));
     await tester.pump();
 
-    final linkAction = find.widgetWithText(OutlinedButton, '近场连接');
+    expect(find.text('测试车辆'), findsOneWidget);
+    expect(find.text('近场连接'), findsOneWidget);
+
+    final linkAction = find.ancestor(
+      of: find.text('近场连接'),
+      matching: find.byWidgetPredicate((widget) => widget is OutlinedButton),
+    );
     expect(linkAction, findsOneWidget);
     expectMinTouchTargetHeight(tester, linkAction);
   });
