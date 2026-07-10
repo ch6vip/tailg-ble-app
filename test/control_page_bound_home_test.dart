@@ -484,7 +484,12 @@ void main() {
       expect(find.text('已启动'), findsNothing);
       expect(find.text('已设防'), findsNothing);
       expect(find.text('未设防'), findsNothing);
-      expect(find.text('等待连接'), findsOneWidget);
+      // Cloud-only tip shows online/offline + last sync age when possible.
+      expect(
+        find.textContaining('同步').evaluate().isNotEmpty ||
+            find.text('等待连接').evaluate().isNotEmpty,
+        isTrue,
+      );
       expect(find.bySemanticsLabel('点击连接'), findsOneWidget);
     } finally {
       semantics.dispose();

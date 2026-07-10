@@ -20,8 +20,12 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   void initState() {
     super.initState();
     _cloudSub = officialCloudService.stateStream.listen((_) {
-      if (mounted) setState(() {});
+      if (mounted) setState(_onCloudStateChanged);
     });
+  }
+
+  void _onCloudStateChanged() {
+    // Rebuild with latest cloud vehicle snapshot / sync time.
   }
 
   @override
@@ -69,20 +73,19 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
         return;
       }
       final result = await _commandExecutor.send(command: cmd);
-      final successMessage = result.successMessage;
       if (result.success) {
         _runBackgroundTask(
           locationService.recordDefaultVehicleLocation(),
           failureMessage: '控车后记录车辆位置失败',
         );
         final confirmed = await _waitForCommandConfirmation(cmd);
-        if (!confirmed && mounted) {
+        if (!mounted) return;
+        if (!confirmed) {
           _showSnack(_unconfirmedMessage(cmd), isError: true);
-        } else if (mounted && successMessage != null) {
-          _showSnack(successMessage, isError: false);
+        } else {
+          _showSnack(result.successMessage ?? '${cmd.label}成功', isError: false);
         }
-      }
-      if (!result.success) {
+      } else {
         logService.operation(
           '控车失败: ${cmd.label}',
           detail:
@@ -90,7 +93,10 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
           level: LogLevel.error,
         );
         if (mounted) {
-          _showSnack(result.failureMessage ?? '${cmd.label}失败', isError: true);
+          _showSnack(
+            _failureMessage(cmd, result.failureMessage),
+            isError: true,
+          );
         }
       }
     } finally {
@@ -129,12 +135,19 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
 
   String _unconfirmedMessage(CommandCode command) {
     return switch (command) {
-      CommandCode.powerOn => '车辆未响应，请稍后重试',
-      CommandCode.powerOff => '车辆未响应，请稍后重试',
-      CommandCode.lock => '设防未完成，请稍后重试',
-      CommandCode.unlock => '解防未完成，请稍后重试',
-      _ => '车辆未响应，请稍后重试',
+      CommandCode.powerOn => '上电未确认，请稍后重试',
+      CommandCode.powerOff => '断电未确认，请稍后重试',
+      CommandCode.lock => '设防未确认，请稍后重试',
+      CommandCode.unlock => '解防未确认，请稍后重试',
+      _ => '${command.label}未确认，请稍后重试',
     };
+  }
+
+  String _failureMessage(CommandCode command, String? detail) {
+    final text = detail?.trim() ?? '';
+    if (text.isEmpty) return '${command.label}失败，请稍后重试';
+    if (text.contains(command.label)) return text;
+    return '${command.label}失败：$text';
   }
 
   bool _needsStateConfirmation(CommandCode command) {
@@ -176,6 +189,15 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     };
   }
 
+  String _statusText(OfficialVehicle? cloudVehicle) {
+    if (cloudVehicle == null) return '等待连接';
+    final online = cloudVehicle.onlineLabel;
+    final sync = formatRelativeSyncText(
+      officialCloudService.lastVehiclesRefreshAt,
+    );
+    return '$online · $sync';
+  }
+
   Future<void> _refreshStateForConfirmation() async {
     try {
       await officialCloudService.refreshVehicles(
@@ -204,7 +226,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     final bool? isArmed = cloudVehicle?.isLocked;
     final bool isPowerOn = cloudVehicle?.isPowerOn ?? false;
     final vehicleName = vehicleStore.defaultVehicle?.displayName ?? '我的车辆';
-    final statusText = cloudVehicle?.onlineLabel ?? '等待连接';
+    final statusText = _statusText(cloudVehicle);
     final topPadding = MediaQuery.paddingOf(context).top + 18;
     return Container(
       decoration: const BoxDecoration(
@@ -224,7 +246,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             rangeKm: range,
             vehicleName: cloudVehicle?.displayName ?? vehicleName,
             online: cloudVehicle?.online ?? true,
-            connectionLabel: '官方云端',
+            connectionLabel: _busy ? '同步中' : '官方云端',
             connectionVariant: '',
             onVehicleSwitch: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -292,7 +314,7 @@ class _OfficialControlTip extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final pillWidth = (constraints.maxWidth * 0.43).clamp(154.0, 184.0);
+        final pillWidth = (constraints.maxWidth * 0.58).clamp(180.0, 260.0);
         return SizedBox(
           height: 50,
           child: Stack(

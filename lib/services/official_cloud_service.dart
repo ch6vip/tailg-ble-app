@@ -309,6 +309,7 @@ class OfficialCloudService {
   Stream<OfficialCloudState> get stateStream => _stateController.stream;
   OfficialCloudState get state => _state;
   OfficialCloudRequestSummary? get lastRequest => _apiClient.lastRequest;
+  DateTime? get lastVehiclesRefreshAt => _lastSuccessfulRefresh['vehicles'];
 
   Future<void> init() => _init(refreshOnSignedIn: true);
 
