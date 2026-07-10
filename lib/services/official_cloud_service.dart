@@ -172,8 +172,8 @@ class OfficialCloudState {
     travelDetails: {},
     travelDetailLoading: false,
     travelDetailError: null,
-    vehicleMessages: const [],
-    systemMessages: const [],
+    vehicleMessages: [],
+    systemMessages: [],
     messagesLoading: false,
     messagesError: null,
   );
