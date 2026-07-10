@@ -64,6 +64,7 @@ class ConnectionManager {
   StreamSubscription<BluetoothConnectionState>? _connectionSub;
   StreamSubscription<List<int>>? _notifySub;
   StreamSubscription<List<int>>? _gpsNotifySub;
+  StreamSubscription<List<int>>? _fbb2NotifySub;
 
   bool _userDisconnected = false;
   bool _reconnecting = false;
@@ -84,10 +85,12 @@ class ConnectionManager {
   final _stateController = StreamController<ConnectionState>.broadcast();
   final _responseController = StreamController<ParsedResponse>.broadcast();
   final _bikeStateController = StreamController<BikeState?>.broadcast();
+  final _fbb2Controller = StreamController<String>.broadcast();
 
   Stream<ConnectionState> get stateStream => _stateController.stream;
   Stream<ParsedResponse> get responseStream => _responseController.stream;
   Stream<BikeState?> get bikeStateStream => _bikeStateController.stream;
+  Stream<String> get fbb2Stream => _fbb2Controller.stream;
   ConnectionState get state => _state;
   ProtocolType get protocol => _protocol;
   ProtocolType get lastKnownProtocol => _lastKnownProtocol;
@@ -444,6 +447,9 @@ class ConnectionManager {
           'fcc1=${_fcc1Char != null}, fcc2=${_fcc2Char != null}, fbb1=${_fbb1Char != null}, fbb2=${_fbb2Char != null}',
       level: LogLevel.info,
     );
+    if (_fbb2Char != null) {
+      _fbb2NotifySub = _fbb2Char!.onValueReceived.listen(_onFbb2Notify);
+    }
   }
 
   Future<void> _subscribeQgjGps(List<BluetoothService> services) async {
@@ -750,6 +756,24 @@ class ConnectionManager {
     }, priority: GattOperationPriority.high);
   }
 
+  void _onFbb2Notify(List<int> value) {
+    if (value.isEmpty) return;
+    final hex = bytesToHex(Uint8List.fromList(value));
+    _log.ble('fbb2 通知', detail: hex, level: LogLevel.debug);
+    if (!_disposed) {
+      _fbb2Controller.add(hex);
+    }
+  }
+
+  Future<void> writeFbb2(String hexData) async {
+    if (_state != ConnectionState.ready || _fbb2Char == null) return;
+    final bytes = hexToBytes(hexData);
+    await runGattOperation(
+      () => _fbb2Char!.write(bytes.toList(), withoutResponse: false),
+      priority: GattOperationPriority.high,
+    );
+  }
+
   RidingMode _ridingMode = RidingMode.standard;
   RidingMode get ridingMode => _ridingMode;
   final _ridingModeController = StreamController<RidingMode>.broadcast();
@@ -919,6 +943,8 @@ class ConnectionManager {
     _notifySub = null;
     await _gpsNotifySub?.cancel();
     _gpsNotifySub = null;
+    await _fbb2NotifySub?.cancel();
+    _fbb2NotifySub = null;
     await _connectionSub?.cancel();
     _connectionSub = null;
     _completePendingOperations(StateError('BLE runtime cleared'));
@@ -1074,6 +1100,7 @@ class ConnectionManager {
     _responseController.close();
     _bikeStateController.close();
     _ridingModeController.close();
+    _fbb2Controller.close();
   }
 }
 

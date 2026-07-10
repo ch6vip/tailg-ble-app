@@ -67,6 +67,8 @@ class BatteryDetailsPage extends StatelessWidget {
                             const SizedBox(height: 14),
                             _BmsDetailsCard(snapshot: data),
                             const SizedBox(height: 14),
+                            const _CoulombMeterCard(),
+                            const SizedBox(height: 14),
                             const _BatteryReadOnlyCard(),
                           ],
                         ),
@@ -823,6 +825,134 @@ class _SourceChip {
   final Color color;
 
   const _SourceChip(this.label, this.color);
+}
+
+class _CoulombMeterCard extends StatefulWidget {
+  const _CoulombMeterCard();
+
+  @override
+  State<_CoulombMeterCard> createState() => _CoulombMeterCardState();
+}
+
+class _CoulombMeterCardState extends State<_CoulombMeterCard> {
+  StreamSubscription<String>? _fbb2Sub;
+  bool _loading = false;
+  bool? _socEnabled;
+  bool _toggling = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fbb2Sub = connectionManager.fbb2Stream.listen(_onFbb2Data);
+  }
+
+  @override
+  void dispose() {
+    _fbb2Sub?.cancel();
+    super.dispose();
+  }
+
+  void _onFbb2Data(String hex) {
+    final upper = hex.toUpperCase();
+    if (upper.length == 24 && upper.startsWith('D0010A08')) {
+      final statusByte = int.parse(upper.substring(10, 12), radix: 16);
+      final bit0 = (statusByte >> 7) & 1;
+      setState(() {
+        _socEnabled = bit0 == 1;
+        _loading = false;
+        _toggling = false;
+      });
+    }
+  }
+
+  Future<void> _readSocState() async {
+    setState(() => _loading = true);
+    try {
+      await connectionManager.sendCommand(CommandCode.powerOn);
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      await connectionManager.writeFbb2('D0018A00');
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _toggleSoc(bool enable) async {
+    setState(() => _toggling = true);
+    try {
+      await connectionManager.sendCommand(CommandCode.powerOn);
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      final cmd = enable ? 'D0018A020600' : 'D0018A020500';
+      await connectionManager.writeFbb2(cmd);
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      await _readSocState();
+    } catch (_) {
+      if (mounted) setState(() => _toggling = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.battery_charging_full,
+                size: AppIconSizes.md,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: 8),
+              const Text('库仑计 (SOC自学习)', style: AppTextStyles.itemTitle),
+              const Spacer(),
+              if (_loading || _toggling)
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 20),
+                  onPressed: _readSocState,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '开启后可自学习电量（铅酸电池适用，锂电不可用）',
+            style: AppTextStyles.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          if (_socEnabled != null)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _socEnabled! ? '已开启' : '已关闭',
+                  style: AppTextStyles.valueText,
+                ),
+                Switch(
+                  value: _socEnabled!,
+                  activeColor: AppColors.primary,
+                  onChanged: _toggling ? null : _toggleSoc,
+                ),
+              ],
+            )
+          else
+            Text(
+              '点击刷新按钮读取状态',
+              style: AppTextStyles.caption,
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class _BatteryReadOnlyCard extends StatelessWidget {
