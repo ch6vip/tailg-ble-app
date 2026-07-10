@@ -53,18 +53,10 @@ class VehicleSettingsPage extends StatelessWidget {
                             ),
                             _InfoRow(
                               label: 'IMEI',
-                              value: vehicle.imei.isEmpty
-                                  ? '未知'
-                                  : vehicle.imei,
+                              value: vehicle.imei.isEmpty ? '未知' : vehicle.imei,
                             ),
-                            _InfoRow(
-                              label: '状态',
-                              value: vehicle.onlineLabel,
-                            ),
-                            _InfoRow(
-                              label: '设防',
-                              value: vehicle.defenceLabel,
-                            ),
+                            _InfoRow(label: '状态', value: vehicle.onlineLabel),
+                            _InfoRow(label: '设防', value: vehicle.defenceLabel),
                           ],
                         ),
                       ),

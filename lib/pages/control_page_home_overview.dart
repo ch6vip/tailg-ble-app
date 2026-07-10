@@ -216,8 +216,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
         : (soc * _kmPerPercent).round();
     final bool? isArmed = cloudVehicle?.isLocked;
     final bool isPowerOn = cloudVehicle?.isPowerOn ?? false;
-    final vehicleName =
-        vehicleStore.defaultVehicle?.displayName ?? '我的车辆';
+    final vehicleName = vehicleStore.defaultVehicle?.displayName ?? '我的车辆';
     final statusText = cloudVehicle?.onlineLabel ?? '等待连接';
     final topPadding = MediaQuery.paddingOf(context).top + 18;
     return Container(
@@ -246,9 +245,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
               ),
             ),
             onConnect: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const AddVehiclePage(),
-              ),
+              MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
             ),
             onBatteryTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(

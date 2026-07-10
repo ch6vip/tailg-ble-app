@@ -96,10 +96,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
       final raw = prefs.getStringList(_historyKey) ?? [];
       final records = <DiagnosticRecord>[];
       for (final entry in raw) {
-        final record = DiagnosticRecord.tryParse(
-          entry,
-          clock: widget.clock,
-        );
+        final record = DiagnosticRecord.tryParse(entry, clock: widget.clock);
         if (record != null) records.add(record);
       }
       if (mounted) setState(() => _history = records);

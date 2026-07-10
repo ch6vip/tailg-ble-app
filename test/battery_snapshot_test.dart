@@ -104,10 +104,7 @@ void main() {
 
   test('BmsSnapshot exposes official field structure without fake values', () {
     final snapshot = BatterySnapshot.fromSources(
-      officialVehicle: _officialVehicle(
-        electricQuantity: 80,
-        voltage: 48.5,
-      ),
+      officialVehicle: _officialVehicle(electricQuantity: 80, voltage: 48.5),
     );
 
     final fields = snapshot.bms.fields;
