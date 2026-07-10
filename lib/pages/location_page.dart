@@ -127,31 +127,60 @@ class _LocationPageState extends State<LocationPage> {
 
   Future<void> _refreshOfficial({bool silent = false}) async {
     final service = officialCloudService;
-    if (!service.state.signedIn) return;
+    if (!service.state.signedIn) {
+      if (!silent && mounted) {
+        _showSnack('请先登录官方账号后再同步位置数据', isError: true);
+      }
+      return;
+    }
     try {
       await service.refreshVehicles(
         silent: silent,
         refreshReplicaDetails: false,
       );
+      // Refresh location first so the map card updates even if fence/travel lag.
+      await service.refreshVehicleLocation(silent: silent);
       await Future.wait([
-        service.refreshVehicleLocation(silent: silent),
         service.refreshFenceData(silent: silent),
         service.refreshTravelHistory(silent: silent),
       ]);
-      if (!silent && mounted) _showSnack('官方地图数据已刷新');
+      if (!silent && mounted) {
+        final hasLocation =
+            _resolveLocation(
+              localVehicle: vehicleStore.defaultVehicle,
+              cloudState: service.state,
+            ) !=
+            null;
+        _showSnack(hasLocation ? '位置数据已同步' : '已同步，当前暂无停车坐标');
+      }
     } catch (e) {
       logService.operation(
         '官云地图数据刷新失败',
         detail: e.toString(),
         level: LogLevel.warning,
       );
-      if (!silent && mounted) setState(() => _localError = _errorMessage(e));
+      if (!silent && mounted) {
+        final message = _errorMessage(e);
+        setState(() => _localError = message);
+        _showSnack(message, isError: true);
+      }
     }
   }
 
   Future<void> _refreshTravelHistory({String? month}) async {
+    if (!officialCloudService.state.signedIn) {
+      if (mounted) _showSnack('请先登录官方账号后再同步轨迹', isError: true);
+      return;
+    }
     try {
-      await officialCloudService.refreshTravelHistory(month: month);
+      await officialCloudService.refreshTravelHistory(
+        month: month,
+        force: true,
+      );
+      if (!mounted) return;
+      final days = officialCloudService.state.travelDays;
+      final count = days.fold<int>(0, (sum, day) => sum + day.records.length);
+      _showSnack(count == 0 ? '已同步，本月暂无轨迹记录' : '轨迹已同步 · $count条');
     } catch (e) {
       logService.operation(
         '官云行程历史刷新失败',
@@ -174,8 +203,19 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   Future<void> _refreshFenceData() async {
+    if (!officialCloudService.state.signedIn) {
+      if (mounted) _showSnack('请先登录官方账号后再同步围栏', isError: true);
+      return;
+    }
     try {
-      await officialCloudService.refreshFenceData();
+      await officialCloudService.refreshFenceData(force: true);
+      if (!mounted) return;
+      final fence = officialCloudService.state.fenceData;
+      if (fence?.hasData == true) {
+        _showSnack('围栏配置已同步 · ${fence!.statusLabel} · ${fence.radiusLabel}');
+      } else {
+        _showSnack('已同步，当前暂无围栏配置');
+      }
     } catch (e) {
       logService.operation(
         '官云电子围栏刷新失败',
@@ -669,7 +709,7 @@ class _MapPanel extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '等待定位数据',
+                          '暂无位置数据',
                           style: AppTextStyles.bodyLarge.copyWith(
                             color: AppColors.textTertiary,
                           ),
@@ -763,7 +803,7 @@ class _LocationDetailCard extends StatelessWidget {
     final activeLocation = location;
     final errorText = error;
     final addressText = activeLocation == null
-        ? (signedIn ? '官方车辆暂无坐标' : '暂无位置记录')
+        ? (signedIn ? '暂无停车位置，可下拉或点刷新同步' : '登录官方账号后同步停车位置')
         : activeLocation.address.isNotEmpty
         ? activeLocation.address
         : activeLocation.coordinateText;

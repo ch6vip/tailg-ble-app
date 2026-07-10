@@ -327,7 +327,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 1));
 
-    expect(find.text('官方车辆暂无坐标'), findsOneWidget);
+    expect(find.text('暂无停车位置，可下拉或点刷新同步'), findsOneWidget);
     expect(find.text('定位服务异常'), findsOneWidget);
   });
 

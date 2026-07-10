@@ -48,7 +48,7 @@ class _TravelTab extends StatelessWidget {
             const _EmptyCard(
               icon: Icons.cloud_off,
               title: '未登录官方账号',
-              subtitle: '登录后才能读取官方历史轨迹。',
+              subtitle: '登录官方账号后可同步本月骑行轨迹。',
             )
           else if (travelError != null)
             _EmptyCard(
@@ -60,7 +60,7 @@ class _TravelTab extends StatelessWidget {
             const _EmptyCard(
               icon: Icons.route_outlined,
               title: '暂无轨迹记录',
-              subtitle: '本月还没有可显示的骑行轨迹。',
+              subtitle: '本月还没有可显示的骑行轨迹，可点右上角刷新或切换月份。',
             )
           else
             ...dateGroups.map(

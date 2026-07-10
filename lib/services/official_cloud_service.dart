@@ -699,7 +699,7 @@ class OfficialCloudService {
     final token = _state.token;
     if (token.isEmpty) return;
     const refreshKey = 'batteryInfo';
-    if (silent && _shouldUseRecentRefresh(refreshKey)) return;
+    if (!force && silent && _shouldUseRecentRefresh(refreshKey)) return;
     final inFlight = _inFlightRefreshes[refreshKey];
     if (silent && inFlight != null) return inFlight;
 
@@ -777,14 +777,17 @@ class OfficialCloudService {
     }
   }
 
-  Future<void> refreshVehicleLocation({bool silent = false}) async {
+  Future<void> refreshVehicleLocation({
+    bool silent = false,
+    bool force = false,
+  }) async {
     final token = _state.token;
     final vehicle = _state.selectedVehicle;
     if (token.isEmpty || vehicle == null || vehicle.carId.isEmpty) {
       return;
     }
     final refreshKey = 'vehicleLocation:${vehicle.key}';
-    if (silent && _shouldUseRecentRefresh(refreshKey)) return;
+    if (!force && silent && _shouldUseRecentRefresh(refreshKey)) return;
     final inFlight = _inFlightRefreshes[refreshKey];
     if (silent && inFlight != null) return inFlight;
 
@@ -868,14 +871,17 @@ class OfficialCloudService {
     }
   }
 
-  Future<void> refreshFenceData({bool silent = false}) async {
+  Future<void> refreshFenceData({
+    bool silent = false,
+    bool force = false,
+  }) async {
     final token = _state.token;
     final vehicle = _state.selectedVehicle;
     if (token.isEmpty || vehicle == null || vehicle.carId.isEmpty) {
       return;
     }
     final refreshKey = 'fence:${vehicle.key}';
-    if (silent && _shouldUseRecentRefresh(refreshKey)) return;
+    if (!force && silent && _shouldUseRecentRefresh(refreshKey)) return;
     final inFlight = _inFlightRefreshes[refreshKey];
     if (silent && inFlight != null) return inFlight;
 
@@ -955,6 +961,7 @@ class OfficialCloudService {
   Future<void> refreshTravelHistory({
     String? month,
     bool silent = false,
+    bool force = false,
   }) async {
     final token = _state.token;
     final vehicle = _state.selectedVehicle;

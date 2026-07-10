@@ -46,7 +46,7 @@ class _MapTab extends StatelessWidget {
         const SizedBox(height: 14),
         _ReadOnlyNotice(
           title: '车辆位置服务',
-          subtitle: '位置会随车辆在线状态和最近停车记录更新，地图显示可能受网络和定位服务影响。',
+          subtitle: '优先显示官方停车位置；无坐标时显示“暂无位置”。可点刷新重新同步。',
         ),
       ],
     );
