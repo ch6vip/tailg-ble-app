@@ -400,6 +400,50 @@ class _BatteryReplicaPainter extends CustomPainter {
   }
 }
 
+class _BatterySyncCard extends StatelessWidget {
+  final OfficialCloudState cloudState;
+
+  const _BatterySyncCard({required this.cloudState});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!cloudState.signedIn) {
+      return const SizedBox.shrink();
+    }
+    final sync = formatRelativeSyncText(
+      officialCloudService.lastBatteryRefreshAt,
+    );
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.sync_outlined,
+            size: AppIconSizes.sm,
+            color: AppColors.textTertiary,
+          ),
+          const SizedBox(width: 8),
+          const Text('最后同步', style: AppTextStyles.smallText),
+          const Spacer(),
+          Text(
+            sync,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SourceStrip extends StatelessWidget {
   final BatterySnapshot snapshot;
   final OfficialCloudState cloudState;
