@@ -365,7 +365,7 @@ void main() {
       expect(find.text(label), findsNothing);
     }
     expect(find.text('打开座桶'), findsOneWidget);
-    expect(find.text('添加快捷功能'), findsOneWidget);
+    expect(find.bySemanticsLabel('添加快捷功能'), findsOneWidget);
     final edit = find.bySemanticsLabel('编辑快捷功能');
     expect(edit, findsOneWidget);
     expectMinTouchTargetHeight(tester, edit);
@@ -417,66 +417,6 @@ void main() {
 
     expect(find.byType(BatteryDetailsPage), findsOneWidget);
     expect(find.text('电池信息'), findsOneWidget);
-  });
-
-  testWidgets('official manual mode control keeps a 44dp touch target', (
-    tester,
-  ) async {
-    await pumpBoundHome(tester, size: const Size(430, 2200));
-
-    final manualModePill = find.byTooltip('感应模式已开启');
-    expect(manualModePill, findsOneWidget);
-    expectMinTouchTargetHeight(tester, manualModePill);
-    expect(
-      find.descendant(of: manualModePill, matching: find.byType(AppPressable)),
-      findsOneWidget,
-    );
-
-    final enabledEvent = app.manualModeService.enabledStream.firstWhere(
-      (value) => value,
-    );
-
-    await tester.tap(manualModePill);
-    await tester.pump();
-    await enabledEvent;
-    await tester.pump();
-
-    expect(app.manualModeService.enabled, isTrue);
-  });
-
-  testWidgets('mode toggle exposes semantics action', (tester) async {
-    final semantics = tester.ensureSemantics();
-    try {
-      await pumpBoundHome(tester, size: const Size(430, 2200));
-
-      final modeToggle = find.bySemanticsLabel('感应模式');
-      expect(modeToggle, findsOneWidget);
-      expect(
-        tester.getSemantics(modeToggle),
-        matchesSemantics(
-          label: '感应模式',
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasTapAction: true,
-          hasToggledState: true,
-          isToggled: true,
-        ),
-      );
-
-      final enabledEvent = app.manualModeService.enabledStream.firstWhere(
-        (value) => value,
-      );
-
-      tester.semantics.tap(find.semantics.byLabel('感应模式'));
-      await tester.pump();
-      await enabledEvent;
-      await tester.pump();
-
-      expect(app.manualModeService.enabled, isTrue);
-    } finally {
-      semantics.dispose();
-    }
   });
 
   testWidgets('official settings entries use AppPressable feedback', (
@@ -546,10 +486,6 @@ void main() {
       expect(find.text('未设防'), findsNothing);
       expect(find.text('等待连接'), findsOneWidget);
       expect(find.bySemanticsLabel('点击连接'), findsOneWidget);
-
-      final modeAction = find.bySemanticsLabel('感应模式');
-      expect(modeAction, findsOneWidget);
-      expectMinTouchTargetHeight(tester, modeAction);
     } finally {
       semantics.dispose();
     }

@@ -138,7 +138,7 @@ void main() {
 
     final scanAction = find.ancestor(
       of: find.text('近场连接'),
-      matching: find.byType(TextButton),
+      matching: find.byType(OutlinedButton),
     );
     expect(scanAction, findsOneWidget);
     expectMinTouchTargetHeight(tester, scanAction);

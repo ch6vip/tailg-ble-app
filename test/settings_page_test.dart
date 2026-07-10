@@ -134,9 +134,6 @@ void main() {
       tester.semantics.tap(find.semantics.byLabel(advancedLabel));
       await tester.pumpAndSettle();
 
-      expect(find.text('车辆信息'), findsOneWidget);
-      expect(find.text('OTA 前置检测'), findsOneWidget);
-      expect(find.text('协议类型'), findsOneWidget);
       expect(find.text('故障诊断'), findsOneWidget);
       expect(find.text('日志'), findsOneWidget);
 

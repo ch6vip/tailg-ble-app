@@ -46,7 +46,7 @@ void main() {
   testWidgets('diagnostic page shows empty state without records', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({});
+    resetMockPreferences();
 
     await tester.pumpWidget(const TestApp(home: DiagnosticPage()));
     await tester.pump();

@@ -185,11 +185,13 @@ void main() {
 
     await tester.pumpWidget(const TestApp(home: ControlPage()));
     await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump();
 
     expect(find.text('绑定说明'), findsOneWidget);
 
     await tester.tap(find.text('绑定说明'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
 
     expect(find.text('绑定说明'), findsWidgets);
   });

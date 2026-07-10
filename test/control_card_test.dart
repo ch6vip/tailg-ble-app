@@ -12,7 +12,7 @@ void main() {
     await tester.pumpWidget(TestApp(home: ControlCard(onOpenSeat: () {})));
 
     expect(find.text('打开座桶'), findsOneWidget);
-    expect(find.text('添加快捷功能'), findsOneWidget);
+    expect(find.bySemanticsLabel('添加快捷功能'), findsOneWidget);
     expect(find.text('更多功能'), findsNothing);
   });
 

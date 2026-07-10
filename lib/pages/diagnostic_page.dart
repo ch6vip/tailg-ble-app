@@ -100,7 +100,7 @@ class DiagnosticPage extends StatefulWidget {
 
 class _DiagnosticPageState extends State<DiagnosticPage> {
   static const _historyKey = 'diagnostic_history';
-  final _log = LogService();
+  final _log = logService;
   List<DiagnosticRecord> _history = [];
 
   @override
