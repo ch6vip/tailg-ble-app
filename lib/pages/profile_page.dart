@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../main.dart';
+import '../services/app_navigation.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
 import '../services/official_cloud_service.dart';

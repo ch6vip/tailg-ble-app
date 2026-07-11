@@ -1,62 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tailg_ble_app/main.dart' as app;
-import 'package:tailg_ble_app/pages/add_vehicle_page.dart';
 import 'package:tailg_ble_app/pages/control_page.dart';
-import 'package:tailg_ble_app/pages/garage_page.dart';
+import 'package:tailg_ble_app/pages/login_page.dart';
+import 'package:tailg_ble_app/pages/vehicle_message_page.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
-import 'helpers/snack_finders.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/view_size.dart';
 
 void main() {
-  testWidgets('unbound banner auto advance pauses with app lifecycle', (
-    tester,
-  ) async {
-    resetMockPreferences();
-    VehicleStore().resetForTest();
-    await VehicleStore().init();
-
-    applyTestViewSize(tester, const Size(430, 2200));
-    addTearDown(() async {
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump();
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-
-    await tester.pumpWidget(const TestApp(home: ControlPage()));
-    await tester.pump();
-
-    expect(find.text('登录官方账号后同步车辆状态'), findsOneWidget);
-
-    await tester.pump(const Duration(seconds: 4, milliseconds: 1));
-    await tester.pump(const Duration(milliseconds: 401));
-    await tester.pump();
-
-    expect(find.text('手机就是你的车钥匙'), findsOneWidget);
-
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-    await tester.pump(const Duration(seconds: 5));
-    await tester.pump(const Duration(milliseconds: 401));
-
-    expect(find.text('手机就是你的车钥匙'), findsOneWidget);
-    expect(find.text('全面掌控车辆数据'), findsNothing);
-
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 4, milliseconds: 1));
-    await tester.pump(const Duration(milliseconds: 401));
-    await tester.pump();
-
-    expect(find.text('全面掌控车辆数据'), findsOneWidget);
-  });
-
-  testWidgets('virtual experience action shows info snack', (tester) async {
+  Future<void> pumpUnboundHome(WidgetTester tester) async {
     resetMockPreferences();
     VehicleStore().resetForTest();
     await VehicleStore().init();
@@ -71,35 +26,42 @@ void main() {
 
     await tester.pumpWidget(const TestApp(home: ControlPage()));
     await tester.pump(const Duration(milliseconds: 50));
+  }
 
-    await tester.tap(find.text('虚拟体验（演示）'));
-    await tester.pump();
+  testWidgets('official unbound home shows selector and assets', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await pumpUnboundHome(tester);
 
-    expect(find.text('虚拟体验暂未开放，可先登录账号使用官方云端控车'), findsOneWidget);
-    expect(snackIcon(Icons.info_outline), findsOneWidget);
+      expect(find.byKey(const ValueKey('unbound-home')), findsOneWidget);
+      expect(find.text('--'), findsOneWidget);
+      expect(find.bySemanticsLabel('未绑定车辆'), findsOneWidget);
+      expect(find.bySemanticsLabel('绑定设备'), findsOneWidget);
+      expect(find.bySemanticsLabel('登录账号'), findsOneWidget);
+      expect(find.bySemanticsLabel('消息'), findsOneWidget);
+      expect(find.bySemanticsLabel('车辆详情'), findsOneWidget);
+
+      expect(
+        find.image(const AssetImage('assets/official_tailg/iv_control_evbike.png')),
+        findsOneWidget,
+      );
+      expect(
+        find.image(const AssetImage('assets/official_tailg/iv_uncontrol_bg.png')),
+        findsOneWidget,
+      );
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets(
     'official action buttons expose semantics and AppPressable feedback',
     (tester) async {
       final semantics = tester.ensureSemantics();
-      resetMockPreferences();
-      VehicleStore().resetForTest();
-      await VehicleStore().init();
-
       try {
-        applyTestViewSize(tester, const Size(430, 2200));
-        addTearDown(() async {
-          await tester.pumpWidget(const SizedBox.shrink());
-          await tester.pump();
-          tester.view.resetPhysicalSize();
-          tester.view.resetDevicePixelRatio();
-        });
+        await pumpUnboundHome(tester);
 
-        await tester.pumpWidget(const TestApp(home: ControlPage()));
-        await tester.pump(const Duration(milliseconds: 50));
-
-        for (final label in ['绑定设备', '虚拟体验（演示）']) {
+        for (final label in ['登录账号', '绑定设备']) {
           final semanticAction = find.bySemanticsLabel(label);
           expect(semanticAction, findsOneWidget);
           expect(
@@ -113,95 +75,83 @@ void main() {
             ),
           );
           final pressableAction = find.ancestor(
-            of: find.text(label),
+            of: semanticAction,
             matching: find.byType(AppPressable),
           );
-          expect(pressableAction, findsOneWidget);
-          expect(tester.getSize(pressableAction).height, 54);
+          expect(pressableAction, findsWidgets);
         }
-
-        tester.semantics.tap(find.semantics.byLabel('虚拟体验（演示）'));
-        await tester.pump();
-
-        expect(find.text('虚拟体验暂未开放，可先登录账号使用官方云端控车'), findsOneWidget);
-        expect(snackIcon(Icons.info_outline), findsOneWidget);
       } finally {
         semantics.dispose();
       }
     },
   );
 
-  testWidgets('primary bind action opens add vehicle page', (tester) async {
+  testWidgets('bind action opens login page when unsigned', (
+    tester,
+  ) async {
     final semantics = tester.ensureSemantics();
-    resetMockPreferences();
-    VehicleStore().resetForTest();
-    await VehicleStore().init();
-
     try {
-      applyTestViewSize(tester, const Size(430, 2200));
-      addTearDown(() async {
-        await tester.pumpWidget(const SizedBox.shrink());
-        await tester.pump();
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      await tester.pumpWidget(const TestApp(home: ControlPage()));
-      await tester.pump(const Duration(milliseconds: 50));
+      await pumpUnboundHome(tester);
 
       const linkLabel = '绑定设备';
-      final officialCloudAction = find.bySemanticsLabel(linkLabel);
-      expect(officialCloudAction, findsOneWidget);
-      expect(
-        tester.getSemantics(officialCloudAction),
-        matchesSemantics(
-          label: linkLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasTapAction: true,
-        ),
-      );
+      final bindAction = find.bySemanticsLabel(linkLabel);
+      expect(bindAction, findsOneWidget);
 
       tester.semantics.tap(find.semantics.byLabel(linkLabel));
       await tester.pumpAndSettle();
 
-      expect(find.byType(AddVehiclePage), findsOneWidget);
+      // Honest path: unsigned default -> LoginPage, no bind method sheet.
+      expect(find.text('请选择绑定方式'), findsNothing);
+      expect(find.text('4G功能中控'), findsNothing);
+      expect(find.byType(LoginPage), findsOneWidget);
     } finally {
       semantics.dispose();
     }
   });
 
-  testWidgets('binding help text link opens garage page', (tester) async {
-    resetMockPreferences();
-    VehicleStore().resetForTest();
-    app.officialCloudService.resetForTest();
-    await VehicleStore().init();
+  testWidgets('login action opens login page', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await pumpUnboundHome(tester);
 
-    applyTestViewSize(tester, const Size(430, 2200));
-    addTearDown(() async {
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump();
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-      VehicleStore().resetForTest();
-      app.officialCloudService.resetForTest();
-    });
+      const linkLabel = '登录账号';
+      final loginAction = find.bySemanticsLabel(linkLabel);
+      expect(loginAction, findsOneWidget);
 
-    await tester.pumpWidget(const TestApp(home: ControlPage()));
-    await tester.pump(const Duration(milliseconds: 50));
-    await tester.pump();
+      tester.semantics.tap(find.semantics.byLabel(linkLabel));
+      await tester.pumpAndSettle();
 
-    expect(find.text('绑定说明'), findsOneWidget);
+      expect(find.byType(LoginPage), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
 
-    await tester.tap(find.text('绑定说明'));
-    // Banner auto-advance timers prevent pumpAndSettle from finishing.
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 350));
+  testWidgets('message icon opens vehicle message page', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await pumpUnboundHome(tester);
 
-    // GaragePage is pushed on top; previous route is offstage so "绑定说明"
-    // is no longer hittable. Assert the destination page instead.
-    expect(find.byType(GaragePage), findsOneWidget);
-    expect(find.text('我的车库'), findsOneWidget);
+      tester.semantics.tap(find.semantics.byLabel('消息'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(VehicleMessagePage), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('vehicle selector toast when no car', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await pumpUnboundHome(tester);
+
+      tester.semantics.tap(find.semantics.byLabel('切换车辆'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('暂无车辆！'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
   });
 }

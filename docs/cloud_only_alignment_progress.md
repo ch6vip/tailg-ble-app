@@ -1,6 +1,6 @@
 # Cloud-only 对齐进度（非蓝牙）
 
-> 状态：P0 已完成，待真机回归后发版  
+> 状态：P0 已完成；P0.5 路径优化已完成  
 > 更新：2026-07-11  
 > 定位：官方账号 + 云端控车；**不做绑定闭环，不做 BLE 相关能力**
 
@@ -161,7 +161,24 @@ P0-4 电池页增强                       ✅
 
 ---
 
-## 5. 后续优先级（先不做，仅登记）
+## 5. P0.5 高价值路径优化（已完成）
+
+在 P0 可信控车基线上，吸收官方爱车双态 / 自动回首页 / 功能门禁 / 返回刷新。
+
+详见专项进度：**[p0_5_high_value_path_progress.md](p0_5_high_value_path_progress.md)**
+
+| ID | 项 | 状态 |
+| --- | --- | --- |
+| A1 | `ControlHomeMode` 状态机 | **已完成** |
+| A2 | 登录/同步成功自动回爱车 bound | **已完成** |
+| A3 | 未绑定绑定路径诚实化 | **已完成** |
+| A4 | 统一 `requireCloudVehicle` 门禁 | **已完成** |
+| A5 | 子页返回爱车 silent refresh | **已完成** |
+
+---
+
+## 6. 后续优先级（先不做，仅登记）
+
 
 ### P1
 - 多车切换体验 / 当前车标识
@@ -177,7 +194,7 @@ P0-4 电池页增强                       ✅
 
 ---
 
-## 6. 非目标（明确不做）
+## 7. 非目标（明确不做）
 
 - 扫码绑定 / IMEI 绑定 / 门店绑定
 - 本地 BLE 控车、感应解锁、GATT 诊断
@@ -185,12 +202,14 @@ P0-4 电池页增强                       ✅
 
 ---
 
-## 7. 验收与发版建议
+## 8. 验收与发版建议
 
 ### P0 完成后建议
 1. 真机回归：登录、控车六键、消息、定位、电池、回前台刷新  
 2. 打 `v1.0.13`（或下一版本）release  
 3. Release notes 写清：cloud-only + 消息/状态/定位/电池增强
+
+完整可勾选清单见：**[device_regression_checklist_v1_0_13.md](device_regression_checklist_v1_0_13.md)**
 
 ### 真机最小清单
 - [ ] 冷启动已登录 → 自动出最新电量/设防
@@ -204,7 +223,7 @@ P0-4 电池页增强                       ✅
 
 ---
 
-## 8. 变更日志
+## 9. 变更日志
 
 | 日期 | 内容 |
 | --- | --- |
@@ -215,10 +234,12 @@ P0-4 电池页增强                       ✅
 | 2026-07-11 | P0-3：定位/轨迹/围栏空态与刷新反馈打磨 |
 | 2026-07-11 | P0-4：电池页增加最后同步时间 + 成功/空态反馈 |
 | 2026-07-11 | P0 全部完成，CI 通过；文档同步为完成态 |
+| 2026-07-11 | 新增 P0.5 高价值路径优化进度文档（A1–A5） |
+| 2026-07-11 | P0.5 A1–A5 全部完成（状态机/回爱车/诚实绑定/门禁/RouteAware 刷新） |
 
 ---
 
-## 9. 相关代码入口
+## 10. 相关代码入口
 
 - 控车页：`lib/pages/control_page.dart` / `control_page_home_overview.dart`
 - 云服务：`lib/services/official_cloud_service.dart`（`refreshMessages` / `lastVehiclesRefreshAt` / `lastBatteryRefreshAt`）
@@ -228,3 +249,4 @@ P0-4 电池页增强                       ✅
 - 电池：`lib/pages/battery_details_page.dart`
 - 同步时间格式：`lib/services/display_time_formatter.dart`（`formatRelativeSyncText`）
 - 生命周期刷新：`lib/main.dart`（`AppLifecycleState.resumed` / 切回车辆 Tab）
+| 2026-07-11 | 新增真机回归 checklist（P0+P0.5 / v1.0.13） |

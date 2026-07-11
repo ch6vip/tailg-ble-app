@@ -58,7 +58,11 @@ lib/
 
 ## 对齐进度
 
-当前主线见：[docs/cloud_only_alignment_progress.md](docs/cloud_only_alignment_progress.md)
+当前主线见：
+
+- [docs/cloud_only_alignment_progress.md](docs/cloud_only_alignment_progress.md)（P0 总览）
+- [docs/p0_5_high_value_path_progress.md](docs/p0_5_high_value_path_progress.md)（P0.5 已完成）
+- [docs/device_regression_checklist_v1_0_13.md](docs/device_regression_checklist_v1_0_13.md)（**发版前真机回归**）
 
 **P0 已全部完成并通过 CI**（非蓝牙）：
 
@@ -67,4 +71,4 @@ lib/
 3. ✅ 定位·轨迹·围栏打磨（空态 / 刷新反馈 / force 刷新）
 4. ✅ 电池信息增强（最后同步 / 成功空态反馈 / force 刷新）
 
-下一步：真机回归 → 发 `v1.0.13` → 进入 P1。
+下一步：**真机回归**（见 device_regression_checklist_v1_0_13）→ 发 `v1.0.13` → 进入 P1（多车切换等）。

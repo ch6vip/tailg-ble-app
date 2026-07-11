@@ -286,11 +286,14 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             onConnect: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
             ),
-            onBatteryTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const BatteryDetailsPage(),
-              ),
-            ),
+            onBatteryTap: () {
+              if (!requireCloudVehicle(context)) return;
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const BatteryDetailsPage(),
+                ),
+              );
+            },
             onDetail: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const OfficialCloudPage(),
@@ -322,11 +325,14 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             onLock: () => _sendCommand(CommandCode.lock),
             onUnlock: () => _sendCommand(CommandCode.unlock),
             onOpenSeat: () => _sendCommand(CommandCode.openSeat),
-            onQuickEdit: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const VehicleSettingsPage(),
-              ),
-            ),
+            onQuickEdit: () {
+              if (!requireCloudVehicle(context)) return;
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const VehicleSettingsPage(),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 16),
         ],

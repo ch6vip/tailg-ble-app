@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../main.dart';
+import '../services/app_navigation.dart';
 import '../models/official_vehicle.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
@@ -426,7 +427,10 @@ class _SessionCard extends StatelessWidget {
             ),
           ),
           TextButton(
-            onPressed: () => officialCloudService.logout(),
+            onPressed: () async {
+              await officialCloudService.logout();
+              AppNavigation.focusVehicleTabAfterSignOut();
+            },
             child: const Text('退出'),
           ),
           IconButton(
@@ -496,6 +500,8 @@ class _OfficialVehicleCard extends StatelessWidget {
         onTap: () async {
           HapticFeedback.selectionClick();
           await officialCloudService.selectVehicle(vehicle);
+          if (!context.mounted) return;
+          AppNavigation.returnToVehicleHome(context);
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -10,6 +10,7 @@ import '../models/vehicle_profile.dart';
 import '../services/control_channel_resolver.dart';
 import '../services/control_command_executor.dart';
 import '../services/control_command_policy.dart';
+import '../services/control_home_mode.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
@@ -17,13 +18,14 @@ import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/cloud_vehicle_gate.dart';
 import '../widgets/vehicle_stage.dart';
 import '../widgets/control_card.dart';
 import 'add_vehicle_page.dart';
 import 'battery_details_page.dart';
 import 'control_page_hero.dart';
-import 'garage_page.dart';
 import 'location_page.dart';
+import 'login_page.dart';
 import 'official_cloud_page.dart';
 import 'vehicle_message_page.dart';
 import 'vehicle_settings_page.dart';
@@ -62,9 +64,12 @@ class ControlPage extends StatefulWidget {
 }
 
 class _ControlPageState extends State<ControlPage>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, RouteAware {
   @override
   bool get wantKeepAlive => true;
+
+  RouteObserver<ModalRoute<void>>? _routeObserver;
+  bool _routeSubscribed = false;
 
   /// Pull-to-refresh: re-sync cloud vehicle data when signed in, otherwise just
   /// settle briefly so the indicator animation feels intentional.
@@ -84,6 +89,34 @@ class _ControlPageState extends State<ControlPage>
   void initState() {
     super.initState();
     // First mount of the control shell (app start / page recreate).
+    _refreshOnVisible();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is! PageRoute) return;
+    if (_routeSubscribed && identical(_routeObserver, appRouteObserver)) {
+      return;
+    }
+    _routeObserver?.unsubscribe(this);
+    _routeObserver = appRouteObserver;
+    _routeObserver!.subscribe(this, route);
+    _routeSubscribed = true;
+  }
+
+  @override
+  void dispose() {
+    _routeObserver?.unsubscribe(this);
+    _routeObserver = null;
+    _routeSubscribed = false;
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Returning from a pushed sub-page (battery / location / settings / …).
     _refreshOnVisible();
   }
 
@@ -137,13 +170,13 @@ class _HomeBody extends StatefulWidget {
 class _HomeBodyState extends State<_HomeBody> {
   StreamSubscription<List<VehicleProfile>>? _subVehicles;
   StreamSubscription<OfficialCloudState>? _subCloud;
-  late final ValueNotifier<bool> _showUnboundHome;
+  late final ValueNotifier<ControlHomeMode> _homeMode;
   bool _disposed = false;
 
   @override
   void initState() {
     super.initState();
-    _showUnboundHome = ValueNotifier<bool>(_computeShowUnboundHome());
+    _homeMode = ValueNotifier<ControlHomeMode>(_computeHomeMode());
     _subVehicles = vehicleStore.vehiclesStream.listen((_) {
       if (_disposed) return;
       _updateDerived();
@@ -154,18 +187,22 @@ class _HomeBodyState extends State<_HomeBody> {
     });
   }
 
-  bool _computeShowUnboundHome() {
+  ControlHomeMode _computeHomeMode() {
     final hasLocalVehicle =
         vehicleStore.vehicles.isNotEmpty || vehicleStore.defaultVehicle != null;
     final cloudState = officialCloudService.state;
-    final hasCloudVehicle =
-        cloudState.signedIn && cloudState.selectedVehicle != null;
-    return !hasLocalVehicle && !hasCloudVehicle;
+    final hasCloudVehicle = cloudState.selectedVehicle != null;
+    return ControlHomeModeResolver.resolve(
+      signedIn: cloudState.signedIn,
+      hasLocalVehicle: hasLocalVehicle,
+      hasCloudVehicle: hasCloudVehicle,
+      cloudLoading: cloudState.loading,
+    );
   }
 
   void _updateDerived() {
-    final nextShow = _computeShowUnboundHome();
-    if (_showUnboundHome.value != nextShow) _showUnboundHome.value = nextShow;
+    final next = _computeHomeMode();
+    if (_homeMode.value != next) _homeMode.value = next;
   }
 
   @override
@@ -175,15 +212,15 @@ class _HomeBodyState extends State<_HomeBody> {
     _subCloud?.cancel();
     _subVehicles = null;
     _subCloud = null;
-    _showUnboundHome.dispose();
+    _homeMode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: _showUnboundHome,
-      builder: (context, showUnboundHome, _) {
+    return ValueListenableBuilder<ControlHomeMode>(
+      valueListenable: _homeMode,
+      builder: (context, mode, _) {
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 260),
           switchInCurve: AppMotion.entranceCurve,
@@ -205,20 +242,42 @@ class _HomeBodyState extends State<_HomeBody> {
               ),
             );
           },
-          child: showUnboundHome
-              ? const _UnboundVehicleHome()
-              : Column(
-                  key: const ValueKey('bound-home'),
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _HomeTopSection(),
-                    const SizedBox(height: 14),
-                    const _HomeQuickSection(),
-                    const SizedBox(height: 20),
-                  ],
-                ),
+          child: switch (mode) {
+            ControlHomeMode.bound => Column(
+              key: const ValueKey('bound-home'),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                _HomeTopSection(),
+                SizedBox(height: 14),
+                _HomeQuickSection(),
+                SizedBox(height: 20),
+              ],
+            ),
+            ControlHomeMode.loading => const _ControlHomeLoading(
+              key: ValueKey('control-home-loading'),
+            ),
+            ControlHomeMode.needLogin ||
+            ControlHomeMode.unbound => _UnboundVehicleHome(
+              key: ValueKey(mode.name),
+              mode: mode,
+            ),
+          },
         );
       },
+    );
+  }
+}
+
+class _ControlHomeLoading extends StatelessWidget {
+  const _ControlHomeLoading({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height * 0.55,
+      child: const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      ),
     );
   }
 }

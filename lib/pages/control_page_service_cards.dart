@@ -35,7 +35,8 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
     super.dispose();
   }
 
-  void _open(BuildContext context, Widget page) {
+  void _open(BuildContext context, Widget page, {bool requireVehicle = true}) {
+    if (requireVehicle && !requireCloudVehicle(context)) return;
     Navigator.push(context, MaterialPageRoute<void>(builder: (_) => page));
   }
 
@@ -107,7 +108,7 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
                   if (showGpsBanner) ...[
                     const SizedBox(height: 10),
                     _OfficialGpsBanner(
-                      onTap: () => _open(context, const OfficialCloudPage()),
+                      onTap: () => _open(context, const OfficialCloudPage(), requireVehicle: false),
                     ),
                   ],
                   const SizedBox(height: 10),

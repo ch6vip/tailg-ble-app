@@ -200,9 +200,10 @@ class _LogoutButton extends StatelessWidget {
               child: const Text('取消'),
             ),
             FilledButton(
-              onPressed: () {
-                officialCloudService.logout();
-                Navigator.pop(ctx);
+              onPressed: () async {
+                await officialCloudService.logout();
+                if (ctx.mounted) Navigator.pop(ctx);
+                AppNavigation.focusVehicleTabAfterSignOut();
               },
               child: const Text('确定'),
             ),

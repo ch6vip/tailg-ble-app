@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/cloud_vehicle_gate.dart';
 import 'battery_details_page.dart';
 import 'diagnostic_page.dart';
 import 'location_page.dart';
@@ -109,7 +110,7 @@ class ServiceHubPage extends StatelessWidget {
                         icon: Icons.cloud_outlined,
                         label: '官方账号',
                         color: AppColors.brandRed,
-                        onTap: () => _open(context, const OfficialCloudPage()),
+                        onTap: () => _open(context, const OfficialCloudPage(), requireVehicle: false),
                       ),
                     ],
                   );
@@ -140,7 +141,8 @@ class ServiceHubPage extends StatelessWidget {
     AppSnack.featureUnavailable(context, label);
   }
 
-  static void _open(BuildContext context, Widget page) {
+  static void _open(BuildContext context, Widget page, {bool requireVehicle = true}) {
+    if (requireVehicle && !requireCloudVehicle(context)) return;
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
   }
 }

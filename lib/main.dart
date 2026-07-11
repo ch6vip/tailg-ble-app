@@ -26,6 +26,10 @@ AppPermissionService get permissionService =>
 
 ValueNotifier<int> get homeTabIndex => AppServices.instance.homeTabIndex;
 
+/// Shared RouteObserver so tab pages can silent-refresh on didPopNext.
+final RouteObserver<ModalRoute<void>> appRouteObserver =
+    RouteObserver<ModalRoute<void>>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -228,6 +232,7 @@ class _TailgBleAppState extends State<TailgBleApp> {
     return MaterialApp(
       title: '台铃智能',
       navigatorKey: AppToast.navigatorKey,
+      navigatorObservers: [appRouteObserver],
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme:

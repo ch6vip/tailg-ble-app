@@ -10,14 +10,20 @@ void main() {
   });
 
   testWidgets('App renders home page', (WidgetTester tester) async {
-    await tester.pumpWidget(const TailgBleApp());
-    await tester.pump(); // Allow combined stream initial emission
-    expect(find.text('未绑定车辆'), findsOneWidget);
-    expect(find.text('爱车'), findsOneWidget);
-    expect(find.text('服务'), findsOneWidget);
-    expect(find.text('我的'), findsOneWidget);
-    expect(find.text('消息'), findsNothing);
-    expect(find.text('车库'), findsNothing);
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(const TailgBleApp());
+      await tester.pump(); // Allow combined stream initial emission
+      expect(find.byKey(const ValueKey('unbound-home')), findsOneWidget);
+      expect(find.bySemanticsLabel('未绑定车辆'), findsOneWidget);
+      expect(find.text('爱车'), findsOneWidget);
+      expect(find.text('服务'), findsOneWidget);
+      expect(find.text('我的'), findsOneWidget);
+      expect(find.text('消息'), findsNothing);
+      expect(find.text('车库'), findsNothing);
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('Bottom nav keeps vehicle in the center', (
@@ -100,13 +106,19 @@ void main() {
   testWidgets('Unbound home stays stable on a narrow surface', (
     WidgetTester tester,
   ) async {
-    setTestViewSize(tester, const Size(320, 1800));
+    final semantics = tester.ensureSemantics();
+    try {
+      setTestViewSize(tester, const Size(320, 1800));
 
-    await tester.pumpWidget(const TailgBleApp());
-    await tester.pump(const Duration(milliseconds: 50));
+      await tester.pumpWidget(const TailgBleApp());
+      await tester.pump(const Duration(milliseconds: 50));
 
-    expect(tester.takeException(), isNull);
-    expect(find.text('未绑定车辆'), findsOneWidget);
-    expect(find.text('绑定设备'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const ValueKey('unbound-home')), findsOneWidget);
+      expect(find.bySemanticsLabel('未绑定车辆'), findsOneWidget);
+      expect(find.bySemanticsLabel('绑定设备'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
   });
 }

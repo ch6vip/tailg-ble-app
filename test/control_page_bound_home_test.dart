@@ -402,7 +402,17 @@ void main() {
   });
 
   testWidgets('battery metric opens battery details page', (tester) async {
-    await pumpBoundHome(tester, size: const Size(430, 2200));
+    final vehicle = OfficialVehicle.fromJson({
+      'imei': 'IMEI_BATT',
+      'carId': 'official-batt-bike',
+      'carNickName': '电池测试车',
+      'btmac': 'AA:BB:CC:DD:EE:FF',
+    });
+    await pumpBoundHome(
+      tester,
+      size: const Size(430, 2200),
+      officialVehicle: vehicle,
+    );
 
     final batteryAction = find.byKey(
       const ValueKey('control-hero-battery-action'),
