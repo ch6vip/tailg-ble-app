@@ -37,32 +37,44 @@ void main() {
     expect(vehicleCenter.dx, lessThan(mineCenter.dx));
   });
 
-  testWidgets('Bottom nav uses official compact bar geometry', (
+  testWidgets('Bottom nav uses uniform compact bar geometry', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const TailgBleApp());
     await tester.pump();
 
     final barFinder = find.byKey(const ValueKey('official-bottom-nav-bar'));
+    final serviceItemFinder = find.byKey(
+      const ValueKey('official-bottom-nav-item-service'),
+    );
     final vehicleItemFinder = find.byKey(
       const ValueKey('official-bottom-nav-item-vehicle'),
     );
+    final mineItemFinder = find.byKey(
+      const ValueKey('official-bottom-nav-item-mine'),
+    );
 
     expect(barFinder, findsOneWidget);
+    expect(serviceItemFinder, findsOneWidget);
     expect(vehicleItemFinder, findsOneWidget);
+    expect(mineItemFinder, findsOneWidget);
+
     // White bar is 65; system inset is 0 in tests so bar height is 65.
+    // All three tabs share the same slot height (no raised center icon).
     expect(tester.getSize(barFinder).height, 65);
-    expect(tester.getSize(vehicleItemFinder).height, 80);
+    expect(tester.getSize(serviceItemFinder).height, 65);
+    expect(tester.getSize(vehicleItemFinder).height, 65);
+    expect(tester.getSize(mineItemFinder).height, 65);
 
-    // Center item sits on the same bottom baseline and protrudes 15px above.
     final barTop = tester.getTopLeft(barFinder).dy;
+    final serviceTop = tester.getTopLeft(serviceItemFinder).dy;
     final vehicleTop = tester.getTopLeft(vehicleItemFinder).dy;
-    expect(vehicleTop, closeTo(barTop - 15, 0.5));
+    final mineTop = tester.getTopLeft(mineItemFinder).dy;
+    expect(serviceTop, closeTo(barTop, 0.5));
+    expect(vehicleTop, closeTo(barTop, 0.5));
+    expect(mineTop, closeTo(barTop, 0.5));
 
-    // Center icon is not clipped: its top is at/above the bar top.
-    expect(vehicleTop, lessThanOrEqualTo(barTop));
-
-    // Side labels stay above the system inset baseline (bottom of bar content).
+    // Labels share the same baseline.
     final serviceBottom = tester.getBottomLeft(find.text('服务')).dy;
     final vehicleBottom = tester.getBottomLeft(find.text('爱车')).dy;
     final mineBottom = tester.getBottomLeft(find.text('我的')).dy;

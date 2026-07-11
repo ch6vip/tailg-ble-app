@@ -546,96 +546,70 @@ class _OfficialBottomNav extends StatelessWidget {
   /// Visual height of the white bar (matches official compact bar).
   static const double _barHeight = 65;
 
-  /// Full slot height so the raised center icon is never clipped.
-  static const double _prominentItemHeight = 80;
+  /// Shared icon size for 服务 / 爱车 / 我的.
+  static const double _iconSize = 24;
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-    // Outer height must fit the protruding center icon + system nav inset.
-    // Keep the white bar shorter so the center icon still "floats" upward.
     return Material(
-      color: Colors.transparent,
-      child: SizedBox(
-        height: _prominentItemHeight + bottomInset,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: _barHeight + bottomInset,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 12,
-                      offset: const Offset(0, -4),
-                    ),
-                  ],
-                ),
-                child: SizedBox(
-                  key: const ValueKey('official-bottom-nav-bar'),
-                  height: _barHeight + bottomInset,
-                ),
-              ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: bottomInset,
-              height: _prominentItemHeight,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: _OfficialNavItem(
-                      itemKey: const ValueKey(
-                        'official-bottom-nav-item-service',
-                      ),
-                      label: '服务',
-                      asset:
-                          'assets/official_tailg/ic_home_service_unselect.png',
-                      selectedAsset:
-                          'assets/official_tailg/ic_home_service_select.png',
-                      selected: currentIndex == 0,
-                      onTap: onService,
-                    ),
-                  ),
-                  Expanded(
-                    child: _OfficialNavItem(
-                      itemKey: const ValueKey(
-                        'official-bottom-nav-item-vehicle',
-                      ),
-                      label: '爱车',
-                      asset:
-                          'assets/official_tailg/ic_home_control_unselect.png',
-                      selectedAsset:
-                          'assets/official_tailg/ic_home_control_select.png',
-                      selected: currentIndex == 1,
-                      prominent: true,
-                      onTap: onVehicle,
-                    ),
-                  ),
-                  Expanded(
-                    child: _OfficialNavItem(
-                      itemKey: const ValueKey('official-bottom-nav-item-mine'),
-                      label: '我的',
-                      asset: 'assets/official_tailg/ic_home_mine_unselect.png',
-                      selectedAsset:
-                          'assets/official_tailg/ic_home_mine_select.png',
-                      selected: currentIndex == 2,
-                      onTap: onMine,
-                    ),
-                  ),
-                ],
-              ),
+      color: AppColors.surface,
+      elevation: 0,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, -4),
             ),
           ],
+        ),
+        child: SizedBox(
+          key: const ValueKey('official-bottom-nav-bar'),
+          height: _barHeight + bottomInset,
+          child: Padding(
+            padding: EdgeInsets.only(bottom: bottomInset),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _OfficialNavItem(
+                    itemKey: const ValueKey('official-bottom-nav-item-service'),
+                    label: '服务',
+                    asset: 'assets/official_tailg/ic_home_service_unselect.png',
+                    selectedAsset:
+                        'assets/official_tailg/ic_home_service_select.png',
+                    selected: currentIndex == 0,
+                    onTap: onService,
+                  ),
+                ),
+                Expanded(
+                  child: _OfficialNavItem(
+                    itemKey: const ValueKey('official-bottom-nav-item-vehicle'),
+                    label: '爱车',
+                    asset: 'assets/official_tailg/ic_home_control_unselect.png',
+                    selectedAsset:
+                        'assets/official_tailg/ic_home_control_select.png',
+                    selected: currentIndex == 1,
+                    onTap: onVehicle,
+                  ),
+                ),
+                Expanded(
+                  child: _OfficialNavItem(
+                    itemKey: const ValueKey('official-bottom-nav-item-mine'),
+                    label: '我的',
+                    asset: 'assets/official_tailg/ic_home_mine_unselect.png',
+                    selectedAsset:
+                        'assets/official_tailg/ic_home_mine_select.png',
+                    selected: currentIndex == 2,
+                    onTap: onMine,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -649,7 +623,6 @@ class _OfficialNavItem extends StatelessWidget {
     required this.selectedAsset,
     required this.selected,
     required this.onTap,
-    this.prominent = false,
     this.itemKey,
   });
 
@@ -658,7 +631,6 @@ class _OfficialNavItem extends StatelessWidget {
   final String selectedAsset;
   final bool selected;
   final VoidCallback onTap;
-  final bool prominent;
   final Key? itemKey;
 
   @override
@@ -668,10 +640,7 @@ class _OfficialNavItem extends StatelessWidget {
     final labelColor = active
         ? AppColors.brandRed
         : AppColors.officialTextMuted;
-    final itemHeight = prominent
-        ? _OfficialBottomNav._prominentItemHeight
-        : _OfficialBottomNav._barHeight;
-    final iconSize = prominent ? 46.0 : 24.0;
+    const iconSize = _OfficialBottomNav._iconSize;
 
     return Semantics(
       label: label,
@@ -682,7 +651,7 @@ class _OfficialNavItem extends StatelessWidget {
         onTap: onTap,
         child: SizedBox(
           key: itemKey,
-          height: itemHeight,
+          height: _OfficialBottomNav._barHeight,
           child: Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Column(
@@ -694,8 +663,8 @@ class _OfficialNavItem extends StatelessWidget {
                   height: iconSize,
                   fit: BoxFit.contain,
                   errorBuilder: (_, __, ___) => Icon(
-                    prominent ? Icons.shield_outlined : Icons.circle_outlined,
-                    size: prominent ? 46 : 24,
+                    Icons.circle_outlined,
+                    size: iconSize,
                     color: active
                         ? AppColors.brandRed
                         : AppColors.officialTextMuted,
