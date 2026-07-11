@@ -115,11 +115,6 @@ class _OfficialCloudStorage {
     await prefs.setString(_prefCarControlInfo, jsonEncode(vehicle.toJson()));
   }
 
-  Future<void> saveControlChannel(OfficialControlChannel channel) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefControlChannel, channel.name);
-  }
-
   Future<void> saveLinks(Map<String, String> links) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefVehicleLinks, jsonEncode(links));

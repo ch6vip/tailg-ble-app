@@ -690,12 +690,6 @@ class OfficialCloudService {
     await _applySelectedVehicleToLocalProfile();
   }
 
-  Future<void> setControlChannel(OfficialControlChannel channel) async {
-    await _storage.saveControlChannel(channel);
-    _state = _state.copyWith(controlChannel: channel);
-    _emit();
-  }
-
   Future<void> refreshBatteryInfo({
     bool silent = false,
     bool force = false,
