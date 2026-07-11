@@ -29,6 +29,7 @@ import 'vehicle_message_page.dart';
 import 'vehicle_settings_page.dart';
 
 part 'control_page_service_cards.dart';
+part 'control_page_service_card_widgets.dart';
 part 'control_page_unbound_home.dart';
 part 'control_page_home_overview.dart';
 
