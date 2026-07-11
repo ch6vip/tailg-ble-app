@@ -78,13 +78,20 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: margin,
-      padding: padding,
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(AppRadii.lg),
         boxShadow: AppShadows.elevation1,
       ),
-      child: child,
+      // ListTile / SwitchListTile paint ink on the nearest Material ancestor.
+      // Without a local Material here, Flutter asserts that a colored parent
+      // DecoratedBox would hide those effects (Flutter 3.32+).
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(padding: padding, child: child),
+      ),
     );
   }
 }
