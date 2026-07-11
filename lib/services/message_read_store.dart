@@ -97,7 +97,7 @@ class MessageReadStore {
     }
   }
 
-  @visibleForTesting
+  /// Test / locator reset helper.
   void resetForTest() {
     _readIds.clear();
     _hiddenIds.clear();

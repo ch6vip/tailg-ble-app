@@ -11,7 +11,6 @@ import 'helpers/snack_finders.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
-import 'helpers/typography.dart';
 import 'helpers/view_size.dart';
 
 void main() {

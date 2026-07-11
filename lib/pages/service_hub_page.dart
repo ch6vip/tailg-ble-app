@@ -135,10 +135,6 @@ class ServiceHubPage extends StatelessWidget {
     );
   }
 
-  static void _showUnavailable(BuildContext context, String label) {
-    AppSnack.featureUnavailable(context, label);
-  }
-
   static void _open(
     BuildContext context,
     Widget page, {
