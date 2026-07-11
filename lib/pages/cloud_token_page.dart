@@ -1,10 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import '../main.dart';
+import '../services/log_service.dart';
+import '../services/official_cloud_service.dart';
+import '../services/sensitive_value_masker.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_snack.dart';
 
+/// Copy the current official session token, or paste a token to sign in
+/// without SMS (device transfer / multi-client sharing).
 class CloudTokenPage extends StatefulWidget {
   const CloudTokenPage({super.key});
 
@@ -14,159 +22,218 @@ class CloudTokenPage extends StatefulWidget {
 
 class _CloudTokenPageState extends State<CloudTokenPage> {
   final _controller = TextEditingController();
-  String? _savedToken;
-  static const _prefKey = 'cloud_token';
+  StreamSubscription<OfficialCloudState>? _sub;
+  OfficialCloudState _state = officialCloudService.state;
+  bool _busy = false;
 
   @override
   void initState() {
     super.initState();
-    _loadToken();
+    _state = officialCloudService.state;
+    if (_state.token.isNotEmpty) {
+      _controller.text = _state.token;
+    }
+    _sub = officialCloudService.stateStream.listen((state) {
+      if (!mounted) return;
+      setState(() => _state = state);
+    });
   }
 
   @override
   void dispose() {
+    _sub?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
-  Future<void> _loadToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedToken = prefs.getString(_prefKey);
-    if (!mounted) return;
-    setState(() {
-      _savedToken = savedToken;
-      if (savedToken != null) _controller.text = savedToken;
-    });
-  }
-
-  Future<void> _saveToken() async {
-    final token = _controller.text.trim();
-    if (token.isEmpty) return;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefKey, token);
-    if (!mounted) return;
-    setState(() => _savedToken = token);
-    AppSnack.success(context, 'Token 已保存');
-  }
-
-  Future<void> _copyToken() async {
-    final token = _savedToken;
-    if (token == null || token.isEmpty) return;
+  Future<void> _copyCurrentToken() async {
+    final token = _state.token.trim();
+    if (token.isEmpty) {
+      AppSnack.info(context, '当前未登录，没有可复制的 Token');
+      return;
+    }
     await Clipboard.setData(ClipboardData(text: token));
     if (!mounted) return;
-    AppSnack.success(context, '已复制到剪贴板');
+    AppSnack.success(context, 'Token 已复制到剪贴板');
+  }
+
+  Future<void> _pasteFromClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim() ?? '';
+    if (!mounted) return;
+    if (text.isEmpty) {
+      AppSnack.info(context, '剪贴板为空');
+      return;
+    }
+    setState(() => _controller.text = text);
+    AppSnack.success(context, '已从剪贴板粘贴');
+  }
+
+  Future<void> _loginWithToken() async {
+    if (_busy) return;
+    final raw = _controller.text.trim();
+    if (raw.isEmpty) {
+      AppSnack.info(context, '请先粘贴 Token');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await officialCloudService.loginWithToken(
+        raw,
+        phone: _state.phone,
+        userId: _state.userId,
+      );
+      if (!mounted) return;
+      AppSnack.success(context, 'Token 登录成功，车辆已同步');
+    } catch (e) {
+      logService.operation(
+        'Token 登录失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
+      if (!mounted) return;
+      final message = e is OfficialCloudApiException
+          ? OfficialCloudRedactor.text(e.message)
+          : OfficialCloudRedactor.text(e.toString());
+      AppSnack.error(context, message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  String _maskToken(String token) {
+    final value = token.trim();
+    if (value.isEmpty) return '未登录';
+    return SensitiveValueMasker.compact(value, emptyValue: '未登录');
   }
 
   @override
   Widget build(BuildContext context) {
+    final signedIn = _state.signedIn;
+    final loading = _busy || _state.loading;
+
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
           children: [
             const AppPageHeader(title: '云端 Token'),
-            const SizedBox(height: 20),
-            if (_savedToken != null)
-              AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '已保存 Token',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _savedToken!,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontFamily: 'monospace',
-                              color: AppColors.textPrimary,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.copy,
-                            size: 18,
-                            color: Colors.grey.shade400,
-                          ),
-                          onPressed: _copyToken,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: AppTouchTargets.min,
-                            minHeight: AppTouchTargets.min,
-                          ),
-                          tooltip: '复制',
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '共享 Token',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textTertiary,
-                    ),
+                  const Text('当前会话', style: AppTextStyles.subtitle),
+                  const SizedBox(height: 8),
+                  Text(
+                    signedIn
+                        ? '已登录 · ${_maskToken(_state.token)}'
+                        : '未登录 · 可粘贴 Token 直接进入官方会话',
+                    style: AppTextStyles.smallText,
                   ),
+                  if (_state.phone.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '手机号 ${SensitiveValueMasker.phone(_state.phone)}',
+                      style: AppTextStyles.caption,
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: signedIn && !loading
+                              ? _copyCurrentToken
+                              : null,
+                          icon: const Icon(Icons.copy, size: AppIconSizes.sm),
+                          label: const Text('复制 Token'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: loading ? null : _pasteFromClipboard,
+                          icon: const Icon(
+                            Icons.content_paste,
+                            size: AppIconSizes.sm,
+                          ),
+                          label: const Text('粘贴'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('粘贴 Token 登录', style: AppTextStyles.subtitle),
                   const SizedBox(height: 4),
                   const Text(
-                    '输入 Web 端的 Token 可直接使用',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textTertiary,
-                    ),
+                    '支持直接粘贴 Authorization 值，或带 Bearer 前缀 / Authorization 头整行。'
+                    '登录后会写入安全存储并同步车辆。',
+                    style: AppTextStyles.smallText,
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _controller,
+                    minLines: 3,
+                    maxLines: 6,
                     style: const TextStyle(
                       fontSize: 13,
                       fontFamily: 'monospace',
+                      height: 1.35,
                     ),
                     decoration: InputDecoration(
-                      hintText: '粘贴 Token...',
+                      hintText: '粘贴 Token 或 Authorization: Bearer ...',
                       hintStyle: const TextStyle(color: AppColors.textTertiary),
                       filled: true,
-                      fillColor: const Color(0xFFF5F5F5),
+                      fillColor: AppColors.surfaceContainerLow,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppRadii.sm),
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
-                        vertical: 10,
+                        vertical: 12,
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _saveToken,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                      ),
-                      child: const Text('保存'),
+                    height: 48,
+                    child: FilledButton.icon(
+                      onPressed: loading ? null : _loginWithToken,
+                      icon: loading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.login),
+                      label: Text(signedIn ? '用此 Token 重新登录' : '用 Token 登录'),
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            const AppCard(
+              child: Text(
+                'Token 等同于账号登录凭证，请勿分享给不可信的人或页面。'
+                '复制仅用于你自己的多设备调试与迁移。',
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1.45,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           ],

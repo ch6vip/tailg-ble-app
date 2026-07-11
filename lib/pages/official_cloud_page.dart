@@ -12,6 +12,7 @@ import '../services/sensitive_value_masker.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_snack.dart';
+import 'cloud_token_page.dart';
 
 class OfficialCloudPage extends StatefulWidget {
   const OfficialCloudPage({super.key});
@@ -150,6 +151,16 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
                 AppPageHeader(
                   title: '我的车辆',
                   actions: [
+                    AppHeaderAction(
+                      icon: Icons.key_outlined,
+                      tooltip: 'Token 登录',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => const CloudTokenPage(),
+                        ),
+                      ),
+                    ),
                     if (state.signedIn)
                       AppHeaderAction(
                         icon: Icons.refresh,
@@ -417,6 +428,14 @@ class _SessionCard extends StatelessWidget {
           TextButton(
             onPressed: () => officialCloudService.logout(),
             child: const Text('退出'),
+          ),
+          IconButton(
+            tooltip: 'Token',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(builder: (_) => const CloudTokenPage()),
+            ),
+            icon: const Icon(Icons.key_outlined, size: AppIconSizes.md),
           ),
         ],
       ),

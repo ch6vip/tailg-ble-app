@@ -423,6 +423,75 @@ class OfficialCloudService {
     }
   }
 
+  /// Restore an existing official session from a pasted Authorization token.
+  ///
+  /// Accepts either a raw token or a `Bearer ...` value. On success the token
+  /// is persisted the same way as SMS login and vehicles are refreshed.
+  Future<void> loginWithToken(
+    String rawToken, {
+    String phone = '',
+    String userId = '',
+  }) async {
+    final token = _normalizeAuthorizationToken(rawToken);
+    if (token.isEmpty) {
+      throw const OfficialCloudApiException('请粘贴有效的官方 Token');
+    }
+    _setLoading(true);
+    try {
+      await _storage.saveCredentials(
+        token: token,
+        phone: phone.trim(),
+        userId: userId.trim(),
+      );
+      _clearRefreshCache();
+      _state = _state.copyWith(
+        token: token,
+        phone: phone.trim(),
+        userId: userId.trim(),
+        vehicles: const [],
+        selectedVehicleKey: null,
+        error: null,
+      );
+      _emit();
+      _log.operation('官方云 Token 登录成功');
+      try {
+        await refreshVehicles();
+      } catch (e) {
+        // Keep the pasted session even if the first vehicle sync fails
+        // (offline / invalid token will surface on next refresh).
+        _log.operation(
+          '官方云 Token 登录后车辆刷新失败',
+          detail: _errorMessage(e),
+          level: LogLevel.warning,
+        );
+      }
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  static String _normalizeAuthorizationToken(String raw) {
+    var token = raw.trim();
+    if (token.isEmpty) return '';
+    // Users often paste `Authorization: Bearer xxx` or multi-line headers.
+    final authLine = RegExp(
+      r'authorization\s*:\s*(.+)$',
+      caseSensitive: false,
+      multiLine: true,
+    ).firstMatch(token);
+    if (authLine != null) {
+      token = authLine.group(1)!.trim();
+    }
+    token = token.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (token.toLowerCase().startsWith('bearer ')) {
+      final value = token.substring(7).trim();
+      return value.isEmpty ? '' : 'Bearer $value';
+    }
+    // Official login already stores the header value as-is; keep non-Bearer
+    // tokens unchanged so they match server expectations.
+    return token;
+  }
+
   Future<void> logout() async {
     await _storage.clearCredentialsAndSelection();
     _clearRefreshCache();
