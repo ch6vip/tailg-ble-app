@@ -31,8 +31,6 @@ import 'vehicle_settings_page.dart';
 part 'control_page_service_cards.dart';
 part 'control_page_unbound_home.dart';
 part 'control_page_home_overview.dart';
-part 'control_page_vehicle_overview.dart';
-part 'control_page_mode_widgets.dart';
 
 // P0-2: 改为运行时读取，让暗色模式生效。Sprint 3 Token 重建后改用 ThemeExtension。
 Color _pageBg(BuildContext context) =>
