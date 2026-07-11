@@ -110,7 +110,11 @@ class ServiceHubPage extends StatelessWidget {
                         icon: Icons.cloud_outlined,
                         label: '官方账号',
                         color: AppColors.brandRed,
-                        onTap: () => _open(context, const OfficialCloudPage(), requireVehicle: false),
+                        onTap: () => _open(
+                          context,
+                          const OfficialCloudPage(),
+                          requireVehicle: false,
+                        ),
                       ),
                     ],
                   );
@@ -141,7 +145,11 @@ class ServiceHubPage extends StatelessWidget {
     AppSnack.featureUnavailable(context, label);
   }
 
-  static void _open(BuildContext context, Widget page, {bool requireVehicle = true}) {
+  static void _open(
+    BuildContext context,
+    Widget page, {
+    bool requireVehicle = true,
+  }) {
     if (requireVehicle && !requireCloudVehicle(context)) return;
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
   }

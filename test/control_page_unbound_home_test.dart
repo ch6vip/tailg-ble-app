@@ -28,7 +28,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
   }
 
-  testWidgets('official unbound home shows selector and assets', (tester) async {
+  testWidgets('official unbound home shows selector and assets', (
+    tester,
+  ) async {
     final semantics = tester.ensureSemantics();
     try {
       await pumpUnboundHome(tester);
@@ -42,11 +44,15 @@ void main() {
       expect(find.bySemanticsLabel('车辆详情'), findsOneWidget);
 
       expect(
-        find.image(const AssetImage('assets/official_tailg/iv_control_evbike.png')),
+        find.image(
+          const AssetImage('assets/official_tailg/iv_control_evbike.png'),
+        ),
         findsOneWidget,
       );
       expect(
-        find.image(const AssetImage('assets/official_tailg/iv_uncontrol_bg.png')),
+        find.image(
+          const AssetImage('assets/official_tailg/iv_uncontrol_bg.png'),
+        ),
         findsOneWidget,
       );
     } finally {
@@ -86,9 +92,7 @@ void main() {
     },
   );
 
-  testWidgets('bind action opens login page when unsigned', (
-    tester,
-  ) async {
+  testWidgets('bind action opens login page when unsigned', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
       await pumpUnboundHome(tester);

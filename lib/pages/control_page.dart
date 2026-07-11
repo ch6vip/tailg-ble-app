@@ -256,11 +256,8 @@ class _HomeBodyState extends State<_HomeBody> {
             ControlHomeMode.loading => const _ControlHomeLoading(
               key: ValueKey('control-home-loading'),
             ),
-            ControlHomeMode.needLogin ||
-            ControlHomeMode.unbound => _UnboundVehicleHome(
-              key: ValueKey(mode.name),
-              mode: mode,
-            ),
+            ControlHomeMode.needLogin || ControlHomeMode.unbound =>
+              _UnboundVehicleHome(key: ValueKey(mode.name), mode: mode),
           },
         );
       },

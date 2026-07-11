@@ -16,18 +16,13 @@ abstract final class AppNavigation {
   ///
   /// Used after login success / select-vehicle so the user lands on bound or
   /// unbound home without tapping back repeatedly.
-  static void returnToVehicleHome(
-    BuildContext context, {
-    bool refresh = true,
-  }) {
+  static void returnToVehicleHome(BuildContext context, {bool refresh = true}) {
     final nav = Navigator.of(context, rootNavigator: true);
     nav.popUntil((route) => route.isFirst);
     AppServices.instance.homeTabIndex.value = vehicleTabIndex;
     final cloud = AppServices.instance.officialCloudService;
     if (refresh && cloud.state.signedIn) {
-      unawaited(
-        cloud.refreshVehicles(silent: true, force: true),
-      );
+      unawaited(cloud.refreshVehicles(silent: true, force: true));
     }
   }
 

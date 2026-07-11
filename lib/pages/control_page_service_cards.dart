@@ -108,7 +108,11 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
                   if (showGpsBanner) ...[
                     const SizedBox(height: 10),
                     _OfficialGpsBanner(
-                      onTap: () => _open(context, const OfficialCloudPage(), requireVehicle: false),
+                      onTap: () => _open(
+                        context,
+                        const OfficialCloudPage(),
+                        requireVehicle: false,
+                      ),
                     ),
                   ],
                   const SizedBox(height: 10),

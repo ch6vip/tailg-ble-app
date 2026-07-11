@@ -24,18 +24,18 @@ bool requireCloudVehicle(
   if (!state.signedIn) {
     AppSnack.info(context, message ?? '请先登录官方账号');
     if (offerLogin) {
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => const LoginPage()),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const LoginPage()));
     }
     return false;
   }
 
   AppSnack.info(context, message ?? '暂无车辆，请先同步官方车辆');
   if (offerAddVehicle) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()));
   }
   return false;
 }
