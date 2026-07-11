@@ -62,7 +62,7 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: type,
+                    initialValue: type,
                     items: const ['手机', '手表', '卡片']
                         .map(
                           (item) =>
@@ -745,32 +745,34 @@ class _QgjSoundEffectsPageState extends State<QgjSoundEffectsPage> {
                   const SizedBox(height: 14),
                   AppCard(
                     padding: EdgeInsets.zero,
-                    child: Column(
-                      children: [
-                        for (var i = 0; i < effects.length; i++) ...[
-                          RadioListTile<String>(
-                            title: Text(effects[i]),
-                            subtitle: Text(
-                              effects[i] == '官方默认'
-                                  ? '保持当前车辆提示音'
-                                  : '选择后用于当前页面预览',
+                    child: RadioGroup<String>(
+                      groupValue: _selected,
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _selected = value);
+                        }
+                      },
+                      child: Column(
+                        children: [
+                          for (var i = 0; i < effects.length; i++) ...[
+                            RadioListTile<String>(
+                              title: Text(effects[i]),
+                              subtitle: Text(
+                                effects[i] == '官方默认'
+                                    ? '保持当前车辆提示音'
+                                    : '选择后用于当前页面预览',
+                              ),
+                              value: effects[i],
                             ),
-                            value: effects[i],
-                            groupValue: _selected,
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() => _selected = value);
-                              }
-                            },
-                          ),
-                          if (i != effects.length - 1)
-                            const Divider(
-                              height: 1,
-                              indent: 72,
-                              color: AppColors.border,
-                            ),
+                            if (i != effects.length - 1)
+                              const Divider(
+                                height: 1,
+                                indent: 72,
+                                color: AppColors.border,
+                              ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ],

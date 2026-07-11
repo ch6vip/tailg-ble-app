@@ -270,7 +270,7 @@ Widget _buildToggle({
   final toggle = Switch(
     value: value,
     onChanged: onChanged,
-    activeColor: Colors.white,
+    activeThumbColor: Colors.white,
     activeTrackColor: AppColors.primary,
     inactiveThumbColor: Colors.white,
     inactiveTrackColor: AppColors.border,
