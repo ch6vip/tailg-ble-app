@@ -19,7 +19,7 @@ class _FunctionCenter extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
-                color: _officialStrong,
+                color: AppColors.officialStrong,
                 letterSpacing: 0,
               ),
             ),
@@ -87,7 +87,7 @@ class _FunctionEntry extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 24, color: _officialStrong),
+              Icon(icon, size: 24, color: AppColors.officialStrong),
               const SizedBox(height: 8),
               Text(
                 label,
@@ -95,7 +95,7 @@ class _FunctionEntry extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 12,
-                  color: _officialStrong,
+                  color: AppColors.officialStrong,
                   letterSpacing: 0,
                 ),
               ),

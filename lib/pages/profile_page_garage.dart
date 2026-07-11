@@ -206,7 +206,7 @@ class _GarageInfo extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
-              color: _officialMuted,
+              color: AppColors.officialTextMuted,
               letterSpacing: 0,
             ),
           ),
@@ -215,7 +215,7 @@ class _GarageInfo extends StatelessWidget {
             '门店购买或绑定后查看',
             style: TextStyle(
               fontSize: 14,
-              color: _officialLight,
+              color: AppColors.officialTextLight,
               letterSpacing: 0,
             ),
           ),
@@ -236,12 +236,16 @@ class _GarageInfo extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
-                  color: _officialInk,
+                  color: AppColors.officialInk,
                   letterSpacing: 0,
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right, size: 18, color: _officialMuted),
+            const Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: AppColors.officialTextMuted,
+            ),
           ],
         ),
         const SizedBox(height: 14),
@@ -294,7 +298,7 @@ class _VehicleMetric extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: _officialInk,
+                    color: AppColors.officialInk,
                     letterSpacing: 0,
                   ),
                 ),
@@ -306,7 +310,7 @@ class _VehicleMetric extends StatelessWidget {
                   unit,
                   style: const TextStyle(
                     fontSize: 12,
-                    color: _officialInk,
+                    color: AppColors.officialInk,
                     letterSpacing: 0,
                   ),
                 ),
@@ -320,7 +324,7 @@ class _VehicleMetric extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 12,
-              color: _officialLight,
+              color: AppColors.officialTextLight,
               letterSpacing: 0,
             ),
           ),

@@ -43,6 +43,21 @@ abstract final class AppColors {
   /// 官方台铃 App 次级文字色（APK: `c807e89`）。
   static const officialTextMuted = Color(0xFF807E89);
 
+  /// 官方台铃 App 主文字墨色（我的页标题/强调）。
+  static const officialInk = Color(0xFF060606);
+
+  /// 官方台铃 App 强对比正文色（卡片正文）。
+  static const officialStrong = Color(0xFF1F1F1F);
+
+  /// 官方台铃 App 更浅次级文字（辅助说明）。
+  static const officialTextLight = Color(0xFFACABB5);
+
+  /// 官方台铃 App 控车页指标墨色。
+  static const officialHeroMetricInk = Color(0xFF252525);
+
+  /// 官方台铃 App 在线/健康绿（控车页状态点）。
+  static const officialConnectedGreen = Color(0xFF31C764);
+
   /// 深色主操作色（极简高端风格滑块/按钮）。
   static const dark = Color(0xFF1A1A1A);
 

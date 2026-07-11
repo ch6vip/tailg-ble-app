@@ -117,7 +117,7 @@ class _MineListTile extends StatelessWidget {
                 width: 48,
                 height: 48,
                 alignment: Alignment.center,
-                child: Icon(icon, size: 28, color: _officialStrong),
+                child: Icon(icon, size: 28, color: AppColors.officialStrong),
               ),
               const SizedBox(width: 2),
               Expanded(
@@ -128,7 +128,7 @@ class _MineListTile extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
-                    color: _officialStrong,
+                    color: AppColors.officialStrong,
                     letterSpacing: 0,
                   ),
                 ),
@@ -140,17 +140,25 @@ class _MineListTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 13,
-                    color: _officialMuted,
+                    color: AppColors.officialTextMuted,
                     letterSpacing: 0,
                   ),
                 ),
                 const SizedBox(width: 6),
               ],
               if (trailingHelp) ...[
-                const Icon(Icons.help_outline, size: 22, color: _officialMuted),
+                const Icon(
+                  Icons.help_outline,
+                  size: 22,
+                  color: AppColors.officialTextMuted,
+                ),
                 const SizedBox(width: 12),
               ],
-              const Icon(Icons.chevron_right, size: 20, color: _officialMuted),
+              const Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: AppColors.officialTextMuted,
+              ),
             ],
           ),
         ),

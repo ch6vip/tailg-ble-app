@@ -21,10 +21,6 @@ part 'profile_page_garage.dart';
 part 'profile_page_function.dart';
 part 'profile_page_settings.dart';
 
-const _officialInk = Color(0xFF060606);
-const _officialStrong = Color(0xFF1F1F1F);
-const _officialMuted = Color(0xFF807E89);
-const _officialLight = Color(0xFFACABB5);
 const _mineCardRadius = 10.0;
 
 /// Official-style "我的" page.

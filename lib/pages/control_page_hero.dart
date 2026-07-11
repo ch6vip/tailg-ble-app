@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
-const _officialHeroMetricInk = Color(0xFF252525);
-const _officialConnectedGreen = Color(0xFF31C764);
-
 /// Official control-page header replica.
 class ControlPageHero extends StatelessWidget {
   const ControlPageHero({
@@ -350,7 +347,9 @@ class _OnlineBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: online ? _officialConnectedGreen : AppColors.officialTextMuted,
+        color: online
+            ? AppColors.officialConnectedGreen
+            : AppColors.officialTextMuted,
         borderRadius: BorderRadius.circular(AppRadii.xs),
       ),
       child: Text(
@@ -420,7 +419,9 @@ class _BatteryIconMetric extends StatelessWidget {
           errorBuilder: (_, __, ___) => Icon(
             Icons.battery_full_outlined,
             size: 36,
-            color: level <= 20 ? AppColors.brandRed : _officialConnectedGreen,
+            color: level <= 20
+                ? AppColors.brandRed
+                : AppColors.officialConnectedGreen,
           ),
         ),
       ],
@@ -465,7 +466,7 @@ class _RangeMetric extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                   height: 0.95,
                   letterSpacing: 0,
-                  color: _officialHeroMetricInk,
+                  color: AppColors.officialHeroMetricInk,
                 ),
               ),
               const Padding(
@@ -475,7 +476,7 @@ class _RangeMetric extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: _officialHeroMetricInk,
+                    color: AppColors.officialHeroMetricInk,
                     letterSpacing: 0,
                   ),
                 ),
@@ -622,7 +623,7 @@ class _CloudPillState {
         iconAsset: 'assets/official_tailg/ic_control_ble_clint.png',
         fallbackBg: Color(0xFFEAF8EF),
         textColor: AppColors.textPrimary,
-        iconColor: _officialConnectedGreen,
+        iconColor: AppColors.officialConnectedGreen,
         connected: true,
       );
     }

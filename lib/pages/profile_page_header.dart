@@ -73,7 +73,7 @@ class _MineHeader extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
-                            color: _officialInk,
+                            color: AppColors.officialInk,
                             letterSpacing: 0,
                           ),
                         ),
@@ -84,7 +84,7 @@ class _MineHeader extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 13,
-                            color: _officialMuted,
+                            color: AppColors.officialTextMuted,
                             letterSpacing: 0,
                           ),
                         ),
@@ -111,7 +111,7 @@ class _MineHeader extends StatelessWidget {
                       backgroundColor: Color(0xFFE9EDF4),
                       child: Icon(
                         Icons.person,
-                        color: _officialLight,
+                        color: AppColors.officialTextLight,
                         size: 44,
                       ),
                     ),
@@ -153,7 +153,7 @@ class _HeaderIconButton extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            Icon(icon, size: 24, color: _officialStrong),
+            Icon(icon, size: 24, color: AppColors.officialStrong),
             if (showDot)
               Positioned(
                 right: 11,
@@ -219,7 +219,7 @@ class _SocialStat extends StatelessWidget {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: _officialStrong,
+            color: AppColors.officialStrong,
             letterSpacing: 0,
           ),
         ),
@@ -228,7 +228,7 @@ class _SocialStat extends StatelessWidget {
           label,
           style: const TextStyle(
             fontSize: 13,
-            color: _officialMuted,
+            color: AppColors.officialTextMuted,
             letterSpacing: 0,
           ),
         ),
@@ -327,7 +327,7 @@ class _ShortcutCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: _officialStrong,
+                      color: AppColors.officialStrong,
                       letterSpacing: 0,
                     ),
                   ),
@@ -341,7 +341,7 @@ class _ShortcutCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 12,
-                            color: _officialMuted,
+                            color: AppColors.officialTextMuted,
                             letterSpacing: 0,
                           ),
                         ),
@@ -349,7 +349,7 @@ class _ShortcutCard extends StatelessWidget {
                       const Icon(
                         Icons.chevron_right,
                         size: 15,
-                        color: _officialMuted,
+                        color: AppColors.officialTextMuted,
                       ),
                     ],
                   ),

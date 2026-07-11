@@ -25,7 +25,7 @@ class _OfficialCardSurface extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.md),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1F1F1F).withValues(alpha: 0.04),
+            color: AppColors.officialStrong.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
@@ -486,7 +486,7 @@ class _OfficialHistoryCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF060606),
+                        color: AppColors.officialInk,
                       ),
                     ),
                     const SizedBox(width: 2),
