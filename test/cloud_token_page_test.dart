@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/cloud_token_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 
+import 'helpers/platform_mocks.dart';
 import 'helpers/snack_finders.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
@@ -19,6 +19,7 @@ void main() {
   });
 
   tearDown(() {
+    clearPlatformChannelMock();
     app.officialCloudService.resetForTest();
     resetMockStorage();
   });
@@ -42,6 +43,7 @@ void main() {
   });
 
   testWidgets('copy button writes current token to clipboard', (tester) async {
+    mockClipboardWrites();
     app.officialCloudService.setStateForTest(
       OfficialCloudState.initial().copyWith(
         initialized: true,
@@ -50,36 +52,13 @@ void main() {
       ),
     );
 
-    final clipboard = <MethodCall>[];
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.platform,
-      (call) async {
-        clipboard.add(call);
-        if (call.method == 'Clipboard.getData') {
-          return <String, dynamic>{'text': ''};
-        }
-        return null;
-      },
-    );
-    addTearDown(() {
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.platform,
-        null,
-      );
-    });
-
     await tester.pumpWidget(const TestApp(home: CloudTokenPage()));
     await tester.pump();
 
     await tester.tap(find.text('复制 Token'));
     await tester.pump();
 
-    final setData = clipboard.where((c) => c.method == 'Clipboard.setData');
-    expect(setData, isNotEmpty);
-    expect(
-      setData.last.arguments,
-      containsPair('text', 'Bearer existing-token'),
-    );
+    expect(clipboardWrites, contains('Bearer existing-token'));
     expect(find.text('Token 已复制到剪贴板'), findsOneWidget);
     expect(snackIcon(Icons.check_circle_outline), findsOneWidget);
   });
