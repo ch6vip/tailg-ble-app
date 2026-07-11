@@ -44,6 +44,12 @@ const _kmPerPercent = 0.65;
 // 控车确认超时与轮询间隔
 const _controlConfirmTimeout = Duration(seconds: 8);
 const _controlConfirmPollDelay = Duration(milliseconds: 800);
+// Align with official DoubleClickUtils.isControlChangeCarFastDoubleClick (DIFF=1000):
+// power / find / lock / seat share one debounce window.
+const _controlCommandDebounce = Duration(milliseconds: 1000);
+// Official often posts Lottie (event 112) then delays ~1s before mqttPublish.
+// Cloud-only uses a shorter delay: feedback first, then HTTP.
+const _controlCommandSendDelay = Duration(milliseconds: 500);
 int? _normalizePercent(int? value) {
   if (value == null) return null;
   return value.clamp(0, 100).toInt();

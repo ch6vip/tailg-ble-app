@@ -1254,6 +1254,14 @@ class OfficialCloudService {
       throw const OfficialCloudApiException('当前车辆缺少官方 IMEI，无法云端控车');
     }
 
+    // Test-only override: record the command and let the stub decide the
+    // outcome instead of hitting the network.
+    final override = sendCommandOverride;
+    if (override != null) {
+      sentCommands.add(command);
+      return override(command);
+    }
+
     try {
       _log.operation('发送官方云端指令: ${command.label}');
       final response = await _apiClient.request(
@@ -1426,6 +1434,8 @@ class OfficialCloudService {
       _stateController = StreamController<OfficialCloudState>.broadcast();
     }
     _state = OfficialCloudState.initial();
+    sentCommands.clear();
+    sendCommandOverride = null;
   }
 
   @visibleForTesting
@@ -1434,4 +1444,16 @@ class OfficialCloudService {
     _initialized = state.initialized;
     _emit();
   }
+
+  /// Test-only: when set, [sendCommand] records the command into
+  /// [sentCommands] and returns this stub's result instead of making a
+  /// network request. Lets widget tests assert that a control command was
+  /// actually dispatched (e.g. the right-slide power gesture).
+  @visibleForTesting
+  Future<String> Function(CommandCode)? sendCommandOverride;
+
+  /// Test-only: records every command handed to [sendCommand] since the last
+  /// [resetForTest]. Populated only while [sendCommandOverride] is set.
+  @visibleForTesting
+  final List<CommandCode> sentCommands = [];
 }

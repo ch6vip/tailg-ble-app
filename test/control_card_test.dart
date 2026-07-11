@@ -125,8 +125,9 @@ void main() {
       TestApp(home: ControlCard(onPowerOn: () => powerCount++)),
     );
 
+    // Official Slider only accepts drag from the thumb bounds.
     await tester.drag(
-      find.byKey(const ValueKey('control-power-slide')),
+      find.byKey(const ValueKey('control-power-slide-handle')),
       const Offset(640, 0),
     );
     await tester.pumpAndSettle();
@@ -142,7 +143,7 @@ void main() {
     );
 
     await tester.drag(
-      find.byKey(const ValueKey('control-power-slide')),
+      find.byKey(const ValueKey('control-power-slide-handle')),
       const Offset(-640, 0),
     );
     await tester.pumpAndSettle();
@@ -206,6 +207,7 @@ void main() {
         .map((asset) => asset.assetName);
 
     expect(decoration.image, isNull);
+    expect(decoration.borderRadius, BorderRadius.circular(8));
     expect(
       assetNames,
       contains('assets/official_tailg/ic_slide_start_tip_r.png'),
@@ -255,6 +257,9 @@ void main() {
         node.getSemanticsData().hasAction(SemanticsAction.decrease),
         isFalse,
       );
+      // Official BaseEvent 112: slide is hidden, Lottie overlay shown.
+      expect(find.byKey(const ValueKey('control-power-slide-handle')), findsNothing);
+      expect(find.text('右滑启动'), findsNothing);
     } finally {
       semantics.dispose();
     }
@@ -279,9 +284,31 @@ void main() {
     );
 
     await tester.drag(
-      find.byKey(const ValueKey('control-power-slide')),
+      find.byKey(const ValueKey('control-power-slide-handle')),
       const Offset(40, 0),
     );
+    await tester.pumpAndSettle();
+
+    expect(powerCount, 0);
+  });
+
+  testWidgets('power knob ignores slides that do not start on the handle', (
+    tester,
+  ) async {
+    var powerCount = 0;
+
+    await tester.pumpWidget(
+      TestApp(home: ControlCard(onPowerOn: () => powerCount++)),
+    );
+
+    // Start near the right edge of the track (away from left-rest handle).
+    final track = find.byKey(const ValueKey('control-power-slide'));
+    final trackBox = tester.getRect(track);
+    final gesture = await tester.startGesture(
+      Offset(trackBox.right - 8, trackBox.center.dy),
+    );
+    await gesture.moveBy(const Offset(-640, 0));
+    await gesture.up();
     await tester.pumpAndSettle();
 
     expect(powerCount, 0);
@@ -301,7 +328,7 @@ void main() {
       buttons: kSecondaryMouseButton,
     );
     await gesture.down(
-      tester.getCenter(find.byKey(const ValueKey('control-power-slide'))),
+      tester.getCenter(find.byKey(const ValueKey('control-power-slide-handle'))),
     );
     await gesture.moveBy(const Offset(180, 0));
     await gesture.up();

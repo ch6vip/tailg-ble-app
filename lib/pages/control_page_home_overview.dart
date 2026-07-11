@@ -13,6 +13,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   );
   bool _busy = false;
   bool _disposed = false;
+  DateTime? _lastControlAt;
 
   StreamSubscription<OfficialCloudState>? _cloudSub;
 
@@ -46,6 +47,17 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     );
   }
 
+  /// Official-style cross-control debounce (power/find/lock/seat share 1s).
+  bool _isControlDebounced() {
+    final now = DateTime.now();
+    final last = _lastControlAt;
+    if (last != null && now.difference(last) < _controlCommandDebounce) {
+      return true;
+    }
+    _lastControlAt = now;
+    return false;
+  }
+
   Future<void> _sendPower() async {
     final isPowerOn = _currentIsPowerOn();
     final cmd = isPowerOn ? CommandCode.powerOff : CommandCode.powerOn;
@@ -54,6 +66,10 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
 
   Future<void> _sendCommand(CommandCode cmd) async {
     if (_busy) return;
+    if (_isControlDebounced()) {
+      _showSnack('请勿频繁操作', isError: true);
+      return;
+    }
     final policy = ControlCommandPolicy.evaluate(
       command: cmd,
       isPowerOn: _currentIsPowerOn(),
@@ -62,16 +78,21 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
       _showSnack(policy.disabledReason ?? '${cmd.label}不可用', isError: true);
       return;
     }
+    // 先检查可用性，再设置 _busy，避免 busy 状态影响 availability 判断
+    final availability = _controlAvailability();
+    if (!availability.enabled) {
+      _showSnack(availability.disabledReason, isError: true);
+      return;
+    }
     setState(() {
       _busy = true;
     });
     HapticFeedback.mediumImpact();
     try {
-      final availability = _controlAvailability();
-      if (!availability.enabled) {
-        _showSnack(availability.disabledReason, isError: true);
-        return;
-      }
+      // Official: animation first (event 112), then delayed publish.
+      await Future<void>.delayed(_controlCommandSendDelay);
+      if (!mounted || _disposed) return;
+
       final result = await _commandExecutor.send(command: cmd);
       if (result.success) {
         _runBackgroundTask(
@@ -81,6 +102,10 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
         final confirmed = await _waitForCommandConfirmation(cmd);
         if (!mounted) return;
         if (!confirmed) {
+          // Align with official BaseEvent(128) recovery: force a status pull
+          // so the slide rest position matches the real vehicle ACC/defence.
+          await _refreshStateForConfirmation();
+          if (!mounted) return;
           _showSnack(_unconfirmedMessage(cmd), isError: true);
         } else {
           _showSnack(result.successMessage ?? '${cmd.label}成功', isError: false);
@@ -92,6 +117,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
               '渠道=${result.transport.name} 原因=${result.failureMessage ?? '未知'}',
           level: LogLevel.error,
         );
+        await _refreshStateForConfirmation();
         if (mounted) {
           _showSnack(
             _failureMessage(cmd, result.failureMessage),
@@ -104,6 +130,8 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
         setState(() {
           _busy = false;
         });
+      } else {
+        _busy = false;
       }
     }
   }

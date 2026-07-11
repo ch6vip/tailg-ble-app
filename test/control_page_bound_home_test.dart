@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/main.dart' as app;
+import 'package:tailg_ble_app/models/command_types.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/battery_details_page.dart';
@@ -503,5 +504,59 @@ void main() {
 
     expect(find.text('全部功能'), findsNothing);
     expect(find.bySemanticsLabel('关闭全部功能'), findsNothing);
+  });
+
+  // Regression: right-slide power gesture must actually dispatch powerOn.
+  // _sendCommand previously set _busy=true *before* checking channel
+  // availability, and the resolver reads busy (enabled = !busy && canUseCloud),
+  // so every control command self-blocked with "正在执行控车指令" and never fired.
+  testWidgets('right-slide power dispatches powerOn command', (tester) async {
+    final vehicle = OfficialVehicle.fromJson({
+      'imei': 'IMEI_MAIN',
+      'carId': 'official-power-bike',
+      'carNickName': '控车测试车',
+      'btmac': 'AA:BB:CC:DD:EE:FF',
+      // acc absent → isPowerOn false → knob maps the gesture to powerOn.
+    });
+
+    await pumpBoundHome(
+      tester,
+      size: const Size(430, 2200),
+      officialVehicle: vehicle,
+    );
+
+    // Wire the stub AFTER pumpBoundHome (resetForTest clears it). When the
+    // command lands, reflect the new power state so the confirmation poll
+    // resolves instantly instead of hitting the network for 8s.
+    app.officialCloudService.sendCommandOverride = (command) async {
+      final powered = OfficialVehicle.fromJson({
+        'imei': 'IMEI_MAIN',
+        'carId': 'official-power-bike',
+        'carNickName': '控车测试车',
+        'btmac': 'AA:BB:CC:DD:EE:FF',
+        'acc': 1,
+      });
+      app.officialCloudService.setStateForTest(
+        app.officialCloudService.state.copyWith(
+          vehicles: [powered],
+          selectedVehicleKey: powered.key,
+        ),
+      );
+      return 'success';
+    };
+
+    expect(app.officialCloudService.sentCommands, isEmpty);
+
+    await tester.drag(
+      find.byKey(const ValueKey('control-power-slide-handle')),
+      const Offset(640, 0),
+    );
+    // busy Lottie uses a repeating AnimationController — avoid pumpAndSettle.
+    await tester.pump(); // start _sendCommand (busy=true, pre-send delay)
+    await tester.pump(const Duration(milliseconds: 550)); // past send delay
+    await tester.pump(); // executor + confirmation
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(app.officialCloudService.sentCommands, [CommandCode.powerOn]);
   });
 }
