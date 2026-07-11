@@ -534,9 +534,10 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
   bool _isOnHandle(Offset localPosition, {required bool powered}) {
     final size = context.size;
     if (size == null) return false;
-    return _handleRestRect(size, powered: powered).inflate(4).contains(
-          localPosition,
-        );
+    return _handleRestRect(
+      size,
+      powered: powered,
+    ).inflate(4).contains(localPosition);
   }
 
   void _onDragStart(DragStartDetails details) {
@@ -740,8 +741,7 @@ class _OfficialSlideTrack extends StatelessWidget {
                               errorBuilder: (_, __, ___) => Icon(
                                 powered
                                     ? Icons.keyboard_double_arrow_left_rounded
-                                    : Icons
-                                          .keyboard_double_arrow_right_rounded,
+                                    : Icons.keyboard_double_arrow_right_rounded,
                                 size: 22,
                                 color: const Color(0xFFB9BBC4),
                               ),
@@ -912,12 +912,8 @@ class _StreakFallback extends StatelessWidget {
             height: double.infinity,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: reverse
-                    ? Alignment.centerRight
-                    : Alignment.centerLeft,
-                end: reverse
-                    ? Alignment.centerLeft
-                    : Alignment.centerRight,
+                begin: reverse ? Alignment.centerRight : Alignment.centerLeft,
+                end: reverse ? Alignment.centerLeft : Alignment.centerRight,
                 colors: [
                   Colors.white.withValues(alpha: 0.0),
                   Colors.white.withValues(alpha: 0.45),
