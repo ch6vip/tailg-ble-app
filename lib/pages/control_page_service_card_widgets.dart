@@ -524,47 +524,6 @@ class _OfficialGpsBanner extends StatelessWidget {
   }
 }
 
-class _OfficialImageBanner extends StatelessWidget {
-  const _OfficialImageBanner({
-    required this.asset,
-    required this.semanticsLabel,
-    required this.onTap,
-    this.fallback,
-  });
-
-  final String asset;
-  final String semanticsLabel;
-  final VoidCallback onTap;
-  final Widget? fallback;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppPressable(
-      onTap: onTap,
-      haptic: false,
-      semanticsLabel: semanticsLabel,
-      semanticsButton: true,
-      semanticsEnabled: true,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        child: Image.asset(
-          asset,
-          width: double.infinity,
-          fit: BoxFit.fitWidth,
-          errorBuilder: (_, __, ___) =>
-              fallback ??
-              Container(
-                height: 100,
-                color: AppColors.surface,
-                alignment: Alignment.center,
-                child: Text(semanticsLabel),
-              ),
-        ),
-      ),
-    );
-  }
-}
-
 class _GpsFallback extends StatelessWidget {
   const _GpsFallback();
 
@@ -702,96 +661,6 @@ class _OfficialSettingAction extends StatelessWidget {
   }
 }
 
-class _OfficialNfcCard extends StatelessWidget {
-  const _OfficialNfcCard({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return _OfficialCardSurface(
-      height: 132,
-      onTap: onTap,
-      semanticLabel: 'NFC钥匙',
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-      child: Row(
-        children: [
-          Image.asset(
-            'assets/official_tailg/ic_control_nfc.png',
-            width: 88,
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) =>
-                const Icon(Icons.nfc, size: 46, color: AppColors.brandRed),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  children: const [
-                    Expanded(
-                      child: Text(
-                        'NFC钥匙',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    _OfficialArrow(),
-                  ],
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  '刷卡骑行新体验',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.officialTextMuted,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: const [_NfcNote('手机如何添加'), _NfcNote('智能手表如何添加')],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NfcNote extends StatelessWidget {
-  const _NfcNote(this.label);
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEDEEFF),
-        borderRadius: BorderRadius.circular(AppRadii.xs),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(fontSize: 10, color: Color(0xFF1F1DF1)),
-      ),
-    );
-  }
-}
-
 class _OfficialArrow extends StatelessWidget {
   const _OfficialArrow();
 
@@ -805,6 +674,47 @@ class _OfficialArrow extends StatelessWidget {
         Icons.chevron_right,
         size: 18,
         color: AppColors.officialTextMuted,
+      ),
+    );
+  }
+}
+
+class _OfficialImageBanner extends StatelessWidget {
+  const _OfficialImageBanner({
+    required this.asset,
+    required this.semanticsLabel,
+    required this.onTap,
+    this.fallback,
+  });
+
+  final String asset;
+  final String semanticsLabel;
+  final VoidCallback onTap;
+  final Widget? fallback;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppPressable(
+      onTap: onTap,
+      haptic: false,
+      semanticsLabel: semanticsLabel,
+      semanticsButton: true,
+      semanticsEnabled: true,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        child: Image.asset(
+          asset,
+          width: double.infinity,
+          fit: BoxFit.fitWidth,
+          errorBuilder: (_, __, ___) =>
+              fallback ??
+              Container(
+                height: 100,
+                color: AppColors.surface,
+                alignment: Alignment.center,
+                child: Text(semanticsLabel),
+              ),
+        ),
       ),
     );
   }

@@ -276,15 +276,10 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             rangeKm: range,
             vehicleName: cloudVehicle?.displayName ?? vehicleName,
             online: cloudVehicle?.online ?? true,
-            connectionLabel: _busy ? '同步中' : '官方云端',
-            connectionVariant: '',
             onVehicleSwitch: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const OfficialCloudPage(),
               ),
-            ),
-            onConnect: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
             ),
             onBatteryTap: () {
               if (!requireCloudVehicle(context)) return;

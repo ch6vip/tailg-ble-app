@@ -42,7 +42,7 @@ void main() {
     await _pumpControlPage(tester, const Size(2400, 2400));
     expect(find.text('历史轨迹'), findsOneWidget);
     expect(find.text('功能设置'), findsOneWidget);
-    expect(find.text('NFC钥匙'), findsOneWidget);
+    expect(find.text('NFC钥匙'), findsNothing);
   });
 
   // Official lower entries remain stable on narrow surfaces.
@@ -58,13 +58,13 @@ void main() {
     expect(find.text('车辆定位'), findsOneWidget);
     expect(find.text('历史轨迹'), findsOneWidget);
     expect(find.text('功能设置'), findsOneWidget);
-    expect(find.text('NFC钥匙'), findsOneWidget);
+    expect(find.text('NFC钥匙'), findsNothing);
   });
 
   testWidgets('service cards use AppPressable feedback', (tester) async {
     await _pumpControlPage(tester, const Size(430, 2600));
 
-    for (final label in ['车辆定位', '历史轨迹', 'NFC钥匙']) {
+    for (final label in ['车辆定位', '历史轨迹']) {
       final card = find.ancestor(
         of: find.text(label),
         matching: find.byType(AppPressable),
@@ -83,7 +83,7 @@ void main() {
     try {
       await _pumpControlPage(tester, const Size(430, 2600));
 
-      for (final label in ['车辆定位', '历史轨迹', '可添加GPS', 'NFC钥匙']) {
+      for (final label in ['车辆定位', '历史轨迹', '可添加GPS']) {
         final card = find.bySemanticsLabel(label);
         expect(card, findsOneWidget);
         expect(

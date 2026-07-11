@@ -8,6 +8,12 @@ part of 'control_page.dart';
 /// - center bike illustration `iv_control_evbike`
 /// - bottom bind card `iv_uncontrol_bg` with hit target
 ///
+/// Asset notes for `iv_uncontrol_bg.png` (1008×2577):
+/// The full PNG is a tall marketing collage. Showing the entire natural height
+/// (`width * 2577/1008 ≈ width * 2.556`) overflows phones badly. We crop to the
+/// upper useful portion with `BoxFit.cover` + `Alignment.topCenter` so the blue
+/// CTA remains visible without the huge empty bottom of the asset.
+///
 /// Bind hotspot is honest: not signed in → LoginPage; signed in → AddVehiclePage.
 class _UnboundVehicleHome extends StatelessWidget {
   const _UnboundVehicleHome({super.key, this.mode = ControlHomeMode.unbound});
@@ -16,6 +22,15 @@ class _UnboundVehicleHome extends StatelessWidget {
   final ControlHomeMode mode;
 
   static const _vehicleTitle = '--';
+
+  // Source asset is 1008×2577. We display an upper crop near 1008:1100 so the
+  // CTA band stays in view without the tall empty marketing padding.
+  static const _bindCardAspect = 1008 / 1100;
+
+  // Official full-image hotspot was ~0.348 from the top. After top-aligned
+  // cover crop of the upper portion, the blue CTA sits nearer mid-card.
+  static const _bindHotspotTopFraction = 0.55;
+  static const _bindHotspotHeight = 56.0;
 
   void _openAddVehicle(BuildContext context) {
     Navigator.push(
@@ -78,14 +93,14 @@ class _UnboundVehicleHome extends StatelessWidget {
     final width = MediaQuery.sizeOf(context).width;
 
     // Official dimen400 = 200dp bike height; keep a floor so narrow test
-    // surfaces still look intentional.
-    final bikeHeight = (width * 0.52).clamp(160.0, 220.0);
-    // Bind card is a tall marketing image (1008×2577). Cap height so the page
-    // stays scrollable without dominating small phones.
-    final bindCardHeight = (width * 1.05).clamp(280.0, 420.0);
-    // Official hit target sits around 34.8% from top of the bind image.
-    final bindHitTop = bindCardHeight * 0.348 - 27.5;
-    final bindHitHeight = 55.0;
+    // surfaces still look intentional. Cap lower than before to leave room for
+    // the bind card CTA without huge empty gaps.
+    final bikeHeight = (width * 0.42).clamp(140.0, 200.0);
+
+    // Prefer fitting the useful upper card crop. Clamp against remaining
+    // viewport so small phones stay scrollable instead of clipping mid-CTA.
+    final viewportHeight = MediaQuery.sizeOf(context).height;
+    final maxBindHeight = (viewportHeight * 0.48).clamp(260.0, 420.0);
 
     return Container(
       key: const ValueKey('unbound-home'),
@@ -110,7 +125,7 @@ class _UnboundVehicleHome extends StatelessWidget {
               onMessage: () => _openMessages(context),
             ),
           ),
-          SizedBox(height: (bikeHeight * 0.18).clamp(24.0, 48.0)),
+          SizedBox(height: (bikeHeight * 0.12).clamp(16.0, 36.0)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Semantics(
@@ -133,73 +148,91 @@ class _UnboundVehicleHome extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: SizedBox(
-              height: bindCardHeight,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Positioned.fill(
-                    child: Image.asset(
-                      'assets/official_tailg/iv_uncontrol_bg.png',
-                      fit: BoxFit.fitWidth,
-                      alignment: Alignment.topCenter,
-                      errorBuilder: (_, __, ___) => Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final cardWidth = constraints.maxWidth;
+                final cardHeight = (cardWidth / _bindCardAspect).clamp(
+                  240.0,
+                  maxBindHeight,
+                );
+                // Hotspot over the blue CTA after top-aligned cover crop.
+                final hitTop =
+                    (cardHeight * _bindHotspotTopFraction) -
+                    (_bindHotspotHeight / 2);
+                return SizedBox(
+                  height: cardHeight,
+                  child: Stack(
+                    clipBehavior: Clip.hardEdge,
+                    children: [
+                      Positioned.fill(
+                        child: ClipRRect(
                           borderRadius: BorderRadius.circular(AppRadii.sheet),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          '绑定智能中控',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.officialStrong,
+                          child: Image.asset(
+                            'assets/official_tailg/iv_uncontrol_bg.png',
+                            fit: BoxFit.cover,
+                            alignment: Alignment.topCenter,
+                            errorBuilder: (_, __, ___) => Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.sheet,
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: const Text(
+                                '绑定智能中控',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.officialStrong,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                      Positioned(
+                        left: 15,
+                        right: 15,
+                        top: hitTop.clamp(0.0, cardHeight - _bindHotspotHeight),
+                        height: _bindHotspotHeight,
+                        child: AppPressable(
+                          pressedScale: AppMotion.pressScale,
+                          duration: AppMotion.micro,
+                          curve: AppMotion.pressCurve,
+                          background: Colors.transparent,
+                          pressedBackground: Colors.black.withValues(
+                            alpha: 0.04,
+                          ),
+                          borderRadius: BorderRadius.circular(AppRadii.card),
+                          haptic: false,
+                          semanticsLabel: '绑定设备',
+                          semanticsButton: true,
+                          semanticsEnabled: true,
+                          onTap: () => _onBindHotspot(context),
+                          child: const SizedBox.expand(),
+                        ),
+                      ),
+                    ],
                   ),
-                  Positioned(
-                    left: 15,
-                    right: 15,
-                    top: bindHitTop.clamp(0.0, bindCardHeight - bindHitHeight),
-                    height: bindHitHeight,
-                    child: AppPressable(
-                      pressedScale: AppMotion.pressScale,
-                      duration: AppMotion.micro,
-                      curve: AppMotion.pressCurve,
-                      background: Colors.transparent,
-                      pressedBackground: Colors.black.withValues(alpha: 0.04),
-                      borderRadius: BorderRadius.circular(AppRadii.card),
-                      haptic: false,
-                      semanticsLabel: '绑定设备',
-                      semanticsButton: true,
-                      semanticsEnabled: true,
-                      onTap: () => _onBindHotspot(context),
-                      child: const SizedBox.expand(),
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ),
-          const SizedBox(height: 28),
-          // Cloud-only secondary path: keep an explicit login entry for users
-          // who already own a bound vehicle on the official account.
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
+          // Secondary login path as a compact text button (not a heavy white
+          // filled button that used to overlap the tall marketing card).
+          const SizedBox(height: 10),
+          Center(
             child: AppPressable(
               pressedScale: AppMotion.pressScale,
               duration: AppMotion.micro,
               curve: AppMotion.pressCurve,
-              background: Colors.white,
+              background: Colors.transparent,
               pressedBackground: AppColors.officialPressedBg,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: AppShadows.elevation1,
+              borderRadius: BorderRadius.circular(AppRadii.pill),
               haptic: false,
               semanticsLabel: '登录账号',
               semanticsButton: true,
@@ -208,26 +241,24 @@ class _UnboundVehicleHome extends StatelessWidget {
                 HapticFeedback.mediumImpact();
                 _openLogin(context);
               },
-              builder: (context, pressed) {
-                return SizedBox(
-                  height: 48,
-                  child: Center(
-                    child: Text(
-                      '登录账号同步车辆',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: pressed
-                            ? AppColors.textSecondary
-                            : AppColors.officialStrong,
-                      ),
-                    ),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Text(
+                  '登录账号同步车辆',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.officialStrong,
+                    decoration: TextDecoration.underline,
+                    decorationColor: AppColors.officialTextMuted,
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 24),
+          // Extra bottom breathing room so content clears the bottom nav when
+          // parent scroll padding is tight.
+          const SizedBox(height: 28),
         ],
       ),
     );

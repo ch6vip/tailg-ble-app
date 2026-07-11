@@ -4,6 +4,7 @@ class _MineHeader extends StatelessWidget {
   const _MineHeader({
     required this.signedIn,
     required this.phone,
+    required this.hasUnreadMessages,
     required this.onProfileTap,
     required this.onSettingsTap,
     required this.onMessageTap,
@@ -11,6 +12,7 @@ class _MineHeader extends StatelessWidget {
 
   final bool signedIn;
   final String? phone;
+  final bool hasUnreadMessages;
   final VoidCallback onProfileTap;
   final VoidCallback onSettingsTap;
   final VoidCallback onMessageTap;
@@ -45,7 +47,7 @@ class _MineHeader extends StatelessWidget {
               _HeaderIconButton(
                 icon: Icons.notifications_none_outlined,
                 label: '消息中心',
-                showDot: true,
+                showDot: hasUnreadMessages,
                 onTap: onMessageTap,
               ),
             ],
@@ -172,77 +174,6 @@ class _HeaderIconButton extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _SocialStats extends StatelessWidget {
-  const _SocialStats();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: const Row(
-        children: [
-          Expanded(
-            child: _SocialStat(value: '0', label: '发帖'),
-          ),
-          _StatDivider(),
-          Expanded(
-            child: _SocialStat(value: '0', label: '关注'),
-          ),
-          _StatDivider(),
-          Expanded(
-            child: _SocialStat(value: '0', label: '粉丝'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SocialStat extends StatelessWidget {
-  const _SocialStat({required this.value, required this.label});
-
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          value,
-          key: ValueKey('mine-stat-value-$label'),
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: AppColors.officialStrong,
-            letterSpacing: 0,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            color: AppColors.officialTextMuted,
-            letterSpacing: 0,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatDivider extends StatelessWidget {
-  const _StatDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(width: 1, height: 24, color: const Color(0xFFDCDCDC));
   }
 }
 

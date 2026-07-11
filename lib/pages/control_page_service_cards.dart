@@ -20,10 +20,29 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
     _vehiclesNotifier = ValueNotifier(vehicleStore.vehicles);
     _cloudStateSub = officialCloudService.stateStream.listen((state) {
       if (mounted) _cloudStateNotifier.value = state;
+      if (state.signedIn &&
+          state.selectedVehicle != null &&
+          state.travelDays.isEmpty &&
+          !state.travelLoading) {
+        unawaited(_prefetchTodayTravelCount());
+      }
     });
     _vehiclesSub = vehicleStore.vehiclesStream.listen((vehicles) {
       if (mounted) _vehiclesNotifier.value = vehicles;
     });
+    unawaited(_prefetchTodayTravelCount());
+  }
+
+  Future<void> _prefetchTodayTravelCount() async {
+    final state = officialCloudService.state;
+    if (!state.signedIn || state.selectedVehicle == null) return;
+    // Only pull when empty so we do not thrash the API on every rebuild.
+    if (state.travelDays.isNotEmpty || state.travelLoading) return;
+    try {
+      await officialCloudService.refreshTravelHistory(silent: true);
+    } catch (_) {
+      // Card can stay at 0 until user opens history.
+    }
   }
 
   @override
@@ -97,9 +116,7 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
                   ],
                   const SizedBox(height: 10),
                   _OfficialHistoryCard(
-                    todayCount: logService
-                        .byCategory(LogCategory.operation)
-                        .length,
+                    todayCount: _todayTravelRecordCount(cloudState),
                     onTap: () => _open(
                       context,
                       const LocationPage(initialTab: LocationInitialTab.travel),
@@ -125,17 +142,6 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
                     ),
                     onShare: () => _showUnavailable(context, '共享车辆'),
                   ),
-                  const SizedBox(height: 10),
-                  _OfficialImageBanner(
-                    asset:
-                        'assets/official_tailg/iv_add_sound_effects_set_qgj.webp',
-                    semanticsLabel: 'QGJ音效设置',
-                    onTap: () => _showUnavailable(context, 'QGJ音效设置'),
-                  ),
-                  const SizedBox(height: 10),
-                  _OfficialNfcCard(
-                    onTap: () => _showUnavailable(context, 'NFC钥匙'),
-                  ),
                   if (showChargingStation) ...[
                     const SizedBox(height: 10),
                     _OfficialSimpleServiceCard(
@@ -152,6 +158,27 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
         );
       },
     );
+  }
+
+  /// Count of official travel records for "today" (local calendar day).
+  /// Falls back to 0 when travel history has not been loaded yet.
+  int _todayTravelRecordCount(OfficialCloudState cloudState) {
+    final now = DateTime.now();
+    final todayKey =
+        '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+    var total = 0;
+    for (final day in cloudState.travelDays) {
+      final raw = day.travelDate.trim();
+      // Official payloads commonly use yyyy-MM-dd or yyyy-MM-dd HH:mm:ss.
+      final datePart = raw.length >= 10 ? raw.substring(0, 10) : raw;
+      final normalized = datePart.replaceAll('/', '-');
+      if (normalized == todayKey) {
+        total += day.records.length;
+      }
+    }
+    return total;
   }
 
   VehicleProfile? _defaultLocalVehicle(List<VehicleProfile> vehicles) {

@@ -5,6 +5,7 @@ import 'services/location_service.dart';
 import 'services/log_service.dart';
 import 'services/official_cloud_service.dart';
 import 'services/permission_service.dart';
+import 'services/message_read_store.dart';
 import 'services/vehicle_store.dart';
 import 'services/service_locator.dart';
 import 'services/app_preferences_service.dart';
@@ -17,6 +18,7 @@ import 'widgets/app_toast.dart';
 LocationService get locationService => AppServices.instance.locationService;
 LogService get logService => AppServices.instance.logService;
 VehicleStore get vehicleStore => AppServices.instance.vehicleStore;
+MessageReadStore get messageReadStore => AppServices.instance.messageReadStore;
 OfficialCloudService get officialCloudService =>
     AppServices.instance.officialCloudService;
 AppPreferencesService get appPreferencesService =>

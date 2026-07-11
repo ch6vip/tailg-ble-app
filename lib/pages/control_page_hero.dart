@@ -11,10 +11,7 @@ class ControlPageHero extends StatelessWidget {
     this.healthLabel,
     this.vehicleName,
     this.online = true,
-    this.connectionLabel,
-    this.connectionVariant,
     this.onVehicleSwitch,
-    this.onConnect,
     this.onBatteryTap,
     this.onDetail,
     this.onMessage,
@@ -35,14 +32,7 @@ class ControlPageHero extends StatelessWidget {
   /// Current cloud online status.
   final bool online;
 
-  /// Connection status label from the control channel.
-  final String? connectionLabel;
-
-  /// Official header has separate views for protocol variants.
-  final String? connectionVariant;
-
   final VoidCallback? onVehicleSwitch;
-  final VoidCallback? onConnect;
   final VoidCallback? onBatteryTap;
   final VoidCallback? onDetail;
   final VoidCallback? onMessage;
@@ -96,17 +86,11 @@ class ControlPageHero extends StatelessWidget {
                     ? _WideHeroData(
                         batteryLevel: batteryLevel,
                         displayRange: displayRange,
-                        connectionLabel: connectionLabel,
-                        connectionVariant: connectionVariant,
-                        onConnect: onConnect,
                         onBatteryTap: onBatteryTap,
                       )
                     : _NarrowHeroData(
                         batteryLevel: batteryLevel,
                         displayRange: displayRange,
-                        connectionLabel: connectionLabel,
-                        connectionVariant: connectionVariant,
-                        onConnect: onConnect,
                         onBatteryTap: onBatteryTap,
                       ),
               ),
@@ -216,17 +200,11 @@ class _WideHeroData extends StatelessWidget {
   const _WideHeroData({
     required this.batteryLevel,
     required this.displayRange,
-    required this.connectionLabel,
-    required this.connectionVariant,
-    this.onConnect,
     this.onBatteryTap,
   });
 
   final int batteryLevel;
   final int displayRange;
-  final String? connectionLabel;
-  final String? connectionVariant;
-  final VoidCallback? onConnect;
   final VoidCallback? onBatteryTap;
 
   @override
@@ -237,12 +215,6 @@ class _WideHeroData extends StatelessWidget {
         _BatteryAction(level: batteryLevel, onTap: onBatteryTap),
         const SizedBox(width: 48),
         _RangeMetric(value: displayRange),
-        const Spacer(),
-        _CloudConnectPill(
-          label: connectionLabel,
-          variant: connectionVariant,
-          onTap: onConnect,
-        ),
       ],
     );
   }
@@ -252,37 +224,21 @@ class _NarrowHeroData extends StatelessWidget {
   const _NarrowHeroData({
     required this.batteryLevel,
     required this.displayRange,
-    required this.connectionLabel,
-    required this.connectionVariant,
-    this.onConnect,
     this.onBatteryTap,
   });
 
   final int batteryLevel;
   final int displayRange;
-  final String? connectionLabel;
-  final String? connectionVariant;
-  final VoidCallback? onConnect;
   final VoidCallback? onBatteryTap;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _BatteryAction(level: batteryLevel, onTap: onBatteryTap),
-            const SizedBox(width: 36),
-            Expanded(child: _RangeMetric(value: displayRange)),
-            _CloudConnectPill(
-              label: connectionLabel,
-              variant: connectionVariant,
-              onTap: onConnect,
-            ),
-          ],
-        ),
+        _BatteryAction(level: batteryLevel, onTap: onBatteryTap),
+        const SizedBox(width: 36),
+        Expanded(child: _RangeMetric(value: displayRange)),
       ],
     );
   }
@@ -485,172 +441,6 @@ class _RangeMetric extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _CloudConnectPill extends StatelessWidget {
-  const _CloudConnectPill({required this.label, this.variant, this.onTap});
-
-  final String? label;
-  final String? variant;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final state = _CloudPillState.fromLabel(label, onTap != null);
-    final variant = this.variant?.trim();
-    return AppPressable(
-      onTap: onTap,
-      haptic: false,
-      semanticsLabel: state.text,
-      semanticsButton: true,
-      semanticsEnabled: onTap != null,
-      child: SizedBox(
-        height: AppTouchTargets.min,
-        child: Center(
-          child: Container(
-            height: 33,
-            constraints: const BoxConstraints(minWidth: 92),
-            decoration: BoxDecoration(
-              color: state.fallbackBg,
-              borderRadius: BorderRadius.circular(17),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Stack(
-              fit: StackFit.passthrough,
-              children: [
-                Positioned.fill(
-                  child: Image.asset(
-                    state.backgroundAsset,
-                    fit: BoxFit.fill,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 11),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.asset(
-                        state.iconAsset,
-                        width: 15,
-                        height: 15,
-                        errorBuilder: (_, __, ___) => Icon(
-                          state.connected
-                              ? Icons.cloud_done_outlined
-                              : Icons.cloud_outlined,
-                          size: 15,
-                          color: state.iconColor,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      if (variant != null && variant.isNotEmpty) ...[
-                        Text(
-                          variant,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0,
-                            color: state.textColor.withValues(alpha: 0.82),
-                          ),
-                        ),
-                        const SizedBox(width: 3),
-                      ],
-                      Text(
-                        state.text,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0,
-                          color: state.textColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CloudPillState {
-  const _CloudPillState({
-    required this.text,
-    required this.backgroundAsset,
-    required this.iconAsset,
-    required this.fallbackBg,
-    required this.textColor,
-    required this.iconColor,
-    required this.connected,
-  });
-
-  final String text;
-  final String backgroundAsset;
-  final String iconAsset;
-  final Color fallbackBg;
-  final Color textColor;
-  final Color iconColor;
-  final bool connected;
-
-  static _CloudPillState fromLabel(String? label, bool canConnect) {
-    final normalized = label?.trim();
-    final connected = normalized == '已连接';
-    final pending =
-        normalized == '连接中' || normalized == '正在重连' || normalized == '加载中...';
-    final text = connected
-        ? '已连接'
-        : pending
-        ? (normalized == '正在重连' ? '重连中' : '连接中')
-        : canConnect
-        ? '点击连接'
-        : '未连接';
-    if (connected) {
-      return const _CloudPillState(
-        text: '已连接',
-        backgroundAsset: 'assets/official_tailg/ic_control_ble_bg_connect.png',
-        iconAsset: 'assets/official_tailg/ic_control_ble_clint.png',
-        fallbackBg: Color(0xFFEAF8EF),
-        textColor: AppColors.textPrimary,
-        iconColor: AppColors.officialConnectedGreen,
-        connected: true,
-      );
-    }
-    if (pending) {
-      return _CloudPillState(
-        text: text,
-        backgroundAsset:
-            'assets/official_tailg/ic_control_ble_bg_can_connect.png',
-        iconAsset: 'assets/official_tailg/ic_control_ble_unclint.png',
-        fallbackBg: const Color(0xFFFFF4E8),
-        textColor: AppColors.textPrimary,
-        iconColor: AppColors.officialTextMuted,
-        connected: false,
-      );
-    }
-    return _CloudPillState(
-      text: text,
-      backgroundAsset: canConnect
-          ? 'assets/official_tailg/ic_control_ble_bg_can_connect.png'
-          : 'assets/official_tailg/ic_control_ble_bg_un_connect.png',
-      iconAsset: 'assets/official_tailg/ic_control_ble_unclint.png',
-      fallbackBg: canConnect
-          ? const Color(0xFFFFF1F1)
-          : AppColors.officialPageBg,
-      textColor: canConnect ? AppColors.brandRed : AppColors.officialTextMuted,
-      iconColor: AppColors.officialTextMuted,
-      connected: false,
     );
   }
 }

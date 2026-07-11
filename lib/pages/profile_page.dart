@@ -45,11 +45,51 @@ class _ProfilePageState extends State<ProfilePage> {
     _cloudState = officialCloudService.state;
     _vehicles = vehicleStore.vehicles;
     _cloudSub = officialCloudService.stateStream.listen((state) {
-      if (mounted) setState(() => _cloudState = state);
+      if (!mounted) return;
+      setState(() => _cloudState = state);
+      unawaited(
+        messageReadStore.syncFromCloudMessages(
+          vehicleMessages: state.vehicleMessages,
+          systemMessages: state.systemMessages,
+        ),
+      );
+      if (!state.signedIn) {
+        messageReadStore.setUnreadCount(0);
+      }
     });
     _vehicleSub = vehicleStore.vehiclesStream.listen((vehicles) {
       if (mounted) setState(() => _vehicles = vehicles);
     });
+    unawaited(_bootstrapMessageBadge());
+  }
+
+  Future<void> _bootstrapMessageBadge() async {
+    await messageReadStore.ensureLoaded();
+    if (!_cloudState.signedIn) {
+      messageReadStore.setUnreadCount(0);
+      return;
+    }
+    // Sync badge from any already-cached messages first so the UI does not
+    // wait on network. Then refresh in the background.
+    await messageReadStore.syncFromCloudMessages(
+      vehicleMessages: officialCloudService.state.vehicleMessages,
+      systemMessages: officialCloudService.state.systemMessages,
+    );
+    unawaited(_refreshMessageBadgeSilently());
+  }
+
+  Future<void> _refreshMessageBadgeSilently() async {
+    if (!officialCloudService.state.signedIn) return;
+    try {
+      await officialCloudService.refreshMessages(silent: true);
+    } catch (_) {
+      // Badge can still use cached messages if any.
+    }
+    if (!mounted || !officialCloudService.state.signedIn) return;
+    await messageReadStore.syncFromCloudMessages(
+      vehicleMessages: officialCloudService.state.vehicleMessages,
+      systemMessages: officialCloudService.state.systemMessages,
+    );
   }
 
   @override
@@ -75,14 +115,19 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _MineHeader(
-                signedIn: signedIn,
-                phone: signedIn ? _cloudState.phone : null,
-                onProfileTap: () => _handleProfileTap(signedIn),
-                onSettingsTap: () => AppSnack.info(context, '设置项在下方列表'),
-                onMessageTap: () => _openMessages(context),
+              ValueListenableBuilder<int>(
+                valueListenable: messageReadStore.unreadCount,
+                builder: (context, unread, _) {
+                  return _MineHeader(
+                    signedIn: signedIn,
+                    phone: signedIn ? _cloudState.phone : null,
+                    hasUnreadMessages: signedIn && unread > 0,
+                    onProfileTap: () => _handleProfileTap(signedIn),
+                    onSettingsTap: () => AppSnack.info(context, '设置项在下方列表'),
+                    onMessageTap: () => _openMessages(context),
+                  );
+                },
               ),
-              const _SocialStats(),
               const SizedBox(height: 10),
               _ShortcutPair(onUnavailable: _showUnavailable),
               const SizedBox(height: 10),

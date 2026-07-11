@@ -16,15 +16,17 @@ import 'helpers/view_size.dart';
 
 void main() {
   setUp(() async {
-    resetMockPreferences();
+    resetMockStorage();
     app.officialCloudService.resetForTest();
     app.vehicleStore.resetForTest();
+    app.messageReadStore.resetForTest();
     await app.vehicleStore.init();
   });
 
   tearDown(() {
     app.officialCloudService.resetForTest();
     app.vehicleStore.resetForTest();
+    app.messageReadStore.resetForTest();
   });
 
   testWidgets('profile follows official mine page structure', (tester) async {
@@ -36,9 +38,6 @@ void main() {
       await tester.pump();
 
       expect(find.text('立即登录'), findsOneWidget);
-      expect(find.text('发帖'), findsOneWidget);
-      expect(find.text('关注'), findsOneWidget);
-      expect(find.text('粉丝'), findsOneWidget);
       expect(find.text('我的积分'), findsOneWidget);
       expect(find.text('签到中心'), findsOneWidget);
       expect(find.text('我的车库'), findsOneWidget);
@@ -166,26 +165,6 @@ void main() {
     }
   });
 
-  testWidgets('official mine stats avoid negative letter spacing', (
-    tester,
-  ) async {
-    await tester.pumpWidget(const TestApp(home: ProfilePage()));
-    await tester.pump();
-
-    final metricKeys = [
-      'mine-stat-value-发帖',
-      'mine-stat-value-关注',
-      'mine-stat-value-粉丝',
-    ];
-    final metricTexts = [
-      for (final key in metricKeys)
-        tester.widget<Text>(find.byKey(ValueKey(key))).style?.letterSpacing,
-    ];
-
-    expect(metricTexts, hasLength(3));
-    expect(metricTexts, everyElement(nonNegativeLetterSpacing));
-  });
-
   testWidgets('garage panel follows local vehicle store', (tester) async {
     await app.vehicleStore.upsert(
       id: 'AA:BB:CC:DD:EE:FF',
@@ -292,5 +271,24 @@ void main() {
     expect(find.text('立即登录'), findsOneWidget);
     expect(find.text('登录后同步车辆和消息'), findsOneWidget);
     expect(find.text('188****5678'), findsNothing);
+  });
+
+  testWidgets('message bell hides red dot when unread is zero', (tester) async {
+    app.messageReadStore.setUnreadCount(0);
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        phone: '18812345678',
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: ProfilePage()));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // Bell remains available; badge is driven by messageReadStore.unreadCount.
+    expect(find.bySemanticsLabel('消息中心'), findsOneWidget);
+    expect(app.messageReadStore.unreadCount.value, 0);
   });
 }

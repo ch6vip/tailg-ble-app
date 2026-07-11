@@ -7,12 +7,14 @@ import 'location_service.dart';
 import 'log_service.dart';
 import 'official_cloud_service.dart';
 import 'permission_service.dart';
+import 'message_read_store.dart';
 import 'vehicle_store.dart';
 
 class AppServices {
   final LocationService locationService;
   final LogService logService;
   final VehicleStore vehicleStore;
+  final MessageReadStore messageReadStore;
   final OfficialCloudService officialCloudService;
   final AppPreferencesService appPreferencesService;
   final AppPermissionService permissionService;
@@ -22,6 +24,7 @@ class AppServices {
     required this.locationService,
     required this.logService,
     required this.vehicleStore,
+    required this.messageReadStore,
     required this.officialCloudService,
     required this.appPreferencesService,
     required this.permissionService,
@@ -33,6 +36,7 @@ class AppServices {
       locationService: LocationService(),
       logService: LogService(),
       vehicleStore: VehicleStore(),
+      messageReadStore: MessageReadStore(),
       officialCloudService: OfficialCloudService(),
       appPreferencesService: AppPreferencesService(),
       permissionService: AppPermissionService(),
@@ -57,6 +61,10 @@ class AppServices {
     await _runCleanup(
       'vehicleStore.resetForTest',
       old.vehicleStore.resetForTest,
+    );
+    await _runCleanup(
+      'messageReadStore.resetForTest',
+      old.messageReadStore.resetForTest,
     );
     await _runCleanup(
       'appPreferencesService.resetForTest',

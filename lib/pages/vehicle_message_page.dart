@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../main.dart';
 import '../models/official_vehicle.dart';
@@ -24,9 +23,6 @@ class VehicleMessagePage extends StatefulWidget {
 
 class _VehicleMessagePageState extends State<VehicleMessagePage>
     with SingleTickerProviderStateMixin {
-  static const _prefReadIds = 'vehicle_message_read_ids';
-  static const _prefHiddenIds = 'vehicle_message_hidden_ids';
-
   late final TabController _tabController;
   StreamSubscription<OfficialCloudState>? _cloudSub;
   int _activeTab = 0;
@@ -69,22 +65,33 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
   }
 
   Future<void> _loadMessageState() async {
-    final prefs = await SharedPreferences.getInstance();
+    await messageReadStore.ensureLoaded();
     if (!mounted) return;
     setState(() {
       _readIds
         ..clear()
-        ..addAll(prefs.getStringList(_prefReadIds) ?? const []);
+        ..addAll(messageReadStore.readIds);
       _hiddenIds
         ..clear()
-        ..addAll(prefs.getStringList(_prefHiddenIds) ?? const []);
+        ..addAll(messageReadStore.hiddenIds);
     });
+    await _syncUnreadBadge();
   }
 
   Future<void> _saveMessageState() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_prefReadIds, _readIds.toList());
-    await prefs.setStringList(_prefHiddenIds, _hiddenIds.toList());
+    await messageReadStore.replaceState(
+      readIds: _readIds,
+      hiddenIds: _hiddenIds,
+    );
+    await _syncUnreadBadge();
+  }
+
+  Future<void> _syncUnreadBadge() async {
+    final state = officialCloudService.state;
+    await messageReadStore.syncFromCloudMessages(
+      vehicleMessages: state.vehicleMessages,
+      systemMessages: state.systemMessages,
+    );
   }
 
   Future<void> _refreshMessages({bool force = false}) async {
@@ -94,6 +101,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
         _loading = false;
         _error = null;
       });
+      messageReadStore.setUnreadCount(0);
       return;
     }
     setState(() {
@@ -108,6 +116,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
         _initialized = true;
         _error = officialCloudService.state.messagesError;
       });
+      await _syncUnreadBadge();
     } catch (e) {
       if (!mounted) return;
       final message = e is OfficialCloudApiException

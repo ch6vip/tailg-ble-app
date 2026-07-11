@@ -98,7 +98,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('服务中心'), findsOneWidget);
-    for (final label in ['车辆定位', '历史轨迹', '电子围栏', 'NFC钥匙', '车辆设置', '电池服务']) {
+    for (final label in ['车辆定位', '历史轨迹', '电子围栏', '车辆设置', '电池服务']) {
       expect(find.text(label), findsOneWidget);
     }
   });

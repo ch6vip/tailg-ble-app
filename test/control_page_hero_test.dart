@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/pages/control_page_hero.dart';
-import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
@@ -14,7 +13,6 @@ void main() {
   ) async {
     final semantics = tester.ensureSemantics();
     var vehicleTapped = false;
-    var connectTapped = false;
     var batteryTapped = false;
     var detailTapped = false;
     var messageTapped = false;
@@ -28,7 +26,6 @@ void main() {
               rangeKm: 48,
               vehicleName: '测试车辆',
               onVehicleSwitch: () => vehicleTapped = true,
-              onConnect: () => connectTapped = true,
               onBatteryTap: () => batteryTapped = true,
               onDetail: () => detailTapped = true,
               onMessage: () => messageTapped = true,
@@ -80,31 +77,9 @@ void main() {
         ),
       );
 
-      const connectLabel = '点击连接';
-      final connectAction = find.bySemanticsLabel(connectLabel);
-      expect(connectAction, findsOneWidget);
-      expectMinTouchTargetHeight(tester, connectAction);
-      expect(
-        find.byKey(const ValueKey('control-hero-message-dot')),
-        findsNothing,
-      );
-      expect(
-        find.ancestor(
-          of: find.text(connectLabel),
-          matching: find.byType(AppPressable),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        tester.getSemantics(connectAction),
-        matchesSemantics(
-          label: connectLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasTapAction: true,
-        ),
-      );
+      // Cloud-only: no BLE "点击连接" pill.
+      expect(find.bySemanticsLabel('点击连接'), findsNothing);
+      expect(find.text('点击连接'), findsNothing);
 
       for (final label in ['车辆详情', '消息']) {
         final action = find.bySemanticsLabel(label);
@@ -124,12 +99,10 @@ void main() {
 
       tester.semantics.tap(find.semantics.byLabel(vehicleLabel));
       tester.semantics.tap(find.semantics.byLabel(batteryDetailLabel));
-      tester.semantics.tap(find.semantics.byLabel(connectLabel));
       tester.semantics.tap(find.semantics.byLabel('车辆详情'));
       tester.semantics.tap(find.semantics.byLabel('消息'));
 
       expect(vehicleTapped, isTrue);
-      expect(connectTapped, isTrue);
       expect(batteryTapped, isTrue);
       expect(detailTapped, isTrue);
       expect(messageTapped, isTrue);
@@ -177,38 +150,5 @@ void main() {
       expect(titleSpacing, nonNegativeLetterSpacing);
       expect(rangeSpacing, nonNegativeLetterSpacing);
     }
-  });
-
-  testWidgets('connection pill follows official status labels', (tester) async {
-    Future<void> pump(String? label) async {
-      await tester.pumpWidget(
-        TestApp(
-          home: Scaffold(
-            body: ControlPageHero(
-              batteryLevel: 72,
-              rangeKm: 48,
-              vehicleName: '测试车辆',
-              connectionLabel: label,
-              connectionVariant: 'QGJ',
-              onConnect: () {},
-            ),
-          ),
-        ),
-      );
-      await tester.pump();
-    }
-
-    await pump('未连接');
-    expect(find.bySemanticsLabel('点击连接'), findsOneWidget);
-    expect(find.text('QGJ'), findsOneWidget);
-
-    await pump('连接中');
-    expect(find.bySemanticsLabel('连接中'), findsOneWidget);
-
-    await pump('正在重连');
-    expect(find.bySemanticsLabel('重连中'), findsOneWidget);
-
-    await pump('已连接');
-    expect(find.bySemanticsLabel('已连接'), findsOneWidget);
   });
 }

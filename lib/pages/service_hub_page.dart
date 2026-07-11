@@ -82,12 +82,6 @@ class ServiceHubPage extends StatelessWidget {
                         ),
                       ),
                       _ServiceGridTile(
-                        icon: Icons.nfc,
-                        label: 'NFC钥匙',
-                        color: AppColors.success,
-                        onTap: () => _showUnavailable(context, 'NFC钥匙'),
-                      ),
-                      _ServiceGridTile(
                         icon: Icons.tune,
                         label: '车辆设置',
                         color: AppColors.dark,

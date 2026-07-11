@@ -74,7 +74,7 @@ void main() {
     expect(find.text('导航投屏'), findsNothing);
     expect(find.text('历史轨迹'), findsOneWidget);
     expect(find.text('功能设置'), findsOneWidget);
-    expect(find.text('NFC钥匙'), findsOneWidget);
+    expect(find.text('NFC钥匙'), findsNothing);
   });
 
   testWidgets(
@@ -450,7 +450,7 @@ void main() {
     try {
       await pumpBoundHome(tester, size: const Size(430, 2200));
 
-      for (final label in ['历史轨迹', '可添加GPS', 'NFC钥匙']) {
+      for (final label in ['历史轨迹', '可添加GPS']) {
         final action = find.bySemanticsLabel(label);
         expect(action, findsOneWidget);
         expect(
@@ -499,7 +499,8 @@ void main() {
             find.text('等待连接').evaluate().isNotEmpty,
         isTrue,
       );
-      expect(find.bySemanticsLabel('点击连接'), findsOneWidget);
+      // Cloud-only: no BLE connect pill on the control hero.
+      expect(find.bySemanticsLabel('点击连接'), findsNothing);
     } finally {
       semantics.dispose();
     }
