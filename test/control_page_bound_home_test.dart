@@ -30,7 +30,6 @@ void main() {
     OfficialVehicleLocation? officialLocation,
   }) async {
     resetMockPreferences();
-    app.manualModeService.resetForTest();
     app.officialCloudService.resetForTest();
     VehicleStore().resetForTest();
     await VehicleStore().init();
@@ -82,7 +81,6 @@ void main() {
     'cached official carControlInfo opens bound home before refresh',
     (tester) async {
       resetMockStorage();
-      app.manualModeService.resetForTest();
       app.officialCloudService.resetForTest();
       VehicleStore().resetForTest();
       SharedPreferences.setMockInitialValues({

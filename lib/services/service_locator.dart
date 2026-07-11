@@ -5,13 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'app_preferences_service.dart';
 import 'location_service.dart';
 import 'log_service.dart';
-import 'manual_mode_service.dart';
 import 'official_cloud_service.dart';
 import 'permission_service.dart';
 import 'vehicle_store.dart';
 
 class AppServices {
-  final ManualModeService manualModeService;
   final LocationService locationService;
   final LogService logService;
   final VehicleStore vehicleStore;
@@ -21,7 +19,6 @@ class AppServices {
   final ValueNotifier<int> homeTabIndex;
 
   AppServices({
-    required this.manualModeService,
     required this.locationService,
     required this.logService,
     required this.vehicleStore,
@@ -33,7 +30,6 @@ class AppServices {
 
   factory AppServices.production() {
     return AppServices(
-      manualModeService: ManualModeService(),
       locationService: LocationService(),
       logService: LogService(),
       vehicleStore: VehicleStore(),
@@ -54,10 +50,6 @@ class AppServices {
   @visibleForTesting
   static Future<void> reset() async {
     final old = _instance;
-    await _runCleanup(
-      'manualModeService.resetForTest',
-      old.manualModeService.resetForTest,
-    );
     await _runCleanup(
       'locationService.resetForTest',
       old.locationService.resetForTest,
@@ -83,7 +75,6 @@ class AppServices {
       'officialCloudService.dispose',
       officialCloudService.dispose,
     );
-    await _runCleanup('manualModeService.dispose', manualModeService.dispose);
     await _runCleanup('vehicleStore.dispose', vehicleStore.dispose);
     await _runCleanup(
       'appPreferencesService.dispose',

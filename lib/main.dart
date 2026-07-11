@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'services/manual_mode_service.dart';
 import 'services/location_service.dart';
 import 'services/log_service.dart';
 import 'services/official_cloud_service.dart';
@@ -15,8 +14,6 @@ import 'pages/service_hub_page.dart';
 import 'theme/app_colors.dart';
 import 'widgets/app_toast.dart';
 
-ManualModeService get manualModeService =>
-    AppServices.instance.manualModeService;
 LocationService get locationService => AppServices.instance.locationService;
 LogService get logService => AppServices.instance.logService;
 VehicleStore get vehicleStore => AppServices.instance.vehicleStore;
@@ -36,7 +33,6 @@ void main() async {
     await appPreferencesService.init();
     await vehicleStore.init();
     await officialCloudService.init();
-    await manualModeService.init();
   } catch (e, st) {
     debugPrint('Startup initialization failed: $e\n$st');
     runApp(StartupErrorApp(error: e, stackTrace: st));

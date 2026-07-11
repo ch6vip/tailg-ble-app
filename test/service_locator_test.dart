@@ -5,7 +5,6 @@ import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/services/app_preferences_service.dart';
 import 'package:tailg_ble_app/services/location_service.dart';
 import 'package:tailg_ble_app/services/log_service.dart';
-import 'package:tailg_ble_app/services/manual_mode_service.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/services/permission_service.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
@@ -40,7 +39,6 @@ void main() {
 
     AppServices.override(
       AppServices(
-        manualModeService: ManualModeService(),
         locationService: LocationService(),
         logService: LogService(),
         vehicleStore: VehicleStore(),
