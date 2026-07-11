@@ -472,24 +472,17 @@ class OfficialCloudService {
       _refreshVehicleDependents(refreshReplicaDetails: refreshReplicaDetails);
       return;
     }
-    final inFlight = _inFlightRefreshes[refreshKey];
-    if (silent && inFlight != null) return inFlight;
-
-    late Future<void> refresh;
-    refresh = _refreshVehiclesNow(
-      silent: silent,
-      refreshReplicaDetails: refreshReplicaDetails,
+    await _coalesceRefresh(
       refreshKey: refreshKey,
-      token: token,
+      silent: silent,
+      force: force,
+      run: () => _refreshVehiclesNow(
+        silent: silent,
+        refreshReplicaDetails: refreshReplicaDetails,
+        refreshKey: refreshKey,
+        token: token,
+      ),
     );
-    _inFlightRefreshes[refreshKey] = refresh;
-    try {
-      await refresh;
-    } finally {
-      if (identical(_inFlightRefreshes[refreshKey], refresh)) {
-        _inFlightRefreshes.remove(refreshKey);
-      }
-    }
   }
 
   Future<void> _refreshVehiclesNow({
@@ -556,26 +549,18 @@ class OfficialCloudService {
       throw const OfficialCloudApiException('请先登录官方账号');
     }
     const refreshKey = 'messages';
-    if (!force && silent && _shouldUseRecentRefresh(refreshKey)) return;
-    final inFlight = _inFlightRefreshes[refreshKey];
-    if (silent && inFlight != null) return inFlight;
-
-    late Future<void> refresh;
-    refresh = _refreshMessagesNow(
-      silent: silent,
+    await _coalesceRefresh(
       refreshKey: refreshKey,
-      token: token,
-      pageSize: pageSize,
-      pageIndex: pageIndex,
+      silent: silent,
+      force: force,
+      run: () => _refreshMessagesNow(
+        silent: silent,
+        refreshKey: refreshKey,
+        token: token,
+        pageSize: pageSize,
+        pageIndex: pageIndex,
+      ),
     );
-    _inFlightRefreshes[refreshKey] = refresh;
-    try {
-      await refresh;
-    } finally {
-      if (identical(_inFlightRefreshes[refreshKey], refresh)) {
-        _inFlightRefreshes.remove(refreshKey);
-      }
-    }
   }
 
   Future<void> _refreshMessagesNow({
@@ -682,24 +667,16 @@ class OfficialCloudService {
     final token = _state.token;
     if (token.isEmpty) return;
     const refreshKey = 'batteryInfo';
-    if (!force && silent && _shouldUseRecentRefresh(refreshKey)) return;
-    final inFlight = _inFlightRefreshes[refreshKey];
-    if (silent && inFlight != null) return inFlight;
-
-    late Future<void> refresh;
-    refresh = _refreshBatteryInfoNow(
-      silent: silent,
+    await _coalesceRefresh(
       refreshKey: refreshKey,
-      token: token,
+      silent: silent,
+      force: force,
+      run: () => _refreshBatteryInfoNow(
+        silent: silent,
+        refreshKey: refreshKey,
+        token: token,
+      ),
     );
-    _inFlightRefreshes[refreshKey] = refresh;
-    try {
-      await refresh;
-    } finally {
-      if (identical(_inFlightRefreshes[refreshKey], refresh)) {
-        _inFlightRefreshes.remove(refreshKey);
-      }
-    }
   }
 
   Future<void> _refreshBatteryInfoNow({
@@ -770,25 +747,17 @@ class OfficialCloudService {
       return;
     }
     final refreshKey = 'vehicleLocation:${vehicle.key}';
-    if (!force && silent && _shouldUseRecentRefresh(refreshKey)) return;
-    final inFlight = _inFlightRefreshes[refreshKey];
-    if (silent && inFlight != null) return inFlight;
-
-    late Future<void> refresh;
-    refresh = _refreshVehicleLocationNow(
-      silent: silent,
+    await _coalesceRefresh(
       refreshKey: refreshKey,
-      vehicle: vehicle,
-      token: token,
+      silent: silent,
+      force: force,
+      run: () => _refreshVehicleLocationNow(
+        silent: silent,
+        refreshKey: refreshKey,
+        vehicle: vehicle,
+        token: token,
+      ),
     );
-    _inFlightRefreshes[refreshKey] = refresh;
-    try {
-      await refresh;
-    } finally {
-      if (identical(_inFlightRefreshes[refreshKey], refresh)) {
-        _inFlightRefreshes.remove(refreshKey);
-      }
-    }
   }
 
   Future<void> _refreshVehicleLocationNow({
@@ -864,25 +833,17 @@ class OfficialCloudService {
       return;
     }
     final refreshKey = 'fence:${vehicle.key}';
-    if (!force && silent && _shouldUseRecentRefresh(refreshKey)) return;
-    final inFlight = _inFlightRefreshes[refreshKey];
-    if (silent && inFlight != null) return inFlight;
-
-    late Future<void> refresh;
-    refresh = _refreshFenceDataNow(
-      silent: silent,
+    await _coalesceRefresh(
       refreshKey: refreshKey,
-      vehicle: vehicle,
-      token: token,
+      silent: silent,
+      force: force,
+      run: () => _refreshFenceDataNow(
+        silent: silent,
+        refreshKey: refreshKey,
+        vehicle: vehicle,
+        token: token,
+      ),
     );
-    _inFlightRefreshes[refreshKey] = refresh;
-    try {
-      await refresh;
-    } finally {
-      if (identical(_inFlightRefreshes[refreshKey], refresh)) {
-        _inFlightRefreshes.remove(refreshKey);
-      }
-    }
   }
 
   Future<void> _refreshFenceDataNow({
@@ -963,31 +924,25 @@ class OfficialCloudService {
         month ??
         (_state.travelMonth.isEmpty ? _currentMonth() : _state.travelMonth);
     final refreshKey = 'travel:${vehicle.key}:$queryMonth';
-    if (silent &&
+    if (!force &&
+        silent &&
         _state.travelMonth == queryMonth &&
         _shouldUseRecentRefresh(refreshKey)) {
       return;
     }
-    final inFlight = _inFlightRefreshes[refreshKey];
-    if (silent && inFlight != null) return inFlight;
-
-    late Future<void> refresh;
-    refresh = _refreshTravelHistoryNow(
-      silent: silent,
+    await _coalesceRefresh(
       refreshKey: refreshKey,
-      vehicle: vehicle,
-      queryMonth: queryMonth,
-      userId: userId,
-      token: token,
+      silent: silent,
+      force: force,
+      run: () => _refreshTravelHistoryNow(
+        silent: silent,
+        refreshKey: refreshKey,
+        vehicle: vehicle,
+        queryMonth: queryMonth,
+        userId: userId,
+        token: token,
+      ),
     );
-    _inFlightRefreshes[refreshKey] = refresh;
-    try {
-      await refresh;
-    } finally {
-      if (identical(_inFlightRefreshes[refreshKey], refresh)) {
-        _inFlightRefreshes.remove(refreshKey);
-      }
-    }
   }
 
   Future<void> _refreshTravelHistoryNow({
@@ -1343,6 +1298,31 @@ class OfficialCloudService {
       return OfficialCloudRedactor.text(e.message);
     }
     return OfficialCloudRedactor.text(e.toString());
+  }
+
+  /// Coalesce silent refreshes that share a [refreshKey]: reuse in-flight
+  /// work and skip when a successful refresh is still within TTL (unless
+  /// [force] is true). Non-silent callers always wait for a fresh run.
+  Future<void> _coalesceRefresh({
+    required String refreshKey,
+    required bool silent,
+    required bool force,
+    required Future<void> Function() run,
+  }) async {
+    if (!force && silent && _shouldUseRecentRefresh(refreshKey)) return;
+    final inFlight = _inFlightRefreshes[refreshKey];
+    if (silent && inFlight != null) return inFlight;
+
+    late Future<void> refresh;
+    refresh = run();
+    _inFlightRefreshes[refreshKey] = refresh;
+    try {
+      await refresh;
+    } finally {
+      if (identical(_inFlightRefreshes[refreshKey], refresh)) {
+        _inFlightRefreshes.remove(refreshKey);
+      }
+    }
   }
 
   bool _shouldUseRecentRefresh(String key) {
