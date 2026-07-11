@@ -6,7 +6,6 @@ class _OfficialCloudStoredSession {
   final String userId;
   final String? selectedVehicleKey;
   final List<OfficialVehicle> cachedVehicles;
-  final OfficialControlChannel controlChannel;
   final Map<String, String> localVehicleLinks;
 
   const _OfficialCloudStoredSession({
@@ -15,7 +14,6 @@ class _OfficialCloudStoredSession {
     required this.userId,
     required this.selectedVehicleKey,
     required this.cachedVehicles,
-    required this.controlChannel,
     required this.localVehicleLinks,
   });
 }
@@ -27,7 +25,6 @@ class _OfficialCloudStorage {
   static const _securePhone = 'official_cloud_phone';
   static const _secureUserId = 'official_cloud_user_id';
   static const _prefSelectedVehicle = 'official_cloud_selected_vehicle';
-  static const _prefControlChannel = 'official_cloud_control_channel';
   static const _prefVehicleLinks = 'official_cloud_vehicle_links';
   static const _prefUserId = 'official_cloud_user_id';
   static const _prefCarControlInfo = 'carControlInfo';
@@ -46,7 +43,6 @@ class _OfficialCloudStorage {
 
   Future<_OfficialCloudStoredSession> loadSession() async {
     final prefs = await SharedPreferences.getInstance();
-    final channelName = prefs.getString(_prefControlChannel);
     final credentials = await _loadSecureCredentials(prefs);
     final token = credentials.$1;
     return _OfficialCloudStoredSession(
@@ -57,10 +53,6 @@ class _OfficialCloudStorage {
       cachedVehicles: token.isEmpty
           ? const <OfficialVehicle>[]
           : _decodeCarControlInfo(prefs.getString(_prefCarControlInfo)),
-      controlChannel: OfficialControlChannel.values.firstWhere(
-        (item) => item.name == channelName,
-        orElse: () => OfficialControlChannel.officialCloud,
-      ),
       localVehicleLinks: _decodeLinks(prefs.getString(_prefVehicleLinks)),
     );
   }

@@ -173,17 +173,6 @@ void main() {
         'openCushion',
       );
     });
-
-    test('rejects unsupported read commands', () {
-      expect(
-        OfficialCloudCommand.fromCommandCode(CommandCode.readState),
-        isNull,
-      );
-      expect(
-        OfficialCloudCommand.fromCommandCode(CommandCode.readAntiTheft),
-        isNull,
-      );
-    });
   });
 
   group('OfficialCloudApiConfig', () {

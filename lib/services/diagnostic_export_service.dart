@@ -53,7 +53,7 @@ class DiagnosticExportService {
       'Phone: ${state.phone.isEmpty ? 'none' : _maskPhone(state.phone)}',
       'Token: ${state.token.isEmpty ? 'none' : 'present'}',
       'Vehicles: ${state.vehicles.length}',
-      'Control channel: ${state.controlChannel.label}',
+      'Control channel: 官方云端',
       'Effective control channel: ${availability.effectiveChannelLabel}',
       'Cloud control available: ${availability.canUseCloud}',
       'Cloud unavailable reason: ${availability.cloudUnavailableReason.isEmpty ? 'none' : availability.cloudUnavailableReason}',

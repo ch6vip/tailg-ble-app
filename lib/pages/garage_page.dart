@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
 import '../main.dart';
 import '../models/vehicle_profile.dart';
 import '../theme/app_colors.dart';
@@ -242,10 +240,6 @@ class _VehicleCardState extends State<_VehicleCard> {
                 onSelected: (value) => _handleAction(context, value),
                 itemBuilder: (context) => [
                   const PopupMenuItem(value: 'rename', child: Text('编辑名称')),
-                  const PopupMenuItem(
-                    value: 'qgj_credentials',
-                    child: Text('高级参数'),
-                  ),
                   if (!isDefault)
                     const PopupMenuItem(value: 'default', child: Text('设为默认')),
                   const PopupMenuItem(value: 'delete', child: Text('删除车辆')),
@@ -262,106 +256,12 @@ class _VehicleCardState extends State<_VehicleCard> {
     if (value == 'rename') {
       if (!mounted) return;
       await _showRenameDialog(context);
-    } else if (value == 'qgj_credentials') {
-      if (!mounted) return;
-      await _showQgjCredentialsDialog(context);
     } else if (value == 'default') {
       await vehicleStore.setDefault(vehicle.id);
     } else if (value == 'delete') {
       if (!mounted) return;
       await _confirmDelete(context);
     }
-  }
-
-  Future<void> _showQgjCredentialsDialog(BuildContext context) async {
-    final passwordController = TextEditingController(
-      text: vehicle.qgjLoginPassword?.toString() ?? '',
-    );
-    final userIdController = TextEditingController(
-      text: vehicle.qgjUserId?.toString() ?? '',
-    );
-    final result = await showDialog<_QgjCredentialEdit>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('高级参数'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              '官方 ECU 登录使用车辆密码和账号 UID。留空则使用默认 0。',
-              style: AppTextStyles.bodySmall,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: passwordController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: '车辆密码',
-                hintText: '默认 0',
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: userIdController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: '用户 UID',
-                hintText: '默认 0',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(context, const _QgjCredentialEdit.clear()),
-            child: const Text('清空'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final password = _parseUint32(passwordController.text);
-              final userId = _parseUint32(userIdController.text);
-              if (password == null &&
-                  passwordController.text.trim().isNotEmpty) {
-                return;
-              }
-              if (userId == null && userIdController.text.trim().isNotEmpty) {
-                return;
-              }
-              Navigator.pop(
-                context,
-                _QgjCredentialEdit(password: password, userId: userId),
-              );
-            },
-            child: const Text('保存'),
-          ),
-        ],
-      ),
-    );
-    passwordController.dispose();
-    userIdController.dispose();
-    if (!mounted) return;
-    if (result == null) return;
-    await vehicleStore.updateQgjCredentials(
-      id: vehicle.id,
-      password: result.password,
-      userId: result.userId,
-      clear: result.clear,
-    );
-  }
-
-  int? _parseUint32(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return null;
-    final parsed = int.tryParse(trimmed);
-    if (parsed == null || parsed < 0 || parsed > 0xFFFFFFFF) return null;
-    return parsed;
   }
 
   Future<void> _showRenameDialog(BuildContext context) async {
@@ -416,17 +316,6 @@ class _VehicleCardState extends State<_VehicleCard> {
       await vehicleStore.remove(vehicle.id);
     }
   }
-}
-
-class _QgjCredentialEdit {
-  final int? password;
-  final int? userId;
-  final bool clear;
-  const _QgjCredentialEdit({this.password, this.userId}) : clear = false;
-  const _QgjCredentialEdit.clear()
-    : password = null,
-      userId = null,
-      clear = true;
 }
 
 class _MiniActionButton extends StatelessWidget {

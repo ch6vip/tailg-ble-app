@@ -23,15 +23,6 @@ part 'official_cloud_vehicle_links.dart';
 part 'official_cloud_vehicle_sync.dart';
 part 'official_cloud_storage.dart';
 
-enum OfficialControlChannel {
-  officialCloud('官方云端', '使用官方账号远程控车');
-
-  final String label;
-  final String description;
-
-  const OfficialControlChannel(this.label, this.description);
-}
-
 enum OfficialCloudResponseCode {
   success('200'),
   legacySuccess('0');
@@ -89,7 +80,6 @@ class OfficialCloudState {
   final String? error;
   final List<OfficialVehicle> vehicles;
   final String? selectedVehicleKey;
-  final OfficialControlChannel controlChannel;
   final Map<String, String> localVehicleLinks;
   final OfficialBatteryInfo? batteryInfo;
   final bool batteryInfoLoading;
@@ -121,7 +111,6 @@ class OfficialCloudState {
     required this.error,
     required this.vehicles,
     required this.selectedVehicleKey,
-    required this.controlChannel,
     required this.localVehicleLinks,
     required this.batteryInfo,
     required this.batteryInfoLoading,
@@ -154,7 +143,6 @@ class OfficialCloudState {
     error: null,
     vehicles: [],
     selectedVehicleKey: null,
-    controlChannel: OfficialControlChannel.officialCloud,
     localVehicleLinks: {},
     batteryInfo: null,
     batteryInfoLoading: false,
@@ -202,7 +190,6 @@ class OfficialCloudState {
     Object? error = _sentinel,
     List<OfficialVehicle>? vehicles,
     Object? selectedVehicleKey = _sentinel,
-    OfficialControlChannel? controlChannel,
     Map<String, String>? localVehicleLinks,
     Object? batteryInfo = _sentinel,
     bool? batteryInfoLoading,
@@ -236,7 +223,6 @@ class OfficialCloudState {
       selectedVehicleKey: identical(selectedVehicleKey, _sentinel)
           ? this.selectedVehicleKey
           : selectedVehicleKey as String?,
-      controlChannel: controlChannel ?? this.controlChannel,
       localVehicleLinks: localVehicleLinks ?? this.localVehicleLinks,
       batteryInfo: identical(batteryInfo, _sentinel)
           ? this.batteryInfo
@@ -345,7 +331,6 @@ class OfficialCloudService {
         userId: stored.userId,
         vehicles: cachedVehicles,
         selectedVehicleKey: selectedVehicleKey,
-        controlChannel: stored.controlChannel,
         localVehicleLinks: stored.localVehicleLinks,
       );
       _initialized = true;
