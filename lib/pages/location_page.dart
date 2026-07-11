@@ -15,7 +15,6 @@ import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
 import '../services/display_time_formatter.dart';
 import '../services/official_cloud_service.dart';
-import '../services/replica_feature_store.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
 import '../widgets/app_chrome.dart';
@@ -55,8 +54,6 @@ class _LocationPageState extends State<LocationPage> {
   late int _tabIndex;
   bool _localLoading = false;
   String? _localError;
-  FenceConfig? _localFence;
-
   late final StreamSubscription<List<VehicleProfile>> _vehiclesSub;
   late final StreamSubscription<OfficialCloudState> _cloudStateSub;
   // P0-5: 用 ValueNotifier 驱动需要刷新的子树，避免空 setState 重建含 FlutterMap 的整页
@@ -67,8 +64,6 @@ class _LocationPageState extends State<LocationPage> {
   void initState() {
     super.initState();
     _tabIndex = widget.initialTab.index;
-    _loadLocalFence();
-
     // P0-5: 流回调只更新 ValueNotifier，不调 setState，避免 FlutterMap 重建
     _cloudStateNotifier = ValueNotifier(officialCloudService.state);
     _vehiclesNotifier = ValueNotifier(vehicleStore.vehicles);
@@ -92,12 +87,6 @@ class _LocationPageState extends State<LocationPage> {
     _cloudStateNotifier.dispose();
     _vehiclesNotifier.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadLocalFence() async {
-    final config = await ReplicaFeatureStore().loadFenceConfig();
-    if (!mounted) return;
-    setState(() => _localFence = config);
   }
 
   Future<void> _refreshLocalLocation(VehicleProfile vehicle) async {
@@ -432,7 +421,6 @@ class _LocationPageState extends State<LocationPage> {
                           _FenceTab(
                             cloudState: cloudState,
                             location: location,
-                            localFence: _localFence,
                             onRefresh: _refreshFenceData,
                             onTabChanged: (value) =>
                                 setState(() => _tabIndex = value),

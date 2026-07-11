@@ -3,14 +3,12 @@ part of 'location_page.dart';
 class _FenceTab extends StatelessWidget {
   final OfficialCloudState cloudState;
   final _ResolvedLocation? location;
-  final FenceConfig? localFence;
   final Future<void> Function() onRefresh;
   final ValueChanged<int> onTabChanged;
 
   const _FenceTab({
     required this.cloudState,
     required this.location,
-    required this.localFence,
     required this.onRefresh,
     required this.onTabChanged,
   });
@@ -85,7 +83,6 @@ class _FenceTab extends StatelessWidget {
           bottom: 0,
           child: _OfficialFenceSheet(
             fence: cloudState.fenceData,
-            localFence: localFence,
             error: cloudState.fenceError,
             loading: cloudState.fenceLoading,
             signedIn: cloudState.signedIn,
@@ -100,7 +97,6 @@ class _FenceTab extends StatelessWidget {
 
 class _OfficialFenceSheet extends StatelessWidget {
   final OfficialFenceData? fence;
-  final FenceConfig? localFence;
   final String? error;
   final bool loading;
   final bool signedIn;
@@ -109,7 +105,6 @@ class _OfficialFenceSheet extends StatelessWidget {
 
   const _OfficialFenceSheet({
     required this.fence,
-    required this.localFence,
     required this.error,
     required this.loading,
     required this.signedIn,
@@ -119,10 +114,9 @@ class _OfficialFenceSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localFence = this.localFence;
     final error = this.error;
-    final enabled = fence?.enabled ?? localFence?.enabled ?? false;
-    final radius = fence?.radiusMeters ?? localFence?.radiusMeters.toDouble();
+    final enabled = fence?.enabled ?? false;
+    final radius = fence?.radiusMeters;
     final minRadius = _radiusMeters(fence?.fenceRadiusMin) ?? 100;
     final maxRadius = _radiusMeters(fence?.fenceRadiusMax) ?? 10000;
     final progress = radius == null
@@ -256,13 +250,6 @@ class _OfficialFenceSheet extends StatelessWidget {
               ],
             ),
           ),
-          if (localFence != null && fence?.hasData != true) ...[
-            const SizedBox(height: 8),
-            Text(
-              '本地围栏：${localFence.enabled ? '已开启' : '已关闭'} · ${localFence.radiusMeters}m',
-              style: AppTextStyles.caption,
-            ),
-          ],
           if (error != null) ...[
             const SizedBox(height: 8),
             Text(

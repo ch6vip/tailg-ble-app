@@ -331,13 +331,9 @@ void main() {
     expect(find.text('定位服务异常'), findsOneWidget);
   });
 
-  testWidgets('LocationPage fence sheet renders local fallback and error', (
+  testWidgets('LocationPage fence sheet prefers official cloud source', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({
-      'replica_fence_config':
-          '{"enabled":true,"latitude":31.2304,"longitude":121.4737,"radiusMeters":800,"updatedAt":"2026-07-03T12:30:00.000"}',
-    });
     app.officialCloudService.resetForTest();
     addTearDown(app.officialCloudService.resetForTest);
     setTestViewSize(tester, const Size(430, 1200));
@@ -363,8 +359,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 1));
 
-    expect(find.text('本地围栏：已开启 · 800m'), findsOneWidget);
+    // Location fence is cloud-only: local ReplicaFeatureStore is not shown here.
+    expect(find.textContaining('本地围栏'), findsNothing);
     expect(find.text('围栏服务异常'), findsOneWidget);
+    expect(find.text('暂无围栏配置'), findsOneWidget);
   });
 
   testWidgets('LocationPage meta values avoid negative letter spacing', (
