@@ -40,7 +40,7 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
   }
 
   void _showUnavailable(BuildContext context, String label) {
-    AppSnack.info(context, '$label暂未开放，可先使用官方云端控车');
+    AppSnack.featureUnavailable(context, label);
   }
 
   @override

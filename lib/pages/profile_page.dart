@@ -138,7 +138,7 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       return;
     }
-    AppSnack.info(context, '资料编辑暂未开放，可先使用官方云端控车');
+    AppSnack.featureUnavailable(context, '资料编辑');
   }
 
   void _openMessages(BuildContext context) {
@@ -163,7 +163,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _showUnavailable(String label) {
-    AppSnack.info(context, '$label暂未开放，可先使用官方云端控车');
+    AppSnack.featureUnavailable(context, label);
   }
 }
 

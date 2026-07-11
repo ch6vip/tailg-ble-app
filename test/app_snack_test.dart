@@ -43,6 +43,16 @@ void main() {
       expectedBackground: scheme.inverseSurface,
       expectedForeground: scheme.onInverseSurface,
     );
+
+    await _pumpSnack(
+      tester,
+      scheme: scheme,
+      message: '导航投屏暂未开放，可先使用官方云端控车',
+      icon: Icons.info_outline,
+      show: (context) => AppSnack.featureUnavailable(context, '导航投屏'),
+      expectedBackground: scheme.inverseSurface,
+      expectedForeground: scheme.onInverseSurface,
+    );
   });
 }
 

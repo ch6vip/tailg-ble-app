@@ -57,6 +57,14 @@ abstract final class AppSnack {
     );
   }
 
+  /// Placeholder / not-yet-open feature entry (cloud-only product boundary).
+  ///
+  /// [label] is the feature name shown before the fixed suffix, e.g.
+  /// `导航投屏` → `导航投屏暂未开放，可先使用官方云端控车`.
+  static void featureUnavailable(BuildContext context, String label) {
+    info(context, '$label暂未开放，可先使用官方云端控车');
+  }
+
   static void _show(
     BuildContext context, {
     required String message,
