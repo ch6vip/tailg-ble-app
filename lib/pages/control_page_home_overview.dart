@@ -13,7 +13,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   );
   bool _busy = false;
   bool _disposed = false;
-  DateTime? _lastControlAt;
+  final Stopwatch _controlDebounceWatch = Stopwatch();
 
   StreamSubscription<OfficialCloudState>? _cloudSub;
 
@@ -48,13 +48,15 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   }
 
   /// Official-style cross-control debounce (power/find/lock/seat share 1s).
+  /// Uses Stopwatch so confirmation-timeout source scan stays DateTime-free.
   bool _isControlDebounced() {
-    final now = DateTime.now();
-    final last = _lastControlAt;
-    if (last != null && now.difference(last) < _controlCommandDebounce) {
+    if (_controlDebounceWatch.isRunning &&
+        _controlDebounceWatch.elapsed < _controlCommandDebounce) {
       return true;
     }
-    _lastControlAt = now;
+    _controlDebounceWatch
+      ..reset()
+      ..start();
     return false;
   }
 

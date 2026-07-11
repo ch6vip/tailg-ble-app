@@ -483,6 +483,12 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
     _busyPulse = Tween(begin: 0.25, end: 0.55).animate(
       CurvedAnimation(parent: _busyPulseCtrl, curve: AppMotion.pulseCurve),
     );
+    // First frame may already be busy (parent rebuild / tests).
+    if (widget.busy) {
+      _showBusyOverlay = true;
+      _busyAsPowered = widget.powered;
+      _busyPulseCtrl.repeat(reverse: true);
+    }
   }
 
   @override
