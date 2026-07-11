@@ -589,9 +589,7 @@ class _OfficialBottomNav extends StatelessWidget {
                   child: _OfficialNavItem(
                     itemKey: const ValueKey('official-bottom-nav-item-vehicle'),
                     label: '爱车',
-                    asset: 'assets/official_tailg/ic_home_control_unselect.png',
-                    selectedAsset:
-                        'assets/official_tailg/ic_home_control_select.png',
+                    iconWidget: _VehicleTabIcon(selected: currentIndex == 1),
                     selected: currentIndex == 1,
                     onTap: onVehicle,
                   ),
@@ -619,16 +617,18 @@ class _OfficialBottomNav extends StatelessWidget {
 class _OfficialNavItem extends StatelessWidget {
   const _OfficialNavItem({
     required this.label,
-    required this.asset,
-    required this.selectedAsset,
     required this.selected,
     required this.onTap,
+    this.asset,
+    this.selectedAsset,
+    this.iconWidget,
     this.itemKey,
   });
 
   final String label;
-  final String asset;
-  final String selectedAsset;
+  final String? asset;
+  final String? selectedAsset;
+  final Widget? iconWidget;
   final bool selected;
   final VoidCallback onTap;
   final Key? itemKey;
@@ -636,11 +636,30 @@ class _OfficialNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final active = selected;
-    final displayAsset = active ? selectedAsset : asset;
     final labelColor = active
         ? AppColors.brandRed
         : AppColors.officialTextMuted;
     const iconSize = _OfficialBottomNav._iconSize;
+
+    Widget iconChild;
+    if (iconWidget != null) {
+      iconChild = SizedBox(width: iconSize, height: iconSize, child: iconWidget);
+    } else {
+      final displayAsset = active ? selectedAsset! : asset!;
+      iconChild = Image.asset(
+        displayAsset,
+        width: iconSize,
+        height: iconSize,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => Icon(
+          Icons.circle_outlined,
+          size: iconSize,
+          color: active
+              ? AppColors.brandRed
+              : AppColors.officialTextMuted,
+        ),
+      );
+    }
 
     return Semantics(
       label: label,
@@ -657,19 +676,7 @@ class _OfficialNavItem extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Image.asset(
-                  displayAsset,
-                  width: iconSize,
-                  height: iconSize,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => Icon(
-                    Icons.circle_outlined,
-                    size: iconSize,
-                    color: active
-                        ? AppColors.brandRed
-                        : AppColors.officialTextMuted,
-                  ),
-                ),
+                iconChild,
                 const SizedBox(height: 5),
                 Text(
                   label,
@@ -690,4 +697,105 @@ class _OfficialNavItem extends StatelessWidget {
       ),
     );
   }
+}
+
+class _VehicleTabIcon extends StatelessWidget {
+  const _VehicleTabIcon({required this.selected});
+
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(24, 24),
+      painter: _ScooterIconPainter(
+        color: selected ? AppColors.brandRed : AppColors.officialTextMuted,
+        filled: selected,
+      ),
+    );
+  }
+}
+
+class _ScooterIconPainter extends CustomPainter {
+  _ScooterIconPainter({required this.color, required this.filled});
+
+  final Color color;
+  final bool filled;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = filled ? PaintingStyle.fill : PaintingStyle.stroke;
+
+    final w = size.width;
+    final h = size.height;
+
+    // Wheels
+    final wheelRadius = w * 0.12;
+    final wheelY = h * 0.78;
+    final leftWheelCenter = Offset(w * 0.22, wheelY);
+    final rightWheelCenter = Offset(w * 0.78, wheelY);
+
+    if (filled) {
+      canvas.drawCircle(leftWheelCenter, wheelRadius, paint);
+      canvas.drawCircle(rightWheelCenter, wheelRadius, paint);
+    } else {
+      canvas.drawCircle(leftWheelCenter, wheelRadius, paint);
+      canvas.drawCircle(rightWheelCenter, wheelRadius, paint);
+    }
+
+    // Body frame
+    final framePaint = Paint()
+      ..color = color
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+
+    final bodyPath = Path();
+    // Deck (footboard connecting wheels)
+    bodyPath.moveTo(w * 0.22, wheelY - wheelRadius - 1);
+    bodyPath.lineTo(w * 0.78, wheelY - wheelRadius - 1);
+
+    // Front fork going up to handlebar
+    bodyPath.moveTo(w * 0.72, wheelY - wheelRadius - 1);
+    bodyPath.lineTo(w * 0.75, h * 0.32);
+
+    // Handlebar
+    bodyPath.moveTo(w * 0.62, h * 0.28);
+    bodyPath.lineTo(w * 0.88, h * 0.28);
+
+    // Rear structure / seat support
+    bodyPath.moveTo(w * 0.28, wheelY - wheelRadius - 1);
+    bodyPath.lineTo(w * 0.35, h * 0.38);
+    bodyPath.lineTo(w * 0.62, h * 0.38);
+
+    // Seat
+    bodyPath.moveTo(w * 0.30, h * 0.35);
+    bodyPath.lineTo(w * 0.58, h * 0.35);
+
+    canvas.drawPath(bodyPath, framePaint);
+
+    if (filled) {
+      // Fill the seat area when selected
+      final seatFill = Paint()
+        ..color = color
+        ..style = PaintingStyle.fill;
+      final seatPath = Path()
+        ..moveTo(w * 0.30, h * 0.34)
+        ..lineTo(w * 0.58, h * 0.34)
+        ..lineTo(w * 0.60, h * 0.39)
+        ..lineTo(w * 0.33, h * 0.39)
+        ..close();
+      canvas.drawPath(seatPath, seatFill);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ScooterIconPainter oldDelegate) =>
+      color != oldDelegate.color || filled != oldDelegate.filled;
 }
