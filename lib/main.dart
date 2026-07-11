@@ -543,17 +543,22 @@ class _OfficialBottomNav extends StatelessWidget {
   final VoidCallback onVehicle;
   final VoidCallback onMine;
 
+  /// Visual height of the white bar (matches official compact bar).
   static const double _barHeight = 65;
+
+  /// Full slot height so the raised center icon is never clipped.
   static const double _prominentItemHeight = 80;
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-    return SizedBox(
-      height: _prominentItemHeight + bottomInset,
-      child: Padding(
-        padding: EdgeInsets.only(bottom: bottomInset),
+    // Outer height must fit the protruding center icon + system nav inset.
+    // Keep the white bar shorter so the center icon still "floats" upward.
+    return Material(
+      color: Colors.transparent,
+      child: SizedBox(
+        height: _prominentItemHeight + bottomInset,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -561,6 +566,7 @@ class _OfficialBottomNav extends StatelessWidget {
               left: 0,
               right: 0,
               bottom: 0,
+              height: _barHeight + bottomInset,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: AppColors.surface,
@@ -574,74 +580,59 @@ class _OfficialBottomNav extends StatelessWidget {
                 ),
                 child: SizedBox(
                   key: const ValueKey('official-bottom-nav-bar'),
-                  height: _barHeight,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final itemWidth = constraints.maxWidth / 3;
-
-                      return Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Positioned(
-                            left: 0,
-                            bottom: 0,
-                            width: itemWidth,
-                            height: _barHeight,
-                            child: _OfficialNavItem(
-                              itemKey: const ValueKey(
-                                'official-bottom-nav-item-service',
-                              ),
-                              label: '服务',
-                              asset:
-                                  'assets/official_tailg/ic_home_service_unselect.png',
-                              selectedAsset:
-                                  'assets/official_tailg/ic_home_service_select.png',
-                              selected: currentIndex == 0,
-                              onTap: onService,
-                            ),
-                          ),
-                          Positioned(
-                            left: itemWidth,
-                            bottom: 0,
-                            width: itemWidth,
-                            height: _prominentItemHeight,
-                            child: _OfficialNavItem(
-                              itemKey: const ValueKey(
-                                'official-bottom-nav-item-vehicle',
-                              ),
-                              label: '爱车',
-                              asset:
-                                  'assets/official_tailg/ic_home_control_unselect.png',
-                              selectedAsset:
-                                  'assets/official_tailg/ic_home_control_select.png',
-                              selected: currentIndex == 1,
-                              prominent: true,
-                              onTap: onVehicle,
-                            ),
-                          ),
-                          Positioned(
-                            left: itemWidth * 2,
-                            bottom: 0,
-                            width: itemWidth,
-                            height: _barHeight,
-                            child: _OfficialNavItem(
-                              itemKey: const ValueKey(
-                                'official-bottom-nav-item-mine',
-                              ),
-                              label: '我的',
-                              asset:
-                                  'assets/official_tailg/ic_home_mine_unselect.png',
-                              selectedAsset:
-                                  'assets/official_tailg/ic_home_mine_select.png',
-                              selected: currentIndex == 2,
-                              onTap: onMine,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                  height: _barHeight + bottomInset,
                 ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: bottomInset,
+              height: _prominentItemHeight,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: _OfficialNavItem(
+                      itemKey: const ValueKey(
+                        'official-bottom-nav-item-service',
+                      ),
+                      label: '服务',
+                      asset:
+                          'assets/official_tailg/ic_home_service_unselect.png',
+                      selectedAsset:
+                          'assets/official_tailg/ic_home_service_select.png',
+                      selected: currentIndex == 0,
+                      onTap: onService,
+                    ),
+                  ),
+                  Expanded(
+                    child: _OfficialNavItem(
+                      itemKey: const ValueKey(
+                        'official-bottom-nav-item-vehicle',
+                      ),
+                      label: '爱车',
+                      asset:
+                          'assets/official_tailg/ic_home_control_unselect.png',
+                      selectedAsset:
+                          'assets/official_tailg/ic_home_control_select.png',
+                      selected: currentIndex == 1,
+                      prominent: true,
+                      onTap: onVehicle,
+                    ),
+                  ),
+                  Expanded(
+                    child: _OfficialNavItem(
+                      itemKey: const ValueKey('official-bottom-nav-item-mine'),
+                      label: '我的',
+                      asset: 'assets/official_tailg/ic_home_mine_unselect.png',
+                      selectedAsset:
+                          'assets/official_tailg/ic_home_mine_select.png',
+                      selected: currentIndex == 2,
+                      onTap: onMine,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -692,41 +683,38 @@ class _OfficialNavItem extends StatelessWidget {
         child: SizedBox(
           key: itemKey,
           height: itemHeight,
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset(
-                    displayAsset,
-                    width: iconSize,
-                    height: iconSize,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Icon(
-                      prominent ? Icons.shield_outlined : Icons.circle_outlined,
-                      size: prominent ? 46 : 24,
-                      color: active
-                          ? AppColors.brandRed
-                          : AppColors.officialTextMuted,
-                    ),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Image.asset(
+                  displayAsset,
+                  width: iconSize,
+                  height: iconSize,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Icon(
+                    prominent ? Icons.shield_outlined : Icons.circle_outlined,
+                    size: prominent ? 46 : 24,
+                    color: active
+                        ? AppColors.brandRed
+                        : AppColors.officialTextMuted,
                   ),
-                  const SizedBox(height: 5),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      height: 1,
-                      fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                      letterSpacing: 0,
-                      color: labelColor,
-                    ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    height: 1,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                    letterSpacing: 0,
+                    color: labelColor,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

@@ -50,12 +50,24 @@ void main() {
 
     expect(barFinder, findsOneWidget);
     expect(vehicleItemFinder, findsOneWidget);
+    // White bar is 65; system inset is 0 in tests so bar height is 65.
     expect(tester.getSize(barFinder).height, 65);
     expect(tester.getSize(vehicleItemFinder).height, 80);
 
+    // Center item sits on the same bottom baseline and protrudes 15px above.
     final barTop = tester.getTopLeft(barFinder).dy;
     final vehicleTop = tester.getTopLeft(vehicleItemFinder).dy;
-    expect(vehicleTop, closeTo(barTop - 15, 0.1));
+    expect(vehicleTop, closeTo(barTop - 15, 0.5));
+
+    // Center icon is not clipped: its top is at/above the bar top.
+    expect(vehicleTop, lessThanOrEqualTo(barTop));
+
+    // Side labels stay above the system inset baseline (bottom of bar content).
+    final serviceBottom = tester.getBottomLeft(find.text('服务')).dy;
+    final vehicleBottom = tester.getBottomLeft(find.text('爱车')).dy;
+    final mineBottom = tester.getBottomLeft(find.text('我的')).dy;
+    expect(serviceBottom, closeTo(vehicleBottom, 1.0));
+    expect(mineBottom, closeTo(vehicleBottom, 1.0));
   });
 
   testWidgets('Service tab opens aggregate service hub', (
