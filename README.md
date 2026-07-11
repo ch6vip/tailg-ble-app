@@ -19,7 +19,7 @@
 
 | 类别 | 选型 |
 |------|------|
-| 框架 | Flutter 3.32.1 (stable) · Dart 3.8.1 |
+| 框架 | Flutter 3.44.6 (stable) · Dart 3.12.2 |
 | 存储 | `shared_preferences`（普通配置）· `flutter_secure_storage`（凭据） |
 | 地图 / 定位 | `flutter_map` · `latlong2` · `geolocator` |
 | 其他 | `url_launcher` · `intl` · `cached_network_image` |
@@ -41,7 +41,7 @@ docs/         规划、验证、构建等技术文档
 
 ### 前置条件
 
-- Flutter `3.32.1`（stable，含 Dart `3.8.1`），`flutter doctor` 全绿
+- Flutter `3.44.6`（stable，含 Dart `3.12.2`），`flutter doctor` 全绿
 - Android SDK 34 + Build Tools 34.0.0，JDK 17
 - 一台开启 USB 调试的 Android 设备或模拟器
 

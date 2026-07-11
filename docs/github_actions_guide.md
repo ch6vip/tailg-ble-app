@@ -8,7 +8,7 @@
 
 | 维度 | 详情 |
 |------|------|
-| 框架 | Flutter 3.32.1 / Dart 3.8.1 |
+| 框架 | Flutter 3.44.6 / Dart 3.12.2 |
 | 构建工具 | Gradle (Kotlin DSL), compileSdk 36, JDK 11 |
 | 依赖管理 | `flutter pub get` (`pubspec.yaml` + `pubspec.lock`) |
 | 测试框架 | `flutter_test` |
@@ -81,7 +81,7 @@
 | Step | 作用 |
 |------|------|
 | checkout | 使用 tag 输入或当前 ref |
-| setup Flutter | 安装 Flutter 3.32.1 stable，启用 pub cache |
+| setup Flutter | 安装 Flutter 3.44.6 stable，启用 pub cache |
 | quality gates | `flutter pub get`、format、analyze、test |
 | signing | 解码 keystore，写入 `android/key.properties` |
 | build | `flutter build apk --release --target-platform android-arm64` |
