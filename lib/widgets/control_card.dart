@@ -466,7 +466,8 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
   /// True while showing official command Lottie overlays (busy phase).
   bool _showBusyOverlay = false;
 
-  /// Direction of the in-flight command: false = start (rightward), true = stop.
+  /// Direction of the in-flight command:
+  /// false = start (rightward), true = stop.
   bool _busyAsPowered = false;
 
   late final AnimationController _busyPulseCtrl;
@@ -572,7 +573,7 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
     if (shouldFire) {
       HapticFeedback.heavyImpact();
       // Overlay is shown when parent sets busy=true (didUpdateWidget), after
-      // policy/availability pass — avoids stuck Lottie if the command is denied.
+      // policy/availability pass. Avoids stuck Lottie if the command is denied.
       widget.onPowerOn?.call();
     }
   }

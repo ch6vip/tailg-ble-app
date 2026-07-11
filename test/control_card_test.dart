@@ -258,7 +258,10 @@ void main() {
         isFalse,
       );
       // Official BaseEvent 112: slide is hidden, Lottie overlay shown.
-      expect(find.byKey(const ValueKey('control-power-slide-handle')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('control-power-slide-handle')),
+        findsNothing,
+      );
       expect(find.text('右滑启动'), findsNothing);
     } finally {
       semantics.dispose();
@@ -328,7 +331,9 @@ void main() {
       buttons: kSecondaryMouseButton,
     );
     await gesture.down(
-      tester.getCenter(find.byKey(const ValueKey('control-power-slide-handle'))),
+      tester.getCenter(
+        find.byKey(const ValueKey('control-power-slide-handle')),
+      ),
     );
     await gesture.moveBy(const Offset(180, 0));
     await gesture.up();
