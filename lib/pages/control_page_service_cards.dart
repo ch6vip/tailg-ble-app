@@ -20,29 +20,10 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
     _vehiclesNotifier = ValueNotifier(vehicleStore.vehicles);
     _cloudStateSub = officialCloudService.stateStream.listen((state) {
       if (mounted) _cloudStateNotifier.value = state;
-      if (state.signedIn &&
-          state.selectedVehicle != null &&
-          state.travelDays.isEmpty &&
-          !state.travelLoading) {
-        unawaited(_prefetchTodayTravelCount());
-      }
     });
     _vehiclesSub = vehicleStore.vehiclesStream.listen((vehicles) {
       if (mounted) _vehiclesNotifier.value = vehicles;
     });
-    unawaited(_prefetchTodayTravelCount());
-  }
-
-  Future<void> _prefetchTodayTravelCount() async {
-    final state = officialCloudService.state;
-    if (!state.signedIn || state.selectedVehicle == null) return;
-    // Only pull when empty so we do not thrash the API on every rebuild.
-    if (state.travelDays.isNotEmpty || state.travelLoading) return;
-    try {
-      await officialCloudService.refreshTravelHistory(silent: true);
-    } catch (_) {
-      // Card can stay at 0 until user opens history.
-    }
   }
 
   @override
