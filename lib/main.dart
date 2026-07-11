@@ -643,7 +643,11 @@ class _OfficialNavItem extends StatelessWidget {
 
     Widget iconChild;
     if (iconWidget != null) {
-      iconChild = SizedBox(width: iconSize, height: iconSize, child: iconWidget);
+      iconChild = SizedBox(
+        width: iconSize,
+        height: iconSize,
+        child: iconWidget,
+      );
     } else {
       final displayAsset = active ? selectedAsset! : asset!;
       iconChild = Image.asset(
@@ -654,9 +658,7 @@ class _OfficialNavItem extends StatelessWidget {
         errorBuilder: (_, __, ___) => Icon(
           Icons.circle_outlined,
           size: iconSize,
-          color: active
-              ? AppColors.brandRed
-              : AppColors.officialTextMuted,
+          color: active ? AppColors.brandRed : AppColors.officialTextMuted,
         ),
       );
     }
