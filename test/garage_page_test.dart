@@ -29,9 +29,8 @@ void main() {
   test('garage sync errors redact exception details before display', () {
     final source = readSource('lib/pages/garage_page.dart');
 
-    expect(source, contains('OfficialCloudRedactor.text(e.message)'));
-    expect(source, contains('OfficialCloudRedactor.text(e.toString())'));
-    expect(source, isNot(contains('? e.message : e.toString()')));
+    expect(source, contains('OfficialCloudRedactor.errorMessage(e)'));
+    expect(source, isNot(contains('e is OfficialCloudApiException')));
   });
 
   testWidgets('mini vehicle actions keep 44dp touch targets', (tester) async {

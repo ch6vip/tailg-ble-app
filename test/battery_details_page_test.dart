@@ -40,8 +40,7 @@ void main() {
       refreshSource,
       isNot(contains('AppSnack.error(context, e.toString())')),
     );
-    expect(helperSource, contains('OfficialCloudRedactor.text(e.message)'));
-    expect(helperSource, contains('OfficialCloudRedactor.text(e.toString())'));
+    expect(helperSource, contains('OfficialCloudRedactor.errorMessage(e)'));
   });
 
   testWidgets('refreshing battery details while signed out shows info snack', (

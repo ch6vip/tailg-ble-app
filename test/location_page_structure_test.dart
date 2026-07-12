@@ -79,8 +79,7 @@ void main() {
 
     final helperSource = source.substring(helperStart, helperEnd);
 
-    expect(helperSource, contains('OfficialCloudRedactor.text(e.message)'));
-    expect(helperSource, contains('OfficialCloudRedactor.text(e.toString())'));
+    expect(helperSource, contains('OfficialCloudRedactor.errorMessage(e)'));
     expect(helperSource, isNot(contains('return e.toString();')));
   });
 

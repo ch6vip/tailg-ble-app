@@ -92,9 +92,7 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
         level: LogLevel.warning,
       );
       if (!mounted) return;
-      final message = e is OfficialCloudApiException
-          ? OfficialCloudRedactor.text(e.message)
-          : OfficialCloudRedactor.text(e.toString());
+      final message = OfficialCloudRedactor.errorMessage(e);
       AppSnack.error(context, message);
     } finally {
       if (mounted) setState(() => _busy = false);

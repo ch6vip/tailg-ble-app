@@ -59,6 +59,13 @@ class OfficialCloudRedactor {
         .replaceAllMapped(_compactMacPattern, _maskMatch);
   }
 
+  static String errorMessage(Object error) {
+    final message = error is OfficialCloudApiException
+        ? error.message
+        : error.toString();
+    return text(message);
+  }
+
   static String _mask(String value) {
     return SensitiveValueMasker.compact(value);
   }

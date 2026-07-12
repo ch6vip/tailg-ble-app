@@ -120,9 +120,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
       await _syncUnreadBadge();
     } catch (e) {
       if (!mounted) return;
-      final message = e is OfficialCloudApiException
-          ? e.message
-          : OfficialCloudRedactor.text(e.toString());
+      final message = OfficialCloudRedactor.errorMessage(e);
       setState(() {
         _loading = false;
         _initialized = true;
@@ -240,9 +238,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
     } catch (e) {
       if (!mounted) return;
       setState(() => _clearing = false);
-      final message = e is OfficialCloudApiException
-          ? e.message
-          : OfficialCloudRedactor.text(e.toString());
+      final message = OfficialCloudRedactor.errorMessage(e);
       AppSnack.error(context, message);
     }
   }

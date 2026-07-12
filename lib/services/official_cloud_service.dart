@@ -1514,10 +1514,7 @@ class OfficialCloudService {
   }
 
   String _errorMessage(Object e) {
-    if (e is OfficialCloudApiException) {
-      return OfficialCloudRedactor.text(e.message);
-    }
-    return OfficialCloudRedactor.text(e.toString());
+    return OfficialCloudRedactor.errorMessage(e);
   }
 
   /// Coalesce silent refreshes that share a [refreshKey]: reuse in-flight

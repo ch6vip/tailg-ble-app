@@ -208,10 +208,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   String _errorMessage(Object e) {
-    if (e is OfficialCloudApiException) {
-      return OfficialCloudRedactor.text(e.message);
-    }
-    return OfficialCloudRedactor.text(e.toString());
+    return OfficialCloudRedactor.errorMessage(e);
   }
 
   @override

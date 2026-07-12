@@ -472,7 +472,7 @@ void main() {
       );
     });
 
-    test('redacts generic error messages before publishing state', () {
+    test('uses the shared redactor before publishing error state', () {
       final source = readSource('lib/services/official_cloud_service.dart');
       final methodStart = source.indexOf('String _errorMessage(Object e)');
       final methodEnd = source.indexOf(
@@ -485,11 +485,7 @@ void main() {
 
       final methodSource = source.substring(methodStart, methodEnd);
 
-      expect(methodSource, contains('OfficialCloudRedactor.text(e.message)'));
-      expect(
-        methodSource,
-        contains('OfficialCloudRedactor.text(e.toString())'),
-      );
+      expect(methodSource, contains('OfficialCloudRedactor.errorMessage(e)'));
       expect(methodSource, isNot(contains('return e.toString();')));
     });
   });
@@ -530,6 +526,21 @@ void main() {
           'phone=18886120851 imei=860123456789377 mac=AA:BB:CC:DD:EE:FF compact=aabbccddeeff userId=user-secret password=qgj-secret authorization=raw-secret-token Bearer bearer-secret-token frame=L12345678901234567',
         ),
         'phone=188***851 imei=860***377 mac=AA:***:FF compact=aab***eff userId=use***ret password=qgj***ret authorization=raw***ken Bearer bea***ken frame=L12***567',
+      );
+    });
+
+    test('normalizes API and generic exceptions through one entry point', () {
+      expect(
+        OfficialCloudRedactor.errorMessage(
+          const OfficialCloudApiException('phone=18886120851'),
+        ),
+        'phone=188***851',
+      );
+      expect(
+        OfficialCloudRedactor.errorMessage(
+          Exception('authorization=raw-secret-token'),
+        ),
+        'Exception: authorization=raw***ken',
       );
     });
   });
