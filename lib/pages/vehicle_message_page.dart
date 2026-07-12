@@ -409,7 +409,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
               AppEmptyState(
                 icon: Icons.wifi_off_outlined,
                 title: '消息加载失败',
-                subtitle: _error!,
+                subtitle: _error,
                 padding: EdgeInsets.zero,
               ),
               const SizedBox(height: 16),

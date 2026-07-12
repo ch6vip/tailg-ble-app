@@ -28,15 +28,27 @@ linter:
   # producing the lint.
   rules:
     avoid_dynamic_calls: true
+    avoid_slow_async_io: true
+    avoid_unused_constructor_parameters: true
     close_sinks: true
     collection_methods_unrelated_type: true
     constant_identifier_names: false
+    depend_on_referenced_packages: true
     discarded_futures: true
     empty_catches: true
+    no_adjacent_strings_in_list: true
     noop_primitive_operations: true
+    no_runtimeType_toString: true
+    parameter_assignments: true
+    prefer_final_in_for_each: true
+    prefer_final_locals: true
+    prefer_null_aware_method_calls: true
     unnecessary_await_in_return: true
+    unnecessary_null_checks: true
     unnecessary_statements: true
     unawaited_futures: true
+    use_test_throws_matchers: true
+    valid_regexps: true
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options
