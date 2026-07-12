@@ -93,8 +93,8 @@ class _ControlPageState extends State<ControlPage>
   void initState() {
     super.initState();
     _signedIn = officialCloudService.state.signedIn;
-    _hasLocalVehicle = vehicleStore.vehicles.isNotEmpty ||
-        vehicleStore.defaultVehicle != null;
+    _hasLocalVehicle =
+        vehicleStore.vehicles.isNotEmpty || vehicleStore.defaultVehicle != null;
     _cloudSub = officialCloudService.stateStream.listen((state) {
       if (!mounted) return;
       final next = state.signedIn;
