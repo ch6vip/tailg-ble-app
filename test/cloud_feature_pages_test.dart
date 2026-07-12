@@ -76,6 +76,52 @@ void main() {
     expect(find.text('切换车辆'), findsNothing);
   });
 
+  testWidgets('vehicle switch sheet scrolls on a short screen', (tester) async {
+    setTestViewSize(tester, const Size(390, 600));
+    final vehicles = List.generate(
+      12,
+      (index) => OfficialVehicle.fromJson({
+        'carId': 'scroll-car-$index',
+        'carNickName': '车辆 ${index + 1}',
+      }),
+    );
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        vehicles: vehicles,
+        selectedVehicleKey: vehicles.first.key,
+      ),
+    );
+
+    await tester.pumpWidget(
+      TestApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: ElevatedButton(
+                onPressed: () => showVehicleSwitchSheet(context),
+                child: const Text('打开车辆切换'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('打开车辆切换'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(ListView), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('车辆 12'),
+      200,
+      scrollable: find.byType(Scrollable),
+    );
+
+    expect(find.text('车辆 12'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'ride stats renders cloud travel summary and blocks future month',
     (tester) async {

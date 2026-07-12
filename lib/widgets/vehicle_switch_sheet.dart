@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 Future<void> showVehicleSwitchSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
+    isScrollControlled: true,
     backgroundColor: Colors.white,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -47,11 +48,21 @@ class _VehicleSwitchSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          ...vehicles.map(
-            (OfficialVehicle v) => _VehicleTile(
-              vehicle: v,
-              selected: v.key == selectedKey,
-              onTap: () => _onSelect(context, v),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * 0.55,
+            ),
+            child: ListView(
+              shrinkWrap: true,
+              children: vehicles
+                  .map(
+                    (OfficialVehicle vehicle) => _VehicleTile(
+                      vehicle: vehicle,
+                      selected: vehicle.key == selectedKey,
+                      onTap: () => _onSelect(context, vehicle),
+                    ),
+                  )
+                  .toList(growable: false),
             ),
           ),
           const SizedBox(height: 16),
