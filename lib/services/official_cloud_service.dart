@@ -720,13 +720,32 @@ class OfficialCloudService {
   }
 
   Future<void> selectVehicle(OfficialVehicle vehicle) async {
+    final changed = _state.selectedVehicleKey != vehicle.key;
     await Future.wait([
       _storage.saveSelectedVehicleKey(vehicle.key),
       _storage.saveCarControlInfo(vehicle),
     ]);
-    _state = _state.copyWith(selectedVehicleKey: vehicle.key);
+    if (changed) {
+      _state = _state.copyWith(
+        selectedVehicleKey: vehicle.key,
+        batteryInfo: null,
+        batteryInfoError: null,
+        vehicleLocation: null,
+        vehicleLocationError: null,
+        fenceData: null,
+        fenceError: null,
+        travelDays: const [],
+        travelDetails: const {},
+        travelError: null,
+      );
+    } else {
+      _state = _state.copyWith(selectedVehicleKey: vehicle.key);
+    }
     _emit();
     await _applySelectedVehicleToLocalProfile();
+    if (changed) {
+      _refreshVehicleDependents(refreshReplicaDetails: true);
+    }
   }
 
   Future<void> refreshBatteryInfo({
@@ -968,6 +987,96 @@ class OfficialCloudService {
         _state = _state.copyWith(fenceLoading: false);
         _emit();
       }
+    }
+  }
+
+  Future<void> updateFenceData({
+    required bool enabled,
+    required int radiusValue,
+    required String timeFrom,
+    required String timeTo,
+  }) async {
+    final token = _state.token;
+    final vehicle = _state.selectedVehicle;
+    if (token.isEmpty || vehicle == null) return;
+    _state = _state.copyWith(fenceLoading: true, fenceError: null);
+    _emit();
+    try {
+      final response = await _apiClient.request(
+        'app/device/updFenceData',
+        method: 'POST',
+        token: token,
+        body: {
+          'carId': vehicle.carId,
+          'fenceSwitch': enabled ? '1' : '0',
+          'fenceRadius': '$radiusValue',
+          'fenceTimeFr': timeFrom,
+          'fenceTimeTo': timeTo,
+        },
+        retryPolicy: OfficialCloudRetryPolicy.transportOnly,
+      );
+      _ensureSuccess(response.body, fallback: '围栏设置保存失败');
+      if (!_isCurrentSession(token)) return;
+      await refreshFenceData(silent: true, force: true);
+      _log.operation('官方电子围栏已更新');
+    } catch (e) {
+      if (!_isCurrentSession(token)) return;
+      await _handleAuthFailureIfNeeded(e);
+      if (_state.signedIn) {
+        _state = _state.copyWith(
+          fenceLoading: false,
+          fenceError: _errorMessage(e),
+        );
+        _emit();
+      }
+      rethrow;
+    } finally {
+      if (_isCurrentSession(token) && _state.fenceLoading) {
+        _state = _state.copyWith(fenceLoading: false);
+        _emit();
+      }
+    }
+  }
+
+  Future<Map<String, bool>> getMessageControl() async {
+    final token = _state.token;
+    if (token.isEmpty) return {};
+    try {
+      final response = await _apiClient.request(
+        'app/msg/getMessageControl',
+        method: 'POST',
+        token: token,
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
+      );
+      _ensureSuccess(response.body, fallback: '获取消息偏好失败');
+      final data = response.body['data'];
+      if (data is! Map) return {};
+      return data.map(
+        (k, v) => MapEntry(k.toString(), v == true || v == '1' || v == 1),
+      );
+    } catch (e) {
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
+    }
+  }
+
+  Future<void> setMessagePushConfig(Map<String, bool> config) async {
+    final token = _state.token;
+    if (token.isEmpty) return;
+    try {
+      final body = config.map((k, v) => MapEntry(k, v ? '1' : '0'));
+      final response = await _apiClient.request(
+        'app/msg/setMessagePushConfig',
+        method: 'POST',
+        token: token,
+        body: body,
+        retryPolicy: OfficialCloudRetryPolicy.transportOnly,
+      );
+      _ensureSuccess(response.body, fallback: '消息偏好保存失败');
+      _log.operation('消息推送偏好已更新');
+    } catch (e) {
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
     }
   }
 

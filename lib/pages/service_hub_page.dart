@@ -9,6 +9,7 @@ import 'battery_details_page.dart';
 import 'diagnostic_page.dart';
 import 'location_page.dart';
 import 'official_cloud_page.dart';
+import 'ride_stats_page.dart';
 import 'vehicle_settings_page.dart';
 
 class ServiceHubPage extends StatelessWidget {
@@ -93,6 +94,12 @@ class ServiceHubPage extends StatelessWidget {
                         label: '电池服务',
                         color: AppColors.energyGreen,
                         onTap: () => _open(context, const BatteryDetailsPage()),
+                      ),
+                      _ServiceGridTile(
+                        icon: Icons.insert_chart_outlined,
+                        label: '骑行统计',
+                        color: AppColors.accentPurple,
+                        onTap: () => _open(context, const RideStatsPage()),
                       ),
                       _ServiceGridTile(
                         icon: Icons.health_and_safety_outlined,

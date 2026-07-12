@@ -20,6 +20,7 @@ import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/cloud_vehicle_gate.dart';
 import '../widgets/vehicle_stage.dart';
+import '../widgets/vehicle_switch_sheet.dart';
 import '../widgets/control_card.dart';
 import 'add_vehicle_page.dart';
 import 'battery_details_page.dart';

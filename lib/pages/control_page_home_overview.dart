@@ -276,11 +276,18 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             rangeKm: range,
             vehicleName: cloudVehicle?.displayName ?? vehicleName,
             online: cloudVehicle?.online ?? true,
-            onVehicleSwitch: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const OfficialCloudPage(),
-              ),
-            ),
+            onVehicleSwitch: () {
+              final vehicles = officialCloudService.state.vehicles;
+              if (vehicles.length > 1) {
+                showVehicleSwitchSheet(context);
+              } else {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const OfficialCloudPage(),
+                  ),
+                );
+              }
+            },
             onBatteryTap: () {
               if (!requireCloudVehicle(context)) return;
               Navigator.of(context).push(

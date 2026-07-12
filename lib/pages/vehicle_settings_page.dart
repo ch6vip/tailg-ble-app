@@ -3,6 +3,7 @@ import '../main.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import 'notification_prefs_page.dart';
 
 class VehicleSettingsPage extends StatelessWidget {
   const VehicleSettingsPage({super.key});
@@ -58,6 +59,41 @@ class VehicleSettingsPage extends StatelessWidget {
                             _InfoRow(label: '状态', value: vehicle.onlineLabel),
                             _InfoRow(label: '设防', value: vehicle.defenceLabel),
                           ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      AppCard(
+                        margin: EdgeInsets.zero,
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(
+                            Icons.notifications_outlined,
+                            color: AppColors.textSecondary,
+                          ),
+                          title: const Text(
+                            '通知偏好',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          subtitle: const Text(
+                            '管理消息推送类型',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                          trailing: const Icon(
+                            Icons.chevron_right,
+                            color: AppColors.textTertiary,
+                          ),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const NotificationPrefsPage(),
+                            ),
+                          ),
                         ),
                       ),
                     ],

@@ -95,7 +95,7 @@ class _FenceTab extends StatelessWidget {
   }
 }
 
-class _OfficialFenceSheet extends StatelessWidget {
+class _OfficialFenceSheet extends StatefulWidget {
   final OfficialFenceData? fence;
   final String? error;
   final bool loading;
@@ -113,24 +113,85 @@ class _OfficialFenceSheet extends StatelessWidget {
   });
 
   @override
+  State<_OfficialFenceSheet> createState() => _OfficialFenceSheetState();
+}
+
+class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
+  late bool _enabled;
+  late double _radiusValue;
+  late String _timeFrom;
+  late String _timeTo;
+  bool _saving = false;
+  bool _dirty = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncFromFence(widget.fence);
+  }
+
+  @override
+  void didUpdateWidget(_OfficialFenceSheet old) {
+    super.didUpdateWidget(old);
+    if (!_dirty && widget.fence != old.fence) {
+      _syncFromFence(widget.fence);
+    }
+  }
+
+  void _syncFromFence(OfficialFenceData? fence) {
+    _enabled = fence?.enabled ?? false;
+    final rawRadius = fence?.fenceRadius.trim();
+    _radiusValue = (double.tryParse(rawRadius ?? '') ?? 1).clamp(
+      double.tryParse(fence?.fenceRadiusMin ?? '') ?? 1,
+      double.tryParse(fence?.fenceRadiusMax ?? '') ?? 100,
+    );
+    _timeFrom = fence?.fenceTimeFr ?? '08:00';
+    _timeTo = fence?.fenceTimeTo ?? '22:00';
+  }
+
+  double get _minRadius =>
+      double.tryParse(widget.fence?.fenceRadiusMin ?? '') ?? 1;
+  double get _maxRadius =>
+      double.tryParse(widget.fence?.fenceRadiusMax ?? '') ?? 100;
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      await officialCloudService.updateFenceData(
+        enabled: _enabled,
+        radiusValue: _radiusValue.round(),
+        timeFrom: _timeFrom,
+        timeTo: _timeTo,
+      );
+      if (mounted) {
+        setState(() {
+          _dirty = false;
+          _saving = false;
+        });
+        AppSnack.success(context, '围栏设置已保存');
+      }
+    } on Exception {
+      if (mounted) {
+        setState(() => _saving = false);
+        AppSnack.error(context, '保存失败，请重试');
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final error = this.error;
-    final enabled = fence?.enabled ?? false;
-    final radius = fence?.radiusMeters;
-    final minRadius = _radiusMeters(fence?.fenceRadiusMin) ?? 100;
-    final maxRadius = _radiusMeters(fence?.fenceRadiusMax) ?? 10000;
-    final progress = radius == null
-        ? 0.0
-        : ((radius - minRadius) / (maxRadius - minRadius)).clamp(0.0, 1.0);
-    final time = fence?.timeLabel ?? '待读取';
-    final source = fence?.hasData == true
+    final error = widget.error;
+    final radius = _radiusValue * 100;
+    final minRadius = _minRadius * 100;
+    final maxRadius = _maxRadius * 100;
+    final source = widget.fence?.hasData == true
         ? '围栏配置已同步'
-        : signedIn
+        : widget.signedIn
         ? '暂无围栏配置'
         : '登录后同步围栏配置';
 
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 18, 20, 18 + bottomPadding),
+      padding: EdgeInsets.fromLTRB(20, 18, 20, 18 + widget.bottomPadding),
       decoration: const BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(
@@ -168,8 +229,8 @@ class _OfficialFenceSheet extends StatelessWidget {
                 shape: const CircleBorder(),
                 child: IconButton(
                   tooltip: '刷新围栏',
-                  onPressed: loading ? null : onRefresh,
-                  icon: loading
+                  onPressed: widget.loading ? null : widget.onRefresh,
+                  icon: widget.loading
                       ? const SizedBox(
                           width: 18,
                           height: 18,
@@ -181,10 +242,18 @@ class _OfficialFenceSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          _FenceSettingRow(
-            title: '电子围栏',
-            subtitle: source,
-            trailing: _FenceSwitchPill(enabled: enabled),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _enabled = !_enabled;
+                _dirty = true;
+              });
+            },
+            child: _FenceSettingRow(
+              title: '电子围栏',
+              subtitle: source,
+              trailing: _FenceSwitchPill(enabled: _enabled),
+            ),
           ),
           const SizedBox(height: 10),
           Container(
@@ -202,7 +271,7 @@ class _OfficialFenceSheet extends StatelessWidget {
                       child: Text('范围设置', style: AppTextStyles.bodyLarge),
                     ),
                     Text(
-                      radius == null ? '待读取' : _formatDistance(radius),
+                      _formatDistance(radius),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
@@ -212,18 +281,29 @@ class _OfficialFenceSheet extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadii.pill),
-                  child: LinearProgressIndicator(
-                    minHeight: 6,
-                    value: progress,
-                    backgroundColor: AppColors.surface,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      enabled ? AppColors.primary : AppColors.textTertiary,
-                    ),
+                SliderTheme(
+                  data: SliderThemeData(
+                    activeTrackColor: _enabled
+                        ? AppColors.primary
+                        : AppColors.textTertiary,
+                    inactiveTrackColor: AppColors.surface,
+                    thumbColor: _enabled
+                        ? AppColors.primary
+                        : AppColors.textTertiary,
+                    trackHeight: 6,
+                  ),
+                  child: Slider(
+                    value: _radiusValue,
+                    min: _minRadius,
+                    max: _maxRadius,
+                    onChanged: (v) {
+                      setState(() {
+                        _radiusValue = v;
+                        _dirty = true;
+                      });
+                    },
                   ),
                 ),
-                const SizedBox(height: 8),
                 Row(
                   children: [
                     Text(
@@ -238,14 +318,17 @@ class _OfficialFenceSheet extends StatelessWidget {
                   ],
                 ),
                 const Divider(height: 24, color: AppColors.outlineVariant),
-                _FenceSettingRow(
-                  title: '时间设置',
-                  subtitle: time,
-                  trailing: const Icon(
-                    Icons.chevron_right,
-                    color: AppColors.textTertiary,
+                GestureDetector(
+                  onTap: () => _pickTimeRange(context),
+                  child: _FenceSettingRow(
+                    title: '时间设置',
+                    subtitle: '$_timeFrom - $_timeTo',
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: AppColors.textTertiary,
+                    ),
+                    dense: true,
                   ),
-                  dense: true,
                 ),
               ],
             ),
@@ -261,21 +344,34 @@ class _OfficialFenceSheet extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             height: 48,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.45),
-                borderRadius: BorderRadius.circular(AppRadii.card),
-              ),
-              child: const Center(
-                child: Text(
-                  '保存',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
+            child: ElevatedButton(
+              onPressed: (_dirty && !_saving && !widget.loading) ? _save : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                disabledBackgroundColor: AppColors.primary.withValues(
+                  alpha: 0.35,
+                ),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.card),
                 ),
               ),
+              child: _saving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      '保存',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
             ),
           ),
         ],
@@ -283,16 +379,38 @@ class _OfficialFenceSheet extends StatelessWidget {
     );
   }
 
-  static double? _radiusMeters(String? value) {
-    final text = value?.trim();
-    if (text == null || text.isEmpty) return null;
-    final parsed = double.tryParse(text);
-    if (parsed == null) return null;
-    return parsed * 100;
+  Future<void> _pickTimeRange(BuildContext context) async {
+    final fromParts = _timeFrom.split(':');
+    final startHour = int.tryParse(fromParts[0]) ?? 8;
+    final startMin = fromParts.length > 1 ? int.tryParse(fromParts[1]) ?? 0 : 0;
+
+    final from = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: startHour, minute: startMin),
+      helpText: '开始时间',
+    );
+    if (from == null || !context.mounted) return;
+
+    final toParts = _timeTo.split(':');
+    final endHour = int.tryParse(toParts[0]) ?? 22;
+    final endMin = toParts.length > 1 ? int.tryParse(toParts[1]) ?? 0 : 0;
+
+    final to = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: endHour, minute: endMin),
+      helpText: '结束时间',
+    );
+    if (to == null || !context.mounted) return;
+
+    setState(() {
+      _timeFrom =
+          '${from.hour.toString().padLeft(2, '0')}:${from.minute.toString().padLeft(2, '0')}';
+      _timeTo =
+          '${to.hour.toString().padLeft(2, '0')}:${to.minute.toString().padLeft(2, '0')}';
+      _dirty = true;
+    });
   }
 
-  // Show large fence radii in km (e.g. 10000m -> 10km) so the range labels
-  // stay readable; keep metres below 1km.
   static String _formatDistance(double meters) {
     if (meters >= 1000) {
       final km = meters / 1000;
