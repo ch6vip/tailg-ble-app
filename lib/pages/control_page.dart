@@ -70,6 +70,10 @@ class _ControlPageState extends State<ControlPage>
 
   RouteObserver<ModalRoute<void>>? _routeObserver;
   bool _routeSubscribed = false;
+  StreamSubscription<OfficialCloudState>? _cloudSub;
+  StreamSubscription<List<VehicleProfile>>? _vehicleSub;
+  bool _signedIn = false;
+  bool _hasLocalVehicle = false;
 
   /// Pull-to-refresh: re-sync cloud vehicle data when signed in, otherwise just
   /// settle briefly so the indicator animation feels intentional.
@@ -88,7 +92,19 @@ class _ControlPageState extends State<ControlPage>
   @override
   void initState() {
     super.initState();
-    // First mount of the control shell (app start / page recreate).
+    _signedIn = officialCloudService.state.signedIn;
+    _hasLocalVehicle = vehicleStore.vehicles.isNotEmpty ||
+        vehicleStore.defaultVehicle != null;
+    _cloudSub = officialCloudService.stateStream.listen((state) {
+      if (!mounted) return;
+      final next = state.signedIn;
+      if (next != _signedIn) setState(() => _signedIn = next);
+    });
+    _vehicleSub = vehicleStore.vehiclesStream.listen((vehicles) {
+      if (!mounted) return;
+      final next = vehicles.isNotEmpty || vehicleStore.defaultVehicle != null;
+      if (next != _hasLocalVehicle) setState(() => _hasLocalVehicle = next);
+    });
     _refreshOnVisible();
   }
 
@@ -108,6 +124,8 @@ class _ControlPageState extends State<ControlPage>
 
   @override
   void dispose() {
+    _cloudSub?.cancel();
+    _vehicleSub?.cancel();
     _routeObserver?.unsubscribe(this);
     _routeObserver = null;
     _routeSubscribed = false;
@@ -122,8 +140,6 @@ class _ControlPageState extends State<ControlPage>
 
   void _refreshOnVisible() {
     if (!officialCloudService.state.signedIn) return;
-    // Align with official ControlFragment.onResume: refresh car status when
-    // the control page becomes active again.
     unawaited(_refreshVehiclesSilently());
   }
 
@@ -142,8 +158,7 @@ class _ControlPageState extends State<ControlPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    // 静态外壳只构建一次；仅随数据变化的内容下沉到 [_HomeBody]，
-    // 避免每次连接态/车辆/云态事件都重建 Scaffold/RefreshIndicator/滚动容器。
+    if (!_signedIn && !_hasLocalVehicle) return const LoginPage();
     return Scaffold(
       backgroundColor: _pageBg(context),
       body: RefreshIndicator(
@@ -256,8 +271,10 @@ class _HomeBodyState extends State<_HomeBody> {
             ControlHomeMode.loading => const _ControlHomeLoading(
               key: ValueKey('control-home-loading'),
             ),
-            ControlHomeMode.needLogin || ControlHomeMode.unbound =>
-              _UnboundVehicleHome(key: ValueKey(mode.name), mode: mode),
+            ControlHomeMode.unbound => const _UnboundVehicleHome(
+              key: ValueKey('unbound-home'),
+            ),
+            ControlHomeMode.needLogin => const SizedBox.shrink(),
           },
         );
       },

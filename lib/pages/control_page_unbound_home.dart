@@ -14,12 +14,9 @@ part of 'control_page.dart';
 /// upper useful portion with `BoxFit.cover` + `Alignment.topCenter` so the blue
 /// CTA remains visible without the huge empty bottom of the asset.
 ///
-/// Bind hotspot is honest: not signed in → LoginPage; signed in → AddVehiclePage.
+/// Bind hotspot opens AddVehiclePage (user is always signed in here).
 class _UnboundVehicleHome extends StatelessWidget {
-  const _UnboundVehicleHome({super.key, this.mode = ControlHomeMode.unbound});
-
-  /// Optional mode so needLogin / unbound can share this shell.
-  final ControlHomeMode mode;
+  const _UnboundVehicleHome({super.key});
 
   static const _vehicleTitle = '--';
 
@@ -39,13 +36,6 @@ class _UnboundVehicleHome extends StatelessWidget {
     );
   }
 
-  void _openLogin(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(builder: (_) => const LoginPage()),
-    );
-  }
-
   void _openMessages(BuildContext context) {
     Navigator.push(
       context,
@@ -53,15 +43,11 @@ class _UnboundVehicleHome extends StatelessWidget {
     );
   }
 
-  void _openCloudOrLogin(BuildContext context) {
-    if (officialCloudService.state.signedIn) {
-      Navigator.push(
-        context,
-        MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
-      );
-      return;
-    }
-    _openLogin(context);
+  void _openCloud(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
+    );
   }
 
   void _onVehicleSelectTap(BuildContext context) {
@@ -69,26 +55,16 @@ class _UnboundVehicleHome extends StatelessWidget {
   }
 
   void _onDetailTap(BuildContext context) {
-    // Official opens EVBikeInfoDetail; cloud-only falls back to vehicle list /
-    // login since there is no bound car detail to show.
-    _openCloudOrLogin(context);
+    _openCloud(context);
   }
 
   void _onBindHotspot(BuildContext context) {
     HapticFeedback.mediumImpact();
-    if (!officialCloudService.state.signedIn) {
-      _openLogin(context);
-      return;
-    }
     _openAddVehicle(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    // mode is used for AnimatedSwitcher keys; keep field for future copy.
-    assert(
-      mode == ControlHomeMode.needLogin || mode == ControlHomeMode.unbound,
-    );
     final topPadding = MediaQuery.paddingOf(context).top;
     final width = MediaQuery.sizeOf(context).width;
 
@@ -103,7 +79,6 @@ class _UnboundVehicleHome extends StatelessWidget {
     final maxBindHeight = (viewportHeight * 0.48).clamp(260.0, 420.0);
 
     return Container(
-      key: const ValueKey('unbound-home'),
       decoration: const BoxDecoration(
         color: AppColors.officialPageBg,
         image: DecorationImage(
@@ -222,42 +197,6 @@ class _UnboundVehicleHome extends StatelessWidget {
               },
             ),
           ),
-          // Secondary login path as a compact text button (not a heavy white
-          // filled button that used to overlap the tall marketing card).
-          const SizedBox(height: 10),
-          Center(
-            child: AppPressable(
-              pressedScale: AppMotion.pressScale,
-              duration: AppMotion.micro,
-              curve: AppMotion.pressCurve,
-              background: Colors.transparent,
-              pressedBackground: AppColors.officialPressedBg,
-              borderRadius: BorderRadius.circular(AppRadii.pill),
-              haptic: false,
-              semanticsLabel: '登录账号',
-              semanticsButton: true,
-              semanticsEnabled: true,
-              onTap: () {
-                HapticFeedback.mediumImpact();
-                _openLogin(context);
-              },
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Text(
-                  '登录账号同步车辆',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.officialStrong,
-                    decoration: TextDecoration.underline,
-                    decorationColor: AppColors.officialTextMuted,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          // Extra bottom breathing room so content clears the bottom nav when
-          // parent scroll padding is tight.
           const SizedBox(height: 28),
         ],
       ),
