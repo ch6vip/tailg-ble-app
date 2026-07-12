@@ -54,7 +54,7 @@ const _controlCommandDebounce = Duration(milliseconds: 1000);
 const _controlCommandSendDelay = Duration(milliseconds: 500);
 int? _normalizePercent(int? value) {
   if (value == null) return null;
-  return value.clamp(0, 100).toInt();
+  return value.clamp(0, 100);
 }
 
 class ControlPage extends StatefulWidget {

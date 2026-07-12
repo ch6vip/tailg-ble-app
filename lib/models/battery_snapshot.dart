@@ -160,7 +160,7 @@ class BatterySnapshot {
 
   static int? _parsePercent(String? value) {
     final parsed = _parseNumber(value?.replaceAll('%', ''));
-    return parsed?.round().clamp(0, 100).toInt();
+    return parsed?.round().clamp(0, 100);
   }
 
   static double? _parseNumber(String? value) {

@@ -172,7 +172,7 @@ class _VehicleTile extends StatelessWidget {
     }
     final battery = v.electricQuantity;
     if (battery != null && battery > 0) {
-      parts.add('${battery.toInt()}%');
+      parts.add('$battery%');
     }
     return parts.join(' · ');
   }

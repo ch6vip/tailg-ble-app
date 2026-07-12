@@ -27,10 +27,15 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
+    avoid_dynamic_calls: true
     close_sinks: true
+    collection_methods_unrelated_type: true
     constant_identifier_names: false
     discarded_futures: true
     empty_catches: true
+    noop_primitive_operations: true
+    unnecessary_await_in_return: true
+    unnecessary_statements: true
     unawaited_futures: true
 
 # Additional information about this file can be found at
