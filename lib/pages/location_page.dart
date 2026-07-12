@@ -182,8 +182,10 @@ class _LocationPageState extends State<LocationPage> {
 
   Future<void> _changeTravelMonth(int delta) async {
     final state = officialCloudService.state;
-    final current = _parseMonth(state.travelMonth) ?? _now();
+    final current = parseMonthText(state.travelMonth) ?? _now();
     final next = DateTime(current.year, current.month + delta);
+    final now = _now();
+    if (delta > 0 && next.isAfter(DateTime(now.year, now.month))) return;
     await _refreshTravelHistory(month: formatMonthText(next));
   }
 
@@ -1286,13 +1288,4 @@ class _TabItem {
   final String label;
 
   const _TabItem(this.icon, this.label);
-}
-
-DateTime? _parseMonth(String value) {
-  final parts = value.trim().split('-');
-  if (parts.length != 2) return null;
-  final year = int.tryParse(parts[0]);
-  final month = int.tryParse(parts[1]);
-  if (year == null || month == null || month < 1 || month > 12) return null;
-  return DateTime(year, month);
 }

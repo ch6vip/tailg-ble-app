@@ -23,6 +23,14 @@ void main() {
     expect(formatMonthText(DateTime(2026, 1)), '2026-01');
   });
 
+  test('parseMonthText accepts valid months and rejects invalid input', () {
+    expect(parseMonthText('2026-07'), DateTime(2026, 7));
+    expect(parseMonthText(' 2026-01 '), DateTime(2026, 1));
+    expect(parseMonthText('2026-00'), isNull);
+    expect(parseMonthText('2026-13'), isNull);
+    expect(parseMonthText('not-a-month'), isNull);
+  });
+
   test('formatMonthDayMinuteText renders padded compact time text', () {
     expect(
       formatMonthDayMinuteText(DateTime(2026, 5, 29, 10, 30)),

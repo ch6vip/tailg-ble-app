@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../main.dart';
 import '../models/official_vehicle.dart';
+import '../services/display_time_formatter.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 
@@ -14,7 +14,7 @@ class RideStatsPage extends StatefulWidget {
 }
 
 class _RideStatsPageState extends State<RideStatsPage> {
-  String _month = DateFormat('yyyy-MM').format(DateTime.now());
+  String _month = formatMonthText(DateTime.now());
   bool _loading = false;
   String? _error;
   List<OfficialTravelDay> _days = [];
@@ -51,18 +51,20 @@ class _RideStatsPageState extends State<RideStatsPage> {
   }
 
   void _prevMonth() {
-    final date = DateFormat('yyyy-MM').parse(_month);
+    final date = parseMonthText(_month);
+    if (date == null) return;
     final prev = DateTime(date.year, date.month - 1);
-    _month = DateFormat('yyyy-MM').format(prev);
+    _month = formatMonthText(prev);
     _loadMonth();
   }
 
   void _nextMonth() {
-    final date = DateFormat('yyyy-MM').parse(_month);
+    final date = parseMonthText(_month);
+    if (date == null) return;
     final next = DateTime(date.year, date.month + 1);
     final now = DateTime.now();
     if (next.isAfter(DateTime(now.year, now.month))) return;
-    _month = DateFormat('yyyy-MM').format(next);
+    _month = formatMonthText(next);
     _loadMonth();
   }
 

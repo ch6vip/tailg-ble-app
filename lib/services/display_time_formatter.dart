@@ -11,6 +11,15 @@ String formatMonthText(DateTime time) {
   return '${time.year}-${_twoDigits(time.month)}';
 }
 
+DateTime? parseMonthText(String value) {
+  final parts = value.trim().split('-');
+  if (parts.length != 2) return null;
+  final year = int.tryParse(parts[0]);
+  final month = int.tryParse(parts[1]);
+  if (year == null || month == null || month < 1 || month > 12) return null;
+  return DateTime(year, month);
+}
+
 String formatMonthDayMinuteText(DateTime time) {
   return '${_twoDigits(time.month)}/${_twoDigits(time.day)} '
       '${_twoDigits(time.hour)}:${_twoDigits(time.minute)}';

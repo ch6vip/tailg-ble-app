@@ -225,6 +225,24 @@ void main() {
     expect(find.text('2026-06'), findsOneWidget);
   });
 
+  test('LocationPage prevents navigation into future travel months', () {
+    final source = readSource('lib/pages/location_page.dart');
+    final methodStart = source.indexOf('Future<void> _changeTravelMonth');
+    final methodEnd = source.indexOf('  DateTime _now()', methodStart);
+
+    expect(methodStart, greaterThanOrEqualTo(0));
+    expect(methodEnd, greaterThan(methodStart));
+    final method = source.substring(methodStart, methodEnd);
+
+    expect(method, contains('parseMonthText(state.travelMonth)'));
+    expect(
+      method,
+      contains(
+        'if (delta > 0 && next.isAfter(DateTime(now.year, now.month))) return;',
+      ),
+    );
+  });
+
   testWidgets('LocationPage travel tab renders cloud error details', (
     tester,
   ) async {
