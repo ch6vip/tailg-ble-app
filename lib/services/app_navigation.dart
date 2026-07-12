@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'log_service.dart';
+import 'official_cloud_service.dart';
 import 'service_locator.dart';
 
 /// Shared navigation helpers for cloud-only high-value paths.
@@ -22,7 +24,21 @@ abstract final class AppNavigation {
     AppServices.instance.homeTabIndex.value = vehicleTabIndex;
     final cloud = AppServices.instance.officialCloudService;
     if (refresh && cloud.state.signedIn) {
-      unawaited(cloud.refreshVehicles(silent: true, force: true));
+      unawaited(_refreshVehiclesSilently(cloud));
+    }
+  }
+
+  static Future<void> _refreshVehiclesSilently(
+    OfficialCloudService cloud,
+  ) async {
+    try {
+      await cloud.refreshVehicles(silent: true, force: true);
+    } catch (error) {
+      AppServices.instance.logService.operation(
+        '返回爱车页后官方车辆刷新失败',
+        detail: OfficialCloudRedactor.errorMessage(error),
+        level: LogLevel.warning,
+      );
     }
   }
 
