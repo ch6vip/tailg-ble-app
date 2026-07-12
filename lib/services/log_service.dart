@@ -119,21 +119,6 @@ class LogService {
     r'(登录|login|QGJ 登录)',
     caseSensitive: false,
   );
-  static final RegExp _sensitiveKeyValuePattern = RegExp(
-    r'''(["']?\b(?:phone|token|imei|carId|uid|userId|password|frame|btmac|mac)\b["']?\s*[:=]\s*["']?)([^"'\s,&}]+)(["']?)''',
-    caseSensitive: false,
-  );
-  static final RegExp _authorizationValuePattern = RegExp(
-    r'''(["']?\bauthorization\b["']?\s*[:=]\s*["']?)(?!Bearer\b)([^"'\s,&}]+)(["']?)''',
-    caseSensitive: false,
-  );
-  static final RegExp _bearerTokenPattern = RegExp(
-    r'\bBearer\s+([A-Za-z0-9._~+/=-]+)',
-    caseSensitive: false,
-  );
-  static final RegExp _phonePattern = RegExp(r'\b1\d{10}\b');
-  static final RegExp _imeiPattern = RegExp(r'\b\d{14,17}\b');
-
   String? _redactDetail(String message, String? detail) {
     if (detail == null) return null;
     if (!_qgjLoginHint.hasMatch(message)) return _redactSensitiveText(detail);
@@ -145,26 +130,7 @@ class LogService {
   }
 
   String _redactSensitiveText(String value) {
-    return value
-        .replaceAllMapped(_bearerTokenPattern, (match) {
-          return 'Bearer ${_mask(match.group(1) ?? '')}';
-        })
-        .replaceAllMapped(_authorizationValuePattern, (match) {
-          return '${match.group(1)}${_mask(match.group(2) ?? '')}${match.group(3)}';
-        })
-        .replaceAllMapped(_sensitiveKeyValuePattern, (match) {
-          return '${match.group(1)}${_mask(match.group(2) ?? '')}${match.group(3)}';
-        })
-        .replaceAllMapped(_phonePattern, _maskMatch)
-        .replaceAllMapped(_imeiPattern, _maskMatch);
-  }
-
-  String _mask(String value) {
-    return SensitiveValueMasker.compact(value);
-  }
-
-  String _maskMatch(Match match) {
-    return _mask(match.group(0) ?? '');
+    return SensitiveTextRedactor.redact(value);
   }
 
   void _add(LogEntry entry) {

@@ -31,4 +31,17 @@ void main() {
       );
     },
   );
+
+  test('text redactor masks structured and standalone sensitive values', () {
+    expect(
+      SensitiveTextRedactor.redact(
+        'phone=18886120851 token=abcdef123456 '
+        'authorization=raw-secret-token Bearer bearer-secret-token '
+        'AA:BB:CC:DD:EE:FF aabbccddeeff',
+      ),
+      'phone=188***851 token=abc***456 '
+      'authorization=raw***ken Bearer bea***ken '
+      'AA:***:FF aab***eff',
+    );
+  });
 }
