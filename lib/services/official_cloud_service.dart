@@ -1535,14 +1535,13 @@ class OfficialCloudService {
     final inFlight = _inFlightRefreshes[refreshKey];
     if (silent && inFlight != null) return inFlight;
 
-    late Future<void> refresh;
-    refresh = run();
+    final refresh = run();
     _inFlightRefreshes[refreshKey] = refresh;
     try {
       await refresh;
     } finally {
       if (identical(_inFlightRefreshes[refreshKey], refresh)) {
-        _inFlightRefreshes.remove(refreshKey);
+        unawaited(_inFlightRefreshes.remove(refreshKey));
       }
     }
   }

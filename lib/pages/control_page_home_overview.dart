@@ -90,7 +90,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
     setState(() {
       _busy = true;
     });
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     try {
       // Official: animation first (event 112), then delayed publish.
       await Future<void>.delayed(_controlCommandSendDelay);

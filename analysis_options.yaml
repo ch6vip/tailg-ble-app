@@ -27,9 +27,11 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
+    close_sinks: true
     constant_identifier_names: false
     discarded_futures: true
     empty_catches: true
+    unawaited_futures: true
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

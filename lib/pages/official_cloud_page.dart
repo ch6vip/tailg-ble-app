@@ -495,7 +495,7 @@ class _OfficialVehicleCard extends StatelessWidget {
           : AppColors.surface,
       child: InkWell(
         onTap: () async {
-          HapticFeedback.selectionClick();
+          unawaited(HapticFeedback.selectionClick());
           await officialCloudService.selectVehicle(vehicle);
           if (!context.mounted) return;
           AppNavigation.returnToVehicleHome(context);

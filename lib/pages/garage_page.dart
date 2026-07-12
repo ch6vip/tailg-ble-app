@@ -104,7 +104,7 @@ class _GaragePageState extends State<GaragePage> {
   }
 
   Future<void> _selectCloudVehicle(OfficialVehicle vehicle) async {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     await officialCloudService.selectVehicle(vehicle);
     if (!mounted) return;
     AppNavigation.returnToVehicleHome(context);
