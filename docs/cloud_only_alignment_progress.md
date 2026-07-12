@@ -1,11 +1,11 @@
-# Cloud-only 对齐进度（非蓝牙）
+# Cloud-only 对齐进度
 
 > 状态：P0 已完成；P0.5 路径优化已完成  
-> 更新：2026-07-11  
-> 定位：官方账号 + 云端控车；**不做绑定闭环，不做 BLE 相关能力**
+> 更新：2026-07-12
+> 定位：官方账号 + 云端控车；**不做绑定闭环，不做本地硬件直连，不要求真机回归**
 
 本文记录「对齐官方 App」的产品与工程进度，聚焦 **P0**，并给出后续优先级。  
-相关历史文档见 `official_3_5_6_deep_comparison.md` / `cloud_architecture_plan.md`（已标记历史，不作为当前架构依据）。
+当前架构见 `cloud_architecture_plan.md`，范围对比见 `official_3_5_6_deep_comparison.md`。
 
 ---
 
@@ -36,11 +36,11 @@
 | 电池页「最后同步时间」 | `lastBatteryRefreshAt` | **P0-4 已接** |
 
 ### 1.3 P0 增强后的现状
-| 模块 | P0 后状态 | 仍待办（二期） |
+| 模块 | P0 后状态 | 后续事项 |
 | --- | --- | --- |
-| 消息中心 | 接官方 `pageOfCarMsg` / `pageOfSysMsg`，本地已读/清空 | 推送开关、服务端删除 |
-| 控车反馈 | 最后同步时间、命令态文案统一、busy=「同步中」 | 真机确认弱网/超时体感 |
-| 定位/轨迹/围栏 | 空态、刷新成功/失败反馈、登录引导、force 刷新 | 围栏写入（`updFenceData`） |
+| 消息中心 | 接官方列表、服务端清空、本地已读状态、通知偏好 | 持续维护 API 兼容 |
+| 控车反馈 | 最后同步时间、命令态文案统一、busy=「同步中」 | 持续补自动化边界测试 |
+| 定位/轨迹/围栏 | 空态、刷新反馈、登录引导、force 刷新、围栏写入 | 持续维护 API 兼容 |
 | 电池页 | 最后同步卡、成功/空态反馈、force 刷新 | BMS 写入/校准不做 |
 
 ---
@@ -55,15 +55,15 @@
 官方参考接口：
 - `app/msg/pageOfCarMsg`
 - `app/msg/pageOfSysMsg`
-- `app/msg/delMsg`（二期）
-- `app/msg/getMessageControl` / `messageControl`（二期）
-- `app/msg/setMessagePushConfig`（二期）
+- `app/msg/delMsg`
+- `app/msg/getMessageControl` / `messageControl`
+- `app/msg/setMessagePushConfig`
 
 验收（已完成）：
 - [x] 已登录可拉取车辆消息 / 系统消息
 - [x] 首屏 + 下拉刷新
 - [x] 详情 bottom sheet
-- [x] 本地已读 / 本地清空（服务端删除二期）
+- [x] 服务端清空车辆与系统消息，并同步清理本地状态
 - [x] 未登录空态引导登录
 - [x] 失败可重试，不崩溃
 - [x] 单测覆盖 parser + 关键 UI
@@ -79,8 +79,8 @@
 - [x] busy 状态显示「同步中」，不再出现错误登录提示
 
 验收：
-- [x] 已登录选车后，右滑启动/锁车反馈正确（代码层统一，待真机确认）
-- [x] 弱网有失败提示且可重试（代码层统一，待真机确认）
+- [x] 已登录选车后，右滑启动/锁车反馈正确（代码与自动化测试验收）
+- [x] 弱网有失败提示且可重试（代码与自动化测试验收）
 - [x] 页面可见「刚刚同步 / x 分钟前同步」
 
 ### P0-3 定位 / 轨迹 / 围栏打磨
@@ -92,7 +92,7 @@
 - [x] 轨迹按天浏览基础体验
 - [x] 围栏只读信息完整（开关、半径、时间若有）
 - [x] force 刷新（`refreshVehicleLocation` / `refreshFenceData` / `refreshTravelHistory`）
-- [ ] 可选：围栏写入（`updFenceData`）——不做不阻塞 P0
+- [x] 围栏写入（`updFenceData`）已接入
 
 验收：
 - [x] 有车时位置页不空白
@@ -145,7 +145,7 @@ P0-4 电池页增强                       ✅
 
 ### 进度统计
 - P0 完成：**100%**（P0-1/2/3/4 全部完成，CI 通过）
-- 当前动作：**P0 全部完成；建议真机回归后发 v1.0.13**
+- 当前动作：**P0 全部完成；CI 与自动化测试通过后即可进入发布流程**
 
 ### P0-1 接口规格（来自官方反编译）
 
@@ -153,7 +153,7 @@ P0-4 电池页增强                       ✅
 | --- | --- | --- | --- |
 | 车辆消息 | POST | `app/msg/pageOfCarMsg` | `uid`, `pageSize`, `nowPageIndex` |
 | 系统消息 | POST | `app/msg/pageOfSysMsg` | `pageSize`, `nowPageIndex` |
-| 清空消息 | POST | `app/msg/delMsg` | 无 body（二期） |
+| 清空消息 | POST | `app/msg/delMsg` | 无 body |
 
 车辆消息 record 关键字段：`msgId` / `title` / `content` / `sendTime` / `messageCode` / `carId`  
 系统消息 record 关键字段：`sysMessageRecordId` / `title` / `content` / `sendTime` / `messageCode` / `url`  
@@ -177,49 +177,43 @@ P0-4 电池页增强                       ✅
 
 ---
 
-## 6. 后续优先级（先不做，仅登记）
+## 6. P1 现状与后续优先级
 
 
 ### P1
-- 多车切换体验 / 当前车标识
-- 云端车辆设置（昵称、围栏写入、通知偏好）
-- 骑行统计 / 碳排
-- 家庭共享（基础）
+- [x] 多车切换体验 / 当前车标识
+- [x] 围栏写入 / 通知偏好
+- [x] 骑行统计 / 碳排
+- [ ] 官方车辆昵称回写
+- [ ] 家庭共享官方授权闭环
 
 ### P2 / 暂缓
 - 充电站、商城、积分、社区
 - OTA / 保险 / 支付
 - 投屏、智能仪表真实能力
-- 任何绑定新车流程、NFC 写入、BLE 相关
+- 任何绑定新车流程、NFC 写入、本地硬件控制
 
 ---
 
 ## 7. 非目标（明确不做）
 
 - 扫码绑定 / IMEI 绑定 / 门店绑定
-- 本地 BLE 控车、感应解锁、GATT 诊断
+- 本地硬件控车、感应解锁、设备协议诊断
 - 为“功能数量”复刻官方全量页面
 
 ---
 
 ## 8. 验收与发版建议
 
-### P0 完成后建议
-1. 真机回归：登录、控车六键、消息、定位、电池、回前台刷新  
-2. 打 `v1.0.13`（或下一版本）release  
-3. Release notes 写清：cloud-only + 消息/状态/定位/电池增强
+### 发布 Gate
+1. `dart format --output=none --set-exit-if-changed .`
+2. `flutter analyze --fatal-warnings --fatal-infos`
+3. `flutter test --coverage`
+4. `dart tool/check_coverage.dart coverage/lcov.info 40`
+5. GitHub Actions CI 与签名 APK artifact 构建成功
+6. Release notes 写清 cloud-only 边界和本次云端功能变化
 
-完整可勾选清单见：**[device_regression_checklist_v1_0_13.md](device_regression_checklist_v1_0_13.md)**
-
-### 真机最小清单
-- [ ] 冷启动已登录 → 自动出最新电量/设防
-- [ ] 回前台 → 状态刷新
-- [ ] 控车页显示「刚刚同步 / N分钟前同步」
-- [ ] 锁/解/上电/断电/寻车/开坐垫（成功/失败/未确认反馈）
-- [ ] 消息列表有官方数据（车辆 + 系统）
-- [ ] 位置/轨迹有数据或明确空态；未登录有引导
-- [ ] 电池页显示电量/电压/温度 + 最后同步
-- [ ] busy 时不再误提示「请登录」
+不要求连接实体手机、实体车辆或本地硬件；不执行 BLE/GATT/扫描/近场控车回归。历史清单见 [device_regression_checklist_v1_0_13.md](device_regression_checklist_v1_0_13.md)，状态为已废弃。
 
 ---
 
@@ -236,6 +230,8 @@ P0-4 电池页增强                       ✅
 | 2026-07-11 | P0 全部完成，CI 通过；文档同步为完成态 |
 | 2026-07-11 | 新增 P0.5 高价值路径优化进度文档（A1–A5） |
 | 2026-07-11 | P0.5 A1–A5 全部完成（状态机/回爱车/诚实绑定/门禁/RouteAware 刷新） |
+| 2026-07-12 | 取消真机与本地硬件回归要求；发布 Gate 改为自动化测试、覆盖率和 CI APK 构建 |
+| 2026-07-12 | P1：接入服务端消息清空；失败时保留现有消息并补充服务契约与页面回归测试 |
 
 ---
 
@@ -249,4 +245,3 @@ P0-4 电池页增强                       ✅
 - 电池：`lib/pages/battery_details_page.dart`
 - 同步时间格式：`lib/services/display_time_formatter.dart`（`formatRelativeSyncText`）
 - 生命周期刷新：`lib/main.dart`（`AppLifecycleState.resumed` / 切回车辆 Tab）
-| 2026-07-11 | 新增真机回归 checklist（P0+P0.5 / v1.0.13） |

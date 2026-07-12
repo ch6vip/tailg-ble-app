@@ -1,6 +1,6 @@
-# Tailg BLE App - GitHub Actions CI/CD 配置指南
+# Tailg Cloud App - GitHub Actions CI/CD 配置指南
 
-> 本文档按 `.github/workflows/` 当前实际配置维护。当前只有 `build.yml` 和 `release.yml` 两个工作流，不存在 `ci.yml`。
+> 本文档按 `.github/workflows/` 当前实际配置维护。当前只有 `build.yml` 和 `release.yml` 两个工作流，不存在 `ci.yml`。CI 只运行自动化门禁和 APK 构建，不要求实体设备、实体车辆或 Bluetooth 测试。
 
 ---
 

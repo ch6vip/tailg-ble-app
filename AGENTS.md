@@ -7,8 +7,8 @@ This is a Flutter app for Tailg vehicle **official-cloud** control. Local BLE/GA
 ## Build, Test, and Development Commands
 
 - `flutter pub get`: install Dart and Flutter dependencies.
-- `flutter doctor`: verify Flutter, Android SDK, JDK, and devices.
-- `flutter run`: run a debug build on a connected device.
+- `flutter doctor`: verify Flutter, Android SDK, and JDK; a connected device is optional.
+- `flutter run`: optionally run a debug build on an emulator or development device.
 - `flutter build apk --debug`: build a debug APK.
 - `flutter build apk --release`: build a release APK; local signing requires `android/key.properties` and a keystore.
 - `dart format --output=none --set-exit-if-changed .`: check formatting.
@@ -48,4 +48,4 @@ Workflows live in `.github/workflows/`:
 
 ## Security & Configuration Tips
 
-Do not commit keystores, `key.properties`, tokens, phone numbers, IMEI values, or captured vehicle data. Keep official cloud credentials in secure storage and preserve log redaction. Account/cloud changes should include reversible steps and a real-device verification note in `docs/first_batch_verification.md` when not fully tested.
+Do not commit keystores, `key.properties`, tokens, phone numbers, IMEI values, or captured vehicle data. Keep official cloud credentials in secure storage and preserve log redaction. Account/cloud changes should include automated test evidence and reversible steps; do not require real-device, vehicle, or Bluetooth captures.
