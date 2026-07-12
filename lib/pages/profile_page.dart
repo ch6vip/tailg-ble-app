@@ -82,8 +82,8 @@ class _ProfilePageState extends State<ProfilePage> {
     if (!officialCloudService.state.signedIn) return;
     try {
       await officialCloudService.refreshMessages(silent: true);
-    } catch (_) {
-      // Badge can still use cached messages if any.
+    } on Exception {
+      // Badge refresh is best-effort; cached messages suffice.
     }
     if (!mounted || !officialCloudService.state.signedIn) return;
     await messageReadStore.syncFromCloudMessages(
