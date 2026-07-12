@@ -6,6 +6,7 @@ import '../services/app_navigation.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
 import '../services/official_cloud_service.dart';
+import '../services/log_service.dart';
 import '../services/sensitive_value_masker.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_pressable.dart';
@@ -47,11 +48,12 @@ class _ProfilePageState extends State<ProfilePage> {
     _cloudSub = officialCloudService.stateStream.listen((state) {
       if (!mounted) return;
       setState(() => _cloudState = state);
-      unawaited(
+      _runBackgroundTask(
         messageReadStore.syncFromCloudMessages(
           vehicleMessages: state.vehicleMessages,
           systemMessages: state.systemMessages,
         ),
+        failureMessage: '消息角标同步失败',
       );
       if (!state.signedIn) {
         messageReadStore.setUnreadCount(0);
@@ -60,7 +62,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _vehicleSub = vehicleStore.vehiclesStream.listen((vehicles) {
       if (mounted) setState(() => _vehicles = vehicles);
     });
-    unawaited(_bootstrapMessageBadge());
+    _runBackgroundTask(_bootstrapMessageBadge(), failureMessage: '消息角标初始化失败');
   }
 
   Future<void> _bootstrapMessageBadge() async {
@@ -75,7 +77,22 @@ class _ProfilePageState extends State<ProfilePage> {
       vehicleMessages: officialCloudService.state.vehicleMessages,
       systemMessages: officialCloudService.state.systemMessages,
     );
-    unawaited(_refreshMessageBadgeSilently());
+    await _refreshMessageBadgeSilently();
+  }
+
+  void _runBackgroundTask(
+    Future<void> future, {
+    required String failureMessage,
+  }) {
+    unawaited(
+      future.catchError((Object error) {
+        logService.operation(
+          failureMessage,
+          detail: OfficialCloudRedactor.errorMessage(error),
+          level: LogLevel.warning,
+        );
+      }),
+    );
   }
 
   Future<void> _refreshMessageBadgeSilently() async {

@@ -26,6 +26,26 @@ void main() {
     },
   );
 
+  test('message bootstrap contains failures and stops after disposal', () {
+    final source = readSource('lib/pages/vehicle_message_page.dart');
+    final bootstrapStart = source.indexOf('Future<void> _bootstrap()');
+    final bootstrapEnd = source.indexOf(
+      '  void _syncFromCloudState()',
+      bootstrapStart,
+    );
+
+    expect(bootstrapStart, greaterThanOrEqualTo(0));
+    expect(bootstrapEnd, greaterThan(bootstrapStart));
+    final bootstrap = source.substring(bootstrapStart, bootstrapEnd);
+
+    expect(source, contains('_bootstrap().catchError((Object error)'));
+    expect(source, contains('OfficialCloudRedactor.errorMessage(error)'));
+    expect(
+      bootstrap,
+      contains('await _loadMessageState();\n    if (!mounted) return;'),
+    );
+  });
+
   test('official message models parse vehicle and system records', () {
     final vehicle = OfficialCloudMessage.vehicle({
       'msgId': 'm-1',

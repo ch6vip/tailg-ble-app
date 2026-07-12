@@ -8,12 +8,27 @@ import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/snack_finders.dart';
+import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
 import 'helpers/view_size.dart';
 
 void main() {
+  test('profile contains message badge background task failures', () {
+    final source = readSource('lib/pages/profile_page.dart');
+
+    expect(source, contains('void _runBackgroundTask('));
+    expect(source, contains('OfficialCloudRedactor.errorMessage(error)'));
+    expect(source, isNot(contains('unawaited(_bootstrapMessageBadge())')));
+    expect(
+      source,
+      isNot(
+        contains('unawaited(\n        messageReadStore.syncFromCloudMessages'),
+      ),
+    );
+  });
+
   setUp(() async {
     resetMockStorage();
     app.officialCloudService.resetForTest();

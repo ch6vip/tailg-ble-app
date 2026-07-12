@@ -46,7 +46,15 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
       if (!mounted) return;
       setState(_syncFromCloudState);
     });
-    unawaited(_bootstrap());
+    unawaited(
+      _bootstrap().catchError((Object error) {
+        logService.operation(
+          '消息页初始化失败',
+          detail: OfficialCloudRedactor.errorMessage(error),
+          level: LogLevel.warning,
+        );
+      }),
+    );
   }
 
   @override
@@ -58,6 +66,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
 
   Future<void> _bootstrap() async {
     await _loadMessageState();
+    if (!mounted) return;
     await _refreshMessages(force: true);
   }
 
