@@ -720,6 +720,11 @@ class OfficialCloudService {
   }
 
   Future<void> selectVehicle(OfficialVehicle vehicle) async {
+    final override = selectVehicleOverride;
+    if (override != null) {
+      await override(vehicle);
+      return;
+    }
     final changed = _state.selectedVehicleKey != vehicle.key;
     await Future.wait([
       _storage.saveSelectedVehicleKey(vehicle.key),
@@ -1625,6 +1630,7 @@ class OfficialCloudService {
     setMessagePushConfigOverride = null;
     deleteMessagesOverride = null;
     refreshTravelHistoryOverride = null;
+    selectVehicleOverride = null;
   }
 
   @visibleForTesting
@@ -1656,6 +1662,10 @@ class OfficialCloudService {
   /// Test-only override for controlling travel-history request completion.
   @visibleForTesting
   Future<void> Function(String month)? refreshTravelHistoryOverride;
+
+  /// Test-only override for controlling official vehicle selection.
+  @visibleForTesting
+  Future<void> Function(OfficialVehicle vehicle)? selectVehicleOverride;
 
   /// Test-only: records every command handed to [sendCommand] since the last
   /// [resetForTest]. Populated only while [sendCommandOverride] is set.

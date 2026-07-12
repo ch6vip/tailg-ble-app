@@ -10,6 +10,7 @@ import 'package:tailg_ble_app/pages/vehicle_settings_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/widgets/vehicle_switch_sheet.dart';
 
+import 'helpers/snack_finders.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/view_size.dart';
@@ -120,6 +121,56 @@ void main() {
 
     expect(find.text('车辆 12'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('vehicle switch failure keeps sheet open and restores actions', (
+    tester,
+  ) async {
+    final first = OfficialVehicle.fromJson({
+      'carId': 'failure-first',
+      'carNickName': '第一辆车',
+    });
+    final second = OfficialVehicle.fromJson({
+      'carId': 'failure-second',
+      'carNickName': '第二辆车',
+    });
+    app.officialCloudService.selectVehicleOverride = (_) async {
+      throw Exception('token=abcdef123456');
+    };
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        vehicles: [first, second],
+        selectedVehicleKey: first.key,
+      ),
+    );
+
+    await tester.pumpWidget(
+      TestApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: ElevatedButton(
+                onPressed: () => showVehicleSwitchSheet(context),
+                child: const Text('打开车辆切换'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('打开车辆切换'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('第二辆车'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('切换车辆'), findsOneWidget);
+    expect(find.text('Exception: token=abc***456'), findsOneWidget);
+    expect(snackIcon(Icons.error_outline), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(app.officialCloudService.state.selectedVehicleKey, first.key);
   });
 
   testWidgets(

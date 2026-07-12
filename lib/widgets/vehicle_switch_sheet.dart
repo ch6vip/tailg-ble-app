@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../models/official_vehicle.dart';
+import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
+import 'app_snack.dart';
 
 Future<void> showVehicleSwitchSheet(BuildContext context) {
   return showModalBottomSheet<void>(
@@ -16,8 +18,15 @@ Future<void> showVehicleSwitchSheet(BuildContext context) {
   );
 }
 
-class _VehicleSwitchSheet extends StatelessWidget {
+class _VehicleSwitchSheet extends StatefulWidget {
   const _VehicleSwitchSheet();
+
+  @override
+  State<_VehicleSwitchSheet> createState() => _VehicleSwitchSheetState();
+}
+
+class _VehicleSwitchSheetState extends State<_VehicleSwitchSheet> {
+  String? _selectingKey;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +69,10 @@ class _VehicleSwitchSheet extends StatelessWidget {
                 return _VehicleTile(
                   vehicle: vehicle,
                   selected: vehicle.key == selectedKey,
-                  onTap: () => _onSelect(context, vehicle),
+                  selecting: vehicle.key == _selectingKey,
+                  onTap: _selectingKey == null
+                      ? () => _onSelect(vehicle)
+                      : null,
                 );
               },
             ),
@@ -71,9 +83,18 @@ class _VehicleSwitchSheet extends StatelessWidget {
     );
   }
 
-  void _onSelect(BuildContext context, OfficialVehicle vehicle) {
-    Navigator.of(context).pop();
-    officialCloudService.selectVehicle(vehicle);
+  Future<void> _onSelect(OfficialVehicle vehicle) async {
+    if (_selectingKey != null) return;
+    setState(() => _selectingKey = vehicle.key);
+    try {
+      await officialCloudService.selectVehicle(vehicle);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _selectingKey = null);
+      AppSnack.error(context, OfficialCloudRedactor.errorMessage(error));
+    }
   }
 }
 
@@ -81,12 +102,14 @@ class _VehicleTile extends StatelessWidget {
   const _VehicleTile({
     required this.vehicle,
     required this.selected,
+    required this.selecting,
     required this.onTap,
   });
 
   final OfficialVehicle vehicle;
   final bool selected;
-  final VoidCallback onTap;
+  final bool selecting;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +145,13 @@ class _VehicleTile extends StatelessWidget {
                 ],
               ),
             ),
-            if (selected)
+            if (selecting)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else if (selected)
               const Icon(
                 Icons.check_circle,
                 size: 20,
