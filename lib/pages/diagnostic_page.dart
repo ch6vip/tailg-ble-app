@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
@@ -107,7 +109,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
   @override
   void initState() {
     super.initState();
-    _loadHistory();
+    unawaited(_loadHistory());
   }
 
   Future<void> _loadHistory() async {

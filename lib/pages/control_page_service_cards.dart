@@ -28,8 +28,8 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
 
   @override
   void dispose() {
-    _cloudStateSub.cancel();
-    _vehiclesSub.cancel();
+    unawaited(_cloudStateSub.cancel());
+    unawaited(_vehiclesSub.cancel());
     _cloudStateNotifier.dispose();
     _vehiclesNotifier.dispose();
     super.dispose();
@@ -37,7 +37,9 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
 
   void _open(BuildContext context, Widget page, {bool requireVehicle = true}) {
     if (requireVehicle && !requireCloudVehicle(context)) return;
-    Navigator.push(context, MaterialPageRoute<void>(builder: (_) => page));
+    unawaited(
+      Navigator.push(context, MaterialPageRoute<void>(builder: (_) => page)),
+    );
   }
 
   void _showUnavailable(BuildContext context, String label) {

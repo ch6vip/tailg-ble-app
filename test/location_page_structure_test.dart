@@ -59,7 +59,7 @@ void main() {
       callbackIndex,
     );
     final refreshIndex = source.indexOf(
-      '_refreshOfficial(silent: true);',
+      'unawaited(_refreshOfficial(silent: true));',
       callbackIndex,
     );
 

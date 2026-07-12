@@ -28,6 +28,7 @@ linter:
   # producing the lint.
   rules:
     constant_identifier_names: false
+    discarded_futures: true
     empty_catches: true
 
 # Additional information about this file can be found at

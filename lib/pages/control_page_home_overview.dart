@@ -32,7 +32,8 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   @override
   void dispose() {
     _disposed = true;
-    _cloudSub?.cancel();
+    final cloudSub = _cloudSub;
+    if (cloudSub != null) unawaited(cloudSub.cancel());
     super.dispose();
   }
 
@@ -279,31 +280,39 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             onVehicleSwitch: () {
               final vehicles = officialCloudService.state.vehicles;
               if (vehicles.length > 1) {
-                showVehicleSwitchSheet(context);
+                unawaited(showVehicleSwitchSheet(context));
               } else {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const OfficialCloudPage(),
+                unawaited(
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const OfficialCloudPage(),
+                    ),
                   ),
                 );
               }
             },
             onBatteryTap: () {
               if (!requireCloudVehicle(context)) return;
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const BatteryDetailsPage(),
+              unawaited(
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const BatteryDetailsPage(),
+                  ),
                 ),
               );
             },
-            onDetail: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const OfficialCloudPage(),
+            onDetail: () => unawaited(
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const OfficialCloudPage(),
+                ),
               ),
             ),
-            onMessage: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const VehicleMessagePage(),
+            onMessage: () => unawaited(
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const VehicleMessagePage(),
+                ),
               ),
             ),
           ),
@@ -329,9 +338,11 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
             onOpenSeat: () => _sendCommand(CommandCode.openSeat),
             onQuickEdit: () {
               if (!requireCloudVehicle(context)) return;
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const VehicleSettingsPage(),
+              unawaited(
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const VehicleSettingsPage(),
+                  ),
                 ),
               );
             },

@@ -76,14 +76,14 @@ class _LocationPageState extends State<LocationPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _refreshOfficial(silent: true);
+      unawaited(_refreshOfficial(silent: true));
     });
   }
 
   @override
   void dispose() {
-    _vehiclesSub.cancel();
-    _cloudStateSub.cancel();
+    unawaited(_vehiclesSub.cancel());
+    unawaited(_cloudStateSub.cancel());
     _cloudStateNotifier.dispose();
     _vehiclesNotifier.dispose();
     super.dispose();

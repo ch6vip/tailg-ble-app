@@ -41,7 +41,8 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
 
   @override
   void dispose() {
-    _sub?.cancel();
+    final sub = _sub;
+    if (sub != null) unawaited(sub.cancel());
     _controller.dispose();
     super.dispose();
   }

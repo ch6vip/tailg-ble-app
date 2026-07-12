@@ -111,8 +111,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   void dispose() {
-    _cloudSub?.cancel();
-    _vehicleSub?.cancel();
+    final cloudSub = _cloudSub;
+    if (cloudSub != null) unawaited(cloudSub.cancel());
+    final vehicleSub = _vehicleSub;
+    if (vehicleSub != null) unawaited(vehicleSub.cancel());
     super.dispose();
   }
 
@@ -195,9 +197,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _handleProfileTap(bool signedIn) {
     if (!signedIn) {
-      Navigator.push(
-        context,
-        MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
+      unawaited(
+        Navigator.push(
+          context,
+          MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
+        ),
       );
       return;
     }
@@ -205,23 +209,29 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _openMessages(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(builder: (_) => const VehicleMessagePage()),
+    unawaited(
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const VehicleMessagePage()),
+      ),
     );
   }
 
   void _openGarage(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(builder: (_) => const GaragePage()),
+    unawaited(
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const GaragePage()),
+      ),
     );
   }
 
   void _openAddVehicle(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
+    unawaited(
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
+      ),
     );
   }
 

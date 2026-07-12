@@ -59,7 +59,8 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
 
   @override
   void dispose() {
-    _cloudSub?.cancel();
+    final cloudSub = _cloudSub;
+    if (cloudSub != null) unawaited(cloudSub.cancel());
     _tabController.dispose();
     super.dispose();
   }
@@ -378,9 +379,11 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const OfficialCloudPage(),
+                  unawaited(
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const OfficialCloudPage(),
+                      ),
                     ),
                   );
                 },

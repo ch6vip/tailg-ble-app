@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
@@ -9,9 +11,11 @@ class AddVehiclePage extends StatelessWidget {
   const AddVehiclePage({super.key});
 
   void _openOfficialVehicles(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
+    unawaited(
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
+      ),
     );
   }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
@@ -148,7 +150,9 @@ class ServiceHubPage extends StatelessWidget {
     bool requireVehicle = true,
   }) {
     if (requireVehicle && !requireCloudVehicle(context)) return;
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+    unawaited(
+      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page)),
+    );
   }
 }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../main.dart';
@@ -23,7 +25,7 @@ class _RideStatsPageState extends State<RideStatsPage> {
   @override
   void initState() {
     super.initState();
-    _loadMonth();
+    unawaited(_loadMonth());
   }
 
   Future<void> _loadMonth() async {
@@ -55,7 +57,7 @@ class _RideStatsPageState extends State<RideStatsPage> {
     if (date == null) return;
     final prev = DateTime(date.year, date.month - 1);
     _month = formatMonthText(prev);
-    _loadMonth();
+    unawaited(_loadMonth());
   }
 
   void _nextMonth() {
@@ -65,7 +67,7 @@ class _RideStatsPageState extends State<RideStatsPage> {
     final now = DateTime.now();
     if (next.isAfter(DateTime(now.year, now.month))) return;
     _month = formatMonthText(next);
-    _loadMonth();
+    unawaited(_loadMonth());
   }
 
   @override

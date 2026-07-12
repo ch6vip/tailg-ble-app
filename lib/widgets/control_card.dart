@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
@@ -87,7 +89,7 @@ class _ControlCardState extends State<ControlCard> {
                     locked: widget.locked,
                     busy: busy,
                     onPowerOn: () {
-                      HapticFeedback.heavyImpact();
+                      unawaited(HapticFeedback.heavyImpact());
                       widget.onPowerOn?.call();
                     },
                     onFind: widget.onFind,
@@ -487,7 +489,7 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
     if (widget.busy) {
       _showBusyOverlay = true;
       _busyAsPowered = widget.powered;
-      _busyPulseCtrl.repeat(reverse: true);
+      unawaited(_busyPulseCtrl.repeat(reverse: true));
     }
   }
 
@@ -504,7 +506,7 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
         _dragProgress = 0;
       });
       if (!_busyPulseCtrl.isAnimating) {
-        _busyPulseCtrl.repeat(reverse: true);
+        unawaited(_busyPulseCtrl.repeat(reverse: true));
       }
     }
     // Official event 32: command ends → hide overlays, show opposite slide.
@@ -549,7 +551,7 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
   void _onDragStart(DragStartDetails details) {
     if (widget.busy || widget.onPowerOn == null) return;
     if (!_isOnHandle(details.localPosition, powered: widget.powered)) return;
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     setState(() {
       _dragging = true;
       _dragProgress = 0;
@@ -578,7 +580,7 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
       _dragProgress = 0;
     });
     if (shouldFire) {
-      HapticFeedback.heavyImpact();
+      unawaited(HapticFeedback.heavyImpact());
       // Overlay is shown when parent sets busy=true (didUpdateWidget), after
       // policy/availability pass. Avoids stuck Lottie if the command is denied.
       widget.onPowerOn?.call();
@@ -595,7 +597,7 @@ class _PowerKnobState extends State<_PowerKnob> with TickerProviderStateMixin {
 
   void _triggerFromSemantics() {
     if (widget.busy || widget.onPowerOn == null) return;
-    HapticFeedback.heavyImpact();
+    unawaited(HapticFeedback.heavyImpact());
     widget.onPowerOn?.call();
   }
 

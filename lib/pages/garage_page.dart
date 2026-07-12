@@ -53,8 +53,10 @@ class _GaragePageState extends State<GaragePage> {
 
   @override
   void dispose() {
-    _cloudSub?.cancel();
-    _vehicleSub?.cancel();
+    final cloudSub = _cloudSub;
+    if (cloudSub != null) unawaited(cloudSub.cancel());
+    final vehicleSub = _vehicleSub;
+    if (vehicleSub != null) unawaited(vehicleSub.cancel());
     super.dispose();
   }
 
@@ -75,23 +77,29 @@ class _GaragePageState extends State<GaragePage> {
   }
 
   void _openAddVehicle() {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
+    unawaited(
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
+      ),
     );
   }
 
   void _openOfficialCloud() {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
+    unawaited(
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
+      ),
     );
   }
 
   void _openLogin() {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(builder: (_) => const LoginPage()),
+    unawaited(
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const LoginPage()),
+      ),
     );
   }
 

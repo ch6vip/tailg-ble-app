@@ -1600,7 +1600,7 @@ class OfficialCloudService {
     if (_disposed) return;
     _disposed = true;
     _apiClient.dispose();
-    _stateController.close();
+    unawaited(_stateController.close());
   }
 
   /// Resets the service state so it can be re-used after [dispose()].

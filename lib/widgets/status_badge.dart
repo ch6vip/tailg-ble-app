@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/theme/app_motion.dart';
@@ -178,7 +180,7 @@ class _PulsingDotState extends State<_PulsingDot>
       end: AppMotion.pulseMax,
     ).animate(CurvedAnimation(parent: _ctrl, curve: AppMotion.pulseCurve));
     if (widget.pulsing) {
-      _ctrl.repeat(reverse: true);
+      unawaited(_ctrl.repeat(reverse: true));
     }
   }
 
@@ -187,7 +189,7 @@ class _PulsingDotState extends State<_PulsingDot>
     super.didUpdateWidget(oldWidget);
     if (widget.pulsing != oldWidget.pulsing) {
       if (widget.pulsing) {
-        _ctrl.repeat(reverse: true);
+        unawaited(_ctrl.repeat(reverse: true));
       } else {
         _ctrl.stop();
         _ctrl.value = 0;

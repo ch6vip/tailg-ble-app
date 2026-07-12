@@ -169,13 +169,13 @@ class AppPreferencesService {
 
   void dispose() {
     if (!_languageController.isClosed) {
-      _languageController.close();
+      unawaited(_languageController.close());
     }
     if (!_distanceUnitController.isClosed) {
-      _distanceUnitController.close();
+      unawaited(_distanceUnitController.close());
     }
     if (!_respectTextScaleController.isClosed) {
-      _respectTextScaleController.close();
+      unawaited(_respectTextScaleController.close());
     }
   }
 }

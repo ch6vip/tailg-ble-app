@@ -188,26 +188,28 @@ class _LogoutButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     void confirmLogout() {
-      HapticFeedback.mediumImpact();
-      showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('退出登录'),
-          content: const Text('确定要退出当前账号吗？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                await officialCloudService.logout();
-                if (ctx.mounted) Navigator.pop(ctx);
-                AppNavigation.focusVehicleTabAfterSignOut();
-              },
-              child: const Text('确定'),
-            ),
-          ],
+      unawaited(HapticFeedback.mediumImpact());
+      unawaited(
+        showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('退出登录'),
+            content: const Text('确定要退出当前账号吗？'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  await officialCloudService.logout();
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  AppNavigation.focusVehicleTabAfterSignOut();
+                },
+                child: const Text('确定'),
+              ),
+            ],
+          ),
         ),
       );
     }

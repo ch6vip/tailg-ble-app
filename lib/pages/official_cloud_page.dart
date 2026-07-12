@@ -695,7 +695,7 @@ class _OfficialVehicleSelfCheckPageState
   @override
   void initState() {
     super.initState();
-    _runCheck();
+    unawaited(_runCheck());
   }
 
   Future<void> _runCheck() async {

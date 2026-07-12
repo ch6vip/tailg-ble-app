@@ -125,8 +125,10 @@ class _ControlPageState extends State<ControlPage>
 
   @override
   void dispose() {
-    _cloudSub?.cancel();
-    _vehicleSub?.cancel();
+    final cloudSub = _cloudSub;
+    if (cloudSub != null) unawaited(cloudSub.cancel());
+    final vehicleSub = _vehicleSub;
+    if (vehicleSub != null) unawaited(vehicleSub.cancel());
     _routeObserver?.unsubscribe(this);
     _routeObserver = null;
     _routeSubscribed = false;
@@ -224,8 +226,10 @@ class _HomeBodyState extends State<_HomeBody> {
   @override
   void dispose() {
     _disposed = true;
-    _subVehicles?.cancel();
-    _subCloud?.cancel();
+    final vehiclesSub = _subVehicles;
+    if (vehiclesSub != null) unawaited(vehiclesSub.cancel());
+    final cloudSub = _subCloud;
+    if (cloudSub != null) unawaited(cloudSub.cancel());
     _subVehicles = null;
     _subCloud = null;
     _homeMode.dispose();

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -70,7 +72,7 @@ class _AppPressableState extends State<AppPressable> {
 
   void _activateTap() {
     if (widget.haptic) {
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
     }
     widget.onTap?.call();
   }

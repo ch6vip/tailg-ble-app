@@ -70,7 +70,8 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _smsTimer?.cancel();
     _smsCountdown.dispose();
-    _sub?.cancel();
+    final sub = _sub;
+    if (sub != null) unawaited(sub.cancel());
     _phoneController.dispose();
     _smsController.dispose();
     _tokenController.dispose();

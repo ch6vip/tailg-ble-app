@@ -225,7 +225,8 @@ class _TailgBleAppState extends State<TailgBleApp> {
 
   @override
   void dispose() {
-    _textScaleSub?.cancel();
+    final textScaleSub = _textScaleSub;
+    if (textScaleSub != null) unawaited(textScaleSub.cancel());
     super.dispose();
   }
 
@@ -460,7 +461,7 @@ class _HomePageState extends State<HomePage>
     final index = _homeTabIndex.value;
     if (index == _currentIndex || index < 0 || index > _mineTabIndex) return;
     setState(() => _currentIndex = index);
-    _pageAnimController.forward(from: 0);
+    unawaited(_pageAnimController.forward(from: 0));
     if (index == _vehicleTabIndex && officialCloudService.state.signedIn) {
       unawaited(_silentRefreshVehicles(reason: '切换到控车页后官方车辆刷新失败'));
     }
@@ -469,7 +470,7 @@ class _HomePageState extends State<HomePage>
   void _switchTab(int index) {
     if (index == _currentIndex) return;
     setState(() => _currentIndex = index);
-    _pageAnimController.forward(from: 0);
+    unawaited(_pageAnimController.forward(from: 0));
     _homeTabIndex.value = index;
     if (index == _vehicleTabIndex && officialCloudService.state.signedIn) {
       unawaited(_silentRefreshVehicles(reason: '切换到控车页后官方车辆刷新失败'));

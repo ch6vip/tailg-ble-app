@@ -30,23 +30,29 @@ class _UnboundVehicleHome extends StatelessWidget {
   static const _bindHotspotHeight = 56.0;
 
   void _openAddVehicle(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
+    unawaited(
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
+      ),
     );
   }
 
   void _openMessages(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(builder: (_) => const VehicleMessagePage()),
+    unawaited(
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const VehicleMessagePage()),
+      ),
     );
   }
 
   void _openCloud(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
+    unawaited(
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
+      ),
     );
   }
 
@@ -59,7 +65,7 @@ class _UnboundVehicleHome extends StatelessWidget {
   }
 
   void _onBindHotspot(BuildContext context) {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     _openAddVehicle(context);
   }
 

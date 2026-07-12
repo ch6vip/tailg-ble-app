@@ -97,7 +97,7 @@ class _ToastWidgetState extends State<_ToastWidget>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _ctrl, curve: AppMotion.entranceCurve));
     _fade = Tween(begin: 0.0, end: 1.0).animate(_ctrl);
-    _ctrl.forward();
+    unawaited(_ctrl.forward());
   }
 
   @override

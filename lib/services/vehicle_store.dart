@@ -421,7 +421,7 @@ class VehicleStore {
 
   void dispose() {
     if (!_vehiclesController.isClosed) {
-      _vehiclesController.close();
+      unawaited(_vehiclesController.close());
     }
   }
 }

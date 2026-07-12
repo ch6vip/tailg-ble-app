@@ -154,7 +154,7 @@ class LogService {
 
   void dispose() {
     if (!_controller.isClosed) {
-      _controller.close();
+      unawaited(_controller.close());
     }
   }
 }

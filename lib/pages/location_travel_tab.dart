@@ -313,7 +313,7 @@ class _TravelRecordCard extends StatelessWidget {
       semanticsEnabled: interactive,
       semanticsContainer: true,
       onTap: () {
-        HapticFeedback.selectionClick();
+        unawaited(HapticFeedback.selectionClick());
         onTap();
       },
       child: SizedBox(

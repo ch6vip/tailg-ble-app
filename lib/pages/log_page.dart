@@ -43,7 +43,8 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
 
   @override
   void dispose() {
-    _logSub?.cancel();
+    final logSub = _logSub;
+    if (logSub != null) unawaited(logSub.cancel());
     _tabController.dispose();
     super.dispose();
   }
