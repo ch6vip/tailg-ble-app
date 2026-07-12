@@ -34,11 +34,14 @@ class MessageReadStore {
 
   Future<void> persist() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(prefReadIds, _readIds.toList(growable: false));
-    await prefs.setStringList(
-      prefHiddenIds,
-      _hiddenIds.toList(growable: false),
-    );
+    await prefs.setStringList(prefReadIds, _sortedIds(_readIds));
+    await prefs.setStringList(prefHiddenIds, _sortedIds(_hiddenIds));
+  }
+
+  List<String> _sortedIds(Set<String> ids) {
+    final values = ids.toList(growable: false);
+    values.sort();
+    return values;
   }
 
   Future<void> replaceState({
