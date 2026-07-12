@@ -52,17 +52,17 @@ class _VehicleSwitchSheet extends StatelessWidget {
             constraints: BoxConstraints(
               maxHeight: MediaQuery.sizeOf(context).height * 0.55,
             ),
-            child: ListView(
+            child: ListView.builder(
               shrinkWrap: true,
-              children: vehicles
-                  .map(
-                    (OfficialVehicle vehicle) => _VehicleTile(
-                      vehicle: vehicle,
-                      selected: vehicle.key == selectedKey,
-                      onTap: () => _onSelect(context, vehicle),
-                    ),
-                  )
-                  .toList(growable: false),
+              itemCount: vehicles.length,
+              itemBuilder: (context, index) {
+                final vehicle = vehicles[index];
+                return _VehicleTile(
+                  vehicle: vehicle,
+                  selected: vehicle.key == selectedKey,
+                  onTap: () => _onSelect(context, vehicle),
+                );
+              },
             ),
           ),
           const SizedBox(height: 16),
