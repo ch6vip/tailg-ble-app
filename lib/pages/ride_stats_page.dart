@@ -56,7 +56,7 @@ class _RideStatsPageState extends State<RideStatsPage> {
     final date = DateFormat('yyyy-MM').parse(_month);
     final next = DateTime(date.year, date.month + 1);
     final now = DateTime.now();
-    if (next.isAfter(DateTime(now.year, now.month + 1))) return;
+    if (next.isAfter(DateTime(now.year, now.month))) return;
     _month = DateFormat('yyyy-MM').format(next);
     _loadMonth();
   }
@@ -231,28 +231,34 @@ class _StatItem extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+          SizedBox(
+            height: 31,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: value,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    if (unit.isNotEmpty)
+                      TextSpan(
+                        text: ' $unit',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                  ],
                 ),
+                maxLines: 1,
               ),
-              if (unit.isNotEmpty)
-                Text(
-                  ' $unit',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
-            ],
+            ),
           ),
           const SizedBox(height: 4),
           Text(label, style: AppTextStyles.caption),

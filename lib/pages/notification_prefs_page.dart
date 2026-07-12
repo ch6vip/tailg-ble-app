@@ -100,11 +100,10 @@ class _NotificationPrefsPageState extends State<NotificationPrefsPage> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(AppRadii.card),
-          ),
+        Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          clipBehavior: Clip.antiAlias,
           child: Column(
             children: _config.entries.map((entry) {
               return SwitchListTile(

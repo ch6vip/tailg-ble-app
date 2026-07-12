@@ -276,7 +276,7 @@ class OfficialCloudService {
 
   final _log = LogService();
   final _storage = _OfficialCloudStorage();
-  final _apiClient = OfficialCloudApiClient(
+  OfficialCloudApiClient _apiClient = OfficialCloudApiClient(
     config: const OfficialCloudApiConfig(),
     log: LogService(),
   );
@@ -1042,6 +1042,8 @@ class OfficialCloudService {
     final token = _state.token;
     if (token.isEmpty) return {};
     try {
+      final override = getMessageControlOverride;
+      if (override != null) return override();
       final response = await _apiClient.request(
         'app/msg/getMessageControl',
         method: 'POST',
@@ -1064,16 +1066,51 @@ class OfficialCloudService {
     final token = _state.token;
     if (token.isEmpty) return;
     try {
-      final body = config.map((k, v) => MapEntry(k, v ? '1' : '0'));
-      final response = await _apiClient.request(
-        'app/msg/setMessagePushConfig',
-        method: 'POST',
-        token: token,
-        body: body,
-        retryPolicy: OfficialCloudRetryPolicy.transportOnly,
-      );
-      _ensureSuccess(response.body, fallback: '消息偏好保存失败');
+      final override = setMessagePushConfigOverride;
+      if (override != null) {
+        await override(Map.unmodifiable(config));
+      } else {
+        final body = config.map((k, v) => MapEntry(k, v ? '1' : '0'));
+        final response = await _apiClient.request(
+          'app/msg/setMessagePushConfig',
+          method: 'POST',
+          token: token,
+          body: body,
+          retryPolicy: OfficialCloudRetryPolicy.transportOnly,
+        );
+        _ensureSuccess(response.body, fallback: '消息偏好保存失败');
+      }
       _log.operation('消息推送偏好已更新');
+    } catch (e) {
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
+    }
+  }
+
+  Future<void> deleteMessages() async {
+    final token = _state.token;
+    if (token.isEmpty) return;
+    try {
+      final override = deleteMessagesOverride;
+      if (override != null) {
+        await override();
+      } else {
+        final response = await _apiClient.request(
+          'app/msg/delMsg',
+          method: 'POST',
+          token: token,
+          retryPolicy: OfficialCloudRetryPolicy.transportOnly,
+        );
+        _ensureSuccess(response.body, fallback: '清空消息失败');
+      }
+      if (!_isCurrentSession(token)) return;
+      _state = _state.copyWith(
+        vehicleMessages: const [],
+        systemMessages: const [],
+        messagesError: null,
+      );
+      _emit();
+      _log.operation('官方消息已清空');
     } catch (e) {
       await _handleAuthFailureIfNeeded(e);
       rethrow;
@@ -1561,7 +1598,15 @@ class OfficialCloudService {
 
   /// Resets the service state so it can be re-used after [dispose()].
   /// Used by [AppServices.reset()] to support hot restart and testing.
-  void resetForTest({DateTime Function()? clock}) {
+  void resetForTest({
+    DateTime Function()? clock,
+    OfficialCloudApiConfig? apiConfig,
+  }) {
+    _apiClient.dispose();
+    _apiClient = OfficialCloudApiClient(
+      config: apiConfig ?? const OfficialCloudApiConfig(),
+      log: _log,
+    );
     _disposed = false;
     _initialized = false;
     _initializing = null;
@@ -1571,8 +1616,12 @@ class OfficialCloudService {
       _stateController = StreamController<OfficialCloudState>.broadcast();
     }
     _state = OfficialCloudState.initial();
+    _clearRefreshCache();
     sentCommands.clear();
     sendCommandOverride = null;
+    getMessageControlOverride = null;
+    setMessagePushConfigOverride = null;
+    deleteMessagesOverride = null;
   }
 
   @visibleForTesting
@@ -1588,6 +1637,18 @@ class OfficialCloudService {
   /// actually dispatched (e.g. the right-slide power gesture).
   @visibleForTesting
   Future<String> Function(CommandCode)? sendCommandOverride;
+
+  /// Test-only override for loading official notification preferences.
+  @visibleForTesting
+  Future<Map<String, bool>> Function()? getMessageControlOverride;
+
+  /// Test-only override for saving official notification preferences.
+  @visibleForTesting
+  Future<void> Function(Map<String, bool>)? setMessagePushConfigOverride;
+
+  /// Test-only override for the official server-side message deletion call.
+  @visibleForTesting
+  Future<void> Function()? deleteMessagesOverride;
 
   /// Test-only: records every command handed to [sendCommand] since the last
   /// [resetForTest]. Populated only while [sendCommandOverride] is set.

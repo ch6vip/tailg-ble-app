@@ -29,6 +29,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
   final Set<String> _readIds = {};
   final Set<String> _hiddenIds = {};
   var _loading = false;
+  var _clearing = false;
   String? _error;
   var _initialized = false;
 
@@ -221,16 +222,29 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
     await _saveMessageState();
   }
 
-  Future<void> _clearCurrentMessages() async {
-    final currentMessages = _messagesForTab(_tabController.index);
-    if (currentMessages.isEmpty) return;
-    setState(() {
-      _hiddenIds.addAll(currentMessages.map((message) => message.id));
-      _readIds.addAll(currentMessages.map((message) => message.id));
-    });
-    await _saveMessageState();
-    if (!mounted) return;
-    AppSnack.success(context, '已清空 ${currentMessages.length} 条当前分组消息');
+  Future<void> _clearAllMessages() async {
+    final allMessages = _visibleMessages();
+    if (allMessages.isEmpty || _clearing) return;
+    setState(() => _clearing = true);
+    try {
+      await officialCloudService.deleteMessages();
+      if (!mounted) return;
+      setState(() {
+        _hiddenIds.addAll(allMessages.map((message) => message.id));
+        _readIds.addAll(allMessages.map((message) => message.id));
+        _clearing = false;
+      });
+      await _saveMessageState();
+      if (!mounted) return;
+      AppSnack.success(context, '已清空 ${allMessages.length} 条消息');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _clearing = false);
+      final message = e is OfficialCloudApiException
+          ? e.message
+          : OfficialCloudRedactor.text(e.toString());
+      AppSnack.error(context, message);
+    }
   }
 
   Future<void> _openMessage(_VehicleMessage message) async {
@@ -261,7 +275,6 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
       growable: false,
     );
     final all = tabMessages[0];
-    final currentMessages = tabMessages[_tabController.index];
     final unreadCount = all
         .where((message) => !_readIds.contains(message.id))
         .length;
@@ -306,14 +319,20 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
                   ),
                 ),
                 IconButton(
-                  tooltip: '清空当前分组',
-                  onPressed: !signedIn || currentMessages.isEmpty
+                  tooltip: '清空全部消息',
+                  onPressed: !signedIn || all.isEmpty || _clearing
                       ? null
-                      : _clearCurrentMessages,
-                  icon: const Icon(
-                    Icons.delete_sweep_outlined,
-                    semanticLabel: '清空',
-                  ),
+                      : _clearAllMessages,
+                  icon: _clearing
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(
+                          Icons.delete_sweep_outlined,
+                          semanticLabel: '清空全部消息',
+                        ),
                 ),
                 IconButton(
                   tooltip: '刷新',

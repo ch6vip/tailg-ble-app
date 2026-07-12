@@ -156,7 +156,7 @@ void main() {
     }
   });
 
-  testWidgets('clearing current message group shows success snack', (
+  testWidgets('clearing messages removes vehicle and system records', (
     tester,
   ) async {
     final vehicleMessage = OfficialCloudMessage.vehicle({
@@ -165,6 +165,54 @@ void main() {
       'content': '检测到异常移动',
       'sendTime': '2026-07-11 12:00:00',
     });
+    final systemMessage = OfficialCloudMessage.system({
+      'sysMessageRecordId': 'sm-clear',
+      'title': '系统维护通知',
+      'content': '今晚维护',
+      'sendTime': '2026-07-11 11:00:00',
+    });
+    app.officialCloudService.deleteMessagesOverride = () async {};
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        userId: 'uid-1',
+        vehicleMessages: [vehicleMessage],
+        systemMessages: [systemMessage],
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: VehicleMessagePage()));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('车辆移动告警'), findsOneWidget);
+    expect(find.text('系统维护通知'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.delete_sweep_outlined));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('已清空 2 条消息'), findsOneWidget);
+    expect(snackIcon(Icons.check_circle_outline), findsOneWidget);
+    expect(find.text('车辆移动告警'), findsNothing);
+    expect(find.text('系统维护通知'), findsNothing);
+    expect(app.officialCloudService.state.vehicleMessages, isEmpty);
+    expect(app.officialCloudService.state.systemMessages, isEmpty);
+  });
+
+  testWidgets('server-side clear failure keeps existing messages', (
+    tester,
+  ) async {
+    final vehicleMessage = OfficialCloudMessage.vehicle({
+      'msgId': 'vm-failed-clear',
+      'title': '车辆移动告警',
+      'content': '检测到异常移动',
+      'sendTime': '2026-07-11 12:00:00',
+    });
+    app.officialCloudService.deleteMessagesOverride = () async {
+      throw const OfficialCloudApiException('服务端清空失败');
+    };
     app.officialCloudService.setStateForTest(
       OfficialCloudState.initial().copyWith(
         initialized: true,
@@ -178,15 +226,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('车辆移动告警'), findsOneWidget);
-
     await tester.tap(find.byIcon(Icons.delete_sweep_outlined));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('已清空 1 条当前分组消息'), findsOneWidget);
-    expect(snackIcon(Icons.check_circle_outline), findsOneWidget);
-    expect(find.text('车辆移动告警'), findsNothing);
+    expect(find.text('服务端清空失败'), findsOneWidget);
+    expect(find.text('车辆移动告警'), findsOneWidget);
+    expect(app.officialCloudService.state.vehicleMessages, hasLength(1));
   });
 
   testWidgets('message rows expose semantics and open detail sheet', (

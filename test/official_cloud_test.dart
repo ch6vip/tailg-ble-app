@@ -1176,6 +1176,221 @@ void main() {
     });
   });
 
+  group('OfficialCloudService P1 cloud contracts', () {
+    setUp(() {
+      resetMockStorage();
+      OfficialCloudService().resetForTest();
+      LogService().clear();
+    });
+
+    tearDown(() {
+      OfficialCloudService().resetForTest();
+      LogService().clear();
+    });
+
+    test('writes fence settings and refreshes the saved state', () async {
+      final requestBodies = <String, Map<String, dynamic>?>{};
+      final server = await _startOfficialCloudServer((request) async {
+        final text = await utf8.decoder.bind(request).join();
+        requestBodies[request.uri.path] = text.isEmpty
+            ? null
+            : jsonDecode(text) as Map<String, dynamic>;
+        if (request.uri.path.endsWith('/app/device/updFenceData')) {
+          await _writeJsonResponse(request, 200, {
+            'code': '200',
+            'msg': 'success',
+          });
+          return;
+        }
+        if (request.uri.path.endsWith('/app/device/getFenceData')) {
+          await _writeJsonResponse(request, 200, {
+            'code': '200',
+            'msg': 'success',
+            'data': {
+              'fenceSwitch': '1',
+              'fenceRadius': '5',
+              'fenceRadiusMin': '1',
+              'fenceRadiusMax': '100',
+              'fenceTimeFr': '08:00',
+              'fenceTimeTo': '22:00',
+            },
+          });
+          return;
+        }
+        await _writeJsonResponse(request, 404, {'msg': 'unexpected path'});
+      });
+      final service = OfficialCloudService();
+      try {
+        service.resetForTest(
+          apiConfig: OfficialCloudApiConfig(
+            apiBase: server.apiBase,
+            retryBaseDelay: Duration.zero,
+          ),
+        );
+        final vehicle = OfficialVehicle.fromJson({
+          'carId': 'fence-car',
+          'carNickName': '围栏测试车',
+        });
+        service.setStateForTest(
+          OfficialCloudState.initial().copyWith(
+            initialized: true,
+            token: 'test-token',
+            vehicles: [vehicle],
+            selectedVehicleKey: vehicle.key,
+          ),
+        );
+
+        await service.updateFenceData(
+          enabled: true,
+          radiusValue: 5,
+          timeFrom: '08:00',
+          timeTo: '22:00',
+        );
+
+        expect(
+          requestBodies['/v1/api/app/device/updFenceData'],
+          containsPair('carId', 'fence-car'),
+        );
+        expect(
+          requestBodies['/v1/api/app/device/updFenceData'],
+          containsPair('fenceSwitch', '1'),
+        );
+        expect(
+          requestBodies['/v1/api/app/device/updFenceData'],
+          containsPair('fenceRadius', '5'),
+        );
+        expect(requestBodies['/v1/api/app/device/getFenceData'], {
+          'carId': 'fence-car',
+        });
+        expect(service.state.fenceData?.enabled, isTrue);
+        expect(service.state.fenceData?.fenceRadius, '5');
+      } finally {
+        service.resetForTest();
+        await server.close();
+      }
+    });
+
+    test('reads, writes, and clears official message settings', () async {
+      final requestBodies = <String, Map<String, dynamic>?>{};
+      final authorizationHeaders = <String, String?>{};
+      final server = await _startOfficialCloudServer((request) async {
+        final text = await utf8.decoder.bind(request).join();
+        requestBodies[request.uri.path] = text.isEmpty
+            ? null
+            : jsonDecode(text) as Map<String, dynamic>;
+        authorizationHeaders[request.uri.path] = request.headers.value(
+          HttpHeaders.authorizationHeader,
+        );
+        if (request.uri.path.endsWith('/app/msg/getMessageControl')) {
+          await _writeJsonResponse(request, 200, {
+            'code': '200',
+            'msg': 'success',
+            'data': {'carMsg': '1', 'sysMsg': 0, 'alarm': true},
+          });
+          return;
+        }
+        if (request.uri.path.endsWith('/app/msg/setMessagePushConfig') ||
+            request.uri.path.endsWith('/app/msg/delMsg')) {
+          await _writeJsonResponse(request, 200, {
+            'code': '200',
+            'msg': 'success',
+          });
+          return;
+        }
+        await _writeJsonResponse(request, 404, {'msg': 'unexpected path'});
+      });
+      final service = OfficialCloudService();
+      try {
+        service.resetForTest(
+          apiConfig: OfficialCloudApiConfig(
+            apiBase: server.apiBase,
+            retryBaseDelay: Duration.zero,
+          ),
+        );
+        service.setStateForTest(
+          OfficialCloudState.initial().copyWith(
+            initialized: true,
+            token: 'test-token',
+            vehicleMessages: [
+              OfficialCloudMessage.vehicle({
+                'msgId': 'vehicle-message',
+                'title': '车辆消息',
+              }),
+            ],
+            systemMessages: [
+              OfficialCloudMessage.system({
+                'sysMessageRecordId': 'system-message',
+                'title': '系统消息',
+              }),
+            ],
+          ),
+        );
+
+        final config = await service.getMessageControl();
+        await service.setMessagePushConfig({'carMsg': false, 'sysMsg': true});
+        await service.deleteMessages();
+
+        expect(config, {'carMsg': true, 'sysMsg': false, 'alarm': true});
+        expect(requestBodies['/v1/api/app/msg/setMessagePushConfig'], {
+          'carMsg': '0',
+          'sysMsg': '1',
+        });
+        expect(requestBodies['/v1/api/app/msg/delMsg'], isNull);
+        expect(authorizationHeaders.values, everyElement('test-token'));
+        expect(service.state.vehicleMessages, isEmpty);
+        expect(service.state.systemMessages, isEmpty);
+      } finally {
+        service.resetForTest();
+        await server.close();
+      }
+    });
+
+    test('failed server-side message deletion preserves messages', () async {
+      final server = await _startOfficialCloudServer((request) async {
+        await _writeJsonResponse(request, 200, {
+          'code': '500',
+          'msg': '服务端拒绝清空',
+        });
+      });
+      final service = OfficialCloudService();
+      try {
+        service.resetForTest(
+          apiConfig: OfficialCloudApiConfig(
+            apiBase: server.apiBase,
+            retryBaseDelay: Duration.zero,
+          ),
+        );
+        service.setStateForTest(
+          OfficialCloudState.initial().copyWith(
+            initialized: true,
+            token: 'test-token',
+            vehicleMessages: [
+              OfficialCloudMessage.vehicle({
+                'msgId': 'message-to-keep',
+                'title': '保留消息',
+              }),
+            ],
+          ),
+        );
+
+        await expectLater(
+          service.deleteMessages(),
+          throwsA(
+            isA<OfficialCloudApiException>().having(
+              (error) => error.message,
+              'message',
+              '服务端拒绝清空',
+            ),
+          ),
+        );
+        expect(service.state.vehicleMessages, hasLength(1));
+      } finally {
+        service.resetForTest();
+        await server.close();
+      }
+    });
+  });
+
   group('ControlChannelResolver', () {
     test(
       'enables official cloud only when signed in with a selected vehicle',
