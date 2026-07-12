@@ -93,7 +93,7 @@ class OfficialVehicle {
   }
 
   Map<String, dynamic> toJson() {
-    final json = _rawPayload(raw);
+    final json = Map<String, dynamic>.of(raw);
     json.addAll({
       'imei': imei,
       'imeiGps': imeiGps,
@@ -671,7 +671,7 @@ Map<String, dynamic> _dataMap(Object? value) {
 }
 
 Map<String, dynamic> _stringKeyedMap(Map<Object?, Object?> value) {
-  return parsePersistedMap(value)!;
+  return Map<String, dynamic>.unmodifiable(parsePersistedMap(value)!);
 }
 
 String _stringValue(Object? value) => value?.toString().trim() ?? '';

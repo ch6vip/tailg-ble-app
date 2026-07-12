@@ -1588,6 +1588,16 @@ void main() {
       expect(nonMap.dataMap, isEmpty);
       expect(nonMap.displayMessage, 'code=500');
     });
+
+    test('keeps self-check raw maps immutable', () {
+      final result = OfficialVehicleSelfCheck.fromResponse({
+        'code': '200',
+        'data': {'voltage': 52.6},
+      });
+
+      expect(() => result.dataMap['voltage'] = 48.0, throwsUnsupportedError);
+      expect(() => result.raw['code'] = '500', throwsUnsupportedError);
+    });
   });
 
   group('Official map replica models', () {
@@ -1620,6 +1630,26 @@ void main() {
       expect(fence.radiusLabel, '500m');
       expect(fence.radiusMeters, 500);
       expect(fence.timeLabel, '08:00 - 22:00');
+    });
+
+    test('keeps replica model raw maps immutable', () {
+      final location = OfficialVehicleLocation.fromJson({
+        'latitude': '25.1',
+        'longitude': '104.1',
+      });
+      final day = OfficialTravelDay.fromJson({
+        'travelDate': '2026-06-01',
+        'deviceTravelDtoList': [
+          {'deviceTravelId': 'trip-1', 'mileage': '1.0'},
+        ],
+      });
+
+      expect(() => location.raw['latitude'] = '0', throwsUnsupportedError);
+      expect(() => day.raw['travelDate'] = 'changed', throwsUnsupportedError);
+      expect(
+        () => day.records.first.raw['mileage'] = '0',
+        throwsUnsupportedError,
+      );
     });
 
     test('parses official travel list and track points', () {
