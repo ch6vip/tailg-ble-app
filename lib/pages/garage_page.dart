@@ -67,7 +67,9 @@ class _GaragePageState extends State<GaragePage> {
       AppSnack.success(context, '车辆列表已同步');
     } catch (e) {
       if (!mounted) return;
-      final message = e is OfficialCloudApiException ? e.message : e.toString();
+      final message = e is OfficialCloudApiException
+          ? OfficialCloudRedactor.text(e.message)
+          : OfficialCloudRedactor.text(e.toString());
       AppSnack.error(context, message);
     } finally {
       if (mounted) setState(() => _syncing = false);

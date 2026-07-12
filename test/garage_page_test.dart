@@ -6,6 +6,7 @@ import 'package:tailg_ble_app/pages/garage_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
+import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
@@ -23,6 +24,14 @@ void main() {
     app.vehicleStore.resetForTest();
     app.officialCloudService.resetForTest();
     app.homeTabIndex.value = 1;
+  });
+
+  test('garage sync errors redact exception details before display', () {
+    final source = readSource('lib/pages/garage_page.dart');
+
+    expect(source, contains('OfficialCloudRedactor.text(e.message)'));
+    expect(source, contains('OfficialCloudRedactor.text(e.toString())'));
+    expect(source, isNot(contains('? e.message : e.toString()')));
   });
 
   testWidgets('mini vehicle actions keep 44dp touch targets', (tester) async {
