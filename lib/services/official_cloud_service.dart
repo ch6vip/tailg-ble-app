@@ -1138,6 +1138,11 @@ class OfficialCloudService {
     final queryMonth =
         month ??
         (_state.travelMonth.isEmpty ? _currentMonth() : _state.travelMonth);
+    final override = refreshTravelHistoryOverride;
+    if (override != null) {
+      await override(queryMonth);
+      return;
+    }
     final refreshKey = 'travel:${vehicle.key}:$queryMonth';
     if (!force &&
         silent &&
@@ -1622,6 +1627,7 @@ class OfficialCloudService {
     getMessageControlOverride = null;
     setMessagePushConfigOverride = null;
     deleteMessagesOverride = null;
+    refreshTravelHistoryOverride = null;
   }
 
   @visibleForTesting
@@ -1649,6 +1655,10 @@ class OfficialCloudService {
   /// Test-only override for the official server-side message deletion call.
   @visibleForTesting
   Future<void> Function()? deleteMessagesOverride;
+
+  /// Test-only override for controlling travel-history request completion.
+  @visibleForTesting
+  Future<void> Function(String month)? refreshTravelHistoryOverride;
 
   /// Test-only: records every command handed to [sendCommand] since the last
   /// [resetForTest]. Populated only while [sendCommandOverride] is set.

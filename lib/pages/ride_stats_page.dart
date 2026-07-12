@@ -18,6 +18,7 @@ class _RideStatsPageState extends State<RideStatsPage> {
   bool _loading = false;
   String? _error;
   List<OfficialTravelDay> _days = [];
+  var _loadGeneration = 0;
 
   @override
   void initState() {
@@ -26,18 +27,22 @@ class _RideStatsPageState extends State<RideStatsPage> {
   }
 
   Future<void> _loadMonth() async {
+    final generation = ++_loadGeneration;
+    final month = _month;
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      await officialCloudService.refreshTravelHistory(month: _month);
+      await officialCloudService.refreshTravelHistory(month: month);
+      if (!mounted || generation != _loadGeneration) return;
       final state = officialCloudService.state;
       setState(() {
         _days = state.travelDays;
         _loading = false;
       });
     } catch (e) {
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _error = '加载失败';
         _loading = false;

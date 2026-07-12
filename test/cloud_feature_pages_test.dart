@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
@@ -154,6 +156,96 @@ void main() {
     },
   );
 
+  testWidgets('ride stats ignores travel completion after disposal', (
+    tester,
+  ) async {
+    final completion = Completer<void>();
+    final vehicle = OfficialVehicle.fromJson({
+      'carId': 'dispose-travel-car',
+      'frame': 'FRAME-DISPOSE',
+    });
+    app.officialCloudService.refreshTravelHistoryOverride = (_) =>
+        completion.future;
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        userId: 'uid-1',
+        vehicles: [vehicle],
+        selectedVehicleKey: vehicle.key,
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: RideStatsPage()));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+
+    completion.complete();
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('ride stats ignores stale month completion', (tester) async {
+    setTestViewSize(tester, const Size(430, 1200));
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month);
+    final previousMonth = DateTime(now.year, now.month - 1);
+    final currentLabel = _monthLabel(currentMonth);
+    final previousLabel = _monthLabel(previousMonth);
+    final completions = <String, Completer<void>>{};
+    final vehicle = OfficialVehicle.fromJson({
+      'carId': 'race-travel-car',
+      'frame': 'FRAME-RACE',
+    });
+    app.officialCloudService.refreshTravelHistoryOverride = (month) {
+      final completion = Completer<void>();
+      completions[month] = completion;
+      return completion.future;
+    };
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        userId: 'uid-1',
+        vehicles: [vehicle],
+        selectedVehicleKey: vehicle.key,
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: RideStatsPage()));
+    await tester.pump();
+    expect(completions, contains(currentLabel));
+
+    await tester.tap(find.byIcon(Icons.chevron_left));
+    await tester.pump();
+    expect(completions, contains(previousLabel));
+
+    final previousDay = _travelDay('$previousLabel-01');
+    app.officialCloudService.setStateForTest(
+      app.officialCloudService.state.copyWith(
+        travelDays: [previousDay],
+        travelMonth: previousLabel,
+      ),
+    );
+    completions[previousLabel]!.complete();
+    await tester.pump();
+    expect(find.text(previousDay.travelDate), findsOneWidget);
+
+    final currentDay = _travelDay('$currentLabel-01');
+    app.officialCloudService.setStateForTest(
+      app.officialCloudService.state.copyWith(
+        travelDays: [currentDay],
+        travelMonth: currentLabel,
+      ),
+    );
+    completions[currentLabel]!.complete();
+    await tester.pump();
+
+    expect(find.text(previousDay.travelDate), findsOneWidget);
+    expect(find.text(currentDay.travelDate), findsNothing);
+  });
+
   testWidgets(
     'vehicle settings renders selected vehicle and opens preferences',
     (tester) async {
@@ -194,4 +286,18 @@ void main() {
       expect(find.text('车辆消息通知'), findsOneWidget);
     },
   );
+}
+
+String _monthLabel(DateTime value) {
+  return '${value.year}-${value.month.toString().padLeft(2, '0')}';
+}
+
+OfficialTravelDay _travelDay(String date) {
+  return OfficialTravelDay.fromJson({
+    'travelDate': date,
+    'totalMileage': '1.0',
+    'deviceTravelDtoList': [
+      {'deviceTravelId': 'trip-$date', 'mileage': '1.0'},
+    ],
+  });
 }
