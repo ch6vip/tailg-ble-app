@@ -26,6 +26,11 @@ void mockGeolocator({
   required bool serviceEnabled,
   LocationPermission checkedPermission = LocationPermission.whileInUse,
   LocationPermission requestedPermission = LocationPermission.whileInUse,
+  Map<String, Object?> currentPosition = const {
+    'latitude': 31.2304,
+    'longitude': 121.4737,
+    'accuracy': 8.5,
+  },
 }) {
   geolocatorMethodCalls.clear();
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -35,6 +40,7 @@ void mockGeolocator({
           'isLocationServiceEnabled' => serviceEnabled,
           'checkPermission' => _permissionCode(checkedPermission),
           'requestPermission' => _permissionCode(requestedPermission),
+          'getCurrentPosition' => currentPosition,
           _ => null,
         };
       });
