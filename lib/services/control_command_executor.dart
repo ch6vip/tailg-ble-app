@@ -20,9 +20,8 @@ class ControlCommandExecutor {
     this.cloudTimeout = _defaultCloudCommandTimeout,
   });
 
-  Future<ControlCommandResult> send({required CommandCode command}) async {
-    return _sendCloud(command);
-  }
+  Future<ControlCommandResult> send({required CommandCode command}) =>
+      _sendCloud(command);
 
   Future<ControlCommandResult> _sendCloud(CommandCode command) async {
     try {

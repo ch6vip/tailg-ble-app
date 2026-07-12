@@ -230,9 +230,8 @@ void main() {
       'content': '检测到异常移动',
       'sendTime': '2026-07-11 12:00:00',
     });
-    app.officialCloudService.deleteMessagesOverride = () async {
-      throw const OfficialCloudApiException('服务端清空失败');
-    };
+    app.officialCloudService.deleteMessagesOverride = () =>
+        Future<void>.error(const OfficialCloudApiException('服务端清空失败'));
     app.officialCloudService.setStateForTest(
       OfficialCloudState.initial().copyWith(
         initialized: true,

@@ -6,7 +6,7 @@ import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 
 void main() {
-  test('DiagnosticExportService uses injected report time', () async {
+  test('DiagnosticExportService uses injected report time', () {
     LogService().clear();
     VehicleStore().resetForTest();
     OfficialCloudService().resetForTest();

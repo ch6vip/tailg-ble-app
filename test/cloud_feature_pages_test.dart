@@ -134,9 +134,8 @@ void main() {
       'carId': 'failure-second',
       'carNickName': '第二辆车',
     });
-    app.officialCloudService.selectVehicleOverride = (_) async {
-      throw Exception('token=abcdef123456');
-    };
+    app.officialCloudService.selectVehicleOverride = (_) =>
+        Future<void>.error(Exception('token=abcdef123456'));
     app.officialCloudService.setStateForTest(
       OfficialCloudState.initial().copyWith(
         initialized: true,
