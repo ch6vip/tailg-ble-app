@@ -10,6 +10,7 @@ import '../models/official_vehicle.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../services/sensitive_value_masker.dart';
+import '../services/sms_countdown.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_snack.dart';
@@ -25,8 +26,7 @@ class OfficialCloudPage extends StatefulWidget {
 class _OfficialCloudPageState extends State<OfficialCloudPage> {
   final _phoneController = TextEditingController();
   final _smsController = TextEditingController();
-  final _smsCountdown = ValueNotifier<int>(0);
-  Timer? _smsTimer;
+  final _smsCountdown = SmsCountdown();
 
   @override
   void initState() {
@@ -37,7 +37,6 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
 
   @override
   void dispose() {
-    _smsTimer?.cancel();
     _smsCountdown.dispose();
     _phoneController.dispose();
     _smsController.dispose();
@@ -45,11 +44,11 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
   }
 
   Future<void> _requestCode() async {
-    if (_smsCountdown.value > 0) return;
+    if (_smsCountdown.isActive) return;
     try {
       await officialCloudService.requestSmsCode(_normalizedPhone);
       if (!mounted) return;
-      _startSmsCountdown();
+      _smsCountdown.start(isMounted: () => mounted);
       _showSnack('验证码已发送');
     } catch (e) {
       logService.operation(
@@ -60,23 +59,6 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
       if (!mounted) return;
       _showSnack(OfficialCloudRedactor.errorMessage(e), error: true);
     }
-  }
-
-  void _startSmsCountdown() {
-    _smsTimer?.cancel();
-    _smsCountdown.value = 60;
-    _smsTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      if (_smsCountdown.value <= 1) {
-        timer.cancel();
-        _smsCountdown.value = 0;
-      } else {
-        _smsCountdown.value--;
-      }
-    });
   }
 
   Future<void> _login() async {
@@ -169,7 +151,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
                     phoneController: _phoneController,
                     smsController: _smsController,
                     loading: state.loading,
-                    smsCountdown: _smsCountdown,
+                    smsCountdown: _smsCountdown.remaining,
                     onRequestCode: _requestCode,
                     onLogin: _login,
                   )

@@ -9,6 +9,7 @@ import '../services/app_navigation.dart';
 import '../services/clipboard_text.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
+import '../services/sms_countdown.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
 import '../widgets/app_pressable.dart';
@@ -38,8 +39,7 @@ class _LoginPageState extends State<LoginPage> {
   final _phoneController = TextEditingController();
   final _smsController = TextEditingController();
   final _tokenController = TextEditingController();
-  final _smsCountdown = ValueNotifier<int>(0);
-  Timer? _smsTimer;
+  final _smsCountdown = SmsCountdown();
   StreamSubscription<OfficialCloudState>? _sub;
   bool _agreed = false;
   bool _busy = false;
@@ -69,7 +69,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _smsTimer?.cancel();
     _smsCountdown.dispose();
     final sub = _sub;
     if (sub != null) unawaited(sub.cancel());
@@ -91,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
       OfficialCloudLoginValidator.isValidSmsCode(_smsController.text.trim());
 
   Future<void> _requestCode() async {
-    if (_smsCountdown.value > 0 || !_validPhone) return;
+    if (_smsCountdown.isActive || !_validPhone) return;
     if (!_agreed) {
       AppSnack.info(context, '请先阅读并同意用户协议与隐私政策');
       return;
@@ -99,30 +98,13 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await officialCloudService.requestSmsCode(_normalizedPhone);
       if (!mounted) return;
-      _startSmsCountdown();
+      _smsCountdown.start(isMounted: () => mounted);
       AppSnack.success(context, '验证码已发送');
     } catch (e) {
       _logError('官云验证码发送失败', e);
       if (!mounted) return;
       AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
     }
-  }
-
-  void _startSmsCountdown() {
-    _smsTimer?.cancel();
-    _smsCountdown.value = 60;
-    _smsTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      if (_smsCountdown.value <= 1) {
-        timer.cancel();
-        _smsCountdown.value = 0;
-      } else {
-        _smsCountdown.value--;
-      }
-    });
   }
 
   Future<void> _loginWithSms() async {
@@ -229,7 +211,7 @@ class _LoginPageState extends State<LoginPage> {
               _SmsLoginForm(
                 phoneController: _phoneController,
                 smsController: _smsController,
-                smsCountdown: _smsCountdown,
+                smsCountdown: _smsCountdown.remaining,
                 loading: loading,
                 agreed: _agreed,
                 validPhone: _validPhone,
