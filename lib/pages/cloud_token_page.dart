@@ -99,11 +99,8 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
     }
   }
 
-  String _maskToken(String token) {
-    final value = token.trim();
-    if (value.isEmpty) return '未登录';
-    return SensitiveValueMasker.compact(value, emptyValue: '未登录');
-  }
+  String _maskToken(String token) =>
+      SensitiveValueMasker.compact(token, emptyValue: '未登录');
 
   @override
   Widget build(BuildContext context) {

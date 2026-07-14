@@ -34,9 +34,7 @@ class OfficialCloudRedactor {
     return text(message);
   }
 
-  static String _mask(String value) {
-    return SensitiveValueMasker.compact(value);
-  }
+  static String _mask(String value) => SensitiveValueMasker.compact(value);
 }
 
 class OfficialCloudApiResponse {

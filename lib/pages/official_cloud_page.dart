@@ -387,7 +387,12 @@ class _SessionCard extends StatelessWidget {
                 const Text('账号已登录', style: AppTextStyles.itemTitle),
                 const SizedBox(height: 2),
                 Text(
-                  state.phone.isEmpty ? '手机号已脱敏保存' : _maskPhone(state.phone),
+                  state.phone.isEmpty
+                      ? '手机号已脱敏保存'
+                      : SensitiveValueMasker.phone(
+                          state.phone,
+                          shortValue: '已登录',
+                        ),
                   style: AppTextStyles.smallText,
                 ),
               ],
@@ -411,10 +416,6 @@ class _SessionCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _maskPhone(String phone) {
-    return SensitiveValueMasker.phone(phone, shortValue: '已登录');
   }
 }
 
@@ -593,9 +594,30 @@ class OfficialVehicleDetailPage extends StatelessWidget {
                   _DetailLine('车辆昵称', vehicle.carNickName),
                   _DetailLine('车辆名称', vehicle.carName),
                   _DetailLine('车架号', vehicle.frame),
-                  _DetailLine('官方 IMEI', _maskId(vehicle.imei)),
-                  _DetailLine('GPS IMEI', _maskId(vehicle.imeiGps)),
-                  _DetailLine('命令 IMEI', _maskId(vehicle.commandImei)),
+                  _DetailLine(
+                    '官方 IMEI',
+                    SensitiveValueMasker.compact(
+                      vehicle.imei,
+                      emptyValue: '未返回',
+                      trim: false,
+                    ),
+                  ),
+                  _DetailLine(
+                    'GPS IMEI',
+                    SensitiveValueMasker.compact(
+                      vehicle.imeiGps,
+                      emptyValue: '未返回',
+                      trim: false,
+                    ),
+                  ),
+                  _DetailLine(
+                    '命令 IMEI',
+                    SensitiveValueMasker.compact(
+                      vehicle.commandImei,
+                      emptyValue: '未返回',
+                      trim: false,
+                    ),
+                  ),
                   _DetailLine(
                     '车型 modelType',
                     vehicle.modelType?.toString() ?? '未返回',
@@ -724,7 +746,14 @@ class _OfficialVehicleSelfCheckPageState
                     style: AppTextStyles.subtitle,
                   ),
                   const SizedBox(height: 8),
-                  _DetailLine('命令 IMEI', _maskId(widget.vehicle.commandImei)),
+                  _DetailLine(
+                    '命令 IMEI',
+                    SensitiveValueMasker.compact(
+                      widget.vehicle.commandImei,
+                      emptyValue: '未返回',
+                      trim: false,
+                    ),
+                  ),
                   _DetailLine(
                     '车型 modelType',
                     widget.vehicle.modelType?.toString() ?? '未返回',
@@ -806,14 +835,10 @@ class _SelfCheckResultCard extends StatelessWidget {
         lowerKey.contains('mac') ||
         lowerKey.contains('phone') ||
         lowerKey.contains('token')) {
-      return _maskId(text);
+      return SensitiveValueMasker.compact(text, emptyValue: '未返回', trim: false);
     }
     return text;
   }
-}
-
-String _maskId(String value) {
-  return SensitiveValueMasker.compact(value, emptyValue: '未返回', trim: false);
 }
 
 class _StatusChip extends StatelessWidget {
