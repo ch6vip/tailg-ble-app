@@ -101,7 +101,11 @@ class _LoginPageState extends State<LoginPage> {
       _smsCountdown.start(isMounted: () => mounted);
       AppSnack.success(context, '验证码已发送');
     } catch (e) {
-      _logError('官云验证码发送失败', e);
+      logService.operation(
+        '官云验证码发送失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
       if (!mounted) return;
       AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
     }
@@ -132,7 +136,11 @@ class _LoginPageState extends State<LoginPage> {
       widget.onSignedIn?.call();
       if (mounted) AppNavigation.returnToVehicleHome(context);
     } catch (e) {
-      _logError('官云登录失败', e);
+      logService.operation(
+        '官云登录失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
       if (!mounted) return;
       AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
     } finally {
@@ -176,7 +184,11 @@ class _LoginPageState extends State<LoginPage> {
       widget.onSignedIn?.call();
       if (mounted) AppNavigation.returnToVehicleHome(context);
     } catch (e) {
-      _logError('Token 登录失败', e);
+      logService.operation(
+        'Token 登录失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
       if (!mounted) return;
       AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
     } finally {
@@ -185,10 +197,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ── 辅助 ──────────────────────────────────────────────────────────────
-
-  void _logError(String reason, Object e) {
-    logService.operation(reason, detail: e.toString(), level: LogLevel.warning);
-  }
 
   @override
   Widget build(BuildContext context) {

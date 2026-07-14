@@ -285,7 +285,7 @@ class OfficialFenceData {
   String get radiusLabel {
     final meters = radiusMeters;
     if (meters == null) return fenceRadius.isEmpty ? '待读取' : fenceRadius;
-    return '${meters.toStringAsFixed(0)}m';
+    return formatDistanceMeters(meters);
   }
 
   double? get radiusMeters {

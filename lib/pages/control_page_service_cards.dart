@@ -53,21 +53,21 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
       builder: (context, cloudState, _) {
         return ValueListenableBuilder<List<VehicleProfile>>(
           valueListenable: _vehiclesNotifier,
-          builder: (context, vehicles, __) {
+          builder: (context, _, __) {
             final vehicle = cloudState.selectedVehicle;
-            final localVehicle = _defaultLocalVehicle(vehicles);
+            final localVehicle = vehicleStore.defaultVehicle;
             final location = _resolveLocationSummary(
               cloudState: cloudState,
               localVehicle: localVehicle,
             );
             final showGpsBanner =
                 cloudState.selectedVehicle?.hasGpsService != true;
-            final showNavigationProjection = _supportsNavigationProjection(
-              vehicle,
-            );
-            final showCamera = _supportsCamera(vehicle);
-            final showSmartMeter = _supportsSmartMeter(vehicle);
-            final showChargingStation = _supportsChargingStation(vehicle);
+            final showNavigationProjection =
+                vehicle?.supportsNavigationProjection == true;
+            final showCamera = vehicle?.supportsCamera == true;
+            final showSmartMeter = vehicle?.supportsSmartMeter == true;
+            final showChargingStation =
+                vehicle?.supportsChargingStation == true;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
@@ -156,16 +156,6 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
     return total;
   }
 
-  VehicleProfile? _defaultLocalVehicle(List<VehicleProfile> vehicles) {
-    if (vehicles.isEmpty) return null;
-    final defaultId = vehicleStore.defaultVehicleId;
-    if (defaultId == null) return vehicles.first;
-    for (final vehicle in vehicles) {
-      if (vehicle.id == defaultId) return vehicle;
-    }
-    return vehicles.first;
-  }
-
   _LocationSummary? _resolveLocationSummary({
     required OfficialCloudState cloudState,
     required VehicleProfile? localVehicle,
@@ -184,15 +174,6 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
       source: resolved.source,
     );
   }
-
-  bool _supportsNavigationProjection(OfficialVehicle? vehicle) =>
-      vehicle?.supportsNavigationProjection == true;
-  bool _supportsCamera(OfficialVehicle? vehicle) =>
-      vehicle?.supportsCamera == true;
-  bool _supportsSmartMeter(OfficialVehicle? vehicle) =>
-      vehicle?.supportsSmartMeter == true;
-  bool _supportsChargingStation(OfficialVehicle? vehicle) =>
-      vehicle?.supportsChargingStation == true;
 }
 
 // ── Official Control Lower Area ───────────────────────────────────

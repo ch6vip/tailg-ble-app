@@ -271,7 +271,7 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
                       child: Text('范围设置', style: AppTextStyles.bodyLarge),
                     ),
                     Text(
-                      _formatDistance(radius),
+                      formatDistanceMeters(radius),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
@@ -307,12 +307,12 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
                 Row(
                   children: [
                     Text(
-                      _formatDistance(minRadius),
+                      formatDistanceMeters(minRadius),
                       style: AppTextStyles.caption,
                     ),
                     const Spacer(),
                     Text(
-                      _formatDistance(maxRadius),
+                      formatDistanceMeters(maxRadius),
                       style: AppTextStyles.caption,
                     ),
                   ],
@@ -408,8 +408,6 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
       _dirty = true;
     });
   }
-
-  static String _formatDistance(double meters) => formatDistanceMeters(meters);
 }
 
 class _FenceSettingRow extends StatelessWidget {

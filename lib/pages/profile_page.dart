@@ -38,13 +38,11 @@ class _ProfilePageState extends State<ProfilePage> {
   StreamSubscription<OfficialCloudState>? _cloudSub;
   StreamSubscription<List<VehicleProfile>>? _vehicleSub;
   late OfficialCloudState _cloudState;
-  late List<VehicleProfile> _vehicles;
 
   @override
   void initState() {
     super.initState();
     _cloudState = officialCloudService.state;
-    _vehicles = vehicleStore.vehicles;
     _cloudSub = officialCloudService.stateStream.listen((state) {
       if (!mounted) return;
       setState(() => _cloudState = state);
@@ -59,8 +57,9 @@ class _ProfilePageState extends State<ProfilePage> {
         messageReadStore.setUnreadCount(0);
       }
     });
-    _vehicleSub = vehicleStore.vehiclesStream.listen((vehicles) {
-      if (mounted) setState(() => _vehicles = vehicles);
+    // Rebuild when local vehicles change so default-vehicle dependent UI updates.
+    _vehicleSub = vehicleStore.vehiclesStream.listen((_) {
+      if (mounted) setState(() {});
     });
     _runBackgroundTask(_bootstrapMessageBadge(), failureMessage: '消息角标初始化失败');
   }
@@ -184,16 +183,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  VehicleProfile? _defaultLocalVehicle() {
-    final defaultId = vehicleStore.defaultVehicleId;
-    if (defaultId != null) {
-      for (final vehicle in _vehicles) {
-        if (vehicle.id == defaultId) return vehicle;
-      }
-    }
-    return vehicleStore.defaultVehicle ??
-        (_vehicles.isEmpty ? null : _vehicles.first);
-  }
+  VehicleProfile? _defaultLocalVehicle() => vehicleStore.defaultVehicle;
 
   void _handleProfileTap(bool signedIn) {
     if (!signedIn) {
