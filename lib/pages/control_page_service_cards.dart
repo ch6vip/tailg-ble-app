@@ -170,63 +170,19 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
     required OfficialCloudState cloudState,
     required VehicleProfile? localVehicle,
   }) {
-    final cloudLocation = cloudState.vehicleLocation;
-    if (cloudLocation != null) {
-      final cloudLat = cloudLocation.latitude;
-      final cloudLng = cloudLocation.longitude;
-      if (cloudLat != null &&
-          cloudLng != null &&
-          !isZeroCoordinate(cloudLat, cloudLng, tolerance: 0.000001)) {
-        return _LocationSummary(
-          latitude: cloudLat,
-          longitude: cloudLng,
-          timeLabel: cloudLocation.bleConnectTime.trim(),
-          address: cloudLocation.bleConnectAddress.trim(),
-          source: '官方停车位置',
-        );
-      }
-      if (cloudLocation.hasData) {
-        return _LocationSummary(
-          latitude: null,
-          longitude: null,
-          timeLabel: cloudLocation.bleConnectTime.trim(),
-          address: cloudLocation.bleConnectAddress.trim(),
-          source: '官方停车位置',
-        );
-      }
-    }
-
-    final officialVehicle = cloudState.selectedVehicle;
-    final vehicleLat = double.tryParse(officialVehicle?.latitude ?? '');
-    final vehicleLng = double.tryParse(officialVehicle?.longitude ?? '');
-    if (vehicleLat != null &&
-        vehicleLng != null &&
-        !isZeroCoordinate(vehicleLat, vehicleLng, tolerance: 0.000001)) {
-      return _LocationSummary(
-        latitude: vehicleLat,
-        longitude: vehicleLng,
-        timeLabel: '',
-        address: '',
-        source: '官方车辆状态',
-      );
-    }
-
-    final local = localVehicle?.lastLocation;
-    if (local != null &&
-        !isZeroCoordinate(
-          local.latitude,
-          local.longitude,
-          tolerance: 0.000001,
-        )) {
-      return _LocationSummary(
-        latitude: local.latitude,
-        longitude: local.longitude,
-        timeLabel: formatDateMinuteText(local.recordedAt),
-        address: '',
-        source: '本地记录',
-      );
-    }
-    return null;
+    final resolved = resolveVehicleLocation(
+      cloudState: cloudState,
+      localVehicle: localVehicle,
+      allowCloudMetadataWithoutCoordinate: true,
+    );
+    if (resolved == null) return null;
+    return _LocationSummary(
+      latitude: resolved.latitude,
+      longitude: resolved.longitude,
+      timeLabel: resolved.timeLabel,
+      address: resolved.address,
+      source: resolved.source,
+    );
   }
 
   bool _supportsNavigationProjection(OfficialVehicle? vehicle) =>

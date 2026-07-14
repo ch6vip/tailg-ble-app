@@ -17,6 +17,7 @@ import '../services/log_service.dart';
 import '../services/display_number_formatter.dart';
 import '../services/display_time_formatter.dart';
 import '../services/official_cloud_service.dart';
+import '../services/vehicle_location_resolver.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
 import '../widgets/app_chrome.dart';
@@ -284,52 +285,19 @@ class _LocationPageState extends State<LocationPage> {
     required VehicleProfile? localVehicle,
     required OfficialCloudState cloudState,
   }) {
-    final officialVehicle = cloudState.selectedVehicle;
-    final cloudLocation = cloudState.vehicleLocation;
-    if (cloudLocation != null) {
-      final cloudLat = cloudLocation.latitude;
-      final cloudLng = cloudLocation.longitude;
-      if (cloudLat != null &&
-          cloudLng != null &&
-          !isZeroCoordinate(cloudLat, cloudLng)) {
-        return _ResolvedLocation(
-          latitude: cloudLat,
-          longitude: cloudLng,
-          accuracy: 0,
-          timeLabel: cloudLocation.bleConnectTime,
-          address: cloudLocation.bleConnectAddress,
-          source: '官方停车位置',
-        );
-      }
-    }
-
-    final vehicleLat = double.tryParse(officialVehicle?.latitude ?? '');
-    final vehicleLng = double.tryParse(officialVehicle?.longitude ?? '');
-    if (vehicleLat != null &&
-        vehicleLng != null &&
-        !isZeroCoordinate(vehicleLat, vehicleLng)) {
-      return _ResolvedLocation(
-        latitude: vehicleLat,
-        longitude: vehicleLng,
-        accuracy: 0,
-        timeLabel: '',
-        address: '',
-        source: '官方车辆状态',
-      );
-    }
-
-    final local = localVehicle?.lastLocation;
-    if (local != null) {
-      return _ResolvedLocation(
-        latitude: local.latitude,
-        longitude: local.longitude,
-        accuracy: local.accuracy,
-        timeLabel: formatDateMinuteText(local.recordedAt),
-        address: '',
-        source: '本地记录',
-      );
-    }
-    return null;
+    final resolved = resolveVehicleLocation(
+      cloudState: cloudState,
+      localVehicle: localVehicle,
+    );
+    if (resolved == null || !resolved.hasCoordinate) return null;
+    return _ResolvedLocation(
+      latitude: resolved.latitude!,
+      longitude: resolved.longitude!,
+      accuracy: resolved.accuracy,
+      timeLabel: resolved.timeLabel,
+      address: resolved.address,
+      source: resolved.source,
+    );
   }
 
   @override

@@ -14,6 +14,7 @@ import '../services/control_home_mode.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
+import '../services/vehicle_location_resolver.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
 import '../widgets/app_pressable.dart';
