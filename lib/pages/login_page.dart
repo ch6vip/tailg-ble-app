@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../main.dart';
 import '../services/app_navigation.dart';
+import '../services/clipboard_text.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
@@ -160,10 +161,9 @@ class _LoginPageState extends State<LoginPage> {
   // ── Token 登录 ────────────────────────────────────────────────────────
 
   Future<void> _pasteFromClipboard() async {
-    final data = await Clipboard.getData(Clipboard.kTextPlain);
-    final text = data?.text?.trim() ?? '';
+    final text = await readClipboardText();
     if (!mounted) return;
-    if (text.isEmpty) {
+    if (text == null) {
       AppSnack.info(context, '剪贴板为空');
       return;
     }

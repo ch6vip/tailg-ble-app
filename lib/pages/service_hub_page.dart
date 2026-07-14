@@ -133,7 +133,7 @@ class ServiceHubPage extends StatelessWidget {
                     icon: Icons.support_agent_outlined,
                     title: '售后服务',
                     subtitle: '保养、维修和官方服务渠道',
-                    onTap: () => AppSnack.info(context, '售后服务暂未开放'),
+                    onTap: () => AppSnack.notYetOpen(context, '售后服务'),
                   ),
                 ],
               ),

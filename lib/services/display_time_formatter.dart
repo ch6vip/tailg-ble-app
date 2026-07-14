@@ -2,6 +2,17 @@ String formatDateText(DateTime time) {
   return '${time.year}-${_twoDigits(time.month)}-${_twoDigits(time.day)}';
 }
 
+/// Normalize official travel/date payloads to a `yyyy-MM-dd` day key.
+///
+/// Accepts `yyyy-MM-dd`, `yyyy/MM/dd`, and longer timestamps such as
+/// `yyyy-MM-dd HH:mm:ss`. Empty input returns an empty string.
+String normalizeOfficialDateKey(String raw) {
+  final trimmed = raw.trim();
+  if (trimmed.isEmpty) return '';
+  final datePart = trimmed.length >= 10 ? trimmed.substring(0, 10) : trimmed;
+  return datePart.replaceAll('/', '-');
+}
+
 String formatDateMinuteText(DateTime time) {
   return '${formatDateText(time)} ${formatHourMinuteText(time.hour, time.minute)}';
 }

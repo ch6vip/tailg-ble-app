@@ -12,6 +12,7 @@ import '../config/map_tile_config.dart';
 import '../models/geo_coordinate.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
+import '../services/clipboard_text.dart';
 import '../services/log_service.dart';
 import '../services/display_number_formatter.dart';
 import '../services/display_time_formatter.dart';
@@ -231,7 +232,7 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   Future<void> _copyLocation(_ResolvedLocation location) async {
-    await Clipboard.setData(ClipboardData(text: location.coordinateText));
+    await writeClipboardText(location.coordinateText);
     _showSnack('坐标已复制');
   }
 

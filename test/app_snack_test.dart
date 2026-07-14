@@ -53,6 +53,16 @@ void main() {
       expectedBackground: scheme.inverseSurface,
       expectedForeground: scheme.onInverseSurface,
     );
+
+    await _pumpSnack(
+      tester,
+      scheme: scheme,
+      message: '用户协议暂未开放',
+      icon: Icons.info_outline,
+      show: (context) => AppSnack.notYetOpen(context, '用户协议'),
+      expectedBackground: scheme.inverseSurface,
+      expectedForeground: scheme.onInverseSurface,
+    );
   });
 }
 

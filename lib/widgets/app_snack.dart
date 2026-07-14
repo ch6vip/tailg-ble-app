@@ -65,6 +65,13 @@ abstract final class AppSnack {
     info(context, '$label暂未开放，可先使用官方云端控车');
   }
 
+  /// Short not-yet-open notice for legal/support entries without a cloud fallback.
+  ///
+  /// e.g. `用户协议` → `用户协议暂未开放`.
+  static void notYetOpen(BuildContext context, String label) {
+    info(context, '$label暂未开放');
+  }
+
   static void _show(
     BuildContext context, {
     required String message,

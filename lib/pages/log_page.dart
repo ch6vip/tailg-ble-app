@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../main.dart';
+import '../services/clipboard_text.dart';
 import '../services/diagnostic_export_service.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
@@ -74,7 +74,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
       vehicleStore: vehicleStore,
       officialCloudService: officialCloudService,
     ).buildReport(entries);
-    await Clipboard.setData(ClipboardData(text: report));
+    await writeClipboardText(report);
     if (!mounted) return;
     AppSnack.success(context, '已复制诊断报告（${entries.length} 条日志）');
   }

@@ -149,11 +149,7 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
     final todayKey = formatDateText(DateTime.now());
     var total = 0;
     for (final day in cloudState.travelDays) {
-      final raw = day.travelDate.trim();
-      // Official payloads commonly use yyyy-MM-dd or yyyy-MM-dd HH:mm:ss.
-      final datePart = raw.length >= 10 ? raw.substring(0, 10) : raw;
-      final normalized = datePart.replaceAll('/', '-');
-      if (normalized == todayKey) {
+      if (normalizeOfficialDateKey(day.travelDate) == todayKey) {
         total += day.records.length;
       }
     }

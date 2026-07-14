@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../main.dart';
 import '../services/app_preferences_service.dart';
+import '../services/clipboard_text.dart';
 import '../services/diagnostic_export_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
@@ -194,7 +194,7 @@ class AboutAppPage extends StatelessWidget {
       vehicleStore: vehicleStore,
       officialCloudService: officialCloudService,
     ).buildReport(logService.all);
-    await Clipboard.setData(ClipboardData(text: report));
+    await writeClipboardText(report);
     if (!context.mounted) return;
     AppSnack.success(context, '已复制诊断报告');
   }
@@ -263,14 +263,14 @@ class AboutAppPage extends StatelessWidget {
                           icon: Icons.description_outlined,
                           title: '用户协议',
                           subtitle: '查看服务使用条款',
-                          onTap: () => AppSnack.info(context, '用户协议暂未开放'),
+                          onTap: () => AppSnack.notYetOpen(context, '用户协议'),
                         ),
                         _InsetDivider(),
                         _ActionRow(
                           icon: Icons.privacy_tip_outlined,
                           title: '隐私政策',
                           subtitle: '了解个人信息保护规则',
-                          onTap: () => AppSnack.info(context, '隐私政策暂未开放'),
+                          onTap: () => AppSnack.notYetOpen(context, '隐私政策'),
                         ),
                       ],
                     ),

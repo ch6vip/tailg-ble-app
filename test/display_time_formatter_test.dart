@@ -7,6 +7,14 @@ void main() {
     expect(formatDateText(DateTime(2026, 1, 2)), '2026-01-02');
   });
 
+  test('normalizeOfficialDateKey accepts common official date shapes', () {
+    expect(normalizeOfficialDateKey('2026-05-29'), '2026-05-29');
+    expect(normalizeOfficialDateKey('2026/05/29'), '2026-05-29');
+    expect(normalizeOfficialDateKey('2026-05-29 10:30:00'), '2026-05-29');
+    expect(normalizeOfficialDateKey(' 2026/05/29 08:00 '), '2026-05-29');
+    expect(normalizeOfficialDateKey(''), '');
+  });
+
   test('formatDateMinuteText renders padded date and minute display text', () {
     expect(
       formatDateMinuteText(DateTime(2026, 5, 29, 10, 30)),

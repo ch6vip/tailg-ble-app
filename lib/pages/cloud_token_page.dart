@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../main.dart';
+import '../services/clipboard_text.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../services/sensitive_value_masker.dart';
@@ -53,16 +53,15 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
       AppSnack.info(context, '当前未登录，没有可复制的 Token');
       return;
     }
-    await Clipboard.setData(ClipboardData(text: token));
+    await writeClipboardText(token);
     if (!mounted) return;
     AppSnack.success(context, 'Token 已复制到剪贴板');
   }
 
   Future<void> _pasteFromClipboard() async {
-    final data = await Clipboard.getData(Clipboard.kTextPlain);
-    final text = data?.text?.trim() ?? '';
+    final text = await readClipboardText();
     if (!mounted) return;
-    if (text.isEmpty) {
+    if (text == null) {
       AppSnack.info(context, '剪贴板为空');
       return;
     }
