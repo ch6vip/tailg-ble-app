@@ -214,7 +214,7 @@ class OfficialVehicleLocation {
 
   factory OfficialVehicleLocation.fromJson(Map<String, dynamic> json) {
     return OfficialVehicleLocation(
-      raw: _rawPayload(json),
+      raw: _stringKeyedMap(json),
       extendId: _clean(json['extendId']) ?? '',
       bleConnectTime: _clean(json['bleConnectTime']) ?? '',
       bleConnectLat: _clean(json['bleConnectLat']) ?? '',
@@ -257,7 +257,7 @@ class OfficialFenceData {
 
   factory OfficialFenceData.fromJson(Map<String, dynamic> json) {
     return OfficialFenceData(
-      raw: _rawPayload(json),
+      raw: _stringKeyedMap(json),
       fenceRadius: _clean(json['fenceRadius'] ?? json['range']) ?? '',
       fenceRadiusMax: _clean(json['fenceRadiusMax']) ?? '',
       fenceRadiusMin: _clean(json['fenceRadiusMin']) ?? '',
@@ -326,7 +326,7 @@ class OfficialTravelDay {
 
   factory OfficialTravelDay.fromJson(Map<String, dynamic> json) {
     return OfficialTravelDay(
-      raw: _rawPayload(json),
+      raw: _stringKeyedMap(json),
       sec: _clean(json['sec']) ?? '',
       hours: _clean(json['hours']) ?? '',
       min: _clean(json['min']) ?? '',
@@ -382,7 +382,7 @@ class OfficialTravelRecord {
 
   factory OfficialTravelRecord.fromJson(Map<String, dynamic> json) {
     return OfficialTravelRecord(
-      raw: _rawPayload(json),
+      raw: _stringKeyedMap(json),
       hours: _clean(json['hours']) ?? '',
       carName: _clean(json['carName']) ?? '',
       averageSpeed: _clean(json['averageSpeed']) ?? '',
@@ -479,7 +479,7 @@ class OfficialTravelPoint {
 
   factory OfficialTravelPoint.fromJson(Map<String, dynamic> json) {
     return OfficialTravelPoint(
-      raw: _rawPayload(json),
+      raw: _stringKeyedMap(json),
       lng: _clean(json['lng']) ?? '',
       heading: _clean(json['heading']) ?? '',
       starsNum: _clean(json['starsNum']) ?? '',
@@ -528,7 +528,7 @@ class OfficialBatteryInfo {
         _clean(json['dumpEnergyPercentLabel']) ??
         (dumpEnergyPercent == null ? '' : '$dumpEnergyPercent%');
     return OfficialBatteryInfo(
-      raw: _rawPayload(json),
+      raw: _stringKeyedMap(json),
       dumpEnergyPercent: dumpEnergyPercent ?? '',
       dumpEnergyPercentLabel: dumpEnergyPercentLabel,
       remainingMileage: _clean(json['remainingMileage']) ?? '',
@@ -664,7 +664,7 @@ class OfficialVehicleSelfCheck {
 
   factory OfficialVehicleSelfCheck.fromResponse(Map<String, dynamic> json) {
     return OfficialVehicleSelfCheck(
-      raw: _rawPayload(json),
+      raw: _stringKeyedMap(json),
       code: parsePersistedInt(json['code']),
       message: json['msg']?.toString() ?? '',
       data: json['data'],
@@ -681,10 +681,6 @@ class OfficialVehicleSelfCheck {
     if (code != null) return 'code=$code';
     return '自检已返回';
   }
-}
-
-Map<String, dynamic> _rawPayload(Map<String, dynamic> json) {
-  return _stringKeyedMap(json);
 }
 
 Map<String, dynamic> _dataMap(Object? value) {

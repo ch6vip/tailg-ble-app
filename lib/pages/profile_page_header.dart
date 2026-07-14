@@ -20,7 +20,12 @@ class _MineHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = signedIn ? '台铃用户' : '立即登录';
-    final subtitle = signedIn ? (_maskPhone(phone) ?? '已登录') : '登录后同步车辆和消息';
+    final phoneText = phone?.trim() ?? '';
+    final subtitle = signedIn
+        ? (phoneText.isEmpty
+              ? '已登录'
+              : SensitiveValueMasker.phone(phoneText, minMaskLength: 11))
+        : '登录后同步车辆和消息';
     final semanticsLabel = signedIn ? '编辑资料' : '登录 / 查看车辆';
 
     return Container(

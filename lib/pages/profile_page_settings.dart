@@ -245,8 +245,3 @@ class _LogoutButton extends StatelessWidget {
     );
   }
 }
-
-String? _maskPhone(String? phone) {
-  if (phone == null || phone.isEmpty) return null;
-  return SensitiveValueMasker.phone(phone, minMaskLength: 11);
-}
