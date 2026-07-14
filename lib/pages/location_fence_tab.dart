@@ -409,17 +409,7 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
     });
   }
 
-  static String _formatDistance(double meters) {
-    if (meters >= 1000) {
-      final km = meters / 1000;
-      final fixed = km.toStringAsFixed(1);
-      final trimmed = fixed.endsWith('.0')
-          ? fixed.substring(0, fixed.length - 2)
-          : fixed;
-      return '${trimmed}km';
-    }
-    return '${meters.toStringAsFixed(0)}m';
-  }
+  static String _formatDistance(double meters) => formatDistanceMeters(meters);
 }
 
 class _FenceSettingRow extends StatelessWidget {

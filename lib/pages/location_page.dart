@@ -13,6 +13,7 @@ import '../models/geo_coordinate.dart';
 import '../models/official_vehicle.dart';
 import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
+import '../services/display_number_formatter.dart';
 import '../services/display_time_formatter.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
