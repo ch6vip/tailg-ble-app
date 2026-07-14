@@ -46,3 +46,17 @@ bool requireCloudVehicle(
   }
   return false;
 }
+
+/// Push [page] after an optional [requireCloudVehicle] gate.
+///
+/// Shared by control home service cards and the service hub grid.
+void openCloudGatedPage(
+  BuildContext context,
+  Widget page, {
+  bool requireVehicle = true,
+}) {
+  if (requireVehicle && !requireCloudVehicle(context)) return;
+  unawaited(
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page)),
+  );
+}

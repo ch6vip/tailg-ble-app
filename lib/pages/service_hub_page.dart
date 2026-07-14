@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
@@ -55,7 +53,7 @@ class ServiceHubPage extends StatelessWidget {
                         icon: Icons.location_on_outlined,
                         label: '车辆定位',
                         color: AppColors.accentSky,
-                        onTap: () => _open(
+                        onTap: () => openCloudGatedPage(
                           context,
                           const LocationPage(
                             initialTab: LocationInitialTab.map,
@@ -66,7 +64,7 @@ class ServiceHubPage extends StatelessWidget {
                         icon: Icons.route_outlined,
                         label: '历史轨迹',
                         color: AppColors.accentViolet,
-                        onTap: () => _open(
+                        onTap: () => openCloudGatedPage(
                           context,
                           const LocationPage(
                             initialTab: LocationInitialTab.travel,
@@ -77,7 +75,7 @@ class ServiceHubPage extends StatelessWidget {
                         icon: Icons.fence_outlined,
                         label: '电子围栏',
                         color: AppColors.accentAmber,
-                        onTap: () => _open(
+                        onTap: () => openCloudGatedPage(
                           context,
                           const LocationPage(
                             initialTab: LocationInitialTab.fence,
@@ -88,32 +86,39 @@ class ServiceHubPage extends StatelessWidget {
                         icon: Icons.tune,
                         label: '车辆设置',
                         color: AppColors.dark,
-                        onTap: () =>
-                            _open(context, const VehicleSettingsPage()),
+                        onTap: () => openCloudGatedPage(
+                          context,
+                          const VehicleSettingsPage(),
+                        ),
                       ),
                       _ServiceGridTile(
                         icon: Icons.battery_charging_full,
                         label: '电池服务',
                         color: AppColors.energyGreen,
-                        onTap: () => _open(context, const BatteryDetailsPage()),
+                        onTap: () => openCloudGatedPage(
+                          context,
+                          const BatteryDetailsPage(),
+                        ),
                       ),
                       _ServiceGridTile(
                         icon: Icons.insert_chart_outlined,
                         label: '骑行统计',
                         color: AppColors.accentPurple,
-                        onTap: () => _open(context, const RideStatsPage()),
+                        onTap: () =>
+                            openCloudGatedPage(context, const RideStatsPage()),
                       ),
                       _ServiceGridTile(
                         icon: Icons.health_and_safety_outlined,
                         label: '故障诊断',
                         color: AppColors.energyRed,
-                        onTap: () => _open(context, const DiagnosticPage()),
+                        onTap: () =>
+                            openCloudGatedPage(context, const DiagnosticPage()),
                       ),
                       _ServiceGridTile(
                         icon: Icons.cloud_outlined,
                         label: '官方账号',
                         color: AppColors.brandRed,
-                        onTap: () => _open(
+                        onTap: () => openCloudGatedPage(
                           context,
                           const OfficialCloudPage(),
                           requireVehicle: false,
@@ -141,17 +146,6 @@ class ServiceHubPage extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  static void _open(
-    BuildContext context,
-    Widget page, {
-    bool requireVehicle = true,
-  }) {
-    if (requireVehicle && !requireCloudVehicle(context)) return;
-    unawaited(
-      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page)),
     );
   }
 }

@@ -35,13 +35,6 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
     super.dispose();
   }
 
-  void _open(BuildContext context, Widget page, {bool requireVehicle = true}) {
-    if (requireVehicle && !requireCloudVehicle(context)) return;
-    unawaited(
-      Navigator.push(context, MaterialPageRoute<void>(builder: (_) => page)),
-    );
-  }
-
   void _showUnavailable(BuildContext context, String label) {
     AppSnack.featureUnavailable(context, label);
   }
@@ -74,7 +67,8 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
                 children: [
                   _OfficialMapCard(
                     location: location,
-                    onTap: () => _open(context, const LocationPage()),
+                    onTap: () =>
+                        openCloudGatedPage(context, const LocationPage()),
                   ),
                   if (showNavigationProjection) ...[
                     const SizedBox(height: 10),
@@ -100,7 +94,7 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
                   const SizedBox(height: 10),
                   _OfficialHistoryCard(
                     todayCount: _todayTravelRecordCount(cloudState),
-                    onTap: () => _open(
+                    onTap: () => openCloudGatedPage(
                       context,
                       const LocationPage(initialTab: LocationInitialTab.travel),
                     ),
@@ -108,7 +102,7 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
                   if (showGpsBanner) ...[
                     const SizedBox(height: 10),
                     _OfficialGpsBanner(
-                      onTap: () => _open(
+                      onTap: () => openCloudGatedPage(
                         context,
                         const OfficialCloudPage(),
                         requireVehicle: false,
@@ -117,9 +111,11 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
                   ],
                   const SizedBox(height: 10),
                   _OfficialSettingsCard(
-                    onVehicleSetting: () =>
-                        _open(context, const VehicleSettingsPage()),
-                    onFence: () => _open(
+                    onVehicleSetting: () => openCloudGatedPage(
+                      context,
+                      const VehicleSettingsPage(),
+                    ),
+                    onFence: () => openCloudGatedPage(
                       context,
                       const LocationPage(initialTab: LocationInitialTab.fence),
                     ),

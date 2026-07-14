@@ -50,7 +50,7 @@ class DiagnosticExportService {
       '## Official Cloud',
       'Initialized: ${state.initialized}',
       'Signed in: ${state.signedIn}',
-      'Phone: ${state.phone.isEmpty ? 'none' : _maskPhone(state.phone)}',
+      'Phone: ${state.phone.isEmpty ? 'none' : SensitiveValueMasker.phone(state.phone, shortValue: 'present')}',
       'Token: ${state.token.isEmpty ? 'none' : 'present'}',
       'Vehicles: ${state.vehicles.length}',
       'Control channel: 官方云端',
@@ -89,19 +89,19 @@ class DiagnosticExportService {
 
     final linkedId = state.linkedLocalVehicleId(vehicle.key);
     return [
-      'Selected key: ${_maskId(vehicle.key)}',
-      'Linked local vehicle: ${linkedId == null ? 'none' : _maskId(linkedId)}',
+      'Selected key: ${SensitiveValueMasker.compact(vehicle.key, emptyValue: 'none', trim: false)}',
+      'Linked local vehicle: ${linkedId == null ? 'none' : SensitiveValueMasker.compact(linkedId, emptyValue: 'none', trim: false)}',
       'Online: ${vehicle.online}',
       'Defence: ${vehicle.defenceLabel}',
       'ACC: ${vehicle.powerLabel}',
       'Official vehicle battery: ${vehicle.electricQuantity?.toString() ?? '--'}%',
       'Official vehicle voltage: ${vehicle.voltage?.toString() ?? '--'}V',
       'ModelType: ${vehicle.modelType?.toString() ?? 'none'}',
-      'Command IMEI: ${_maskId(vehicle.commandImei)}',
-      'IMEI: ${_maskId(vehicle.imei)}',
-      'GPS IMEI: ${_maskId(vehicle.imeiGps)}',
+      'Command IMEI: ${SensitiveValueMasker.compact(vehicle.commandImei, emptyValue: 'none', trim: false)}',
+      'IMEI: ${SensitiveValueMasker.compact(vehicle.imei, emptyValue: 'none', trim: false)}',
+      'GPS IMEI: ${SensitiveValueMasker.compact(vehicle.imeiGps, emptyValue: 'none', trim: false)}',
       'BT name: ${vehicle.btname.isEmpty ? 'none' : vehicle.btname}',
-      'BT MAC: ${_maskId(vehicle.btmac)}',
+      'BT MAC: ${SensitiveValueMasker.compact(vehicle.btmac, emptyValue: 'none', trim: false)}',
       'Location: ${vehicle.latitude.isEmpty || vehicle.longitude.isEmpty ? 'none' : 'present (hidden)'}',
     ];
   }
@@ -136,7 +136,7 @@ class DiagnosticExportService {
     final location = vehicle.lastLocation;
     final lines = [
       '## Vehicle',
-      'Default ID: ${_maskId(vehicle.id)}',
+      'Default ID: ${SensitiveValueMasker.compact(vehicle.id, emptyValue: 'none', trim: false)}',
       'Name: ${vehicle.displayName}',
       'Protocol: ${vehicle.protocol.label}',
       'Last connected: ${vehicle.lastConnectedAt?.toIso8601String() ?? 'none'}',
@@ -154,13 +154,5 @@ class DiagnosticExportService {
     final detail = entry.detail;
     return '$t $tag [$level] ${OfficialCloudRedactor.text(entry.message)}'
         '${detail == null ? '' : ' | ${OfficialCloudRedactor.text(detail)}'}';
-  }
-
-  String _maskPhone(String phone) {
-    return SensitiveValueMasker.phone(phone, shortValue: 'present');
-  }
-
-  String _maskId(String value) {
-    return SensitiveValueMasker.compact(value, emptyValue: 'none', trim: false);
   }
 }
