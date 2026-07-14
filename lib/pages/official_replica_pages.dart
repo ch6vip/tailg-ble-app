@@ -247,11 +247,11 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
     final longitude = double.tryParse(_lngController.text.trim());
     final radius = int.tryParse(_radiusController.text.trim()) ?? 500;
     if (latitude == null || longitude == null) {
-      _showSnack('请输入有效坐标');
+      AppSnack.info(context, '请输入有效坐标');
       return;
     }
     if (radius < 100 || radius > 10000) {
-      _showSnack('半径建议设置在 100-10000 米');
+      AppSnack.info(context, '半径建议设置在 100-10000 米');
       return;
     }
     await _store.saveFenceConfig(
@@ -263,24 +263,21 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
       ),
     );
     if (!mounted) return;
-    _showSnack('电子围栏配置已保存');
+    AppSnack.info(context, '电子围栏配置已保存');
   }
 
   Future<void> _openMap() async {
     final latitude = double.tryParse(_latController.text.trim());
     final longitude = double.tryParse(_lngController.text.trim());
     if (latitude == null || longitude == null) {
-      _showSnack('请输入有效坐标');
+      AppSnack.info(context, '请输入有效坐标');
       return;
     }
     final uri = googleMapsSearchUri(latitude, longitude);
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched && mounted) _showSnack('无法打开地图');
-  }
-
-  void _showSnack(String message) {
-    if (!mounted) return;
-    AppSnack.info(context, message);
+    if (!launched && mounted) {
+      AppSnack.info(context, '无法打开地图');
+    }
   }
 
   @override

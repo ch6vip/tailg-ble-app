@@ -104,7 +104,7 @@ class _LocationPageState extends State<LocationPage> {
         requestPermission: true,
       );
       if (!mounted) return;
-      _showSnack('本地位置已更新');
+      AppSnack.info(context, '本地位置已更新');
     } catch (e) {
       logService.operation(
         '本地车辆位置刷新失败',
@@ -123,7 +123,10 @@ class _LocationPageState extends State<LocationPage> {
     final service = officialCloudService;
     if (!service.state.signedIn) {
       if (!silent && mounted) {
-        _showSnack('请先登录官方账号后再同步位置数据', isError: true);
+        AppSnack.error(
+          context,
+          OfficialCloudMessages.signInRequiredBefore('同步位置数据'),
+        );
       }
       return;
     }
@@ -145,7 +148,7 @@ class _LocationPageState extends State<LocationPage> {
               cloudState: service.state,
             ) !=
             null;
-        _showSnack(hasLocation ? '位置数据已同步' : '已同步，当前暂无停车坐标');
+        AppSnack.info(context, hasLocation ? '位置数据已同步' : '已同步，当前暂无停车坐标');
       }
     } catch (e) {
       logService.operation(
@@ -156,14 +159,19 @@ class _LocationPageState extends State<LocationPage> {
       if (!silent && mounted) {
         final message = OfficialCloudRedactor.errorMessage(e);
         setState(() => _localError = message);
-        _showSnack(message, isError: true);
+        AppSnack.error(context, message);
       }
     }
   }
 
   Future<void> _refreshTravelHistory({String? month}) async {
     if (!officialCloudService.state.signedIn) {
-      if (mounted) _showSnack('请先登录官方账号后再同步轨迹', isError: true);
+      if (mounted) {
+        AppSnack.error(
+          context,
+          OfficialCloudMessages.signInRequiredBefore('同步轨迹'),
+        );
+      }
       return;
     }
     try {
@@ -174,7 +182,7 @@ class _LocationPageState extends State<LocationPage> {
       if (!mounted) return;
       final days = officialCloudService.state.travelDays;
       final count = days.fold<int>(0, (sum, day) => sum + day.records.length);
-      _showSnack(count == 0 ? '已同步，本月暂无轨迹记录' : '轨迹已同步 · $count条');
+      AppSnack.info(context, count == 0 ? '已同步，本月暂无轨迹记录' : '轨迹已同步 · $count条');
     } catch (e) {
       logService.operation(
         '官云行程历史刷新失败',
@@ -182,7 +190,7 @@ class _LocationPageState extends State<LocationPage> {
         level: LogLevel.warning,
       );
       if (mounted) {
-        _showSnack(OfficialCloudRedactor.errorMessage(e), isError: true);
+        AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
       }
     }
   }
@@ -201,7 +209,12 @@ class _LocationPageState extends State<LocationPage> {
 
   Future<void> _refreshFenceData() async {
     if (!officialCloudService.state.signedIn) {
-      if (mounted) _showSnack('请先登录官方账号后再同步围栏', isError: true);
+      if (mounted) {
+        AppSnack.error(
+          context,
+          OfficialCloudMessages.signInRequiredBefore('同步围栏'),
+        );
+      }
       return;
     }
     try {
@@ -209,9 +222,12 @@ class _LocationPageState extends State<LocationPage> {
       if (!mounted) return;
       final fence = officialCloudService.state.fenceData;
       if (fence?.hasData == true) {
-        _showSnack('围栏配置已同步 · ${fence!.statusLabel} · ${fence.radiusLabel}');
+        AppSnack.info(
+          context,
+          '围栏配置已同步 · ${fence!.statusLabel} · ${fence.radiusLabel}',
+        );
       } else {
-        _showSnack('已同步，当前暂无围栏配置');
+        AppSnack.info(context, '已同步，当前暂无围栏配置');
       }
     } catch (e) {
       logService.operation(
@@ -220,7 +236,7 @@ class _LocationPageState extends State<LocationPage> {
         level: LogLevel.warning,
       );
       if (mounted) {
-        _showSnack(OfficialCloudRedactor.errorMessage(e), isError: true);
+        AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
       }
     }
   }
@@ -234,19 +250,21 @@ class _LocationPageState extends State<LocationPage> {
 
   Future<void> _copyLocation(_ResolvedLocation location) async {
     await writeClipboardText(location.coordinateText);
-    _showSnack('坐标已复制');
+    if (mounted) AppSnack.info(context, '坐标已复制');
   }
 
   Future<void> _openMap(_ResolvedLocation location) async {
     final uri = googleMapsSearchUri(location.latitude, location.longitude);
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched && mounted) _showSnack('无法打开地图', isError: true);
+    if (!launched && mounted) {
+      AppSnack.error(context, '无法打开地图');
+    }
   }
 
   Future<void> _openTravelDetail(OfficialTravelRecord record) async {
     final travelId = record.deviceTravelId;
     if (travelId.isEmpty) {
-      _showSnack('当前轨迹缺少官方 ID', isError: true);
+      if (mounted) AppSnack.error(context, '当前轨迹缺少官方 ID');
       return;
     }
     try {
@@ -267,17 +285,8 @@ class _LocationPageState extends State<LocationPage> {
         level: LogLevel.warning,
       );
       if (mounted) {
-        _showSnack(OfficialCloudRedactor.errorMessage(e), isError: true);
+        AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
       }
-    }
-  }
-
-  void _showSnack(String message, {bool isError = false}) {
-    if (!mounted) return;
-    if (isError) {
-      AppSnack.error(context, message);
-    } else {
-      AppSnack.info(context, message);
     }
   }
 

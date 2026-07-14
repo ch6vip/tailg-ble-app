@@ -49,7 +49,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
       await officialCloudService.requestSmsCode(_normalizedPhone);
       if (!mounted) return;
       _smsCountdown.start(isMounted: () => mounted);
-      _showSnack('验证码已发送');
+      AppSnack.success(context, '验证码已发送');
     } catch (e) {
       logService.operation(
         '官云验证码发送失败',
@@ -57,7 +57,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
         level: LogLevel.warning,
       );
       if (!mounted) return;
-      _showSnack(OfficialCloudRedactor.errorMessage(e), error: true);
+      AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
     }
   }
 
@@ -68,7 +68,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
         _smsController.text.trim(),
       );
       if (!mounted) return;
-      _showSnack('官方账号登录成功');
+      AppSnack.success(context, '官方账号登录成功');
     } catch (e) {
       logService.operation(
         '官云登录失败',
@@ -76,7 +76,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
         level: LogLevel.warning,
       );
       if (!mounted) return;
-      _showSnack(OfficialCloudRedactor.errorMessage(e), error: true);
+      AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
     }
   }
 
@@ -87,7 +87,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
     try {
       await officialCloudService.refreshVehicles();
       if (!mounted) return;
-      _showSnack('官方车辆已刷新');
+      AppSnack.success(context, '官方车辆已刷新');
     } catch (e) {
       logService.operation(
         '官云车辆刷新失败',
@@ -95,15 +95,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
         level: LogLevel.warning,
       );
       if (!mounted) return;
-      _showSnack(OfficialCloudRedactor.errorMessage(e), error: true);
-    }
-  }
-
-  void _showSnack(String message, {bool error = false}) {
-    if (error) {
-      AppSnack.error(context, message);
-    } else {
-      AppSnack.success(context, message);
+      AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
     }
   }
 

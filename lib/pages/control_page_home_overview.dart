@@ -70,7 +70,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
   Future<void> _sendCommand(CommandCode cmd) async {
     if (_busy) return;
     if (_isControlDebounced()) {
-      _showSnack('请勿频繁操作', isError: true);
+      if (mounted) AppSnack.error(context, '请勿频繁操作');
       return;
     }
     final policy = ControlCommandPolicy.evaluate(
@@ -78,13 +78,15 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
       isPowerOn: _currentIsPowerOn(),
     );
     if (!policy.allowed) {
-      _showSnack(policy.disabledReason ?? '${cmd.label}不可用', isError: true);
+      if (mounted) {
+        AppSnack.error(context, policy.disabledReason ?? '${cmd.label}不可用');
+      }
       return;
     }
     // 先检查可用性，再设置 _busy，避免 busy 状态影响 availability 判断
     final availability = _controlAvailability();
     if (!availability.enabled) {
-      _showSnack(availability.disabledReason, isError: true);
+      if (mounted) AppSnack.error(context, availability.disabledReason);
       return;
     }
     setState(() {
@@ -109,9 +111,9 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
           // so the slide rest position matches the real vehicle ACC/defence.
           await _refreshStateForConfirmation();
           if (!mounted) return;
-          _showSnack(_unconfirmedMessage(cmd), isError: true);
+          AppSnack.error(context, _unconfirmedMessage(cmd));
         } else {
-          _showSnack(result.successMessage ?? '${cmd.label}成功', isError: false);
+          AppSnack.info(context, result.successMessage ?? '${cmd.label}成功');
         }
       } else {
         logService.operation(
@@ -122,10 +124,7 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
         );
         await _refreshStateForConfirmation();
         if (mounted) {
-          _showSnack(
-            _failureMessage(cmd, result.failureMessage),
-            isError: true,
-          );
+          AppSnack.error(context, _failureMessage(cmd, result.failureMessage));
         }
       }
     } finally {
@@ -153,15 +152,6 @@ class _HomeTopSectionState extends State<_HomeTopSection> {
         return null;
       }),
     );
-  }
-
-  void _showSnack(String message, {required bool isError}) {
-    if (!mounted) return;
-    if (isError) {
-      AppSnack.error(context, message);
-      return;
-    }
-    AppSnack.info(context, message);
   }
 
   String _unconfirmedMessage(CommandCode command) {
