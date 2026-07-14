@@ -71,24 +71,24 @@ class OfficialVehicle {
 
   factory OfficialVehicle.fromJson(Map<String, dynamic> json) {
     return OfficialVehicle(
-      imei: _stringValue(json['imei']),
-      imeiGps: _stringValue(json['imeiGps']),
-      carId: _stringValue(json['carId']),
-      carName: _stringValue(json['carName']),
-      carNickName: _stringValue(json['carNickName']),
-      carPhoto: _stringValue(json['carPhoto']),
-      frame: _stringValue(json['frame']),
-      defenceStatus: _intOrNull(json['defenceStatus']),
-      acc: _intOrNull(json['acc']),
-      electricQuantity: _intOrNull(json['electricQuantity']),
-      voltage: _doubleOrNull(json['voltage']),
-      online: _boolValue(json['online']),
-      btname: _stringValue(json['btname']),
-      btmac: _stringValue(json['btmac']),
-      longitude: _stringValue(json['longitude']),
-      latitude: _stringValue(json['latitude']),
-      modelType: _intOrNull(json['modelType']),
-      mileage: _doubleOrNull(json['mileage']),
+      imei: parsePersistedString(json['imei']),
+      imeiGps: parsePersistedString(json['imeiGps']),
+      carId: parsePersistedString(json['carId']),
+      carName: parsePersistedString(json['carName']),
+      carNickName: parsePersistedString(json['carNickName']),
+      carPhoto: parsePersistedString(json['carPhoto']),
+      frame: parsePersistedString(json['frame']),
+      defenceStatus: parsePersistedInt(json['defenceStatus']),
+      acc: parsePersistedInt(json['acc']),
+      electricQuantity: parsePersistedInt(json['electricQuantity']),
+      voltage: parsePersistedDouble(json['voltage']),
+      online: parsePersistedBool(json['online']),
+      btname: parsePersistedString(json['btname']),
+      btmac: parsePersistedString(json['btmac']),
+      longitude: parsePersistedString(json['longitude']),
+      latitude: parsePersistedString(json['latitude']),
+      modelType: parsePersistedInt(json['modelType']),
+      mileage: parsePersistedDouble(json['mileage']),
       raw: Map<String, dynamic>.unmodifiable(json),
     );
   }
@@ -233,7 +233,7 @@ class OfficialVehicleLocation {
   double? get latitude => _double(bleConnectLat);
   double? get longitude => _double(bleConnectLng);
 
-  static double? _double(String value) => double.tryParse(value.trim());
+  static double? _double(String value) => parsePersistedDouble(value);
 }
 
 class OfficialFenceData {
@@ -665,7 +665,7 @@ class OfficialVehicleSelfCheck {
   factory OfficialVehicleSelfCheck.fromResponse(Map<String, dynamic> json) {
     return OfficialVehicleSelfCheck(
       raw: _rawPayload(json),
-      code: _intOrNull(json['code']),
+      code: parsePersistedInt(json['code']),
       message: json['msg']?.toString() ?? '',
       data: json['data'],
     );
@@ -695,8 +695,6 @@ Map<String, dynamic> _dataMap(Object? value) {
 Map<String, dynamic> _stringKeyedMap(Map<Object?, Object?> value) {
   return Map<String, dynamic>.unmodifiable(parsePersistedMap(value)!);
 }
-
-String _stringValue(Object? value) => value?.toString().trim() ?? '';
 
 String? _firstNonBlank(Iterable<String> values) {
   for (final value in values) {
@@ -765,29 +763,8 @@ bool _truthyFeatureValue(Object? value) {
   return value != null;
 }
 
-bool _boolValue(Object? value) {
-  if (value is bool) return value;
-  if (value is num) return value != 0;
-  final text = value?.toString().toLowerCase();
-  return text == 'true' || text == '1';
-}
-
 List<OfficialTravelRecord> _travelRecords(Object? value) {
   return parsePersistedMapList(
     value,
   ).map(OfficialTravelRecord.fromJson).toList(growable: false);
-}
-
-int? _intOrNull(Object? value) {
-  if (value == null) return null;
-  if (value is int) return value;
-  if (value is num) return value.toInt();
-  return int.tryParse(value.toString());
-}
-
-double? _doubleOrNull(Object? value) {
-  if (value == null) return null;
-  if (value is double) return value;
-  if (value is num) return value.toDouble();
-  return double.tryParse(value.toString());
 }
