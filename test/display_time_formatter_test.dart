@@ -40,7 +40,7 @@ void main() {
   });
 
   test('shiftMonthText navigates months and blocks future months', () {
-    final clock = () => DateTime(2026, 7, 15);
+    DateTime clock() => DateTime(2026, 7, 15);
     expect(shiftMonthText('2026-07', -1, clock: clock), '2026-06');
     expect(shiftMonthText('2026-07', 1, clock: clock), isNull);
     expect(shiftMonthText('2026-06', 1, clock: clock), '2026-07');

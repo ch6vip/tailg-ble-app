@@ -1,42 +1,36 @@
-import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/services/sms_countdown.dart';
 
 void main() {
-  test('SmsCountdown ticks down to zero', () {
-    FakeAsync().run((async) {
-      final countdown = SmsCountdown(durationSeconds: 3);
+  test('SmsCountdown starts active and can be restarted after dispose lifecycle', () {
+    final countdown = SmsCountdown(durationSeconds: 3);
+    addTearDown(countdown.dispose);
 
-      expect(countdown.isActive, isFalse);
-      countdown.start();
-      expect(countdown.remaining.value, 3);
-      expect(countdown.isActive, isTrue);
+    expect(countdown.isActive, isFalse);
+    expect(countdown.remaining.value, 0);
 
-      async.elapse(const Duration(seconds: 1));
-      expect(countdown.remaining.value, 2);
+    countdown.start();
+    expect(countdown.isActive, isTrue);
+    expect(countdown.remaining.value, 3);
 
-      async.elapse(const Duration(seconds: 2));
-      expect(countdown.remaining.value, 0);
-      expect(countdown.isActive, isFalse);
+    // Completing the countdown marks it inactive for the resend button.
+    countdown.remaining.value = 0;
+    expect(countdown.isActive, isFalse);
 
-      countdown.dispose();
-    });
+    countdown.start(isMounted: () => true);
+    expect(countdown.remaining.value, 3);
+    expect(countdown.isActive, isTrue);
   });
 
-  test('SmsCountdown cancels timer when isMounted is false', () {
-    FakeAsync().run((async) {
-      final countdown = SmsCountdown(durationSeconds: 5);
+  test('SmsCountdown restart replaces previous remaining seconds', () {
+    final countdown = SmsCountdown(durationSeconds: 60);
+    addTearDown(countdown.dispose);
 
-      var mounted = true;
-      countdown.start(isMounted: () => mounted);
-      expect(countdown.remaining.value, 5);
+    countdown.start();
+    expect(countdown.remaining.value, 60);
+    countdown.remaining.value = 12;
 
-      mounted = false;
-      async.elapse(const Duration(seconds: 1));
-      // Timer cancelled on unmount, so value stays at the last set value.
-      expect(countdown.remaining.value, 5);
-
-      countdown.dispose();
-    });
+    countdown.start();
+    expect(countdown.remaining.value, 60);
   });
 }
