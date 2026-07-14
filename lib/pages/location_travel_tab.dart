@@ -179,12 +179,16 @@ class _TravelDayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final records = day.records;
+    final summedMileage = sumTravelMileageKm(records);
     final mileage = day.totalMileage.isNotEmpty
         ? day.totalMileage
-        : _sumMileage(records);
+        : (summedMileage == 0 ? '' : summedMileage.toStringAsFixed(1));
     final duration = day.totalTime.isNotEmpty
         ? day.totalTime
-        : _sumDuration(records);
+        : formatCompactDuration(
+            sumTravelDurationSeconds(records),
+            emptyWhenZero: true,
+          );
     return Container(
       padding: const EdgeInsets.fromLTRB(15, 14, 15, 12),
       decoration: cardDecoration,
@@ -247,28 +251,6 @@ class _TravelDayCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  static String _sumMileage(List<OfficialTravelRecord> records) {
-    final total = records.fold<double>(
-      0,
-      (sum, record) => sum + (double.tryParse(record.mileage) ?? 0),
-    );
-    return total == 0 ? '' : total.toStringAsFixed(1);
-  }
-
-  static String _sumDuration(List<OfficialTravelRecord> records) {
-    var seconds = 0;
-    for (final record in records) {
-      seconds += (int.tryParse(record.hours) ?? 0) * 3600;
-      seconds += (int.tryParse(record.min) ?? 0) * 60;
-      seconds += int.tryParse(record.sec) ?? 0;
-    }
-    if (seconds <= 0) return '';
-    final hours = seconds ~/ 3600;
-    final minutes = (seconds % 3600) ~/ 60;
-    if (hours > 0) return '${hours}h${minutes}m';
-    return '${minutes}m';
   }
 }
 

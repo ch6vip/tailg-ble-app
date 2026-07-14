@@ -161,24 +161,10 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double totalKm = 0;
-    int totalTrips = 0;
-    int totalSeconds = 0;
-
-    for (final day in days) {
-      for (final record in day.records) {
-        final km = double.tryParse(record.mileage) ?? 0;
-        totalKm += km;
-        totalTrips++;
-        totalSeconds +=
-            (int.tryParse(record.hours) ?? 0) * 3600 +
-            (int.tryParse(record.min) ?? 0) * 60 +
-            (int.tryParse(record.sec) ?? 0);
-      }
-    }
-
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
+    final records = days.expand((day) => day.records);
+    final totalKm = sumTravelMileageKm(records);
+    final totalTrips = records.length;
+    final totalSeconds = sumTravelDurationSeconds(records);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -208,7 +194,7 @@ class _SummaryCard extends StatelessWidget {
               ),
               _StatItem(value: '$totalTrips', unit: '次', label: '骑行次数'),
               _StatItem(
-                value: hours > 0 ? '${hours}h${minutes}m' : '${minutes}m',
+                value: formatCompactDuration(totalSeconds),
                 unit: '',
                 label: '总时长',
               ),
@@ -282,12 +268,7 @@ class _CarbonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double totalKm = 0;
-    for (final day in days) {
-      for (final record in day.records) {
-        totalKm += double.tryParse(record.mileage) ?? 0;
-      }
-    }
+    final totalKm = sumTravelMileageKm(days.expand((day) => day.records));
     final carbonSaved = totalKm * _kgCo2PerKm;
 
     return Container(

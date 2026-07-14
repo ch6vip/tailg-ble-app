@@ -1709,6 +1709,38 @@ void main() {
       expect(record.maxSpeedLabel, '45.7km/h');
       expect(record.mileageLabel, '604km');
     });
+
+    test('aggregates travel mileage and duration across records', () {
+      final day = OfficialTravelDay.fromJson({
+        'travelDate': '2026-06-01',
+        'deviceTravelDtoList': [
+          {
+            'deviceTravelId': 'a',
+            'mileage': '12.5',
+            'hours': '1',
+            'min': '30',
+            'sec': '0',
+          },
+          {
+            'deviceTravelId': 'b',
+            'mileage': '7.5',
+            'hours': '0',
+            'min': '45',
+            'sec': '30',
+          },
+        ],
+      });
+
+      expect(sumTravelMileageKm(day.records), 20.0);
+      expect(
+        sumTravelDurationSeconds(day.records),
+        1 * 3600 + 30 * 60 + 45 * 60 + 30,
+      );
+      expect(formatCompactDuration(5430), '1h30m');
+      expect(formatCompactDuration(45 * 60), '45m');
+      expect(formatCompactDuration(0), '0m');
+      expect(formatCompactDuration(0, emptyWhenZero: true), '');
+    });
   });
 }
 

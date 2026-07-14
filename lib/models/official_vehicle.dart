@@ -427,6 +427,35 @@ class OfficialTravelRecord {
       : '${formatCompactDecimalText(averageSpeed)}km/h';
   String get maxSpeedLabel =>
       maxSpeed.isEmpty ? '待读取' : '${formatCompactDecimalText(maxSpeed)}km/h';
+
+  /// Parsed mileage in km; non-numeric payloads count as 0.
+  double get mileageKm => double.tryParse(mileage) ?? 0;
+
+  /// Duration from hours/min/sec fields; non-numeric parts count as 0.
+  int get durationSeconds =>
+      (int.tryParse(hours) ?? 0) * 3600 +
+      (int.tryParse(min) ?? 0) * 60 +
+      (int.tryParse(sec) ?? 0);
+}
+
+double sumTravelMileageKm(Iterable<OfficialTravelRecord> records) {
+  return records.fold<double>(0, (sum, record) => sum + record.mileageKm);
+}
+
+int sumTravelDurationSeconds(Iterable<OfficialTravelRecord> records) {
+  return records.fold<int>(0, (sum, record) => sum + record.durationSeconds);
+}
+
+/// Compact `2h30m` / `30m` duration label used by travel and ride stats.
+///
+/// When [emptyWhenZero] is true, zero/negative totals render as `''`
+/// (travel day cards prefer blank over `0m`).
+String formatCompactDuration(int seconds, {bool emptyWhenZero = false}) {
+  if (seconds <= 0) return emptyWhenZero ? '' : '0m';
+  final hours = seconds ~/ 3600;
+  final minutes = (seconds % 3600) ~/ 60;
+  if (hours > 0) return '${hours}h${minutes}m';
+  return '${minutes}m';
 }
 
 class OfficialTravelPoint {
