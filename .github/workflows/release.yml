@@ -102,7 +102,11 @@ jobs:
         run: flutter build apk --release --target-platform android-arm64
 
       - name: Generate SHA-256 checksum
-        run: sha256sum "${{ env.APK_RELEASE_PATH }}" > "${{ env.APK_RELEASE_PATH }}.sha256"
+        id: artifact
+        run: |
+          sha256sum "${{ env.APK_RELEASE_PATH }}" > "${{ env.APK_RELEASE_PATH }}.sha256"
+          echo "apk_size=$(du -h "${{ env.APK_RELEASE_PATH }}" | cut -f1)" >> "$GITHUB_OUTPUT"
+          echo "apk_sha256=$(awk '{print $1}' "${{ env.APK_RELEASE_PATH }}.sha256")" >> "$GITHUB_OUTPUT"
 
       # ── 提取版本号用于 Release 标题 ──
       - name: Extract version
@@ -131,7 +135,7 @@ jobs:
 
             | 文件 | 大小 | SHA-256 |
             |------|------|---------|
-            | `app-release.apk` | $(du -h "${{ env.APK_RELEASE_PATH }}" | cut -f1) | \`$(cat "${{ env.APK_RELEASE_PATH }}.sha256" | awk '{print $1}')\` |
+            | `app-release.apk` | ${{ steps.artifact.outputs.apk_size }} | `${{ steps.artifact.outputs.apk_sha256 }}` |
 
             ## :gear: 安装说明
 
