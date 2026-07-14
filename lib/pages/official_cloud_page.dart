@@ -54,11 +54,11 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
     } catch (e) {
       logService.operation(
         '官云验证码发送失败',
-        detail: _errorMessage(e),
+        detail: OfficialCloudRedactor.errorMessage(e),
         level: LogLevel.warning,
       );
       if (!mounted) return;
-      _showSnack(_errorMessage(e), error: true);
+      _showSnack(OfficialCloudRedactor.errorMessage(e), error: true);
     }
   }
 
@@ -90,11 +90,11 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
     } catch (e) {
       logService.operation(
         '官云登录失败',
-        detail: _errorMessage(e),
+        detail: OfficialCloudRedactor.errorMessage(e),
         level: LogLevel.warning,
       );
       if (!mounted) return;
-      _showSnack(_errorMessage(e), error: true);
+      _showSnack(OfficialCloudRedactor.errorMessage(e), error: true);
     }
   }
 
@@ -109,11 +109,11 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
     } catch (e) {
       logService.operation(
         '官云车辆刷新失败',
-        detail: _errorMessage(e),
+        detail: OfficialCloudRedactor.errorMessage(e),
         level: LogLevel.warning,
       );
       if (!mounted) return;
-      _showSnack(_errorMessage(e), error: true);
+      _showSnack(OfficialCloudRedactor.errorMessage(e), error: true);
     }
   }
 
@@ -123,10 +123,6 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
     } else {
       AppSnack.success(context, message);
     }
-  }
-
-  String _errorMessage(Object e) {
-    return OfficialCloudRedactor.errorMessage(e);
   }
 
   @override
@@ -711,18 +707,14 @@ class _OfficialVehicleSelfCheckPageState
     } catch (e) {
       logService.operation(
         '官云自检失败',
-        detail: _errorMessage(e),
+        detail: OfficialCloudRedactor.errorMessage(e),
         level: LogLevel.warning,
       );
       if (!mounted) return;
-      setState(() => _error = _errorMessage(e));
+      setState(() => _error = OfficialCloudRedactor.errorMessage(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  String _errorMessage(Object e) {
-    return OfficialCloudRedactor.errorMessage(e);
   }
 
   @override

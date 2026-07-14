@@ -461,7 +461,7 @@ class OfficialCloudService {
         // (offline / invalid token will surface on next refresh).
         _log.operation(
           '官方云 Token 登录后车辆刷新失败',
-          detail: _errorMessage(e),
+          detail: OfficialCloudRedactor.errorMessage(e),
           level: LogLevel.warning,
         );
       }
@@ -597,7 +597,7 @@ class OfficialCloudService {
       if (!_isCurrentSession(token)) return;
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
-        final message = _errorMessage(e);
+        final message = OfficialCloudRedactor.errorMessage(e);
         _state = _state.copyWith(error: message);
         _emit();
       }
@@ -703,7 +703,7 @@ class OfficialCloudService {
       if (!_isCurrentSession(token)) return;
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
-        final message = _errorMessage(e);
+        final message = OfficialCloudRedactor.errorMessage(e);
         _state = _state.copyWith(
           messagesLoading: false,
           messagesError: message,
@@ -809,7 +809,7 @@ class OfficialCloudService {
       if (!_isCurrentSession(token)) return;
       await _handleAuthFailureIfNeeded(e);
       if (_state.signedIn) {
-        final message = _errorMessage(e);
+        final message = OfficialCloudRedactor.errorMessage(e);
         _state = _state.copyWith(
           batteryInfoLoading: false,
           batteryInfoError: message,
@@ -819,7 +819,7 @@ class OfficialCloudService {
       if (!silent) rethrow;
       _log.operation(
         '官方电池信息刷新失败',
-        detail: _errorMessage(e),
+        detail: OfficialCloudRedactor.errorMessage(e),
         level: LogLevel.warning,
       );
     } finally {
@@ -896,14 +896,14 @@ class OfficialCloudService {
       if (_state.signedIn) {
         _state = _state.copyWith(
           vehicleLocationLoading: false,
-          vehicleLocationError: _errorMessage(e),
+          vehicleLocationError: OfficialCloudRedactor.errorMessage(e),
         );
         _emit();
       }
       if (!silent) rethrow;
       _log.operation(
         '官方停车位置刷新失败',
-        detail: _errorMessage(e),
+        detail: OfficialCloudRedactor.errorMessage(e),
         level: LogLevel.warning,
       );
     } finally {
@@ -977,14 +977,14 @@ class OfficialCloudService {
       if (_state.signedIn) {
         _state = _state.copyWith(
           fenceLoading: false,
-          fenceError: _errorMessage(e),
+          fenceError: OfficialCloudRedactor.errorMessage(e),
         );
         _emit();
       }
       if (!silent) rethrow;
       _log.operation(
         '官方电子围栏刷新失败',
-        detail: _errorMessage(e),
+        detail: OfficialCloudRedactor.errorMessage(e),
         level: LogLevel.warning,
       );
     } finally {
@@ -1030,7 +1030,7 @@ class OfficialCloudService {
       if (_state.signedIn) {
         _state = _state.copyWith(
           fenceLoading: false,
-          fenceError: _errorMessage(e),
+          fenceError: OfficialCloudRedactor.errorMessage(e),
         );
         _emit();
       }
@@ -1212,14 +1212,14 @@ class OfficialCloudService {
       if (_state.signedIn) {
         _state = _state.copyWith(
           travelLoading: false,
-          travelError: _errorMessage(e),
+          travelError: OfficialCloudRedactor.errorMessage(e),
         );
         _emit();
       }
       if (!silent) rethrow;
       _log.operation(
         '官方历史轨迹刷新失败',
-        detail: _errorMessage(e),
+        detail: OfficialCloudRedactor.errorMessage(e),
         level: LogLevel.warning,
       );
     } finally {
@@ -1268,7 +1268,7 @@ class OfficialCloudService {
       if (_state.signedIn) {
         _state = _state.copyWith(
           travelDetailLoading: false,
-          travelDetailError: _errorMessage(e),
+          travelDetailError: OfficialCloudRedactor.errorMessage(e),
         );
         _emit();
       }
@@ -1392,7 +1392,7 @@ class OfficialCloudService {
       await _handleAuthFailureIfNeeded(e);
       _log.operation(
         '官方云端自检失败',
-        detail: _errorMessage(e),
+        detail: OfficialCloudRedactor.errorMessage(e),
         level: LogLevel.warning,
       );
       rethrow;
@@ -1473,7 +1473,7 @@ class OfficialCloudService {
       future.catchError((Object e) {
         _log.operation(
           failureMessage,
-          detail: _errorMessage(e),
+          detail: OfficialCloudRedactor.errorMessage(e),
           level: LogLevel.warning,
         );
       }),
@@ -1516,10 +1516,6 @@ class OfficialCloudService {
     await _storage.saveLinks(normalized);
     _state = _state.copyWith(localVehicleLinks: normalized);
     _emit();
-  }
-
-  String _errorMessage(Object e) {
-    return OfficialCloudRedactor.errorMessage(e);
   }
 
   /// Coalesce silent refreshes that share a [refreshKey]: reuse in-flight

@@ -103,7 +103,7 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       _logError('官云验证码发送失败', e);
       if (!mounted) return;
-      AppSnack.error(context, _errorMessage(e));
+      AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
     }
   }
 
@@ -151,7 +151,7 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       _logError('官云登录失败', e);
       if (!mounted) return;
-      AppSnack.error(context, _errorMessage(e));
+      AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -196,7 +196,7 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       _logError('Token 登录失败', e);
       if (!mounted) return;
-      AppSnack.error(context, _errorMessage(e));
+      AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -206,10 +206,6 @@ class _LoginPageState extends State<LoginPage> {
 
   void _logError(String reason, Object e) {
     logService.operation(reason, detail: e.toString(), level: LogLevel.warning);
-  }
-
-  String _errorMessage(Object e) {
-    return OfficialCloudRedactor.errorMessage(e);
   }
 
   @override

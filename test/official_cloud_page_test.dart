@@ -29,19 +29,14 @@ void main() {
 
   test('page error helpers redact generic exception text', () {
     final source = readSource('lib/pages/official_cloud_page.dart');
-    final helperStarts = RegExp(
-      r'String _errorMessage\(Object e\)',
-    ).allMatches(source).map((match) => match.start).toList();
 
-    expect(helperStarts, hasLength(2));
-    for (final start in helperStarts) {
-      final end = source.indexOf('\n  @override', start);
-      expect(end, greaterThan(start));
-      final helperSource = source.substring(start, end);
-
-      expect(helperSource, contains('OfficialCloudRedactor.errorMessage(e)'));
-      expect(helperSource, isNot(contains('return e.toString();')));
-    }
+    expect(source, contains('OfficialCloudRedactor.errorMessage(e)'));
+    expect(
+      RegExp(
+        r'_showSnack\(\s*e\.toString\(\)|setState\(\(\)\s*=>\s*_error\s*=\s*e\.toString\(\)',
+      ).hasMatch(source),
+      isFalse,
+    );
   });
 
   setUp(() {

@@ -31,6 +31,18 @@ void main() {
     expect(parseMonthText('not-a-month'), isNull);
   });
 
+  test('shiftMonthText navigates months and blocks future months', () {
+    final clock = () => DateTime(2026, 7, 15);
+    expect(shiftMonthText('2026-07', -1, clock: clock), '2026-06');
+    expect(shiftMonthText('2026-07', 1, clock: clock), isNull);
+    expect(shiftMonthText('2026-06', 1, clock: clock), '2026-07');
+    expect(shiftMonthText('not-a-month', -1, clock: clock), isNull);
+    expect(
+      shiftMonthDate(DateTime(2026, 12), 1, clock: () => DateTime(2027, 1, 1)),
+      '2027-01',
+    );
+  });
+
   test('formatMonthDayMinuteText renders padded compact time text', () {
     expect(
       formatMonthDayMinuteText(DateTime(2026, 5, 29, 10, 30)),

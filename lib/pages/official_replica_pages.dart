@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../main.dart'; // P0-6: service locator getters
+import '../models/geo_coordinate.dart';
 import '../models/vehicle_profile.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
@@ -272,10 +273,7 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
       _showSnack('请输入有效坐标');
       return;
     }
-    final uri = Uri.https('www.google.com', '/maps/search/', {
-      'api': '1',
-      'query': '$latitude,$longitude',
-    });
+    final uri = googleMapsSearchUri(latitude, longitude);
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) _showSnack('无法打开地图');
   }

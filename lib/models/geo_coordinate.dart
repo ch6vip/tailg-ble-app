@@ -2,6 +2,14 @@ String formatCoordinateText(double latitude, double longitude) {
   return '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
 }
 
+/// External Google Maps search URI for a WGS84 coordinate pair.
+Uri googleMapsSearchUri(double latitude, double longitude) {
+  return Uri.https('www.google.com', '/maps/search/', {
+    'api': '1',
+    'query': '$latitude,$longitude',
+  });
+}
+
 bool isZeroCoordinate(
   double latitude,
   double longitude, {

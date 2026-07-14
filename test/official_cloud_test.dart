@@ -474,19 +474,11 @@ void main() {
 
     test('uses the shared redactor before publishing error state', () {
       final source = readSource('lib/services/official_cloud_service.dart');
-      final methodStart = source.indexOf('String _errorMessage(Object e)');
-      final methodEnd = source.indexOf(
-        '  bool _shouldUseRecentRefresh',
-        methodStart,
-      );
 
-      expect(methodStart, greaterThanOrEqualTo(0));
-      expect(methodEnd, greaterThan(methodStart));
-
-      final methodSource = source.substring(methodStart, methodEnd);
-
-      expect(methodSource, contains('OfficialCloudRedactor.errorMessage(e)'));
-      expect(methodSource, isNot(contains('return e.toString();')));
+      expect(source, contains('OfficialCloudRedactor.errorMessage(e)'));
+      // Error state fields must go through the redactor, not raw toString.
+      expect(RegExp(r'error:\s*e\.toString\(\)').hasMatch(source), isFalse);
+      expect(RegExp(r'Error:\s*e\.toString\(\)').hasMatch(source), isFalse);
     });
   });
 

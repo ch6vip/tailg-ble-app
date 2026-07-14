@@ -71,16 +71,18 @@ void main() {
 
   test('LocationPage redacts page-level error messages', () {
     final source = readSource('lib/pages/location_page.dart');
-    final helperStart = source.indexOf('String _errorMessage(Object e)');
-    final helperEnd = source.indexOf('  void _showSnack', helperStart);
 
-    expect(helperStart, greaterThanOrEqualTo(0));
-    expect(helperEnd, greaterThan(helperStart));
-
-    final helperSource = source.substring(helperStart, helperEnd);
-
-    expect(helperSource, contains('OfficialCloudRedactor.errorMessage(e)'));
-    expect(helperSource, isNot(contains('return e.toString();')));
+    expect(source, contains('OfficialCloudRedactor.errorMessage(e)'));
+    // Keep raw exception text out of user-facing snack/error paths only —
+    // operation logs may still include e.toString() for diagnostics.
+    expect(
+      RegExp(r'_showSnack\([^;]*e\.toString\(\)').hasMatch(source),
+      isFalse,
+    );
+    expect(
+      RegExp(r'_localError\s*=\s*e\.toString\(\)').hasMatch(source),
+      isFalse,
+    );
   });
 
   testWidgets('LocationPage segmented tabs keep 44dp touch targets', (
@@ -235,12 +237,8 @@ void main() {
     final method = source.substring(methodStart, methodEnd);
 
     expect(method, contains('parseMonthText(state.travelMonth)'));
-    expect(
-      method,
-      contains(
-        'if (delta > 0 && next.isAfter(DateTime(now.year, now.month))) return;',
-      ),
-    );
+    expect(method, contains('shiftMonthDate(current, delta, clock: _now)'));
+    expect(method, contains('if (nextMonth == null) return;'));
   });
 
   testWidgets('LocationPage travel tab renders cloud error details', (

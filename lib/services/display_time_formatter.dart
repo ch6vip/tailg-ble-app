@@ -19,6 +19,30 @@ DateTime? parseMonthText(String value) {
   return DateTime(year, month);
 }
 
+/// Shift a `yyyy-MM` value by [delta] months.
+///
+/// Returns null when [month] is invalid, or when advancing past the current
+/// calendar month (future months are blocked for travel/stats navigation).
+String? shiftMonthText(String month, int delta, {DateTime Function()? clock}) {
+  final current = parseMonthText(month);
+  if (current == null) return null;
+  return shiftMonthDate(current, delta, clock: clock);
+}
+
+/// Same bounds as [shiftMonthText] for an already-parsed month.
+String? shiftMonthDate(
+  DateTime current,
+  int delta, {
+  DateTime Function()? clock,
+}) {
+  final next = DateTime(current.year, current.month + delta);
+  if (delta > 0) {
+    final now = (clock ?? DateTime.now)();
+    if (next.isAfter(DateTime(now.year, now.month))) return null;
+  }
+  return formatMonthText(next);
+}
+
 String formatMonthDayMinuteText(DateTime time) {
   return '${_twoDigits(time.month)}/${_twoDigits(time.day)} '
       '${formatHourMinuteText(time.hour, time.minute)}';

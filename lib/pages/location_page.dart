@@ -109,7 +109,9 @@ class _LocationPageState extends State<LocationPage> {
         detail: e.toString(),
         level: LogLevel.warning,
       );
-      if (mounted) setState(() => _localError = _errorMessage(e));
+      if (mounted) {
+        setState(() => _localError = OfficialCloudRedactor.errorMessage(e));
+      }
     } finally {
       if (mounted) setState(() => _localLoading = false);
     }
@@ -150,7 +152,7 @@ class _LocationPageState extends State<LocationPage> {
         level: LogLevel.warning,
       );
       if (!silent && mounted) {
-        final message = _errorMessage(e);
+        final message = OfficialCloudRedactor.errorMessage(e);
         setState(() => _localError = message);
         _showSnack(message, isError: true);
       }
@@ -177,17 +179,18 @@ class _LocationPageState extends State<LocationPage> {
         detail: e.toString(),
         level: LogLevel.warning,
       );
-      if (mounted) _showSnack(_errorMessage(e), isError: true);
+      if (mounted) {
+        _showSnack(OfficialCloudRedactor.errorMessage(e), isError: true);
+      }
     }
   }
 
   Future<void> _changeTravelMonth(int delta) async {
     final state = officialCloudService.state;
     final current = parseMonthText(state.travelMonth) ?? _now();
-    final next = DateTime(current.year, current.month + delta);
-    final now = _now();
-    if (delta > 0 && next.isAfter(DateTime(now.year, now.month))) return;
-    await _refreshTravelHistory(month: formatMonthText(next));
+    final nextMonth = shiftMonthDate(current, delta, clock: _now);
+    if (nextMonth == null) return;
+    await _refreshTravelHistory(month: nextMonth);
   }
 
   DateTime _now() {
@@ -214,7 +217,9 @@ class _LocationPageState extends State<LocationPage> {
         detail: e.toString(),
         level: LogLevel.warning,
       );
-      if (mounted) _showSnack(_errorMessage(e), isError: true);
+      if (mounted) {
+        _showSnack(OfficialCloudRedactor.errorMessage(e), isError: true);
+      }
     }
   }
 
@@ -231,10 +236,7 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   Future<void> _openMap(_ResolvedLocation location) async {
-    final uri = Uri.https('www.google.com', '/maps/search/', {
-      'api': '1',
-      'query': '${location.latitude},${location.longitude}',
-    });
+    final uri = googleMapsSearchUri(location.latitude, location.longitude);
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) _showSnack('无法打开地图', isError: true);
   }
@@ -262,12 +264,10 @@ class _LocationPageState extends State<LocationPage> {
         detail: e.toString(),
         level: LogLevel.warning,
       );
-      if (mounted) _showSnack(_errorMessage(e), isError: true);
+      if (mounted) {
+        _showSnack(OfficialCloudRedactor.errorMessage(e), isError: true);
+      }
     }
-  }
-
-  String _errorMessage(Object e) {
-    return OfficialCloudRedactor.errorMessage(e);
   }
 
   void _showSnack(String message, {bool isError = false}) {

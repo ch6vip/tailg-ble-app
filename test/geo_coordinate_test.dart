@@ -7,6 +7,13 @@ void main() {
     expect(formatCoordinateText(-0.1, 0), '-0.100000, 0.000000');
   });
 
+  test('googleMapsSearchUri builds external search links', () {
+    expect(
+      googleMapsSearchUri(31.2304, 121.4737).toString(),
+      'https://www.google.com/maps/search/?api=1&query=31.2304%2C121.4737',
+    );
+  });
+
   test('isZeroCoordinate defaults to exact zero matching', () {
     expect(isZeroCoordinate(0, 0), isTrue);
     expect(isZeroCoordinate(0.0000005, 0), isFalse);

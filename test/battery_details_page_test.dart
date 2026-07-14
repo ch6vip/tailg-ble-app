@@ -19,28 +19,23 @@ void main() {
   test('BatteryDetailsPage redacts refresh failure snack messages', () {
     final source = readSource('lib/pages/battery_details_page.dart');
     final refreshStart = source.indexOf('Future<void> _refreshOfficialBattery');
-    final helperStart = source.indexOf(
-      'String _errorMessage(Object e)',
-      refreshStart,
-    );
-    final helperEnd = source.indexOf('class _BatteryHero', helperStart);
+    final refreshEnd = source.indexOf('class _BatteryHero', refreshStart);
 
     expect(refreshStart, greaterThanOrEqualTo(0));
-    expect(helperStart, greaterThan(refreshStart));
-    expect(helperEnd, greaterThan(helperStart));
+    expect(refreshEnd, greaterThan(refreshStart));
 
-    final refreshSource = source.substring(refreshStart, helperStart);
-    final helperSource = source.substring(helperStart, helperEnd);
+    final refreshSource = source.substring(refreshStart, refreshEnd);
 
     expect(
       refreshSource,
-      contains('AppSnack.error(context, _errorMessage(e))'),
+      contains(
+        'AppSnack.error(context, OfficialCloudRedactor.errorMessage(e))',
+      ),
     );
     expect(
       refreshSource,
       isNot(contains('AppSnack.error(context, e.toString())')),
     );
-    expect(helperSource, contains('OfficialCloudRedactor.errorMessage(e)'));
   });
 
   testWidgets('refreshing battery details while signed out shows info snack', (

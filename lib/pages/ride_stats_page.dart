@@ -53,20 +53,16 @@ class _RideStatsPageState extends State<RideStatsPage> {
   }
 
   void _prevMonth() {
-    final date = parseMonthText(_month);
-    if (date == null) return;
-    final prev = DateTime(date.year, date.month - 1);
-    _month = formatMonthText(prev);
+    final prev = shiftMonthText(_month, -1);
+    if (prev == null) return;
+    _month = prev;
     unawaited(_loadMonth());
   }
 
   void _nextMonth() {
-    final date = parseMonthText(_month);
-    if (date == null) return;
-    final next = DateTime(date.year, date.month + 1);
-    final now = DateTime.now();
-    if (next.isAfter(DateTime(now.year, now.month))) return;
-    _month = formatMonthText(next);
+    final next = shiftMonthText(_month, 1);
+    if (next == null) return;
+    _month = next;
     unawaited(_loadMonth());
   }
 
