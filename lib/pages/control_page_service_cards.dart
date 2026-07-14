@@ -146,11 +146,7 @@ class _HomeQuickSectionState extends State<_HomeQuickSection> {
   /// Count of official travel records for "today" (local calendar day).
   /// Falls back to 0 when travel history has not been loaded yet.
   int _todayTravelRecordCount(OfficialCloudState cloudState) {
-    final now = DateTime.now();
-    final todayKey =
-        '${now.year.toString().padLeft(4, '0')}-'
-        '${now.month.toString().padLeft(2, '0')}-'
-        '${now.day.toString().padLeft(2, '0')}';
+    final todayKey = formatDateText(DateTime.now());
     var total = 0;
     for (final day in cloudState.travelDays) {
       final raw = day.travelDate.trim();

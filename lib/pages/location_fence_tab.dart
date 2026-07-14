@@ -403,10 +403,8 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
     if (to == null || !context.mounted) return;
 
     setState(() {
-      _timeFrom =
-          '${from.hour.toString().padLeft(2, '0')}:${from.minute.toString().padLeft(2, '0')}';
-      _timeTo =
-          '${to.hour.toString().padLeft(2, '0')}:${to.minute.toString().padLeft(2, '0')}';
+      _timeFrom = formatHourMinuteText(from.hour, from.minute);
+      _timeTo = formatHourMinuteText(to.hour, to.minute);
       _dirty = true;
     });
   }

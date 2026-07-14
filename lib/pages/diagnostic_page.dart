@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../models/persistence_value.dart';
+import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
@@ -205,7 +206,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                     ),
                                   ),
                                   Text(
-                                    _formatTime(record.time),
+                                    formatMonthDayMinuteText(record.time),
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: AppColors.textTertiary,
@@ -233,11 +234,5 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
         ),
       ),
     );
-  }
-
-  String _formatTime(DateTime time) {
-    return '${time.month}/${time.day} '
-        '${time.hour.toString().padLeft(2, '0')}:'
-        '${time.minute.toString().padLeft(2, '0')}';
   }
 }

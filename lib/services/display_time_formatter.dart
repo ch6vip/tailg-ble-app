@@ -3,8 +3,7 @@ String formatDateText(DateTime time) {
 }
 
 String formatDateMinuteText(DateTime time) {
-  return '${formatDateText(time)} '
-      '${_twoDigits(time.hour)}:${_twoDigits(time.minute)}';
+  return '${formatDateText(time)} ${formatHourMinuteText(time.hour, time.minute)}';
 }
 
 String formatMonthText(DateTime time) {
@@ -22,11 +21,16 @@ DateTime? parseMonthText(String value) {
 
 String formatMonthDayMinuteText(DateTime time) {
   return '${_twoDigits(time.month)}/${_twoDigits(time.day)} '
-      '${_twoDigits(time.hour)}:${_twoDigits(time.minute)}';
+      '${formatHourMinuteText(time.hour, time.minute)}';
+}
+
+/// Padded `HH:mm` for pickers, schedules, and compact clock labels.
+String formatHourMinuteText(int hour, int minute) {
+  return '${_twoDigits(hour)}:${_twoDigits(minute)}';
 }
 
 String formatLogClockTime(DateTime time) {
-  return '${_twoDigits(time.hour)}:${_twoDigits(time.minute)}:'
+  return '${formatHourMinuteText(time.hour, time.minute)}:'
       '${_twoDigits(time.second)}';
 }
 

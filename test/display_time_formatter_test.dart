@@ -39,6 +39,11 @@ void main() {
     expect(formatMonthDayMinuteText(DateTime(2026, 1, 2, 3, 4)), '01/02 03:04');
   });
 
+  test('formatHourMinuteText pads hour and minute fields', () {
+    expect(formatHourMinuteText(1, 2), '01:02');
+    expect(formatHourMinuteText(12, 30), '12:30');
+  });
+
   test('formatLogClockTime pads clock fields for log rows and reports', () {
     expect(formatLogClockTime(DateTime(2026, 7, 5, 1, 2, 3)), '01:02:03');
     expect(formatLogClockTime(DateTime(2026, 7, 5, 12, 30, 59)), '12:30:59');
