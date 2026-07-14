@@ -71,6 +71,12 @@ final class OfficialCloudLoginValidator {
   }
 }
 
+/// Shared user-facing copy for official-cloud auth gates.
+abstract final class OfficialCloudMessages {
+  static const signInRequired = '请先登录官方账号';
+  static const signInAndSelectVehicleRequired = '请先登录官方账号并选择车辆';
+}
+
 class OfficialCloudState {
   final bool initialized;
   final String token;
@@ -615,7 +621,9 @@ class OfficialCloudService {
   }) async {
     final token = _state.token;
     if (token.isEmpty) {
-      throw const OfficialCloudApiException('请先登录官方账号');
+      throw const OfficialCloudApiException(
+        OfficialCloudMessages.signInRequired,
+      );
     }
     const refreshKey = 'messages';
     await _coalesceRefresh(
@@ -1364,7 +1372,9 @@ class OfficialCloudService {
     final token = _state.token;
     final vehicle = _state.selectedVehicle;
     if (token.isEmpty || vehicle == null) {
-      throw const OfficialCloudApiException('请先登录官方账号并选择车辆');
+      throw const OfficialCloudApiException(
+        OfficialCloudMessages.signInAndSelectVehicleRequired,
+      );
     }
     if (vehicle.commandImei.isEmpty) {
       throw const OfficialCloudApiException('当前车辆缺少官方 IMEI，无法云端自检');
@@ -1407,7 +1417,9 @@ class OfficialCloudService {
     final token = _state.token;
     final vehicle = _state.selectedVehicle;
     if (token.isEmpty || vehicle == null) {
-      throw const OfficialCloudApiException('请先登录官方账号并选择车辆');
+      throw const OfficialCloudApiException(
+        OfficialCloudMessages.signInAndSelectVehicleRequired,
+      );
     }
     if (vehicle.commandImei.isEmpty) {
       throw const OfficialCloudApiException('当前车辆缺少官方 IMEI，无法云端控车');

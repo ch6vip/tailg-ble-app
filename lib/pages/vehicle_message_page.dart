@@ -372,7 +372,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
             children: [
               const AppEmptyState(
                 icon: Icons.lock_outline,
-                title: '请先登录官方账号',
+                title: OfficialCloudMessages.signInRequired,
                 subtitle: '登录后可同步官方车辆消息与系统通知。',
                 padding: EdgeInsets.zero,
               ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../pages/add_vehicle_page.dart';
 import '../pages/login_page.dart';
+import '../services/official_cloud_service.dart';
 import '../services/service_locator.dart';
 import 'app_snack.dart';
 
@@ -24,7 +25,7 @@ bool requireCloudVehicle(
   }
 
   if (!state.signedIn) {
-    AppSnack.info(context, message ?? '请先登录官方账号');
+    AppSnack.info(context, message ?? OfficialCloudMessages.signInRequired);
     if (offerLogin) {
       unawaited(
         Navigator.of(

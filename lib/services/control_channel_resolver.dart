@@ -54,7 +54,7 @@ class ControlChannelResolver {
   }
 
   static String _cloudUnavailableReason(OfficialCloudState cloudState) {
-    if (!cloudState.signedIn) return '请先登录官方账号';
+    if (!cloudState.signedIn) return OfficialCloudMessages.signInRequired;
     if (cloudState.selectedVehicle == null) return '官方账号未选择车辆';
     return '';
   }

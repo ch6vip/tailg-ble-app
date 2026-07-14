@@ -74,7 +74,7 @@ class BatteryDetailsPage extends StatelessWidget {
 
   Future<void> _refreshOfficialBattery(BuildContext context) async {
     if (!officialCloudService.state.signedIn) {
-      AppSnack.info(context, '请先登录官方账号');
+      AppSnack.info(context, OfficialCloudMessages.signInRequired);
       return;
     }
     try {
