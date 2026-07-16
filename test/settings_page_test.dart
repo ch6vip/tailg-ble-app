@@ -140,6 +140,23 @@ void main() {
       await tester.tap(find.byTooltip('返回'));
       await tester.pumpAndSettle();
 
+      const tokenLabel = '官方会话 / Token，调试用：粘贴或复制官方登录凭证';
+      await tester.scrollUntilVisible(
+        find.text('官方会话 / Token'),
+        260,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.pump();
+      final tokenRow = find.bySemanticsLabel(tokenLabel);
+      expect(tokenRow, findsOneWidget);
+      expectMinTouchTargetHeight(tester, tokenRow);
+      tester.semantics.tap(find.semantics.byLabel(tokenLabel));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Token'), findsWidgets);
+
+      await tester.tap(find.byTooltip('返回'));
+      await tester.pumpAndSettle();
+
       await tester.scrollUntilVisible(
         find.text('语言设置'),
         260,

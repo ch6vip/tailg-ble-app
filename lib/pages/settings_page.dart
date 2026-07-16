@@ -4,13 +4,14 @@ import '../services/app_preferences_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import 'app_preferences_pages.dart';
-import 'log_page.dart';
-import 'vehicle_settings_page.dart';
-import 'diagnostic_page.dart';
-import 'official_cloud_page.dart';
-import 'garage_page.dart';
 import 'battery_details_page.dart';
+import 'cloud_token_page.dart';
+import 'diagnostic_page.dart';
+import 'garage_page.dart';
+import 'log_page.dart';
+import 'official_cloud_page.dart';
 import 'vehicle_message_page.dart';
+import 'vehicle_settings_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -114,6 +115,17 @@ class _SettingsPageState extends State<SettingsPage> {
                   context,
                   MaterialPageRoute<void>(
                     builder: (_) => const _AdvancedDiagnosticsPage(),
+                  ),
+                ),
+              ),
+              _settingItem(
+                icon: Icons.key_outlined,
+                title: '官方会话 / Token',
+                subtitle: '调试用：粘贴或复制官方登录凭证',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const CloudTokenPage(),
                   ),
                 ),
               ),
