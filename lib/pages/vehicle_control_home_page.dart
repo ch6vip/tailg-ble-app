@@ -37,7 +37,7 @@ import 'vehicle_settings_page.dart';
 /// - 下拉刷新：`refreshVehicles` + 电池 / 位置
 ///
 /// 作为爱车 Tab 主入口使用（见 `main.dart` IndexedStack）；底栏由 shell 提供，
-/// 本页不再自带 TabBar。旧官方复刻 [ControlPage] 仍保留在工程内。
+/// 本页不再自带 TabBar。
 class VehicleControlHomePage extends StatefulWidget {
   const VehicleControlHomePage({super.key});
 

@@ -517,8 +517,6 @@ class _HomePageState extends State<HomePage>
               ),
               TickerMode(
                 enabled: _currentIndex == _vehicleTabIndex,
-                // Aurora 控车主页（Open Design vehicle-control-home）；
-                // 旧官方复刻 ControlPage 仍保留在 pages/ 供对照或回退。
                 child: const VehicleControlHomePage(),
               ),
               TickerMode(
