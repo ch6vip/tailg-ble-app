@@ -19,7 +19,6 @@
 
 仍属于 cloud-only 产品待办的项目：
 
-- 官方车辆昵称回写（已接 `app/car/updateCarInfo`）
 - 多语言资源与业务文案切换
 - 新增云 API 的自动化边界测试
 
