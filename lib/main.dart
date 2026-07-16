@@ -9,10 +9,12 @@ import 'services/message_read_store.dart';
 import 'services/vehicle_store.dart';
 import 'services/service_locator.dart';
 import 'services/app_preferences_service.dart';
-import 'pages/profile_page.dart';
+import 'pages/profile_mine_page.dart';
 import 'pages/service_hub_page.dart';
 import 'pages/vehicle_control_home_page.dart';
 import 'theme/app_colors.dart';
+import 'theme/app_motion.dart';
+import 'widgets/app_pressable.dart';
 import 'widgets/app_toast.dart';
 
 LocationService get locationService => AppServices.instance.locationService;
@@ -521,14 +523,14 @@ class _HomePageState extends State<HomePage>
               ),
               TickerMode(
                 enabled: _currentIndex == _mineTabIndex,
-                child: const ProfilePage(),
+                child: const ProfileMinePage(),
               ),
             ],
           ),
         ),
       ),
       extendBody: true,
-      bottomNavigationBar: _OfficialBottomNav(
+      bottomNavigationBar: _AuroraBottomNav(
         currentIndex: _currentIndex,
         onService: () => _switchTab(_serviceTabIndex),
         onVehicle: () => _switchTab(_vehicleTabIndex),
@@ -538,8 +540,13 @@ class _HomePageState extends State<HomePage>
   }
 }
 
-class _OfficialBottomNav extends StatelessWidget {
-  const _OfficialBottomNav({
+/// Aurora shell bottom nav — Open Design 控车 / 服务 / 我的.
+///
+/// Tab **indices** stay 服务=0 / 控车=1 / 我的=2 so [AppNavigation] and
+/// existing home-tab call sites keep working. Visual language uses
+/// emerald accent + outline icons instead of official red assets.
+class _AuroraBottomNav extends StatelessWidget {
+  const _AuroraBottomNav({
     required this.currentIndex,
     required this.onService,
     required this.onVehicle,
@@ -551,29 +558,21 @@ class _OfficialBottomNav extends StatelessWidget {
   final VoidCallback onVehicle;
   final VoidCallback onMine;
 
-  /// Visual height of the white bar (matches official compact bar).
+  /// Visual height of the bar (keeps shell geometry tests stable).
   static const double _barHeight = 65;
-
-  /// Shared icon size for 服务 / 爱车 / 我的.
-  static const double _iconSize = 24;
+  static const double _iconSize = 22;
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Material(
-      color: AppColors.surface,
+      color: AppColors.surface.withValues(alpha: 0.96),
       elevation: 0,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 12,
-              offset: const Offset(0, -4),
-            ),
-          ],
+          color: AppColors.surface.withValues(alpha: 0.96),
+          border: const Border(top: BorderSide(color: AppColors.hairline)),
         ),
         child: SizedBox(
           key: const ValueKey('official-bottom-nav-bar'),
@@ -583,32 +582,28 @@ class _OfficialBottomNav extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: _OfficialNavItem(
+                  child: _AuroraNavItem(
                     itemKey: const ValueKey('official-bottom-nav-item-service'),
                     label: '服务',
-                    asset: 'assets/official_tailg/ic_home_service_unselect.png',
-                    selectedAsset:
-                        'assets/official_tailg/ic_home_service_select.png',
+                    icon: Icons.work_outline_rounded,
                     selected: currentIndex == 0,
                     onTap: onService,
                   ),
                 ),
                 Expanded(
-                  child: _OfficialNavItem(
+                  child: _AuroraNavItem(
                     itemKey: const ValueKey('official-bottom-nav-item-vehicle'),
-                    label: '爱车',
-                    iconWidget: _VehicleTabIcon(selected: currentIndex == 1),
+                    label: '控车',
+                    icon: Icons.control_camera_outlined,
                     selected: currentIndex == 1,
                     onTap: onVehicle,
                   ),
                 ),
                 Expanded(
-                  child: _OfficialNavItem(
+                  child: _AuroraNavItem(
                     itemKey: const ValueKey('official-bottom-nav-item-mine'),
                     label: '我的',
-                    asset: 'assets/official_tailg/ic_home_mine_unselect.png',
-                    selectedAsset:
-                        'assets/official_tailg/ic_home_mine_select.png',
+                    icon: Icons.person_outline_rounded,
                     selected: currentIndex == 2,
                     onTap: onMine,
                   ),
@@ -622,190 +617,54 @@ class _OfficialBottomNav extends StatelessWidget {
   }
 }
 
-class _OfficialNavItem extends StatelessWidget {
-  const _OfficialNavItem({
+class _AuroraNavItem extends StatelessWidget {
+  const _AuroraNavItem({
     required this.label,
+    required this.icon,
     required this.selected,
     required this.onTap,
-    this.asset,
-    this.selectedAsset,
-    this.iconWidget,
     this.itemKey,
   });
 
   final String label;
-  final String? asset;
-  final String? selectedAsset;
-  final Widget? iconWidget;
+  final IconData icon;
   final bool selected;
   final VoidCallback onTap;
   final Key? itemKey;
 
   @override
   Widget build(BuildContext context) {
-    final active = selected;
-    final labelColor = active
-        ? AppColors.brandRed
-        : AppColors.officialTextMuted;
-    const iconSize = _OfficialBottomNav._iconSize;
+    final color = selected ? AppColors.primaryDark : AppColors.navInactive;
 
-    Widget iconChild;
-    if (iconWidget != null) {
-      iconChild = SizedBox(
-        width: iconSize,
-        height: iconSize,
-        child: iconWidget,
-      );
-    } else {
-      final displayAsset = active ? selectedAsset! : asset!;
-      iconChild = Image.asset(
-        displayAsset,
-        width: iconSize,
-        height: iconSize,
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => Icon(
-          Icons.circle_outlined,
-          size: iconSize,
-          color: active ? AppColors.brandRed : AppColors.officialTextMuted,
-        ),
-      );
-    }
-
-    return Semantics(
-      label: label,
-      button: true,
-      selected: active,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: SizedBox(
-          key: itemKey,
-          height: _OfficialBottomNav._barHeight,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                iconChild,
-                const SizedBox(height: 5),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    height: 1,
-                    fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                    letterSpacing: 0,
-                    color: labelColor,
-                  ),
-                ),
-              ],
+    return AppPressable(
+      onTap: onTap,
+      pressedScale: AppMotion.pressScale,
+      semanticsLabel: label,
+      semanticsButton: true,
+      semanticsSelected: selected,
+      child: SizedBox(
+        key: itemKey,
+        height: _AuroraBottomNav._barHeight,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: _AuroraBottomNav._iconSize, color: color),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                height: 1,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+                color: color,
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
-}
-
-class _VehicleTabIcon extends StatelessWidget {
-  const _VehicleTabIcon({required this.selected});
-
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: const Size(24, 24),
-      painter: _ScooterIconPainter(
-        color: selected ? AppColors.brandRed : AppColors.officialTextMuted,
-        filled: selected,
-      ),
-    );
-  }
-}
-
-class _ScooterIconPainter extends CustomPainter {
-  _ScooterIconPainter({required this.color, required this.filled});
-
-  final Color color;
-  final bool filled;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.8
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = filled ? PaintingStyle.fill : PaintingStyle.stroke;
-
-    final w = size.width;
-    final h = size.height;
-
-    // Wheels
-    final wheelRadius = w * 0.12;
-    final wheelY = h * 0.78;
-    final leftWheelCenter = Offset(w * 0.22, wheelY);
-    final rightWheelCenter = Offset(w * 0.78, wheelY);
-
-    if (filled) {
-      canvas.drawCircle(leftWheelCenter, wheelRadius, paint);
-      canvas.drawCircle(rightWheelCenter, wheelRadius, paint);
-    } else {
-      canvas.drawCircle(leftWheelCenter, wheelRadius, paint);
-      canvas.drawCircle(rightWheelCenter, wheelRadius, paint);
-    }
-
-    // Body frame
-    final framePaint = Paint()
-      ..color = color
-      ..strokeWidth = 1.8
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
-
-    final bodyPath = Path();
-    // Deck (footboard connecting wheels)
-    bodyPath.moveTo(w * 0.22, wheelY - wheelRadius - 1);
-    bodyPath.lineTo(w * 0.78, wheelY - wheelRadius - 1);
-
-    // Front fork going up to handlebar
-    bodyPath.moveTo(w * 0.72, wheelY - wheelRadius - 1);
-    bodyPath.lineTo(w * 0.75, h * 0.32);
-
-    // Handlebar
-    bodyPath.moveTo(w * 0.62, h * 0.28);
-    bodyPath.lineTo(w * 0.88, h * 0.28);
-
-    // Rear structure / seat support
-    bodyPath.moveTo(w * 0.28, wheelY - wheelRadius - 1);
-    bodyPath.lineTo(w * 0.35, h * 0.38);
-    bodyPath.lineTo(w * 0.62, h * 0.38);
-
-    // Seat
-    bodyPath.moveTo(w * 0.30, h * 0.35);
-    bodyPath.lineTo(w * 0.58, h * 0.35);
-
-    canvas.drawPath(bodyPath, framePaint);
-
-    if (filled) {
-      // Fill the seat area when selected
-      final seatFill = Paint()
-        ..color = color
-        ..style = PaintingStyle.fill;
-      final seatPath = Path()
-        ..moveTo(w * 0.30, h * 0.34)
-        ..lineTo(w * 0.58, h * 0.34)
-        ..lineTo(w * 0.60, h * 0.39)
-        ..lineTo(w * 0.33, h * 0.39)
-        ..close();
-      canvas.drawPath(seatPath, seatFill);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_ScooterIconPainter oldDelegate) =>
-      color != oldDelegate.color || filled != oldDelegate.filled;
 }

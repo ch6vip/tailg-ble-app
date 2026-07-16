@@ -20,7 +20,7 @@ void main() {
       expect(find.byType(VehicleControlHomePage), findsOneWidget);
       expect(find.text('请先登录官方账号'), findsAtLeastNWidgets(1));
       expect(find.text('去登录'), findsOneWidget);
-      expect(find.text('爱车'), findsOneWidget);
+      expect(find.text('控车'), findsOneWidget);
       expect(find.text('服务'), findsOneWidget);
       expect(find.text('我的'), findsOneWidget);
       expect(find.text('消息'), findsNothing);
@@ -40,7 +40,7 @@ void main() {
     expect(navBar, findsNothing);
 
     final serviceCenter = tester.getCenter(find.text('服务'));
-    final vehicleCenter = tester.getCenter(find.text('爱车'));
+    final vehicleCenter = tester.getCenter(find.text('控车'));
     final mineCenter = tester.getCenter(find.text('我的'));
 
     expect(serviceCenter.dx, lessThan(vehicleCenter.dx));
@@ -86,7 +86,7 @@ void main() {
 
     // Labels share the same baseline.
     final serviceBottom = tester.getBottomLeft(find.text('服务')).dy;
-    final vehicleBottom = tester.getBottomLeft(find.text('爱车')).dy;
+    final vehicleBottom = tester.getBottomLeft(find.text('控车')).dy;
     final mineBottom = tester.getBottomLeft(find.text('我的')).dy;
     expect(serviceBottom, closeTo(vehicleBottom, 1.0));
     expect(mineBottom, closeTo(vehicleBottom, 1.0));

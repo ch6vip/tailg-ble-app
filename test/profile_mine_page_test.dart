@@ -1,0 +1,135 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:tailg_ble_app/main.dart' as app;
+import 'package:tailg_ble_app/models/official_vehicle.dart';
+import 'package:tailg_ble_app/pages/profile_mine_page.dart';
+import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
+
+import 'helpers/storage_mocks.dart';
+import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
+import 'helpers/view_size.dart';
+
+void main() {
+  setUp(() async {
+    resetMockStorage();
+    app.officialCloudService.resetForTest();
+    app.vehicleStore.resetForTest();
+    app.messageReadStore.resetForTest();
+    await app.vehicleStore.init();
+  });
+
+  tearDown(() {
+    app.officialCloudService.resetForTest();
+    app.vehicleStore.resetForTest();
+    app.messageReadStore.resetForTest();
+  });
+
+  testWidgets('aurora mine follows design structure when signed out', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      setTestViewSize(tester, const Size(430, 1800));
+      await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
+      await tester.pump();
+
+      expect(find.text('立即登录'), findsOneWidget);
+      expect(find.text('登录后同步车辆和消息'), findsOneWidget);
+      expect(find.text('工具与服务'), findsOneWidget);
+      expect(find.text('设置'), findsOneWidget);
+      expect(find.text('消息中心'), findsOneWidget);
+      expect(find.text('骑行统计'), findsOneWidget);
+      expect(find.text('诊断报告'), findsOneWidget);
+      expect(find.text('帮助与反馈'), findsOneWidget);
+      expect(find.text('关于我们'), findsOneWidget);
+      expect(find.text('手机号'), findsOneWidget);
+      expect(find.text('Tailg Cloud 1.0.0'), findsOneWidget);
+      // Logout is signed-in only.
+      expect(find.text('退出登录'), findsNothing);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('aurora mine exposes edit touch target', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
+      await tester.pump();
+
+      final edit = find.bySemanticsLabel('编辑');
+      expect(edit, findsOneWidget);
+      expectMinTouchTargetHeight(tester, edit);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('signed-in header shows masked phone and logout sheet', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      setTestViewSize(tester, const Size(430, 1800));
+      final vehicle = OfficialVehicle.fromJson({
+        'carId': 'c1',
+        'carNickName': '极光 Aurora S',
+        'online': true,
+        'electricQuantity': 73,
+      });
+      app.officialCloudService.setStateForTest(
+        OfficialCloudState.initial().copyWith(
+          initialized: true,
+          token: 'token',
+          phone: '13812346688',
+          vehicles: [vehicle],
+          selectedVehicleKey: vehicle.key,
+        ),
+      );
+
+      await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
+      await tester.pump();
+
+      expect(find.text('极光车主'), findsOneWidget);
+      expect(find.text('138****6688'), findsAtLeastNWidgets(1));
+      expect(find.text('极光 Aurora S'), findsOneWidget);
+      expect(find.text('在线'), findsOneWidget);
+      expect(find.text('73%'), findsOneWidget);
+      expect(find.text('会员 Lv.3'), findsOneWidget);
+      expect(find.text('退出登录'), findsOneWidget);
+
+      tester.semantics.tap(find.semantics.byLabel('退出登录'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('退出登录？'), findsOneWidget);
+      expect(find.text('下次登录需验证手机号。本机车辆缓存会保留。'), findsOneWidget);
+      expect(
+        find.ancestor(of: find.text('退出'), matching: find.byType(AppPressable)),
+        findsOneWidget,
+      );
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('message badge appears when unread > 0', (tester) async {
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        phone: '13812346688',
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
+    await tester.pump();
+    // Badge bootstrap may sync from empty cloud messages first; set after settle.
+    app.messageReadStore.setUnreadCount(2);
+    await tester.pump();
+
+    expect(find.text('2'), findsOneWidget);
+    expect(find.bySemanticsLabel('消息中心'), findsOneWidget);
+  });
+}
