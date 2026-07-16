@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
+import 'package:tailg_ble_app/models/official_user_profile.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/profile_mine_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
@@ -46,7 +47,6 @@ void main() {
       expect(find.text('关于我们'), findsOneWidget);
       expect(find.text('手机号'), findsOneWidget);
       expect(find.text('Tailg Cloud 1.0.0'), findsOneWidget);
-      // Logout is signed-in only.
       expect(find.text('退出登录'), findsNothing);
     } finally {
       semantics.dispose();
@@ -67,7 +67,7 @@ void main() {
     }
   });
 
-  testWidgets('signed-in header shows masked phone and logout sheet', (
+  testWidgets('signed-in header shows profile nick and logout sheet', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -86,20 +86,30 @@ void main() {
           phone: '13812346688',
           vehicles: [vehicle],
           selectedVehicleKey: vehicle.key,
+          userProfile: const OfficialUserProfile(
+            id: 'u1',
+            nickName: '极光骑士',
+            name: '',
+            signature: '',
+            avatarName: '',
+            avatarPath: '',
+            gender: '',
+            birthday: '',
+          ),
         ),
       );
 
       await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
       await tester.pump();
 
-      expect(find.text('台铃用户'), findsOneWidget);
+      expect(find.text('极光骑士'), findsOneWidget);
+      expect(find.text('台铃用户'), findsNothing);
       expect(find.text('138****6688'), findsAtLeastNWidgets(1));
       expect(find.text('极光 Aurora S'), findsOneWidget);
       expect(find.text('在线'), findsOneWidget);
       expect(find.text('73%'), findsOneWidget);
       expect(find.text('已登录'), findsOneWidget);
       expect(find.text('我的积分'), findsOneWidget);
-      // No fabricated member level / points balance.
       expect(find.text('会员 Lv.3'), findsNothing);
       expect(find.text('1280'), findsNothing);
       expect(find.text('退出登录'), findsOneWidget);
@@ -118,6 +128,21 @@ void main() {
     }
   });
 
+  testWidgets('falls back to 台铃用户 when profile nick is empty', (tester) async {
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        phone: '13812346688',
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
+    await tester.pump();
+
+    expect(find.text('台铃用户'), findsOneWidget);
+  });
+
   testWidgets('message badge appears when unread > 0', (tester) async {
     app.officialCloudService.setStateForTest(
       OfficialCloudState.initial().copyWith(
@@ -129,7 +154,6 @@ void main() {
 
     await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
     await tester.pump();
-    // Badge bootstrap may sync from empty cloud messages first; set after settle.
     app.messageReadStore.setUnreadCount(2);
     await tester.pump();
 

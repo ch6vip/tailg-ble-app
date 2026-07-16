@@ -630,6 +630,20 @@ void main() {
       expect(invalidSingle, isEmpty);
     });
 
+    test('parses user profile nickName from getUserProfile data', () {
+      final profile = OfficialCloudDataParser.userProfile({
+        'id': 'u-1',
+        'nickName': '极光骑士',
+        'avatar_path': 'https://cdn.example.com/a.png',
+        'signature': 'ride on',
+      });
+      expect(profile, isNotNull);
+      expect(profile!.displayName, '极光骑士');
+      expect(profile.avatarUrl, 'https://cdn.example.com/a.png');
+      expect(OfficialCloudDataParser.userProfile(null), isNull);
+      expect(OfficialCloudDataParser.userProfile(<String, dynamic>{}), isNull);
+    });
+
     test('returns empty detail models for missing map payloads', () {
       final batteryInfo = OfficialCloudDataParser.batteryInfo(null);
       final location = OfficialCloudDataParser.vehicleLocation('invalid');

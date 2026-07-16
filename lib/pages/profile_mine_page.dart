@@ -59,6 +59,19 @@ class _ProfileMinePageState extends State<ProfileMinePage>
       if (mounted) setState(() {});
     });
     unawaited(_bootstrapMessageBadge());
+    if (officialCloudService.state.signedIn) {
+      unawaited(
+        officialCloudService.refreshUserProfile(silent: true).catchError((
+          Object e,
+        ) {
+          logService.operation(
+            '我的页用户资料刷新失败',
+            detail: OfficialCloudRedactor.errorMessage(e),
+            level: LogLevel.warning,
+          );
+        }),
+      );
+    }
   }
 
   @override
@@ -86,8 +99,10 @@ class _ProfileMinePageState extends State<ProfileMinePage>
   String get _nickname {
     final signedIn = officialCloudService.state.signedIn;
     if (!signedIn) return '立即登录';
-    // Official app uses UserInfoBean.nickName from app/getUserProfile.
-    // Until that profile fetch is wired, match ProfilePage fallback.
+    final fromProfile = officialCloudService.state.userProfile?.displayName
+        .trim();
+    if (fromProfile != null && fromProfile.isNotEmpty) return fromProfile;
+    // Fallback when getUserProfile not yet loaded / empty nickName.
     return '台铃用户';
   }
 

@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/command_types.dart';
+import '../models/official_user_profile.dart';
 import '../models/official_vehicle.dart';
 import '../models/persistence_value.dart';
 import '../models/vehicle_profile.dart';
@@ -101,6 +102,10 @@ class OfficialCloudService {
           refreshVehicles(silent: true),
           failureMessage: '官方车辆静默刷新失败',
         );
+        _runSilentRefresh(
+          refreshUserProfile(silent: true),
+          failureMessage: '官方用户资料静默刷新失败',
+        );
       }
     } finally {
       _initializing = null;
@@ -166,13 +171,17 @@ class OfficialCloudService {
         token: token,
         phone: normalizedPhone,
         userId: userId,
+        userProfile: null,
         vehicles: const [],
         selectedVehicleKey: null,
         error: null,
       );
       _emit();
       _log.operation('官方云登录成功');
-      await refreshVehicles();
+      await Future.wait<void>([
+        refreshVehicles(),
+        refreshUserProfile(silent: true),
+      ]);
     } finally {
       _setLoading(false);
     }
@@ -203,6 +212,7 @@ class OfficialCloudService {
         token: token,
         phone: phone.trim(),
         userId: userId.trim(),
+        userProfile: null,
         vehicles: const [],
         selectedVehicleKey: null,
         error: null,
@@ -210,7 +220,10 @@ class OfficialCloudService {
       _emit();
       _log.operation('官方云 Token 登录成功');
       try {
-        await refreshVehicles();
+        await Future.wait<void>([
+          refreshVehicles(),
+          refreshUserProfile(silent: true),
+        ]);
       } catch (e) {
         // Keep the pasted session even if the first vehicle sync fails
         // (offline / invalid token will surface on next refresh).
@@ -255,6 +268,7 @@ class OfficialCloudService {
       token: '',
       phone: '',
       userId: '',
+      userProfile: null,
       loading: false,
       vehicles: const [],
       selectedVehicleKey: null,
@@ -282,6 +296,67 @@ class OfficialCloudService {
     );
     _emit();
     _log.operation('官方云已退出登录');
+  }
+
+  /// Fetch official user profile (`POST app/getUserProfile`).
+  ///
+  /// Decompiled [HomeViewModel] loads this with menu dict after login so the
+  /// mine page can show nickName / avatar. Failures are soft when [silent].
+  Future<void> refreshUserProfile({
+    bool silent = false,
+    bool force = false,
+  }) async {
+    final token = _state.token;
+    if (token.isEmpty) return;
+    const refreshKey = 'userProfile';
+    await _coalesceRefresh(
+      refreshKey: refreshKey,
+      silent: silent,
+      force: force,
+      run: () => _refreshUserProfileNow(
+        silent: silent,
+        refreshKey: refreshKey,
+        token: token,
+      ),
+    );
+  }
+
+  Future<void> _refreshUserProfileNow({
+    required bool silent,
+    required String refreshKey,
+    required String token,
+  }) async {
+    try {
+      final response = await _apiClient.request(
+        'app/getUserProfile',
+        method: 'POST',
+        token: token,
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
+      );
+      _ensureSuccess(response.body, fallback: '获取官方用户资料失败');
+      if (!_isCurrentSession(token)) return;
+      final profile = OfficialCloudDataParser.userProfile(
+        response.body['data'],
+      );
+      _state = _state.copyWith(userProfile: profile);
+      _emit();
+      _log.operation(
+        '官方用户资料已刷新',
+        detail: profile == null
+            ? 'empty'
+            : 'nick=${SensitiveValueMasker.compact(profile.displayName)}',
+      );
+      _markRefreshSuccess(refreshKey);
+    } catch (e) {
+      if (!_isCurrentSession(token)) return;
+      await _handleAuthFailureIfNeeded(e);
+      if (!silent) rethrow;
+      _log.operation(
+        '官方用户资料刷新失败',
+        detail: OfficialCloudRedactor.errorMessage(e),
+        level: LogLevel.warning,
+      );
+    }
   }
 
   Future<void> refreshVehicles({

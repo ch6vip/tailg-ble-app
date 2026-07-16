@@ -54,6 +54,20 @@ class OfficialCloudDataParser {
         .toList(growable: false);
   }
 
+  static OfficialUserProfile? userProfile(Object? data) {
+    final map = _map(data);
+    if (map.isEmpty) return null;
+    final profile = OfficialUserProfile.fromJson(map);
+    // Treat completely empty payloads as absent rather than a blank profile.
+    if (!profile.hasDisplayName &&
+        profile.signature.trim().isEmpty &&
+        profile.avatarPath.trim().isEmpty &&
+        profile.id.trim().isEmpty) {
+      return null;
+    }
+    return profile;
+  }
+
   static Iterable<Map<String, dynamic>> _pageRecords(Object? data) {
     if (data is Map) {
       final records = data['records'] ?? data['list'] ?? data['rows'];

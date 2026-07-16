@@ -62,6 +62,7 @@ class OfficialCloudState {
   final String token;
   final String phone;
   final String userId;
+  final OfficialUserProfile? userProfile;
   final bool loading;
   final String? error;
   final List<OfficialVehicle> vehicles;
@@ -93,6 +94,7 @@ class OfficialCloudState {
     required this.token,
     required this.phone,
     required this.userId,
+    required this.userProfile,
     required this.loading,
     required this.error,
     required this.vehicles,
@@ -125,6 +127,7 @@ class OfficialCloudState {
     token: '',
     phone: '',
     userId: '',
+    userProfile: null,
     loading: false,
     error: null,
     vehicles: [],
@@ -172,6 +175,7 @@ class OfficialCloudState {
     String? token,
     String? phone,
     String? userId,
+    Object? userProfile = _sentinel,
     bool? loading,
     Object? error = _sentinel,
     List<OfficialVehicle>? vehicles,
@@ -203,6 +207,9 @@ class OfficialCloudState {
       token: token ?? this.token,
       phone: phone ?? this.phone,
       userId: userId ?? this.userId,
+      userProfile: identical(userProfile, _sentinel)
+          ? this.userProfile
+          : userProfile as OfficialUserProfile?,
       loading: loading ?? this.loading,
       error: identical(error, _sentinel) ? this.error : error as String?,
       vehicles: vehicles ?? this.vehicles,
