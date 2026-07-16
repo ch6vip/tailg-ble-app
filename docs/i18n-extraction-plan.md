@@ -65,11 +65,12 @@ These are the screens with the most visible copy and the most "lone hero" pages 
 
 | # | File | Hits | Why high-traffic | Example strings |
 | --- | --- | --- | --- | --- |
-| 1 | `lib/pages/control_page_service_cards.dart` | 36 | Home dashboard service grid and unavailable cloud-only entries | `'功能设置'`, `'NFC钥匙'`, `'附近站点'` |
-| 2 | `lib/pages/location_page.dart` | 79 | Map / 轨迹 / 电子围栏 — second most hit page | `'车辆定位'`, `'电子围栏'`, `'历史轨迹'`, `'今日骑行记录 $travelCount 条'`, `'累计轨迹 ${totalMileage}km'` |
-| 3 | `lib/pages/vehicle_settings_page.dart` | 77 | Vehicle config (most knobs) | `'震动灵敏度'`, `'档位'`, `'一键修复'`, ... (one row per setting) |
-| 4 | `lib/pages/official_cloud_page.dart` | 72 | Official cloud login + SMS code | `'验证码已发送'`, `'手机号'`, `'验证码'`, `'登录'` |
-| 5 | `lib/pages/official_replica_pages.dart` | 69 | NFC and charging-station placeholder screens | `'手机'`, `'手表'`, `'添加'`, `'删除'` |
+| 1 | `lib/pages/vehicle_control_home_page.dart` | — | Aurora 爱车主页（控车快捷 / 电量 / 位置 / 最近命令） | `'寻车'`, `'已设防'`, `'开坐垫'`, `'最近命令'` |
+| 2 | `lib/pages/service_hub_page.dart` | — | 服务中心入口网格 | `'服务中心'`, `'车辆定位'`, `'历史轨迹'`, `'电子围栏'` |
+| 3 | `lib/pages/location_page.dart` | 79 | Map / 轨迹 / 电子围栏 — second most hit page | `'车辆定位'`, `'电子围栏'`, `'历史轨迹'`, `'今日骑行记录 $travelCount 条'`, `'累计轨迹 ${totalMileage}km'` |
+| 4 | `lib/pages/vehicle_settings_page.dart` | 77 | Vehicle config (most knobs) | `'震动灵敏度'`, `'档位'`, `'一键修复'`, ... (one row per setting) |
+| 5 | `lib/pages/official_cloud_page.dart` | 72 | Official cloud login + SMS code | `'验证码已发送'`, `'手机号'`, `'验证码'`, `'登录'` |
+| 6 | `lib/pages/official_replica_pages.dart` | 69 | NFC and charging-station placeholder screens | `'手机'`, `'手表'`, `'添加'`, `'删除'` |
 | 7 | `lib/pages/settings_page.dart` | 42 | Top-level settings menu (most cross-links) | `'设置'`, `'连接'`, `'爱车'`, `'扫码'`, `'日志'` |
 | 8 | `lib/pages/diagnostic_page.dart` | 28 | Diagnostic dumps | `'诊断'`, `'运行中'`, `'已停止'` |
 | 9 | `lib/main.dart` | 6 | Bottom nav labels | `'服务'`, `'爱车'`, `'我的'`, `'$label，已选中'` |
@@ -77,7 +78,7 @@ These are the screens with the most visible copy and the most "lone hero" pages 
 For each: replace literal → `Strings.*`, re-run, snapshot-diff golden tests, ship.
 
 ### Phase 3 — Extract remaining 44 files (~1200 LoC touched, 2–3 days)
-- Mechanical sweep. Group by feature: `garage_page`, `cloud_token_page`, `log_page`, `vehicle_message_page`, `control_page_*` (the part files), then `widgets/*`, then `services/*` for SnackBar/error copy. Removed scan, OTA-precheck, and device-info pages are excluded.
+- Mechanical sweep. Group by feature: `garage_page`, `cloud_token_page`, `log_page`, `vehicle_message_page`, `vehicle_control_home_page`, `service_hub_page`, then `widgets/*`, then `services/*` for SnackBar/error copy. Removed scan, OTA-precheck, device-info pages, and the retired official-replica `control_page_*` family are excluded.
 - Skip internal log strings (developer-facing). Only i18n what the user can see in a SnackBar, dialog, tooltip, or `Text`.
 - Update `app_snack.dart`, `app_chrome.dart`, `empty_state.dart`, `slide_to_action.dart` — these are shared widgets, extract once, used everywhere.
 
@@ -106,7 +107,7 @@ Total: ~1400 LoC touched, ~5–7 working days for one engineer. No production-ri
 3. **Dynamic / list content**. NFC key names, official-cloud API error strings, GPS coordinates, and dates come from data, not from the UI tree. Do not pass them through `Strings`; translate only the surrounding frame.
 4. **SnackBars built from exceptions** (`_showSnack(_errorMessage(e), error: true)`). The error map is hardcoded Chinese in services like `control_command_executor.dart` and `official_cloud_api_client.dart`. The error->message map needs to move out of services and into `Strings` (with a thin key-based API: services throw a typed error, UI translates it).
 5. **Test snapshot updates**. `test/widget_test.dart` and others may have golden images / hardcoded text assertions. Re-record after Phase 2 lands.
-6. **Part files**. `lib/pages/control_page.dart` has 11 `part of` files. `Strings` needs to be importable from all of them — the `part` files already share the parent's imports, so a single import in `control_page.dart` is enough.
+6. **Shared imports**. Prefer one `Strings` import per library file. Retired official-replica `control_page.dart` part trees no longer apply; Aurora home and service hub are standalone libraries.
 7. **Log strings in services**. Service logs are mostly *developer* messages going to `logService`. **Do not** i18n them — they are not user-facing. The check should be scoped: `Text('..CJK..')` and `SnackBar(content: Text('..CJK..'))` only, not bare string literals in services.
 8. **Comment / doc strings**. The regex `[\x{4e00}-\x{9fff}]` matches them too. The lint guard should only count `Text(`-style call sites.
 9. **Selector / Semantics labels**. `lib/main.dart:310` builds a Semantics label via `'$label，已选中'`. This needs to be i18n'd too — accessibility strings are first-class UI.
@@ -133,7 +134,8 @@ Total: ~1400 LoC touched, ~5–7 working days for one engineer. No production-ri
 ## 9. Critical files for implementation
 
 - `lib/main.dart` — bottom nav labels and current `MaterialApp` localization wiring
-- `lib/pages/control_page_service_cards.dart` — densest visible screen; will exercise every extraction pattern
+- `lib/pages/vehicle_control_home_page.dart` — Aurora 爱车主页；primary control-surface copy
+- `lib/pages/service_hub_page.dart` — service grid labels
 - `lib/pages/location_page.dart` — second-densest page; the test bed for the `s(...)` interpolation helper
 - `pubspec.yaml` — localization dependencies are already present; add generated-resource configuration when ARB migration starts
 - `lib/services/control_command_result.dart` and `lib/services/official_cloud_api_client.dart` — the services that surface error strings into SnackBars

@@ -43,12 +43,14 @@
 lib/
   services/   云端 API、持久化、控车路由、日志、定位
   models/     官方车辆与遥测模型
-  pages/      控车主页、地图、车库、诊断、设置等
-  widgets/    通用组件
+  pages/      Aurora 控车主页、地图、车库、诊断、设置等
+  widgets/    通用组件（AppPressable / VehicleStage / StatusBadge …）
   theme/      设计 token
 ```
 
 QGJ/BLE 命名残留与可删除评估见 [docs/qgj_ble_residual_inventory.md](docs/qgj_ble_residual_inventory.md)。
+
+爱车 Tab 主入口为 `lib/pages/vehicle_control_home_page.dart`（Open Design Aurora）。官方复刻 `ControlPage` / `ControlCard` 已于 2026-07-16 移除。
 ## 车辆添加策略
 
 仅保留官方账号同步：

@@ -9,9 +9,10 @@
 | Color tokens | `lib/theme/app_colors.dart` |
 | Motion tokens | `lib/theme/app_motion.dart` |
 | Shared chrome, cards, skeleton | `lib/widgets/app_chrome.dart` |
-| Press / long-press interaction | `lib/widgets/app_pressable.dart`, `lib/widgets/control_card.dart` |
+| Press / long-press interaction | `lib/widgets/app_pressable.dart` |
 | Status labels | `lib/widgets/status_badge.dart` |
 | Toast / snack feedback | `lib/widgets/app_toast.dart`, `lib/widgets/app_snack.dart` |
+| Vehicle illustration | `lib/widgets/vehicle_stage.dart`（车库等场景） |
 
 ## Current Visual Direction
 
@@ -26,16 +27,16 @@
 - Tap targets for custom controls should stay at least `AppTouchTargets.min`
   (44 px).
 - Reusable press feedback should go through `AppPressable` and `AppMotion.pressScale`.
-- Long-press power actions use `AppMotion.longPressHold` and must support pointer-exit cancellation.
 - Snack/toast colors should resolve from the active theme where possible.
 
 ## Page Patterns
 
-- Control home hero: `ControlPageHero` owns battery, range, connection label, vehicle switch, and message entry.
-- Vehicle illustration: `VehicleStagePainter` is now a native canvas implementation; do not reintroduce external SVG/HTML dependencies.
-- Central control card: `ControlCard` owns the long-press power knob and quick action layout.
+- Control home (爱车 Tab): `VehicleControlHomePage` — Aurora layout (battery ring, location card, equal-weight shortcuts: find / arm / seat / power, recent commands). Open Design source: `vehicle-control-home`.
+- Vehicle illustration: `VehicleStagePainter` remains a native canvas implementation for garage/profile; do not reintroduce external SVG/HTML dependencies.
+- Service hub: `ServiceHubPage` owns location / travel / fence / settings grid entries.
 - Profile page: `ProfilePage` follows the current app chrome and account/status card structure.
 
 ## Historical Notes
 
-The removed `design_v2/` directory contained early HTML previews and bitmap screenshots. Those files were useful during visual exploration, but they were not used by Flutter builds, tests, CI, or runtime assets. Keep future design references in this document or in code-owned theme/component files instead of committing large throwaway prototypes.
+- The removed official-replica `ControlPage` / `ControlCard` / `ControlPageHero` (slide power knob, bound/unbound dual shell) were replaced by Aurora `VehicleControlHomePage` on 2026-07-16.
+- The removed `design_v2/` directory contained early HTML previews and bitmap screenshots. Those files were useful during visual exploration, but they were not used by Flutter builds, tests, CI, or runtime assets. Keep future design references in this document or in code-owned theme/component files instead of committing large throwaway prototypes.

@@ -169,7 +169,7 @@ P0-4 电池页增强                       ✅
 
 | ID | 项 | 状态 |
 | --- | --- | --- |
-| A1 | `ControlHomeMode` 状态机 | **已完成** |
+| A1 | 爱车页状态机（原 `ControlHomeMode`，后随官方复刻页移除） | **已完成**（历史） |
 | A2 | 登录/同步成功自动回爱车 bound | **已完成** |
 | A3 | 未绑定绑定路径诚实化 | **已完成** |
 | A4 | 统一 `requireCloudVehicle` 门禁 | **已完成** |
@@ -234,16 +234,19 @@ P0-4 电池页增强                       ✅
 | 2026-07-12 | P1：接入服务端消息清空；失败时保留现有消息并补充服务契约与页面回归测试 |
 | 2026-07-16 | P1：官方车辆昵称回写 `app/car/updateCarInfo`（详情页可编辑 + 乐观更新 + carStatus 刷新） |
 | 2026-07-16 | 范围：家庭共享官方授权闭环标为不做（产品决策） |
+| 2026-07-16 | 爱车主页切换为 Aurora `VehicleControlHomePage`；移除官方复刻 `ControlPage` / `ControlCard` / `ControlHomeMode` |
 
 ---
 
 ## 10. 相关代码入口
 
-- 控车页：`lib/pages/control_page.dart` / `control_page_home_overview.dart`
+- 控车页（爱车 Tab）：`lib/pages/vehicle_control_home_page.dart`（Aurora）
 - 云服务：`lib/services/official_cloud_service.dart`（`refreshMessages` / `lastVehiclesRefreshAt` / `lastBatteryRefreshAt`）
+- 控车管道：`lib/services/control_command_executor.dart` · `control_command_policy.dart` · `control_channel_resolver.dart`
 - 消息页：`lib/pages/vehicle_message_page.dart`
 - 消息模型/解析：`lib/models/official_vehicle.dart`（`OfficialCloudMessage`）/ `lib/services/official_cloud_data_parser.dart`
 - 定位：`lib/pages/location_page.dart` + tabs
 - 电池：`lib/pages/battery_details_page.dart`
+- 服务中心：`lib/pages/service_hub_page.dart`
 - 同步时间格式：`lib/services/display_time_formatter.dart`（`formatRelativeSyncText`）
 - 生命周期刷新：`lib/main.dart`（`AppLifecycleState.resumed` / 切回车辆 Tab）
