@@ -580,7 +580,7 @@ class _VehicleCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
       child: AppPressable(
         onTap: onTap,
-        pressedScale: 0.985,
+        pressedScale: AppMotion.pressScale,
         borderRadius: BorderRadius.circular(_Aurora.cardRadius),
         background: _Aurora.surface,
         pressedBackground: const Color(0xFFFBFBFC),
@@ -600,7 +600,7 @@ class _VehicleCard extends StatelessWidget {
                       height: 48,
                       decoration: BoxDecoration(
                         color: _Aurora.surfaceSoft,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(AppRadii.md),
                       ),
                       child: const Icon(
                         Icons.electric_moped_outlined,
@@ -820,8 +820,8 @@ class _FuncGridTile extends StatelessWidget {
     final badge = data.badge;
     return AppPressable(
       onTap: data.onTap,
-      pressedScale: 0.95,
-      borderRadius: BorderRadius.circular(14),
+      pressedScale: AppMotion.pressScale,
+      borderRadius: BorderRadius.circular(AppRadii.md),
       pressedBackground: const Color(0x080F1620),
       semanticsLabel: data.label,
       semanticsButton: true,
@@ -1051,7 +1051,7 @@ class _LogoutSheet extends StatelessWidget {
           const SizedBox(height: 16),
           AppPressable(
             onTap: () => Navigator.of(context).pop(true),
-            pressedScale: 0.98,
+            pressedScale: AppMotion.pressScale,
             borderRadius: BorderRadius.circular(AppRadii.md),
             background: _Aurora.danger,
             semanticsLabel: '确认退出',
@@ -1075,7 +1075,7 @@ class _LogoutSheet extends StatelessWidget {
           const SizedBox(height: 8),
           AppPressable(
             onTap: () => Navigator.of(context).pop(false),
-            pressedScale: 0.98,
+            pressedScale: AppMotion.pressScale,
             borderRadius: BorderRadius.circular(AppRadii.md),
             background: _Aurora.surfaceSoft,
             semanticsLabel: '取消',

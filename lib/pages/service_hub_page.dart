@@ -245,8 +245,8 @@ class _ServiceGridTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppPressable(
       onTap: item.onTap,
-      pressedScale: 0.95,
-      borderRadius: BorderRadius.circular(14),
+      pressedScale: AppMotion.pressScale,
+      borderRadius: BorderRadius.circular(AppRadii.md),
       pressedBackground: const Color(0x080F1620),
       semanticsLabel: item.label,
       semanticsButton: true,
@@ -309,8 +309,8 @@ class _ServiceListTile extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: AppTouchTargets.min,
+              height: AppTouchTargets.min,
               decoration: const BoxDecoration(
                 color: AppColors.surfaceContainerHigh,
                 shape: BoxShape.circle,
