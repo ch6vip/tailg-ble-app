@@ -14,6 +14,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/cloud_vehicle_gate.dart';
 import '../widgets/vehicle_switch_sheet.dart';
 import 'app_preferences_pages.dart';
 import 'diagnostic_page.dart';
@@ -273,19 +274,11 @@ class _ProfileMinePageState extends State<ProfileMinePage>
   }
 
   void _openRideStats() {
-    unawaited(
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute<void>(builder: (_) => const RideStatsPage())),
-    );
+    openCloudGatedPage(context, const RideStatsPage());
   }
 
   void _openDiagnostic() {
-    unawaited(
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute<void>(builder: (_) => const DiagnosticPage())),
-    );
+    openCloudGatedPage(context, const DiagnosticPage());
   }
 
   void _openHelp() {

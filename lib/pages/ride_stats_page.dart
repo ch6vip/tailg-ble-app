@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import '../models/official_vehicle.dart';
 import '../services/display_time_formatter.dart';
+import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import 'add_vehicle_page.dart';
+import 'login_page.dart';
 
 class RideStatsPage extends StatefulWidget {
   const RideStatsPage({super.key});
@@ -21,6 +24,7 @@ class _RideStatsPageState extends State<RideStatsPage> {
   String? _error;
   List<OfficialTravelDay> _days = [];
   var _loadGeneration = 0;
+  _RideStatsGate _gate = _RideStatsGate.ready;
 
   @override
   void initState() {
@@ -31,23 +35,65 @@ class _RideStatsPageState extends State<RideStatsPage> {
   Future<void> _loadMonth() async {
     final generation = ++_loadGeneration;
     final month = _month;
+    final cloud = officialCloudService.state;
+
+    if (!cloud.signedIn) {
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() {
+        _gate = _RideStatsGate.needLogin;
+        _loading = false;
+        _error = null;
+        _days = const [];
+      });
+      return;
+    }
+    if (cloud.selectedVehicle == null) {
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() {
+        _gate = _RideStatsGate.needVehicle;
+        _loading = false;
+        _error = null;
+        _days = const [];
+      });
+      return;
+    }
+    if (cloud.userId.trim().isEmpty) {
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() {
+        _gate = _RideStatsGate.needRelogin;
+        _loading = false;
+        _error = null;
+        _days = const [];
+      });
+      return;
+    }
+
     setState(() {
+      _gate = _RideStatsGate.ready;
       _loading = true;
       _error = null;
     });
     try {
-      await officialCloudService.refreshTravelHistory(month: month);
+      await officialCloudService.refreshTravelHistory(
+        month: month,
+        force: true,
+      );
       if (!mounted || generation != _loadGeneration) return;
       final state = officialCloudService.state;
+      final travelError = state.travelError?.trim();
       setState(() {
         _days = state.travelDays;
         _loading = false;
+        _error = (travelError != null && travelError.isNotEmpty)
+            ? travelError
+            : null;
       });
     } catch (e) {
       if (!mounted || generation != _loadGeneration) return;
       setState(() {
-        _error = '加载失败';
+        _error = OfficialCloudRedactor.errorMessage(e);
         _loading = false;
+        _days = const [];
       });
     }
   }
@@ -73,7 +119,7 @@ class _RideStatsPageState extends State<RideStatsPage> {
       body: SafeArea(
         child: Column(
           children: [
-            AppPageHeader(title: '骑行统计'),
+            const AppPageHeader(title: '骑行统计'),
             _MonthSelector(
               month: _month,
               onPrev: _prevMonth,
@@ -90,12 +136,52 @@ class _RideStatsPageState extends State<RideStatsPage> {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
+    if (_gate == _RideStatsGate.needLogin) {
+      return _GateState(
+        title: '请先登录官方账号',
+        actionLabel: '去登录',
+        onAction: () => unawaited(
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute<void>(builder: (_) => const LoginPage())),
+        ),
+      );
+    }
+    if (_gate == _RideStatsGate.needVehicle) {
+      return _GateState(
+        title: '暂无车辆，请先同步官方车辆',
+        actionLabel: '添加车辆',
+        onAction: () => unawaited(
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
+          ),
+        ),
+      );
+    }
+    if (_gate == _RideStatsGate.needRelogin) {
+      return _GateState(
+        title: '登录信息不完整，请重新登录后再查看骑行统计',
+        actionLabel: '重新登录',
+        onAction: () => unawaited(
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute<void>(builder: (_) => const LoginPage())),
+        ),
+      );
+    }
     if (_error != null) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(_error!, style: AppTextStyles.bodyMedium),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium,
+              ),
+            ),
             const SizedBox(height: 12),
             TextButton(onPressed: _loadMonth, child: const Text('重试')),
           ],
@@ -103,8 +189,17 @@ class _RideStatsPageState extends State<RideStatsPage> {
       );
     }
     if (_days.isEmpty) {
-      return const Center(
-        child: Text('本月暂无骑行记录', style: AppTextStyles.bodyMedium),
+      final vehicleName =
+          officialCloudService.state.selectedVehicle?.displayName ?? '当前车辆';
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Text(
+            '$_month · $vehicleName\n本月暂无骑行记录',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyMedium.copyWith(height: 1.45),
+          ),
+        ),
       );
     }
     return ListView(
@@ -116,6 +211,41 @@ class _RideStatsPageState extends State<RideStatsPage> {
         const SizedBox(height: 16),
         _DayBreakdown(days: _days),
       ],
+    );
+  }
+}
+
+enum _RideStatsGate { ready, needLogin, needVehicle, needRelogin }
+
+class _GateState extends StatelessWidget {
+  const _GateState({
+    required this.title,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  final String title;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium.copyWith(height: 1.45),
+            ),
+            const SizedBox(height: 14),
+            FilledButton(onPressed: onAction, child: Text(actionLabel)),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -222,37 +352,33 @@ class _StatItem extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          SizedBox(
-            height: 31,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text.rich(
+          RichText(
+            text: TextSpan(
+              children: [
                 TextSpan(
-                  children: [
-                    TextSpan(
-                      text: value,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    if (unit.isNotEmpty)
-                      TextSpan(
-                        text: ' $unit',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                  ],
+                  text: value,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-                maxLines: 1,
-              ),
+                if (unit.isNotEmpty)
+                  TextSpan(
+                    text: ' $unit',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 4),
-          Text(label, style: AppTextStyles.caption),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
+          ),
         ],
       ),
     );
@@ -264,52 +390,30 @@ class _CarbonCard extends StatelessWidget {
 
   final List<OfficialTravelDay> days;
 
-  static const _kgCo2PerKm = 0.12;
-
   @override
   Widget build(BuildContext context) {
-    final totalKm = sumTravelMileageKm(days.expand((day) => day.records));
-    final carbonSaved = totalKm * _kgCo2PerKm;
+    final km = sumTravelMileageKm(days.expand((day) => day.records));
+    // Simple estimate: ~0.021 kg CO2 avoided per km vs car.
+    final carbonKg = km * 0.021;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.08),
+        color: AppColors.surfaceBrandTint,
         borderRadius: BorderRadius.circular(AppRadii.card),
       ),
       child: Row(
         children: [
-          const Icon(Icons.eco, color: AppColors.primary, size: 32),
-          const SizedBox(width: 16),
+          const Icon(Icons.eco_outlined, color: AppColors.success),
+          const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '碳减排贡献',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${carbonSaved.toStringAsFixed(1)} kg CO₂',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primaryDark,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '相比驾车出行，本月骑行减少碳排放',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
+            child: Text(
+              '约减排 ${carbonKg.toStringAsFixed(2)} kg CO₂',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
             ),
           ),
         ],
@@ -325,67 +429,60 @@ class _DayBreakdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sorted = [...days]
+      ..sort((a, b) => b.travelDate.compareTo(a.travelDate));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(bottom: 8),
-          child: Text(
-            '每日明细',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
+        const Text(
+          '每日明细',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
           ),
         ),
-        ...days.map((day) => _DayTile(day: day)),
+        const SizedBox(height: 10),
+        for (final day in sorted)
+          Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(AppRadii.card),
+              boxShadow: AppShadows.elevation1,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    day.travelDate,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${sumTravelMileageKm(day.records).toStringAsFixed(1)} km',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '${day.records.length} 次',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
-    );
-  }
-}
-
-class _DayTile extends StatelessWidget {
-  const _DayTile({required this.day});
-
-  final OfficialTravelDay day;
-
-  @override
-  Widget build(BuildContext context) {
-    final tripCount = day.records.length;
-    final mileage = day.totalMileage;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadii.tile),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              day.travelDate,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-          Text('$tripCount次', style: AppTextStyles.caption),
-          const SizedBox(width: 12),
-          Text(
-            '$mileage km',
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
