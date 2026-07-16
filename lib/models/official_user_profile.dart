@@ -13,6 +13,11 @@ class OfficialUserProfile {
   final String avatarPath;
   final String gender;
   final String birthday;
+  final String obsAvatarId;
+  final String province;
+  final String city;
+  final String area;
+  final String address;
   final Map<String, dynamic> raw;
 
   const OfficialUserProfile({
@@ -24,6 +29,11 @@ class OfficialUserProfile {
     required this.avatarPath,
     required this.gender,
     required this.birthday,
+    this.obsAvatarId = '',
+    this.province = '',
+    this.city = '',
+    this.area = '',
+    this.address = '',
     this.raw = const {},
   });
 
@@ -39,7 +49,64 @@ class OfficialUserProfile {
       ),
       gender: parsePersistedString(json['gender']),
       birthday: parsePersistedString(json['birthday'] ?? json['birthDay']),
+      obsAvatarId: parsePersistedString(json['obsAvatarId']),
+      province: parsePersistedString(json['province']),
+      city: parsePersistedString(json['city']),
+      area: parsePersistedString(json['area']),
+      address: parsePersistedString(json['address']),
       raw: Map<String, dynamic>.unmodifiable(json),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nickName': nickName,
+      'name': name,
+      'signature': signature,
+      'avatarName': avatarName,
+      'avatar_path': avatarPath,
+      'gender': gender,
+      'birthday': birthday,
+      'obsAvatarId': obsAvatarId,
+      'province': province,
+      'city': city,
+      'area': area,
+      'address': address,
+    };
+  }
+
+  OfficialUserProfile copyWith({
+    String? id,
+    String? nickName,
+    String? name,
+    String? signature,
+    String? avatarName,
+    String? avatarPath,
+    String? gender,
+    String? birthday,
+    String? obsAvatarId,
+    String? province,
+    String? city,
+    String? area,
+    String? address,
+    Map<String, dynamic>? raw,
+  }) {
+    return OfficialUserProfile(
+      id: id ?? this.id,
+      nickName: nickName ?? this.nickName,
+      name: name ?? this.name,
+      signature: signature ?? this.signature,
+      avatarName: avatarName ?? this.avatarName,
+      avatarPath: avatarPath ?? this.avatarPath,
+      gender: gender ?? this.gender,
+      birthday: birthday ?? this.birthday,
+      obsAvatarId: obsAvatarId ?? this.obsAvatarId,
+      province: province ?? this.province,
+      city: city ?? this.city,
+      area: area ?? this.area,
+      address: address ?? this.address,
+      raw: raw ?? this.raw,
     );
   }
 

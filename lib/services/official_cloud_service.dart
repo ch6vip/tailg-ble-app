@@ -85,6 +85,7 @@ class OfficialCloudService {
         token: stored.token,
         phone: stored.phone,
         userId: stored.userId,
+        userProfile: stored.cachedUserProfile,
         vehicles: cachedVehicles,
         selectedVehicleKey: selectedVehicleKey,
         localVehicleLinks: stored.localVehicleLinks,
@@ -340,6 +341,7 @@ class OfficialCloudService {
       );
       _state = _state.copyWith(userProfile: profile);
       _emit();
+      unawaited(_storage.saveUserProfile(profile));
       _log.operation(
         '官方用户资料已刷新',
         detail: profile == null
@@ -357,6 +359,71 @@ class OfficialCloudService {
         level: LogLevel.warning,
       );
     }
+  }
+
+  /// Update official profile nickname (`POST app/updateUserProfile`).
+  ///
+  /// Decompiled [TailgRepository.updUserDetailInfo] sends the full profile map;
+  /// we reuse cached fields and only change [nickName].
+  Future<void> updateUserNickname(String nickName) async {
+    final token = _state.token;
+    if (token.isEmpty) {
+      throw const OfficialCloudApiException('请先登录官方账号');
+    }
+    final trimmed = nickName.trim();
+    if (trimmed.isEmpty) {
+      throw const OfficialCloudApiException('昵称不能为空');
+    }
+    if (trimmed.length > 20) {
+      throw const OfficialCloudApiException('昵称请控制在 20 字以内');
+    }
+
+    final current = _state.userProfile;
+    final body = <String, dynamic>{
+      'nickName': trimmed,
+      if (current != null) ...{
+        if (current.obsAvatarId.isNotEmpty) 'obsAvatarId': current.obsAvatarId,
+        if (current.gender.isNotEmpty) 'gender': current.gender,
+        if (current.province.isNotEmpty) 'province': current.province,
+        if (current.city.isNotEmpty) 'city': current.city,
+        if (current.area.isNotEmpty) 'area': current.area,
+        if (current.address.isNotEmpty) 'address': current.address,
+        if (current.signature.isNotEmpty) 'signature': current.signature,
+        if (current.birthday.isNotEmpty) 'birthDay': current.birthday,
+      },
+    };
+
+    final response = await _apiClient.request(
+      'app/updateUserProfile',
+      method: 'POST',
+      token: token,
+      body: body,
+    );
+    _ensureSuccess(response.body, fallback: '更新昵称失败');
+    if (!_isCurrentSession(token)) return;
+
+    final next =
+        (current ??
+                const OfficialUserProfile(
+                  id: '',
+                  nickName: '',
+                  name: '',
+                  signature: '',
+                  avatarName: '',
+                  avatarPath: '',
+                  gender: '',
+                  birthday: '',
+                ))
+            .copyWith(nickName: trimmed);
+    _state = _state.copyWith(userProfile: next);
+    _emit();
+    unawaited(_storage.saveUserProfile(next));
+    _log.operation(
+      '官方昵称已更新',
+      detail: 'nick=${SensitiveValueMasker.compact(trimmed)}',
+    );
+    // Re-fetch so server-normalized fields win.
+    unawaited(refreshUserProfile(silent: true, force: true));
   }
 
   Future<void> refreshVehicles({

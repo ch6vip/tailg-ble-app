@@ -16,7 +16,6 @@ import '../widgets/status_badge.dart';
 import '../widgets/vehicle_stage.dart';
 import 'add_vehicle_page.dart';
 import 'login_page.dart';
-import 'official_cloud_page.dart';
 
 /// Garage lists official cloud vehicles when signed in, and optional local
 /// archives under a secondary section. Local-only rename/delete stay available
@@ -85,15 +84,6 @@ class _GaragePageState extends State<GaragePage> {
     );
   }
 
-  void _openOfficialCloud() {
-    unawaited(
-      Navigator.push(
-        context,
-        MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
-      ),
-    );
-  }
-
   void _openLogin() {
     unawaited(
       Navigator.push(
@@ -152,16 +142,12 @@ class _GaragePageState extends State<GaragePage> {
             ),
             Expanded(
               child: !signedIn && !hasLocal
-                  ? _UnsignedEmptyGarage(
-                      onLogin: _openLogin,
-                      onOfficialCloud: _openOfficialCloud,
-                    )
+                  ? _UnsignedEmptyGarage(onLogin: _openLogin)
                   : signedIn && !hasCloud && !hasLocal
                   ? _SignedEmptyGarage(
                       loading: _cloudState.loading || _syncing,
                       onSync: _syncCloudVehicles,
                       onAddVehicle: _openAddVehicle,
-                      onOfficialCloud: _openOfficialCloud,
                     )
                   : ListView(
                       physics: const BouncingScrollPhysics(),
@@ -182,15 +168,11 @@ class _GaragePageState extends State<GaragePage> {
                               loading: _cloudState.loading || _syncing,
                               onSync: _syncCloudVehicles,
                               onAddVehicle: _openAddVehicle,
-                              onOfficialCloud: _openOfficialCloud,
                             ),
                             const SizedBox(height: 16),
                           ],
                         ] else ...[
-                          _LoginPromptCard(
-                            onLogin: _openLogin,
-                            onOfficialCloud: _openOfficialCloud,
-                          ),
+                          _LoginPromptCard(onLogin: _openLogin),
                           const SizedBox(height: 16),
                         ],
                         if (hasLocal) ...[
@@ -234,13 +216,9 @@ class _SectionLabel extends StatelessWidget {
 }
 
 class _UnsignedEmptyGarage extends StatelessWidget {
-  const _UnsignedEmptyGarage({
-    required this.onLogin,
-    required this.onOfficialCloud,
-  });
+  const _UnsignedEmptyGarage({required this.onLogin});
 
   final VoidCallback onLogin;
-  final VoidCallback onOfficialCloud;
 
   @override
   Widget build(BuildContext context) {
@@ -262,11 +240,6 @@ class _UnsignedEmptyGarage extends StatelessWidget {
               icon: const Icon(Icons.login, size: AppIconSizes.md),
               label: const Text('登录账号'),
             ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: onOfficialCloud,
-              child: const Text('打开官方云账号页'),
-            ),
           ],
         ),
       ),
@@ -279,13 +252,11 @@ class _SignedEmptyGarage extends StatelessWidget {
     required this.loading,
     required this.onSync,
     required this.onAddVehicle,
-    required this.onOfficialCloud,
   });
 
   final bool loading;
   final VoidCallback onSync;
   final VoidCallback onAddVehicle;
-  final VoidCallback onOfficialCloud;
 
   @override
   Widget build(BuildContext context) {
@@ -319,10 +290,6 @@ class _SignedEmptyGarage extends StatelessWidget {
               icon: const Icon(Icons.add_circle_outline, size: AppIconSizes.md),
               label: const Text('添加车辆'),
             ),
-            TextButton(
-              onPressed: onOfficialCloud,
-              child: const Text('打开官方云账号页'),
-            ),
           ],
         ),
       ),
@@ -335,13 +302,11 @@ class _SignedEmptyInline extends StatelessWidget {
     required this.loading,
     required this.onSync,
     required this.onAddVehicle,
-    required this.onOfficialCloud,
   });
 
   final bool loading;
   final VoidCallback onSync;
   final VoidCallback onAddVehicle;
-  final VoidCallback onOfficialCloud;
 
   @override
   Widget build(BuildContext context) {
@@ -358,7 +323,7 @@ class _SignedEmptyInline extends StatelessWidget {
           const Text('账号下暂无车辆', style: AppTextStyles.subtitle),
           const SizedBox(height: 6),
           Text(
-            loading ? '正在同步账号车辆…' : '同步账号车辆，或前往官方云查看绑定状态。',
+            loading ? '正在同步账号车辆…' : '同步账号车辆，或前往添加车辆完成绑定。',
             style: AppTextStyles.bodyMedium,
           ),
           const SizedBox(height: 12),
@@ -371,7 +336,6 @@ class _SignedEmptyInline extends StatelessWidget {
                 child: Text(loading ? '同步中…' : '同步'),
               ),
               OutlinedButton(onPressed: onAddVehicle, child: const Text('添加')),
-              TextButton(onPressed: onOfficialCloud, child: const Text('官方云')),
             ],
           ),
         ],
@@ -381,13 +345,9 @@ class _SignedEmptyInline extends StatelessWidget {
 }
 
 class _LoginPromptCard extends StatelessWidget {
-  const _LoginPromptCard({
-    required this.onLogin,
-    required this.onOfficialCloud,
-  });
+  const _LoginPromptCard({required this.onLogin});
 
   final VoidCallback onLogin;
-  final VoidCallback onOfficialCloud;
 
   @override
   Widget build(BuildContext context) {
@@ -408,13 +368,7 @@ class _LoginPromptCard extends StatelessWidget {
             style: AppTextStyles.bodyMedium,
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              FilledButton(onPressed: onLogin, child: const Text('登录账号')),
-              const SizedBox(width: 8),
-              TextButton(onPressed: onOfficialCloud, child: const Text('官方云')),
-            ],
-          ),
+          FilledButton(onPressed: onLogin, child: const Text('登录账号')),
         ],
       ),
     );

@@ -7,6 +7,7 @@ class _OfficialCloudStoredSession {
   final String? selectedVehicleKey;
   final List<OfficialVehicle> cachedVehicles;
   final Map<String, String> localVehicleLinks;
+  final OfficialUserProfile? cachedUserProfile;
 
   const _OfficialCloudStoredSession({
     required this.token,
@@ -15,6 +16,7 @@ class _OfficialCloudStoredSession {
     required this.selectedVehicleKey,
     required this.cachedVehicles,
     required this.localVehicleLinks,
+    required this.cachedUserProfile,
   });
 }
 
@@ -28,6 +30,7 @@ class _OfficialCloudStorage {
   static const _prefVehicleLinks = 'official_cloud_vehicle_links';
   static const _prefUserId = 'official_cloud_user_id';
   static const _prefCarControlInfo = 'carControlInfo';
+  static const _prefUserProfile = 'official_cloud_user_profile';
   static final Object _decodeFailed = Object();
 
   final FlutterSecureStorage _secureStorage;
@@ -54,6 +57,9 @@ class _OfficialCloudStorage {
           ? const <OfficialVehicle>[]
           : _decodeCarControlInfo(prefs.getString(_prefCarControlInfo)),
       localVehicleLinks: _decodeLinks(prefs.getString(_prefVehicleLinks)),
+      cachedUserProfile: token.isEmpty
+          ? null
+          : _decodeUserProfile(prefs.getString(_prefUserProfile)),
     );
   }
 
@@ -75,6 +81,7 @@ class _OfficialCloudStorage {
     await prefs.remove(_prefUserId);
     await prefs.remove(_prefSelectedVehicle);
     await prefs.remove(_prefCarControlInfo);
+    await prefs.remove(_prefUserProfile);
   }
 
   Future<void> clearCredentialsAndSelection() async {
@@ -87,6 +94,7 @@ class _OfficialCloudStorage {
     await prefs.remove(_prefUserId);
     await prefs.remove(_prefSelectedVehicle);
     await prefs.remove(_prefCarControlInfo);
+    await prefs.remove(_prefUserProfile);
   }
 
   Future<void> saveSelectedVehicleKey(String? key) async {
@@ -107,9 +115,43 @@ class _OfficialCloudStorage {
     await prefs.setString(_prefCarControlInfo, jsonEncode(vehicle.toJson()));
   }
 
+  Future<void> saveUserProfile(OfficialUserProfile? profile) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (profile == null) {
+      await prefs.remove(_prefUserProfile);
+      return;
+    }
+    await prefs.setString(_prefUserProfile, jsonEncode(profile.toJson()));
+  }
+
   Future<void> saveLinks(Map<String, String> links) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefVehicleLinks, jsonEncode(links));
+  }
+
+  OfficialUserProfile? _decodeUserProfile(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      final map = <String, dynamic>{};
+      decoded.forEach((key, value) {
+        if (key is String) map[key] = value;
+      });
+      final profile = OfficialUserProfile.fromJson(map);
+      return profile.hasDisplayName ||
+              profile.avatarPath.trim().isNotEmpty ||
+              profile.id.trim().isNotEmpty
+          ? profile
+          : null;
+    } catch (e) {
+      _log.operation(
+        '官方用户资料缓存解析失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
+      return null;
+    }
   }
 
   Future<(String, String, String)> _loadSecureCredentials(

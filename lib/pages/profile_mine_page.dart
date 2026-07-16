@@ -17,8 +17,8 @@ import '../widgets/app_snack.dart';
 import '../widgets/vehicle_switch_sheet.dart';
 import 'app_preferences_pages.dart';
 import 'diagnostic_page.dart';
+import 'garage_page.dart';
 import 'login_page.dart';
-import 'official_cloud_page.dart';
 import 'ride_stats_page.dart';
 import 'settings_page.dart';
 import 'vehicle_message_page.dart';
@@ -112,6 +112,11 @@ class _ProfileMinePageState extends State<ProfileMinePage>
     return String.fromCharCode(name.runes.first);
   }
 
+  String? get _avatarUrl {
+    if (!officialCloudService.state.signedIn) return null;
+    return officialCloudService.state.userProfile?.avatarUrl;
+  }
+
   String? get _rawPhone {
     final phone = officialCloudService.state.phone.trim();
     if (phone.isEmpty) return null;
@@ -172,7 +177,62 @@ class _ProfileMinePageState extends State<ProfileMinePage>
       _openLogin();
       return;
     }
-    AppSnack.featureUnavailable(context, '资料编辑');
+    unawaited(_editNickname());
+  }
+
+  Future<void> _editNickname() async {
+    final current = officialCloudService.state.userProfile?.displayName ?? '';
+    final controller = TextEditingController(text: current);
+    try {
+      final next = await showDialog<String>(
+        context: context,
+        builder: (ctx) {
+          return AlertDialog(
+            title: const Text('修改昵称'),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              maxLength: 20,
+              decoration: const InputDecoration(
+                hintText: '输入昵称',
+                counterText: '',
+              ),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (value) => Navigator.of(ctx).pop(value.trim()),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+                child: const Text('保存'),
+              ),
+            ],
+          );
+        },
+      );
+      if (next == null || !mounted) return;
+      if (next.isEmpty) {
+        AppSnack.info(context, '昵称不能为空');
+        return;
+      }
+      if (next == current) return;
+      try {
+        await officialCloudService.updateUserNickname(next);
+        if (!mounted) return;
+        AppSnack.success(context, '昵称已更新');
+      } catch (e) {
+        if (!mounted) return;
+        AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
+      }
+    } finally {
+      // Dispose after the dialog route is fully torn down.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.dispose();
+      });
+    }
   }
 
   void _onVehicleCard() {
@@ -186,9 +246,9 @@ class _ProfileMinePageState extends State<ProfileMinePage>
       return;
     }
     unawaited(
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
-      ),
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const GaragePage())),
     );
   }
 
@@ -306,6 +366,7 @@ class _ProfileMinePageState extends State<ProfileMinePage>
             // ── Profile header ──────────────────────────────────────────
             _ProfileHeader(
               avatarGlyph: _avatarGlyph,
+              avatarUrl: _avatarUrl,
               nickname: _nickname,
               phoneLine: _maskedPhone,
               // Decompiled UserInfoBean has no member level; show login state only.
@@ -408,6 +469,7 @@ abstract final class _Aurora {
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({
     required this.avatarGlyph,
+    required this.avatarUrl,
     required this.nickname,
     required this.phoneLine,
     required this.memberLabel,
@@ -418,6 +480,7 @@ class _ProfileHeader extends StatelessWidget {
   });
 
   final String avatarGlyph;
+  final String? avatarUrl;
   final String nickname;
   final String phoneLine;
   final String memberLabel;
@@ -428,6 +491,7 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final url = avatarUrl;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 16, 6),
       child: Row(
@@ -442,16 +506,24 @@ class _ProfileHeader extends StatelessWidget {
             child: CircleAvatar(
               radius: 32,
               backgroundColor: const Color(0xFFE6F5EF),
-              child: Text(
-                avatarGlyph,
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: _Aurora.accentDeep,
-                  letterSpacing: -0.5,
-                  height: 1,
-                ),
-              ),
+              backgroundImage: url == null || url.isEmpty
+                  ? null
+                  : NetworkImage(url),
+              onBackgroundImageError: url == null || url.isEmpty
+                  ? null
+                  : (Object error, StackTrace? stackTrace) {},
+              child: url == null || url.isEmpty
+                  ? Text(
+                      avatarGlyph,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: _Aurora.accentDeep,
+                        letterSpacing: -0.5,
+                        height: 1,
+                      ),
+                    )
+                  : null,
             ),
           ),
           const SizedBox(width: 14),

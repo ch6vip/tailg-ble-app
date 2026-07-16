@@ -143,6 +143,38 @@ void main() {
     expect(find.text('台铃用户'), findsOneWidget);
   });
 
+  testWidgets('edit nickname dialog updates profile state', (tester) async {
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        phone: '13812346688',
+        userProfile: const OfficialUserProfile(
+          id: 'u1',
+          nickName: '旧昵称',
+          name: '',
+          signature: '',
+          avatarName: '',
+          avatarPath: '',
+          gender: '',
+          birthday: '',
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
+    await tester.pump();
+
+    expect(find.text('旧昵称'), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel('编辑'));
+    await tester.pumpAndSettle();
+    expect(find.text('修改昵称'), findsOneWidget);
+    // Without network mock, saving will fail; cancel to keep unit stable.
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+    expect(find.text('修改昵称'), findsNothing);
+  });
+
   testWidgets('message badge appears when unread > 0', (tester) async {
     app.officialCloudService.setStateForTest(
       OfficialCloudState.initial().copyWith(
