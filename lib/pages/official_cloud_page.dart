@@ -548,122 +548,227 @@ class _OfficialVehicleCard extends StatelessWidget {
   }
 }
 
-class OfficialVehicleDetailPage extends StatelessWidget {
+class OfficialVehicleDetailPage extends StatefulWidget {
   final OfficialVehicle vehicle;
 
   const OfficialVehicleDetailPage({super.key, required this.vehicle});
 
   @override
+  State<OfficialVehicleDetailPage> createState() =>
+      _OfficialVehicleDetailPageState();
+}
+
+class _OfficialVehicleDetailPageState extends State<OfficialVehicleDetailPage> {
+  bool _savingNick = false;
+
+  OfficialVehicle _resolveVehicle(OfficialCloudState state) {
+    for (final item in state.vehicles) {
+      if (item.key == widget.vehicle.key) return item;
+      if (widget.vehicle.carId.isNotEmpty &&
+          item.carId == widget.vehicle.carId) {
+        return item;
+      }
+    }
+    return widget.vehicle;
+  }
+
+  Future<void> _editCarNickName(OfficialVehicle vehicle) async {
+    if (_savingNick) return;
+    if (vehicle.carId.trim().isEmpty) {
+      AppSnack.error(context, '车辆 ID 无效，无法修改昵称');
+      return;
+    }
+    final controller = TextEditingController(text: vehicle.carNickName);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('编辑车辆昵称'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 24,
+          decoration: const InputDecoration(hintText: '输入车辆昵称'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (!mounted || name == null) return;
+    final nick = name.trim();
+    if (nick.isEmpty) {
+      AppSnack.error(context, '车辆昵称不能为空');
+      return;
+    }
+    if (nick == vehicle.carNickName.trim()) return;
+
+    setState(() => _savingNick = true);
+    try {
+      await officialCloudService.updateCarNickName(
+        carId: vehicle.carId,
+        carNickName: nick,
+      );
+      if (!mounted) return;
+      AppSnack.success(context, '车辆昵称已更新');
+    } catch (e) {
+      if (!mounted) return;
+      AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
+    } finally {
+      if (mounted) setState(() => _savingNick = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
-          children: [
-            AppPageHeader(title: vehicle.displayName),
-            const SizedBox(height: 12),
-            if (vehicle.carPhoto.isNotEmpty)
-              AppCard(
-                padding: EdgeInsets.zero,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadii.lg),
-                  child: Image.network(
-                    vehicle.carPhoto,
-                    height: 160,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox(
-                      height: 120,
-                      child: Center(
-                        child: Icon(
-                          Icons.electric_bike,
-                          size: AppIconSizes.xl,
-                          semanticLabel: '车辆',
+    return StreamBuilder<OfficialCloudState>(
+      stream: officialCloudService.stateStream,
+      initialData: officialCloudService.state,
+      builder: (context, snapshot) {
+        final vehicle = _resolveVehicle(
+          snapshot.data ?? officialCloudService.state,
+        );
+        return Scaffold(
+          backgroundColor: AppColors.pageBg,
+          body: SafeArea(
+            child: ListView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.only(
+                bottom: AppNav.contentBottomPadding,
+              ),
+              children: [
+                AppPageHeader(title: vehicle.displayName),
+                const SizedBox(height: 12),
+                if (vehicle.carPhoto.isNotEmpty)
+                  AppCard(
+                    padding: EdgeInsets.zero,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadii.lg),
+                      child: Image.network(
+                        vehicle.carPhoto,
+                        height: 160,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox(
+                          height: 120,
+                          child: Center(
+                            child: Icon(
+                              Icons.electric_bike,
+                              size: AppIconSizes.xl,
+                              semanticLabel: '车辆',
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
+                const SizedBox(height: 12),
+                AppCard(
+                  child: Column(
+                    children: [
+                      _DetailLine(
+                        '车辆昵称',
+                        vehicle.carNickName,
+                        trailing: _savingNick
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.edit_outlined,
+                                size: AppIconSizes.sm,
+                                color: AppColors.textTertiary,
+                              ),
+                        onTap: _savingNick
+                            ? null
+                            : () => _editCarNickName(vehicle),
+                      ),
+                      _DetailLine('车辆名称', vehicle.carName),
+                      _DetailLine('车架号', vehicle.frame),
+                      _DetailLine(
+                        '官方 IMEI',
+                        SensitiveValueMasker.compact(
+                          vehicle.imei,
+                          emptyValue: '未返回',
+                          trim: false,
+                        ),
+                      ),
+                      _DetailLine(
+                        'GPS IMEI',
+                        SensitiveValueMasker.compact(
+                          vehicle.imeiGps,
+                          emptyValue: '未返回',
+                          trim: false,
+                        ),
+                      ),
+                      _DetailLine(
+                        '命令 IMEI',
+                        SensitiveValueMasker.compact(
+                          vehicle.commandImei,
+                          emptyValue: '未返回',
+                          trim: false,
+                        ),
+                      ),
+                      _DetailLine(
+                        '车型 modelType',
+                        vehicle.modelType?.toString() ?? '未返回',
+                      ),
+                      _DetailLine('在线状态', vehicle.onlineLabel),
+                      _DetailLine('设防状态', vehicle.defenceLabel),
+                      _DetailLine('启动状态', vehicle.powerLabel),
+                      _DetailLine(
+                        '电量',
+                        vehicle.electricQuantity == null
+                            ? '未返回'
+                            : '${vehicle.electricQuantity}%',
+                      ),
+                      _DetailLine(
+                        '电压',
+                        vehicle.voltage == null ? '未返回' : '${vehicle.voltage}V',
+                      ),
+                      _DetailLine(
+                        '里程',
+                        vehicle.mileage == null
+                            ? '未返回'
+                            : '${vehicle.mileage} km',
+                      ),
+                      _DetailLine('经度', vehicle.longitude),
+                      _DetailLine('纬度', vehicle.latitude),
+                    ],
+                  ),
                 ),
-              ),
-            const SizedBox(height: 12),
-            AppCard(
-              child: Column(
-                children: [
-                  _DetailLine('车辆昵称', vehicle.carNickName),
-                  _DetailLine('车辆名称', vehicle.carName),
-                  _DetailLine('车架号', vehicle.frame),
-                  _DetailLine(
-                    '官方 IMEI',
-                    SensitiveValueMasker.compact(
-                      vehicle.imei,
-                      emptyValue: '未返回',
-                      trim: false,
+                const SizedBox(height: 12),
+                AppCard(
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                              OfficialVehicleSelfCheckPage(vehicle: vehicle),
+                        ),
+                      ),
+                      icon: const Icon(Icons.health_and_safety_outlined),
+                      label: const Text('云端自检'),
                     ),
                   ),
-                  _DetailLine(
-                    'GPS IMEI',
-                    SensitiveValueMasker.compact(
-                      vehicle.imeiGps,
-                      emptyValue: '未返回',
-                      trim: false,
-                    ),
-                  ),
-                  _DetailLine(
-                    '命令 IMEI',
-                    SensitiveValueMasker.compact(
-                      vehicle.commandImei,
-                      emptyValue: '未返回',
-                      trim: false,
-                    ),
-                  ),
-                  _DetailLine(
-                    '车型 modelType',
-                    vehicle.modelType?.toString() ?? '未返回',
-                  ),
-                  _DetailLine('在线状态', vehicle.onlineLabel),
-                  _DetailLine('设防状态', vehicle.defenceLabel),
-                  _DetailLine('启动状态', vehicle.powerLabel),
-                  _DetailLine(
-                    '电量',
-                    vehicle.electricQuantity == null
-                        ? '未返回'
-                        : '${vehicle.electricQuantity}%',
-                  ),
-                  _DetailLine(
-                    '电压',
-                    vehicle.voltage == null ? '未返回' : '${vehicle.voltage}V',
-                  ),
-                  _DetailLine(
-                    '里程',
-                    vehicle.mileage == null ? '未返回' : '${vehicle.mileage} km',
-                  ),
-                  _DetailLine('经度', vehicle.longitude),
-                  _DetailLine('纬度', vehicle.latitude),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            AppCard(
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) =>
-                          OfficialVehicleSelfCheckPage(vehicle: vehicle),
-                    ),
-                  ),
-                  icon: const Icon(Icons.health_and_safety_outlined),
-                  label: const Text('云端自检'),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -870,14 +975,16 @@ class _StatusChip extends StatelessWidget {
 class _DetailLine extends StatelessWidget {
   final String label;
   final String value;
+  final Widget? trailing;
+  final VoidCallback? onTap;
 
-  const _DetailLine(this.label, this.value);
+  const _DetailLine(this.label, this.value, {this.trailing, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final text = value.trim();
     final display = text.isEmpty ? '未返回' : text;
-    return Padding(
+    final row = Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -893,8 +1000,15 @@ class _DetailLine extends StatelessWidget {
               style: AppTextStyles.valueText,
             ),
           ),
+          if (trailing != null) ...[const SizedBox(width: 8), trailing!],
         ],
       ),
+    );
+    if (onTap == null) return row;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadii.sm),
+      child: row,
     );
   }
 }

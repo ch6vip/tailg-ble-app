@@ -800,6 +800,70 @@ class OfficialCloudService {
     }
   }
 
+  /// Write vehicle nickname via official `app/car/updateCarInfo`.
+  ///
+  /// Evidence: decompiled `TailgService.updateCarInfo` + garage rename callers
+  /// (`GarageV2ViewModel` / `MyGarageRevisionViewModel`). Body is
+  /// `{ carId, carNickName }`; response is no-data success.
+  Future<void> updateCarNickName({
+    required String carId,
+    required String carNickName,
+  }) async {
+    final token = _state.token;
+    if (token.isEmpty) {
+      throw Exception(OfficialCloudMessages.signInRequired);
+    }
+    final normalizedCarId = carId.trim();
+    final nick = carNickName.trim();
+    if (normalizedCarId.isEmpty) {
+      throw Exception('车辆 ID 无效');
+    }
+    if (nick.isEmpty) {
+      throw Exception('车辆昵称不能为空');
+    }
+
+    try {
+      final response = await _apiClient.request(
+        'app/car/updateCarInfo',
+        method: 'POST',
+        token: token,
+        body: {'carId': normalizedCarId, 'carNickName': nick},
+        retryPolicy: OfficialCloudRetryPolicy.transportOnly,
+      );
+      _ensureSuccess(response.body, fallback: '车辆昵称保存失败');
+      if (!_isCurrentSession(token)) return;
+
+      final vehicles = [
+        for (final vehicle in _state.vehicles)
+          if (vehicle.carId == normalizedCarId)
+            OfficialVehicle.fromJson({...vehicle.toJson(), 'carNickName': nick})
+          else
+            vehicle,
+      ];
+      final selected = _vehicleByKey(vehicles, _state.selectedVehicleKey);
+      await _storage.saveCarControlInfo(selected);
+      _state = _state.copyWith(vehicles: vehicles, error: null);
+      _emit();
+      await _applySelectedVehicleToLocalProfile();
+      _log.operation('官方车辆昵称已更新', detail: normalizedCarId);
+
+      try {
+        await refreshVehicles(silent: true, force: true);
+      } catch (e) {
+        // Keep optimistic local nick if status refresh fails.
+        _log.operation(
+          '官方车辆列表刷新失败（昵称已写回）',
+          detail: OfficialCloudRedactor.errorMessage(e),
+          level: LogLevel.warning,
+        );
+      }
+    } catch (e) {
+      if (!_isCurrentSession(token)) return;
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
+    }
+  }
+
   Future<Map<String, bool>> getMessageControl() async {
     final token = _state.token;
     if (token.isEmpty) return {};

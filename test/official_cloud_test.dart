@@ -1191,6 +1191,76 @@ void main() {
       LogService().clear();
     });
 
+    test('writes car nickname and refreshes vehicle cache', () async {
+      final requestBodies = <String, Map<String, dynamic>?>{};
+      var carStatusCalls = 0;
+      final server = await _startOfficialCloudServer((request) async {
+        final bodyText = await utf8.decoder.bind(request).join();
+        requestBodies[request.uri.path] = bodyText.isEmpty
+            ? null
+            : jsonDecode(bodyText) as Map<String, dynamic>;
+        if (request.uri.path.endsWith('/app/car/updateCarInfo')) {
+          await _writeJsonResponse(request, 200, {
+            'code': '200',
+            'msg': 'success',
+          });
+          return;
+        }
+        if (request.uri.path.endsWith('/app/centralControl/carStatus')) {
+          carStatusCalls += 1;
+          await _writeJsonResponse(request, 200, {
+            'code': '200',
+            'msg': 'success',
+            'data': {
+              'carId': 'nick-car',
+              'carNickName': '新昵称',
+              'carName': '型号车',
+            },
+          });
+          return;
+        }
+        await _writeJsonResponse(request, 404, {'msg': 'unexpected path'});
+      });
+      final service = OfficialCloudService();
+      try {
+        service.resetForTest(
+          apiConfig: OfficialCloudApiConfig(
+            apiBase: server.apiBase,
+            retryBaseDelay: Duration.zero,
+          ),
+        );
+        final vehicle = OfficialVehicle.fromJson({
+          'carId': 'nick-car',
+          'carNickName': '旧昵称',
+          'carName': '型号车',
+        });
+        service.setStateForTest(
+          OfficialCloudState.initial().copyWith(
+            initialized: true,
+            token: 'test-token',
+            vehicles: [vehicle],
+            selectedVehicleKey: vehicle.key,
+          ),
+        );
+
+        await service.updateCarNickName(
+          carId: 'nick-car',
+          carNickName: ' 新昵称 ',
+        );
+
+        expect(requestBodies['/v1/api/app/car/updateCarInfo'], {
+          'carId': 'nick-car',
+          'carNickName': '新昵称',
+        });
+        expect(carStatusCalls, greaterThanOrEqualTo(1));
+        expect(service.state.selectedVehicle?.carNickName, '新昵称');
+        expect(service.state.selectedVehicle?.displayName, '新昵称');
+      } finally {
+        service.resetForTest();
+        await server.close();
+      }
+    });
+
     test('writes fence settings and refreshes the saved state', () async {
       final requestBodies = <String, Map<String, dynamic>?>{};
       final server = await _startOfficialCloudServer((request) async {
