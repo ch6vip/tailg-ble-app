@@ -613,6 +613,13 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 onTap: _openBattery,
               ),
               const SizedBox(height: 12),
+              _LocationCard(
+                title: _locationTitle(location),
+                updated: _locationUpdated(location),
+                walk: _locationWalk(location),
+                onTap: _openLocation,
+              ),
+              const SizedBox(height: 12),
               _ShortcutsRow(
                 armed: isArmed,
                 powered: isPowerOn,
@@ -621,13 +628,6 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 onArm: _sendArmToggle,
                 onSeat: () => _sendCommand(CommandCode.openSeat),
                 onPower: _sendPower,
-              ),
-              const SizedBox(height: 12),
-              _LocationCard(
-                title: _locationTitle(location),
-                updated: _locationUpdated(location),
-                walk: _locationWalk(location),
-                onTap: _openLocation,
               ),
               const SizedBox(height: 12),
               _RecentCommandsCard(commands: _commands),
