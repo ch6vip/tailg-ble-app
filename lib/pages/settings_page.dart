@@ -9,7 +9,6 @@ import 'cloud_token_page.dart';
 import 'diagnostic_page.dart';
 import 'garage_page.dart';
 import 'log_page.dart';
-import 'official_cloud_page.dart';
 import 'vehicle_message_page.dart';
 import 'vehicle_settings_page.dart';
 
@@ -43,20 +42,9 @@ class _SettingsPageState extends State<SettingsPage> {
             const AppSectionLabel('账号与车辆'),
             _group([
               _settingItem(
-                icon: Icons.cloud_outlined,
-                title: '我的车辆',
-                subtitle: '登录账号、车辆列表、远程控车',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const OfficialCloudPage(),
-                  ),
-                ),
-              ),
-              _settingItem(
                 icon: Icons.garage_outlined,
-                title: '车辆管理',
-                subtitle: '我的车辆和默认车辆',
+                title: '我的车辆',
+                subtitle: '账号车辆、默认车辆与同步',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute<void>(builder: (_) => const GaragePage()),

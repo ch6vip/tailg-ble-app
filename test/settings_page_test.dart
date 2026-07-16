@@ -83,7 +83,7 @@ void main() {
       await tester.pumpWidget(const TestApp(home: SettingsPage()));
       await tester.pump();
 
-      const myVehiclesLabel = '我的车辆，登录账号、车辆列表、远程控车';
+      const myVehiclesLabel = '我的车辆，账号车辆、默认车辆与同步';
       final myVehiclesRow = find.bySemanticsLabel(myVehiclesLabel);
       expect(myVehiclesRow, findsOneWidget);
       expectMinTouchTargetHeight(tester, myVehiclesRow);
