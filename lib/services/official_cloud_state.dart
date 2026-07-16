@@ -84,6 +84,9 @@ class OfficialCloudState {
   final Map<String, List<OfficialTravelPoint>> travelDetails;
   final bool travelDetailLoading;
   final String? travelDetailError;
+
+  /// Official control-home "今日骑行" mileage from `app/carTravel/records`.
+  final String todayRideMileage;
   final List<OfficialCloudMessage> vehicleMessages;
   final List<OfficialCloudMessage> systemMessages;
   final bool messagesLoading;
@@ -116,6 +119,7 @@ class OfficialCloudState {
     required this.travelDetails,
     required this.travelDetailLoading,
     required this.travelDetailError,
+    required this.todayRideMileage,
     required this.vehicleMessages,
     required this.systemMessages,
     required this.messagesLoading,
@@ -149,6 +153,7 @@ class OfficialCloudState {
     travelDetails: {},
     travelDetailLoading: false,
     travelDetailError: null,
+    todayRideMileage: '',
     vehicleMessages: [],
     systemMessages: [],
     messagesLoading: false,
@@ -197,6 +202,7 @@ class OfficialCloudState {
     Map<String, List<OfficialTravelPoint>>? travelDetails,
     bool? travelDetailLoading,
     Object? travelDetailError = _sentinel,
+    String? todayRideMileage,
     List<OfficialCloudMessage>? vehicleMessages,
     List<OfficialCloudMessage>? systemMessages,
     bool? messagesLoading,
@@ -250,6 +256,7 @@ class OfficialCloudState {
       travelDetailError: identical(travelDetailError, _sentinel)
           ? this.travelDetailError
           : travelDetailError as String?,
+      todayRideMileage: todayRideMileage ?? this.todayRideMileage,
       vehicleMessages: vehicleMessages ?? this.vehicleMessages,
       systemMessages: systemMessages ?? this.systemMessages,
       messagesLoading: messagesLoading ?? this.messagesLoading,

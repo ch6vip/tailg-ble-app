@@ -115,6 +115,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
         ),
         officialCloudService.refreshBatteryInfo(force: true, silent: true),
         officialCloudService.refreshVehicleLocation(force: true, silent: true),
+        officialCloudService.refreshTodayRideMileage(force: true, silent: true),
       ]);
     } catch (e) {
       logService.operation(
@@ -431,6 +432,15 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   }
 
   String _todayRideLabel(OfficialCloudState cloudState) {
+    // Official control home uses app/carTravel/records → todayRideMileage.
+    final direct = cloudState.todayRideMileage.trim();
+    if (direct.isNotEmpty) {
+      final cleaned = direct.replaceAll(RegExp(r'[^\d.]'), '');
+      final parsed = double.tryParse(cleaned);
+      if (parsed != null) return '${formatCompactDecimal(parsed)} km';
+      return direct.toLowerCase().contains('km') ? direct : '$direct km';
+    }
+    // Fallback if monthly travel history already loaded for today.
     final todayKey = formatDateText(DateTime.now());
     for (final day in cloudState.travelDays) {
       if (normalizeOfficialDateKey(day.travelDate) != todayKey) continue;

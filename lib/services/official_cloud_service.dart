@@ -290,6 +290,7 @@ class OfficialCloudService {
       travelDetails: const {},
       travelDetailLoading: false,
       travelDetailError: null,
+      todayRideMileage: '',
       vehicleMessages: [],
       systemMessages: [],
       messagesLoading: false,
@@ -1085,6 +1086,72 @@ class OfficialCloudService {
     }
   }
 
+  /// Official control-home "今日骑行" (`POST app/carTravel/records`).
+  ///
+  /// Decompiled [HomeViewModel.deviceTravel] actually calls carTravelRecords
+  /// with `{frame, uid}` and stores the returned mileage string.
+  Future<void> refreshTodayRideMileage({
+    bool silent = false,
+    bool force = false,
+  }) async {
+    final token = _state.token;
+    final vehicle = _state.selectedVehicle;
+    final userId = _state.userId.trim();
+    final frame = vehicle?.frame.trim() ?? '';
+    if (token.isEmpty || vehicle == null || frame.isEmpty || userId.isEmpty) {
+      if (_state.todayRideMileage.isNotEmpty) {
+        _state = _state.copyWith(todayRideMileage: '');
+        _emit();
+      }
+      return;
+    }
+    final refreshKey = 'todayRide:${vehicle.key}';
+    await _coalesceRefresh(
+      refreshKey: refreshKey,
+      silent: silent,
+      force: force,
+      run: () => _refreshTodayRideMileageNow(
+        refreshKey: refreshKey,
+        vehicle: vehicle,
+        userId: userId,
+        token: token,
+      ),
+    );
+  }
+
+  Future<void> _refreshTodayRideMileageNow({
+    required String refreshKey,
+    required OfficialVehicle vehicle,
+    required String userId,
+    required String token,
+  }) async {
+    try {
+      final response = await _apiClient.request(
+        'app/carTravel/records',
+        method: 'POST',
+        token: token,
+        body: {'frame': vehicle.frame.trim(), 'uid': userId},
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
+      );
+      _ensureSuccess(response.body, fallback: '获取今日骑行失败');
+      if (!_isCurrentSession(token)) return;
+      final data = response.body['data'];
+      final raw = data == null ? '' : data.toString().trim();
+      _state = _state.copyWith(todayRideMileage: raw);
+      _emit();
+      _log.operation('官方今日骑行已刷新', detail: raw.isEmpty ? 'empty' : 'value=$raw');
+      _markRefreshSuccess(refreshKey);
+    } catch (e) {
+      if (!_isCurrentSession(token)) return;
+      await _handleAuthFailureIfNeeded(e);
+      _log.operation(
+        '官方今日骑行刷新失败',
+        detail: OfficialCloudRedactor.errorMessage(e),
+        level: LogLevel.warning,
+      );
+    }
+  }
+
   Future<void> refreshTravelHistory({
     String? month,
     bool silent = false,
@@ -1420,6 +1487,10 @@ class OfficialCloudService {
     _runSilentRefresh(
       refreshBatteryInfo(silent: true),
       failureMessage: '官方电池信息静默刷新失败',
+    );
+    _runSilentRefresh(
+      refreshTodayRideMileage(silent: true),
+      failureMessage: '官方今日骑行静默刷新失败',
     );
     if (!refreshReplicaDetails) return;
     _runSilentRefresh(
