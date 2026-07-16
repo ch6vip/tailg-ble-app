@@ -26,6 +26,10 @@ part 'profile_page_settings.dart';
 const _mineCardRadius = 10.0;
 
 /// Official-style "我的" page.
+///
+/// Kept as an **official-replica reference** (and unit-test surface) after the
+/// shell switched to Aurora [ProfileMinePage]. Do not wire this back into
+/// [HomePage] IndexedStack without an explicit product decision.
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});

@@ -86,7 +86,9 @@ class _ProfileMinePageState extends State<ProfileMinePage>
   String get _nickname {
     final signedIn = officialCloudService.state.signedIn;
     if (!signedIn) return '立即登录';
-    return '极光车主';
+    // Official app uses UserInfoBean.nickName from app/getUserProfile.
+    // Until that profile fetch is wired, match ProfilePage fallback.
+    return '台铃用户';
   }
 
   String get _avatarGlyph {
@@ -212,6 +214,8 @@ class _ProfileMinePageState extends State<ProfileMinePage>
   }
 
   void _openHelp() {
+    // Official mine routes problem/feedback via customer-menu H5
+    // (`problemService` dict). No native page yet.
     AppSnack.featureUnavailable(context, '帮助与反馈');
   }
 
@@ -228,7 +232,14 @@ class _ProfileMinePageState extends State<ProfileMinePage>
       _openLogin();
       return;
     }
+    // Official app has no in-place phone change on mine; phone is login identity.
     AppSnack.featureUnavailable(context, '更换手机号');
+  }
+
+  void _onPointsTap() {
+    // Decompiled: myPointsCustomer is a menu flag/H5 URL, not a points balance.
+    // Official mine shows static「我的积分 / 赚更多积分」entry — no numeric balance.
+    AppSnack.featureUnavailable(context, '我的积分');
   }
 
   Future<void> _confirmLogout() async {
@@ -282,10 +293,13 @@ class _ProfileMinePageState extends State<ProfileMinePage>
               avatarGlyph: _avatarGlyph,
               nickname: _nickname,
               phoneLine: _maskedPhone,
-              memberLabel: signedIn ? '会员 Lv.3' : '游客',
-              points: signedIn ? 1280 : 0,
+              // Decompiled UserInfoBean has no member level; show login state only.
+              memberLabel: signedIn ? '已登录' : '游客',
+              // No points balance in official API; hide fake numbers.
+              showPointsEntry: signedIn,
               onAvatarTap: _onAvatarOrEdit,
               onEditTap: _onAvatarOrEdit,
+              onPointsTap: _onPointsTap,
             ),
 
             // ── Default vehicle ─────────────────────────────────────────
@@ -382,18 +396,20 @@ class _ProfileHeader extends StatelessWidget {
     required this.nickname,
     required this.phoneLine,
     required this.memberLabel,
-    required this.points,
+    required this.showPointsEntry,
     required this.onAvatarTap,
     required this.onEditTap,
+    required this.onPointsTap,
   });
 
   final String avatarGlyph;
   final String nickname;
   final String phoneLine;
   final String memberLabel;
-  final int points;
+  final bool showPointsEntry;
   final VoidCallback onAvatarTap;
   final VoidCallback onEditTap;
+  final VoidCallback onPointsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -473,27 +489,23 @@ class _ProfileHeader extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Text.rich(
-                      TextSpan(
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: _Aurora.fgSecondary,
-                        ),
-                        children: [
-                          const TextSpan(text: '积分'),
-                          TextSpan(
-                            text: ' $points',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: _Aurora.fg,
-                              fontFeatures: _Aurora.tabularNums,
-                            ),
+                    if (showPointsEntry) ...[
+                      const SizedBox(width: 10),
+                      AppPressable(
+                        onTap: onPointsTap,
+                        pressedScale: AppMotion.pressScale,
+                        semanticsLabel: '我的积分',
+                        semanticsButton: true,
+                        child: const Text(
+                          '我的积分',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _Aurora.fgSecondary,
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ],

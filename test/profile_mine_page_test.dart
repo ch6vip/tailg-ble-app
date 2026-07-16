@@ -92,12 +92,16 @@ void main() {
       await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
       await tester.pump();
 
-      expect(find.text('极光车主'), findsOneWidget);
+      expect(find.text('台铃用户'), findsOneWidget);
       expect(find.text('138****6688'), findsAtLeastNWidgets(1));
       expect(find.text('极光 Aurora S'), findsOneWidget);
       expect(find.text('在线'), findsOneWidget);
       expect(find.text('73%'), findsOneWidget);
-      expect(find.text('会员 Lv.3'), findsOneWidget);
+      expect(find.text('已登录'), findsOneWidget);
+      expect(find.text('我的积分'), findsOneWidget);
+      // No fabricated member level / points balance.
+      expect(find.text('会员 Lv.3'), findsNothing);
+      expect(find.text('1280'), findsNothing);
       expect(find.text('退出登录'), findsOneWidget);
 
       tester.semantics.tap(find.semantics.byLabel('退出登录'));
