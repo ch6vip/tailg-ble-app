@@ -9,9 +9,9 @@ import 'services/message_read_store.dart';
 import 'services/vehicle_store.dart';
 import 'services/service_locator.dart';
 import 'services/app_preferences_service.dart';
-import 'pages/control_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/service_hub_page.dart';
+import 'pages/vehicle_control_home_page.dart';
 import 'theme/app_colors.dart';
 import 'widgets/app_toast.dart';
 
@@ -517,7 +517,9 @@ class _HomePageState extends State<HomePage>
               ),
               TickerMode(
                 enabled: _currentIndex == _vehicleTabIndex,
-                child: const ControlPage(),
+                // Aurora 控车主页（Open Design vehicle-control-home）；
+                // 旧官方复刻 ControlPage 仍保留在 pages/ 供对照或回退。
+                child: const VehicleControlHomePage(),
               ),
               TickerMode(
                 enabled: _currentIndex == _mineTabIndex,
