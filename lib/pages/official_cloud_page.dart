@@ -149,8 +149,6 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
                   )
                 else ...[
                   _VehicleListCard(state: state),
-                  const SizedBox(height: 14),
-                  _SessionCard(state: state),
                 ],
                 if (error != null) ...[
                   const SizedBox(height: 14),
@@ -352,69 +350,6 @@ class _LoginCardState extends State<_LoginCard> {
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-    );
-  }
-}
-
-class _SessionCard extends StatelessWidget {
-  final OfficialCloudState state;
-
-  const _SessionCard({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AppColors.success.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.verified_user_outlined,
-              color: AppColors.success,
-              size: AppIconSizes.md,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('账号已登录', style: AppTextStyles.itemTitle),
-                const SizedBox(height: 2),
-                Text(
-                  state.phone.isEmpty
-                      ? '手机号已脱敏保存'
-                      : SensitiveValueMasker.phone(
-                          state.phone,
-                          shortValue: '已登录',
-                        ),
-                  style: AppTextStyles.smallText,
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              await officialCloudService.logout();
-              AppNavigation.focusVehicleTabAfterSignOut();
-            },
-            child: const Text('退出'),
-          ),
-          IconButton(
-            tooltip: 'Token',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(builder: (_) => const CloudTokenPage()),
-            ),
-            icon: const Icon(Icons.key_outlined, size: AppIconSizes.md),
-          ),
-        ],
-      ),
     );
   }
 }

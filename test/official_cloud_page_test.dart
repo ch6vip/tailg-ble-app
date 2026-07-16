@@ -145,7 +145,11 @@ void main() {
 
     expect(find.text('我的车辆'), findsOneWidget);
     expect(find.text('测试车辆'), findsOneWidget);
-    expect(find.text('账号已登录'), findsOneWidget);
+    // Session/account chrome lives on Aurora mine page; this page is list+refresh.
+    expect(find.text('账号已登录'), findsNothing);
+    expect(find.text('手机号已脱敏保存'), findsNothing);
+    expect(find.text('退出'), findsNothing);
+    expect(find.byTooltip('刷新车辆'), findsOneWidget);
     expect(find.textContaining('登录后会同步账号下已绑定车辆'), findsOneWidget);
     expect(find.text('官方账号已登录'), findsNothing);
     expect(find.text('官方账号模式只使用'), findsNothing);
