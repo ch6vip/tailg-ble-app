@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart';
-import 'package:tailg_ble_app/pages/login_page.dart';
+import 'package:tailg_ble_app/pages/vehicle_control_home_page.dart';
 
 import 'helpers/view_size.dart';
 
@@ -15,8 +15,11 @@ void main() {
     try {
       await tester.pumpWidget(const TailgBleApp());
       await tester.pump(); // Allow combined stream initial emission
-      // No token + no local vehicle → needLogin → LoginPage shown directly.
-      expect(find.byType(LoginPage), findsOneWidget);
+      // No token + no local vehicle → Aurora home with sign-in gate banner.
+      // Gate title + status line both use OfficialCloudMessages.signInRequired.
+      expect(find.byType(VehicleControlHomePage), findsOneWidget);
+      expect(find.text('请先登录官方账号'), findsAtLeastNWidgets(1));
+      expect(find.text('去登录'), findsOneWidget);
       expect(find.text('爱车'), findsOneWidget);
       expect(find.text('服务'), findsOneWidget);
       expect(find.text('我的'), findsOneWidget);
@@ -115,7 +118,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(LoginPage), findsOneWidget);
+      expect(find.byType(VehicleControlHomePage), findsOneWidget);
+      expect(find.text('请先登录官方账号'), findsAtLeastNWidgets(1));
+      expect(find.text('去登录'), findsOneWidget);
     } finally {
       semantics.dispose();
     }

@@ -676,7 +676,7 @@ class _GateBanner extends StatelessWidget {
           ),
           AppPressable(
             onTap: onAction,
-            pressedScale: 0.96,
+            pressedScale: AppMotion.pressScale,
             semanticsLabel: actionLabel,
             semanticsButton: true,
             child: Container(
@@ -757,7 +757,7 @@ class _TopBar extends StatelessWidget {
           Expanded(
             child: AppPressable(
               onTap: onTitleTap,
-              pressedScale: 0.98,
+              pressedScale: AppMotion.pressScale,
               semanticsLabel: '切换车辆 $vehicleName',
               semanticsButton: true,
               child: Column(
@@ -861,7 +861,7 @@ class _IconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppPressable(
       onTap: onTap,
-      pressedScale: 0.94,
+      pressedScale: AppMotion.pressScale,
       semanticsLabel: semanticsLabel,
       semanticsButton: true,
       child: Container(
@@ -908,7 +908,7 @@ class _BatteryHeroCard extends StatelessWidget {
       padding: _Aurora.cardMargin,
       child: AppPressable(
         onTap: onTap,
-        pressedScale: 0.99,
+        pressedScale: AppMotion.pressScale,
         borderRadius: BorderRadius.circular(_Aurora.cardRadius),
         background: _Aurora.surface,
         boxShadow: _Aurora.cardShadow,
@@ -1261,7 +1261,7 @@ class _Shortcut extends StatelessWidget {
     return AppPressable(
       enabled: enabled,
       onTap: enabled ? onTap : null,
-      pressedScale: 0.95,
+      pressedScale: AppMotion.pressScale,
       semanticsLabel: '$label，$sub',
       semanticsButton: true,
       semanticsEnabled: enabled,
@@ -1329,7 +1329,7 @@ class _LocationCard extends StatelessWidget {
       padding: _Aurora.cardMargin,
       child: AppPressable(
         onTap: onTap,
-        pressedScale: 0.98,
+        pressedScale: AppMotion.pressScale,
         borderRadius: BorderRadius.circular(_Aurora.cardRadius),
         background: _Aurora.surface,
         boxShadow: _Aurora.cardShadow,
