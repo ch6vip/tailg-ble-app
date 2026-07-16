@@ -99,10 +99,7 @@ class LogService {
 
   /// Redacts sensitive login payloads before they hit the in-memory log
   /// ring buffer (P2-4).
-  static final RegExp _loginHint = RegExp(
-    r'(登录|login)',
-    caseSensitive: false,
-  );
+  static final RegExp _loginHint = RegExp(r'(登录|login)', caseSensitive: false);
   String? _redactDetail(String message, String? detail) {
     if (detail == null) return null;
     if (!_loginHint.hasMatch(message)) return _redactSensitiveText(detail);
