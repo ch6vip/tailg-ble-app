@@ -33,8 +33,8 @@
 
 - Control home (爱车 Tab): `VehicleControlHomePage` — Aurora layout (battery ring, location card, equal-weight shortcuts: find / arm / seat / power, recent commands). Open Design source: `vehicle-control-home`.
 - Vehicle illustration: `VehicleStagePainter` remains a native canvas implementation for garage/profile; do not reintroduce external SVG/HTML dependencies.
-- Service hub: `ServiceHubPage` owns location / travel / fence / settings grid entries.
-- Profile page: `ProfilePage` follows the current app chrome and account/status card structure.
+- Service hub: `ServiceHubPage` — sectioned IA (定位服务 / 车辆与能耗 glyph rows + 更多 list); not a single equal-weight launcher card.
+- Profile mine: `ProfileMinePage` — vehicle card as primary elevation surface; account/support list (设置 / 消息 / 帮助 / 关于). Vehicle tools live on the service hub.
 
 ## Historical Notes
 

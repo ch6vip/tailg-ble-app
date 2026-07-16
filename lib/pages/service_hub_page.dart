@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
+import '../widgets/app_chrome.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/cloud_vehicle_gate.dart';
@@ -14,12 +16,13 @@ import 'vehicle_settings_page.dart';
 
 /// 服务中心 · Tailg Aurora
 ///
-/// 布局对齐控车 / 我的页的 Aurora Cockpit 语言：
-/// - 页面灰底 + 白卡片 elevation
-/// - 圆形 soft glyph 网格
-/// - AppPressable 按压反馈
+/// 信息架构（避免一张「大白卡」塞满等权入口）：
+/// - 定位服务：定位 / 轨迹 / 围栏（核心车务，三列轻网格）
+/// - 车辆与能耗：设置 / 电池 / 骑行统计
+/// - 更多：一级只露「更多服务」；故障诊断 / 官方账号 / 售后 为二级入口
 ///
-/// 入口与权限门槛仍走 [openCloudGatedPage]。
+/// 视觉对齐设置页：section label 在卡外，内容用 elevation 白卡。
+/// 入口权限门槛仍走 [openCloudGatedPage]。
 class ServiceHubPage extends StatelessWidget {
   const ServiceHubPage({super.key});
 
@@ -51,7 +54,7 @@ class ServiceHubPage extends StatelessWidget {
               ),
             ),
             const Padding(
-              padding: EdgeInsets.fromLTRB(20, 4, 20, 12),
+              padding: EdgeInsets.fromLTRB(20, 4, 20, 4),
               child: Text(
                 '定位、轨迹、车辆设置和维护服务',
                 style: TextStyle(
@@ -62,114 +65,84 @@ class ServiceHubPage extends StatelessWidget {
               ),
             ),
 
-            // ── 常用服务 ────────────────────────────────────────────────
-            _ServiceCard(
-              title: '常用服务',
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final columns = constraints.maxWidth < 330 ? 3 : 4;
-                  final items = <_ServiceItem>[
-                    _ServiceItem(
-                      icon: Icons.location_on_outlined,
-                      label: '车辆定位',
-                      color: AppColors.accentSky,
-                      onTap: () => openCloudGatedPage(
-                        context,
-                        const LocationPage(initialTab: LocationInitialTab.map),
-                      ),
-                    ),
-                    _ServiceItem(
-                      icon: Icons.route_outlined,
-                      label: '历史轨迹',
-                      color: AppColors.accentViolet,
-                      onTap: () => openCloudGatedPage(
-                        context,
-                        const LocationPage(
-                          initialTab: LocationInitialTab.travel,
-                        ),
-                      ),
-                    ),
-                    _ServiceItem(
-                      icon: Icons.fence_outlined,
-                      label: '电子围栏',
-                      color: AppColors.accentAmber,
-                      onTap: () => openCloudGatedPage(
-                        context,
-                        const LocationPage(
-                          initialTab: LocationInitialTab.fence,
-                        ),
-                      ),
-                    ),
-                    _ServiceItem(
-                      icon: Icons.tune_rounded,
-                      label: '车辆设置',
-                      color: AppColors.inkBtn,
-                      onTap: () => openCloudGatedPage(
-                        context,
-                        const VehicleSettingsPage(),
-                      ),
-                    ),
-                    _ServiceItem(
-                      icon: Icons.battery_charging_full_rounded,
-                      label: '电池服务',
-                      color: AppColors.energyGreen,
-                      onTap: () => openCloudGatedPage(
-                        context,
-                        const BatteryDetailsPage(),
-                      ),
-                    ),
-                    _ServiceItem(
-                      icon: Icons.bar_chart_rounded,
-                      label: '骑行统计',
-                      color: AppColors.accentPurple,
-                      onTap: () =>
-                          openCloudGatedPage(context, const RideStatsPage()),
-                    ),
-                    _ServiceItem(
-                      icon: Icons.health_and_safety_outlined,
-                      label: '故障诊断',
-                      color: AppColors.energyRed,
-                      onTap: () =>
-                          openCloudGatedPage(context, const DiagnosticPage()),
-                    ),
-                    _ServiceItem(
-                      icon: Icons.cloud_outlined,
-                      label: '官方账号',
-                      color: AppColors.primaryDark,
-                      onTap: () => openCloudGatedPage(
-                        context,
-                        const OfficialCloudPage(),
-                        requireVehicle: false,
-                      ),
-                    ),
-                  ];
-
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: items.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: columns,
-                      mainAxisSpacing: 4,
-                      crossAxisSpacing: 4,
-                      mainAxisExtent: 96,
-                    ),
-                    itemBuilder: (context, index) {
-                      return _ServiceGridTile(item: items[index]);
-                    },
-                  );
-                },
-              ),
+            // ── 定位服务（核心三入口） ──────────────────────────────────────
+            const AppSectionLabel('定位服务'),
+            _GlyphSection(
+              items: [
+                _GlyphItem(
+                  icon: Icons.location_on_outlined,
+                  label: '车辆定位',
+                  onTap: () => openCloudGatedPage(
+                    context,
+                    const LocationPage(initialTab: LocationInitialTab.map),
+                  ),
+                ),
+                _GlyphItem(
+                  icon: Icons.route_outlined,
+                  label: '历史轨迹',
+                  onTap: () => openCloudGatedPage(
+                    context,
+                    const LocationPage(initialTab: LocationInitialTab.travel),
+                  ),
+                ),
+                _GlyphItem(
+                  icon: Icons.fence_outlined,
+                  label: '电子围栏',
+                  onTap: () => openCloudGatedPage(
+                    context,
+                    const LocationPage(initialTab: LocationInitialTab.fence),
+                  ),
+                ),
+              ],
             ),
 
-            // ── 车辆维护 ────────────────────────────────────────────────
-            _ServiceCard(
-              title: '车辆维护',
+            // ── 车辆与能耗 ────────────────────────────────────────────────
+            const AppSectionLabel('车辆与能耗'),
+            _GlyphSection(
+              items: [
+                _GlyphItem(
+                  icon: Icons.tune_rounded,
+                  label: '车辆设置',
+                  onTap: () => openCloudGatedPage(
+                    context,
+                    const VehicleSettingsPage(),
+                  ),
+                ),
+                _GlyphItem(
+                  icon: Icons.battery_charging_full_rounded,
+                  label: '电池服务',
+                  onTap: () => openCloudGatedPage(
+                    context,
+                    const BatteryDetailsPage(),
+                  ),
+                ),
+                _GlyphItem(
+                  icon: Icons.bar_chart_rounded,
+                  label: '骑行统计',
+                  onTap: () =>
+                      openCloudGatedPage(context, const RideStatsPage()),
+                ),
+              ],
+            ),
+
+            // ── 更多：一级入口 → 二级页 ─────────────────────────────────────
+            const AppSectionLabel('更多'),
+            AppCard(
+              margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              padding: const EdgeInsets.symmetric(vertical: 4),
               child: _ServiceListTile(
-                icon: Icons.support_agent_outlined,
-                title: '售后服务',
-                subtitle: '保养、维修和官方服务渠道',
-                onTap: () => AppSnack.notYetOpen(context, '售后服务'),
+                icon: Icons.apps_outlined,
+                title: '更多服务',
+                subtitle: '故障诊断、官方账号、售后服务',
+                onTap: () {
+                  unawaited(
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const _MoreServicesPage(),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -180,66 +153,113 @@ class ServiceHubPage extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Card shell
+// Secondary entries (二级入口) — revealed only after tapping「更多服务」
 // ═══════════════════════════════════════════════════════════════════════════
-class _ServiceCard extends StatelessWidget {
-  const _ServiceCard({required this.title, required this.child});
+class _MoreServicesPage extends StatelessWidget {
+  const _MoreServicesPage();
 
-  final String title;
-  final Widget child;
+  static const _pageBg = Color(0xFFF5F6F8);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        boxShadow: AppShadows.elevation1,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.1,
-                color: AppColors.textPrimary,
+    return Scaffold(
+      backgroundColor: _pageBg,
+      body: SafeArea(
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            const AppPageHeader(title: '更多服务'),
+            const SizedBox(height: 8),
+            AppCard(
+              margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Column(
+                children: [
+                  _ServiceListTile(
+                    icon: Icons.health_and_safety_outlined,
+                    title: '故障诊断',
+                    subtitle: '车辆健康与异常排查',
+                    onTap: () =>
+                        openCloudGatedPage(context, const DiagnosticPage()),
+                  ),
+                  const Divider(
+                    height: 1,
+                    thickness: 1,
+                    indent: 60,
+                    color: AppColors.hairline,
+                  ),
+                  _ServiceListTile(
+                    icon: Icons.cloud_outlined,
+                    title: '官方账号',
+                    subtitle: '云端登录与账号同步',
+                    onTap: () => openCloudGatedPage(
+                      context,
+                      const OfficialCloudPage(),
+                      requireVehicle: false,
+                    ),
+                  ),
+                  const Divider(
+                    height: 1,
+                    thickness: 1,
+                    indent: 60,
+                    color: AppColors.hairline,
+                  ),
+                  _ServiceListTile(
+                    icon: Icons.support_agent_outlined,
+                    title: '售后服务',
+                    subtitle: '保养、维修和官方服务渠道',
+                    onTap: () => AppSnack.notYetOpen(context, '售后服务'),
+                  ),
+                ],
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
-            child: child,
-          ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Glyph section (3 equal items, quiet mono soft circles)
+// ═══════════════════════════════════════════════════════════════════════════
+class _GlyphSection extends StatelessWidget {
+  const _GlyphSection({required this.items});
+
+  final List<_GlyphItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      margin: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
+      child: Row(
+        children: [
+          for (final item in items)
+            Expanded(child: _GlyphTile(item: item)),
         ],
       ),
     );
   }
 }
 
-class _ServiceItem {
-  const _ServiceItem({
+class _GlyphItem {
+  const _GlyphItem({
     required this.icon,
     required this.label,
-    required this.color,
     required this.onTap,
   });
 
   final IconData icon;
   final String label;
-  final Color color;
   final VoidCallback onTap;
 }
 
-class _ServiceGridTile extends StatelessWidget {
-  const _ServiceGridTile({required this.item});
+class _GlyphTile extends StatelessWidget {
+  const _GlyphTile({required this.item});
 
-  final _ServiceItem item;
+  final _GlyphItem item;
 
   @override
   Widget build(BuildContext context) {
@@ -250,33 +270,40 @@ class _ServiceGridTile extends StatelessWidget {
       pressedBackground: const Color(0x080F1620),
       semanticsLabel: item.label,
       semanticsButton: true,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: item.color.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
+      child: SizedBox(
+        height: 86,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: const BoxDecoration(
+                color: AppColors.surfaceContainerHigh,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                item.icon,
+                color: AppColors.textSecondary,
+                size: AppIconSizes.lg,
+              ),
             ),
-            child: Icon(item.icon, color: item.color, size: AppIconSizes.md),
-          ),
-          const SizedBox(height: 9),
-          Text(
-            item.label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-              letterSpacing: 0.1,
-              height: 1.2,
+            const SizedBox(height: 8),
+            Text(
+              item.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+                letterSpacing: 0.1,
+                height: 1.2,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -38,13 +38,15 @@ void main() {
 
       expect(find.text('立即登录'), findsOneWidget);
       expect(find.text('登录后同步车辆和消息'), findsOneWidget);
-      expect(find.text('工具与服务'), findsOneWidget);
+      expect(find.text('账户与支持'), findsOneWidget);
       expect(find.text('设置'), findsOneWidget);
       expect(find.text('消息中心'), findsOneWidget);
-      expect(find.text('骑行统计'), findsOneWidget);
-      expect(find.text('诊断报告'), findsOneWidget);
       expect(find.text('帮助与反馈'), findsOneWidget);
       expect(find.text('关于我们'), findsOneWidget);
+      // Vehicle tools live on the service hub, not as equal mine grid tiles.
+      expect(find.text('骑行统计'), findsNothing);
+      expect(find.text('诊断报告'), findsNothing);
+      expect(find.text('工具与服务'), findsNothing);
       expect(find.text('手机号'), findsOneWidget);
       expect(find.text('Tailg Cloud 1.0.0'), findsOneWidget);
       expect(find.text('退出登录'), findsNothing);

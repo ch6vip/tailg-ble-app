@@ -14,24 +14,23 @@ import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
-import '../widgets/cloud_vehicle_gate.dart';
 import '../widgets/vehicle_switch_sheet.dart';
 import 'app_preferences_pages.dart';
-import 'diagnostic_page.dart';
 import 'garage_page.dart';
 import 'login_page.dart';
-import 'ride_stats_page.dart';
 import 'settings_page.dart';
 import 'vehicle_message_page.dart';
 
 /// 我的 · Tailg Aurora (Open Design `profile-mine`)
 ///
-/// 布局对齐 HTML / 设计稿：
+/// 布局：
 /// - 扁平资料头（无卡片外壳）
-/// - 默认车辆卡片 + 切换
-/// - 「工具与服务」2×3 功能网格
+/// - 默认车辆卡片 + 切换（页内主 elevation 卡）
+/// - 「账户与支持」列表（设置 / 消息 / 帮助 / 关于），与手机号卡同行几何对齐
 /// - 账户行（手机号 / 退出登录）
 /// - 版本脚注
+///
+/// 车务能力（骑行统计、诊断等）主入口在服务中心，本页不再等权九宫格重复。
 ///
 /// 作为「我的」Tab 内容页使用时，底栏由 shell（`main.dart`）提供，
 /// 本页不再自带 TabBar。也可在预览场景下设置 [showBottomNav] = true。
@@ -273,14 +272,6 @@ class _ProfileMinePageState extends State<ProfileMinePage>
     );
   }
 
-  void _openRideStats() {
-    openCloudGatedPage(context, const RideStatsPage());
-  }
-
-  void _openDiagnostic() {
-    openCloudGatedPage(context, const DiagnosticPage());
-  }
-
   void _openHelp() {
     // Official mine routes problem/feedback via customer-menu H5
     // (`problemService` dict). No native page yet.
@@ -380,16 +371,26 @@ class _ProfileMinePageState extends State<ProfileMinePage>
               onTap: _onVehicleCard,
             ),
 
-            // ── Tools grid ──────────────────────────────────────────────
+            // ── Account & support (list, not equal-weight grid) ────────
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 18, 20, 0),
+              child: Text(
+                '账户与支持',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                  color: Color(0xFF8A8A8A),
+                ),
+              ),
+            ),
             ValueListenableBuilder<int>(
               valueListenable: messageReadStore.unreadCount,
               builder: (context, unread, _) {
-                return _ToolsCard(
+                return _SupportCard(
                   messageBadge: signedIn && unread > 0 ? unread : null,
                   onSettings: _openSettings,
                   onMessages: _openMessages,
-                  onStats: _openRideStats,
-                  onDiag: _openDiagnostic,
                   onHelp: _openHelp,
                   onAbout: _openAbout,
                 );
@@ -766,15 +767,14 @@ class _VehicleCard extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Tools & services (2 rows × 3 cols GridView)
+// Account & support — same row geometry as phone/logout card (no lead icons)
+// so title / chevron columns align across both list cards.
 // ═══════════════════════════════════════════════════════════════════════════
-class _ToolsCard extends StatelessWidget {
-  const _ToolsCard({
+class _SupportCard extends StatelessWidget {
+  const _SupportCard({
     required this.messageBadge,
     required this.onSettings,
     required this.onMessages,
-    required this.onStats,
-    required this.onDiag,
     required this.onHelp,
     required this.onAbout,
   });
@@ -782,37 +782,20 @@ class _ToolsCard extends StatelessWidget {
   final int? messageBadge;
   final VoidCallback onSettings;
   final VoidCallback onMessages;
-  final VoidCallback onStats;
-  final VoidCallback onDiag;
   final VoidCallback onHelp;
   final VoidCallback onAbout;
 
   @override
   Widget build(BuildContext context) {
-    final items = <_FuncItemData>[
-      _FuncItemData(
-        icon: Icons.settings_outlined,
-        label: '设置',
-        onTap: onSettings,
-      ),
-      _FuncItemData(
-        icon: Icons.mail_outline,
-        label: '消息中心',
+    final rows = <_SupportRowData>[
+      _SupportRowData(title: '设置', onTap: onSettings),
+      _SupportRowData(
+        title: '消息中心',
         badge: messageBadge,
         onTap: onMessages,
       ),
-      _FuncItemData(
-        icon: Icons.bar_chart_rounded,
-        label: '骑行统计',
-        onTap: onStats,
-      ),
-      _FuncItemData(
-        icon: Icons.task_alt_outlined,
-        label: '诊断报告',
-        onTap: onDiag,
-      ),
-      _FuncItemData(icon: Icons.help_outline, label: '帮助与反馈', onTap: onHelp),
-      _FuncItemData(icon: Icons.info_outline, label: '关于我们', onTap: onAbout),
+      _SupportRowData(title: '帮助与反馈', onTap: onHelp),
+      _SupportRowData(title: '关于我们', onTap: onAbout),
     ];
 
     return Container(
@@ -822,63 +805,37 @@ class _ToolsCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(_Aurora.cardRadius),
         boxShadow: _Aurora.cardShadow,
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 14, 16, 2),
-            child: Text(
-              '工具与服务',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.1,
-                color: _Aurora.fg,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(6, 8, 6, 14),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: items.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisSpacing: 2,
-                crossAxisSpacing: 0,
-                mainAxisExtent: 86,
-              ),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return _FuncGridTile(data: item);
-              },
-            ),
-          ),
+          for (var i = 0; i < rows.length; i++) ...[
+            if (i > 0)
+              const Divider(height: 1, thickness: 1, color: _Aurora.line),
+            _SupportRow(data: rows[i]),
+          ],
         ],
       ),
     );
   }
 }
 
-class _FuncItemData {
-  const _FuncItemData({
-    required this.icon,
-    required this.label,
+class _SupportRowData {
+  const _SupportRowData({
+    required this.title,
     required this.onTap,
     this.badge,
   });
 
-  final IconData icon;
-  final String label;
+  final String title;
   final VoidCallback onTap;
   final int? badge;
 }
 
-class _FuncGridTile extends StatelessWidget {
-  const _FuncGridTile({required this.data});
+class _SupportRow extends StatelessWidget {
+  const _SupportRow({required this.data});
 
-  final _FuncItemData data;
+  final _SupportRowData data;
 
   @override
   Widget build(BuildContext context) {
@@ -886,72 +843,60 @@ class _FuncGridTile extends StatelessWidget {
     return AppPressable(
       onTap: data.onTap,
       pressedScale: AppMotion.pressScale,
-      borderRadius: BorderRadius.circular(AppRadii.md),
       pressedBackground: const Color(0x080F1620),
-      semanticsLabel: data.label,
+      semanticsLabel: data.title,
       semanticsButton: true,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 52),
+        child: Padding(
+          // Match _AccountCard phone row: 16 / 15 so left titles & chevrons line up.
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          child: Row(
             children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: const BoxDecoration(
-                  color: _Aurora.surfaceSoft,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  data.icon,
-                  size: AppIconSizes.md,
-                  color: _Aurora.fgSecondary,
+              Expanded(
+                child: Text(
+                  data.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.1,
+                    color: _Aurora.fg,
+                  ),
                 ),
               ),
-              if (badge != null && badge > 0)
-                Positioned(
-                  top: -2,
-                  right: -4,
-                  child: Container(
-                    constraints: const BoxConstraints(minWidth: 16),
-                    height: 16,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: _Aurora.danger,
-                      borderRadius: BorderRadius.circular(AppRadii.pill),
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      badge > 99 ? '99+' : '$badge',
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        height: 1,
-                        fontFeatures: _Aurora.tabularNums,
-                      ),
+              if (badge != null && badge > 0) ...[
+                Container(
+                  constraints: const BoxConstraints(minWidth: 18),
+                  height: 18,
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  decoration: BoxDecoration(
+                    color: _Aurora.danger,
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    badge > 99 ? '99+' : '$badge',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      height: 1,
+                      fontFeatures: _Aurora.tabularNums,
                     ),
                   ),
                 ),
+                const SizedBox(width: 4),
+              ],
+              const Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: Color(0xFFC4C8CD),
+              ),
             ],
           ),
-          const SizedBox(height: 9),
-          Text(
-            data.label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: _Aurora.fg,
-              letterSpacing: 0.1,
-              height: 1.2,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
