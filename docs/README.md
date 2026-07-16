@@ -12,8 +12,9 @@
 4. [P0.5 高价值路径优化](p0_5_high_value_path_progress.md)：A1–A5 已完成。
 5. [GitHub Actions 指南](github_actions_guide.md)：当前自动化验收、APK 构建与发布门禁。
 6. [当前设计系统索引](design_system.md)：主题 token、交互规则和页面模式。
-7. [Android 构建说明](android_build_notes.md)：Windows/Android 构建问题。
-8. [已废弃的真机回归清单](device_regression_checklist_v1_0_13.md)：历史归档，不执行。
+7. [QGJ/BLE 残留清单](qgj_ble_residual_inventory.md)：凭据/死页面/云字段保留边界与删除切片。
+8. [Android 构建说明](android_build_notes.md)：Windows/Android 构建问题。
+9. [已废弃的真机回归清单](device_regression_checklist_v1_0_13.md)：历史归档，不执行。
 
 ## 文档分类
 
@@ -31,6 +32,7 @@
 | CI/CD | [github_actions_guide](github_actions_guide.md) | 当前 | Actions / Secrets |
 | 复刻对比 | [official_3_5_6_deep_comparison](official_3_5_6_deep_comparison.md) | 当前 | cloud-only 范围与差距 |
 | 云端方案 | [cloud_architecture_plan](cloud_architecture_plan.md) | 当前 | cloud-only 架构与发布边界 |
+| 残留审计 | [qgj_ble_residual_inventory](qgj_ble_residual_inventory.md) | 当前 | QGJ/BLE 残留清单与可删除评估 |
 | 工程审视 | [工程审视报告_2026-06-28](工程审视报告_2026-06-28.md) | **历史** | 阶段性风险记录 |
 | 后续规划 | [i18n-extraction-plan](i18n-extraction-plan.md) | 规划 | i18n 抽取 |
 

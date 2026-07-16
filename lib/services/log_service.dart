@@ -5,7 +5,8 @@ import 'sensitive_value_masker.dart';
 
 enum LogLevel { debug, info, warning, error }
 
-enum LogCategory { connection, operation }
+/// Log category. Cloud-only app only writes [operation] entries.
+enum LogCategory { operation }
 
 class LogEntry {
   final DateTime time;
@@ -62,23 +63,6 @@ class LogService {
     _clock = clock ?? DateTime.now;
   }
 
-  void connection(
-    String message, {
-    String? detail,
-    LogLevel level = LogLevel.debug,
-    DateTime? time,
-  }) {
-    _add(
-      _redactedEntry(
-        LogCategory.connection,
-        message,
-        detail: detail,
-        level: level,
-        time: time,
-      ),
-    );
-  }
-
   void operation(
     String message, {
     String? detail,
@@ -115,13 +99,13 @@ class LogService {
 
   /// Redacts sensitive login payloads before they hit the in-memory log
   /// ring buffer (P2-4).
-  static final RegExp _qgjLoginHint = RegExp(
-    r'(登录|login|QGJ 登录)',
+  static final RegExp _loginHint = RegExp(
+    r'(登录|login)',
     caseSensitive: false,
   );
   String? _redactDetail(String message, String? detail) {
     if (detail == null) return null;
-    if (!_qgjLoginHint.hasMatch(message)) return _redactSensitiveText(detail);
+    if (!_loginHint.hasMatch(message)) return _redactSensitiveText(detail);
     // Replace hex payloads containing login frames with a length summary so
     // troubleshooting can still see "frame sent, N bytes" without leaking
     // credentials.

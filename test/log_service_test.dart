@@ -43,29 +43,25 @@ void main() {
     expect(entry.detail, isNot(contains('bearer-secret-token')));
   });
 
-  test('keeps QGJ login frame details fully redacted', () {
-    log.connection('QGJ 登录', detail: '01 02 03 04');
+  test('keeps login frame details fully redacted', () {
+    log.operation('登录', detail: '01 02 03 04');
 
     final entry = log.all.single;
 
     expect(entry.detail, '<redacted login frame, 4 bytes>');
   });
 
-  test('keeps log categories and default levels while redacting', () {
-    log.connection('connection phone=18886120851');
-    log.operation('operation token=abcdef123456');
+  test('keeps default operation level while redacting', () {
+    log.operation('operation phone=18886120851 token=abcdef123456');
 
-    final connEntry = log.byCategory(LogCategory.connection).single;
-    final operationEntry = log.byCategory(LogCategory.operation).single;
+    final entry = log.byCategory(LogCategory.operation).single;
 
-    expect(connEntry.level, LogLevel.debug);
-    expect(connEntry.message, 'connection phone=188***851');
-    expect(operationEntry.level, LogLevel.info);
-    expect(operationEntry.message, 'operation token=abc***456');
+    expect(entry.level, LogLevel.info);
+    expect(entry.category, LogCategory.operation);
+    expect(entry.message, 'operation phone=188***851 token=abc***456');
   });
 
   test('returns detached log snapshots', () {
-    log.connection('connection entry');
     log.operation('operation entry');
 
     final allEntries = log.all;
@@ -74,7 +70,7 @@ void main() {
     allEntries.clear();
     operationEntries.clear();
 
-    expect(log.all, hasLength(2));
+    expect(log.all, hasLength(1));
     expect(log.byCategory(LogCategory.operation), hasLength(1));
   });
 

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/persistence_value.dart';
@@ -14,13 +13,10 @@ class VehicleStore {
 
   static const _prefVehicles = 'vehicle_profiles';
   static const _prefDefaultVehicleId = 'vehicle_default_id';
-  static const _secureQgjPasswordPrefix = 'vehicle_qgj_password:';
-  static const _secureQgjUserIdPrefix = 'vehicle_qgj_user_id:';
   static final Object _decodeFailed = Object();
 
   StreamController<List<VehicleProfile>> _vehiclesController =
       StreamController<List<VehicleProfile>>.broadcast();
-  final FlutterSecureStorage _secureStorage;
   final List<VehicleProfile> _vehicles = [];
   String? _defaultVehicleId;
   bool _initialized = false;
@@ -28,11 +24,7 @@ class VehicleStore {
   Future<void>? _saveQueue;
   DateTime Function() _clock = DateTime.now;
 
-  VehicleStore._internal({
-    FlutterSecureStorage secureStorage = const FlutterSecureStorage(
-      aOptions: AndroidOptions(storageNamespace: 'vehicle_store'),
-    ),
-  }) : _secureStorage = secureStorage;
+  VehicleStore._internal();
 
   Stream<List<VehicleProfile>> get vehiclesStream => _vehiclesController.stream;
   List<VehicleProfile> get vehicles => List.unmodifiable(_vehicles);
@@ -59,13 +51,14 @@ class VehicleStore {
     final prefs = await SharedPreferences.getInstance();
     try {
       _defaultVehicleId = _normalizeId(prefs.getString(_prefDefaultVehicleId));
-      final decodedVehicles = _decodeVehicles(prefs.getString(_prefVehicles));
-      final hydratedVehicles = await _hydrateQgjCredentials(decodedVehicles);
+      final rawProfiles = prefs.getString(_prefVehicles);
+      final decodedVehicles = _decodeVehicles(rawProfiles);
       _vehicles
         ..clear()
-        ..addAll(hydratedVehicles);
+        ..addAll(decodedVehicles);
       _normalizeDefaultVehicleId();
-      if (_containsLegacyQgjCredentials(decodedVehicles)) {
+      // Scrub legacy BLE-era QGJ credential fields from prefs if present.
+      if (_rawContainsLegacyQgjCredentials(rawProfiles)) {
         await _persistVehicleProfiles(prefs);
       }
       _initialized = true;
@@ -151,43 +144,9 @@ class VehicleStore {
     );
   }
 
-  Future<List<VehicleProfile>> _hydrateQgjCredentials(
-    List<VehicleProfile> vehicles,
-  ) async {
-    final hydrated = <VehicleProfile>[];
-    for (final vehicle in vehicles) {
-      final legacyPassword = vehicle.qgjLoginPassword;
-      final legacyUserId = vehicle.qgjUserId;
-      final securePassword = await _readSecureInt(
-        _securePasswordKey(vehicle.id),
-      );
-      final secureUserId = await _readSecureInt(_secureUserIdKey(vehicle.id));
-      final resolvedPassword = securePassword ?? legacyPassword;
-      final resolvedUserId = secureUserId ?? legacyUserId;
-      if (securePassword == null && legacyPassword != null) {
-        await _secureStorage.write(
-          key: _securePasswordKey(vehicle.id),
-          value: legacyPassword.toString(),
-        );
-      }
-      if (secureUserId == null && legacyUserId != null) {
-        await _secureStorage.write(
-          key: _secureUserIdKey(vehicle.id),
-          value: legacyUserId.toString(),
-        );
-      }
-      hydrated.add(
-        vehicle.copyWith(
-          qgjLoginPassword: resolvedPassword,
-          qgjUserId: resolvedUserId,
-        ),
-      );
-    }
-    return hydrated;
-  }
-
-  bool _containsLegacyQgjCredentials(List<VehicleProfile> vehicles) {
-    return vehicles.any((vehicle) => vehicle.hasQgjCredentials);
+  bool _rawContainsLegacyQgjCredentials(String? raw) {
+    if (raw == null || raw.isEmpty) return false;
+    return raw.contains('qgjLoginPassword') || raw.contains('qgjUserId');
   }
 
   void _normalizeDefaultVehicleId() {
@@ -279,43 +238,6 @@ class VehicleStore {
     await _save();
   }
 
-  Future<void> updateQgjCredentials({
-    required String id,
-    int? password,
-    int? userId,
-    bool clear = false,
-    DateTime? savedAt,
-  }) async {
-    await init();
-    final normalizedId = _normalizeId(id);
-    if (normalizedId == null) return;
-    final index = _vehicles.indexWhere((vehicle) => vehicle.id == normalizedId);
-    if (index < 0) return;
-    final current = _vehicles[index];
-    if (clear || password == null) {
-      await _secureStorage.delete(key: _securePasswordKey(normalizedId));
-    } else {
-      await _secureStorage.write(
-        key: _securePasswordKey(normalizedId),
-        value: password.toString(),
-      );
-    }
-    if (clear || userId == null) {
-      await _secureStorage.delete(key: _secureUserIdKey(normalizedId));
-    } else {
-      await _secureStorage.write(
-        key: _secureUserIdKey(normalizedId),
-        value: userId.toString(),
-      );
-    }
-    _vehicles[index] = current.copyWith(
-      updatedAt: _savedAt(savedAt),
-      qgjLoginPassword: clear ? null : password,
-      qgjUserId: clear ? null : userId,
-    );
-    await _save();
-  }
-
   Future<void> setDefault(String id) async {
     await init();
     final normalizedId = _normalizeId(id);
@@ -330,8 +252,6 @@ class VehicleStore {
     final normalizedId = _normalizeId(id);
     if (normalizedId == null) return;
     _vehicles.removeWhere((vehicle) => vehicle.id == normalizedId);
-    await _secureStorage.delete(key: _securePasswordKey(normalizedId));
-    await _secureStorage.delete(key: _secureUserIdKey(normalizedId));
     if (_defaultVehicleId == normalizedId) {
       _defaultVehicleId = _vehicles.isEmpty ? null : _vehicles.first.id;
     }
@@ -377,11 +297,7 @@ class VehicleStore {
   Future<void> _persistVehicleProfiles(SharedPreferences prefs) async {
     await prefs.setString(
       _prefVehicles,
-      jsonEncode(
-        _vehicles
-            .map((vehicle) => _profileJsonWithoutQgjCredentials(vehicle))
-            .toList(),
-      ),
+      jsonEncode(_vehicles.map((vehicle) => vehicle.toJson()).toList()),
     );
     final defaultVehicleId = _defaultVehicleId;
     if (defaultVehicleId == null) {
@@ -389,28 +305,6 @@ class VehicleStore {
     } else {
       await prefs.setString(_prefDefaultVehicleId, defaultVehicleId);
     }
-  }
-
-  Map<String, dynamic> _profileJsonWithoutQgjCredentials(
-    VehicleProfile vehicle,
-  ) {
-    final json = vehicle.copyWith(clearQgjCredentials: true).toJson();
-    json.remove('qgjLoginPassword');
-    json.remove('qgjUserId');
-    return json;
-  }
-
-  Future<int?> _readSecureInt(String key) async {
-    final raw = await _secureStorage.read(key: key);
-    return parsePersistedInt(raw);
-  }
-
-  String _securePasswordKey(String vehicleId) {
-    return '$_secureQgjPasswordPrefix$vehicleId';
-  }
-
-  String _secureUserIdKey(String vehicleId) {
-    return '$_secureQgjUserIdPrefix$vehicleId';
   }
 
   void _emit() {

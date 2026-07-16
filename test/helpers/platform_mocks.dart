@@ -3,22 +3,36 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 
 final clipboardWrites = <String>[];
+final clipboardData = <String, String?>{};
 final geolocatorMethodCalls = <String>[];
 
 const _geolocatorChannel = MethodChannel('flutter.baseflow.com/geolocator');
 
+/// Mocks platform clipboard get/set for tests.
+///
+/// Written values are appended to [clipboardWrites] and stored in
+/// [clipboardData] under the `'text'` key for read-back assertions.
 void mockClipboardWrites() {
   clipboardWrites.clear();
+  clipboardData.clear();
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(SystemChannels.platform, (call) async {
-        if (call.method == 'Clipboard.setData') {
-          final arguments = call.arguments;
-          if (arguments is Map) {
-            clipboardWrites.add(arguments['text']?.toString() ?? '');
-          }
-          return null;
+        switch (call.method) {
+          case 'Clipboard.getData':
+            final text = clipboardData['text'];
+            if (text == null) return null;
+            return <String, dynamic>{'text': text};
+          case 'Clipboard.setData':
+            final arguments = call.arguments;
+            if (arguments is Map) {
+              final text = arguments['text']?.toString();
+              clipboardData['text'] = text;
+              clipboardWrites.add(text ?? '');
+            }
+            return null;
+          default:
+            return null;
         }
-        return null;
       });
 }
 
@@ -48,6 +62,7 @@ void mockGeolocator({
 
 void clearPlatformChannelMock() {
   clipboardWrites.clear();
+  clipboardData.clear();
   geolocatorMethodCalls.clear();
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(SystemChannels.platform, null);

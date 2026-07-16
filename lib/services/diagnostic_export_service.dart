@@ -149,10 +149,9 @@ class DiagnosticExportService {
 
   String _formatEntry(LogEntry entry) {
     final t = formatLogClockTime(entry.time);
-    final tag = entry.category == LogCategory.connection ? '[CONN]' : '[OP]';
     final level = entry.level.name.toUpperCase();
     final detail = entry.detail;
-    return '$t $tag [$level] ${OfficialCloudRedactor.text(entry.message)}'
+    return '$t [OP] [$level] ${OfficialCloudRedactor.text(entry.message)}'
         '${detail == null ? '' : ' | ${OfficialCloudRedactor.text(detail)}'}';
   }
 }

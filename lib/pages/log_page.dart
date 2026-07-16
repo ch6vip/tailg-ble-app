@@ -6,9 +6,7 @@ import '../services/diagnostic_export_service.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_motion.dart';
 import '../widgets/app_chrome.dart';
-import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 
 class LogPage extends StatefulWidget {
@@ -18,21 +16,15 @@ class LogPage extends StatefulWidget {
   State<LogPage> createState() => _LogPageState();
 }
 
-class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _LogPageState extends State<LogPage> {
   final _log = logService;
   StreamSubscription<void>? _logSub;
-  int _activeTab = 0;
+  // Bumped on refresh so setState is never empty (test convention).
+  int _listGeneration = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        setState(() => _activeTab = _tabController.index);
-      }
-    });
     // Subscribe to LogService.changes so the list refreshes automatically
     // when new entries arrive (P3-12). The manual refresh button remains as
     // a force-rebuild escape hatch.
@@ -45,26 +37,16 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
   void dispose() {
     final logSub = _logSub;
     if (logSub != null) unawaited(logSub.cancel());
-    _tabController.dispose();
     super.dispose();
-  }
-
-  List<LogEntry> _getEntries(int tabIndex) {
-    return switch (tabIndex) {
-      0 => _log.all,
-      1 => _log.byCategory(LogCategory.connection),
-      2 => _log.byCategory(LogCategory.operation),
-      _ => _log.all,
-    };
   }
 
   void _refreshVisibleLogs() {
     if (!mounted) return;
-    setState(() => _activeTab = _tabController.index);
+    setState(() => _listGeneration++);
   }
 
   Future<void> _copyAll() async {
-    final entries = _getEntries(_tabController.index);
+    final entries = _log.all;
     if (entries.isEmpty) {
       AppSnack.info(context, '当前没有可复制的日志');
       return;
@@ -103,7 +85,7 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final tabEntries = List.generate(3, _getEntries, growable: false);
+    final entries = _log.all;
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
@@ -132,13 +114,10 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
                 ),
               ],
             ),
-            _buildTabs(),
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  for (final entries in tabEntries) _LogList(entries: entries),
-                ],
+              child: _LogList(
+                key: ValueKey<int>(_listGeneration),
+                entries: entries,
               ),
             ),
           ],
@@ -146,71 +125,11 @@ class _LogPageState extends State<LogPage> with SingleTickerProviderStateMixin {
       ),
     );
   }
-
-  Widget _buildTabs() {
-    const tabs = ['全部', '连接', '操作'];
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.outlineVariant, width: 1),
-        ),
-      ),
-      child: Row(
-        children: List.generate(3, (i) {
-          final active = _activeTab == i;
-          void selectTab() => _tabController.animateTo(i);
-          return Expanded(
-            child: AppPressable(
-              onTap: selectTab,
-              haptic: false,
-              semanticsLabel: tabs[i],
-              semanticsButton: true,
-              semanticsEnabled: true,
-              semanticsSelected: active,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minHeight: AppTouchTargets.min,
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Text(
-                        tabs[i],
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: active
-                              ? AppColors.primary
-                              : AppColors.textTertiary,
-                        ),
-                      ),
-                    ),
-                    AnimatedContainer(
-                      duration: AppMotion.tabIndicator,
-                      height: 2,
-                      margin: const EdgeInsets.symmetric(horizontal: 20),
-                      decoration: BoxDecoration(
-                        color: active ? AppColors.primary : Colors.transparent,
-                        borderRadius: BorderRadius.circular(1),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
 }
 
 class _LogList extends StatelessWidget {
   final List<LogEntry> entries;
-  const _LogList({required this.entries});
+  const _LogList({super.key, required this.entries});
 
   @override
   Widget build(BuildContext context) {

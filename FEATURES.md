@@ -48,6 +48,7 @@ lib/
   theme/      设计 token
 ```
 
+QGJ/BLE 命名残留与可删除评估见 [docs/qgj_ble_residual_inventory.md](docs/qgj_ble_residual_inventory.md)。
 ## 车辆添加策略
 
 仅保留官方账号同步：

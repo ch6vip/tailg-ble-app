@@ -61,8 +61,6 @@ class VehicleProfile {
   final DateTime updatedAt;
   final DateTime? lastConnectedAt;
   final VehicleLocation? lastLocation;
-  final int? qgjLoginPassword;
-  final int? qgjUserId;
 
   const VehicleProfile({
     required this.id,
@@ -72,14 +70,9 @@ class VehicleProfile {
     required this.updatedAt,
     this.lastConnectedAt,
     this.lastLocation,
-    this.qgjLoginPassword,
-    this.qgjUserId,
   });
 
   String get displayName => parsePersistedStringOr(name, '未命名车辆');
-  bool get hasQgjCredentials => qgjLoginPassword != null || qgjUserId != null;
-
-  static const _sentinel = Object();
 
   VehicleProfile copyWith({
     String? name,
@@ -87,16 +80,7 @@ class VehicleProfile {
     DateTime? updatedAt,
     DateTime? lastConnectedAt,
     VehicleLocation? lastLocation,
-    Object? qgjLoginPassword = _sentinel,
-    Object? qgjUserId = _sentinel,
-    bool clearQgjCredentials = false,
   }) {
-    final resolvedQgjPassword = identical(qgjLoginPassword, _sentinel)
-        ? (clearQgjCredentials ? null : this.qgjLoginPassword)
-        : qgjLoginPassword as int?;
-    final resolvedQgjUserId = identical(qgjUserId, _sentinel)
-        ? (clearQgjCredentials ? null : this.qgjUserId)
-        : qgjUserId as int?;
     return VehicleProfile(
       id: id,
       name: name ?? this.name,
@@ -105,8 +89,6 @@ class VehicleProfile {
       updatedAt: updatedAt ?? this.updatedAt,
       lastConnectedAt: lastConnectedAt ?? this.lastConnectedAt,
       lastLocation: lastLocation ?? this.lastLocation,
-      qgjLoginPassword: resolvedQgjPassword,
-      qgjUserId: resolvedQgjUserId,
     );
   }
 
@@ -118,8 +100,6 @@ class VehicleProfile {
     'updatedAt': updatedAt.toIso8601String(),
     'lastConnectedAt': lastConnectedAt?.toIso8601String(),
     'lastLocation': lastLocation?.toJson(),
-    'qgjLoginPassword': qgjLoginPassword,
-    'qgjUserId': qgjUserId,
   };
 
   factory VehicleProfile.fromJson(
@@ -138,8 +118,6 @@ class VehicleProfile {
       updatedAt: parsePersistedDateOr(json['updatedAt'], now),
       lastConnectedAt: parsePersistedDate(json['lastConnectedAt']),
       lastLocation: _vehicleLocation(json['lastLocation'], fallbackNow: now),
-      qgjLoginPassword: parsePersistedInt(json['qgjLoginPassword']),
-      qgjUserId: parsePersistedInt(json['qgjUserId']),
     );
   }
 }

@@ -18,6 +18,14 @@ void main() {
     expect(source, contains('_refreshVisibleLogs'));
   });
 
+  test('LogPage has no BLE-era connection category tabs', () {
+    final source = readSource('lib/pages/log_page.dart');
+
+    expect(source, isNot(contains("LogCategory.connection")));
+    expect(source, isNot(contains("'连接'")));
+    expect(source, isNot(contains('TabController')));
+  });
+
   setUp(() {
     app.logService.clear();
     mockClipboardWrites();
@@ -65,65 +73,16 @@ void main() {
     expect(find.text('耗时 12ms'), findsOneWidget);
   });
 
-  testWidgets('custom tabs keep 44dp touch targets', (tester) async {
-    final semantics = tester.ensureSemantics();
-    try {
-      await tester.pumpWidget(const TestApp(home: LogPage()));
+  testWidgets('header actions keep 44dp touch targets', (tester) async {
+    await tester.pumpWidget(const TestApp(home: LogPage()));
 
-      final connTab = find.ancestor(
-        of: find.text('连接'),
+    for (final icon in [Icons.copy, Icons.refresh, Icons.delete_outline]) {
+      final action = find.ancestor(
+        of: find.byIcon(icon),
         matching: find.byType(AppPressable),
       );
-      expect(connTab, findsOneWidget);
-      expectMinTouchTargetHeight(tester, connTab);
-
-      const allLabel = '全部';
-      final allTabSemantics = find.bySemanticsLabel(allLabel);
-      expect(
-        tester.getSemantics(allTabSemantics),
-        matchesSemantics(
-          label: allLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasSelectedState: true,
-          isSelected: true,
-          hasTapAction: true,
-        ),
-      );
-
-      const connLabel = '连接';
-      final connTabSemantics = find.bySemanticsLabel(connLabel);
-      expect(
-        tester.getSemantics(connTabSemantics),
-        matchesSemantics(
-          label: connLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasSelectedState: true,
-          isSelected: false,
-          hasTapAction: true,
-        ),
-      );
-
-      tester.semantics.tap(find.semantics.byLabel(connLabel));
-      await tester.pumpAndSettle();
-
-      expect(
-        tester.getSemantics(connTabSemantics),
-        matchesSemantics(
-          label: connLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasSelectedState: true,
-          isSelected: true,
-          hasTapAction: true,
-        ),
-      );
-    } finally {
-      semantics.dispose();
+      expect(action, findsOneWidget);
+      expectMinTouchTargetHeight(tester, action);
     }
   });
 
