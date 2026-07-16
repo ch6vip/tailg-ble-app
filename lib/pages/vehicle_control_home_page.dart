@@ -157,7 +157,8 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   }
 
   Future<void> _sendArmToggle() async {
-    final locked = officialCloudService.state.selectedVehicle?.isLocked ?? false;
+    final locked =
+        officialCloudService.state.selectedVehicle?.isLocked ?? false;
     final cmd = locked ? CommandCode.unlock : CommandCode.lock;
     await _sendCommand(cmd);
   }
@@ -524,9 +525,9 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   void _openLocation() {
     if (!requireCloudVehicle(context)) return;
     unawaited(
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => const LocationPage()),
-      ),
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const LocationPage())),
     );
   }
 
@@ -1359,7 +1360,10 @@ class _LocationCard extends StatelessWidget {
                       updated,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12, color: _Aurora.muted),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: _Aurora.muted,
+                      ),
                     ),
                   ],
                 ),
