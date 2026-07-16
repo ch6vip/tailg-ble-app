@@ -103,18 +103,14 @@ class ServiceHubPage extends StatelessWidget {
                 _GlyphItem(
                   icon: Icons.tune_rounded,
                   label: '车辆设置',
-                  onTap: () => openCloudGatedPage(
-                    context,
-                    const VehicleSettingsPage(),
-                  ),
+                  onTap: () =>
+                      openCloudGatedPage(context, const VehicleSettingsPage()),
                 ),
                 _GlyphItem(
                   icon: Icons.battery_charging_full_rounded,
                   label: '电池服务',
-                  onTap: () => openCloudGatedPage(
-                    context,
-                    const BatteryDetailsPage(),
-                  ),
+                  onTap: () =>
+                      openCloudGatedPage(context, const BatteryDetailsPage()),
                 ),
                 _GlyphItem(
                   icon: Icons.bar_chart_rounded,
@@ -236,8 +232,7 @@ class _GlyphSection extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
       child: Row(
         children: [
-          for (final item in items)
-            Expanded(child: _GlyphTile(item: item)),
+          for (final item in items) Expanded(child: _GlyphTile(item: item)),
         ],
       ),
     );

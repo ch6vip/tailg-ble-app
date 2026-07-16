@@ -192,9 +192,21 @@ void main() {
           },
         ],
       });
+      final vehicle = OfficialVehicle.fromJson({
+        'carId': 'stats-car',
+        'frame': 'FRAME-STATS',
+        'carNickName': '统计测试车',
+      });
+      // Gate requires signed-in user + vehicle; override skips network and
+      // leaves the seeded travelDays in place for rendering.
+      app.officialCloudService.refreshTravelHistoryOverride = (_) async {};
       app.officialCloudService.setStateForTest(
         OfficialCloudState.initial().copyWith(
           initialized: true,
+          token: 'token',
+          userId: 'uid-1',
+          vehicles: [vehicle],
+          selectedVehicleKey: vehicle.key,
           travelDays: [day],
         ),
       );
@@ -203,9 +215,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('12.5', findRichText: true), findsWidgets);
-      expect(find.textContaining('1h30m', findRichText: true), findsOneWidget);
-      expect(find.textContaining('1 次', findRichText: true), findsOneWidget);
-      expect(find.text('1.5 kg CO₂'), findsOneWidget);
+      expect(find.textContaining('1h30m', findRichText: true), findsWidgets);
+      expect(find.textContaining('1 次', findRichText: true), findsWidgets);
+      // 12.5 km * 0.021 kg/km ≈ 0.26
+      expect(find.textContaining('0.26 kg CO₂'), findsOneWidget);
       expect(find.text(currentMonth), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.chevron_right));

@@ -789,11 +789,7 @@ class _SupportCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final rows = <_SupportRowData>[
       _SupportRowData(title: '设置', onTap: onSettings),
-      _SupportRowData(
-        title: '消息中心',
-        badge: messageBadge,
-        onTap: onMessages,
-      ),
+      _SupportRowData(title: '消息中心', badge: messageBadge, onTap: onMessages),
       _SupportRowData(title: '帮助与反馈', onTap: onHelp),
       _SupportRowData(title: '关于我们', onTap: onAbout),
     ];
@@ -821,11 +817,7 @@ class _SupportCard extends StatelessWidget {
 }
 
 class _SupportRowData {
-  const _SupportRowData({
-    required this.title,
-    required this.onTap,
-    this.badge,
-  });
+  const _SupportRowData({required this.title, required this.onTap, this.badge});
 
   final String title;
   final VoidCallback onTap;
