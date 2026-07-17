@@ -90,10 +90,15 @@ ControlChannelResolver（**完全按官方 ControlFragment 决策表**）
     3/default → BB/默认：isGps 门闩 + BLE
         │
         ├─ willUseBle → ConnectionManager.sendCommand
-        └─ cloud      → OfficialCloudService.sendCommand (HTTP 暂代官方 MQTT)
+        └─ cloud      → OfficialMqttService (官方 MQTT 优先)
+                         └─ 失败回退 OfficialCloudService HTTP device/cmd
 ```
 
-> 官方远程主通道为 MQTT；本实验 **分流表**完整对齐反编译，**云传输**仍用 HTTP `app/device/cmd/*`。
+> 云端发令已接官方 MQTT：`OfficialMqttConfig` / `OfficialMqttService`  
+> - KKS/YJ：`tcp://www.tailgdd.com:1883`，topic `app-update-kks|yunjia/{imei}`  
+> - 其它：`ssl://www.tailgdd.com:6668`（或车辆 `mqHost:mqPort`），topic `APP_S/CMD/{imei}`  
+> - payload：`{"imei","command"}`，账号 `client_app` / `123456`  
+> HTTP `app/device/cmd/*` 仅作 MQTT 失败回退。
 
 ### 4.1 协议层（`lib/ble/`）
 | 文件 | 职责 |

@@ -49,6 +49,8 @@ class OfficialVehicle {
   final String latitude;
   final int? modelType;
   final int? isGps;
+  final String mqHost;
+  final String mqPort;
   final double? mileage;
   final Map<String, dynamic> raw;
 
@@ -71,6 +73,8 @@ class OfficialVehicle {
     required this.latitude,
     required this.modelType,
     required this.isGps,
+    required this.mqHost,
+    required this.mqPort,
     required this.mileage,
     this.raw = const {},
   });
@@ -95,6 +99,8 @@ class OfficialVehicle {
       latitude: parsePersistedString(json['latitude']),
       modelType: parsePersistedInt(json['modelType']),
       isGps: parsePersistedInt(json['isGps']),
+      mqHost: parsePersistedString(json['mqHost']),
+      mqPort: parsePersistedString(json['mqPort']),
       mileage: parsePersistedDouble(json['mileage']),
       raw: Map<String, dynamic>.unmodifiable(json),
     );
@@ -121,6 +127,8 @@ class OfficialVehicle {
       'latitude': latitude,
       'modelType': modelType,
       'isGps': isGps,
+      'mqHost': mqHost,
+      'mqPort': mqPort,
       'mileage': mileage,
     });
     return json;

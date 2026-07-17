@@ -16,6 +16,7 @@ import '../services/display_number_formatter.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
+import '../services/official_mqtt_service.dart';
 import '../services/vehicle_location_resolver.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
@@ -59,7 +60,10 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     with AutomaticKeepAliveClientMixin {
   final _commandExecutor = ControlCommandExecutor(
     sendBleCommand: (command) => connectionManager.sendCommand(command),
-    sendCloudCommand: officialCloudService.sendCommand,
+    sendCloudCommand: (command) => OfficialMqttService().sendCommandPreferMqtt(
+      command: command,
+      cloud: officialCloudService,
+    ),
   );
   final Stopwatch _controlDebounceWatch = Stopwatch();
   final List<_CommandEntry> _commands = <_CommandEntry>[];
