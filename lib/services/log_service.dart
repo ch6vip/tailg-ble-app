@@ -5,8 +5,8 @@ import 'sensitive_value_masker.dart';
 
 enum LogLevel { debug, info, warning, error }
 
-/// Log category. Cloud-only app only writes [operation] entries.
-enum LogCategory { operation }
+/// Log categories for cloud operations and local BLE connection activity.
+enum LogCategory { ble, operation }
 
 class LogEntry {
   final DateTime time;
@@ -61,6 +61,23 @@ class LogService {
     }
     clear();
     _clock = clock ?? DateTime.now;
+  }
+
+  void ble(
+    String message, {
+    String? detail,
+    LogLevel level = LogLevel.debug,
+    DateTime? time,
+  }) {
+    _add(
+      _redactedEntry(
+        LogCategory.ble,
+        message,
+        detail: detail,
+        level: level,
+        time: time,
+      ),
+    );
   }
 
   void operation(

@@ -24,6 +24,14 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>用于记录车辆最后连接和控制时的位置。</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>用于通过蓝牙连接和控制您的车辆。</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>用于通过蓝牙连接您的车辆。</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
