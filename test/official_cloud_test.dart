@@ -1541,6 +1541,37 @@ void main() {
       expect(availability.willUseBle, isTrue);
       expect(availability.effectiveChannelLabel, 'BLE');
     });
+
+    test(
+      'automatic mode falls back to cloud only when vehicle has remote ability',
+      () {
+        final withGps = ControlChannelResolver.resolve(
+          cloudState: _cloudState(
+            signedIn: true,
+            withVehicle: true,
+            withGpsService: true,
+          ),
+          bleReady: false,
+          channel: OfficialControlChannel.automatic,
+        );
+        final pureBle = ControlChannelResolver.resolve(
+          cloudState: _cloudState(signedIn: true, withVehicle: true),
+          bleReady: false,
+          channel: OfficialControlChannel.automatic,
+        );
+
+        expect(withGps.enabled, isTrue);
+        expect(withGps.canUseCloud, isTrue);
+        expect(withGps.willUseBle, isFalse);
+        expect(withGps.vehicleAllowsCloudFallback, isTrue);
+        expect(withGps.effectiveChannelLabel, '官方云端');
+
+        expect(pureBle.enabled, isFalse);
+        expect(pureBle.canUseCloud, isFalse);
+        expect(pureBle.vehicleAllowsCloudFallback, isFalse);
+        expect(pureBle.disabledReason, contains('蓝牙'));
+      },
+    );
   });
 
   group('ControlCommandResult', () {
@@ -1705,6 +1736,40 @@ void main() {
       expect(result.transport, ControlCommandTransport.ble);
       expect(bleCalls, [CommandCode.lock]);
       expect(cloudCalls, isEmpty);
+    });
+
+    test('automatic mode uses cloud only for remote-capable vehicles', () async {
+      final bleCalls = <CommandCode>[];
+      final cloudCalls = <CommandCode>[];
+      final executor = ControlCommandExecutor(
+        sendBleCommand: (command) async {
+          bleCalls.add(command);
+          return true;
+        },
+        sendCloudCommand: (command) async {
+          cloudCalls.add(command);
+          return 'ok';
+        },
+      );
+
+      final availability = ControlChannelResolver.resolve(
+        cloudState: _cloudState(
+          signedIn: true,
+          withVehicle: true,
+          withGpsService: true,
+        ),
+        bleReady: false,
+        channel: OfficialControlChannel.automatic,
+      );
+      final result = await executor.send(
+        command: CommandCode.unlock,
+        availability: availability,
+      );
+
+      expect(result.success, isTrue);
+      expect(result.transport, ControlCommandTransport.officialCloud);
+      expect(bleCalls, isEmpty);
+      expect(cloudCalls, [CommandCode.unlock]);
     });
   });
 
@@ -1933,10 +1998,16 @@ Future<void> _writeJsonResponse(
 OfficialCloudState _cloudState({
   bool signedIn = false,
   bool withVehicle = false,
+  bool withGpsService = false,
 }) {
   final vehicle = OfficialVehicle.fromJson({
     'carId': 'official-1',
     'carNickName': '测试车辆',
+    if (withGpsService) ...{
+      // Official isGps==1 equivalent: GPS model type + imeiGps.
+      'modelType': 8,
+      'imeiGps': '860123456789012',
+    },
   });
   return OfficialCloudState.initial().copyWith(
     token: signedIn ? 'token' : '',
