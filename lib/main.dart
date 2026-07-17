@@ -8,6 +8,7 @@ import 'services/location_service.dart';
 import 'services/log_service.dart';
 import 'services/manual_mode_service.dart';
 import 'services/official_cloud_service.dart';
+import 'services/official_mqtt_service.dart';
 import 'services/permission_service.dart';
 import 'services/message_read_store.dart';
 import 'services/vehicle_store.dart';
@@ -77,6 +78,8 @@ void main() async {
     await officialCloudService.init();
     await manualModeService.init();
     await autoConnectService.init(connectionManager);
+    // Keep official MQTT session aligned with selected vehicle (pre-connect).
+    OfficialMqttService().attachToCloud(officialCloudService);
   } catch (e, st) {
     debugPrint('Startup initialization failed: $e\n$st');
     runApp(StartupErrorApp(error: e, stackTrace: st));

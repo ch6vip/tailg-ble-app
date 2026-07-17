@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:mqtt_client/mqtt_client.dart';
@@ -9,12 +10,13 @@ import '../models/official_vehicle.dart';
 import 'log_service.dart';
 import 'official_cloud_service.dart';
 import 'official_mqtt_config.dart';
+import 'official_mqtt_payload.dart';
 
 /// Official MQTT remote control (ControlFragment.mqttPublish path).
 ///
-/// Connects with the same credentials/topics as the decompiled app and publishes
-/// `MqttCmdBean` JSON payloads. HTTP `app/device/cmd/*` remains available as a
-/// fallback in [sendCommandPreferMqtt].
+/// Connects with the same credentials/topics as the decompiled app, publishes
+/// `MqttCmdBean` JSON payloads, and applies status replies to
+/// [OfficialCloudService.applyMqttVehicleStatus].
 class OfficialMqttService {
   static final OfficialMqttService _instance = OfficialMqttService._();
   factory OfficialMqttService() => _instance;
@@ -22,30 +24,100 @@ class OfficialMqttService {
 
   final _log = LogService();
   MqttServerClient? _client;
+  StreamSubscription<List<MqttReceivedMessage<MqttMessage>>>? _updatesSub;
+  StreamSubscription<OfficialCloudState>? _cloudSub;
+  OfficialCloudService? _boundCloud;
   String? _connectedClientId;
   String? _connectedBroker;
   String? _connectedImei;
+  String? _pendingCommandApiName;
   bool _disposed = false;
+  bool _preconnectInFlight = false;
 
   bool get isConnected =>
       _client?.connectionStatus?.state == MqttConnectionState.connected;
 
+  String? get pendingCommandApiName => _pendingCommandApiName;
+
   Future<void> resetForTest() async {
+    await _cloudSub?.cancel();
+    _cloudSub = null;
+    _boundCloud = null;
+    _pendingCommandApiName = null;
     await disconnect();
     _disposed = false;
+    _preconnectInFlight = false;
   }
 
   Future<void> dispose() async {
     _disposed = true;
+    await _cloudSub?.cancel();
+    _cloudSub = null;
+    _boundCloud = null;
     await disconnect();
   }
 
+  /// Bind to cloud state and pre-connect whenever a vehicle is selected.
+  void attachToCloud(OfficialCloudService cloud) {
+    if (identical(_boundCloud, cloud) && _cloudSub != null) return;
+    _boundCloud = cloud;
+    unawaited(_cloudSub?.cancel());
+    _cloudSub = cloud.stateStream.listen((state) {
+      unawaited(_onCloudState(state));
+    });
+    // Kick once with current state (stateStream is broadcast, may miss last).
+    unawaited(_onCloudState(cloud.state));
+  }
+
+  Future<void> _onCloudState(OfficialCloudState state) async {
+    if (_disposed) return;
+    final vehicle = state.selectedVehicle;
+    if (!state.signedIn || vehicle == null) {
+      await disconnect();
+      return;
+    }
+    await preconnect(
+      vehicle: vehicle,
+      userId: state.userId,
+    );
+  }
+
+  /// Best-effort pre-connect used on vehicle select / home enter.
+  Future<void> preconnect({
+    required OfficialVehicle vehicle,
+    required String userId,
+  }) async {
+    if (_disposed || _preconnectInFlight) return;
+    _preconnectInFlight = true;
+    try {
+      await ensureConnected(vehicle: vehicle, userId: userId);
+    } catch (e) {
+      _log.operation(
+        '官方 MQTT 预连接失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
+    } finally {
+      _preconnectInFlight = false;
+    }
+  }
+
+  Future<void> preconnectForCloud(OfficialCloudService cloud) async {
+    attachToCloud(cloud);
+    final vehicle = cloud.state.selectedVehicle;
+    if (!cloud.state.signedIn || vehicle == null) return;
+    await preconnect(vehicle: vehicle, userId: cloud.state.userId);
+  }
+
   Future<void> disconnect() async {
+    await _updatesSub?.cancel();
+    _updatesSub = null;
     final client = _client;
     _client = null;
     _connectedClientId = null;
     _connectedBroker = null;
     _connectedImei = null;
+    _pendingCommandApiName = null;
     if (client == null) return;
     try {
       client.disconnect();
@@ -130,7 +202,6 @@ class OfficialMqttService {
       throw OfficialCloudApiException('官方 MQTT 网络失败: $e');
     }
 
-    // Subscribe to status topics like official initMqtt success path.
     for (final topic in OfficialMqttConfig.subscribeTopics(
       vehicle: vehicle,
       imei: imei,
@@ -138,11 +209,55 @@ class OfficialMqttService {
       client.subscribe(topic, MqttQos.atMostOnce);
     }
 
+    await _updatesSub?.cancel();
+    _updatesSub = client.updates?.listen(
+      _onMqttUpdates,
+      onError: (Object e) {
+        _log.operation(
+          '官方 MQTT 收包错误',
+          detail: e.toString(),
+          level: LogLevel.warning,
+        );
+      },
+    );
+
     _client = client;
     _connectedClientId = clientId;
     _connectedBroker = broker;
     _connectedImei = imei;
     _log.operation('官方 MQTT 已连接', detail: clientId);
+  }
+
+  void _onMqttUpdates(List<MqttReceivedMessage<MqttMessage?>> messages) {
+    for (final received in messages) {
+      final message = received.payload;
+      if (message is! MqttPublishMessage) continue;
+      final bytes = message.payload.message;
+      final raw = utf8.decode(bytes);
+      handleStatusPayload(raw);
+    }
+  }
+
+  /// Parse status JSON and push ACC/defence into cloud vehicle state.
+  ///
+  /// Exposed for unit tests; used by the live updates listener.
+  void handleStatusPayload(String raw) {
+    final payload = OfficialMqttStatusPayload.tryParse(raw);
+    if (payload == null) return;
+
+    final pending = _pendingCommandApiName;
+    if (pending != null && payload.confirmsCommand(pending)) {
+      _pendingCommandApiName = null;
+      _log.operation('官方 MQTT 指令已确认: $pending');
+    }
+
+    // Official also applies ACC/defence fields opportunistically on any status.
+    final cloud = _boundCloud ?? OfficialCloudService();
+    if (!payload.hasVehicleState) return;
+    cloud.applyMqttVehicleStatus(
+      acc: payload.accInt,
+      defenceStatus: payload.defenceStatusInt,
+    );
   }
 
   /// Publish one official control command over MQTT.
@@ -166,6 +281,7 @@ class OfficialMqttService {
       command: commandApiName,
     );
 
+    _pendingCommandApiName = commandApiName;
     final builder = MqttClientPayloadBuilder()..addString(payload);
     client.publishMessage(
       topic,
@@ -184,6 +300,7 @@ class OfficialMqttService {
     required CommandCode command,
     required OfficialCloudService cloud,
   }) async {
+    attachToCloud(cloud);
     final api = OfficialCloudCommand.fromCommandCode(command);
     if (api == null) {
       throw OfficialCloudApiException('官方云端不支持${command.label}');
@@ -201,16 +318,19 @@ class OfficialMqttService {
         userId: cloud.state.userId,
         commandApiName: api.apiName,
       );
-      // Official also refreshes car state after commands; reuse HTTP refresh.
+      // Keep a light HTTP refresh as secondary consistency (official uses MQTT
+      // status first; we still poll list state shortly after).
       unawaited(
         Future(() async {
           try {
+            await Future<void>.delayed(const Duration(seconds: 2));
             await cloud.refreshVehicles(silent: true, force: true);
           } catch (_) {}
         }),
       );
       return 'success';
     } catch (e) {
+      _pendingCommandApiName = null;
       _log.operation(
         '官方 MQTT 发令失败，回退 HTTP',
         detail: e.toString(),

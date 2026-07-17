@@ -173,6 +173,43 @@ class OfficialVehicle {
   bool get isLocked => defenceStatus == 1;
   bool get isPowerOn => acc == 1;
 
+  OfficialVehicle copyWith({
+    int? defenceStatus,
+    int? acc,
+    int? electricQuantity,
+    double? voltage,
+    bool? online,
+    String? carNickName,
+    String? longitude,
+    String? latitude,
+    double? mileage,
+  }) {
+    return OfficialVehicle(
+      imei: imei,
+      imeiGps: imeiGps,
+      carId: carId,
+      carName: carName,
+      carNickName: carNickName ?? this.carNickName,
+      carPhoto: carPhoto,
+      frame: frame,
+      defenceStatus: defenceStatus ?? this.defenceStatus,
+      acc: acc ?? this.acc,
+      electricQuantity: electricQuantity ?? this.electricQuantity,
+      voltage: voltage ?? this.voltage,
+      online: online ?? this.online,
+      btname: btname,
+      btmac: btmac,
+      longitude: longitude ?? this.longitude,
+      latitude: latitude ?? this.latitude,
+      modelType: modelType,
+      isGps: isGps,
+      mqHost: mqHost,
+      mqPort: mqPort,
+      mileage: mileage ?? this.mileage,
+      raw: raw,
+    );
+  }
+
   bool get supportsNavigationProjection => _rawFeatureFlag(raw, const [
     'navigationProjection',
     'navProjection',

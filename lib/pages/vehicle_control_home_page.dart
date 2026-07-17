@@ -86,6 +86,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       if (mounted) setState(() {});
     });
     unawaited(_silentRefresh());
+    unawaited(OfficialMqttService().preconnectForCloud(officialCloudService));
   }
 
   @override

@@ -98,6 +98,7 @@ ControlChannelResolver（**完全按官方 ControlFragment 决策表**）
 > - KKS/YJ：`tcp://www.tailgdd.com:1883`，topic `app-update-kks|yunjia/{imei}`  
 > - 其它：`ssl://www.tailgdd.com:6668`（或车辆 `mqHost:mqPort`），topic `APP_S/CMD/{imei}`  
 > - payload：`{"imei","command"}`，账号 `client_app` / `123456`  
+> - **选车 / 进爱车页预连接**；订阅状态主题，解析 ACC/defenceStatus 回写车辆列表  
 > HTTP `app/device/cmd/*` 仅作 MQTT 失败回退。
 
 ### 4.1 协议层（`lib/ble/`）

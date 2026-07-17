@@ -653,6 +653,40 @@ class OfficialCloudService {
     }
   }
 
+  /// Apply MQTT status telemetry to the currently selected vehicle list entry.
+  ///
+  /// Mirrors ControlFragment messageArrived ACC/defenceStatus writes.
+  void applyMqttVehicleStatus({
+    int? acc,
+    int? defenceStatus,
+  }) {
+    if (_disposed) return;
+    final current = _state.selectedVehicle;
+    if (current == null) return;
+    if (acc == null && defenceStatus == null) return;
+
+    final nextAcc = acc ?? current.acc;
+    final nextDefence = defenceStatus ?? current.defenceStatus;
+    if (nextAcc == current.acc && nextDefence == current.defenceStatus) {
+      return;
+    }
+
+    final updated = current.copyWith(
+      acc: nextAcc,
+      defenceStatus: nextDefence,
+    );
+    final vehicles = _state.vehicles
+        .map((vehicle) => vehicle.key == updated.key ? updated : vehicle)
+        .toList(growable: false);
+    _state = _state.copyWith(vehicles: vehicles);
+    _emit();
+    unawaited(_storage.saveCarControlInfo(updated));
+    _log.operation(
+      '官方 MQTT 状态已更新',
+      detail: 'acc=$nextAcc defenceStatus=$nextDefence',
+    );
+  }
+
   Future<void> refreshBatteryInfo({
     bool silent = false,
     bool force = false,
