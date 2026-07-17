@@ -1484,12 +1484,15 @@ void main() {
       () {
         final available = ControlChannelResolver.resolve(
           cloudState: _cloudState(signedIn: true, withVehicle: true),
+          channel: OfficialControlChannel.officialCloud,
         );
         final missingVehicle = ControlChannelResolver.resolve(
           cloudState: _cloudState(signedIn: true),
+          channel: OfficialControlChannel.officialCloud,
         );
         final signedOut = ControlChannelResolver.resolve(
           cloudState: _cloudState(),
+          channel: OfficialControlChannel.officialCloud,
         );
 
         expect(available.enabled, isTrue);
@@ -1504,6 +1507,7 @@ void main() {
     test('busy state disables an otherwise available route', () {
       final availability = ControlChannelResolver.resolve(
         cloudState: _cloudState(signedIn: true, withVehicle: true),
+        channel: OfficialControlChannel.officialCloud,
         busy: true,
       );
 
@@ -1516,12 +1520,26 @@ void main() {
     test('busy state keeps signed-out reason when cloud is unavailable', () {
       final availability = ControlChannelResolver.resolve(
         cloudState: _cloudState(),
+        channel: OfficialControlChannel.officialCloud,
         busy: true,
       );
 
       expect(availability.canUseCloud, isFalse);
       expect(availability.enabled, isFalse);
       expect(availability.disabledReason, '请先登录官方账号');
+    });
+
+    test('automatic mode prefers BLE when ready', () {
+      final availability = ControlChannelResolver.resolve(
+        cloudState: _cloudState(signedIn: true, withVehicle: true),
+        bleReady: true,
+        channel: OfficialControlChannel.automatic,
+      );
+
+      expect(availability.enabled, isTrue);
+      expect(availability.canUseBle, isTrue);
+      expect(availability.willUseBle, isTrue);
+      expect(availability.effectiveChannelLabel, 'BLE');
     });
   });
 
@@ -1598,6 +1616,13 @@ void main() {
   });
 
   group('ControlCommandExecutor', () {
+    ControlChannelAvailability availableCloud() {
+      return ControlChannelResolver.resolve(
+        cloudState: _cloudState(signedIn: true, withVehicle: true),
+        channel: OfficialControlChannel.officialCloud,
+      );
+    }
+
     test('uses official cloud sender for a command', () async {
       final calls = <CommandCode>[];
       final executor = ControlCommandExecutor(
@@ -1607,7 +1632,10 @@ void main() {
         },
       );
 
-      final result = await executor.send(command: CommandCode.find);
+      final result = await executor.send(
+        command: CommandCode.find,
+        availability: availableCloud(),
+      );
 
       expect(result.success, isTrue);
       expect(result.transport, ControlCommandTransport.officialCloud);
@@ -1621,7 +1649,10 @@ void main() {
             throw const OfficialCloudApiException('官方错误'),
       );
 
-      final result = await executor.send(command: CommandCode.powerOff);
+      final result = await executor.send(
+        command: CommandCode.powerOff,
+        availability: availableCloud(),
+      );
 
       expect(result.success, isFalse);
       expect(result.failureMessage, '官方错误');
@@ -1634,13 +1665,46 @@ void main() {
         cloudTimeout: Duration.zero,
       );
 
-      final result = await executor.send(command: CommandCode.find);
+      final result = await executor.send(
+        command: CommandCode.find,
+        availability: availableCloud(),
+      );
 
       expect(result.success, isFalse);
       expect(result.transport, ControlCommandTransport.officialCloud);
       expect(result.failureMessage, 'Cloud command timed out');
 
       pendingCloud.complete('ok');
+    });
+
+    test('prefers BLE in automatic mode when ready', () async {
+      final bleCalls = <CommandCode>[];
+      final cloudCalls = <CommandCode>[];
+      final executor = ControlCommandExecutor(
+        sendBleCommand: (command) async {
+          bleCalls.add(command);
+          return true;
+        },
+        sendCloudCommand: (command) async {
+          cloudCalls.add(command);
+          return 'ok';
+        },
+      );
+
+      final availability = ControlChannelResolver.resolve(
+        cloudState: _cloudState(signedIn: true, withVehicle: true),
+        bleReady: true,
+        channel: OfficialControlChannel.automatic,
+      );
+      final result = await executor.send(
+        command: CommandCode.lock,
+        availability: availability,
+      );
+
+      expect(result.success, isTrue);
+      expect(result.transport, ControlCommandTransport.ble);
+      expect(bleCalls, [CommandCode.lock]);
+      expect(cloudCalls, isEmpty);
     });
   });
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../main.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_pressable.dart';
@@ -17,6 +18,10 @@ class AddVehiclePage extends StatelessWidget {
         MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
       ),
     );
+  }
+
+  void _openBleScan(BuildContext context) {
+    openScanTab(context);
   }
 
   @override
@@ -42,9 +47,20 @@ class AddVehiclePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
+            const AppSectionLabel('蓝牙车辆'),
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: _AddVehicleAction(
+                icon: Icons.bluetooth_searching,
+                title: '扫描附近车辆',
+                subtitle: '通过蓝牙扫描并连接本地车辆',
+                onTap: () => _openBleScan(context),
+              ),
+            ),
+            const SizedBox(height: 14),
             const AppCard(
               child: Text(
-                '当前仅支持通过官方账号同步已绑定车辆，不再提供扫码、IMEI 或门店绑定入口。',
+                '支持官方云端同步与本地蓝牙直连。蓝牙连接成功后会绑定为默认本地车辆，控车优先走 BLE。',
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.45,

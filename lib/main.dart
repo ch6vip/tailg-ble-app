@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'ble/connection_manager.dart' as ble;
+import 'models/vehicle_profile.dart';
+import 'services/auto_connect_service.dart';
 import 'services/location_service.dart';
 import 'services/log_service.dart';
+import 'services/manual_mode_service.dart';
 import 'services/official_cloud_service.dart';
 import 'services/permission_service.dart';
 import 'services/message_read_store.dart';
@@ -10,6 +14,7 @@ import 'services/vehicle_store.dart';
 import 'services/service_locator.dart';
 import 'services/app_preferences_service.dart';
 import 'pages/profile_mine_page.dart';
+import 'pages/scan_page.dart';
 import 'pages/service_hub_page.dart';
 import 'pages/vehicle_control_home_page.dart';
 import 'theme/app_colors.dart';
@@ -17,6 +22,12 @@ import 'theme/app_motion.dart';
 import 'widgets/app_pressable.dart';
 import 'widgets/app_toast.dart';
 
+ble.ConnectionManager get connectionManager =>
+    AppServices.instance.connectionManager;
+AutoConnectService get autoConnectService =>
+    AppServices.instance.autoConnectService;
+ManualModeService get manualModeService =>
+    AppServices.instance.manualModeService;
 LocationService get locationService => AppServices.instance.locationService;
 LogService get logService => AppServices.instance.logService;
 VehicleStore get vehicleStore => AppServices.instance.vehicleStore;
@@ -34,6 +45,29 @@ ValueNotifier<int> get homeTabIndex => AppServices.instance.homeTabIndex;
 final RouteObserver<ModalRoute<void>> appRouteObserver =
     RouteObserver<ModalRoute<void>>();
 
+VehicleProtocol vehicleProtocolFromBle(ble.ProtocolType protocol) {
+  return switch (protocol) {
+    ble.ProtocolType.standard => VehicleProtocol.standard,
+    ble.ProtocolType.qgj => VehicleProtocol.qgj,
+    ble.ProtocolType.unknown => VehicleProtocol.auto,
+  };
+}
+
+/// Apply any local BLE auth material for [vehicle].
+///
+/// QGJ password/userId fields were scrubbed from [VehicleProfile] during the
+/// cloud-only cleanup; ConnectionManager still accepts credentials for the
+/// QGJ login frame, so we intentionally reset them to zero defaults here.
+void applyVehicleBleCredentials(VehicleProfile? vehicle) {
+  connectionManager.setQgjCredentials(password: 0, userId: 0);
+}
+
+void openScanTab(BuildContext context) {
+  Navigator.of(
+    context,
+  ).push(MaterialPageRoute<void>(builder: (_) => const ScanPage()));
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -41,6 +75,8 @@ void main() async {
     await appPreferencesService.init();
     await vehicleStore.init();
     await officialCloudService.init();
+    await manualModeService.init();
+    await autoConnectService.init(connectionManager);
   } catch (e, st) {
     debugPrint('Startup initialization failed: $e\n$st');
     runApp(StartupErrorApp(error: e, stackTrace: st));

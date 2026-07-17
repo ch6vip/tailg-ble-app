@@ -33,6 +33,7 @@ class ControlCommandConfirmationGuard {
     required String? currentOfficialVehicleKey,
   }) {
     return switch (context.transport) {
+      ControlCommandTransport.ble => true,
       ControlCommandTransport.officialCloud => _sameOfficialVehicle(
         expectedOfficialVehicleKey: context.officialVehicleKey,
         currentOfficialVehicleKey: currentOfficialVehicleKey,

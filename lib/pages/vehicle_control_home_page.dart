@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../main.dart';
+import '../ble/connection_manager.dart' as ble;
 import '../models/battery_snapshot.dart';
 import '../models/command_types.dart';
 import '../models/official_vehicle.dart';
@@ -57,12 +58,14 @@ const _urbanAvgSpeedKmh = 20.0;
 class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     with AutomaticKeepAliveClientMixin {
   final _commandExecutor = ControlCommandExecutor(
+    sendBleCommand: (command) => connectionManager.sendCommand(command),
     sendCloudCommand: officialCloudService.sendCommand,
   );
   final Stopwatch _controlDebounceWatch = Stopwatch();
   final List<_CommandEntry> _commands = <_CommandEntry>[];
 
   StreamSubscription<OfficialCloudState>? _cloudSub;
+  StreamSubscription<ble.ConnectionState>? _bleStateSub;
   bool _busy = false;
   bool _disposed = false;
 
@@ -75,14 +78,19 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     _cloudSub = officialCloudService.stateStream.listen((_) {
       if (mounted) setState(() {});
     });
+    _bleStateSub = connectionManager.stateStream.listen((_) {
+      if (mounted) setState(() {});
+    });
     unawaited(_silentRefresh());
   }
 
   @override
   void dispose() {
     _disposed = true;
-    final sub = _cloudSub;
-    if (sub != null) unawaited(sub.cancel());
+    final cloudSub = _cloudSub;
+    if (cloudSub != null) unawaited(cloudSub.cancel());
+    final bleSub = _bleStateSub;
+    if (bleSub != null) unawaited(bleSub.cancel());
     super.dispose();
   }
 
@@ -136,6 +144,8 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   ControlChannelAvailability _controlAvailability() {
     return ControlChannelResolver.resolve(
       cloudState: officialCloudService.state,
+      bleReady: connectionManager.state == ble.ConnectionState.ready,
+      defaultVehicleId: vehicleStore.defaultVehicle?.id,
       busy: _busy,
     );
   }
@@ -202,7 +212,10 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       await Future<void>.delayed(_controlCommandSendDelay);
       if (!mounted || _disposed) return;
 
-      final result = await _commandExecutor.send(command: cmd);
+      final result = await _commandExecutor.send(
+        command: cmd,
+        availability: availability,
+      );
       if (result.success) {
         _runBackgroundTask(
           locationService.recordDefaultVehicleLocation(),

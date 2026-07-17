@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tailg_ble_app/ble/connection_manager.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/services/app_preferences_service.dart';
+import 'package:tailg_ble_app/services/auto_connect_service.dart';
 import 'package:tailg_ble_app/services/location_service.dart';
 import 'package:tailg_ble_app/services/log_service.dart';
+import 'package:tailg_ble_app/services/manual_mode_service.dart';
 import 'package:tailg_ble_app/services/message_read_store.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/services/permission_service.dart';
@@ -30,6 +33,10 @@ void main() {
       isTrue,
     );
     expect(
+      identical(app.connectionManager, AppServices.instance.connectionManager),
+      isTrue,
+    );
+    expect(
       identical(app.homeTabIndex, AppServices.instance.homeTabIndex),
       isTrue,
     );
@@ -40,6 +47,9 @@ void main() {
 
     AppServices.override(
       AppServices(
+        connectionManager: ConnectionManager(),
+        autoConnectService: AutoConnectService(),
+        manualModeService: ManualModeService(),
         locationService: LocationService(),
         logService: LogService(),
         vehicleStore: VehicleStore(),
