@@ -317,6 +317,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       CommandCode.unlock => '解防成功',
       CommandCode.find => '寻车完成',
       CommandCode.openSeat => '开坐垫',
+      _ => '${command.label}完成',
     };
   }
 
@@ -328,6 +329,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       CommandCode.unlock => '车锁已打开',
       CommandCode.find => '车辆已响应',
       CommandCode.openSeat => '坐垫锁已释放',
+      _ => command.label,
     };
   }
 
@@ -338,6 +340,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       CommandCode.unlock => _CommandKind.unlock,
       CommandCode.find => _CommandKind.find,
       CommandCode.openSeat => _CommandKind.seat,
+      _ => _CommandKind.find,
     };
   }
 

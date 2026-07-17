@@ -1,0 +1,43 @@
+import 'dart:typed_data';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:tailg_ble_app/ble/hex.dart';
+
+void main() {
+  test('bytesToHex renders uppercase contiguous byte text', () {
+    expect(bytesToHex(Uint8List.fromList([0, 10, 255])), '000AFF');
+  });
+
+  test('bytesToSpacedHex renders lowercase spaced byte text', () {
+    expect(bytesToSpacedHex([0, 10, 255]), '00 0a ff');
+  });
+
+  test('intToHex2Lower renders lowercase two digit byte text', () {
+    expect(intToHex2Lower(0), '00');
+    expect(intToHex2Lower(10), '0a');
+    expect(intToHex2Lower(255), 'ff');
+  });
+
+  test('intToHex2Lower masks values to one byte', () {
+    expect(intToHex2Lower(0x123), '23');
+    expect(intToHex2Lower(-1), 'ff');
+  });
+
+  test('intToHex2 renders uppercase two digit byte text', () {
+    expect(intToHex2(0), '00');
+    expect(intToHex2(10), '0A');
+    expect(intToHex2(255), 'FF');
+  });
+
+  test('intToHex2 masks values to one byte', () {
+    expect(intToHex2(0x123), '23');
+    expect(intToHex2(-1), 'FF');
+  });
+
+  test('intToHex4Lower renders lowercase four digit text', () {
+    expect(intToHex4Lower(0), '0000');
+    expect(intToHex4Lower(10), '000a');
+    expect(intToHex4Lower(0xabcd), 'abcd');
+    expect(intToHex4Lower(0x12345), '12345');
+  });
+}
