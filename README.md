@@ -1,212 +1,151 @@
-# Tailg Cloud App
+# Tailg BLE App · 官方 App 完全复刻
 
-台铃电动车的**非官方 Flutter 客户端**。通过**官方云端 API** 完成账号登录、车辆管理与远程控车（设防 / 解防 / 通电 / 断电 / 寻车 / 开坐垫），并提供电池、定位轨迹、电子围栏、消息中心与诊断日志等能力。
+台铃电动车 **官方 App（台铃智能）的非官方 Flutter 完全复刻**。
 
-[![Build APK](https://github.com/ch6vip/tailg-ble-app/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/ch6vip/tailg-ble-app/actions/workflows/build.yml)
-![Flutter](https://img.shields.io/badge/Flutter-3.44.6_stable-02569B?logo=flutter)
-![Dart](https://img.shields.io/badge/Dart-3.12.2-0175C2?logo=dart)
-![Platform](https://img.shields.io/badge/platform-Android-3DDC84?logo=android)
-![Tests](https://img.shields.io/badge/tests-389%2B_passing-00C896)
-![Coverage](https://img.shields.io/badge/coverage-81%25-00C896)
+目标不是「只做云端遥控器」，而是在功能、业务逻辑、数据通道与状态机上 **对齐官方**：近场 BLE、远程 MQTT、云 API、绑车与车况全链路可用。UI 采用自有 Aurora 设计语言，**不要求像素级抄皮肤**。
 
-> ⚠️ 仅供**学习研究与个人车辆管理**使用。本项目为 **cloud-only**：本地 BLE 直连栈（扫描 / GATT / 协议解析 / 感应解锁）已整体移除，控车与状态同步**仅走官方云端**。高级写入（QGJ 设置、密码解锁、NFC 加钥匙、OTA、胎压 / ECU 校准）不在范围内，且无开放计划。
+> ⚠️ 仅供学习研究与个人车辆管理。请勿用于未授权车辆或任何违法用途。
+
+| | |
+|--|--|
+| 仓库 | [`ch6vip/tailg-ble-app`](https://github.com/ch6vip/tailg-ble-app) · Public |
+| 角色 | 工作区内 **测试 / 复刻实验线**（正式 cloud 产品线见 [`tailg-next`](https://github.com/ch6vip/tailg-next)） |
+| 对照源 | 官方包 `台铃智能` · 反编译 `E:\ctf-aaa\tlddc\decompiled`（`com.tailg.run.intelligence`） |
+| 技术栈 | Flutter 3.44.6 · Dart 3.12.2 · Android API 23+ |
+| 包名 | Dart `tailg_ble_app` · Android `de.tttq.tailg_ble_app` · 显示名「台铃智能」 |
+| 版本 | 以 `pubspec.yaml` 为准（当前 `1.1.0+14`） |
 
 ---
 
-## ✨ 功能特性
+## 产品目标
 
-| 模块 | 能力 |
+### 完全复刻（Complete）= 默认交付线
+
+在**不依赖官方 UI** 的前提下，做到与官方一致的：
+
+| 维度 | 标准 |
 |------|------|
-| **账号与会话** | 短信验证码登录、退出、会话保持；粘贴 token 快速登录 |
-| **车辆中心** | 账号下车辆列表 / 详情（在线、电量、电压、设防、ACC 状态）、多车快速切换、默认车辆、车库管理 |
-| **云端控车** | 设防 / 解防 / 通电 / 断电 / 寻车 / 开坐垫；命令态（发送中 / 成功 / 失败 / 未确认）统一反馈 |
-| **车况可信度** | 打开 App / 回前台 / 切回控车页自动刷新 `carStatus`；显示「最后同步时间」；busy 态显示「同步中」而非误报离线 |
-| **电池详情** | 电量 / 电压 / 温度 / BMS 信息，环形进度，force 刷新，最后同步卡 |
-| **定位与轨迹** | 停车位置、历史轨迹、电子围栏读取与写入；空态 / 刷新 / 登录引导反馈 |
-| **消息中心** | 官方车辆消息 / 系统消息（`pageOfCarMsg` / `pageOfSysMsg`）、服务端清空、本地已读状态、通知偏好 |
-| **骑行数据** | 月度骑行统计与碳排估算 |
-| **诊断与日志** | 云端自检、历史诊断记录、运行日志（含凭据脱敏）、诊断报告导出 |
+| 功能覆盖 | 账号、车辆、六键控车、近场 BLE、远程 MQTT、电池、定位/轨迹/围栏、消息等主路径可用 |
+| 通道逻辑 | 分流与官方 `ControlFragment` + `ControlTypeUtil` 一致（`modelType` / `isGps` / BLE LOGIN） |
+| 近场 | 登录 → 选车 → 进爱车 → 自动/点连 BLE → LOGIN 后本地控车 |
+| 远程 | 允许远程时 **MQTT 主路径**，HTTP `device/cmd` 兜底；状态回包更新 ACC/设防 |
+| 数据语义 | 列表、状态、电池、定位、消息等与官方 API 语义一致 |
+| 失败语义 | 未登录 / 无车 / 蓝牙未开 / 未 LOGIN / 无网 / MQTT 未连 / 指令未确认 → 明确结果，禁止静默假成功 |
 
-完整能力清单与官方 3.5.6 版差距见 **[FEATURES.md](FEATURES.md)**。
+### 完美复刻（Perfect）= 后续加深
 
----
+车型矩阵、QGJ 设置全集、感应解锁、OTA、NFC 钥匙、绑定闭环（扫码/IMEI/门店/解绑/转让）等。详见 [FEATURES.md](FEATURES.md)。
 
-## 🧱 技术栈
+### 明确不做（L3，非控车主业）
 
-| 类别 | 选型 |
-|------|------|
-| 框架 | Flutter **3.44.6** (stable) · Dart **3.12.2** |
-| 存储 | `shared_preferences`（普通配置）· `flutter_secure_storage`（凭据） |
-| 地图 / 定位 | `flutter_map` · `latlong2` · `geolocator` · `cached_network_image`（瓦片缓存） |
-| 动效 / 国际化 | `lottie` · `intl` · `flutter_localizations` |
-| 其他 | `url_launcher` · `cupertino_icons` |
-| 质量 | `flutter_lints`(`--fatal-infos`) · `mockito` · `flutter_test` / `integration_test` |
+商城、支付、保险、积分、社区/直播、充电运营交易、广告位等。需要时单独立项，不挡控车复刻主线。
 
 ---
 
-## 🏗️ 项目架构
+## 当前能力快照
 
+| 通道 | 状态 | 说明 |
+|------|------|------|
+| 官方云 API | ✅ 主路径 | 登录、车辆同步、状态、消息、定位、轨迹、围栏、电池、部分写回 |
+| MQTT 远程控车 | ✅ 实验线已接 | 预连接 + 发令 + 状态回包（`OfficialMqttService`） |
+| 本地 BLE | ✅ 实验线已接 | 协议 / 连接 / 扫描 / 爱车近场自动连（`lib/ble/`） |
+| 通道路由 | ✅ 按官方表 | `OfficialControlRoute`：BLE / MQTT / 不可用 |
+| 感应解锁 / OTA / NFC / 完整绑车 | ⏳ 未完成 | 完美复刻阶段 |
+| 商城等运营 | ❌ 不做 | L3 |
+
+能力与缺口明细见 **[FEATURES.md](FEATURES.md)**。
+
+### 推荐使用路径（对齐官方）
+
+```text
+1. 短信登录官方账号
+2. 同步并选中已绑定车辆
+3. 打开「爱车」
+4. 近场：有 btmac → 自动扫连；失败则顶栏「连接蓝牙」
+5. 远程：不在身边时直接点设防/通电等 → MQTT（必要时 HTTP 兜底）
 ```
+
+顶栏通道文案：`BLE 直连` · `MQTT 远程` · `MQTT 连接中` · `云端待命`。
+
+---
+
+## 工程结构
+
+```text
 lib/
-├── main.dart                  应用入口、路由、底部导航
-├── config/                    地图瓦片等运行时配置
-├── models/                    车辆状态、电池快照、命令类型、地理坐标等数据结构
-├── services/                  业务逻辑（见下）
-├── pages/                     各页面 UI（Aurora 控车主页 / 电池 / 定位 / 车库 / 诊断 / 我的 …）
-├── widgets/                   可复用组件（AppPressable / StatusBadge / VehicleStage …）
-└── theme/                     设计 token（app_colors · app_motion）
-
-test/                          约 54 个测试文件，覆盖云服务、控车路由、持久化与 UI 状态
-docs/                          架构规划、对齐进度、构建与设计文档
+  ble/          近场协议、AES、ConnectionManager、QGJ 帧
+  services/     云 API、MQTT、通道路由、自动连、持久化、日志脱敏
+  models/       车辆 / 电池 / 命令 / 坐标等
+  pages/        爱车、定位、车库、消息、登录、扫描、设置…
+  widgets/      AppPressable、StatusBadge、VehicleStage…
+  theme/        Aurora 设计 token（禁止硬编码 Material 色）
+test/           单元 / 组件测试
+android|ios…    平台工程（含 BLE / 定位权限）
 ```
 
-### 服务分层（`lib/services/`）
+对照与逆向材料在工作区上级目录：
 
-- **官方云端**：`official_cloud_service` · `official_cloud_api_client` · `official_cloud_auth_parser` · `official_cloud_data_parser` · `official_cloud_storage` · `official_cloud_vehicle_sync` / `_mapper` / `_links`
-- **控车管道**：`control_command_executor` · `control_command_policy`（策略校验）· `control_command_result` · `control_channel_resolver`（通道可用性）
-- **状态与持久化**：`vehicle_store` · `app_preferences_service` · `message_read_store` · `replica_feature_store` · `service_locator`
-- **横切能力**：`log_service`（广播 stream + 脱敏）· `sensitive_value_masker` · `location_service` · `permission_service` · `app_navigation` · `display_time_formatter` · `diagnostic_export_service`
+- `E:\ctf-aaa\tlddc\decompiled` — 官方反编译
+- `E:\ctf-aaa\tlddc\台铃智能_*.apk` — 官方安装包样本
+- `E:\ctf-aaa\tlddc\版本说明.md` — 与 `tailg-next` 的正式/测试分工
+
+本仓 **不再维护 `docs/`**；说明以本 README、`FEATURES.md`、`AGENTS.md` 为准。
 
 ---
 
-## 🎨 设计系统
-
-设计语言 **v8「Aurora Cockpit」**（Ninebot 蓝本），所有颜色 / 圆角 / 阴影 / 文本样式统一收敛在 `lib/theme/`，**禁止硬编码 Material 颜色**。
-
-| Token | 值 | 用途 |
-|-------|-----|------|
-| `primary` | `#00C896` 翡翠绿 | 主操作、品牌色 |
-| `success` / `accentTeal` | `#00A896` | 状态确认、信息 |
-| `energyGreen` | `#00C896` | 电池 / 能量指示 |
-| `accentSky` | `#2E9BFF` | 标准骑行模式 |
-| `warning` | `#FF9800` | 运动模式 / 警告 |
-| `danger` | `#FF5252` | 警示、失败 |
-| `pageBg` | `#F5F5F7` | 页面底色 |
-
-- **交互反馈**：所有可点击元素按下 `AnimatedScale(AppMotion.pressScale)`；控车快捷为等权圆标（通电为绿实底高亮，非中置长按旋钮）
-- **无障碍**：触控目标 ≥ 44×44px（WCAG 2.5.5），对比度 ≥ 4.5:1，颜色非唯一信息载体
-- **暗色**：`AppColorsDark` token 已定义（暗色主色 `#00E0A8`），已通过 `ThemeMode.system` 跟随系统；部分页面仍有硬编码对比色，后续按 token 体系扫尾
-- **爱车主页**：`lib/pages/vehicle_control_home_page.dart`（Open Design Aurora / vehicle-control-home）；官方复刻 `ControlPage` 已移除
-
-设计索引见 **[docs/design_system.md](docs/design_system.md)**。
-
----
-
-## 🚀 快速开始
-
-### 前置条件
-
-- Flutter `3.44.6`（stable，含 Dart `3.12.2`），`flutter doctor` 全绿
-- Android SDK（compileSdk 36）· Gradle 8.12（需 JDK 17 运行；Kotlin / Java 编译目标 11）
-- Android 模拟器可选；**不要求**连接实体手机、车辆或蓝牙设备
-
-### 运行
+## 快速开始
 
 ```bash
-flutter pub get          # 安装依赖
-flutter doctor           # 检查环境
-flutter run              # 启动模拟器 / 设备后运行 debug 构建（可选）
+flutter pub get
+flutter doctor
+flutter run                 # 调试；近场控车需真机蓝牙
+flutter build apk --release # 发布包（需本地或 CI 签名）
 ```
 
-### 地图瓦片 Token（可选）
-
-默认使用**高德**瓦片兜底，无需配置。如需**天地图**，通过编译期变量注入 Token：
+### 质量门禁（与 CI 一致）
 
 ```bash
-flutter run --dart-define=TIANDITU_TOKEN=<your-token>
-flutter build apk --release --dart-define=TIANDITU_TOKEN=<your-token>
+dart format --output=none --set-exit-if-changed .
+flutter analyze --fatal-warnings --fatal-infos
+flutter test --coverage
 ```
-
-配置逻辑见 `lib/config/map_tile_config.dart`（有 Token → 天地图矢量 + 注记，否则 → 高德）。
-
----
-
-## 📦 构建
-
-```bash
-flutter build apk --debug        # Debug APK
-flutter build apk --release      # Release APK（需签名，见下）
-```
-
-**签名**：CI 通过 GitHub Secrets 注入密钥（`key.properties` 与 keystore **不入库**）。本地发布自行准备 `android/key.properties`：
-
-```properties
-storePassword=<your-store-password>
-keyPassword=<your-key-password>
-keyAlias=<your-key-alias>
-storeFile=../../release.keystore
-```
-
----
-
-## ✅ 质量门禁
-
-提交前请保持以下门禁全绿（与 CI 完全一致）：
-
-```bash
-dart format --output=none --set-exit-if-changed .    # ① 格式
-flutter analyze --fatal-warnings --fatal-infos       # ② 静态分析（0 容忍）
-flutter test --coverage                              # ③ 单元 / 组件测试
-dart tool/check_coverage.dart coverage/lcov.info 40  # ④ 覆盖率阈值 ≥ 40%
-```
-
-可选启用本地 pre-commit hook：
-
-```bash
-git config core.hooksPath .husky
-```
-
-**当前状态**：`analyze` 0 问题 · 约 **390** 个用例（最近全量跑：**389 通过 / 1 失败**，失败为 `test_conventions_test` 对 `clipboard_text_test` 平台 mock 约定）· 行覆盖约 **81%**（门槛 40%）。badge 与状态数字可能略滞后，以本地 `flutter test --coverage` 为准。
-
-### CI / CD
 
 | 工作流 | 触发 | 行为 |
 |--------|------|------|
-| [`build.yml`](.github/workflows/build.yml) | PR / push 到 `master`·`develop`，手动 | `format → analyze → test --coverage → 覆盖率门禁`；push 后额外构建签名 APK（arm64）artifact |
-| [`release.yml`](.github/workflows/release.yml) | `v*` tag，手动 | 同门禁 → 签名 APK → 发布 GitHub Release（含 Telegram 通知） |
+| `build.yml` | PR / push `master`·`develop`，手动 | format → analyze → test →（push 时）签名 APK artifact |
+| `release.yml` | `v*` tag，手动 | 门禁 → Release APK（可 Telegram 通知） |
 
-配置与 Secrets 说明见 **[docs/github_actions_guide.md](docs/github_actions_guide.md)**。
+密钥、`key.properties`、token、手机号、IMEI、抓包隐私数据 **禁止入库**。
 
----
+### 地图（可选）
 
-## 🔌 控车通道
+默认高德瓦片兜底。天地图：
 
-当前控车通道**仅** `ControlCommandTransport.officialCloud`。云端不可用时命令返回 `unavailable`，本项目**不提供**任何本地 / 蓝牙控车通道。
-
-> 官方云返回的车辆 JSON 仍可能包含 `btname` / `btmac` / `bleConnect*` 字段，仅作展示或兼容映射，**不驱动**任何本地蓝牙连接。
-
----
-
-## 📚 文档索引
-
-| 文档 | 用途 |
-|------|------|
-| [FEATURES.md](FEATURES.md) | 已实现能力、官方版差距、车辆添加策略 |
-| [docs/README.md](docs/README.md) | 文档索引（现行 + 归档） |
-| [docs/cloud_architecture_plan.md](docs/cloud_architecture_plan.md) | 云端架构与产品边界 |
-| [docs/design_system.md](docs/design_system.md) | 设计系统索引 |
-| [docs/github_actions_guide.md](docs/github_actions_guide.md) | CI/CD 配置与 Secrets |
-| [docs/android_build_notes.md](docs/android_build_notes.md) | Android 构建 warning 处理 |
-| [docs/qgj_ble_residual_inventory.md](docs/qgj_ble_residual_inventory.md) | QGJ/BLE 残留清单与可删除评估 |
-| [docs/ble_adaptation_progress.md](docs/ble_adaptation_progress.md) | （实验分支）BLE/MQTT 适配进度 |
-| [docs/official_logic_parity_plan.md](docs/official_logic_parity_plan.md) | （计划）官方功能逻辑复刻蓝图 |
-| [docs/archive/](docs/archive/README.md) | 历史完成/取消文档 |
+```bash
+flutter run --dart-define=TIANDITU_TOKEN=<token>
+```
 
 ---
 
-## ℹ️ 项目信息
+## 与 `tailg-next` 的关系
 
-- **版本**：`1.1.0+14`（以 `pubspec.yaml` 为准）
-- **包名**：`de.tttq.tailg_ble_app`（历史包名保留；与 cloud-only 产品定位无关）
-- **最低 Android**：API 23（Android 6.0）· compileSdk 36
-- **发布**：仅内部 / 侧载，未上架 pub.dev（`publish_to: none`）
+| | `tailg-ble-app`（本仓） | `tailg-next` |
+|--|------------------------|--------------|
+| 角色 | **测试 / 官方完全复刻实验** | **正式版**（工作区约定） |
+| 侧重 | BLE + MQTT + 云，冲齐官方逻辑 | 当前以 cloud 产品线为主（以 next 仓文档为准） |
+| App ID | `de.tttq.tailg_ble_app` | `com.ch6vip.tailg.next` |
+| 安装 | 可与 next **并排安装**对照 | 同上 |
 
-## 🔒 安全须知
-
-- 严禁提交 keystore、`key.properties`、token、手机号、IMEI 及任何抓取的车辆数据
-- 官方云凭据存于 `flutter_secure_storage`；日志经 `sensitive_value_masker` 脱敏，新增日志调用须沿用该模式
-- 账号 / 云端相关改动需附自动化测试证据，且不得要求真机、实体车辆或蓝牙抓包
+验证通过的复刻能力，再考虑合入或移植到正式线。
 
 ---
 
-> 本项目与台铃官方无隶属关系，商标归各自所有者。请遵守当地法律法规，仅在你拥有合法使用权的车辆上使用。
+## 设计
+
+**v8 Aurora Cockpit**：主色翡翠绿 `#00C896`，token 在 `lib/theme/`。触控目标 ≥ 44×44；颜色不作唯一信息载体。
+
+---
+
+## 许可证与免责
+
+非官方、与台铃品牌方无关联。逆向所得协议与接口仅用于个人学习与自有车辆管理。使用风险自负。

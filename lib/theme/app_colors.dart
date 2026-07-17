@@ -66,7 +66,7 @@ abstract final class AppColors {
   static const accentTeal = Color(0xFF00A896);
   static const accentOrange = Color(0xFFFF8A00);
 
-  // ── v8 accent tokens (see docs/design_system.md) ──────────────────────
+  // ── v8 accent tokens (Aurora; see README design section) ───────────────
   static const accentViolet = Color(0xFF7C6CFF);
   static const accentSky = Color(0xFF2E9BFF);
   static const accentAmber = Color(0xFFF5A623);
@@ -240,7 +240,7 @@ class AppColorsLight extends AppColorsData {
 
 /// Dark-mode token set.
 ///
-/// Dark-mode token notes are tracked in `docs/design_system.md`:
+/// Dark-mode token notes:
 /// - Backgrounds invert to deep charcoal
 /// - Foreground colours are lightened and slightly desaturated
 /// - Brand accent stays vivid but with adjusted contrast
@@ -373,7 +373,7 @@ abstract final class AppShadows {
     BoxShadow(color: Color(0x06000000), blurRadius: 6, offset: Offset(0, 3)),
   ];
 
-  // ── v8 tokens (see docs/design_system.md) ──────────────────────────────
+  // ── v8 tokens (Aurora) ─────────────────────────────────────────────────
   static const List<BoxShadow> svcCardShadow = [
     BoxShadow(color: Color(0x0D182740), blurRadius: 14, offset: Offset(0, 4)),
   ];
