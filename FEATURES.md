@@ -35,7 +35,7 @@
 - NFC、投屏、智能仪表、充电站等多为入口或占位
 - OTA / 胎压 / 高级 ECU 写入未开放
 
-详见 `docs/official_3_5_6_deep_comparison.md`。
+详见 [docs/archive/official_3_5_6_deep_comparison.md](docs/archive/official_3_5_6_deep_comparison.md)（归档）。
 
 ## 工程结构（当前）
 
@@ -64,9 +64,9 @@ QGJ/BLE 命名残留与可删除评估见 [docs/qgj_ble_residual_inventory.md](d
 
 当前主线见：
 
-- [docs/cloud_only_alignment_progress.md](docs/cloud_only_alignment_progress.md)（P0 总览）
-- [docs/p0_5_high_value_path_progress.md](docs/p0_5_high_value_path_progress.md)（P0.5 已完成）
-- [docs/device_regression_checklist_v1_0_13.md](docs/device_regression_checklist_v1_0_13.md)（已废弃的真机/BLE 历史清单）
+- [docs/README.md](docs/README.md)（文档索引）
+- [docs/archive/cloud_only_alignment_progress.md](docs/archive/cloud_only_alignment_progress.md)（归档：P0 历史）
+- [docs/archive/p0_5_high_value_path_progress.md](docs/archive/p0_5_high_value_path_progress.md)（归档：P0.5 已完成）
 
 **P0 已全部完成并通过 CI**（非蓝牙）：
 

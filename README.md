@@ -182,14 +182,15 @@ git config core.hooksPath .husky
 | 文档 | 用途 |
 |------|------|
 | [FEATURES.md](FEATURES.md) | 已实现能力、官方版差距、车辆添加策略 |
-| [docs/README.md](docs/README.md) | 文档索引与阅读顺序 |
-| [docs/cloud_architecture_plan.md](docs/cloud_architecture_plan.md) | 官方账号 / 云端控车架构规划 |
-| [docs/cloud_only_alignment_progress.md](docs/cloud_only_alignment_progress.md) | cloud-only 对齐进度（P0 / P0.5） |
-| [docs/official_3_5_6_deep_comparison.md](docs/official_3_5_6_deep_comparison.md) | 官方 3.5.6 复刻度对比 |
+| [docs/README.md](docs/README.md) | 文档索引（现行 + 归档） |
+| [docs/cloud_architecture_plan.md](docs/cloud_architecture_plan.md) | 云端架构与产品边界 |
 | [docs/design_system.md](docs/design_system.md) | 设计系统索引 |
 | [docs/github_actions_guide.md](docs/github_actions_guide.md) | CI/CD 配置与 Secrets |
 | [docs/android_build_notes.md](docs/android_build_notes.md) | Android 构建 warning 处理 |
 | [docs/qgj_ble_residual_inventory.md](docs/qgj_ble_residual_inventory.md) | QGJ/BLE 残留清单与可删除评估 |
+| [docs/ble_adaptation_progress.md](docs/ble_adaptation_progress.md) | （实验分支）BLE/MQTT 适配进度 |
+| [docs/official_logic_parity_plan.md](docs/official_logic_parity_plan.md) | （计划）官方功能逻辑复刻蓝图 |
+| [docs/archive/](docs/archive/README.md) | 历史完成/取消文档 |
 
 ---
 

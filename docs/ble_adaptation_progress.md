@@ -13,7 +13,7 @@
 | 项 | 说明 |
 | --- | --- |
 | 本文范围 | **仅描述本实验分支**，不代表 `master` 已改为 hybrid |
-| 产品文档 | `AGENTS.md` / `cloud_only_alignment_progress.md` / `qgj_ble_residual_inventory.md` **暂未解禁**「不恢复 BLE」 |
+| 产品文档 | `AGENTS.md` / `docs/archive/cloud_only_alignment_progress.md` / `qgj_ble_residual_inventory.md` **暂未解禁**「不恢复 BLE」 |
 | 历史基线 | BLE 移除提交 `58b320e`；恢复参考 `58b320e^` |
 | 官方对照 | 反编译目录 `E:\ctf-aaa\tlddc\decompiled`（`ControlFragment` / `MqttUtil` / `ControlTypeUtil`） |
 
@@ -257,6 +257,7 @@ ControlChannelResolver.automatic
 - [项目文档索引](README.md)  
 - [官方功能逻辑复刻计划](official_logic_parity_plan.md)（完全/完美复刻蓝图，不含 UI）  
 - [QGJ/BLE 残留清单](qgj_ble_residual_inventory.md)（master 审计基线）  
-- [Cloud-only 对齐进度](cloud_only_alignment_progress.md)（产品主线）  
+- [Cloud-only 对齐进度（归档）](archive/cloud_only_alignment_progress.md)  
+- [文档归档目录](archive/README.md)  
 - 历史移除：`58b320e`  
 - 本分支：`feature/ble-adaptation`

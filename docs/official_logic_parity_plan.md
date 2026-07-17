@@ -421,7 +421,7 @@ QGJ 凭据：完美复刻时需安全存储策略（当前实验为 0）。
 | 文档 | 关系 |
 | --- | --- |
 | [ble_adaptation_progress.md](ble_adaptation_progress.md) | **实验分支执行日志**；本计划是总蓝图 |
-| [cloud_only_alignment_progress.md](cloud_only_alignment_progress.md) | master 已完成的 cloud-only P0 |
+| [archive/cloud_only_alignment_progress.md](archive/cloud_only_alignment_progress.md) | master 已完成的 cloud-only P0（归档） |
 | [cloud_architecture_plan.md](cloud_architecture_plan.md) | master 架构边界（与本计划冲突处以产品决策为准） |
 | [qgj_ble_residual_inventory.md](qgj_ble_residual_inventory.md) | 残留审计；完美复刻时多处将反转 |
 | [FEATURES.md](../FEATURES.md) | 当前对外功能清单（master 视角） |

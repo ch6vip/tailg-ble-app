@@ -116,7 +116,7 @@
 
 ### 3.7 文档中的 BLE/QGJ（保留并继续标历史）
 
-- `FEATURES.md`、`docs/cloud_architecture_plan.md`、`docs/工程审视报告_*`、`device_regression_checklist_*` 等已标明 **已移除 / 不执行**。
+- `FEATURES.md`、`docs/cloud_architecture_plan.md`、`docs/archive/工程审视报告_*`、`docs/archive/device_regression_checklist_*` 等已标明 **已移除 / 不执行**。
 - **不要**从文档抹掉「已删除 BLE」——否则后人可能以为该恢复。
 
 ---

@@ -40,7 +40,7 @@ Flutter UI
 - 电池信息、诊断日志和报告导出
 - 多车切换、骑行统计和碳排估算
 
-当前功能状态以 [../FEATURES.md](../FEATURES.md) 和 [cloud_only_alignment_progress.md](cloud_only_alignment_progress.md) 为准。
+当前功能状态以 [../FEATURES.md](../FEATURES.md) 和归档 [archive/cloud_only_alignment_progress.md](archive/cloud_only_alignment_progress.md) 为准。
 
 ## 安全与错误处理
 
