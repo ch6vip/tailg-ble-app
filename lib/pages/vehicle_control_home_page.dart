@@ -57,7 +57,7 @@ const _controlCommandSendDelay = Duration(milliseconds: 500);
 const _urbanAvgSpeedKmh = 20.0;
 
 class _VehicleControlHomePageState extends State<VehicleControlHomePage>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   final _commandExecutor = ControlCommandExecutor(
     sendBleCommand: (command) => connectionManager.sendCommand(command),
     sendCloudCommand: (command) => OfficialMqttService().sendCommandPreferMqtt(
@@ -73,6 +73,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   StreamSubscription<OfficialMqttLinkState>? _mqttLinkSub;
   bool _busy = false;
   bool _disposed = false;
+  bool _nearFieldBusy = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -80,8 +81,10 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _cloudSub = officialCloudService.stateStream.listen((_) {
       if (mounted) setState(() {});
+      unawaited(_ensureNearFieldLink(auto: true));
     });
     _bleStateSub = connectionManager.stateStream.listen((_) {
       if (mounted) setState(() {});
@@ -91,11 +94,13 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     });
     unawaited(_silentRefresh());
     unawaited(OfficialMqttService().preconnectForCloud(officialCloudService));
+    unawaited(_ensureNearFieldLink(auto: true));
   }
 
   @override
   void dispose() {
     _disposed = true;
+    WidgetsBinding.instance.removeObserver(this);
     final cloudSub = _cloudSub;
     if (cloudSub != null) unawaited(cloudSub.cancel());
     final bleSub = _bleStateSub;
@@ -103,6 +108,79 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     final mqttSub = _mqttLinkSub;
     if (mqttSub != null) unawaited(mqttSub.cancel());
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_ensureNearFieldLink(auto: true));
+      unawaited(OfficialMqttService().preconnectForCloud(officialCloudService));
+    }
+  }
+
+  /// Official-like near-field path: open control home → auto link BLE by
+  /// selected vehicle MAC when possible.
+  Future<void> _ensureNearFieldLink({required bool auto}) async {
+    if (_disposed || _nearFieldBusy) return;
+    if (!officialCloudService.state.signedIn) return;
+    final vehicle = officialCloudService.state.selectedVehicle;
+    if (vehicle == null) return;
+    final mac = vehicle.normalizedDeviceMac;
+    if (mac.isEmpty) return;
+
+    final bleState = connectionManager.state;
+    if (bleState == ble.ConnectionState.ready ||
+        bleState == ble.ConnectionState.connecting ||
+        bleState == ble.ConnectionState.connected ||
+        bleState == ble.ConnectionState.reconnecting) {
+      return;
+    }
+
+    _nearFieldBusy = true;
+    try {
+      // Keep local default vehicle aligned with official MAC target.
+      await autoConnectService.linkOfficialTarget(
+        deviceId: mac,
+        displayName: vehicle.displayName,
+        enable: true,
+        connectNow: true,
+      );
+    } catch (e) {
+      logService.operation(
+        '爱车近场连接失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
+      if (!auto && mounted) {
+        AppSnack.error(context, '蓝牙连接失败，请确认车辆在附近并已开机');
+      }
+    } finally {
+      _nearFieldBusy = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _manualNearFieldConnect() async {
+    final permission = await permissionService.requestBleScanPermissions();
+    if (!permission.granted) {
+      if (mounted) {
+        AppSnack.error(context, permission.message ?? '请授予蓝牙和定位权限');
+      }
+      return;
+    }
+    if (mounted) {
+      AppSnack.info(context, '正在连接车辆蓝牙…');
+    }
+    await _ensureNearFieldLink(auto: false);
+    if (!mounted) return;
+    if (connectionManager.state == ble.ConnectionState.ready) {
+      AppSnack.success(context, '蓝牙已连接');
+    } else if (connectionManager.state == ble.ConnectionState.connecting ||
+        connectionManager.state == ble.ConnectionState.connected) {
+      AppSnack.info(context, '蓝牙连接中…');
+    } else {
+      AppSnack.error(context, '未找到车辆，请靠近车辆后重试');
+    }
   }
 
   Future<void> _silentRefresh() async {
@@ -455,6 +533,13 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     return availability.effectiveChannelLabel;
   }
 
+  bool _shouldShowNearFieldBanner(OfficialVehicle? vehicle) {
+    if (vehicle == null) return false;
+    if (vehicle.normalizedDeviceMac.isEmpty) return false;
+    final state = connectionManager.state;
+    return state == ble.ConnectionState.disconnected;
+  }
+
   String _vehicleName(OfficialVehicle? cloudVehicle) {
     return cloudVehicle?.displayName ??
         vehicleStore.defaultVehicle?.displayName ??
@@ -648,6 +733,18 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                       ),
                     ),
                   ),
+                )
+              else if (_shouldShowNearFieldBanner(cloudVehicle))
+                _GateBanner(
+                  title: _nearFieldBusy
+                      ? '正在连接车辆蓝牙…'
+                      : connectionManager.state == ble.ConnectionState.connecting
+                      ? '蓝牙连接中…'
+                      : '车辆在附近时可连接蓝牙本地控车',
+                  actionLabel: _nearFieldBusy ? '连接中' : '连接蓝牙',
+                  onAction: _nearFieldBusy
+                      ? () {}
+                      : () => unawaited(_manualNearFieldConnect()),
                 ),
               _TopBar(
                 vehicleName: _vehicleName(cloudVehicle),

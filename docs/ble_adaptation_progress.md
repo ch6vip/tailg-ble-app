@@ -119,7 +119,7 @@ ControlChannelResolver（**完全按官方 ControlFragment 决策表**）
 | `ControlCommandTransport` | `ble` / `officialCloud` / `unavailable` |
 | `ControlChannelResolver` | 默认 `automatic`：BLE ready 优先 |
 | `ControlCommandExecutor` | 按 availability 路由 BLE/云 |
-| `AutoConnectService` | 已恢复；**尚未在启动路径主动 tryAutoConnect** |
+| `AutoConnectService` | 已恢复；爱车页按官方 `btmac` 自动 linkOfficialTarget + tryAutoConnect |
 | `ManualModeService` | 已恢复；手动模式跳过自动连接 |
 | `AppPermissionService.requestBleScanPermissions` | 已恢复 |
 
@@ -195,6 +195,23 @@ ControlChannelResolver（**完全按官方 ControlFragment 决策表**）
 ---
 
 ## 9. 关键路径速查
+
+## 8.1 官方使用路径对齐（2026-07-18）
+
+目标路径：
+
+1. 登录  
+2. 账号下已绑定车辆  
+3. 打开爱车  
+4. 近场：蓝牙开时自动/点按连接 → 本地控  
+5. 远程：有远程能力直接控 → MQTT  
+
+当前实现：
+
+- 爱车 `init` / 回前台 / 换车：用选中车 `normalizedDeviceMac` 调用 `autoConnectService.linkOfficialTarget` 并扫描连接  
+- 未连上时横幅「连接蓝牙」手动再试  
+- 远程仍 MQTT 优先 + HTTP 兜底  
+- 扫描页保留为兜底发现，**不再是近场控车必经入口**
 
 ```text
 lib/ble/*

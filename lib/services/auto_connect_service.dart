@@ -45,7 +45,7 @@ class AutoConnectTargetGuard {
   }) {
     return autoConnectEnabled &&
         !manualModeEnabled &&
-        defaultVehicleId == deviceId &&
+        AutoConnectService._sameDeviceId(defaultVehicleId ?? '', deviceId) &&
         snapshotGuard.allowsReadyTarget(
           startManager: manager,
           currentManager: currentManager,
@@ -150,6 +150,40 @@ class AutoConnectService {
     _emitEnabled();
   }
 
+  /// Bind the official selected car as the near-field auto-connect target and
+  /// optionally start scanning/connecting (official ControlFragment path).
+  Future<void> linkOfficialTarget({
+    required String deviceId,
+    required String displayName,
+    bool enable = true,
+    bool connectNow = true,
+  }) async {
+    final id = deviceId.trim();
+    if (id.isEmpty) return;
+    await VehicleStore().init();
+    await VehicleStore().upsert(
+      id: id,
+      name: displayName.trim().isEmpty ? '我的车辆' : displayName.trim(),
+      protocol: VehicleProtocol.auto,
+      makeDefault: true,
+    );
+    _lastDeviceId = id;
+    _lastDeviceName = displayName;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefDeviceId, id);
+    if (displayName.trim().isNotEmpty) {
+      await prefs.setString(_prefDeviceName, displayName.trim());
+    }
+    if (enable && !_enabled) {
+      await setEnabled(true);
+    } else {
+      _refreshTarget();
+    }
+    if (connectNow) {
+      await tryAutoConnect();
+    }
+  }
+
   void _emitEnabled() {
     if (!_enabledController.isClosed) {
       _enabledController.add(_enabled);
@@ -210,37 +244,39 @@ class AutoConnectService {
     try {
       scanSub = FlutterBluePlus.scanResults.listen((results) {
         for (final r in results) {
-          if (r.device.remoteId.toString() == targetDeviceId) {
-            if (!_enabled) {
-              scanSub?.cancel();
-              timeout?.cancel();
-              FlutterBluePlus.stopScan();
-              if (!completer.isCompleted) completer.complete();
-              return;
-            }
-            if (ManualModeService().enabled) {
-              scanSub?.cancel();
-              timeout?.cancel();
-              FlutterBluePlus.stopScan();
-              if (!completer.isCompleted) completer.complete();
-              return;
-            }
+          final foundId = r.device.remoteId.toString();
+          if (!_sameDeviceId(foundId, targetDeviceId)) {
+            continue;
+          }
+          if (!_enabled) {
             scanSub?.cancel();
             timeout?.cancel();
             FlutterBluePlus.stopScan();
-            _doConnect(r.device)
-                .catchError((Object e) {
-                  _log.operation(
-                    '自动连接: 连接异常',
-                    detail: e.toString(),
-                    level: LogLevel.error,
-                  );
-                })
-                .whenComplete(() {
-                  if (!completer.isCompleted) completer.complete();
-                });
+            if (!completer.isCompleted) completer.complete();
             return;
           }
+          if (ManualModeService().enabled) {
+            scanSub?.cancel();
+            timeout?.cancel();
+            FlutterBluePlus.stopScan();
+            if (!completer.isCompleted) completer.complete();
+            return;
+          }
+          scanSub?.cancel();
+          timeout?.cancel();
+          FlutterBluePlus.stopScan();
+          _doConnect(r.device)
+              .catchError((Object e) {
+                _log.operation(
+                  '自动连接: 连接异常',
+                  detail: e.toString(),
+                  level: LogLevel.error,
+                );
+              })
+              .whenComplete(() {
+                if (!completer.isCompleted) completer.complete();
+              });
+          return;
         }
       });
 
@@ -322,5 +358,11 @@ class AutoConnectService {
       currentManager: _connectionManager,
       snapshotGuard: _connectionSnapshotGuard,
     );
+  }
+
+  static bool _sameDeviceId(String a, String b) {
+    final left = a.replaceAll(RegExp(r'[^0-9a-fA-F]'), '').toUpperCase();
+    final right = b.replaceAll(RegExp(r'[^0-9a-fA-F]'), '').toUpperCase();
+    return left.isNotEmpty && left == right;
   }
 }

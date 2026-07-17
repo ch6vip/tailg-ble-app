@@ -188,7 +188,7 @@ void main() {
       expect(listenerEnd, greaterThan(listenerStart));
 
       final listenerSource = source.substring(listenerStart, listenerEnd);
-      expect(listenerSource, contains('== targetDeviceId'));
+      expect(listenerSource, contains('_sameDeviceId(foundId, targetDeviceId)'));
       expect(listenerSource, isNot(contains('== _lastDeviceId')));
     });
 
