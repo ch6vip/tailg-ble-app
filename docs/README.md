@@ -15,8 +15,9 @@
 6. [当前设计系统索引](design_system.md)：主题 token、交互规则和页面模式。
 7. [QGJ/BLE 残留清单](qgj_ble_residual_inventory.md)：凭据/死页面/云字段保留边界与删除切片。
 8. [BLE / MQTT 适配实验](ble_adaptation_progress.md)：**仅 `feature/ble-adaptation`**；官方路径近场自动连 + MQTT 远程；未合入前不改变 master 产品边界。
-9. [Android 构建说明](android_build_notes.md)：Windows/Android 构建问题。
-10. [已废弃的真机回归清单](device_regression_checklist_v1_0_13.md)：历史归档，不执行。
+9. [官方功能逻辑复刻计划](official_logic_parity_plan.md)：完全/完美复刻官方**功能与逻辑**（不含 UI）的蓝图、阶段与验收。
+10. [Android 构建说明](android_build_notes.md)：Windows/Android 构建问题。
+11. [已废弃的真机回归清单](device_regression_checklist_v1_0_13.md)：历史归档，不执行。
 
 ## 文档分类
 
@@ -36,6 +37,7 @@
 | 云端方案 | [cloud_architecture_plan](cloud_architecture_plan.md) | 当前 | cloud-only 架构与发布边界 |
 | 残留审计 | [qgj_ble_residual_inventory](qgj_ble_residual_inventory.md) | 当前 | QGJ/BLE 残留清单与可删除评估 |
 | BLE / MQTT 实验 | [ble_adaptation_progress](ble_adaptation_progress.md) | **实验分支** | 官方分流 + 近场自动连 + MQTT；真机验收前不改 master 边界 |
+| 逻辑复刻蓝图 | [official_logic_parity_plan](official_logic_parity_plan.md) | 计划 | 完全/完美复刻官方功能逻辑（不含 UI） |
 | 工程审视 | [工程审视报告_2026-06-28](工程审视报告_2026-06-28.md) | **历史** | 阶段性风险记录 |
 | 后续规划 | [i18n-extraction-plan](i18n-extraction-plan.md) | 规划 | i18n 抽取 |
 

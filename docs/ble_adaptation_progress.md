@@ -255,6 +255,7 @@ ControlChannelResolver.automatic
 ## 11. 相关文档
 
 - [项目文档索引](README.md)  
+- [官方功能逻辑复刻计划](official_logic_parity_plan.md)（完全/完美复刻蓝图，不含 UI）  
 - [QGJ/BLE 残留清单](qgj_ble_residual_inventory.md)（master 审计基线）  
 - [Cloud-only 对齐进度](cloud_only_alignment_progress.md)（产品主线）  
 - 历史移除：`58b320e`  
