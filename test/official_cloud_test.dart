@@ -13,6 +13,7 @@ import 'package:tailg_ble_app/services/control_command_policy.dart';
 import 'package:tailg_ble_app/services/control_command_result.dart';
 import 'package:tailg_ble_app/services/log_service.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/services/official_control_route.dart';
 
 import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
@@ -1543,7 +1544,7 @@ void main() {
     });
 
     test(
-      'automatic mode falls back to cloud only when vehicle has remote ability',
+      'automatic mode follows official isGps gate for cloud fallback',
       () {
         final withGps = ControlChannelResolver.resolve(
           cloudState: _cloudState(
@@ -1555,7 +1556,22 @@ void main() {
           channel: OfficialControlChannel.automatic,
         );
         final pureBle = ControlChannelResolver.resolve(
-          cloudState: _cloudState(signedIn: true, withVehicle: true),
+          cloudState: _cloudState(
+            signedIn: true,
+            withVehicle: true,
+            modelType: 8,
+            isGps: 0,
+          ),
+          bleReady: false,
+          channel: OfficialControlChannel.automatic,
+        );
+        final yjCloudOnly = ControlChannelResolver.resolve(
+          cloudState: _cloudState(
+            signedIn: true,
+            withVehicle: true,
+            modelType: 2,
+            isGps: 0,
+          ),
           bleReady: false,
           channel: OfficialControlChannel.automatic,
         );
@@ -1563,13 +1579,19 @@ void main() {
         expect(withGps.enabled, isTrue);
         expect(withGps.canUseCloud, isTrue);
         expect(withGps.willUseBle, isFalse);
-        expect(withGps.vehicleAllowsCloudFallback, isTrue);
         expect(withGps.effectiveChannelLabel, '官方云端');
+        expect(
+          withGps.officialDecision?.bleStack,
+          OfficialBleStackKind.qgj,
+        );
 
         expect(pureBle.enabled, isFalse);
         expect(pureBle.canUseCloud, isFalse);
-        expect(pureBle.vehicleAllowsCloudFallback, isFalse);
-        expect(pureBle.disabledReason, contains('蓝牙'));
+        expect(pureBle.disabledReason, '蓝牙未连接');
+
+        expect(yjCloudOnly.enabled, isTrue);
+        expect(yjCloudOnly.canUseCloud, isTrue);
+        expect(yjCloudOnly.willUseBle, isFalse);
       },
     );
   });
@@ -1999,13 +2021,18 @@ OfficialCloudState _cloudState({
   bool signedIn = false,
   bool withVehicle = false,
   bool withGpsService = false,
+  int? modelType,
+  int? isGps,
 }) {
   final vehicle = OfficialVehicle.fromJson({
     'carId': 'official-1',
     'carNickName': '测试车辆',
+    if (modelType != null) 'modelType': modelType,
+    if (isGps != null) 'isGps': isGps,
     if (withGpsService) ...{
-      // Official isGps==1 equivalent: GPS model type + imeiGps.
-      'modelType': 8,
+      // Official remote-capable QGJ with isGps==1.
+      'modelType': modelType ?? 8,
+      'isGps': isGps ?? 1,
       'imeiGps': '860123456789012',
     },
   });

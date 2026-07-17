@@ -155,6 +155,7 @@ OfficialVehicle _officialVehicle({
     longitude: '',
     latitude: '',
     modelType: null,
+    isGps: null,
     mileage: mileage,
   );
 }

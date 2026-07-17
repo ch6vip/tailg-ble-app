@@ -80,17 +80,20 @@ UI
   爱车页 VehicleControlHomePage
         │
         ▼
-ControlChannelResolver（对齐官方 ControlFragment 分流）
-  automatic:
-    1) BLE ready（≈ LoginStatus.LOGIN）→ BLE
-    2) 否则仅当车辆可远程（hasGpsService / modelType 1|2）→ HTTP 云
-    3) 无远程能力且 BLE 未就绪 → 禁用，提示连接蓝牙
+ControlChannelResolver（**完全按官方 ControlFragment 决策表**）
+  OfficialControlRoute.resolve(modelType, isGps, bleReady, …):
+    1 → KKS：BLE LOGIN 优先，否则云
+    2 → YJ：仅云
+    8/283 → QGJ：isGps==1 且未 LOGIN → 云，否则必须 BLE(QGJ)
+    10/14 → C39：同上，BLE(standard)
+    401/928/2103/2201/1501/1601/1701 → GPS 组合：未 LOGIN → 云，否则 BLE
+    3/default → BB/默认：isGps 门闩 + BLE
         │
         ├─ willUseBle → ConnectionManager.sendCommand
-        └─ cloud      → OfficialCloudService.sendCommand (HTTP)
+        └─ cloud      → OfficialCloudService.sendCommand (HTTP 暂代官方 MQTT)
 ```
 
-> 官方远程主通道在反编译中为 MQTT；本实验仍用 HTTP `app/device/cmd/*` 作为云端实现，**分流条件**对齐官方，**传输实现**暂不接 MQTT。
+> 官方远程主通道为 MQTT；本实验 **分流表**完整对齐反编译，**云传输**仍用 HTTP `app/device/cmd/*`。
 
 ### 4.1 协议层（`lib/ble/`）
 | 文件 | 职责 |
