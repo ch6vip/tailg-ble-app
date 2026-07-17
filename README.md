@@ -34,7 +34,7 @@
 
 ### 完美复刻（Perfect）= 后续加深
 
-车型矩阵、QGJ 设置全集、感应解锁、OTA、NFC 钥匙、绑定闭环（扫码/IMEI/门店/解绑/转让）等。详见 [FEATURES.md](FEATURES.md)。
+车型矩阵、QGJ 设置全集、感应解锁、OTA、NFC 钥匙、绑定闭环（扫码/IMEI/门店/解绑/转让）等。进度与任务见 [PLAN.md](PLAN.md)。
 
 ### 明确不做（L3，非控车主业）
 
@@ -53,7 +53,7 @@
 | 感应解锁 / OTA / NFC / 完整绑车 | ⏳ 未完成 | 完美复刻阶段 |
 | 商城等运营 | ❌ 不做 | L3 |
 
-能力与缺口明细见 **[FEATURES.md](FEATURES.md)**。
+分阶段任务与真机清单见 **[PLAN.md](PLAN.md)**（以源码审计为准，不依赖旧功能清单）。
 
 ### 推荐使用路径（对齐官方）
 
@@ -89,7 +89,7 @@ android|ios…    平台工程（含 BLE / 定位权限）
 - `E:\ctf-aaa\tlddc\台铃智能_*.apk` — 官方安装包样本
 - `E:\ctf-aaa\tlddc\版本说明.md` — 与 `tailg-next` 的正式/测试分工
 
-本仓 **不再维护 `docs/`**；说明以本 README、`FEATURES.md`、`AGENTS.md` 为准。
+本仓 **不再维护 `docs/` 与 `FEATURES.md`**；说明以本 README、`PLAN.md`、`AGENTS.md` 为准。
 
 ---
 

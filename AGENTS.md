@@ -9,7 +9,7 @@ This repository is an **unofficial full-logic replica** of the official Tailg ap
 - UI uses the in-house Aurora design system — **not** a pixel-perfect skin clone
 - Out of scope by default: mall, payment, insurance, community, and other L3 ops features
 
-Capability matrix: [FEATURES.md](FEATURES.md). Product overview: [README.md](README.md).
+Task plan (source-code based): [PLAN.md](PLAN.md). Product overview: [README.md](README.md).
 
 There is **no `docs/` tree**. Keep durable notes in those root markdown files (or short PR descriptions).
 
