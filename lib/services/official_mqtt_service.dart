@@ -12,6 +12,13 @@ import 'official_cloud_service.dart';
 import 'official_mqtt_config.dart';
 import 'official_mqtt_payload.dart';
 
+/// Observable MQTT link state for control UI.
+enum OfficialMqttLinkState {
+  disconnected,
+  connecting,
+  connected,
+}
+
 /// Official MQTT remote control (ControlFragment.mqttPublish path).
 ///
 /// Connects with the same credentials/topics as the decompiled app, publishes
@@ -33,11 +40,32 @@ class OfficialMqttService {
   String? _pendingCommandApiName;
   bool _disposed = false;
   bool _preconnectInFlight = false;
+  OfficialMqttLinkState _linkState = OfficialMqttLinkState.disconnected;
+  StreamController<OfficialMqttLinkState> _linkController =
+      StreamController<OfficialMqttLinkState>.broadcast();
 
   bool get isConnected =>
       _client?.connectionStatus?.state == MqttConnectionState.connected;
 
+  OfficialMqttLinkState get linkState => _linkState;
+
+  Stream<OfficialMqttLinkState> get linkStateStream => _linkController.stream;
+
   String? get pendingCommandApiName => _pendingCommandApiName;
+
+  String get linkStateLabel => switch (_linkState) {
+    OfficialMqttLinkState.connected => 'MQTT 已连接',
+    OfficialMqttLinkState.connecting => 'MQTT 连接中',
+    OfficialMqttLinkState.disconnected => 'MQTT 未连接',
+  };
+
+  void _setLinkState(OfficialMqttLinkState next) {
+    if (_linkState == next) return;
+    _linkState = next;
+    if (!_linkController.isClosed) {
+      _linkController.add(next);
+    }
+  }
 
   Future<void> resetForTest() async {
     await _cloudSub?.cancel();
@@ -47,6 +75,10 @@ class OfficialMqttService {
     await disconnect();
     _disposed = false;
     _preconnectInFlight = false;
+    if (_linkController.isClosed) {
+      _linkController = StreamController<OfficialMqttLinkState>.broadcast();
+    }
+    _setLinkState(OfficialMqttLinkState.disconnected);
   }
 
   Future<void> dispose() async {
@@ -55,6 +87,9 @@ class OfficialMqttService {
     _cloudSub = null;
     _boundCloud = null;
     await disconnect();
+    if (!_linkController.isClosed) {
+      await _linkController.close();
+    }
   }
 
   /// Bind to cloud state and pre-connect whenever a vehicle is selected.
@@ -92,6 +127,7 @@ class OfficialMqttService {
     try {
       await ensureConnected(vehicle: vehicle, userId: userId);
     } catch (e) {
+      _setLinkState(OfficialMqttLinkState.disconnected);
       _log.operation(
         '官方 MQTT 预连接失败',
         detail: e.toString(),
@@ -118,10 +154,12 @@ class OfficialMqttService {
     _connectedBroker = null;
     _connectedImei = null;
     _pendingCommandApiName = null;
-    if (client == null) return;
-    try {
-      client.disconnect();
-    } catch (_) {}
+    if (client != null) {
+      try {
+        client.disconnect();
+      } catch (_) {}
+    }
+    _setLinkState(OfficialMqttLinkState.disconnected);
   }
 
   /// Ensure a live MQTT session for [vehicle] (reconnect when broker/imei change).
@@ -141,10 +179,12 @@ class OfficialMqttService {
         _connectedBroker == broker &&
         _connectedImei == imei &&
         (_connectedClientId?.contains(imei) ?? false)) {
+      _setLinkState(OfficialMqttLinkState.connected);
       return;
     }
 
     await disconnect();
+    _setLinkState(OfficialMqttLinkState.connecting);
 
     final parsed = OfficialMqttConfig.parseBrokerUri(broker);
     final clientId = OfficialMqttConfig.clientIdFor(
@@ -192,13 +232,16 @@ class OfficialMqttService {
       );
       if (status?.state != MqttConnectionState.connected) {
         client.disconnect();
+        _setLinkState(OfficialMqttLinkState.disconnected);
         throw OfficialCloudApiException(
           '官方 MQTT 连接失败: ${status?.state.name ?? 'unknown'}',
         );
       }
     } on NoConnectionException catch (e) {
+      _setLinkState(OfficialMqttLinkState.disconnected);
       throw OfficialCloudApiException('官方 MQTT 连接失败: $e');
     } on SocketException catch (e) {
+      _setLinkState(OfficialMqttLinkState.disconnected);
       throw OfficialCloudApiException('官方 MQTT 网络失败: $e');
     }
 
@@ -225,6 +268,7 @@ class OfficialMqttService {
     _connectedClientId = clientId;
     _connectedBroker = broker;
     _connectedImei = imei;
+    _setLinkState(OfficialMqttLinkState.connected);
     _log.operation('官方 MQTT 已连接', detail: clientId);
   }
 

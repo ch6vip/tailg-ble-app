@@ -70,6 +70,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
 
   StreamSubscription<OfficialCloudState>? _cloudSub;
   StreamSubscription<ble.ConnectionState>? _bleStateSub;
+  StreamSubscription<OfficialMqttLinkState>? _mqttLinkSub;
   bool _busy = false;
   bool _disposed = false;
 
@@ -85,6 +86,9 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     _bleStateSub = connectionManager.stateStream.listen((_) {
       if (mounted) setState(() {});
     });
+    _mqttLinkSub = OfficialMqttService().linkStateStream.listen((_) {
+      if (mounted) setState(() {});
+    });
     unawaited(_silentRefresh());
     unawaited(OfficialMqttService().preconnectForCloud(officialCloudService));
   }
@@ -96,6 +100,8 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     if (cloudSub != null) unawaited(cloudSub.cancel());
     final bleSub = _bleStateSub;
     if (bleSub != null) unawaited(bleSub.cancel());
+    final mqttSub = _mqttLinkSub;
+    if (mqttSub != null) unawaited(mqttSub.cancel());
     super.dispose();
   }
 
@@ -425,10 +431,28 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       return '等待连接';
     }
     final online = cloudVehicle.onlineLabel;
+    final channel = _channelStatusLabel();
     final sync = formatRelativeSyncText(
       officialCloudService.lastVehiclesRefreshAt,
     );
-    return '$online · $sync';
+    return '$online · $channel · $sync';
+  }
+
+  /// Prefer active control path label (BLE / MQTT / cloud standby).
+  String _channelStatusLabel() {
+    final availability = _controlAvailability();
+    if (availability.willUseBle) return 'BLE 直连';
+    final mqtt = OfficialMqttService();
+    if (mqtt.isConnected ||
+        mqtt.linkState == OfficialMqttLinkState.connected) {
+      return 'MQTT 远程';
+    }
+    if (mqtt.linkState == OfficialMqttLinkState.connecting) {
+      return 'MQTT 连接中';
+    }
+    if (availability.canUseCloud) return '云端待命';
+    if (availability.canUseBle) return 'BLE 可用';
+    return availability.effectiveChannelLabel;
   }
 
   String _vehicleName(OfficialVehicle? cloudVehicle) {
@@ -629,6 +653,9 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 vehicleName: _vehicleName(cloudVehicle),
                 statusText: _statusText(cloudVehicle),
                 online: cloudVehicle?.online ?? false,
+                channelActive:
+                    _controlAvailability().willUseBle ||
+                    OfficialMqttService().isConnected,
                 powered: isPowerOn,
                 onTitleTap: _openVehicleHeader,
                 onSettings: _openSettings,
@@ -766,6 +793,7 @@ class _TopBar extends StatelessWidget {
     required this.vehicleName,
     required this.statusText,
     required this.online,
+    required this.channelActive,
     required this.powered,
     required this.onTitleTap,
     required this.onSettings,
@@ -774,6 +802,7 @@ class _TopBar extends StatelessWidget {
   final String vehicleName;
   final String statusText;
   final bool online;
+  final bool channelActive;
   final bool powered;
   final VoidCallback onTitleTap;
   final VoidCallback onSettings;
@@ -813,7 +842,9 @@ class _TopBar extends StatelessWidget {
                         width: 6,
                         height: 6,
                         decoration: BoxDecoration(
-                          color: online ? _Aurora.accent : _Aurora.muted,
+                          color: channelActive
+                              ? _Aurora.accent
+                              : (online ? _Aurora.accent.withValues(alpha: 0.55) : _Aurora.muted),
                           shape: BoxShape.circle,
                         ),
                       ),
