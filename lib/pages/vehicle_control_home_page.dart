@@ -79,6 +79,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   bool _busy = false;
   bool _disposed = false;
   bool _nearFieldBusy = false;
+  OfficialControlChannel _controlChannel = OfficialControlChannel.automatic;
 
   /// Cached BLE/location permission probe for near-field banner + six-key copy.
   PermissionCheckResult? _blePermission;
@@ -307,8 +308,24 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       bleReady: connectionManager.isProtocolLoggedIn,
       bleNotReadyReason: connectionManager.protocolLoginUnavailableReason,
       defaultVehicleId: vehicleStore.defaultVehicle?.id,
+      channel: _controlChannel,
       busy: _busy,
     );
+  }
+
+  void _selectControlChannel(OfficialControlChannel channel) {
+    if (_busy || _controlChannel == channel) return;
+    setState(() => _controlChannel = channel);
+    unawaited(HapticFeedback.selectionClick());
+
+    if (channel == OfficialControlChannel.ble) {
+      // Selecting local-only mode should start the existing silent BLE path;
+      // permission prompts remain an explicit user action in the banner.
+      unawaited(_ensureNearFieldLink(auto: true));
+    } else if (channel == OfficialControlChannel.officialCloud &&
+        officialCloudService.state.signedIn) {
+      unawaited(officialMqttService.preconnectForCloud(officialCloudService));
+    }
   }
 
   bool _isControlDebounced() {
@@ -676,10 +693,12 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   }
 
   /// P0-C3 / P0-A3: single truth for 爱车 top-bar channel四态 (+ BLE 连接中 / 待重连).
-  ControlTopBarChannel _topBarChannel() {
+  ControlTopBarChannel _topBarChannel({
+    ControlChannelAvailability? availability,
+  }) {
     final mqtt = officialMqttService;
     return ControlTopBarChannel.resolve(
-      availability: _controlAvailability(),
+      availability: availability ?? _controlAvailability(),
       bleState: connectionManager.state,
       bleProtocolLoggedIn: connectionManager.isProtocolLoggedIn,
       mqttLinkState: mqtt.linkState,
@@ -975,6 +994,10 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     final percent = battery.percent ?? 0;
     final signedIn = cloudState.signedIn;
     final hasVehicle = cloudVehicle != null;
+    final controlAvailability = _controlAvailability();
+    final controlChannelStatus = _topBarChannel(
+      availability: controlAvailability,
+    );
     final colors = AppColors.of(context);
     // Leave room for the shell bottom nav (see AppNav.contentBottomPadding).
     final bottomPad =
@@ -1000,7 +1023,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 vehicleName: _vehicleName(cloudVehicle),
                 statusText: _statusText(cloudVehicle),
                 online: cloudVehicle?.online ?? false,
-                channelActive: _topBarChannel().isActive,
+                channelActive: controlChannelStatus.isActive,
                 powered: isPowerOn,
                 onTitleTap: _openVehicleHeader,
                 onSettings: _openSettings,
@@ -1023,6 +1046,14 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 onTap: _openLocation,
               ),
               const SizedBox(height: 12),
+              _ControlChannelCard(
+                selected: _controlChannel,
+                availability: controlAvailability,
+                status: controlChannelStatus,
+                busy: _busy,
+                onChanged: _selectControlChannel,
+              ),
+              const SizedBox(height: 12),
               _ShortcutsRow(
                 armed: isArmed,
                 powered: isPowerOn,
@@ -1032,7 +1063,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                     _busy ||
                     !hasVehicle ||
                     !signedIn ||
-                    !_controlAvailability().enabled,
+                    !controlAvailability.enabled,
                 onFind: () => _sendCommand(CommandCode.find),
                 onArm: _sendArmToggle,
                 onSeat: () => _sendCommand(CommandCode.openSeat),
@@ -1483,6 +1514,203 @@ class _MetricsGrid extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Control channel
+// ═══════════════════════════════════════════════════════════════════════════
+class _ControlChannelCard extends StatelessWidget {
+  const _ControlChannelCard({
+    required this.selected,
+    required this.availability,
+    required this.status,
+    required this.busy,
+    required this.onChanged,
+  });
+
+  final OfficialControlChannel selected;
+  final ControlChannelAvailability availability;
+  final ControlTopBarChannel status;
+  final bool busy;
+  final ValueChanged<OfficialControlChannel> onChanged;
+
+  String get _statusLabel {
+    if (busy) return '指令执行中';
+    if (availability.enabled ||
+        status.kind == ControlTopBarChannelKind.bleConnecting ||
+        status.kind == ControlTopBarChannelKind.mqttConnecting ||
+        status.kind == ControlTopBarChannelKind.mqttRetry) {
+      return status.label;
+    }
+    return '当前不可用';
+  }
+
+  String get _description {
+    if (busy) return '当前指令执行中，暂不能切换控车渠道';
+    if (!availability.enabled) {
+      final reason = switch (selected) {
+        OfficialControlChannel.automatic => availability.disabledReason,
+        OfficialControlChannel.ble => availability.bleUnavailableReason,
+        OfficialControlChannel.officialCloud =>
+          availability.cloudUnavailableReason,
+      };
+      if (reason.trim().isNotEmpty) return reason.trim();
+    }
+    return switch (selected) {
+      OfficialControlChannel.automatic => '根据车辆能力自动选择蓝牙或云端',
+      OfficialControlChannel.ble => '仅使用附近车辆的蓝牙直连',
+      OfficialControlChannel.officialCloud => '仅使用官方账号远程控车',
+    };
+  }
+
+  Color _statusColor(AppColorsData colors) {
+    if (busy) return colors.warning;
+    return switch (status.kind) {
+      ControlTopBarChannelKind.bleDirect ||
+      ControlTopBarChannelKind.mqttRemote ||
+      ControlTopBarChannelKind.cloudStandby => colors.success,
+      ControlTopBarChannelKind.bleConnecting ||
+      ControlTopBarChannelKind.mqttConnecting ||
+      ControlTopBarChannelKind.mqttRetry => colors.warning,
+      ControlTopBarChannelKind.unavailable => colors.danger,
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: _Aurora.cardMargin,
+      padding: const EdgeInsets.fromLTRB(14, 13, 14, 12),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: const BorderRadius.all(
+          Radius.circular(_Aurora.cardRadius),
+        ),
+        boxShadow: dark ? const [] : _Aurora.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.alt_route, size: 18, color: colors.textSecondary),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  '控车渠道',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
+                  ),
+                ),
+              ),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: _statusColor(colors),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  _statusLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SegmentedButton<OfficialControlChannel>(
+            segments: const [
+              ButtonSegment(
+                value: OfficialControlChannel.automatic,
+                icon: Icon(Icons.alt_route, size: 16),
+                label: Text('智能'),
+              ),
+              ButtonSegment(
+                value: OfficialControlChannel.ble,
+                icon: Icon(Icons.bluetooth, size: 16),
+                label: Text('仅蓝牙'),
+              ),
+              ButtonSegment(
+                value: OfficialControlChannel.officialCloud,
+                icon: Icon(Icons.cloud_outlined, size: 16),
+                label: Text('仅云端'),
+              ),
+            ],
+            selected: {selected},
+            showSelectedIcon: false,
+            expandedInsets: EdgeInsets.zero,
+            onSelectionChanged: busy
+                ? null
+                : (selection) => onChanged(selection.first),
+            style: ButtonStyle(
+              minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
+              padding: const WidgetStatePropertyAll(
+                EdgeInsets.symmetric(horizontal: 6),
+              ),
+              textStyle: const WidgetStatePropertyAll(
+                TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              foregroundColor: WidgetStateProperty.resolveWith((states) {
+                return states.contains(WidgetState.selected)
+                    ? Colors.white
+                    : colors.textSecondary;
+              }),
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                return states.contains(WidgetState.selected)
+                    ? colors.primary
+                    : colors.surfaceContainerHigh;
+              }),
+              side: WidgetStateProperty.resolveWith((states) {
+                return BorderSide(
+                  color: states.contains(WidgetState.selected)
+                      ? colors.primary
+                      : colors.outlineVariant,
+                );
+              }),
+              shape: WidgetStatePropertyAll(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.sm),
+                ),
+              ),
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 30,
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Text(
+                _description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  height: 1.35,
+                  color: availability.enabled
+                      ? colors.textTertiary
+                      : colors.danger,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

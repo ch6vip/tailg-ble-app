@@ -111,6 +111,22 @@ void main() {
       expect(ch.label, 'MQTT 待重连');
     });
 
+    test('manual BLE mode never reports a connected MQTT channel', () {
+      final ch = ControlTopBarChannel.resolve(
+        availability: availability(
+          bleReady: false,
+          isGps: 1,
+          channel: OfficialControlChannel.ble,
+        ),
+        bleState: ConnectionState.disconnected,
+        bleProtocolLoggedIn: false,
+        mqttLinkState: OfficialMqttLinkState.connected,
+        mqttPreconnectInFlight: false,
+      );
+      expect(ch.kind, ControlTopBarChannelKind.unavailable);
+      expect(ch.isActive, isFalse);
+    });
+
     test('disconnected BLE never claims active channel alone', () {
       final ch = ControlTopBarChannel.resolve(
         availability: availability(

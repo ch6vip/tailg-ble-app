@@ -64,15 +64,16 @@ class ControlTopBarChannel {
     }
 
     final mqttConnected = mqttLinkState == OfficialMqttLinkState.connected;
-    if (mqttConnected) {
+    if (availability.canUseCloud && mqttConnected) {
       return const ControlTopBarChannel(
         kind: ControlTopBarChannelKind.mqttRemote,
         label: 'MQTT 远程',
       );
     }
 
-    if (mqttLinkState == OfficialMqttLinkState.connecting ||
-        mqttPreconnectInFlight) {
+    if (availability.canUseCloud &&
+        (mqttLinkState == OfficialMqttLinkState.connecting ||
+            mqttPreconnectInFlight)) {
       return const ControlTopBarChannel(
         kind: ControlTopBarChannelKind.mqttConnecting,
         label: 'MQTT 连接中',

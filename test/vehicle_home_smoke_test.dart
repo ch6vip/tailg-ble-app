@@ -46,13 +46,25 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.textContaining('冒烟测试车'), findsWidgets);
+    expect(find.text('控车渠道'), findsOneWidget);
+    expect(find.text('智能'), findsOneWidget);
+    expect(find.text('仅蓝牙'), findsOneWidget);
+    expect(find.text('仅云端'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('控车渠道')).dy,
+      greaterThan(tester.getTopLeft(find.text('暂无位置')).dy),
+    );
     expect(
       tester.getTopLeft(find.text('寻车')).dy,
-      greaterThan(tester.getTopLeft(find.text('电池')).dy),
+      greaterThan(tester.getTopLeft(find.text('控车渠道')).dy),
     );
     expect(
       tester.getTopLeft(find.text('寻车')).dy,
       lessThan(tester.getTopLeft(find.text('最近命令')).dy),
     );
+
+    await tester.tap(find.text('仅云端'));
+    await tester.pump();
+    expect(find.text('仅使用官方账号远程控车'), findsOneWidget);
   });
 }
