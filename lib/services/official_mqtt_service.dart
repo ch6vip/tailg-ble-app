@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
@@ -70,6 +71,15 @@ class OfficialMqttService {
 
   bool get preconnectInFlight => _preconnectInFlight;
 
+  /// Test hook: replace live MQTT publish (P4-2 mock client).
+  @visibleForTesting
+  Future<void> Function({
+    required OfficialVehicle vehicle,
+    required String userId,
+    required String commandApiName,
+  })?
+  publishCommandOverride;
+
   String get linkStateLabel => switch (_linkState) {
     OfficialMqttLinkState.connected => 'MQTT 已连接',
     OfficialMqttLinkState.connecting => 'MQTT 连接中',
@@ -92,6 +102,7 @@ class OfficialMqttService {
     _pendingCommandApiName = null;
     _lastSendPath = null;
     _lastPreconnectError = null;
+    publishCommandOverride = null;
     await disconnect();
     _disposed = false;
     _preconnectInFlight = false;
@@ -369,6 +380,16 @@ class OfficialMqttService {
     required String userId,
     required String commandApiName,
   }) async {
+    final override = publishCommandOverride;
+    if (override != null) {
+      await override(
+        vehicle: vehicle,
+        userId: userId,
+        commandApiName: commandApiName,
+      );
+      _pendingCommandApiName = commandApiName;
+      return;
+    }
     await ensureConnected(vehicle: vehicle, userId: userId);
     final client = _client;
     if (client == null || !isConnected) {

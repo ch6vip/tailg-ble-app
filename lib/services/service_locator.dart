@@ -10,6 +10,7 @@ import 'log_service.dart';
 import 'manual_mode_service.dart';
 import 'message_read_store.dart';
 import 'official_cloud_service.dart';
+import 'official_mqtt_service.dart';
 import 'permission_service.dart';
 import 'vehicle_store.dart';
 
@@ -27,6 +28,7 @@ class AppServices {
   final VehicleStore vehicleStore;
   final MessageReadStore messageReadStore;
   final OfficialCloudService officialCloudService;
+  final OfficialMqttService officialMqttService;
   final AppPreferencesService appPreferencesService;
   final AppPermissionService permissionService;
   final ValueNotifier<int> homeTabIndex;
@@ -40,10 +42,11 @@ class AppServices {
     required this.vehicleStore,
     required this.messageReadStore,
     required this.officialCloudService,
+    OfficialMqttService? officialMqttService,
     required this.appPreferencesService,
     required this.permissionService,
     required this.homeTabIndex,
-  });
+  }) : officialMqttService = officialMqttService ?? OfficialMqttService();
 
   factory AppServices.production() {
     return AppServices(
@@ -55,6 +58,7 @@ class AppServices {
       vehicleStore: VehicleStore(),
       messageReadStore: MessageReadStore(),
       officialCloudService: OfficialCloudService(),
+      officialMqttService: OfficialMqttService(),
       appPreferencesService: AppPreferencesService(),
       permissionService: AppPermissionService(),
       homeTabIndex: ValueNotifier<int>(1),
@@ -100,6 +104,10 @@ class AppServices {
       old.officialCloudService.resetForTest,
     );
     await _runCleanup(
+      'officialMqttService.resetForTest',
+      old.officialMqttService.resetForTest,
+    );
+    await _runCleanup(
       'connectionManager.dispose',
       old.connectionManager.dispose,
     );
@@ -108,6 +116,10 @@ class AppServices {
   }
 
   Future<void> dispose() async {
+    await _runCleanup(
+      'officialMqttService.dispose',
+      officialMqttService.dispose,
+    );
     await _runCleanup('connectionManager.dispose', connectionManager.dispose);
     await _runCleanup(
       'officialCloudService.dispose',

@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tailg_ble_app/ble/connection_manager.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/add_vehicle_page.dart';
 import 'package:tailg_ble_app/pages/login_page.dart';
 import 'package:tailg_ble_app/services/app_navigation.dart';
 import 'package:tailg_ble_app/services/app_preferences_service.dart';
+import 'package:tailg_ble_app/services/auto_connect_service.dart';
 import 'package:tailg_ble_app/services/location_service.dart';
 import 'package:tailg_ble_app/services/log_service.dart';
+import 'package:tailg_ble_app/services/manual_mode_service.dart';
 import 'package:tailg_ble_app/services/message_read_store.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/services/official_mqtt_service.dart';
 import 'package:tailg_ble_app/services/permission_service.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
@@ -28,11 +32,15 @@ void main() {
     homeTabIndex = ValueNotifier<int>(0);
     AppServices.override(
       AppServices(
+        connectionManager: ConnectionManager(),
+        autoConnectService: AutoConnectService(),
+        manualModeService: ManualModeService(),
         locationService: LocationService(),
         logService: LogService(),
         vehicleStore: VehicleStore(),
         messageReadStore: MessageReadStore(),
         officialCloudService: cloud,
+        officialMqttService: OfficialMqttService(),
         appPreferencesService: AppPreferencesService(),
         permissionService: AppPermissionService(),
         homeTabIndex: homeTabIndex,

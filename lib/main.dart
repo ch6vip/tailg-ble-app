@@ -35,6 +35,8 @@ VehicleStore get vehicleStore => AppServices.instance.vehicleStore;
 MessageReadStore get messageReadStore => AppServices.instance.messageReadStore;
 OfficialCloudService get officialCloudService =>
     AppServices.instance.officialCloudService;
+OfficialMqttService get officialMqttService =>
+    AppServices.instance.officialMqttService;
 AppPreferencesService get appPreferencesService =>
     AppServices.instance.appPreferencesService;
 AppPermissionService get permissionService =>
@@ -79,12 +81,12 @@ void main() async {
     await manualModeService.init();
     await autoConnectService.init(connectionManager);
     // Keep official MQTT session aligned with selected vehicle (pre-connect).
-    OfficialMqttService().attachToCloud(officialCloudService);
+    officialMqttService.attachToCloud(officialCloudService);
     // P1-4: logout tears down MQTT + BLE so no stale control path remains.
     officialCloudService.afterLogoutSideEffects
       ..clear()
       ..add(() async {
-        await OfficialMqttService().disconnect();
+        await officialMqttService.disconnect();
       })
       ..add(() async {
         await connectionManager.disconnect();

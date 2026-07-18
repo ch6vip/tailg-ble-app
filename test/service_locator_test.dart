@@ -10,6 +10,7 @@ import 'package:tailg_ble_app/services/log_service.dart';
 import 'package:tailg_ble_app/services/manual_mode_service.dart';
 import 'package:tailg_ble_app/services/message_read_store.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/services/official_mqtt_service.dart';
 import 'package:tailg_ble_app/services/permission_service.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
@@ -55,6 +56,7 @@ void main() {
         vehicleStore: VehicleStore(),
         messageReadStore: MessageReadStore(),
         officialCloudService: OfficialCloudService(),
+        officialMqttService: OfficialMqttService(),
         appPreferencesService: AppPreferencesService(),
         permissionService: AppPermissionService(),
         homeTabIndex: ValueNotifier<int>(2),
