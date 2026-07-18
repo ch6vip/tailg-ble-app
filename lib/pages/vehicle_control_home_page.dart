@@ -1006,22 +1006,6 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 onSettings: _openSettings,
               ),
               const SizedBox(height: 10),
-              _ShortcutsRow(
-                armed: isArmed,
-                powered: isPowerOn,
-                // Dim when channel/session not ready, but keep taps so P0-A2
-                // always surfaces a reason (never "点了没反应").
-                dimmed:
-                    _busy ||
-                    !hasVehicle ||
-                    !signedIn ||
-                    !_controlAvailability().enabled,
-                onFind: () => _sendCommand(CommandCode.find),
-                onArm: _sendArmToggle,
-                onSeat: () => _sendCommand(CommandCode.openSeat),
-                onPower: _sendPower,
-              ),
-              const SizedBox(height: 12),
               _BatteryHeroCard(
                 percent: percent,
                 healthLabel: _healthLabel(battery),
@@ -1037,6 +1021,22 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 updated: _locationUpdated(location),
                 walk: _locationWalk(location),
                 onTap: _openLocation,
+              ),
+              const SizedBox(height: 12),
+              _ShortcutsRow(
+                armed: isArmed,
+                powered: isPowerOn,
+                // Dim when channel/session not ready, but keep taps so P0-A2
+                // always surfaces a reason (never "点了没反应").
+                dimmed:
+                    _busy ||
+                    !hasVehicle ||
+                    !signedIn ||
+                    !_controlAvailability().enabled,
+                onFind: () => _sendCommand(CommandCode.find),
+                onArm: _sendArmToggle,
+                onSeat: () => _sendCommand(CommandCode.openSeat),
+                onPower: _sendPower,
               ),
               const SizedBox(height: 12),
               _RecentCommandsCard(commands: _commands),

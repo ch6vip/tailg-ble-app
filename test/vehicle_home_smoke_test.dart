@@ -48,7 +48,11 @@ void main() {
     expect(find.textContaining('冒烟测试车'), findsWidgets);
     expect(
       tester.getTopLeft(find.text('寻车')).dy,
-      lessThan(tester.getTopLeft(find.text('电池')).dy),
+      greaterThan(tester.getTopLeft(find.text('电池')).dy),
+    );
+    expect(
+      tester.getTopLeft(find.text('寻车')).dy,
+      lessThan(tester.getTopLeft(find.text('最近命令')).dy),
     );
   });
 }
