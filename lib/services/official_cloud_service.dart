@@ -256,8 +256,8 @@ class OfficialCloudService {
     );
     _emit();
 
-    String? verifiedUserId;
-    String verifiedPhone = seedPhone.trim();
+    final String verifiedUserId;
+    final verifiedPhone = seedPhone.trim();
     try {
       await refreshVehicles();
       await refreshUserProfile(silent: true);
@@ -282,9 +282,9 @@ class OfficialCloudService {
     await _storage.saveCredentials(
       token: token,
       phone: verifiedPhone,
-      userId: verifiedUserId ?? '',
+      userId: verifiedUserId,
     );
-    _state = _state.copyWith(userId: verifiedUserId ?? '');
+    _state = _state.copyWith(userId: verifiedUserId);
     _emit();
   }
 

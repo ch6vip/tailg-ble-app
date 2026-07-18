@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/cloud_token_page.dart';
@@ -59,8 +58,7 @@ void main() {
           await request.response.close();
         }
       });
-      final apiBase =
-          'http://${server.address.host}:${server.port}/v1/api/';
+      final apiBase = 'http://${server.address.host}:${server.port}/v1/api/';
 
       final service = OfficialCloudService();
       service.resetForTest(
@@ -93,8 +91,7 @@ void main() {
         request.response.write(jsonEncode({'msg': 'token expired'}));
         await request.response.close();
       });
-      final apiBase =
-          'http://${server.address.host}:${server.port}/v1/api/';
+      final apiBase = 'http://${server.address.host}:${server.port}/v1/api/';
 
       final service = OfficialCloudService();
       service.resetForTest(
@@ -127,9 +124,7 @@ void main() {
     );
 
     // Re-create the page inside testWidgets so we can pump it.
-    await tester.pumpWidget(
-      MaterialApp(home: CloudTokenPageTestHarness()),
-    );
+    await tester.pumpWidget(MaterialApp(home: CloudTokenPageTestHarness()));
     await tester.pump();
 
     await tester.tap(find.text('复制 Token'));
@@ -151,10 +146,8 @@ class CloudTokenPageTestHarness extends StatelessWidget {
 Future<void> _ok(HttpRequest request, Map<String, Object?> data) async {
   request.response.statusCode = 200;
   request.response.headers.contentType = ContentType.json;
-  request.response.write(jsonEncode({
-    'code': '200',
-    'msg': 'success',
-    'data': data,
-  }));
+  request.response.write(
+    jsonEncode({'code': '200', 'msg': 'success', 'data': data}),
+  );
   await request.response.close();
 }
