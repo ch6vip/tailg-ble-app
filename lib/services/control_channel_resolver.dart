@@ -50,8 +50,10 @@ class ControlChannelResolver {
 
   static ControlChannelAvailability resolve({
     required OfficialCloudState cloudState,
+
     /// Official LoginStatus.LOGIN equivalent (use ConnectionManager.isProtocolLoggedIn).
     bool bleReady = false,
+
     /// Optional detail when [bleReady] is false (e.g. connecting / not LOGIN).
     String? bleNotReadyReason,
     String? defaultVehicleId,

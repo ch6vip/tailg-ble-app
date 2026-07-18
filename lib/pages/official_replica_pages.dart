@@ -117,10 +117,7 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
     if (record == null && _bleNfc.canWriteOfficialNfc) {
       final ok = type == '卡片'
           ? await _bleNfc.addCard('01')
-          : await _bleNfc.addUserKey(
-              keyType: type == '手表' ? 2 : 1,
-              type: '1',
-            );
+          : await _bleNfc.addUserKey(keyType: type == '手表' ? 2 : 1, type: '1');
       if (!mounted) return;
       if (ok) {
         AppSnack.success(context, '已向车辆发送官方 NFC 写钥匙指令');
@@ -145,10 +142,7 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
     if (_bleNfc.canWriteOfficialNfc) {
       final ok = await _bleNfc.delNfc('01');
       if (mounted) {
-        AppSnack.info(
-          context,
-          ok ? '已发送官方删钥匙指令' : '官方删钥匙失败，仅移除本地列表',
-        );
+        AppSnack.info(context, ok ? '已发送官方删钥匙指令' : '官方删钥匙失败，仅移除本地列表');
       }
     }
     await _save(_records.where((item) => item.id != record.id).toList());
@@ -332,8 +326,7 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
                   const _ReplicaNotice(
                     icon: Icons.location_searching,
                     title: '非官方云围栏',
-                    subtitle:
-                        '此页只写本地草稿，不会同步官方电子围栏。正式围栏请用定位页「电子围栏」云端能力。',
+                    subtitle: '此页只写本地草稿，不会同步官方电子围栏。正式围栏请用定位页「电子围栏」云端能力。',
                   ),
                   const SizedBox(height: 14),
                   if (_loading)
@@ -568,8 +561,7 @@ class _ShareBikePageState extends State<ShareBikePage> {
                   const _ReplicaNotice(
                     icon: Icons.ios_share,
                     title: '本地演示 · 非官方家庭共享',
-                    subtitle:
-                        '仅本机记录联系人草稿，不会调用官方家庭共享 API。正式分享请使用官方 App 授权流程。',
+                    subtitle: '仅本机记录联系人草稿，不会调用官方家庭共享 API。正式分享请使用官方 App 授权流程。',
                   ),
                   const SizedBox(height: 14),
                   if (_loading)

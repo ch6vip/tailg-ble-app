@@ -15,17 +15,10 @@ import 'official_mqtt_payload.dart';
 import 'official_remote_error_messages.dart';
 
 /// Observable MQTT link state for control UI.
-enum OfficialMqttLinkState {
-  disconnected,
-  connecting,
-  connected,
-}
+enum OfficialMqttLinkState { disconnected, connecting, connected }
 
 /// Which remote transport actually carried the last sendCommandPreferMqtt call.
-enum OfficialRemoteSendPath {
-  mqtt,
-  http,
-}
+enum OfficialRemoteSendPath { mqtt, http }
 
 /// Official MQTT remote control (ControlFragment.mqttPublish path).
 ///
@@ -142,10 +135,7 @@ class OfficialMqttService {
       await disconnect();
       return;
     }
-    await preconnect(
-      vehicle: vehicle,
-      userId: state.userId,
-    );
+    await preconnect(vehicle: vehicle, userId: state.userId);
   }
 
   /// Best-effort pre-connect used on vehicle select / home enter.
@@ -187,7 +177,8 @@ class OfficialMqttService {
     attachToCloud(cloud);
     final vehicle = cloud.state.selectedVehicle;
     if (!cloud.state.signedIn || vehicle == null) {
-      _lastPreconnectError = OfficialCloudMessages.signInAndSelectVehicleRequired;
+      _lastPreconnectError =
+          OfficialCloudMessages.signInAndSelectVehicleRequired;
       return;
     }
     await preconnect(vehicle: vehicle, userId: cloud.state.userId, force: true);
@@ -212,7 +203,9 @@ class OfficialMqttService {
     if (client != null) {
       try {
         client.disconnect();
-      } catch (_) {}
+      } on Object {
+        // Best-effort teardown; ignore disconnect errors on an already-dead client.
+      }
     }
     _setLinkState(OfficialMqttLinkState.disconnected);
   }
@@ -275,10 +268,7 @@ class OfficialMqttService {
         .withWillQos(MqttQos.atMostOnce);
     client.connectionMessage = connMess;
 
-    _log.operation(
-      '官方 MQTT 连接中',
-      detail: 'broker=$broker clientId=$clientId',
-    );
+    _log.operation('官方 MQTT 连接中', detail: 'broker=$broker clientId=$clientId');
 
     try {
       final status = await client.connect(
@@ -299,7 +289,7 @@ class OfficialMqttService {
           OfficialCloudApiException('官方 MQTT 连接失败: $e'),
         ),
       );
-    } on SocketException catch (_) {
+    } on SocketException {
       _setLinkState(OfficialMqttLinkState.disconnected);
       throw const OfficialCloudApiException(
         OfficialRemoteErrorMessages.networkUnavailable,
@@ -396,10 +386,7 @@ class OfficialMqttService {
       throw const OfficialCloudApiException('官方 MQTT 未连接');
     }
     final imei = OfficialMqttConfig.commandImei(vehicle);
-    final topic = OfficialMqttConfig.publishTopic(
-      vehicle: vehicle,
-      imei: imei,
-    );
+    final topic = OfficialMqttConfig.publishTopic(vehicle: vehicle, imei: imei);
     final payload = OfficialMqttConfig.commandPayload(
       imei: imei,
       command: commandApiName,
@@ -447,10 +434,7 @@ class OfficialMqttService {
         commandApiName: api.apiName,
       );
       _lastSendPath = OfficialRemoteSendPath.mqtt;
-      _log.operation(
-        '官方远程通道: MQTT',
-        detail: 'command=${api.apiName}',
-      );
+      _log.operation('官方远程通道: MQTT', detail: 'command=${api.apiName}');
       // Keep a light HTTP refresh as secondary consistency (official uses MQTT
       // status first; we still poll list state shortly after).
       unawaited(
@@ -458,7 +442,9 @@ class OfficialMqttService {
           try {
             await Future<void>.delayed(const Duration(seconds: 2));
             await cloud.refreshVehicles(silent: true, force: true);
-          } catch (_) {}
+          } on Object {
+            // Secondary consistency poll only; MQTT status remains source of truth.
+          }
         }),
       );
       // Explicit channel tag so UI/logs can distinguish MQTT vs HTTP fallback.

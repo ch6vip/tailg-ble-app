@@ -50,7 +50,7 @@ void main() {
       final sub = manager.bikeStateStream.listen(events.add);
       addTearDown(() async {
         await sub.cancel();
-        manager.dispose();
+        await manager.dispose();
       });
 
       const state = BikeState(isLocked: true, isPowerOn: false);
@@ -249,7 +249,7 @@ void main() {
       throwsA(isA<StateError>()),
     );
 
-    manager.dispose();
+    await manager.dispose();
 
     await expectLater(commandAck, completion(isFalse));
     await responseExpectation;
@@ -281,7 +281,7 @@ void main() {
   test('dispose is idempotent and ignores later state publications', () {
     final manager = ConnectionManager();
 
-    manager.dispose();
+    unawaited(manager.dispose());
 
     expect(manager.dispose, returnsNormally);
     expect(

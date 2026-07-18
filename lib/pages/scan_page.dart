@@ -61,7 +61,7 @@ class _ScanPageState extends State<ScanPage>
       if (!mounted) return;
       setState(() => _scanning = scanning);
       if (scanning) {
-        _radarController.repeat();
+        unawaited(_radarController.repeat());
       } else {
         _radarController.stop();
       }
@@ -71,8 +71,8 @@ class _ScanPageState extends State<ScanPage>
   @override
   void dispose() {
     _throttle?.cancel();
-    _scanResultsSub?.cancel();
-    _isScanSub?.cancel();
+    unawaited(_scanResultsSub?.cancel());
+    unawaited(_isScanSub?.cancel());
     _resultsNotifier.dispose();
     _radarController.dispose();
     super.dispose();
@@ -110,7 +110,7 @@ class _ScanPageState extends State<ScanPage>
   }
 
   void _stopScan() {
-    FlutterBluePlus.stopScan();
+    unawaited(FlutterBluePlus.stopScan());
   }
 
   Future<void> _connectDevice(BluetoothDevice device) async {
@@ -473,7 +473,7 @@ class _DeviceEntranceState extends State<_DeviceEntrance>
         .animate(
           CurvedAnimation(parent: _controller, curve: AppMotion.entranceCurve),
         );
-    _controller.forward();
+    unawaited(_controller.forward());
   }
 
   @override

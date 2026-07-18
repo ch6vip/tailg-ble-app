@@ -19,10 +19,11 @@ void main() {
 
     expect(find.text('我的车辆'), findsOneWidget);
     expect(find.text('扫描附近车辆'), findsOneWidget);
+    // P3-1: IMEI binding is supported; 扫码/门店 flows are still out of scope.
+    expect(find.text('IMEI 绑车'), findsOneWidget);
     expect(find.text('扫码绑定'), findsNothing);
-    expect(find.text('输入车架号/IMEI'), findsNothing);
     expect(find.text('门店购车绑定'), findsNothing);
-    expect(find.textContaining('支持官方云端同步与本地蓝牙直连'), findsOneWidget);
+    expect(find.textContaining('支持官方云端同步、IMEI 绑定与本地蓝牙直连'), findsOneWidget);
 
     final action = find.bySemanticsLabel('我的车辆，登录官方账号后同步账号下已绑定车辆');
     expect(action, findsOneWidget);

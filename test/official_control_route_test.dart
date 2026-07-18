@@ -45,57 +45,63 @@ void main() {
       expect(noSession.isUnavailable, isTrue);
     });
 
-    test('modelType 8 QGJ: isGps==1 and not LOGIN → cloud; else BLE required', () {
-      final remote = OfficialControlRoute.resolve(
-        bindingCar: true,
-        modelType: 8,
-        isGps: 1,
-        bleReady: false,
-        cloudSessionReady: true,
-      );
-      final local = OfficialControlRoute.resolve(
-        bindingCar: true,
-        modelType: 8,
-        isGps: 1,
-        bleReady: true,
-        cloudSessionReady: true,
-      );
-      final pureBleNoLogin = OfficialControlRoute.resolve(
-        bindingCar: true,
-        modelType: 8,
-        isGps: 0,
-        bleReady: false,
-        cloudSessionReady: true,
-      );
-
-      expect(remote.usesCloud, isTrue);
-      expect(remote.bleStack, OfficialBleStackKind.qgj);
-      expect(local.usesBle, isTrue);
-      expect(pureBleNoLogin.isUnavailable, isTrue);
-      expect(pureBleNoLogin.reason, '蓝牙未连接');
-    });
-
-    test('modelType 10/14 C39 follow isGps hybrid gate with standard stack', () {
-      for (final type in OfficialControlRoute.c39ModelTypes) {
+    test(
+      'modelType 8 QGJ: isGps==1 and not LOGIN → cloud; else BLE required',
+      () {
         final remote = OfficialControlRoute.resolve(
           bindingCar: true,
-          modelType: type,
+          modelType: 8,
           isGps: 1,
           bleReady: false,
           cloudSessionReady: true,
         );
         final local = OfficialControlRoute.resolve(
           bindingCar: true,
-          modelType: type,
-          isGps: 0,
+          modelType: 8,
+          isGps: 1,
           bleReady: true,
           cloudSessionReady: true,
         );
-        expect(remote.usesCloud, isTrue, reason: 'type $type remote');
-        expect(remote.bleStack, OfficialBleStackKind.standard);
-        expect(local.usesBle, isTrue, reason: 'type $type local');
-      }
-    });
+        final pureBleNoLogin = OfficialControlRoute.resolve(
+          bindingCar: true,
+          modelType: 8,
+          isGps: 0,
+          bleReady: false,
+          cloudSessionReady: true,
+        );
+
+        expect(remote.usesCloud, isTrue);
+        expect(remote.bleStack, OfficialBleStackKind.qgj);
+        expect(local.usesBle, isTrue);
+        expect(pureBleNoLogin.isUnavailable, isTrue);
+        expect(pureBleNoLogin.reason, '蓝牙未连接');
+      },
+    );
+
+    test(
+      'modelType 10/14 C39 follow isGps hybrid gate with standard stack',
+      () {
+        for (final type in OfficialControlRoute.c39ModelTypes) {
+          final remote = OfficialControlRoute.resolve(
+            bindingCar: true,
+            modelType: type,
+            isGps: 1,
+            bleReady: false,
+            cloudSessionReady: true,
+          );
+          final local = OfficialControlRoute.resolve(
+            bindingCar: true,
+            modelType: type,
+            isGps: 0,
+            bleReady: true,
+            cloudSessionReady: true,
+          );
+          expect(remote.usesCloud, isTrue, reason: 'type $type remote');
+          expect(remote.bleStack, OfficialBleStackKind.standard);
+          expect(local.usesBle, isTrue, reason: 'type $type local');
+        }
+      },
+    );
 
     test('gpsCombo modelTypes fall back to cloud without isGps gate', () {
       for (final type in {
@@ -168,7 +174,15 @@ void main() {
         _RouteCase(2, 0, false, true, false, expectsUnavailable: true),
         // QGJ hybrid
         _RouteCase(8, 1, false, true, true, expectsCloud: true),
-        _RouteCase(283, 1, true, true, true, expectsBle: true, stack: OfficialBleStackKind.qgj),
+        _RouteCase(
+          283,
+          1,
+          true,
+          true,
+          true,
+          expectsBle: true,
+          stack: OfficialBleStackKind.qgj,
+        ),
         _RouteCase(8, 0, false, true, true, expectsUnavailable: true),
         // C39
         _RouteCase(10, 1, false, true, true, expectsCloud: true),

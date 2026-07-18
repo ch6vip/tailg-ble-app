@@ -25,8 +25,8 @@ void main() {
 
   test('ScanPage cancels scan subscriptions before disposing notifiers', () {
     final source = readSource('lib/pages/scan_page.dart');
-    final cancelScanResults = source.indexOf('_scanResultsSub?.cancel();');
-    final cancelIsScan = source.indexOf('_isScanSub?.cancel();');
+    final cancelScanResults = source.indexOf('_scanResultsSub?.cancel()');
+    final cancelIsScan = source.indexOf('_isScanSub?.cancel()');
     final disposeResultsNotifier = source.indexOf(
       '_resultsNotifier.dispose();',
     );

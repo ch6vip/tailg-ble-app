@@ -12,9 +12,7 @@ void main() {
         OfficialRemoteErrorMessages.sessionExpired,
       );
       expect(
-        OfficialRemoteErrorMessages.describe(
-          Exception('Unauthorized 401'),
-        ),
+        OfficialRemoteErrorMessages.describe(Exception('Unauthorized 401')),
         OfficialRemoteErrorMessages.sessionExpired,
       );
     });

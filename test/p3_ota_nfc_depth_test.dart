@@ -57,10 +57,7 @@ void main() {
 
       final orders = <List<int>>[];
       final chunks = <List<int>>[];
-      final ota = FirmwareOtaService(
-        cloud: cloud,
-        connectionManager: manager,
-      );
+      final ota = FirmwareOtaService(cloud: cloud, connectionManager: manager);
       ota.downloadOverride = (_) async =>
           Uint8List.fromList(List<int>.generate(400, (i) => i & 0xFF));
       ota.writeOrderOverride = (order) async {

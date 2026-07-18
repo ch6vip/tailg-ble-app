@@ -69,7 +69,7 @@ void main() {
             required OfficialVehicle vehicle,
             required String userId,
             required String commandApiName,
-          }) async {
+          }) {
             throw const OfficialCloudApiException('mock broker down');
           };
 

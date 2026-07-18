@@ -58,7 +58,7 @@ class VehicleControlGateBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: const Color(0xFFE8F3FF),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadii.md),
       ),
       child: Row(
         children: [
@@ -82,7 +82,7 @@ class VehicleControlGateBanner extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: busy ? AppColors.textSecondary : const Color(0xFF1A73E8),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(AppRadii.pill),
               ),
               child: Text(
                 actionLabel,

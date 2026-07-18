@@ -6,6 +6,7 @@ import '../ble/connection_manager.dart' as ble;
 import '../ble/constants.dart';
 import '../ble/qgj_protocol.dart';
 import '../main.dart';
+import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_snack.dart';
@@ -50,7 +51,9 @@ class _QgjSettingsPageState extends State<QgjSettingsPage> {
       });
       AppSnack.success(context, '已读取感应解锁状态');
     } catch (e) {
-      if (mounted) AppSnack.error(context, e.toString());
+      if (mounted) {
+        AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -76,7 +79,9 @@ class _QgjSettingsPageState extends State<QgjSettingsPage> {
       setState(() => _proximityEnabled = enabled);
       AppSnack.success(context, enabled ? '已开启感应解锁' : '已关闭感应解锁');
     } catch (e) {
-      if (mounted) AppSnack.error(context, e.toString());
+      if (mounted) {
+        AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

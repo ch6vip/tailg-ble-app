@@ -139,7 +139,7 @@ class AutoConnectService {
 
   void dispose() {
     if (!_enabledController.isClosed) {
-      _enabledController.close();
+      unawaited(_enabledController.close());
     }
   }
 
@@ -205,7 +205,8 @@ class AutoConnectService {
 
     _log.operation(
       '换车: 断开旧 BLE',
-      detail: 'from=${currentId.isEmpty ? manager.state.name : currentId} '
+      detail:
+          'from=${currentId.isEmpty ? manager.state.name : currentId} '
           'to=$targetDeviceId',
       level: LogLevel.info,
     );
@@ -298,40 +299,42 @@ class AutoConnectService {
             continue;
           }
           if (!_enabled) {
-            scanSub?.cancel();
+            unawaited(scanSub?.cancel());
             timeout?.cancel();
-            FlutterBluePlus.stopScan();
+            unawaited(FlutterBluePlus.stopScan());
             if (!completer.isCompleted) completer.complete();
             return;
           }
           if (ManualModeService().enabled) {
-            scanSub?.cancel();
+            unawaited(scanSub?.cancel());
             timeout?.cancel();
-            FlutterBluePlus.stopScan();
+            unawaited(FlutterBluePlus.stopScan());
             if (!completer.isCompleted) completer.complete();
             return;
           }
-          scanSub?.cancel();
+          unawaited(scanSub?.cancel());
           timeout?.cancel();
-          FlutterBluePlus.stopScan();
-          _doConnect(r.device)
-              .catchError((Object e) {
-                _log.operation(
-                  '自动连接: 连接异常',
-                  detail: e.toString(),
-                  level: LogLevel.error,
-                );
-              })
-              .whenComplete(() {
-                if (!completer.isCompleted) completer.complete();
-              });
+          unawaited(FlutterBluePlus.stopScan());
+          unawaited(
+            _doConnect(r.device)
+                .catchError((Object e) {
+                  _log.operation(
+                    '自动连接: 连接异常',
+                    detail: e.toString(),
+                    level: LogLevel.error,
+                  );
+                })
+                .whenComplete(() {
+                  if (!completer.isCompleted) completer.complete();
+                }),
+          );
           return;
         }
       });
 
       timeout = Timer(BleTimings.autoConnectScanTimeout, () {
-        scanSub?.cancel();
-        FlutterBluePlus.stopScan();
+        unawaited(scanSub?.cancel());
+        unawaited(FlutterBluePlus.stopScan());
         _log.operation('自动连接: 超时未找到设备', level: LogLevel.warning);
         if (!completer.isCompleted) completer.complete();
       });
@@ -359,9 +362,9 @@ class AutoConnectService {
       }
       await completer.future;
     } finally {
-      scanSub?.cancel();
+      unawaited(scanSub?.cancel());
       timeout?.cancel();
-      FlutterBluePlus.stopScan();
+      unawaited(FlutterBluePlus.stopScan());
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 class PermissionCheckResult {
   final bool granted;
   final String? message;
+
   /// True when user must open system settings (permanent deny).
   final bool openSettingsRecommended;
 
@@ -38,9 +39,7 @@ class AppPermissionService {
     );
     if (blocked) {
       return PermissionCheckResult.denied(
-        permanentlyBlocked
-            ? '蓝牙/定位权限被永久拒绝，请到系统设置开启后重试'
-            : '请授予蓝牙和定位权限后再扫描',
+        permanentlyBlocked ? '蓝牙/定位权限被永久拒绝，请到系统设置开启后重试' : '请授予蓝牙和定位权限后再扫描',
         openSettingsRecommended: permanentlyBlocked,
       );
     }

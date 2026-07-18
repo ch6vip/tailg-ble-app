@@ -66,9 +66,11 @@ void applyVehicleBleCredentials(VehicleProfile? vehicle) {
 }
 
 void openScanTab(BuildContext context) {
-  Navigator.of(
-    context,
-  ).push(MaterialPageRoute<void>(builder: (_) => const ScanPage()));
+  unawaited(
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const ScanPage())),
+  );
 }
 
 void main() async {

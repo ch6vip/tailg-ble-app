@@ -7,16 +7,14 @@ class BleNfcService {
   final ConnectionManager connectionManager;
   final LogService _log;
 
-  BleNfcService({
-    required this.connectionManager,
-    LogService? logService,
-  }) : _log = logService ?? LogService();
+  BleNfcService({required this.connectionManager, LogService? logService})
+    : _log = logService ?? LogService();
 
   bool get canWriteOfficialNfc =>
       connectionManager.isProtocolLoggedIn &&
       connectionManager.protocol == ProtocolType.standard;
 
-  Future<bool> addUserKey({required int keyType, required String type}) async {
+  Future<bool> addUserKey({required int keyType, required String type}) {
     final hex = OfficialNfcBleFrames.addUserKeyHex(
       keyType: keyType,
       type: type,
@@ -24,15 +22,15 @@ class BleNfcService {
     return _write(hex, label: 'addUserKey');
   }
 
-  Future<bool> addCard(String index) async {
+  Future<bool> addCard(String index) {
     return _write(OfficialNfcBleFrames.addCardHex(index), label: 'addCard');
   }
 
-  Future<bool> checkNfc(String index) async {
+  Future<bool> checkNfc(String index) {
     return _write(OfficialNfcBleFrames.checkNfcHex(index), label: 'checkNfc');
   }
 
-  Future<bool> delNfc(String index) async {
+  Future<bool> delNfc(String index) {
     return _write(OfficialNfcBleFrames.delNfcHex(index), label: 'delNfc');
   }
 

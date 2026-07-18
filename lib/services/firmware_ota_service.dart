@@ -188,7 +188,7 @@ class FirmwareOtaService {
     );
   }
 
-  Future<Uint8List> _download(String url) async {
+  Future<Uint8List> _download(String url) {
     final override = downloadOverride;
     if (override != null) return override(url);
     throw UnsupportedError('未配置 downloadOverride，拒绝在此环境拉真实固件: $url');

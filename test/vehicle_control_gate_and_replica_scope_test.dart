@@ -67,7 +67,9 @@ void main() {
   group('replica pages demote local-only features (P2)', () {
     test('NFC / fence / share pages declare non-official local demos', () {
       final source = readSource('lib/pages/official_replica_pages.dart');
-      expect(source, contains('本地演示 · 非官方 NFC'));
+      // P3-6: NFC now writes official BLE frames on LOGIN; when not LOGIN it
+      // must still make clear it only keeps a local list and does not write.
+      expect(source, contains('未 standard LOGIN：仅本地列表（不会写车）'));
       expect(source, contains('本地草稿围栏'));
       expect(source, contains('非官方云围栏'));
       expect(source, contains('本地演示 · 非官方家庭共享'));

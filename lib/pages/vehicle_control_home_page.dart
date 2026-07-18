@@ -64,7 +64,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   final _commandExecutor = ControlCommandExecutor(
     sendBleCommand: (command) => connectionManager.sendCommand(command),
-    sendCloudCommand: (command) => OfficialMqttService().sendCommandPreferMqtt(
+    sendCloudCommand: (command) => officialMqttService.sendCommandPreferMqtt(
       command: command,
       cloud: officialCloudService,
     ),
@@ -93,11 +93,11 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     _bleStateSub = connectionManager.stateStream.listen((_) {
       if (mounted) setState(() {});
     });
-    _mqttLinkSub = OfficialMqttService().linkStateStream.listen((_) {
+    _mqttLinkSub = officialMqttService.linkStateStream.listen((_) {
       if (mounted) setState(() {});
     });
     unawaited(_silentRefresh());
-    unawaited(OfficialMqttService().preconnectForCloud(officialCloudService));
+    unawaited(officialMqttService.preconnectForCloud(officialCloudService));
     unawaited(_ensureNearFieldLink(auto: true));
   }
 
@@ -138,7 +138,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
         level: LogLevel.warning,
       );
     }
-    final mqtt = OfficialMqttService();
+    final mqtt = officialMqttService;
     if (mqtt.lastPreconnectError != null || !mqtt.isConnected) {
       unawaited(mqtt.retryPreconnect(officialCloudService));
     } else {
@@ -336,8 +336,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
 
     setState(() => _busy = true);
     unawaited(HapticFeedback.mediumImpact());
-    final vehicleKeyAtSend =
-        officialCloudService.state.selectedVehicle?.key;
+    final vehicleKeyAtSend = officialCloudService.state.selectedVehicle?.key;
     final baseline = _vehicleStateSnapshot();
     _pushCommand(
       _CommandEntry(
@@ -363,7 +362,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
           failureMessage: '控车后记录车辆位置失败',
         );
         // Capture pending name set by MQTT publish (if cloud path used MQTT).
-        final mqtt = OfficialMqttService();
+        final mqtt = officialMqttService;
         final String? mqttPendingForConfirm;
         if (result.transport == ControlCommandTransport.officialCloud &&
             mqtt.lastSendPath == OfficialRemoteSendPath.mqtt) {
@@ -565,7 +564,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     while (mounted && !_disposed) {
       final mqttAcked = ControlCommandConfirmation.mqttPendingAcknowledged(
         pendingAtSend: mqttPendingAtSend,
-        pendingNow: OfficialMqttService().pendingCommandApiName,
+        pendingNow: officialMqttService.pendingCommandApiName,
       );
       final confirmed = ControlCommandConfirmation.isConfirmed(
         command: command,
@@ -583,9 +582,9 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       await _refreshStateForConfirmation();
       final mqttAckedAfterRefresh =
           ControlCommandConfirmation.mqttPendingAcknowledged(
-        pendingAtSend: mqttPendingAtSend,
-        pendingNow: OfficialMqttService().pendingCommandApiName,
-      );
+            pendingAtSend: mqttPendingAtSend,
+            pendingNow: officialMqttService.pendingCommandApiName,
+          );
       final confirmedAfterRefresh = ControlCommandConfirmation.isConfirmed(
         command: command,
         transport: transport,
@@ -637,7 +636,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
 
   /// P0-C3 / P0-A3: single truth for 顶栏通道四态 (+ BLE 连接中 / 待重连).
   ControlTopBarChannel _topBarChannel() {
-    final mqtt = OfficialMqttService();
+    final mqtt = officialMqttService;
     return ControlTopBarChannel.resolve(
       availability: _controlAvailability(),
       bleState: connectionManager.state,
@@ -1044,7 +1043,9 @@ class _TopBar extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: channelActive
                               ? _Aurora.accent
-                              : (online ? _Aurora.accent.withValues(alpha: 0.55) : _Aurora.muted),
+                              : (online
+                                    ? _Aurora.accent.withValues(alpha: 0.55)
+                                    : _Aurora.muted),
                           shape: BoxShape.circle,
                         ),
                       ),

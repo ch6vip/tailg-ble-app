@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../services/firmware_ota_service.dart';
+import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_snack.dart';
@@ -74,10 +75,10 @@ class _FirmwareOtaPageState extends State<FirmwareOtaPage> {
               _progress = FirmwareOtaProgress(
                 phase: FirmwareOtaPhase.failed,
                 fraction: _progress.fraction,
-                message: e.toString(),
+                message: OfficialCloudRedactor.errorMessage(e),
               );
             });
-            AppSnack.error(context, e.toString());
+            AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
           },
         );
   }
@@ -97,10 +98,7 @@ class _FirmwareOtaPageState extends State<FirmwareOtaPage> {
                 children: [
                   const Text(
                     '官方 OTA 流',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -115,7 +113,9 @@ class _FirmwareOtaPageState extends State<FirmwareOtaPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  LinearProgressIndicator(value: _progress.fraction.clamp(0, 1)),
+                  LinearProgressIndicator(
+                    value: _progress.fraction.clamp(0, 1),
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     '${_progress.phase.name} · ${_progress.message}',
@@ -128,9 +128,7 @@ class _FirmwareOtaPageState extends State<FirmwareOtaPage> {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                      onPressed: _running
-                          ? null
-                          : () => unawaited(_start()),
+                      onPressed: _running ? null : () => unawaited(_start()),
                       child: Text(_running ? '进行中…' : '检查并升级'),
                     ),
                   ),
@@ -140,9 +138,7 @@ class _FirmwareOtaPageState extends State<FirmwareOtaPage> {
                     child: OutlinedButton(
                       onPressed: _running
                           ? null
-                          : () => unawaited(
-                              _start(injectDemoFirmware: true),
-                            ),
+                          : () => unawaited(_start(injectDemoFirmware: true)),
                       child: const Text('用演示固件包跑通分片传输'),
                     ),
                   ),

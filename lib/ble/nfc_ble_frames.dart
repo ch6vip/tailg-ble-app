@@ -10,7 +10,8 @@ abstract final class OfficialNfcBleFrames {
   static const headerNfcCheck = '85044A3201';
   static const headerNfcDel = '85054A320502';
   static const headerNfcFacSet = '85054A320412';
-  static const cushionSetBody = '000000000000'; // TailgBleUtils.HEADER_SEND_CUSHION_SET_BODY fallback
+  static const cushionSetBody =
+      '000000000000'; // TailgBleUtils.HEADER_SEND_CUSHION_SET_BODY fallback
 
   /// Phone/card key add (keyType 1 = phone, 2 = BLE key).
   static String addUserKeyHex({required int keyType, required String type}) {
@@ -23,10 +24,10 @@ abstract final class OfficialNfcBleFrames {
   }
 
   static String checkNfcHex(String index) =>
-      '$headerNfcCheck$index' '3456789ABCDE';
+      '$headerNfcCheck$index'
+      '3456789ABCDE';
 
-  static String delNfcHex(String index) =>
-      '$headerNfcDel$index$cushionSetBody';
+  static String delNfcHex(String index) => '$headerNfcDel$index$cushionSetBody';
 
   static String addCardHex(String index) =>
       '$headerNfcAddMode$index$cushionSetBody';

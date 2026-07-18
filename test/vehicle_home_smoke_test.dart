@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/vehicle_control_home_page.dart';

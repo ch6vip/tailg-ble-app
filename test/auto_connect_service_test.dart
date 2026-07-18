@@ -189,7 +189,10 @@ void main() {
       expect(listenerEnd, greaterThan(listenerStart));
 
       final listenerSource = source.substring(listenerStart, listenerEnd);
-      expect(listenerSource, contains('_sameDeviceId(foundId, targetDeviceId)'));
+      expect(
+        listenerSource,
+        contains('_sameDeviceId(foundId, targetDeviceId)'),
+      );
       expect(listenerSource, isNot(contains('== _lastDeviceId')));
     });
 
@@ -230,14 +233,17 @@ void main() {
       expect(connectCall, greaterThan(manualGuard));
     });
 
-    test('tryAutoConnect loads manual mode before checking the guard', () async {
-      SharedPreferences.setMockInitialValues({'manual_mode_enabled': true});
-      ManualModeService().resetForTest();
+    test(
+      'tryAutoConnect loads manual mode before checking the guard',
+      () async {
+        SharedPreferences.setMockInitialValues({'manual_mode_enabled': true});
+        ManualModeService().resetForTest();
 
-      await AutoConnectService().tryAutoConnect();
+        await AutoConnectService().tryAutoConnect();
 
-      expect(ManualModeService().enabled, isTrue);
-    });
+        expect(ManualModeService().enabled, isTrue);
+      },
+    );
 
     test('sameDeviceId ignores separators and case', () {
       expect(
@@ -245,40 +251,46 @@ void main() {
         isTrue,
       );
       expect(
-        AutoConnectService.sameDeviceId('AA:BB:CC:DD:EE:FF', '11:22:33:44:55:66'),
+        AutoConnectService.sameDeviceId(
+          'AA:BB:CC:DD:EE:FF',
+          '11:22:33:44:55:66',
+        ),
         isFalse,
       );
     });
 
-    test('linkOfficialTarget disconnects BLE when retargeting another car', () async {
-      final manager = ConnectionManager();
-      addTearDown(manager.dispose);
-      final service = AutoConnectService();
-      await service.init(manager);
+    test(
+      'linkOfficialTarget disconnects BLE when retargeting another car',
+      () async {
+        final manager = ConnectionManager();
+        addTearDown(manager.dispose);
+        final service = AutoConnectService();
+        await service.init(manager);
 
-      final oldDevice = BluetoothDevice(
-        remoteId: const DeviceIdentifier('AA:BB:CC:DD:EE:01'),
-      );
-      manager.attachDeviceForTest(oldDevice);
-      expect(manager.state, ConnectionState.ready);
-      expect(manager.isProtocolLoggedIn, isTrue);
-      expect(service.isLinkedTo('AA:BB:CC:DD:EE:01'), isTrue);
+        final oldDevice = BluetoothDevice(
+          remoteId: const DeviceIdentifier('AA:BB:CC:DD:EE:01'),
+        );
+        manager.attachDeviceForTest(oldDevice);
+        expect(manager.state, ConnectionState.ready);
+        expect(manager.isProtocolLoggedIn, isTrue);
+        expect(service.isLinkedTo('AA:BB:CC:DD:EE:01'), isTrue);
 
-      // connectNow false: only retarget + disconnect; no scan in unit tests.
-      await service.linkOfficialTarget(
-        deviceId: 'AA:BB:CC:DD:EE:02',
-        displayName: 'Bike B',
-        enable: true,
-        connectNow: false,
-      );
+        // connectNow false: only retarget + disconnect; no scan in unit tests.
+        await service.linkOfficialTarget(
+          deviceId: 'AA:BB:CC:DD:EE:02',
+          displayName: 'Bike B',
+          enable: true,
+          connectNow: false,
+        );
 
-      expect(manager.state, ConnectionState.disconnected);
-      expect(manager.device, isNull);
-      expect(manager.isProtocolLoggedIn, isFalse);
-      expect(service.isLinkedTo('AA:BB:CC:DD:EE:01'), isFalse);
-      expect(VehicleStore().defaultVehicle?.id, 'AA:BB:CC:DD:EE:02');
-      expect(service.lastDeviceName, 'Bike B');
-    });
+        expect(manager.state, ConnectionState.disconnected);
+        expect(manager.device, isNull);
+        expect(manager.isProtocolLoggedIn, isFalse);
+        expect(service.isLinkedTo('AA:BB:CC:DD:EE:01'), isFalse);
+        expect(VehicleStore().defaultVehicle?.id, 'AA:BB:CC:DD:EE:02');
+        expect(service.lastDeviceName, 'Bike B');
+      },
+    );
 
     test('linkOfficialTarget keeps session when same car MAC', () async {
       final manager = ConnectionManager();

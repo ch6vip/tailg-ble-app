@@ -24,7 +24,7 @@ class ManualModeService {
       StreamController<bool>.broadcast();
   Stream<bool> get enabledStream => _enabledController.stream;
 
-  Future<void> init() async {
+  Future<void> init() {
     return _ensureInitialized(emitInitialValue: true);
   }
 
@@ -74,7 +74,7 @@ class ManualModeService {
 
   void dispose() {
     if (!_enabledController.isClosed) {
-      _enabledController.close();
+      unawaited(_enabledController.close());
     }
   }
 }

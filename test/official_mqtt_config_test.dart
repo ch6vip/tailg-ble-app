@@ -26,7 +26,10 @@ void main() {
     final kks = vehicle(modelType: 1, imei: 'IMEI1');
     final yj = vehicle(modelType: 2, imei: 'IMEI2');
 
-    expect(OfficialMqttConfig.brokerUriFor(kks), OfficialMqttConfig.kksYjHostUri);
+    expect(
+      OfficialMqttConfig.brokerUriFor(kks),
+      OfficialMqttConfig.kksYjHostUri,
+    );
     expect(OfficialMqttConfig.usesKksYjBroker(1), isTrue);
     expect(
       OfficialMqttConfig.publishTopic(vehicle: kks, imei: 'IMEI1'),
@@ -49,11 +52,7 @@ void main() {
   });
 
   test('vehicle mqHost/mqPort override C18 default', () {
-    final v = vehicle(
-      modelType: 8,
-      mqHost: 'mqtt.example.com',
-      mqPort: '8883',
-    );
+    final v = vehicle(modelType: 8, mqHost: 'mqtt.example.com', mqPort: '8883');
     expect(OfficialMqttConfig.brokerUriFor(v), 'ssl://mqtt.example.com:8883');
   });
 

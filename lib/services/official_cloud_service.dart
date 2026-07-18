@@ -298,7 +298,9 @@ class OfficialCloudService {
     );
     _emit();
     // P1-4: tear down MQTT / BLE control sessions after cloud session is cleared.
-    final sideEffects = List<Future<void> Function()>.of(afterLogoutSideEffects);
+    final sideEffects = List<Future<void> Function()>.of(
+      afterLogoutSideEffects,
+    );
     for (final effect in sideEffects) {
       try {
         await effect();
@@ -669,10 +671,7 @@ class OfficialCloudService {
   /// Apply MQTT status telemetry to the currently selected vehicle list entry.
   ///
   /// Mirrors ControlFragment messageArrived ACC/defenceStatus writes.
-  void applyMqttVehicleStatus({
-    int? acc,
-    int? defenceStatus,
-  }) {
+  void applyMqttVehicleStatus({int? acc, int? defenceStatus}) {
     if (_disposed) return;
     final current = _state.selectedVehicle;
     if (current == null) return;
@@ -684,10 +683,7 @@ class OfficialCloudService {
       return;
     }
 
-    final updated = current.copyWith(
-      acc: nextAcc,
-      defenceStatus: nextDefence,
-    );
+    final updated = current.copyWith(acc: nextAcc, defenceStatus: nextDefence);
     final vehicles = _state.vehicles
         .map((vehicle) => vehicle.key == updated.key ? updated : vehicle)
         .toList(growable: false);
@@ -1527,7 +1523,9 @@ class OfficialCloudService {
   Future<void> bindVehicleByImei(String imei) async {
     final token = _state.token;
     if (token.isEmpty) {
-      throw const OfficialCloudApiException(OfficialCloudMessages.signInRequired);
+      throw const OfficialCloudApiException(
+        OfficialCloudMessages.signInRequired,
+      );
     }
     final cleaned = imei.trim();
     if (cleaned.isEmpty) {
@@ -1560,13 +1558,12 @@ class OfficialCloudService {
   /// P3-2: unbind selected or specified car (`POST app/car/bikeUnbind`).
   ///
   /// [unbindType] follows official garage/settings callers (commonly 1).
-  Future<void> unbindVehicle({
-    String? carId,
-    int unbindType = 1,
-  }) async {
+  Future<void> unbindVehicle({String? carId, int unbindType = 1}) async {
     final token = _state.token;
     if (token.isEmpty) {
-      throw const OfficialCloudApiException(OfficialCloudMessages.signInRequired);
+      throw const OfficialCloudApiException(
+        OfficialCloudMessages.signInRequired,
+      );
     }
     final id = (carId ?? _state.selectedVehicle?.carId ?? '').trim();
     if (id.isEmpty) {
@@ -1583,10 +1580,7 @@ class OfficialCloudService {
         'app/car/bikeUnbind',
         method: 'POST',
         token: token,
-        body: {
-          'carId': id,
-          'unbindType': unbindType,
-        },
+        body: {'carId': id, 'unbindType': unbindType},
       );
       _ensureSuccess(response.body, fallback: '解绑失败');
       _ensureCurrentSession(token);
@@ -1603,10 +1597,11 @@ class OfficialCloudService {
   Future<Map<String, dynamic>> getFirmVersion({String? imei}) async {
     final token = _state.token;
     if (token.isEmpty) {
-      throw const OfficialCloudApiException(OfficialCloudMessages.signInRequired);
+      throw const OfficialCloudApiException(
+        OfficialCloudMessages.signInRequired,
+      );
     }
-    final id =
-        (imei ?? _state.selectedVehicle?.commandImei ?? '').trim();
+    final id = (imei ?? _state.selectedVehicle?.commandImei ?? '').trim();
     if (id.isEmpty) {
       throw const OfficialCloudApiException('缺少 IMEI，无法查询固件');
     }

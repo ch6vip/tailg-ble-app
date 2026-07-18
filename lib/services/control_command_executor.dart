@@ -90,7 +90,7 @@ class ControlCommandExecutor {
         onTimeout: () => throw TimeoutException('Cloud command timed out'),
       );
       return ControlCommandResult.cloudSuccess(command, message: message);
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       return ControlCommandResult.failure(
         command,
         transport: ControlCommandTransport.officialCloud,

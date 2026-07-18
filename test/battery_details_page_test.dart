@@ -26,16 +26,17 @@ void main() {
 
     final refreshSource = source.substring(refreshStart, refreshEnd);
 
-    expect(
-      refreshSource,
-      contains(
-        'AppSnack.error(context, OfficialCloudRedactor.errorMessage(e))',
-      ),
-    );
-    expect(
-      refreshSource,
-      isNot(contains('AppSnack.error(context, e.toString())')),
-    );
+    // Assert on the AppSnack.error(...) call span so multi-line formatting
+    // cannot hide a raw e.toString() snack (logs may still use e.toString()).
+    final snackStart = refreshSource.indexOf('AppSnack.error(');
+    expect(snackStart, greaterThanOrEqualTo(0));
+    final snackEnd = refreshSource.indexOf(');', snackStart);
+    expect(snackEnd, greaterThan(snackStart));
+    final snackCall = refreshSource.substring(snackStart, snackEnd + 2);
+
+    expect(snackCall, contains('OfficialCloudRedactor.errorMessage(e)'));
+    expect(snackCall, isNot(contains('e.toString()')));
+    expect(snackCall, isNot(contains(r'$e')));
   });
 
   testWidgets('refreshing battery details while signed out shows info snack', (

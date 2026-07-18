@@ -26,8 +26,10 @@ enum ConnectionState {
   disconnected,
   connecting,
   reconnecting,
+
   /// GATT connected; token / QGJ login not yet confirmed.
   connected,
+
   /// Handshake success path; combined with token → official LOGIN.
   ready,
 }
@@ -52,6 +54,7 @@ class ConnectionManager {
   ProtocolType _lastKnownProtocol = ProtocolType.unknown;
   ConnectionState _state = ConnectionState.disconnected;
   String? _token;
+
   /// Explicit protocol-login latch (official LoginStatus.LOGIN).
   /// Set only on TokenResponse / QGJ login success; cleared on teardown.
   bool _protocolLoggedIn = false;
@@ -163,33 +166,35 @@ class ConnectionManager {
   void _drainGattQueue() {
     if (_gattRunning || !_hasPendingGattOperations) return;
     _gattRunning = true;
-    () async {
-      while (_hasPendingGattOperations) {
-        final queued = _takeNextGattOperation();
-        _activeGattOperation = queued;
-        try {
-          final result = await queued.operation().timeout(
-            BleTimings.gattOperationTimeout,
-            onTimeout: () =>
-                throw TimeoutException('GATT operation timed out after 30s'),
-          );
-          if (!queued.completer.isCompleted) {
-            queued.completer.complete(result);
-          }
-        } catch (e, st) {
-          if (!queued.completer.isCompleted) {
-            queued.completer.completeError(e, st);
-          }
-        } finally {
-          if (identical(_activeGattOperation, queued)) {
-            _activeGattOperation = null;
+    unawaited(
+      () async {
+        while (_hasPendingGattOperations) {
+          final queued = _takeNextGattOperation();
+          _activeGattOperation = queued;
+          try {
+            final result = await queued.operation().timeout(
+              BleTimings.gattOperationTimeout,
+              onTimeout: () =>
+                  throw TimeoutException('GATT operation timed out after 30s'),
+            );
+            if (!queued.completer.isCompleted) {
+              queued.completer.complete(result);
+            }
+          } catch (e, st) {
+            if (!queued.completer.isCompleted) {
+              queued.completer.completeError(e, st);
+            }
+          } finally {
+            if (identical(_activeGattOperation, queued)) {
+              _activeGattOperation = null;
+            }
           }
         }
-      }
-    }().whenComplete(() {
-      _gattRunning = false;
-      if (_hasPendingGattOperations) _drainGattQueue();
-    });
+      }().whenComplete(() {
+        _gattRunning = false;
+        if (_hasPendingGattOperations) _drainGattQueue();
+      }),
+    );
   }
 
   bool get _hasPendingGattOperations =>
@@ -258,7 +263,7 @@ class ConnectionManager {
       // Subscribe BEFORE connecting to not miss early disconnect events
       _connectionSub = device.connectionState.listen((state) {
         if (state == BluetoothConnectionState.disconnected) {
-          _onDisconnected();
+          unawaited(_onDisconnected());
         }
       });
 
@@ -410,14 +415,12 @@ class ConnectionManager {
     required Duration timeout,
     required int attempts,
   }) async {
-    Object? lastError;
     for (var attempt = 1; attempt <= attempts; attempt++) {
       try {
         await device.connect(timeout: timeout, mtu: null);
         return;
       } catch (e) {
-        lastError = e;
-        if (attempt == attempts) break;
+        if (attempt == attempts) rethrow;
         _log.ble(
           '连接失败，短暂重试 $attempt/$attempts',
           detail: e.toString(),
@@ -427,7 +430,7 @@ class ConnectionManager {
         await Future<void>.delayed(BleTimings.initialConnectRetryDelay);
       }
     }
-    throw lastError ?? StateError('连接失败');
+    throw StateError('连接失败');
   }
 
   Future<void> _requestQgjMtu(BluetoothDevice device) async {
@@ -595,43 +598,47 @@ class ConnectionManager {
       if (_state != ConnectionState.ready || _feb3Char == null) return;
       if (heartbeatInFlight) return;
       heartbeatInFlight = true;
-      readFeb3()
-          .then((data) {
-            failCount = 0;
-            if (data != null && data.isNotEmpty) {
-              final state = BikeState.fromFeb3(data);
-              if (state != null) {
-                _publishBikeState(state);
+      unawaited(
+        readFeb3()
+            .then((data) {
+              failCount = 0;
+              if (data != null && data.isNotEmpty) {
+                final state = BikeState.fromFeb3(data);
+                if (state != null) {
+                  _publishBikeState(state);
+                }
               }
-            }
-          })
-          .catchError((Object e) {
-            failCount++;
-            if (failCount == 3) {
-              _log.ble(
-                '心跳连续失败 3 次',
-                detail: e.toString(),
-                level: LogLevel.warning,
-              );
-            }
-            if (failCount >= 5 && _state == ConnectionState.ready) {
-              _log.ble('心跳持续失败 ($failCount 次)，触发重连', level: LogLevel.warning);
-              _cancelHeartbeat();
-              // scheduleMicrotask: _onDisconnected performs async cleanup
-              // (cancel subs, _attemptReconnect). Running it inline inside
-              // the Timer callback would route those futures through the
-              // Timer zone, swallowing any thrown exceptions.
-              scheduleMicrotask(() {
-                _onDisconnected().catchError((Object e, StackTrace st) {
-                  _log.ble(
-                    'Disconnect handler error: $e',
-                    level: LogLevel.error,
+            })
+            .catchError((Object e) {
+              failCount++;
+              if (failCount == 3) {
+                _log.ble(
+                  '心跳连续失败 3 次',
+                  detail: e.toString(),
+                  level: LogLevel.warning,
+                );
+              }
+              if (failCount >= 5 && _state == ConnectionState.ready) {
+                _log.ble('心跳持续失败 ($failCount 次)，触发重连', level: LogLevel.warning);
+                _cancelHeartbeat();
+                // scheduleMicrotask: _onDisconnected performs async cleanup
+                // (cancel subs, _attemptReconnect). Running it inline inside
+                // the Timer callback would route those futures through the
+                // Timer zone, swallowing any thrown exceptions.
+                scheduleMicrotask(() {
+                  unawaited(
+                    _onDisconnected().catchError((Object e, StackTrace st) {
+                      _log.ble(
+                        'Disconnect handler error: $e',
+                        level: LogLevel.error,
+                      );
+                    }),
                   );
                 });
-              });
-            }
-          })
-          .whenComplete(() => heartbeatInFlight = false);
+              }
+            })
+            .whenComplete(() => heartbeatInFlight = false),
+      );
     }
 
     _heartbeatInitialTimer = Timer(BleTimings.heartbeatInitialDelay, () {
@@ -989,9 +996,11 @@ class ConnectionManager {
     _resetCharacteristics();
     if (!_userDisconnected && _device != null) {
       _setState(ConnectionState.reconnecting);
-      _attemptReconnect().catchError((Object e, StackTrace st) {
-        _log.ble('Reconnect error: $e', level: LogLevel.error);
-      });
+      unawaited(
+        _attemptReconnect().catchError((Object e, StackTrace st) {
+          _log.ble('Reconnect error: $e', level: LogLevel.error);
+        }),
+      );
     } else {
       _setState(ConnectionState.disconnected);
     }
@@ -1031,7 +1040,7 @@ class ConnectionManager {
 
         _connectionSub = _device!.connectionState.listen((state) {
           if (state == BluetoothConnectionState.disconnected) {
-            _onDisconnected();
+            unawaited(_onDisconnected());
           }
         });
 
@@ -1202,9 +1211,11 @@ class ConnectionManager {
       // scheduleMicrotask avoids running teardown inside the Timer zone,
       // where async exceptions from _onDisconnected would be swallowed.
       scheduleMicrotask(() {
-        _onDisconnected().catchError((Object e, StackTrace st) {
-          _log.ble('Disconnect handler error: $e', level: LogLevel.error);
-        });
+        unawaited(
+          _onDisconnected().catchError((Object e, StackTrace st) {
+            _log.ble('Disconnect handler error: $e', level: LogLevel.error);
+          }),
+        );
       });
     });
   }
@@ -1250,11 +1261,11 @@ class ConnectionManager {
     }
 
     // Close controllers
-    _stateController.close();
-    _responseController.close();
-    _bikeStateController.close();
-    _ridingModeController.close();
-    _fbb2Controller.close();
+    unawaited(_stateController.close());
+    unawaited(_responseController.close());
+    unawaited(_bikeStateController.close());
+    unawaited(_ridingModeController.close());
+    unawaited(_fbb2Controller.close());
   }
 }
 

@@ -6,10 +6,7 @@ class ControlCommandVehicleStateSnapshot {
   final bool? isLocked;
   final bool? isPowerOn;
 
-  const ControlCommandVehicleStateSnapshot({
-    this.isLocked,
-    this.isPowerOn,
-  });
+  const ControlCommandVehicleStateSnapshot({this.isLocked, this.isPowerOn});
 }
 
 class ControlCommandConfirmationContext {

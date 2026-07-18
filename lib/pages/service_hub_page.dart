@@ -205,8 +205,7 @@ class _MoreServicesPage extends StatelessWidget {
                     icon: Icons.support_agent_outlined,
                     title: '售后服务',
                     subtitle: '非复刻范围 · 请使用官方渠道',
-                    onTap: () =>
-                        AppSnack.outOfReplicaScope(context, '售后服务'),
+                    onTap: () => AppSnack.outOfReplicaScope(context, '售后服务'),
                   ),
                 ],
               ),

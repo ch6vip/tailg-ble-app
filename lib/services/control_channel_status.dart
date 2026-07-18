@@ -54,7 +54,8 @@ class ControlTopBarChannel {
         bleState == ConnectionState.reconnecting) {
       // If cloud is actively usable we still prefer showing remote readiness,
       // but while intentionally near-field linking, surface BLE progress.
-      if (!availability.canUseCloud || availability.channel == OfficialControlChannel.ble) {
+      if (!availability.canUseCloud ||
+          availability.channel == OfficialControlChannel.ble) {
         return const ControlTopBarChannel(
           kind: ControlTopBarChannelKind.bleConnecting,
           label: '蓝牙连接中',
@@ -62,8 +63,7 @@ class ControlTopBarChannel {
       }
     }
 
-    final mqttConnected =
-        mqttLinkState == OfficialMqttLinkState.connected;
+    final mqttConnected = mqttLinkState == OfficialMqttLinkState.connected;
     if (mqttConnected) {
       return const ControlTopBarChannel(
         kind: ControlTopBarChannelKind.mqttRemote,

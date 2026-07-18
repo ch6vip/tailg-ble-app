@@ -44,7 +44,8 @@ class OfficialMqttStatusPayload {
         imei: _asString(map['imei']),
         muteStatus: _asInt(map['muteStatus']),
       );
-    } catch (_) {
+    } on Object {
+      // Malformed status payload — treat as no update.
       return null;
     }
   }

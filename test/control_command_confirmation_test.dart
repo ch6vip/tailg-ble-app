@@ -139,18 +139,21 @@ void main() {
       expect(confirmed, isTrue);
     });
 
-    test('cloud confirms lock on MQTT ACK even if baseline already matched', () {
-      final confirmed = ControlCommandConfirmation.isConfirmed(
-        command: CommandCode.lock,
-        transport: ControlCommandTransport.officialCloud,
-        expectedOfficialVehicleKey: 'v1',
-        currentOfficialVehicleKey: 'v1',
-        baseline: const ControlCommandVehicleStateSnapshot(isLocked: true),
-        current: const ControlCommandVehicleStateSnapshot(isLocked: true),
-        mqttAcked: true,
-      );
-      expect(confirmed, isTrue);
-    });
+    test(
+      'cloud confirms lock on MQTT ACK even if baseline already matched',
+      () {
+        final confirmed = ControlCommandConfirmation.isConfirmed(
+          command: CommandCode.lock,
+          transport: ControlCommandTransport.officialCloud,
+          expectedOfficialVehicleKey: 'v1',
+          currentOfficialVehicleKey: 'v1',
+          baseline: const ControlCommandVehicleStateSnapshot(isLocked: true),
+          current: const ControlCommandVehicleStateSnapshot(isLocked: true),
+          mqttAcked: true,
+        );
+        expect(confirmed, isTrue);
+      },
+    );
 
     test('cloud rejects confirmation when selected vehicle changed', () {
       final confirmed = ControlCommandConfirmation.isConfirmed(
