@@ -24,12 +24,27 @@ class AppPermissionService {
   factory AppPermissionService() => _instance;
   AppPermissionService._();
 
-  Future<PermissionCheckResult> requestBleScanPermissions() async {
-    final statuses = await [
+  /// BLE scan/connect permissions (Android 12+ Scan/Connect + location for older
+  /// stacks / OEM scan requirements).
+  ///
+  /// When [request] is false, only checks current status and never prompts.
+  Future<PermissionCheckResult> requestBleScanPermissions({
+    bool request = true,
+  }) async {
+    const permissions = <Permission>[
       Permission.bluetoothScan,
       Permission.bluetoothConnect,
       Permission.location,
-    ].request();
+    ];
+    final Map<Permission, PermissionStatus> statuses;
+    if (request) {
+      statuses = await permissions.request();
+    } else {
+      statuses = {
+        for (final permission in permissions)
+          permission: await permission.status,
+      };
+    }
     final permanentlyBlocked = statuses.values.any(
       (status) => status.isPermanentlyDenied || status.isRestricted,
     );

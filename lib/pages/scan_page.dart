@@ -82,7 +82,18 @@ class _ScanPageState extends State<ScanPage>
     final result = await permissionService.requestBleScanPermissions();
     if (!mounted) return false;
     if (!result.granted) {
-      AppSnack.error(context, result.message ?? '请授予蓝牙和定位权限后再扫描');
+      if (result.openSettingsRecommended) {
+        AppSnack.error(
+          context,
+          result.message ?? '请到系统设置开启蓝牙和定位权限',
+          actionLabel: '去设置',
+          onAction: () {
+            unawaited(permissionService.openSystemSettings());
+          },
+        );
+      } else {
+        AppSnack.error(context, result.message ?? '请授予蓝牙和定位权限后再扫描');
+      }
     }
     return result.granted;
   }
@@ -101,7 +112,14 @@ class _ScanPageState extends State<ScanPage>
     } on PlatformException catch (e) {
       logService.ble('手动扫描启动失败', detail: e.toString(), level: LogLevel.warning);
       if (!mounted) return;
-      AppSnack.error(context, '扫描启动失败，请检查蓝牙权限');
+      AppSnack.error(
+        context,
+        '扫描启动失败，请检查蓝牙权限',
+        actionLabel: '去设置',
+        onAction: () {
+          unawaited(permissionService.openSystemSettings());
+        },
+      );
     } catch (e) {
       logService.ble('手动扫描启动失败', detail: e.toString(), level: LogLevel.warning);
       if (!mounted) return;

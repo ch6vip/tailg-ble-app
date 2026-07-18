@@ -8,6 +8,7 @@ import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/services/ble_connection_snapshot_guard.dart';
 import 'package:tailg_ble_app/services/auto_connect_service.dart';
 import 'package:tailg_ble_app/services/manual_mode_service.dart';
+import 'package:tailg_ble_app/services/permission_service.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 
 import 'helpers/allowing_snapshot_guard.dart';
@@ -244,6 +245,45 @@ void main() {
         expect(ManualModeService().enabled, isTrue);
       },
     );
+
+    test('tryAutoConnect requests BLE permissions before scan', () {
+      final source = readSource('lib/services/auto_connect_service.dart');
+      final methodStart = source.indexOf('Future<void> _tryAutoConnectOnce()');
+      final permissionGate = source.indexOf(
+        '_ensureBleScanPermissions',
+        methodStart,
+      );
+      final scanStart = source.indexOf(
+        'FlutterBluePlus.startScan',
+        methodStart,
+      );
+
+      expect(methodStart, greaterThanOrEqualTo(0));
+      expect(permissionGate, greaterThan(methodStart));
+      expect(scanStart, greaterThan(permissionGate));
+    });
+
+    test('tryAutoConnect aborts when BLE permissions are denied', () async {
+      final service = AutoConnectService();
+      final manager = ConnectionManager();
+      addTearDown(() async {
+        await manager.dispose();
+      });
+      await service.init(manager);
+      await service.setEnabled(true);
+      service.permissionRequestOverride = ({bool request = true}) async =>
+          const PermissionCheckResult.denied('请授予蓝牙和定位权限后再扫描');
+
+      // No crash / no scan when permissions denied (connectNow path).
+      await service.linkOfficialTarget(
+        deviceId: 'AA:BB:CC:DD:EE:03',
+        displayName: 'No-Perm Bike',
+        enable: true,
+        connectNow: true,
+      );
+
+      expect(manager.state, ConnectionState.disconnected);
+    });
 
     test('sameDeviceId ignores separators and case', () {
       expect(

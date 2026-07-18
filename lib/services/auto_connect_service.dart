@@ -5,9 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../ble/constants.dart';
 import '../ble/connection_manager.dart';
 import '../models/vehicle_profile.dart';
+import 'package:flutter/foundation.dart';
+
 import 'ble_connection_snapshot_guard.dart';
 import 'log_service.dart';
 import 'manual_mode_service.dart';
+import 'permission_service.dart';
 import 'vehicle_store.dart';
 
 class AutoConnectRunGate {
@@ -82,6 +85,11 @@ class AutoConnectService {
   String? _lastDeviceName;
   String? get lastDeviceName => _lastDeviceName;
 
+  /// Test hook: replace BLE permission gate used before auto-scan.
+  @visibleForTesting
+  Future<PermissionCheckResult> Function({bool request})?
+  permissionRequestOverride;
+
   StreamController<bool> _enabledController =
       StreamController<bool>.broadcast();
   Stream<bool> get enabledStream => _enabledController.stream;
@@ -134,7 +142,18 @@ class AutoConnectService {
     _lastDeviceName = null;
     _initialized = false;
     _initializing = null;
+    permissionRequestOverride = null;
     _clock = clock ?? DateTime.now;
+  }
+
+  Future<PermissionCheckResult> _ensureBleScanPermissions({
+    bool request = true,
+  }) {
+    final override = permissionRequestOverride;
+    if (override != null) {
+      return override(request: request);
+    }
+    return AppPermissionService().requestBleScanPermissions(request: request);
   }
 
   void dispose() {
@@ -285,6 +304,18 @@ class AutoConnectService {
       return;
     }
     if (manager.state != ConnectionState.disconnected) return;
+
+    // Auto-scan must not skip the runtime permission prompt. Without this,
+    // first-run 爱车 auto-link fails silently when the user never opened Scan.
+    final permission = await _ensureBleScanPermissions(request: true);
+    if (!permission.granted) {
+      _log.operation(
+        '自动连接: 缺少蓝牙/定位权限',
+        detail: permission.message ?? 'denied',
+        level: LogLevel.warning,
+      );
+      return;
+    }
 
     _log.operation('自动连接: 扫描 $targetDeviceName ($targetDeviceId)');
 

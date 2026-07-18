@@ -82,4 +82,24 @@ void main() {
       expect(source, contains('非复刻范围'));
     });
   });
+
+  group('near-field permission UI (P0/P1)', () {
+    test('爱车 near-field banner covers auth / settings / connect states', () {
+      final source = readSource('lib/pages/vehicle_control_home_page.dart');
+      expect(source, contains('需要蓝牙和定位权限才能本地控车'));
+      expect(source, contains('授权并连接'));
+      expect(source, contains('权限被关闭，请到系统设置开启蓝牙和定位'));
+      expect(source, contains('去设置'));
+      expect(source, contains('车辆在附近时可连接蓝牙本地控车'));
+      expect(source, contains('连接蓝牙'));
+      expect(source, contains('本地控车需授权蓝牙'));
+      expect(source, contains('_controlDisabledMessage'));
+    });
+
+    test('scan page surfaces settings action on permanent deny', () {
+      final source = readSource('lib/pages/scan_page.dart');
+      expect(source, contains("actionLabel: '去设置'"));
+      expect(source, contains('openSystemSettings'));
+    });
+  });
 }

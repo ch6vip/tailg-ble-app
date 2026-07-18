@@ -20,6 +20,7 @@ import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../services/official_mqtt_service.dart';
+import '../services/permission_service.dart';
 import '../services/vehicle_location_resolver.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
@@ -79,6 +80,9 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   bool _disposed = false;
   bool _nearFieldBusy = false;
 
+  /// Cached BLE/location permission probe for near-field banner + six-key copy.
+  PermissionCheckResult? _blePermission;
+
   @override
   bool get wantKeepAlive => true;
 
@@ -96,6 +100,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     _mqttLinkSub = officialMqttService.linkStateStream.listen((_) {
       if (mounted) setState(() {});
     });
+    unawaited(_refreshBlePermission(request: false));
     unawaited(_silentRefresh());
     unawaited(officialMqttService.preconnectForCloud(officialCloudService));
     unawaited(_ensureNearFieldLink(auto: true));
@@ -124,6 +129,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
 
   Future<void> _onForegroundResume() async {
     if (_disposed) return;
+    unawaited(_refreshBlePermission(request: false));
     unawaited(_ensureNearFieldLink(auto: true));
     if (!officialCloudService.state.signedIn) return;
     try {
@@ -146,6 +152,14 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     }
   }
 
+  Future<void> _refreshBlePermission({required bool request}) async {
+    final result = await permissionService.requestBleScanPermissions(
+      request: request,
+    );
+    if (_disposed || !mounted) return;
+    setState(() => _blePermission = result);
+  }
+
   /// Official-like near-field path: open control home → auto link BLE by
   /// selected vehicle MAC when possible.
   ///
@@ -164,7 +178,27 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       return;
     }
 
+    // Auto path: check first so we don't spam the system dialog on every
+    // resume; if denied, leave the near-field banner for an explicit request.
+    // Manual path still goes through _manualNearFieldConnect which requests.
+    if (auto) {
+      final permission = await permissionService.requestBleScanPermissions(
+        request: false,
+      );
+      if (!mounted || _disposed) return;
+      setState(() => _blePermission = permission);
+      if (!permission.granted) {
+        logService.operation(
+          '爱车自动近场跳过: 无蓝牙/定位权限',
+          detail: permission.message ?? 'denied',
+          level: LogLevel.info,
+        );
+        return;
+      }
+    }
+
     _nearFieldBusy = true;
+    if (mounted) setState(() {});
     try {
       await autoConnectService.linkOfficialTarget(
         deviceId: mac,
@@ -189,26 +223,24 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
 
   Future<void> _manualNearFieldConnect() async {
     final permission = await permissionService.requestBleScanPermissions();
+    if (!mounted || _disposed) return;
+    setState(() => _blePermission = permission);
     if (!permission.granted) {
-      if (mounted) {
-        if (permission.openSettingsRecommended) {
-          AppSnack.error(
-            context,
-            permission.message ?? '请到系统设置开启蓝牙和定位权限',
-            actionLabel: '去设置',
-            onAction: () {
-              unawaited(permissionService.openSystemSettings());
-            },
-          );
-        } else {
-          AppSnack.error(context, permission.message ?? '请授予蓝牙和定位权限');
-        }
+      if (permission.openSettingsRecommended) {
+        AppSnack.error(
+          context,
+          permission.message ?? '请到系统设置开启蓝牙和定位权限',
+          actionLabel: '去设置',
+          onAction: () {
+            unawaited(permissionService.openSystemSettings());
+          },
+        );
+      } else {
+        AppSnack.error(context, permission.message ?? '请授予蓝牙和定位权限');
       }
       return;
     }
-    if (mounted) {
-      AppSnack.info(context, '正在连接车辆蓝牙…');
-    }
+    AppSnack.info(context, '正在连接车辆蓝牙…');
     await _ensureNearFieldLink(auto: false);
     if (!mounted) return;
     if (connectionManager.isProtocolLoggedIn) {
@@ -325,10 +357,9 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     final availability = _controlAvailability();
     if (!availability.enabled) {
       // P0-A2: never silent — surface BLE off / connecting / not LOGIN / cloud.
+      // Prefer permission-specific copy when BLE is the missing piece.
       if (mounted) {
-        final reason = availability.disabledReason.trim().isEmpty
-            ? '当前不可控车，请检查蓝牙或网络'
-            : availability.disabledReason;
+        final reason = _controlDisabledMessage(availability);
         AppSnack.error(context, reason);
       }
       return;
@@ -631,10 +662,20 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     final sync = formatRelativeSyncText(
       officialCloudService.lastVehiclesRefreshAt,
     );
-    return '$online · $channel · $sync';
+    final base = '$online · $channel · $sync';
+    // P1: only when local BLE is still down and permission is the blocker.
+    final needsBlePerm =
+        !connectionManager.isProtocolLoggedIn &&
+        connectionManager.state == ble.ConnectionState.disconnected &&
+        cloudVehicle.normalizedDeviceMac.isNotEmpty &&
+        _blePermission?.granted == false;
+    if (needsBlePerm) {
+      return '$base · 本地控车需授权蓝牙';
+    }
+    return base;
   }
 
-  /// P0-C3 / P0-A3: single truth for 顶栏通道四态 (+ BLE 连接中 / 待重连).
+  /// P0-C3 / P0-A3: single truth for 爱车 top-bar channel四态 (+ BLE 连接中 / 待重连).
   ControlTopBarChannel _topBarChannel() {
     final mqtt = officialMqttService;
     return ControlTopBarChannel.resolve(
@@ -653,6 +694,31 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     // Only when BLE is fully down — connecting/ready hides the banner.
     return connectionManager.state == ble.ConnectionState.disconnected &&
         !connectionManager.isProtocolLoggedIn;
+  }
+
+  /// Six-key / disabled path copy: surface permission before generic BLE text.
+  String _controlDisabledMessage(ControlChannelAvailability availability) {
+    final perm = _blePermission;
+    if (perm != null &&
+        !perm.granted &&
+        !availability.canUseBle &&
+        !availability.canUseCloud) {
+      if (perm.openSettingsRecommended) {
+        return perm.message ?? '请到系统设置开启蓝牙和定位权限';
+      }
+      return perm.message ?? '请授予蓝牙和定位权限后再本地控车';
+    }
+    final reason = availability.disabledReason.trim();
+    if (reason.isEmpty) return '当前不可控车，请检查蓝牙或网络';
+    // When BLE is the only missing piece and permission is denied, override
+    // generic "蓝牙未连接" with the permission message.
+    if (perm != null &&
+        !perm.granted &&
+        !availability.canUseBle &&
+        (reason.contains('蓝牙') || reason.contains('协议登录'))) {
+      return perm.message ?? reason;
+    }
+    return reason;
   }
 
   List<Widget> _buildHomeGates({
@@ -713,21 +779,44 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
           ),
         ];
       case VehicleControlHomeGateKind.nearField:
-        return [
-          VehicleControlGateBanner(
-            title: _nearFieldBusy
-                ? '正在连接车辆蓝牙…'
-                : connectionManager.state == ble.ConnectionState.connecting
-                ? '蓝牙连接中…'
-                : '车辆在附近时可连接蓝牙本地控车',
-            actionLabel: _nearFieldBusy ? '连接中' : '连接蓝牙',
-            busy: _nearFieldBusy,
-            onAction: () => unawaited(_manualNearFieldConnect()),
-          ),
-        ];
+        return [_buildNearFieldBanner()];
       case VehicleControlHomeGateKind.none:
         return const [];
     }
+  }
+
+  Widget _buildNearFieldBanner() {
+    final perm = _blePermission;
+    if (_nearFieldBusy ||
+        connectionManager.state == ble.ConnectionState.connecting) {
+      return VehicleControlGateBanner(
+        title: _nearFieldBusy ? '正在连接车辆蓝牙…' : '蓝牙连接中…',
+        actionLabel: '连接中',
+        busy: true,
+        onAction: () {},
+      );
+    }
+    if (perm != null && !perm.granted) {
+      if (perm.openSettingsRecommended) {
+        return VehicleControlGateBanner(
+          title: '权限被关闭，请到系统设置开启蓝牙和定位',
+          actionLabel: '去设置',
+          onAction: () {
+            unawaited(permissionService.openSystemSettings());
+          },
+        );
+      }
+      return VehicleControlGateBanner(
+        title: '需要蓝牙和定位权限才能本地控车',
+        actionLabel: '授权并连接',
+        onAction: () => unawaited(_manualNearFieldConnect()),
+      );
+    }
+    return VehicleControlGateBanner(
+      title: '车辆在附近时可连接蓝牙本地控车',
+      actionLabel: '连接蓝牙',
+      onAction: () => unawaited(_manualNearFieldConnect()),
+    );
   }
 
   String _vehicleName(OfficialVehicle? cloudVehicle) {
