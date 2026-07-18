@@ -190,8 +190,18 @@ class OfficialCloudService {
 
   /// Restore an existing official session from a pasted Authorization token.
   ///
-  /// Accepts either a raw token or a `Bearer ...` value. On success the token
-  /// is persisted the same way as SMS login and vehicles are refreshed.
+  /// Accepts either a raw token or a `Bearer ...` value. Unlike SMS login, the
+  /// caller does not bring a verified [userId]/[phone]; pasted material is only
+  /// a hint. The token is treated as **unverified** until it successfully pulls
+  /// vehicles/profile from the server — a signed-in state is only committed
+  /// (and persisted) once that server round-trip proves the token live. This
+  /// matches official cold-start behaviour (local token → auth-gated fetch →
+  /// online), so a Token login ends in the same usable session state as SMS.
+  ///
+  /// On any auth/transport failure during hydration we discard the candidate
+  /// session and rethrow, so the UI shows "登录失败" rather than a fake
+  /// signed-in state. [phone]/[userId] are best-effort seeds; the hydrated
+  /// session overwrites them with server-derived values when available.
   Future<void> loginWithToken(
     String rawToken, {
     String phone = '',
@@ -203,40 +213,97 @@ class OfficialCloudService {
     }
     _setLoading(true);
     try {
-      await _storage.saveCredentials(
+      await _hydrateOfficialSession(
         token: token,
-        phone: phone.trim(),
-        userId: userId.trim(),
+        seedPhone: phone,
+        seedUserId: userId,
       );
-      _clearRefreshCache();
-      _state = _state.copyWith(
-        token: token,
-        phone: phone.trim(),
-        userId: userId.trim(),
-        userProfile: null,
-        vehicles: const [],
-        selectedVehicleKey: null,
-        error: null,
-      );
-      _emit();
       _log.operation('官方云 Token 登录成功');
-      try {
-        await Future.wait<void>([
-          refreshVehicles(),
-          refreshUserProfile(silent: true),
-        ]);
-      } catch (e) {
-        // Keep the pasted session even if the first vehicle sync fails
-        // (offline / invalid token will surface on next refresh).
-        _log.operation(
-          '官方云 Token 登录后车辆刷新失败',
-          detail: OfficialCloudRedactor.errorMessage(e),
-          level: LogLevel.warning,
-        );
-      }
     } finally {
       _setLoading(false);
     }
+  }
+
+  /// Shared "make this token a usable signed-in session" routine.
+  ///
+  /// Used by [loginWithToken]; SMS [login] keeps its own path because it
+  /// already has verified phone/userId from the login response and must not
+  /// be blocked by a separate profile fetch (historical behaviour).
+  ///
+  /// 1. Stage the candidate token/phone/userId in-memory so callers see it,
+  ///    but do not persist until verification.
+  /// 2. Pull vehicles + profile using the candidate token. Either succeeding
+  ///    proves the token is live. 401/transport failures abort.
+  /// 3. Backfill [userId]/[phone] from server responses when available; only
+  ///    non-empty server values replace the seeds.
+  /// 4. Persist the now-verified credentials and emit signedIn.
+  /// 5. On failure: drop the staged state, clear seeds, and rethrow.
+  Future<void> _hydrateOfficialSession({
+    required String token,
+    String seedPhone = '',
+    String seedUserId = '',
+  }) async {
+    // Stage candidate session in-memory (unverified). Do NOT save to disk yet.
+    _clearRefreshCache();
+    _state = _state.copyWith(
+      token: token,
+      phone: seedPhone.trim(),
+      userId: seedUserId.trim(),
+      userProfile: null,
+      vehicles: const [],
+      selectedVehicleKey: null,
+      error: null,
+    );
+    _emit();
+
+    String? verifiedUserId;
+    String verifiedPhone = seedPhone.trim();
+    try {
+      await refreshVehicles();
+      await refreshUserProfile(silent: true);
+
+      // userId first from profile, then from current state (refreshVehicles may
+      // have populated it via parsed payload), then keep the seed.
+      final profileUserId = _state.userProfile?.id.trim() ?? '';
+      final stateUserId = _state.userId.trim();
+      verifiedUserId = profileUserId.isNotEmpty
+          ? profileUserId
+          : (stateUserId.isNotEmpty ? stateUserId : seedUserId.trim());
+    } catch (e) {
+      // Verification failed: the token is not a usable session. Discard it so
+      // the UI does not show a fake signed-in state, then rethrow.
+      await _abortCandidateSession();
+      rethrow;
+    }
+
+    // Persist only after a successful server round-trip. An empty userId here
+    // is acceptable (some payloads omit it); refresh travel/history will guide
+    // the user to re-login when it actually needs uid.
+    await _storage.saveCredentials(
+      token: token,
+      phone: verifiedPhone,
+      userId: verifiedUserId ?? '',
+    );
+    _state = _state.copyWith(userId: verifiedUserId ?? '');
+    _emit();
+  }
+
+  /// Drop an unverified staged candidate session without running logout side
+  /// effects (this candidate never reached MQTT/BLE).
+  Future<void> _abortCandidateSession() async {
+    await _storage.clearCredentialsAndSelection();
+    _clearRefreshCache();
+    _inFlightRefreshes.clear();
+    _state = _state.copyWith(
+      token: '',
+      phone: '',
+      userId: '',
+      userProfile: null,
+      vehicles: const [],
+      selectedVehicleKey: null,
+      error: null,
+    );
+    _emit();
   }
 
   static String _normalizeAuthorizationToken(String raw) {
