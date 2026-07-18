@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../main.dart'; // P0-6: service locator getters
 import '../models/geo_coordinate.dart';
 import '../models/vehicle_profile.dart';
+import '../services/ble_nfc_service.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../services/replica_feature_store.dart';
@@ -22,6 +23,9 @@ class NfcKeyPage extends StatefulWidget {
 
 class _NfcKeyPageState extends State<NfcKeyPage> {
   final _store = ReplicaFeatureStore();
+  late final BleNfcService _bleNfc = BleNfcService(
+    connectionManager: connectionManager,
+  );
   List<NfcKeyRecord> _records = [];
   bool _loading = true;
 
@@ -108,6 +112,25 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
     nameController.dispose();
     if (!mounted) return;
     if (result == null) return;
+
+    // P3-6: when standard LOGIN, also push official BLE NFC frames.
+    if (record == null && _bleNfc.canWriteOfficialNfc) {
+      final ok = type == '卡片'
+          ? await _bleNfc.addCard('01')
+          : await _bleNfc.addUserKey(
+              keyType: type == '手表' ? 2 : 1,
+              type: '1',
+            );
+      if (!mounted) return;
+      if (ok) {
+        AppSnack.success(context, '已向车辆发送官方 NFC 写钥匙指令');
+      } else {
+        AppSnack.info(context, '官方 NFC 写入失败，仅保存本地列表');
+      }
+    } else if (record == null && !_bleNfc.canWriteOfficialNfc) {
+      AppSnack.info(context, '未 standard LOGIN：仅本地列表（不会写车）');
+    }
+
     final next = [..._records];
     final index = next.indexWhere((item) => item.id == result.id);
     if (index >= 0) {
@@ -119,11 +142,21 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
   }
 
   Future<void> _deleteKey(NfcKeyRecord record) async {
+    if (_bleNfc.canWriteOfficialNfc) {
+      final ok = await _bleNfc.delNfc('01');
+      if (mounted) {
+        AppSnack.info(
+          context,
+          ok ? '已发送官方删钥匙指令' : '官方删钥匙失败，仅移除本地列表',
+        );
+      }
+    }
     await _save(_records.where((item) => item.id != record.id).toList());
   }
 
   @override
   Widget build(BuildContext context) {
+    final canBle = _bleNfc.canWriteOfficialNfc;
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
@@ -144,12 +177,13 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.only(bottom: 24),
                 children: [
-                  const AppSectionLabel('我的钥匙'),
-                  const _ReplicaNotice(
+                  const AppSectionLabel('官方 / 本地'),
+                  _ReplicaNotice(
                     icon: Icons.nfc,
-                    title: '本地演示 · 非官方 NFC',
-                    subtitle:
-                        '仅保存在本机 SharedPreferences，不会写入车辆或官方钥匙服务。正式钥匙请走官方 NFC 流程。',
+                    title: canBle ? '官方 BLE NFC 可用' : '官方 NFC 待 LOGIN',
+                    subtitle: canBle
+                        ? '当前 standard 协议已 LOGIN：添加/删除将下发官方 writeData 帧（TailgBleConfig NFC 头），并同步本地列表。'
+                        : '未 standard LOGIN 时仅维护本地列表，不会写车。请先 BLE 连接并完成协议登录。',
                   ),
                   const SizedBox(height: 14),
                   if (_loading)

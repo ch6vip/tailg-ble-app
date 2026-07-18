@@ -1523,6 +1523,106 @@ class OfficialCloudService {
     }
   }
 
+  /// P3-1: bind vehicle by IMEI (`POST app/car/bikeBind`, decompiled bindCar1).
+  Future<void> bindVehicleByImei(String imei) async {
+    final token = _state.token;
+    if (token.isEmpty) {
+      throw const OfficialCloudApiException(OfficialCloudMessages.signInRequired);
+    }
+    final cleaned = imei.trim();
+    if (cleaned.isEmpty) {
+      throw const OfficialCloudApiException('设备 IMEI 不能为空');
+    }
+    final override = bindVehicleByImeiOverride;
+    if (override != null) {
+      await override(cleaned);
+      return;
+    }
+    try {
+      _log.operation('官方 IMEI 绑车', detail: cleaned);
+      final response = await _apiClient.request(
+        'app/car/bikeBind',
+        method: 'POST',
+        token: token,
+        body: {'imei': cleaned},
+      );
+      _ensureSuccess(response.body, fallback: '绑车失败');
+      _ensureCurrentSession(token);
+      await refreshVehicles(force: true, refreshReplicaDetails: true);
+      _log.operation('官方 IMEI 绑车成功');
+    } catch (e) {
+      _ensureCurrentSession(token);
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
+    }
+  }
+
+  /// P3-2: unbind selected or specified car (`POST app/car/bikeUnbind`).
+  ///
+  /// [unbindType] follows official garage/settings callers (commonly 1).
+  Future<void> unbindVehicle({
+    String? carId,
+    int unbindType = 1,
+  }) async {
+    final token = _state.token;
+    if (token.isEmpty) {
+      throw const OfficialCloudApiException(OfficialCloudMessages.signInRequired);
+    }
+    final id = (carId ?? _state.selectedVehicle?.carId ?? '').trim();
+    if (id.isEmpty) {
+      throw const OfficialCloudApiException('缺少车辆 carId，无法解绑');
+    }
+    final override = unbindVehicleOverride;
+    if (override != null) {
+      await override(id, unbindType);
+      return;
+    }
+    try {
+      _log.operation('官方解绑车辆', detail: 'carId=$id type=$unbindType');
+      final response = await _apiClient.request(
+        'app/car/bikeUnbind',
+        method: 'POST',
+        token: token,
+        body: {
+          'carId': id,
+          'unbindType': unbindType,
+        },
+      );
+      _ensureSuccess(response.body, fallback: '解绑失败');
+      _ensureCurrentSession(token);
+      await refreshVehicles(force: true, refreshReplicaDetails: true);
+      _log.operation('官方解绑成功', detail: id);
+    } catch (e) {
+      _ensureCurrentSession(token);
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
+    }
+  }
+
+  /// P3-5: query official firm version for OTA (`getFirmVersion`).
+  Future<Map<String, dynamic>> getFirmVersion({String? imei}) async {
+    final token = _state.token;
+    if (token.isEmpty) {
+      throw const OfficialCloudApiException(OfficialCloudMessages.signInRequired);
+    }
+    final id =
+        (imei ?? _state.selectedVehicle?.commandImei ?? '').trim();
+    if (id.isEmpty) {
+      throw const OfficialCloudApiException('缺少 IMEI，无法查询固件');
+    }
+    final override = getFirmVersionOverride;
+    if (override != null) return override(id);
+    final response = await _apiClient.request(
+      'app/firmVersionInfo/getFirmVersion',
+      method: 'POST',
+      token: token,
+      body: {'imei': id},
+    );
+    final data = response.body['data'];
+    if (data is Map) return Map<String, dynamic>.from(data);
+    return Map<String, dynamic>.from(response.body);
+  }
+
   void _refreshVehiclesAfterCommand(CommandCode command) {
     _runSilentRefresh(
       refreshVehicles(silent: true, force: true),
@@ -1706,6 +1806,9 @@ class OfficialCloudService {
     _clearRefreshCache();
     sentCommands.clear();
     sendCommandOverride = null;
+    bindVehicleByImeiOverride = null;
+    unbindVehicleOverride = null;
+    getFirmVersionOverride = null;
     getMessageControlOverride = null;
     setMessagePushConfigOverride = null;
     deleteMessagesOverride = null;
@@ -1733,6 +1836,15 @@ class OfficialCloudService {
   /// actually dispatched (e.g. the right-slide power gesture).
   @visibleForTesting
   Future<String> Function(CommandCode)? sendCommandOverride;
+
+  @visibleForTesting
+  Future<void> Function(String imei)? bindVehicleByImeiOverride;
+
+  @visibleForTesting
+  Future<void> Function(String carId, int unbindType)? unbindVehicleOverride;
+
+  @visibleForTesting
+  Future<Map<String, dynamic>> Function(String imei)? getFirmVersionOverride;
 
   /// Test-only override for loading official notification preferences.
   @visibleForTesting

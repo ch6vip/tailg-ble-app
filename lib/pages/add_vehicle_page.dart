@@ -6,6 +6,7 @@ import '../main.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_pressable.dart';
+import 'bind_imei_page.dart';
 import 'official_cloud_page.dart';
 
 class AddVehiclePage extends StatelessWidget {
@@ -16,6 +17,15 @@ class AddVehiclePage extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
+      ),
+    );
+  }
+
+  void _openImeiBind(BuildContext context) {
+    unawaited(
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const BindImeiPage()),
       ),
     );
   }
@@ -47,6 +57,17 @@ class AddVehiclePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
+            const AppSectionLabel('绑定新车'),
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: _AddVehicleAction(
+                icon: Icons.pin_outlined,
+                title: 'IMEI 绑车',
+                subtitle: '手写/粘贴坐垫二维码中的设备 IMEI（官方 bikeBind）',
+                onTap: () => _openImeiBind(context),
+              ),
+            ),
+            const SizedBox(height: 14),
             const AppSectionLabel('蓝牙车辆'),
             AppCard(
               padding: EdgeInsets.zero,
@@ -60,7 +81,7 @@ class AddVehiclePage extends StatelessWidget {
             const SizedBox(height: 14),
             const AppCard(
               child: Text(
-                '支持官方云端同步与本地蓝牙直连。蓝牙连接成功后会绑定为默认本地车辆，控车优先走 BLE。',
+                '支持官方云端同步、IMEI 绑定与本地蓝牙直连。蓝牙连接成功后会绑定为默认本地车辆，控车优先走 BLE。',
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.45,

@@ -824,6 +824,79 @@ class ConnectionManager {
     }, priority: GattOperationPriority.high);
   }
 
+  /// Standard-stack raw hex write (official `writeData` path) after LOGIN.
+  Future<bool> writeStandardHex(String hexData) async {
+    if (_state != ConnectionState.ready ||
+        _protocol != ProtocolType.standard ||
+        _writeChar == null) {
+      return false;
+    }
+    final bytes = hexToBytes(hexData);
+    await runGattOperation(
+      () => _writeChar!.write(bytes.toList(), withoutResponse: false),
+      priority: GattOperationPriority.high,
+    );
+    return true;
+  }
+
+  /// Official OTA control characteristic write (`gatt7000` / otaOrder).
+  Future<bool> writeOtaOrder(List<int> message) async {
+    if (_state != ConnectionState.ready) return false;
+    final char = _findCharByUuid(BleUuids.otaOrder);
+    if (char == null) return false;
+    await runGattOperation(
+      () => char.write(message, withoutResponse: false),
+      priority: GattOperationPriority.high,
+    );
+    return true;
+  }
+
+  /// Official OTA file characteristic write (`gatt7001` / otaFile).
+  Future<bool> writeOtaFileChunk(List<int> message) async {
+    if (_state != ConnectionState.ready) return false;
+    final char = _findCharByUuid(BleUuids.otaFile);
+    if (char == null) return false;
+    await runGattOperation(
+      () => char.write(message, withoutResponse: true),
+      priority: GattOperationPriority.high,
+    );
+    return true;
+  }
+
+  BluetoothCharacteristic? _findCharByUuid(String uuidFragment) {
+    final device = _device;
+    if (device == null) return null;
+    final needle = uuidFragment.toLowerCase().replaceAll('-', '');
+    for (final service in device.servicesList) {
+      for (final c in service.characteristics) {
+        final id = c.characteristicUuid.toString().toLowerCase().replaceAll(
+          '-',
+          '',
+        );
+        if (id.contains(needle.replaceAll('0000', '').substring(0, 8)) ||
+            id.contains(needle)) {
+          return c;
+        }
+      }
+    }
+    // Also match short form 7000/7001.
+    final short = uuidFragment.toLowerCase();
+    for (final service in device.servicesList) {
+      for (final c in service.characteristics) {
+        if (c.characteristicUuid.toString().toLowerCase().contains(
+          short.contains('7000')
+              ? '7000'
+              : short.contains('7001')
+              ? '7001'
+              : short,
+        )) {
+          return c;
+        }
+      }
+    }
+    return null;
+  }
+
   void _onFbb2Notify(List<int> value) {
     if (value.isEmpty) return;
     final hex = bytesToHex(Uint8List.fromList(value));
