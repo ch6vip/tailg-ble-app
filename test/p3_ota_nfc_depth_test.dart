@@ -31,7 +31,7 @@ void main() {
   });
 
   group('FirmwareOtaService e2e pipeline (P3-5)', () {
-    test('query + inject firmware + chunk transfer completes', () async {
+    test('query + download override + chunk transfer completes', () async {
       final cloud = OfficialCloudService()..resetForTest();
       final vehicle = OfficialVehicle.fromJson({
         'carId': 'ota-1',
@@ -74,6 +74,41 @@ void main() {
       expect(orders, isNotEmpty);
       expect(chunks.length, 4);
       expect(chunks.fold<int>(0, (a, b) => a + b.length), 400);
+    });
+
+    test('missing production downloader fails before BLE writes', () async {
+      final cloud = OfficialCloudService()..resetForTest();
+      final vehicle = OfficialVehicle.fromJson({
+        'carId': 'ota-safe',
+        'imei': '8602',
+      });
+      cloud.setStateForTest(
+        OfficialCloudState.initial().copyWith(
+          token: 't',
+          vehicles: [vehicle],
+          selectedVehicleKey: vehicle.key,
+        ),
+      );
+      cloud.getFirmVersionOverride = (_) async => {'url': 'https://invalid/fw'};
+      final manager = ConnectionManager();
+      addTearDown(manager.dispose);
+      manager.enterReadyForTest();
+
+      var writes = 0;
+      final ota = FirmwareOtaService(cloud: cloud, connectionManager: manager)
+        ..writeOrderOverride = (_) async {
+          writes += 1;
+          return true;
+        }
+        ..writeChunkOverride = (_) async {
+          writes += 1;
+          return true;
+        };
+
+      final progress = await ota.run().toList();
+      expect(progress.last.phase, FirmwareOtaPhase.failed);
+      expect(progress.last.message, contains('未配置 downloadOverride'));
+      expect(writes, 0);
     });
 
     test('fails when not LOGIN', () async {

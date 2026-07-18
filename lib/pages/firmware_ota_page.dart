@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -10,7 +9,7 @@ import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_snack.dart';
 
-/// P3-5: official OTA end-to-end UI (query → download/inject → BLE chunks).
+/// P3-5: experimental official OTA flow (query -> download -> BLE chunks).
 class FirmwareOtaPage extends StatefulWidget {
   const FirmwareOtaPage({super.key});
 
@@ -37,7 +36,7 @@ class _FirmwareOtaPageState extends State<FirmwareOtaPage> {
     super.dispose();
   }
 
-  Future<void> _start({bool injectDemoFirmware = false}) async {
+  Future<void> _start() async {
     if (_running) return;
     setState(() {
       _running = true;
@@ -48,39 +47,33 @@ class _FirmwareOtaPageState extends State<FirmwareOtaPage> {
       );
     });
     await _sub?.cancel();
-    _sub = _ota
-        .run(
-          firmwareBytes: injectDemoFirmware
-              ? Uint8List.fromList(List<int>.generate(512, (i) => i & 0xFF))
-              : null,
-        )
-        .listen(
-          (p) {
-            if (!mounted) return;
-            setState(() => _progress = p);
-          },
-          onDone: () {
-            if (!mounted) return;
-            setState(() => _running = false);
-            if (_progress.phase == FirmwareOtaPhase.completed) {
-              AppSnack.success(context, _progress.message);
-            } else if (_progress.phase == FirmwareOtaPhase.failed) {
-              AppSnack.error(context, _progress.message);
-            }
-          },
-          onError: (Object e) {
-            if (!mounted) return;
-            setState(() {
-              _running = false;
-              _progress = FirmwareOtaProgress(
-                phase: FirmwareOtaPhase.failed,
-                fraction: _progress.fraction,
-                message: OfficialCloudRedactor.errorMessage(e),
-              );
-            });
-            AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
-          },
-        );
+    _sub = _ota.run().listen(
+      (p) {
+        if (!mounted) return;
+        setState(() => _progress = p);
+      },
+      onDone: () {
+        if (!mounted) return;
+        setState(() => _running = false);
+        if (_progress.phase == FirmwareOtaPhase.completed) {
+          AppSnack.success(context, _progress.message);
+        } else if (_progress.phase == FirmwareOtaPhase.failed) {
+          AppSnack.error(context, _progress.message);
+        }
+      },
+      onError: (Object e) {
+        if (!mounted) return;
+        setState(() {
+          _running = false;
+          _progress = FirmwareOtaProgress(
+            phase: FirmwareOtaPhase.failed,
+            fraction: _progress.fraction,
+            message: OfficialCloudRedactor.errorMessage(e),
+          );
+        });
+        AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
+      },
+    );
   }
 
   @override
@@ -103,7 +96,7 @@ class _FirmwareOtaPageState extends State<FirmwareOtaPage> {
                   const SizedBox(height: 8),
                   const Text(
                     '1. POST app/firmVersionInfo/getFirmVersion\n'
-                    '2. 下载固件包（或注入演示包）\n'
+                    '2. 下载官方固件包（完整性校验待完成）\n'
                     '3. BLE LOGIN 后 writeOtaOrder(7000) + writeOtaFile(7001) 分片\n'
                     '4. 等待中控校验/重启',
                     style: TextStyle(
@@ -130,16 +123,6 @@ class _FirmwareOtaPageState extends State<FirmwareOtaPage> {
                     child: FilledButton(
                       onPressed: _running ? null : () => unawaited(_start()),
                       child: Text(_running ? '进行中…' : '检查并升级'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: _running
-                          ? null
-                          : () => unawaited(_start(injectDemoFirmware: true)),
-                      child: const Text('用演示固件包跑通分片传输'),
                     ),
                   ),
                 ],

@@ -27,7 +27,7 @@ class FirmwareOtaProgress {
   });
 }
 
-/// P3-5 end-to-end OTA: query firm version → download → BLE order/file chunks.
+/// P3-5 experimental OTA: query firm version -> download -> BLE chunks.
 class FirmwareOtaService {
   final OfficialCloudService cloud;
   final ConnectionManager connectionManager;
@@ -48,7 +48,6 @@ class FirmwareOtaService {
   Stream<FirmwareOtaProgress> run({
     OfficialVehicle? vehicle,
     int chunkSize = defaultChunkSize,
-    Uint8List? firmwareBytes,
   }) async* {
     final selected = vehicle ?? cloud.state.selectedVehicle;
     if (selected == null) {
@@ -92,36 +91,29 @@ class FirmwareOtaService {
             .toString()
             .trim();
 
-    late final Uint8List bytes;
-    if (firmwareBytes != null) {
-      bytes = firmwareBytes;
-      yield const FirmwareOtaProgress(
-        phase: FirmwareOtaPhase.downloading,
-        fraction: 0.2,
-        message: '使用注入固件包…',
-      );
-    } else if (url.isNotEmpty) {
-      yield const FirmwareOtaProgress(
-        phase: FirmwareOtaPhase.downloading,
-        fraction: 0.15,
-        message: '下载固件…',
-      );
-      try {
-        bytes = await _download(url);
-      } catch (e) {
-        yield FirmwareOtaProgress(
-          phase: FirmwareOtaPhase.failed,
-          fraction: 0.15,
-          message: '固件下载失败: $e',
-        );
-        return;
-      }
-    } else {
+    if (url.isEmpty) {
       yield FirmwareOtaProgress(
         phase: FirmwareOtaPhase.failed,
         fraction: 0.1,
         message:
             '未查到可下载固件（version=${firmInfo['version'] ?? firmInfo['firmVersion'] ?? '-'}）',
+      );
+      return;
+    }
+
+    yield const FirmwareOtaProgress(
+      phase: FirmwareOtaPhase.downloading,
+      fraction: 0.15,
+      message: '下载固件…',
+    );
+    late final Uint8List bytes;
+    try {
+      bytes = await _download(url);
+    } catch (e) {
+      yield FirmwareOtaProgress(
+        phase: FirmwareOtaPhase.failed,
+        fraction: 0.15,
+        message: '固件下载失败: $e',
       );
       return;
     }

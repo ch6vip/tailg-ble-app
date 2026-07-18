@@ -6,7 +6,6 @@ import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_snack.dart';
-import 'firmware_ota_page.dart';
 import 'notification_prefs_page.dart';
 import 'qgj_settings_page.dart';
 
@@ -163,30 +162,6 @@ class VehicleSettingsPage extends StatelessWidget {
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute<void>(
                               builder: (_) => const QgjSettingsPage(),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      AppCard(
-                        margin: EdgeInsets.zero,
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(
-                            Icons.system_update_alt,
-                            color: AppColors.textSecondary,
-                          ),
-                          title: const Text(
-                            '固件 OTA',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const FirmwareOtaPage(),
                             ),
                           ),
                         ),

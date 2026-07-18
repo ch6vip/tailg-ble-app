@@ -56,6 +56,14 @@ void main() {
         contains('writeOtaOrder'),
       );
       expect(
+        readSource('lib/pages/firmware_ota_page.dart'),
+        isNot(contains('injectDemoFirmware')),
+      );
+      expect(
+        readSource('lib/pages/vehicle_settings_page.dart'),
+        isNot(contains('FirmwareOtaPage')),
+      );
+      expect(
         readSource('lib/services/firmware_ota_service.dart'),
         contains('writeOtaFileChunk'),
       );
