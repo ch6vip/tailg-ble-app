@@ -65,6 +65,11 @@ abstract final class AppSnack {
     info(context, '$label暂未开放，可先使用官方云端控车');
   }
 
+  /// Out-of-scope feature (L3 / non-replica) — never implies official support.
+  static void outOfReplicaScope(BuildContext context, String label) {
+    info(context, '$label不在复刻范围内');
+  }
+
   /// Short not-yet-open notice for legal/support entries without a cloud fallback.
   ///
   /// e.g. `用户协议` → `用户协议暂未开放`.

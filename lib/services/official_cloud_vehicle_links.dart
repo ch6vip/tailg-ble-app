@@ -14,6 +14,11 @@ class OfficialCloudVehicleLinks {
     return next;
   }
 
+  /// Link policy (P1-5):
+  /// - One official key → one local device id.
+  /// - If [localVehicleId] was linked to another official key, that mapping is
+  ///   replaced (switch car wins; prevents A-local controlling B-official).
+  /// - Empty localId unlinks the official key.
   static Map<String, String> link(
     Map<String, String> links, {
     required String officialVehicleKey,
@@ -24,7 +29,12 @@ class OfficialCloudVehicleLinks {
     final next = normalize(links);
     if (key.isEmpty) return next;
     if (localId.isEmpty) return next..remove(key);
-    return next..[key] = localId;
+    // Drop any other official keys pointing at the same local id.
+    next.removeWhere((officialKey, linkedLocalId) {
+      return officialKey != key && linkedLocalId == localId;
+    });
+    next[key] = localId;
+    return next;
   }
 
   static Map<String, String> unlink(

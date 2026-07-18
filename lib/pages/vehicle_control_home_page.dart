@@ -10,6 +10,7 @@ import '../models/battery_snapshot.dart';
 import '../models/command_types.dart';
 import '../models/official_vehicle.dart';
 import '../services/control_channel_resolver.dart';
+import '../services/control_channel_status.dart';
 import '../services/control_command_confirmation.dart';
 import '../services/control_command_executor.dart';
 import '../services/control_command_policy.dart';
@@ -25,6 +26,7 @@ import '../theme/app_motion.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/cloud_vehicle_gate.dart';
+import '../widgets/vehicle_control_gate.dart';
 import '../widgets/vehicle_switch_sheet.dart';
 import 'add_vehicle_page.dart';
 import 'battery_details_page.dart';
@@ -115,14 +117,32 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(_ensureNearFieldLink(auto: true));
-      // P0-B4: resume retries MQTT preconnect after prior failure / offline.
-      final mqtt = OfficialMqttService();
-      if (mqtt.lastPreconnectError != null || !mqtt.isConnected) {
-        unawaited(mqtt.retryPreconnect(officialCloudService));
-      } else {
-        unawaited(mqtt.preconnectForCloud(officialCloudService));
-      }
+      // P1-2: back to foreground → refresh carStatus + preconnect as needed.
+      unawaited(_onForegroundResume());
+    }
+  }
+
+  Future<void> _onForegroundResume() async {
+    if (_disposed) return;
+    unawaited(_ensureNearFieldLink(auto: true));
+    if (!officialCloudService.state.signedIn) return;
+    try {
+      await officialCloudService.refreshVehicles(
+        silent: true,
+        refreshReplicaDetails: true,
+      );
+    } catch (e) {
+      logService.operation(
+        '回前台刷新车辆状态失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
+    }
+    final mqtt = OfficialMqttService();
+    if (mqtt.lastPreconnectError != null || !mqtt.isConnected) {
+      unawaited(mqtt.retryPreconnect(officialCloudService));
+    } else {
+      unawaited(mqtt.preconnectForCloud(officialCloudService));
     }
   }
 
@@ -171,7 +191,18 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     final permission = await permissionService.requestBleScanPermissions();
     if (!permission.granted) {
       if (mounted) {
-        AppSnack.error(context, permission.message ?? '请授予蓝牙和定位权限');
+        if (permission.openSettingsRecommended) {
+          AppSnack.error(
+            context,
+            permission.message ?? '请到系统设置开启蓝牙和定位权限',
+            actionLabel: '去设置',
+            onAction: () {
+              unawaited(permissionService.openSystemSettings());
+            },
+          );
+        } else {
+          AppSnack.error(context, permission.message ?? '请授予蓝牙和定位权限');
+        }
       }
       return;
     }
@@ -597,40 +628,107 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       return '等待连接';
     }
     final online = cloudVehicle.onlineLabel;
-    final channel = _channelStatusLabel();
+    final channel = _topBarChannel().label;
     final sync = formatRelativeSyncText(
       officialCloudService.lastVehiclesRefreshAt,
     );
     return '$online · $channel · $sync';
   }
 
-  /// Prefer active control path label (BLE / MQTT / cloud standby).
-  String _channelStatusLabel() {
-    final availability = _controlAvailability();
-    if (availability.willUseBle) return 'BLE 直连';
+  /// P0-C3 / P0-A3: single truth for 顶栏通道四态 (+ BLE 连接中 / 待重连).
+  ControlTopBarChannel _topBarChannel() {
     final mqtt = OfficialMqttService();
-    if (mqtt.isConnected ||
-        mqtt.linkState == OfficialMqttLinkState.connected) {
-      return 'MQTT 远程';
-    }
-    if (mqtt.linkState == OfficialMqttLinkState.connecting ||
-        mqtt.preconnectInFlight) {
-      return 'MQTT 连接中';
-    }
-    final preErr = mqtt.lastPreconnectError?.trim();
-    if (preErr != null && preErr.isNotEmpty) {
-      return 'MQTT 待重连';
-    }
-    if (availability.canUseCloud) return '云端待命';
-    if (availability.canUseBle) return 'BLE 可用';
-    return availability.effectiveChannelLabel;
+    return ControlTopBarChannel.resolve(
+      availability: _controlAvailability(),
+      bleState: connectionManager.state,
+      bleProtocolLoggedIn: connectionManager.isProtocolLoggedIn,
+      mqttLinkState: mqtt.linkState,
+      mqttPreconnectInFlight: mqtt.preconnectInFlight,
+      mqttLastPreconnectError: mqtt.lastPreconnectError,
+    );
   }
 
   bool _shouldShowNearFieldBanner(OfficialVehicle? vehicle) {
     if (vehicle == null) return false;
     if (vehicle.normalizedDeviceMac.isEmpty) return false;
-    final state = connectionManager.state;
-    return state == ble.ConnectionState.disconnected;
+    // Only when BLE is fully down — connecting/ready hides the banner.
+    return connectionManager.state == ble.ConnectionState.disconnected &&
+        !connectionManager.isProtocolLoggedIn;
+  }
+
+  List<Widget> _buildHomeGates({
+    required OfficialCloudState cloudState,
+    required OfficialVehicle? cloudVehicle,
+    required bool signedIn,
+    required bool hasVehicle,
+  }) {
+    final kind = VehicleControlHomeGate.resolve(
+      signedIn: signedIn,
+      hasVehicle: hasVehicle,
+      loading: cloudState.loading,
+      error: cloudState.error,
+      showNearFieldHint: _shouldShowNearFieldBanner(cloudVehicle),
+    );
+    switch (kind) {
+      case VehicleControlHomeGateKind.signedOut:
+        return [
+          VehicleControlGateBanner(
+            title: '请先登录官方账号',
+            actionLabel: '去登录',
+            onAction: () => unawaited(
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const LoginPage()),
+              ),
+            ),
+          ),
+        ];
+      case VehicleControlHomeGateKind.loading:
+        return [
+          VehicleControlGateBanner(
+            title: '正在同步官方车辆…',
+            actionLabel: '刷新中',
+            busy: true,
+            onAction: () {},
+          ),
+        ];
+      case VehicleControlHomeGateKind.error:
+        return [
+          VehicleControlGateBanner(
+            title: cloudState.error?.trim().isNotEmpty == true
+                ? cloudState.error!.trim()
+                : '车辆同步失败，请重试',
+            actionLabel: '重试',
+            onAction: () => unawaited(_handleRefresh()),
+          ),
+        ];
+      case VehicleControlHomeGateKind.noVehicle:
+        return [
+          VehicleControlGateBanner(
+            title: '暂无车辆，请先同步官方车辆',
+            actionLabel: '添加车辆',
+            onAction: () => unawaited(
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
+              ),
+            ),
+          ),
+        ];
+      case VehicleControlHomeGateKind.nearField:
+        return [
+          VehicleControlGateBanner(
+            title: _nearFieldBusy
+                ? '正在连接车辆蓝牙…'
+                : connectionManager.state == ble.ConnectionState.connecting
+                ? '蓝牙连接中…'
+                : '车辆在附近时可连接蓝牙本地控车',
+            actionLabel: _nearFieldBusy ? '连接中' : '连接蓝牙',
+            busy: _nearFieldBusy,
+            onAction: () => unawaited(_manualNearFieldConnect()),
+          ),
+        ];
+      case VehicleControlHomeGateKind.none:
+        return const [];
+    }
   }
 
   String _vehicleName(OfficialVehicle? cloudVehicle) {
@@ -803,49 +901,17 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
             physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.only(top: 4, bottom: bottomPad),
             children: [
-              if (!signedIn)
-                _GateBanner(
-                  title: '请先登录官方账号',
-                  actionLabel: '去登录',
-                  onAction: () => unawaited(
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const LoginPage(),
-                      ),
-                    ),
-                  ),
-                )
-              else if (!hasVehicle)
-                _GateBanner(
-                  title: '暂无车辆，请先同步官方车辆',
-                  actionLabel: '添加车辆',
-                  onAction: () => unawaited(
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const AddVehiclePage(),
-                      ),
-                    ),
-                  ),
-                )
-              else if (_shouldShowNearFieldBanner(cloudVehicle))
-                _GateBanner(
-                  title: _nearFieldBusy
-                      ? '正在连接车辆蓝牙…'
-                      : connectionManager.state == ble.ConnectionState.connecting
-                      ? '蓝牙连接中…'
-                      : '车辆在附近时可连接蓝牙本地控车',
-                  actionLabel: _nearFieldBusy ? '连接中' : '连接蓝牙',
-                  onAction: _nearFieldBusy
-                      ? () {}
-                      : () => unawaited(_manualNearFieldConnect()),
-                ),
+              ..._buildHomeGates(
+                cloudState: cloudState,
+                cloudVehicle: cloudVehicle,
+                signedIn: signedIn,
+                hasVehicle: hasVehicle,
+              ),
               _TopBar(
                 vehicleName: _vehicleName(cloudVehicle),
                 statusText: _statusText(cloudVehicle),
                 online: cloudVehicle?.online ?? false,
-                channelActive:
-                    _controlAvailability().willUseBle ||
-                    OfficialMqttService().isConnected,
+                channelActive: _topBarChannel().isActive,
                 powered: isPowerOn,
                 onTitleTap: _openVehicleHeader,
                 onSettings: _openSettings,
@@ -888,68 +954,6 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Gate banner (login / no vehicle)
-// ═══════════════════════════════════════════════════════════════════════════
-class _GateBanner extends StatelessWidget {
-  const _GateBanner({
-    required this.title,
-    required this.actionLabel,
-    required this.onAction,
-  });
-
-  final String title;
-  final String actionLabel;
-  final VoidCallback onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: _Aurora.accentSoft,
-        borderRadius: BorderRadius.circular(AppRadii.md),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: _Aurora.accentDeep,
-              ),
-            ),
-          ),
-          AppPressable(
-            onTap: onAction,
-            pressedScale: AppMotion.pressScale,
-            semanticsLabel: actionLabel,
-            semanticsButton: true,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: _Aurora.accent,
-                borderRadius: BorderRadius.circular(AppRadii.pill),
-              ),
-              child: Text(
-                actionLabel,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../main.dart';
@@ -93,7 +95,14 @@ class BatteryDetailsPage extends StatelessWidget {
         level: LogLevel.warning,
       );
       if (!context.mounted) return;
-      AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
+      AppSnack.error(
+        context,
+        OfficialCloudRedactor.errorMessage(e),
+        actionLabel: '重试',
+        onAction: () {
+          unawaited(_refreshOfficialBattery(context));
+        },
+      );
     }
   }
 }

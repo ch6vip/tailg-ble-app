@@ -147,8 +147,9 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
                   const AppSectionLabel('我的钥匙'),
                   const _ReplicaNotice(
                     icon: Icons.nfc,
-                    title: 'NFC钥匙服务',
-                    subtitle: '可管理手机、手表和卡片钥匙；添加或删除真实钥匙请按官方授权流程完成。',
+                    title: '本地演示 · 非官方 NFC',
+                    subtitle:
+                        '仅保存在本机 SharedPreferences，不会写入车辆或官方钥匙服务。正式钥匙请走官方 NFC 流程。',
                   ),
                   const SizedBox(height: 14),
                   if (_loading)
@@ -263,7 +264,7 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
       ),
     );
     if (!mounted) return;
-    AppSnack.info(context, '电子围栏配置已保存');
+    AppSnack.info(context, '已保存为本地草稿（未同步官方围栏）');
   }
 
   Future<void> _openMap() async {
@@ -287,17 +288,18 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
       body: SafeArea(
         child: Column(
           children: [
-            const AppPageHeader(title: '电子围栏'),
+            const AppPageHeader(title: '本地草稿围栏'),
             Expanded(
               child: ListView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.only(bottom: 24),
                 children: [
-                  const AppSectionLabel('围栏设置'),
+                  const AppSectionLabel('本地草稿（非官方）'),
                   const _ReplicaNotice(
                     icon: Icons.location_searching,
-                    title: '电子围栏服务',
-                    subtitle: '设置车辆安全范围后，可用于后续位置提醒和安全守护。',
+                    title: '非官方云围栏',
+                    subtitle:
+                        '此页只写本地草稿，不会同步官方电子围栏。正式围栏请用定位页「电子围栏」云端能力。',
                   ),
                   const SizedBox(height: 14),
                   if (_loading)
@@ -528,11 +530,12 @@ class _ShareBikePageState extends State<ShareBikePage> {
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.only(bottom: 24),
                 children: [
-                  const AppSectionLabel('家庭共享'),
+                  const AppSectionLabel('家庭共享（本地演示）'),
                   const _ReplicaNotice(
                     icon: Icons.ios_share,
-                    title: '家庭共享',
-                    subtitle: '可记录常用共享成员；正式授权请通过官方分享流程完成。',
+                    title: '本地演示 · 非官方家庭共享',
+                    subtitle:
+                        '仅本机记录联系人草稿，不会调用官方家庭共享 API。正式分享请使用官方 App 授权流程。',
                   ),
                   const SizedBox(height: 14),
                   if (_loading)
