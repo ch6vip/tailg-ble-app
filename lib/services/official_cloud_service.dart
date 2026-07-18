@@ -297,6 +297,19 @@ class OfficialCloudService {
       messagesError: null,
     );
     _emit();
+    // P1-4: tear down MQTT / BLE control sessions after cloud session is cleared.
+    final sideEffects = List<Future<void> Function()>.of(afterLogoutSideEffects);
+    for (final effect in sideEffects) {
+      try {
+        await effect();
+      } catch (e) {
+        _log.operation(
+          '退出登录后通道清理失败',
+          detail: e.toString(),
+          level: LogLevel.warning,
+        );
+      }
+    }
     _log.operation('官方云已退出登录');
   }
 
@@ -1698,6 +1711,7 @@ class OfficialCloudService {
     deleteMessagesOverride = null;
     refreshTravelHistoryOverride = null;
     selectVehicleOverride = null;
+    afterLogoutSideEffects.clear();
   }
 
   @visibleForTesting
@@ -1706,6 +1720,12 @@ class OfficialCloudService {
     _initialized = state.initialized;
     _emit();
   }
+
+  /// Invoked after credentials/selection are cleared (P1-4).
+  ///
+  /// Host app registers MQTT disconnect + BLE disconnect here so this service
+  /// does not import MQTT/BLE layers directly.
+  final List<Future<void> Function()> afterLogoutSideEffects = [];
 
   /// Test-only: when set, [sendCommand] records the command into
   /// [sentCommands] and returns this stub's result instead of making a

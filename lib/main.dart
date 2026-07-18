@@ -80,6 +80,15 @@ void main() async {
     await autoConnectService.init(connectionManager);
     // Keep official MQTT session aligned with selected vehicle (pre-connect).
     OfficialMqttService().attachToCloud(officialCloudService);
+    // P1-4: logout tears down MQTT + BLE so no stale control path remains.
+    officialCloudService.afterLogoutSideEffects
+      ..clear()
+      ..add(() async {
+        await OfficialMqttService().disconnect();
+      })
+      ..add(() async {
+        await connectionManager.disconnect();
+      });
   } catch (e, st) {
     debugPrint('Startup initialization failed: $e\n$st');
     runApp(StartupErrorApp(error: e, stackTrace: st));

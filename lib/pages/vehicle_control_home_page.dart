@@ -10,8 +10,10 @@ import '../models/battery_snapshot.dart';
 import '../models/command_types.dart';
 import '../models/official_vehicle.dart';
 import '../services/control_channel_resolver.dart';
+import '../services/control_command_confirmation.dart';
 import '../services/control_command_executor.dart';
 import '../services/control_command_policy.dart';
+import '../services/control_command_result.dart';
 import '../services/display_number_formatter.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
@@ -114,12 +116,21 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_ensureNearFieldLink(auto: true));
-      unawaited(OfficialMqttService().preconnectForCloud(officialCloudService));
+      // P0-B4: resume retries MQTT preconnect after prior failure / offline.
+      final mqtt = OfficialMqttService();
+      if (mqtt.lastPreconnectError != null || !mqtt.isConnected) {
+        unawaited(mqtt.retryPreconnect(officialCloudService));
+      } else {
+        unawaited(mqtt.preconnectForCloud(officialCloudService));
+      }
     }
   }
 
   /// Official-like near-field path: open control home → auto link BLE by
   /// selected vehicle MAC when possible.
+  ///
+  /// **P0-A4:** if BLE is active on another vehicle, retarget via
+  /// [AutoConnectService.linkOfficialTarget] (disconnect + clear pending).
   Future<void> _ensureNearFieldLink({required bool auto}) async {
     if (_disposed || _nearFieldBusy) return;
     if (!officialCloudService.state.signedIn) return;
@@ -128,17 +139,13 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     final mac = vehicle.normalizedDeviceMac;
     if (mac.isEmpty) return;
 
-    final bleState = connectionManager.state;
-    if (bleState == ble.ConnectionState.ready ||
-        bleState == ble.ConnectionState.connecting ||
-        bleState == ble.ConnectionState.connected ||
-        bleState == ble.ConnectionState.reconnecting) {
+    // Already linked to this car — do not restart connection.
+    if (autoConnectService.isLinkedTo(mac)) {
       return;
     }
 
     _nearFieldBusy = true;
     try {
-      // Keep local default vehicle aligned with official MAC target.
       await autoConnectService.linkOfficialTarget(
         deviceId: mac,
         displayName: vehicle.displayName,
@@ -173,7 +180,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     }
     await _ensureNearFieldLink(auto: false);
     if (!mounted) return;
-    if (connectionManager.state == ble.ConnectionState.ready) {
+    if (connectionManager.isProtocolLoggedIn) {
       AppSnack.success(context, '蓝牙已连接');
     } else if (connectionManager.state == ble.ConnectionState.connecting ||
         connectionManager.state == ble.ConnectionState.connected) {
@@ -233,7 +240,9 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   ControlChannelAvailability _controlAvailability() {
     return ControlChannelResolver.resolve(
       cloudState: officialCloudService.state,
-      bleReady: connectionManager.state == ble.ConnectionState.ready,
+      // Official LoginStatus.LOGIN — not mere GATT connected / raw ready.
+      bleReady: connectionManager.isProtocolLoggedIn,
+      bleNotReadyReason: connectionManager.protocolLoginUnavailableReason,
       defaultVehicleId: vehicleStore.defaultVehicle?.id,
       busy: _busy,
     );
@@ -264,7 +273,10 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   }
 
   Future<void> _sendCommand(CommandCode cmd) async {
-    if (_busy) return;
+    if (_busy) {
+      if (mounted) AppSnack.error(context, '正在执行控车指令，请稍候');
+      return;
+    }
     if (_isControlDebounced()) {
       if (mounted) AppSnack.error(context, '请勿频繁操作');
       return;
@@ -281,12 +293,21 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     }
     final availability = _controlAvailability();
     if (!availability.enabled) {
-      if (mounted) AppSnack.error(context, availability.disabledReason);
+      // P0-A2: never silent — surface BLE off / connecting / not LOGIN / cloud.
+      if (mounted) {
+        final reason = availability.disabledReason.trim().isEmpty
+            ? '当前不可控车，请检查蓝牙或网络'
+            : availability.disabledReason;
+        AppSnack.error(context, reason);
+      }
       return;
     }
 
     setState(() => _busy = true);
     unawaited(HapticFeedback.mediumImpact());
+    final vehicleKeyAtSend =
+        officialCloudService.state.selectedVehicle?.key;
+    final baseline = _vehicleStateSnapshot();
     _pushCommand(
       _CommandEntry(
         kind: _kindFor(cmd),
@@ -310,7 +331,24 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
           locationService.recordDefaultVehicleLocation(),
           failureMessage: '控车后记录车辆位置失败',
         );
-        final confirmed = await _waitForCommandConfirmation(cmd);
+        // Capture pending name set by MQTT publish (if cloud path used MQTT).
+        final mqtt = OfficialMqttService();
+        final String? mqttPendingForConfirm;
+        if (result.transport == ControlCommandTransport.officialCloud &&
+            mqtt.lastSendPath == OfficialRemoteSendPath.mqtt) {
+          mqttPendingForConfirm =
+              mqtt.pendingCommandApiName ??
+              OfficialCloudCommand.fromCommandCode(cmd)?.apiName;
+        } else {
+          mqttPendingForConfirm = null;
+        }
+        final confirmed = await _waitForCommandConfirmation(
+          command: cmd,
+          transport: result.transport,
+          expectedOfficialVehicleKey: vehicleKeyAtSend,
+          baseline: baseline,
+          mqttPendingAtSend: mqttPendingForConfirm,
+        );
         if (!mounted) return;
         if (!confirmed) {
           await _refreshStateForConfirmation();
@@ -447,42 +485,92 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   }
 
   bool _needsStateConfirmation(CommandCode command) {
-    return switch (command) {
-      CommandCode.lock ||
-      CommandCode.unlock ||
-      CommandCode.powerOn ||
-      CommandCode.powerOff => true,
-      _ => false,
-    };
+    return ControlCommandConfirmation.needsVehicleStateConfirmation(command);
   }
 
-  Future<bool> _waitForCommandConfirmation(CommandCode command) async {
-    if (!_needsStateConfirmation(command)) return true;
+  ControlCommandVehicleStateSnapshot _vehicleStateSnapshot() {
+    final vehicle = officialCloudService.state.selectedVehicle;
+    return ControlCommandVehicleStateSnapshot(
+      isLocked: vehicle?.isLocked,
+      isPowerOn: vehicle?.isPowerOn,
+    );
+  }
+
+  Future<bool> _waitForCommandConfirmation({
+    required CommandCode command,
+    required ControlCommandTransport transport,
+    required String? expectedOfficialVehicleKey,
+    required ControlCommandVehicleStateSnapshot baseline,
+    required String? mqttPendingAtSend,
+  }) async {
+    // BLE device ACK already means executed; cloud publish does not.
+    if (transport == ControlCommandTransport.ble) {
+      return ControlCommandConfirmation.isConfirmed(
+        command: command,
+        transport: transport,
+        expectedOfficialVehicleKey: expectedOfficialVehicleKey,
+        currentOfficialVehicleKey:
+            officialCloudService.state.selectedVehicle?.key,
+        baseline: baseline,
+        current: _vehicleStateSnapshot(),
+        mqttAcked: false,
+      );
+    }
+
+    if (!_needsStateConfirmation(command)) {
+      return ControlCommandConfirmation.isConfirmed(
+        command: command,
+        transport: transport,
+        expectedOfficialVehicleKey: expectedOfficialVehicleKey,
+        currentOfficialVehicleKey:
+            officialCloudService.state.selectedVehicle?.key,
+        baseline: baseline,
+        current: _vehicleStateSnapshot(),
+        mqttAcked: false,
+      );
+    }
 
     final confirmationTimer = Stopwatch()..start();
     while (mounted && !_disposed) {
-      if (_isCommandConfirmed(command)) return true;
+      final mqttAcked = ControlCommandConfirmation.mqttPendingAcknowledged(
+        pendingAtSend: mqttPendingAtSend,
+        pendingNow: OfficialMqttService().pendingCommandApiName,
+      );
+      final confirmed = ControlCommandConfirmation.isConfirmed(
+        command: command,
+        transport: transport,
+        expectedOfficialVehicleKey: expectedOfficialVehicleKey,
+        currentOfficialVehicleKey:
+            officialCloudService.state.selectedVehicle?.key,
+        baseline: baseline,
+        current: _vehicleStateSnapshot(),
+        mqttAcked: mqttAcked,
+      );
+      if (confirmed) return true;
       if (confirmationTimer.elapsed > _controlConfirmTimeout) return false;
 
       await _refreshStateForConfirmation();
-      if (_isCommandConfirmed(command)) return true;
+      final mqttAckedAfterRefresh =
+          ControlCommandConfirmation.mqttPendingAcknowledged(
+        pendingAtSend: mqttPendingAtSend,
+        pendingNow: OfficialMqttService().pendingCommandApiName,
+      );
+      final confirmedAfterRefresh = ControlCommandConfirmation.isConfirmed(
+        command: command,
+        transport: transport,
+        expectedOfficialVehicleKey: expectedOfficialVehicleKey,
+        currentOfficialVehicleKey:
+            officialCloudService.state.selectedVehicle?.key,
+        baseline: baseline,
+        current: _vehicleStateSnapshot(),
+        mqttAcked: mqttAckedAfterRefresh,
+      );
+      if (confirmedAfterRefresh) return true;
       if (confirmationTimer.elapsed > _controlConfirmTimeout) return false;
 
       await Future<void>.delayed(_controlConfirmPollDelay);
     }
     return false;
-  }
-
-  bool _isCommandConfirmed(CommandCode command) {
-    final vehicle = officialCloudService.state.selectedVehicle;
-    if (vehicle == null) return false;
-    return switch (command) {
-      CommandCode.lock => vehicle.isLocked,
-      CommandCode.unlock => !vehicle.isLocked,
-      CommandCode.powerOn => vehicle.isPowerOn,
-      CommandCode.powerOff => !vehicle.isPowerOn,
-      _ => true,
-    };
   }
 
   Future<void> _refreshStateForConfirmation() async {
@@ -525,8 +613,13 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
         mqtt.linkState == OfficialMqttLinkState.connected) {
       return 'MQTT 远程';
     }
-    if (mqtt.linkState == OfficialMqttLinkState.connecting) {
+    if (mqtt.linkState == OfficialMqttLinkState.connecting ||
+        mqtt.preconnectInFlight) {
       return 'MQTT 连接中';
+    }
+    final preErr = mqtt.lastPreconnectError?.trim();
+    if (preErr != null && preErr.isNotEmpty) {
+      return 'MQTT 待重连';
     }
     if (availability.canUseCloud) return '云端待命';
     if (availability.canUseBle) return 'BLE 可用';
@@ -778,7 +871,13 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
               _ShortcutsRow(
                 armed: isArmed,
                 powered: isPowerOn,
-                busy: _busy || !hasVehicle || !signedIn,
+                // Dim when channel/session not ready, but keep taps so P0-A2
+                // always surfaces a reason (never "点了没反应").
+                dimmed:
+                    _busy ||
+                    !hasVehicle ||
+                    !signedIn ||
+                    !_controlAvailability().enabled,
                 onFind: () => _sendCommand(CommandCode.find),
                 onArm: _sendArmToggle,
                 onSeat: () => _sendCommand(CommandCode.openSeat),
@@ -1295,7 +1394,7 @@ class _ShortcutsRow extends StatelessWidget {
   const _ShortcutsRow({
     required this.armed,
     required this.powered,
-    required this.busy,
+    required this.dimmed,
     required this.onFind,
     required this.onArm,
     required this.onSeat,
@@ -1304,7 +1403,7 @@ class _ShortcutsRow extends StatelessWidget {
 
   final bool armed;
   final bool powered;
-  final bool busy;
+  final bool dimmed;
   final VoidCallback onFind;
   final VoidCallback onArm;
   final VoidCallback onSeat;
@@ -1321,7 +1420,7 @@ class _ShortcutsRow extends StatelessWidget {
         boxShadow: _Aurora.cardShadow,
       ),
       child: Opacity(
-        opacity: busy ? 0.55 : 1,
+        opacity: dimmed ? 0.55 : 1,
         child: Row(
           children: [
             Expanded(
@@ -1330,7 +1429,6 @@ class _ShortcutsRow extends StatelessWidget {
                 label: '寻车',
                 sub: '鸣笛闪灯',
                 style: _ShortcutStyle.neutral,
-                enabled: !busy,
                 onTap: onFind,
               ),
             ),
@@ -1340,7 +1438,6 @@ class _ShortcutsRow extends StatelessWidget {
                 label: armed ? '已设防' : '未设防',
                 sub: armed ? '车锁已锁' : '点击设防',
                 style: armed ? _ShortcutStyle.armed : _ShortcutStyle.neutral,
-                enabled: !busy,
                 onTap: onArm,
               ),
             ),
@@ -1350,7 +1447,6 @@ class _ShortcutsRow extends StatelessWidget {
                 label: '开坐垫',
                 sub: '解锁储物',
                 style: _ShortcutStyle.neutral,
-                enabled: !busy,
                 onTap: onSeat,
               ),
             ),
@@ -1362,7 +1458,6 @@ class _ShortcutsRow extends StatelessWidget {
                 style: powered
                     ? _ShortcutStyle.powerOn
                     : _ShortcutStyle.powerOff,
-                enabled: !busy,
                 onTap: onPower,
               ),
             ),
@@ -1381,7 +1476,6 @@ class _Shortcut extends StatelessWidget {
     required this.label,
     required this.sub,
     required this.style,
-    required this.enabled,
     required this.onTap,
   });
 
@@ -1389,7 +1483,6 @@ class _Shortcut extends StatelessWidget {
   final String label;
   final String sub;
   final _ShortcutStyle style;
-  final bool enabled;
   final VoidCallback onTap;
 
   @override
@@ -1418,12 +1511,12 @@ class _Shortcut extends StatelessWidget {
     };
 
     return AppPressable(
-      enabled: enabled,
-      onTap: enabled ? onTap : null,
+      enabled: true,
+      onTap: onTap,
       pressedScale: AppMotion.pressScale,
       semanticsLabel: '$label，$sub',
       semanticsButton: true,
-      semanticsEnabled: enabled,
+      semanticsEnabled: true,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
         child: Column(

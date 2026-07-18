@@ -11,12 +11,19 @@ import 'log_service.dart';
 import 'official_cloud_service.dart';
 import 'official_mqtt_config.dart';
 import 'official_mqtt_payload.dart';
+import 'official_remote_error_messages.dart';
 
 /// Observable MQTT link state for control UI.
 enum OfficialMqttLinkState {
   disconnected,
   connecting,
   connected,
+}
+
+/// Which remote transport actually carried the last sendCommandPreferMqtt call.
+enum OfficialRemoteSendPath {
+  mqtt,
+  http,
 }
 
 /// Official MQTT remote control (ControlFragment.mqttPublish path).
@@ -38,6 +45,8 @@ class OfficialMqttService {
   String? _connectedBroker;
   String? _connectedImei;
   String? _pendingCommandApiName;
+  OfficialRemoteSendPath? _lastSendPath;
+  String? _lastPreconnectError;
   bool _disposed = false;
   bool _preconnectInFlight = false;
   OfficialMqttLinkState _linkState = OfficialMqttLinkState.disconnected;
@@ -53,10 +62,19 @@ class OfficialMqttService {
 
   String? get pendingCommandApiName => _pendingCommandApiName;
 
+  /// Last path used by [sendCommandPreferMqtt] (null before first send).
+  OfficialRemoteSendPath? get lastSendPath => _lastSendPath;
+
+  /// Last preconnect failure message (null after success). Used for UI retry.
+  String? get lastPreconnectError => _lastPreconnectError;
+
+  bool get preconnectInFlight => _preconnectInFlight;
+
   String get linkStateLabel => switch (_linkState) {
     OfficialMqttLinkState.connected => 'MQTT 已连接',
     OfficialMqttLinkState.connecting => 'MQTT 连接中',
-    OfficialMqttLinkState.disconnected => 'MQTT 未连接',
+    OfficialMqttLinkState.disconnected =>
+      _lastPreconnectError == null ? 'MQTT 未连接' : 'MQTT 预连接失败',
   };
 
   void _setLinkState(OfficialMqttLinkState next) {
@@ -72,6 +90,8 @@ class OfficialMqttService {
     _cloudSub = null;
     _boundCloud = null;
     _pendingCommandApiName = null;
+    _lastSendPath = null;
+    _lastPreconnectError = null;
     await disconnect();
     _disposed = false;
     _preconnectInFlight = false;
@@ -118,24 +138,48 @@ class OfficialMqttService {
   }
 
   /// Best-effort pre-connect used on vehicle select / home enter.
+  ///
+  /// Failures are recorded in [lastPreconnectError] and **must not** block a
+  /// later [ensureConnected] on first command send (P0-B4).
   Future<void> preconnect({
     required OfficialVehicle vehicle,
     required String userId,
+    bool force = false,
   }) async {
-    if (_disposed || _preconnectInFlight) return;
+    if (_disposed) return;
+    if (_preconnectInFlight) return;
+    if (!force &&
+        isConnected &&
+        _connectedImei == OfficialMqttConfig.commandImei(vehicle)) {
+      _lastPreconnectError = null;
+      return;
+    }
     _preconnectInFlight = true;
     try {
       await ensureConnected(vehicle: vehicle, userId: userId);
+      _lastPreconnectError = null;
     } catch (e) {
       _setLinkState(OfficialMqttLinkState.disconnected);
+      _lastPreconnectError = OfficialRemoteErrorMessages.describe(e);
       _log.operation(
         '官方 MQTT 预连接失败',
-        detail: e.toString(),
+        detail: _lastPreconnectError ?? e.toString(),
         level: LogLevel.warning,
       );
     } finally {
       _preconnectInFlight = false;
     }
+  }
+
+  /// Explicit retry after a failed preconnect (network restored, user retry).
+  Future<void> retryPreconnect(OfficialCloudService cloud) async {
+    attachToCloud(cloud);
+    final vehicle = cloud.state.selectedVehicle;
+    if (!cloud.state.signedIn || vehicle == null) {
+      _lastPreconnectError = OfficialCloudMessages.signInAndSelectVehicleRequired;
+      return;
+    }
+    await preconnect(vehicle: vehicle, userId: cloud.state.userId, force: true);
   }
 
   Future<void> preconnectForCloud(OfficialCloudService cloud) async {
@@ -239,10 +283,25 @@ class OfficialMqttService {
       }
     } on NoConnectionException catch (e) {
       _setLinkState(OfficialMqttLinkState.disconnected);
-      throw OfficialCloudApiException('官方 MQTT 连接失败: $e');
-    } on SocketException catch (e) {
+      throw OfficialCloudApiException(
+        OfficialRemoteErrorMessages.describe(
+          OfficialCloudApiException('官方 MQTT 连接失败: $e'),
+        ),
+      );
+    } on SocketException catch (_) {
       _setLinkState(OfficialMqttLinkState.disconnected);
-      throw OfficialCloudApiException('官方 MQTT 网络失败: $e');
+      throw const OfficialCloudApiException(
+        OfficialRemoteErrorMessages.networkUnavailable,
+      );
+    } catch (e) {
+      _setLinkState(OfficialMqttLinkState.disconnected);
+      if (e is OfficialCloudApiException) {
+        throw OfficialCloudApiException(
+          OfficialRemoteErrorMessages.describe(e),
+          statusCode: e.statusCode,
+        );
+      }
+      throw OfficialCloudApiException(OfficialRemoteErrorMessages.describe(e));
     }
 
     for (final topic in OfficialMqttConfig.subscribeTopics(
@@ -340,6 +399,10 @@ class OfficialMqttService {
   }
 
   /// Prefer MQTT (official remote path); fall back to HTTP cmd API.
+  ///
+  /// Return value is a transport-level acceptance message. It does **not** mean
+  /// the vehicle has executed the command — callers must confirm via
+  /// [ControlCommandConfirmation] (MQTT status ACK or ACC/defence change).
   Future<String> sendCommandPreferMqtt({
     required CommandCode command,
     required OfficialCloudService cloud,
@@ -362,6 +425,11 @@ class OfficialMqttService {
         userId: cloud.state.userId,
         commandApiName: api.apiName,
       );
+      _lastSendPath = OfficialRemoteSendPath.mqtt;
+      _log.operation(
+        '官方远程通道: MQTT',
+        detail: 'command=${api.apiName}',
+      );
       // Keep a light HTTP refresh as secondary consistency (official uses MQTT
       // status first; we still poll list state shortly after).
       unawaited(
@@ -372,15 +440,28 @@ class OfficialMqttService {
           } catch (_) {}
         }),
       );
-      return 'success';
+      // Explicit channel tag so UI/logs can distinguish MQTT vs HTTP fallback.
+      return 'mqtt:success';
     } catch (e) {
       _pendingCommandApiName = null;
+      _lastSendPath = OfficialRemoteSendPath.http;
       _log.operation(
         '官方 MQTT 发令失败，回退 HTTP',
         detail: e.toString(),
         level: LogLevel.warning,
       );
-      return cloud.sendCommand(command);
+      final httpMsg = await cloud.sendCommand(command);
+      final trimmed = httpMsg.trim();
+      _log.operation(
+        '官方远程通道: HTTP',
+        detail: 'command=${api.apiName} msg=$trimmed',
+      );
+      if (trimmed.isEmpty ||
+          trimmed == 'success' ||
+          trimmed.toLowerCase() == 'ok') {
+        return 'http:success';
+      }
+      return 'http:$trimmed';
     }
   }
 }

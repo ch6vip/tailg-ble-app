@@ -1,10 +1,10 @@
 /// Official control-path routing extracted from decompiled
 /// `ControlFragment.lock()` / `start()` + `ControlTypeUtil`.
 ///
-/// This encodes **transport selection only** (BLE vs remote cloud). The official
-/// remote transport is MQTT; this project still executes remote via HTTP
-/// `app/device/cmd/*`, but the **when to choose remote vs BLE** follows the
-/// official decision tree as closely as the decompiled sources allow.
+/// This encodes **transport selection only** (BLE vs remote). Official remote
+/// is MQTT (project: OfficialMqttService.sendCommandPreferMqtt with HTTP
+/// `app/device/cmd/*` fallback). **When** to choose remote vs BLE follows the
+/// official decision tree (`modelType` / `isGps` / BLE LOGIN).
 library;
 
 enum OfficialBleStackKind {
@@ -22,7 +22,7 @@ enum OfficialControlTransportChoice {
   /// Local BLE after protocol LOGIN (`LoginStatus.LOGIN`).
   ble,
 
-  /// Remote control (official MQTT; our HTTP cmd as stand-in).
+  /// Remote control (official MQTT; HTTP cmd as fallback).
   cloud,
 
   /// No usable path.
@@ -65,12 +65,14 @@ class OfficialControlRoute {
 
   /// Resolve which transport official control would take for a bound vehicle.
   ///
-  /// [bleReady] corresponds to official `LoginStatus.LOGIN` (or
-  /// `bleIsConnectedField` for KKS modelType 1).
+  /// [bleReady] **must** mean official `LoginStatus.LOGIN` (or
+  /// `bleIsConnectedField` for KKS modelType 1). Feed
+  /// `ConnectionManager.isProtocolLoggedIn` — not mere GATT
+  /// `ConnectionState.connected` / raw `ready` without credential.
   /// [networkReady] corresponds to `NetworkUtils.isConnected()`.
   /// [cloudSessionReady] is our stand-in for "can talk to remote backend"
-  /// (signed-in + selected vehicle). Official also requires MQTT connected;
-  /// we do not model MQTT separately yet.
+  /// (signed-in + selected vehicle). MQTT connect is ensured at send time via
+  /// OfficialMqttService.ensureConnected.
   static OfficialControlRouteDecision resolve({
     required bool bindingCar,
     required int? modelType,

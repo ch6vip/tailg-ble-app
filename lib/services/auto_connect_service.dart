@@ -152,6 +152,9 @@ class AutoConnectService {
 
   /// Bind the official selected car as the near-field auto-connect target and
   /// optionally start scanning/connecting (official ControlFragment path).
+  ///
+  /// **P0-A4:** if BLE is already connected/connecting to a *different* device,
+  /// disconnect first (clears pending commands) before retargeting.
   Future<void> linkOfficialTarget({
     required String deviceId,
     required String displayName,
@@ -160,6 +163,9 @@ class AutoConnectService {
   }) async {
     final id = deviceId.trim();
     if (id.isEmpty) return;
+
+    await _disconnectIfDifferentTarget(id);
+
     await VehicleStore().init();
     await VehicleStore().upsert(
       id: id,
@@ -182,6 +188,49 @@ class AutoConnectService {
     if (connectNow) {
       await tryAutoConnect();
     }
+  }
+
+  /// Disconnect when the active BLE session is for another MAC/device id.
+  ///
+  /// [ConnectionManager.disconnect] also completes pending commands / GATT ops.
+  Future<void> _disconnectIfDifferentTarget(String targetDeviceId) async {
+    final manager = _connectionManager;
+    if (manager == null) return;
+    if (manager.state == ConnectionState.disconnected) return;
+
+    final currentId = manager.device?.remoteId.toString() ?? '';
+    if (currentId.isNotEmpty && sameDeviceId(currentId, targetDeviceId)) {
+      return;
+    }
+
+    _log.operation(
+      '换车: 断开旧 BLE',
+      detail: 'from=${currentId.isEmpty ? manager.state.name : currentId} '
+          'to=$targetDeviceId',
+      level: LogLevel.info,
+    );
+    try {
+      await manager.disconnect();
+    } catch (e) {
+      _log.operation(
+        '换车: 断开旧 BLE 失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
+    }
+  }
+
+  /// Whether two BLE/device MAC strings refer to the same radio address.
+  static bool sameDeviceId(String a, String b) => _sameDeviceId(a, b);
+
+  /// True when manager is already working on [targetDeviceId].
+  bool isLinkedTo(String targetDeviceId) {
+    final manager = _connectionManager;
+    if (manager == null) return false;
+    if (manager.state == ConnectionState.disconnected) return false;
+    final currentId = manager.device?.remoteId.toString() ?? '';
+    if (currentId.isEmpty) return false;
+    return sameDeviceId(currentId, targetDeviceId);
   }
 
   void _emitEnabled() {

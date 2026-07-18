@@ -10,10 +10,11 @@
 |--|--|
 | 仓库 | [`ch6vip/tailg-ble-app`](https://github.com/ch6vip/tailg-ble-app) · Public |
 | 角色 | 工作区内 **测试 / 复刻实验线**（正式 cloud 产品线见 [`tailg-next`](https://github.com/ch6vip/tailg-next)） |
-| 对照源 | 官方包 `台铃智能` · 反编译 `E:\ctf-aaa\tlddc\decompiled`（`com.tailg.run.intelligence`） |
+| 对照源 | **`E:\ctf-aaa\tlddc\decompiled`** · 包名 `com.tailg.run.intelligence` · 备忘 [对照源-反编译.md](../对照源-反编译.md) |
 | 技术栈 | Flutter 3.44.6 · Dart 3.12.2 · Android API 23+ |
 | 包名 | Dart `tailg_ble_app` · Android `de.tttq.tailg_ble_app` · 显示名「台铃智能」 |
 | 版本 | 以 `pubspec.yaml` 为准（当前 `1.1.0+14`） |
+| **复刻进度** | **完全 63.8%** · 完美 44.7% · 工程 16.7%（算法与任务勾选见 [PLAN.md §0](PLAN.md)） |
 
 ---
 
@@ -53,7 +54,8 @@
 | 感应解锁 / OTA / NFC / 完整绑车 | ⏳ 未完成 | 完美复刻阶段 |
 | 商城等运营 | ❌ 不做 | L3 |
 
-分阶段任务与真机清单见 **[PLAN.md](PLAN.md)**（以源码审计为准，不依赖旧功能清单）。
+分阶段任务、**百分比计分与里程碑门禁**见 **[PLAN.md](PLAN.md)**（§0 为唯一进度口径；改任务勾选必须重算百分比）。  
+未达 PLAN 门槛前，禁止使用「已完全复刻」等表述。
 
 ### 推荐使用路径（对齐官方）
 
@@ -83,11 +85,17 @@ test/           单元 / 组件测试
 android|ios…    平台工程（含 BLE / 定位权限）
 ```
 
-对照与逆向材料在工作区上级目录：
+对照与逆向材料在工作区上级目录（**勿忘**）：
 
-- `E:\ctf-aaa\tlddc\decompiled` — 官方反编译
-- `E:\ctf-aaa\tlddc\台铃智能_*.apk` — 官方安装包样本
-- `E:\ctf-aaa\tlddc\版本说明.md` — 与 `tailg-next` 的正式/测试分工
+| 路径 | 说明 |
+|------|------|
+| **`E:\ctf-aaa\tlddc\decompiled`** | 官方 App **反编译根目录**（`sources/` + `resources/`） |
+| `...\decompiled\sources\com\tailg\run\intelligence` | 官方包源码根 |
+| `E:\ctf-aaa\tlddc\台铃智能_*.apk` | 官方安装包样本 |
+| `E:\ctf-aaa\tlddc\对照源-反编译.md` | 工作区对照源备忘（高频类路径） |
+| `E:\ctf-aaa\tlddc\版本说明.md` | 与 `tailg-next` 的正式/测试分工 |
+
+关键反编译类（控车/MQTT/BLE）列表见 **[PLAN.md · 对照源](PLAN.md)**。
 
 本仓 **不再维护 `docs/` 与 `FEATURES.md`**；说明以本 README、`PLAN.md`、`AGENTS.md` 为准。
 

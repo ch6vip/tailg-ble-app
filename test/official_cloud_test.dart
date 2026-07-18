@@ -1169,6 +1169,31 @@ void main() {
       expect(service.state.selectedVehicle, isNull);
     });
 
+    test('logout runs afterLogoutSideEffects for MQTT/BLE teardown', () async {
+      final service = OfficialCloudService();
+      service.resetForTest();
+      service.setStateForTest(
+        OfficialCloudState.initial().copyWith(
+          initialized: true,
+          token: 'token',
+          selectedVehicleKey: 'car-x',
+        ),
+      );
+      final calls = <String>[];
+      service.afterLogoutSideEffects.add(() async {
+        calls.add('mqtt');
+      });
+      service.afterLogoutSideEffects.add(() async {
+        calls.add('ble');
+      });
+
+      await service.logout();
+
+      expect(service.state.signedIn, isFalse);
+      expect(service.state.selectedVehicleKey, isNull);
+      expect(calls, ['mqtt', 'ble']);
+    });
+
     test('uses injected clock for missing uid travel month', () async {
       final vehicle = OfficialVehicle.fromJson({
         'carId': 'car-4',
@@ -1725,7 +1750,7 @@ void main() {
 
       expect(result.success, isFalse);
       expect(result.transport, ControlCommandTransport.officialCloud);
-      expect(result.failureMessage, 'Cloud command timed out');
+      expect(result.failureMessage, '手机网络异常，请检查网络后重试');
 
       pendingCloud.complete('ok');
     });

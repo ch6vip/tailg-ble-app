@@ -4,6 +4,7 @@ import '../models/command_types.dart';
 import 'control_channel_resolver.dart';
 import 'control_command_result.dart';
 import 'official_cloud_service.dart';
+import 'official_remote_error_messages.dart';
 
 typedef BleCommandSender = Future<bool> Function(CommandCode command);
 typedef CloudCommandSender = Future<String> Function(CommandCode command);
@@ -93,7 +94,7 @@ class ControlCommandExecutor {
       return ControlCommandResult.failure(
         command,
         transport: ControlCommandTransport.officialCloud,
-        message: e.message ?? 'Cloud command timed out',
+        message: OfficialRemoteErrorMessages.networkUnavailable,
       );
     } catch (e) {
       return ControlCommandResult.failure(
@@ -116,6 +117,8 @@ class ControlCommandExecutor {
 }
 
 String _defaultErrorMessage(Object error) {
-  if (error is OfficialCloudApiException) return error.message;
-  return error.toString();
+  if (error is OfficialCloudApiException) {
+    return OfficialRemoteErrorMessages.describe(error);
+  }
+  return OfficialRemoteErrorMessages.describe(error);
 }

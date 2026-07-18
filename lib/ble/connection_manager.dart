@@ -11,11 +11,24 @@ import 'parser.dart';
 
 enum ProtocolType { standard, qgj, unknown }
 
+/// Local connection lifecycle.
+///
+/// Mapping to official `LoginStatus` (`tlink_ble/LoginStatus.java`):
+/// - [disconnected] ≈ DISCONNECTED / BLE_STATE_OFF
+/// - [connecting] / [reconnecting] ≈ CONNECTING
+/// - [connected] ≈ CONNECTED / READY（GATT up, handshake in flight）
+/// - [ready] ≈ **LOGIN** only when [ConnectionManager.isProtocolLoggedIn]
+///
+/// Do **not** treat raw [ready] alone as official LOGIN for control routing —
+/// use [ConnectionManager.isProtocolLoggedIn], which also requires a protocol
+/// credential (`token` after standard TokenResponse or QGJ login success).
 enum ConnectionState {
   disconnected,
   connecting,
   reconnecting,
+  /// GATT connected; token / QGJ login not yet confirmed.
   connected,
+  /// Handshake success path; combined with token → official LOGIN.
   ready,
 }
 
@@ -39,6 +52,9 @@ class ConnectionManager {
   ProtocolType _lastKnownProtocol = ProtocolType.unknown;
   ConnectionState _state = ConnectionState.disconnected;
   String? _token;
+  /// Explicit protocol-login latch (official LoginStatus.LOGIN).
+  /// Set only on TokenResponse / QGJ login success; cleared on teardown.
+  bool _protocolLoggedIn = false;
   ModelType _model = ModelType.KKS;
   int _qgjLoginPassword = 0;
   int _qgjUserId = 0;
@@ -103,6 +119,26 @@ class ConnectionManager {
   BluetoothCharacteristic? get fcc2Char => _fcc2Char;
   BluetoothCharacteristic? get fbb1Char => _fbb1Char;
   BluetoothCharacteristic? get fbb2Char => _fbb2Char;
+
+  /// Official `LoginStatus.LOGIN` equivalent for control routing.
+  ///
+  /// True only when the connection is in [ConnectionState.ready] **and** a
+  /// protocol credential exists (`token` from standard TokenResponse, or the
+  /// QGJ login marker). GATT-only [ConnectionState.connected] is never LOGIN.
+  bool get isProtocolLoggedIn =>
+      _protocolLoggedIn && _state == ConnectionState.ready && _token != null;
+
+  /// Reason when [isProtocolLoggedIn] is false — feed to channel UI/resolver.
+  String get protocolLoginUnavailableReason {
+    if (isProtocolLoggedIn) return '';
+    return switch (_state) {
+      ConnectionState.disconnected => '蓝牙未连接',
+      ConnectionState.connecting => '蓝牙连接中',
+      ConnectionState.reconnecting => '蓝牙正在重连',
+      ConnectionState.connected => '蓝牙未完成协议登录',
+      ConnectionState.ready => '蓝牙未完成协议登录',
+    };
+  }
 
   void setModel(ModelType model) => _model = model;
 
@@ -255,9 +291,15 @@ class ConnectionManager {
     _completePendingOperations(StateError('QGJ disconnected'));
     _completePendingGattOperations(StateError('Disconnected by user'));
     await _clearRuntimeResources(disconnectDevice: false);
-    await _device?.disconnect();
-    _resetCharacteristics();
-    _reset();
+    try {
+      await _device?.disconnect();
+    } catch (e) {
+      _log.ble('用户断开设备失败', detail: e.toString(), level: LogLevel.debug);
+    } finally {
+      // Always clear local session so switch-vehicle cannot keep A while selecting B.
+      _resetCharacteristics();
+      _reset();
+    }
   }
 
   Future<void> _discoverAndSetup() async {
@@ -494,8 +536,7 @@ class ConnectionManager {
     _addResponse(response);
 
     if (response is TokenResponse) {
-      _token = response.token;
-      _setState(ConnectionState.ready);
+      _markProtocolLoggedIn(response.token);
     } else if (response is StateResponse && response.bikeState != null) {
       _publishBikeState(response.bikeState);
     }
@@ -509,9 +550,8 @@ class ConnectionManager {
     if (response == null) return;
 
     if (response.cmdId == QgjCommandIds.login && response.success) {
-      _token = 'qgj';
       _log.ble('QGJ 登录成功', level: LogLevel.info);
-      _setState(ConnectionState.ready);
+      _markProtocolLoggedIn('qgj');
       _startHeartbeat();
     } else if (response.cmdId == QgjCommandIds.setStatus) {
       final completer = _cmdAckCompleter;
@@ -652,8 +692,36 @@ class ConnectionManager {
   @visibleForTesting
   void enterConnectedForTest() => _setState(ConnectionState.connected);
 
+  /// Simulate official LOGIN (ready + protocol credential).
   @visibleForTesting
-  void enterReadyForTest() => _setState(ConnectionState.ready);
+  void enterReadyForTest({String token = 'test-token'}) {
+    _markProtocolLoggedIn(token);
+  }
+
+  /// Simulate GATT-up without protocol login (must NOT route as bleReady).
+  @visibleForTesting
+  void enterConnectedWithoutLoginForTest() {
+    _protocolLoggedIn = false;
+    _token = null;
+    _setState(ConnectionState.connected);
+  }
+
+  /// Bind a fake remote device for switch-vehicle / target tests.
+  @visibleForTesting
+  void attachDeviceForTest(
+    BluetoothDevice device, {
+    ConnectionState state = ConnectionState.ready,
+    String token = 'test-token',
+  }) {
+    _device = device;
+    if (state == ConnectionState.ready) {
+      _markProtocolLoggedIn(token);
+    } else {
+      _protocolLoggedIn = false;
+      _token = null;
+      _setState(state);
+    }
+  }
 
   @visibleForTesting
   bool get readyWatchdogActiveForTest => _readyWatchdog?.isActive ?? false;
@@ -919,9 +987,21 @@ class ConnectionManager {
     _log.ble('重连次数已用尽', level: LogLevel.warning);
   }
 
+  /// Latch official LOGIN: store credential, mark flag, enter ready.
+  void _markProtocolLoggedIn(String credential) {
+    _token = credential;
+    _protocolLoggedIn = true;
+    _setState(ConnectionState.ready);
+  }
+
+  void _clearProtocolLogin() {
+    _protocolLoggedIn = false;
+    _token = null;
+  }
+
   void _resetCharacteristics() {
     _protocol = ProtocolType.unknown;
-    _token = null;
+    _clearProtocolLogin();
     _writeChar = null;
     _notifyChar = null;
     _feb1Char = null;
@@ -1017,6 +1097,7 @@ class ConnectionManager {
 
   void _reset() {
     _state = ConnectionState.disconnected;
+    _device = null;
     if (!_disposed) {
       _stateController.add(_state);
     }

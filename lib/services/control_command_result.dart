@@ -31,15 +31,21 @@ class ControlCommandResult {
   }) {
     final trimmedMessage = message.trim();
     final normalizedMessage = trimmedMessage.isEmpty ? 'success' : message;
+    final lower = normalizedMessage.toLowerCase();
+    // Strip channel tags from sendCommandPreferMqtt (mqtt:success / http:…).
+    final body = normalizedMessage.contains(':')
+        ? normalizedMessage.substring(normalizedMessage.indexOf(':') + 1)
+        : normalizedMessage;
+    final bodyLower = body.toLowerCase();
+    final display =
+        bodyLower == 'success' || bodyLower == 'ok' || lower == 'success'
+        ? '${command.label}已完成'
+        : body;
     return ControlCommandResult._(
       command: command,
       transport: ControlCommandTransport.officialCloud,
       success: true,
-      successMessage:
-          normalizedMessage == 'success' ||
-              normalizedMessage.toLowerCase() == 'ok'
-          ? '${command.label}已完成'
-          : normalizedMessage,
+      successMessage: display,
     );
   }
 

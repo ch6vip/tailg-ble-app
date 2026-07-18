@@ -50,7 +50,10 @@ class ControlChannelResolver {
 
   static ControlChannelAvailability resolve({
     required OfficialCloudState cloudState,
+    /// Official LoginStatus.LOGIN equivalent (use ConnectionManager.isProtocolLoggedIn).
     bool bleReady = false,
+    /// Optional detail when [bleReady] is false (e.g. connecting / not LOGIN).
+    String? bleNotReadyReason,
     String? defaultVehicleId,
     OfficialControlChannel channel = OfficialControlChannel.automatic,
     bool busy = false,
@@ -106,6 +109,7 @@ class ControlChannelResolver {
         : _bleUnavailableReason(
             cloudState: cloudState,
             bleReady: bleReady,
+            bleNotReadyReason: bleNotReadyReason,
             defaultVehicleId: defaultVehicleId,
             officialReason: officialDecision.usesBle
                 ? ''
@@ -212,10 +216,15 @@ class ControlChannelResolver {
   static String _bleUnavailableReason({
     required OfficialCloudState cloudState,
     required bool bleReady,
+    String? bleNotReadyReason,
     required String? defaultVehicleId,
     required String officialReason,
   }) {
     if (!bleReady) {
+      // Prefer explicit non-LOGIN detail over generic official "蓝牙未连接".
+      if (bleNotReadyReason != null && bleNotReadyReason.isNotEmpty) {
+        return bleNotReadyReason;
+      }
       return officialReason.isNotEmpty ? officialReason : '蓝牙未连接';
     }
     final selected = cloudState.selectedVehicle;
@@ -260,6 +269,17 @@ class ControlChannelResolver {
             ? '官方云端不可用'
             : cloudUnavailableReason;
       case OfficialControlChannel.automatic:
+        // Keep non-BLE official reasons (未绑定/未登录/无网) first.
+        // For the generic "蓝牙未连接" branch, prefer the more specific
+        // non-LOGIN detail (连接中 / 未完成协议登录) when available.
+        if (officialDecision.isUnavailable &&
+            officialDecision.reason.isNotEmpty &&
+            officialDecision.reason != '蓝牙未连接') {
+          return officialDecision.reason;
+        }
+        if (bleUnavailableReason.isNotEmpty) {
+          return bleUnavailableReason;
+        }
         if (officialDecision.isUnavailable &&
             officialDecision.reason.isNotEmpty) {
           return officialDecision.reason;
