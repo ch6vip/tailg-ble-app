@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/vehicle_control_home_page.dart';
@@ -6,6 +8,7 @@ import 'package:tailg_ble_app/services/service_locator.dart';
 
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
+import 'helpers/view_size.dart';
 
 /// P4-4 light smoke: signed-in cloud state → 爱车 page renders without crash.
 void main() {
@@ -20,6 +23,7 @@ void main() {
   });
 
   testWidgets('signed-in vehicle home renders vehicle name', (tester) async {
+    setTestViewSize(tester, const Size(390, 844));
     final vehicle = OfficialVehicle.fromJson({
       'carId': 'smoke-1',
       'carNickName': '冒烟测试车',
@@ -42,5 +46,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.textContaining('冒烟测试车'), findsWidgets);
+    expect(
+      tester.getTopLeft(find.text('寻车')).dy,
+      lessThan(tester.getTopLeft(find.text('电池')).dy),
+    );
   });
 }

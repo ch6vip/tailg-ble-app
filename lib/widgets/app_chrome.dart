@@ -17,15 +17,16 @@ class AppPageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 16, 0),
       child: Row(
         children: [
           if (showBack) ...[
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_back,
-                color: AppColors.textPrimary,
+                color: colors.textPrimary,
                 semanticLabel: '返回',
               ),
               onPressed: () => Navigator.pop(context),
@@ -38,7 +39,15 @@ class AppPageHeader extends StatelessWidget {
             ),
             const SizedBox(width: 8),
           ],
-          Expanded(child: Text(title, style: AppTextStyles.subPageTitle)),
+          Expanded(
+            child: Text(
+              title,
+              style: AppTextStyles.subPageTitle.copyWith(
+                color: colors.textPrimary,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
           ...actions,
         ],
       ),
@@ -53,9 +62,16 @@ class AppSectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
-      child: Text(text, style: AppTextStyles.sectionLabel),
+      child: Text(
+        text,
+        style: AppTextStyles.sectionLabel.copyWith(
+          color: colors.textTertiary,
+          letterSpacing: 0,
+        ),
+      ),
     );
   }
 }
@@ -64,24 +80,26 @@ class AppCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry margin;
   final EdgeInsetsGeometry padding;
-  final Color color;
+  final Color? color;
 
   const AppCard({
     super.key,
     required this.child,
     this.margin = const EdgeInsets.symmetric(horizontal: AppSpacing.screenX),
     this.padding = const EdgeInsets.all(16),
-    this.color = AppColors.surface,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: color,
+        color: color ?? colors.surface,
         borderRadius: BorderRadius.circular(AppRadii.lg),
-        boxShadow: AppShadows.elevation1,
+        boxShadow: dark ? const [] : AppShadows.elevation1,
       ),
       // ListTile / SwitchListTile paint ink on the nearest Material ancestor.
       // Without a local Material here, Flutter asserts that a colored parent
@@ -110,6 +128,7 @@ class AppHeaderAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final tooltip = this.tooltip;
     Widget button = AppPressable(
       onTap: onTap,
@@ -119,15 +138,11 @@ class AppHeaderAction extends StatelessWidget {
       semanticsButton: true,
       semanticsEnabled: onTap != null,
       borderRadius: BorderRadius.circular(AppRadii.sheet),
-      pressedBackground: AppColors.primary.withValues(alpha: 0.05),
+      pressedBackground: colors.primary.withValues(alpha: 0.08),
       child: SizedBox(
         width: AppTouchTargets.min,
         height: AppTouchTargets.min,
-        child: Icon(
-          icon,
-          size: AppIconSizes.md,
-          color: AppColors.textSecondary,
-        ),
+        child: Icon(icon, size: AppIconSizes.md, color: colors.textSecondary),
       ),
     );
     if (tooltip != null) {
@@ -214,6 +229,7 @@ class AppEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final subtitle = this.subtitle;
     return Padding(
       padding: padding,
@@ -223,14 +239,14 @@ class AppEmptyState extends StatelessWidget {
           Container(
             width: 64,
             height: 64,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF2F2EF),
+            decoration: BoxDecoration(
+              color: colors.surfaceContainerHigh,
               shape: BoxShape.circle,
             ),
             child: Icon(
               icon,
               size: AppIconSizes.md,
-              color: AppColors.textTertiary,
+              color: colors.textTertiary,
             ),
           ),
           const SizedBox(height: 16),
@@ -238,7 +254,7 @@ class AppEmptyState extends StatelessWidget {
             title,
             textAlign: TextAlign.center,
             style: AppTextStyles.itemTitle.copyWith(
-              color: AppColors.textSecondary,
+              color: colors.textSecondary,
             ),
           ),
           if (subtitle != null) ...[
@@ -246,10 +262,10 @@ class AppEmptyState extends StatelessWidget {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 height: 1.5,
-                color: AppColors.textTertiary,
+                color: colors.textTertiary,
               ),
             ),
           ],

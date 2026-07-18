@@ -26,41 +26,40 @@ import 'vehicle_settings_page.dart';
 class ServiceHubPage extends StatelessWidget {
   const ServiceHubPage({super.key});
 
-  static const _pageBg = Color(0xFFF5F6F8);
-
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final bottomPad =
         AppNav.contentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: colors.pageBg,
       body: SafeArea(
         bottom: false,
         child: ListView(
           physics: const BouncingScrollPhysics(),
           padding: EdgeInsets.only(bottom: bottomPad),
           children: [
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(20, 16, 20, 4),
               child: Text(
                 '服务中心',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
-                  color: AppColors.textPrimary,
+                  letterSpacing: 0,
+                  color: colors.textPrimary,
                 ),
               ),
             ),
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(20, 4, 20, 4),
               child: Text(
                 '定位、轨迹、车辆设置和维护服务',
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.35,
-                  color: AppColors.textSecondary,
+                  color: colors.textSecondary,
                 ),
               ),
             ),
@@ -154,12 +153,11 @@ class ServiceHubPage extends StatelessWidget {
 class _MoreServicesPage extends StatelessWidget {
   const _MoreServicesPage();
 
-  static const _pageBg = Color(0xFFF5F6F8);
-
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: colors.pageBg,
       body: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
@@ -179,11 +177,11 @@ class _MoreServicesPage extends StatelessWidget {
                     onTap: () =>
                         openCloudGatedPage(context, const DiagnosticPage()),
                   ),
-                  const Divider(
+                  Divider(
                     height: 1,
                     thickness: 1,
                     indent: 60,
-                    color: AppColors.hairline,
+                    color: colors.outlineVariant,
                   ),
                   _ServiceListTile(
                     icon: Icons.cloud_outlined,
@@ -195,11 +193,11 @@ class _MoreServicesPage extends StatelessWidget {
                       requireVehicle: false,
                     ),
                   ),
-                  const Divider(
+                  Divider(
                     height: 1,
                     thickness: 1,
                     indent: 60,
-                    color: AppColors.hairline,
+                    color: colors.outlineVariant,
                   ),
                   _ServiceListTile(
                     icon: Icons.support_agent_outlined,
@@ -258,11 +256,12 @@ class _GlyphTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return AppPressable(
       onTap: item.onTap,
       pressedScale: AppMotion.pressScale,
       borderRadius: BorderRadius.circular(AppRadii.md),
-      pressedBackground: const Color(0x080F1620),
+      pressedBackground: colors.surfaceContainerHigh,
       semanticsLabel: item.label,
       semanticsButton: true,
       child: SizedBox(
@@ -273,13 +272,13 @@ class _GlyphTile extends StatelessWidget {
             Container(
               width: 46,
               height: 46,
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceContainerHigh,
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerHigh,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 item.icon,
-                color: AppColors.textSecondary,
+                color: colors.textSecondary,
                 size: AppIconSizes.lg,
               ),
             ),
@@ -289,11 +288,11 @@ class _GlyphTile extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-                letterSpacing: 0.1,
+                color: colors.textPrimary,
+                letterSpacing: 0,
                 height: 1.2,
               ),
             ),
@@ -319,11 +318,12 @@ class _ServiceListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return AppPressable(
       onTap: onTap,
       pressedScale: AppMotion.pressScale,
       borderRadius: BorderRadius.circular(AppRadii.md),
-      pressedBackground: AppColors.surfaceContainerHigh,
+      pressedBackground: colors.surfaceContainerHigh,
       semanticsLabel: title,
       semanticsButton: true,
       child: Padding(
@@ -333,11 +333,11 @@ class _ServiceListTile extends StatelessWidget {
             Container(
               width: AppTouchTargets.min,
               height: AppTouchTargets.min,
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceContainerHigh,
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerHigh,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: AppColors.textSecondary, size: 22),
+              child: Icon(icon, color: colors.textSecondary, size: 22),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -346,10 +346,10 @@ class _ServiceListTile extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -357,16 +357,16 @@ class _ServiceListTile extends StatelessWidget {
                     subtitle,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       height: 1.25,
-                      color: AppColors.textTertiary,
+                      color: colors.textTertiary,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Color(0xFFC4C8CD), size: 18),
+            Icon(Icons.chevron_right, color: colors.textTertiary, size: 18),
           ],
         ),
       ),

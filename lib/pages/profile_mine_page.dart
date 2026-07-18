@@ -332,12 +332,13 @@ class _ProfileMinePageState extends State<ProfileMinePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final colors = AppColors.of(context);
     final signedIn = officialCloudService.state.signedIn;
     final bottomPad =
         AppNav.contentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: _Aurora.pageBg,
+      backgroundColor: colors.pageBg,
       body: SafeArea(
         bottom: false,
         child: ListView(
@@ -372,15 +373,15 @@ class _ProfileMinePageState extends State<ProfileMinePage>
             ),
 
             // ── Account & support (list, not equal-weight grid) ────────
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(20, 18, 20, 0),
               child: Text(
                 '账户与支持',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
-                  color: Color(0xFF8A8A8A),
+                  letterSpacing: 0,
+                  color: colors.textTertiary,
                 ),
               ),
             ),
@@ -406,15 +407,15 @@ class _ProfileMinePageState extends State<ProfileMinePage>
             ),
 
             // ── Version ─────────────────────────────────────────────────
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(20, 18, 20, 6),
               child: Text(
                 'Tailg Cloud 1.0.0',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 11,
-                  color: Color(0xFFA0A6AD),
-                  letterSpacing: 0.1,
+                  color: colors.textTertiary,
+                  letterSpacing: 0,
                 ),
               ),
             ),
@@ -439,18 +440,6 @@ class _ProfileMinePageState extends State<ProfileMinePage>
 // Design tokens mapped onto theme/
 // ═══════════════════════════════════════════════════════════════════════════
 abstract final class _Aurora {
-  static const accent = AppColors.primary; // #00C896
-  static const accentDeep = AppColors.primaryDark; // #00A57C
-  static const accentSoft = AppColors.energySoft; // 12% green
-  static const danger = AppColors.danger;
-  static const pageBg = Color(0xFFF5F6F8); // HTML --bg-page
-  static const surface = AppColors.surface;
-  static const surfaceSoft = AppColors.surfaceContainerHigh; // #F0F0F4
-  static const fg = AppColors.textPrimary;
-  static const fgSecondary = AppColors.textSecondary;
-  static const muted = AppColors.textTertiary;
-  static const line = AppColors.hairline;
-
   static const cardMargin = EdgeInsets.fromLTRB(20, 12, 20, 0);
   static const cardRadius = AppRadii.lg; // 20 ≈ HTML 18
   static const cardShadow = AppShadows.elevation1;
@@ -485,6 +474,7 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final url = avatarUrl;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 16, 6),
@@ -499,7 +489,7 @@ class _ProfileHeader extends StatelessWidget {
             semanticsButton: true,
             child: CircleAvatar(
               radius: 32,
-              backgroundColor: const Color(0xFFE6F5EF),
+              backgroundColor: colors.primary.withValues(alpha: 0.12),
               backgroundImage: url == null || url.isEmpty
                   ? null
                   : NetworkImage(url),
@@ -509,11 +499,11 @@ class _ProfileHeader extends StatelessWidget {
               child: url == null || url.isEmpty
                   ? Text(
                       avatarGlyph,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w700,
-                        color: _Aurora.accentDeep,
-                        letterSpacing: -0.5,
+                        color: colors.primary,
+                        letterSpacing: 0,
                         height: 1,
                       ),
                     )
@@ -530,12 +520,12 @@ class _ProfileHeader extends StatelessWidget {
                   nickname,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
+                    letterSpacing: 0,
                     height: 1.15,
-                    color: _Aurora.fg,
+                    color: colors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 5),
@@ -543,9 +533,9 @@ class _ProfileHeader extends StatelessWidget {
                   phoneLine,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: _Aurora.muted,
+                    color: colors.textTertiary,
                     fontFeatures: _Aurora.tabularNums,
                   ),
                 ),
@@ -557,16 +547,16 @@ class _ProfileHeader extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 9),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: _Aurora.accentSoft,
+                        color: colors.primary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(AppRadii.pill),
                       ),
                       child: Text(
                         memberLabel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: _Aurora.accentDeep,
-                          letterSpacing: 0.2,
+                          color: colors.primary,
+                          letterSpacing: 0,
                         ),
                       ),
                     ),
@@ -577,12 +567,12 @@ class _ProfileHeader extends StatelessWidget {
                         pressedScale: AppMotion.pressScale,
                         semanticsLabel: '我的积分',
                         semanticsButton: true,
-                        child: const Text(
+                        child: Text(
                           '我的积分',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: _Aurora.fgSecondary,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ),
@@ -598,7 +588,7 @@ class _ProfileHeader extends StatelessWidget {
             pressedScale: AppMotion.pressScale,
             semanticsLabel: '编辑',
             semanticsButton: true,
-            child: const SizedBox(
+            child: SizedBox(
               height: AppTouchTargets.min,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 4),
@@ -608,8 +598,8 @@ class _ProfileHeader extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: _Aurora.fgSecondary,
-                      letterSpacing: 0.2,
+                      color: colors.textSecondary,
+                      letterSpacing: 0,
                     ),
                   ),
                 ),
@@ -642,15 +632,17 @@ class _VehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
       child: AppPressable(
         onTap: onTap,
         pressedScale: AppMotion.pressScale,
         borderRadius: BorderRadius.circular(_Aurora.cardRadius),
-        background: _Aurora.surface,
-        pressedBackground: const Color(0xFFFBFBFC),
-        boxShadow: _Aurora.cardShadow,
+        background: colors.surface,
+        pressedBackground: colors.surfaceContainerHigh,
+        boxShadow: dark ? const [] : _Aurora.cardShadow,
         semanticsLabel: '切换默认车辆 $name',
         semanticsButton: true,
         child: Padding(
@@ -665,13 +657,13 @@ class _VehicleCard extends StatelessWidget {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: _Aurora.surfaceSoft,
+                        color: colors.surfaceContainerHigh,
                         borderRadius: BorderRadius.circular(AppRadii.md),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.electric_moped_outlined,
                         size: 24,
-                        color: _Aurora.fgSecondary,
+                        color: colors.textSecondary,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -683,12 +675,12 @@ class _VehicleCard extends StatelessWidget {
                             name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: -0.2,
+                              letterSpacing: 0,
                               height: 1.2,
-                              color: _Aurora.fg,
+                              color: colors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 5),
@@ -699,17 +691,17 @@ class _VehicleCard extends StatelessWidget {
                                 height: 6,
                                 decoration: BoxDecoration(
                                   color: online
-                                      ? _Aurora.accent
-                                      : const Color(0xFFC5CAD0),
+                                      ? colors.primary
+                                      : colors.textTertiary,
                                   shape: BoxShape.circle,
                                 ),
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 statusLabel,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: _Aurora.fgSecondary,
+                                  color: colors.textSecondary,
                                 ),
                               ),
                               Container(
@@ -718,13 +710,13 @@ class _VehicleCard extends StatelessWidget {
                                 margin: const EdgeInsets.symmetric(
                                   horizontal: 6,
                                 ),
-                                color: const Color(0x1F111315),
+                                color: colors.outlineVariant,
                               ),
                               Text(
                                 batteryLabel,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: _Aurora.fgSecondary,
+                                  color: colors.textSecondary,
                                   fontFeatures: _Aurora.tabularNums,
                                 ),
                               ),
@@ -736,7 +728,7 @@ class _VehicleCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 2),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -746,14 +738,14 @@ class _VehicleCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: _Aurora.fgSecondary,
-                        letterSpacing: 0.1,
+                        color: colors.textSecondary,
+                        letterSpacing: 0,
                       ),
                     ),
                     Icon(
                       Icons.chevron_right,
                       size: 16,
-                      color: _Aurora.fgSecondary,
+                      color: colors.textSecondary,
                     ),
                   ],
                 ),
@@ -787,6 +779,8 @@ class _SupportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final rows = <_SupportRowData>[
       _SupportRowData(title: '设置', onTap: onSettings),
       _SupportRowData(title: '消息中心', badge: messageBadge, onTap: onMessages),
@@ -797,9 +791,9 @@ class _SupportCard extends StatelessWidget {
     return Container(
       margin: _Aurora.cardMargin,
       decoration: BoxDecoration(
-        color: _Aurora.surface,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(_Aurora.cardRadius),
-        boxShadow: _Aurora.cardShadow,
+        boxShadow: dark ? const [] : _Aurora.cardShadow,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -807,7 +801,7 @@ class _SupportCard extends StatelessWidget {
         children: [
           for (var i = 0; i < rows.length; i++) ...[
             if (i > 0)
-              const Divider(height: 1, thickness: 1, color: _Aurora.line),
+              Divider(height: 1, thickness: 1, color: colors.outlineVariant),
             _SupportRow(data: rows[i]),
           ],
         ],
@@ -831,11 +825,12 @@ class _SupportRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final badge = data.badge;
     return AppPressable(
       onTap: data.onTap,
       pressedScale: AppMotion.pressScale,
-      pressedBackground: const Color(0x080F1620),
+      pressedBackground: colors.surfaceContainerHigh,
       semanticsLabel: data.title,
       semanticsButton: true,
       child: ConstrainedBox(
@@ -850,11 +845,11 @@ class _SupportRow extends StatelessWidget {
                   data.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    letterSpacing: -0.1,
-                    color: _Aurora.fg,
+                    letterSpacing: 0,
+                    color: colors.textPrimary,
                   ),
                 ),
               ),
@@ -864,7 +859,7 @@ class _SupportRow extends StatelessWidget {
                   height: 18,
                   padding: const EdgeInsets.symmetric(horizontal: 5),
                   decoration: BoxDecoration(
-                    color: _Aurora.danger,
+                    color: colors.danger,
                     borderRadius: BorderRadius.circular(AppRadii.pill),
                   ),
                   alignment: Alignment.center,
@@ -881,11 +876,7 @@ class _SupportRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
               ],
-              const Icon(
-                Icons.chevron_right,
-                size: 16,
-                color: Color(0xFFC4C8CD),
-              ),
+              Icon(Icons.chevron_right, size: 16, color: colors.textTertiary),
             ],
           ),
         ),
@@ -912,19 +903,21 @@ class _AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: _Aurora.cardMargin,
       decoration: BoxDecoration(
-        color: _Aurora.surface,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(_Aurora.cardRadius),
-        boxShadow: _Aurora.cardShadow,
+        boxShadow: dark ? const [] : _Aurora.cardShadow,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
           AppPressable(
             onTap: onPhoneTap,
-            pressedBackground: const Color(0x080F1620),
+            pressedBackground: colors.surfaceContainerHigh,
             semanticsLabel: '手机号 $phoneValue',
             semanticsButton: true,
             child: ConstrainedBox(
@@ -936,30 +929,30 @@ class _AccountCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         '手机号',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
-                          letterSpacing: -0.1,
-                          color: _Aurora.fg,
+                          letterSpacing: 0,
+                          color: colors.textPrimary,
                         ),
                       ),
                     ),
                     Text(
                       phoneValue,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: _Aurora.muted,
+                        color: colors.textTertiary,
                         fontFeatures: _Aurora.tabularNums,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right,
                       size: 16,
-                      color: Color(0xFFC4C8CD),
+                      color: colors.textTertiary,
                     ),
                   ],
                 ),
@@ -967,21 +960,21 @@ class _AccountCard extends StatelessWidget {
             ),
           ),
           if (showLogout) ...[
-            const Divider(height: 1, thickness: 1, color: _Aurora.line),
+            Divider(height: 1, thickness: 1, color: colors.outlineVariant),
             AppPressable(
               onTap: onLogoutTap,
-              pressedBackground: const Color(0x080F1620),
+              pressedBackground: colors.surfaceContainerHigh,
               semanticsLabel: '退出登录',
               semanticsButton: true,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 52),
-                child: const Center(
+                child: Center(
                   child: Text(
                     '退出登录',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: _Aurora.danger,
+                      color: colors.danger,
                     ),
                   ),
                 ),
@@ -1002,13 +995,15 @@ class _LogoutSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      decoration: const BoxDecoration(
-        color: _Aurora.surface,
-        borderRadius: BorderRadius.vertical(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppRadii.sheet),
         ),
-        boxShadow: AppShadows.sheetShadow,
+        boxShadow: dark ? const [] : AppShadows.sheetShadow,
       ),
       padding: EdgeInsets.fromLTRB(
         16,
@@ -1024,21 +1019,21 @@ class _LogoutSheet extends StatelessWidget {
             height: 4,
             margin: const EdgeInsets.only(bottom: 14),
             decoration: BoxDecoration(
-              color: const Color(0xFFD8DCE1),
+              color: colors.outlineVariant,
               borderRadius: BorderRadius.circular(AppRadii.pill),
             ),
           ),
-          const Text(
+          Text(
             '退出登录？',
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
-              letterSpacing: -0.2,
-              color: _Aurora.fg,
+              letterSpacing: 0,
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(height: 6),
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 12),
             child: Text(
               '下次登录需验证手机号。本机车辆缓存会保留。',
@@ -1046,7 +1041,7 @@ class _LogoutSheet extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 height: 1.5,
-                color: _Aurora.fgSecondary,
+                color: colors.textSecondary,
               ),
             ),
           ),
@@ -1055,7 +1050,7 @@ class _LogoutSheet extends StatelessWidget {
             onTap: () => Navigator.of(context).pop(true),
             pressedScale: AppMotion.pressScale,
             borderRadius: BorderRadius.circular(AppRadii.md),
-            background: _Aurora.danger,
+            background: colors.danger,
             semanticsLabel: '确认退出',
             semanticsButton: true,
             child: const SizedBox(
@@ -1079,10 +1074,10 @@ class _LogoutSheet extends StatelessWidget {
             onTap: () => Navigator.of(context).pop(false),
             pressedScale: AppMotion.pressScale,
             borderRadius: BorderRadius.circular(AppRadii.md),
-            background: _Aurora.surfaceSoft,
+            background: colors.surfaceContainerHigh,
             semanticsLabel: '取消',
             semanticsButton: true,
-            child: const SizedBox(
+            child: SizedBox(
               height: 48,
               width: double.infinity,
               child: Center(
@@ -1091,8 +1086,8 @@ class _LogoutSheet extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: _Aurora.fgSecondary,
-                    letterSpacing: 0.1,
+                    color: colors.textSecondary,
+                    letterSpacing: 0,
                   ),
                 ),
               ),
@@ -1115,20 +1110,21 @@ class _PreviewBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final items = const [
       (Icons.control_camera_outlined, '控车'),
       (Icons.work_outline, '服务'),
       (Icons.person_outline, '我的'),
     ];
     return Material(
-      color: const Color(0xF5FFFFFF),
+      color: colors.surface.withValues(alpha: 0.96),
       elevation: 0,
       child: SafeArea(
         top: false,
         child: Container(
           height: 56,
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: _Aurora.line)),
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: colors.outlineVariant)),
           ),
           child: Row(
             children: [
@@ -1147,8 +1143,8 @@ class _PreviewBottomNav extends StatelessWidget {
                           items[i].$1,
                           size: 22,
                           color: currentIndex == i
-                              ? _Aurora.accentDeep
-                              : _Aurora.muted,
+                              ? colors.primary
+                              : colors.textTertiary,
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -1156,10 +1152,10 @@ class _PreviewBottomNav extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
+                            letterSpacing: 0,
                             color: currentIndex == i
-                                ? _Aurora.accentDeep
-                                : _Aurora.muted,
+                                ? colors.primary
+                                : colors.textTertiary,
                           ),
                         ),
                       ],

@@ -11,8 +11,6 @@ import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../services/sms_countdown.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_motion.dart';
-import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 
 /// 登录页 — 参考官方 LoginOnActivity / LoginPhoneCodeActivity，
@@ -196,25 +194,26 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void _switchMode(_LoginMode mode) {
+    FocusScope.of(context).unfocus();
+    setState(() => _mode = mode);
+  }
+
   // ── 辅助 ──────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     final loading = _busy || officialCloudService.state.loading;
+    final colors = AppColors.of(context);
     return Scaffold(
-      backgroundColor: AppColors.officialPageBg,
+      backgroundColor: colors.pageBg,
       body: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
           children: [
             const _BrandHeader(),
-            const SizedBox(height: 36),
-            _ModeSwitch(
-              mode: _mode,
-              onChanged: (m) => setState(() => _mode = m),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             if (_mode == _LoginMode.sms)
               _SmsLoginForm(
                 phoneController: _phoneController,
@@ -234,7 +233,30 @@ class _LoginPageState extends State<LoginPage> {
                 onPaste: _pasteFromClipboard,
                 onLogin: _loginWithToken,
               ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.center,
+              child: TextButton.icon(
+                key: const ValueKey('login-mode-toggle'),
+                onPressed: loading
+                    ? null
+                    : () => _switchMode(
+                        _mode == _LoginMode.sms
+                            ? _LoginMode.token
+                            : _LoginMode.sms,
+                      ),
+                icon: Icon(
+                  _mode == _LoginMode.sms
+                      ? Icons.key_outlined
+                      : Icons.phone_android_outlined,
+                  size: AppIconSizes.sm,
+                ),
+                label: Text(
+                  _mode == _LoginMode.sms ? '使用 Token 登录' : '返回手机号登录',
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             _AgreementRow(
               agreed: _agreed,
               onChanged: (v) => setState(() => _agreed = v),
@@ -255,6 +277,7 @@ class _BrandHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Column(
       children: [
         const SizedBox(height: 20),
@@ -262,9 +285,11 @@ class _BrandHeader extends StatelessWidget {
           width: 72,
           height: 72,
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(AppRadii.lg),
-            boxShadow: AppShadows.elevation1,
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? const []
+                : AppShadows.elevation1,
           ),
           child: const Icon(
             Icons.electric_bike,
@@ -278,107 +303,25 @@ class _BrandHeader extends StatelessWidget {
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w900,
-            color: AppColors.textPrimary,
-            letterSpacing: 2,
+            letterSpacing: 0,
           ),
         ),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           '台铃智能',
           style: TextStyle(
             fontSize: 14,
-            color: AppColors.textSecondary,
+            color: colors.textSecondary,
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           '登录后同步车辆，享受控车、定位、电池等服务',
-          style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 12, color: colors.textTertiary),
         ),
       ],
-    );
-  }
-}
-
-// ── 模式切换 ──────────────────────────────────────────────────────────────
-
-class _ModeSwitch extends StatelessWidget {
-  const _ModeSwitch({required this.mode, required this.onChanged});
-
-  final _LoginMode mode;
-  final ValueChanged<_LoginMode> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-      ),
-      padding: const EdgeInsets.all(4),
-      child: Row(
-        children: [
-          Expanded(
-            child: _ModeChip(
-              label: '手机号登录',
-              selected: mode == _LoginMode.sms,
-              onTap: () => onChanged(_LoginMode.sms),
-            ),
-          ),
-          Expanded(
-            child: _ModeChip(
-              label: 'Token 登录',
-              selected: mode == _LoginMode.token,
-              onTap: () => onChanged(_LoginMode.token),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ModeChip extends StatelessWidget {
-  const _ModeChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppPressable(
-      pressedScale: AppMotion.pressScale,
-      duration: AppMotion.micro,
-      curve: AppMotion.pressCurve,
-      background: selected ? AppColors.brandRed : Colors.transparent,
-      pressedBackground: AppColors.brandRed.withValues(alpha: 0.85),
-      borderRadius: BorderRadius.circular(AppRadii.pill),
-      haptic: false,
-      semanticsLabel: label,
-      semanticsButton: true,
-      semanticsEnabled: true,
-      onTap: onTap,
-      builder: (context, pressed) {
-        return SizedBox(
-          height: 40,
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: selected ? Colors.white : AppColors.officialTextMuted,
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -460,6 +403,7 @@ class _SmsLoginFormState extends State<_SmsLoginForm> {
             LengthLimitingTextInputFormatter(11),
           ],
           decoration: _inputDecoration(
+            context,
             '请输入手机号',
             errorText: _showPhoneError ? '请输入 11 位手机号' : null,
           ),
@@ -479,6 +423,7 @@ class _SmsLoginFormState extends State<_SmsLoginForm> {
                   LengthLimitingTextInputFormatter(8),
                 ],
                 decoration: _inputDecoration(
+                  context,
                   '请输入验证码',
                   errorText: _showSmsError ? '请输入短信验证码' : null,
                 ),
@@ -541,6 +486,7 @@ class _TokenLoginForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -555,8 +501,11 @@ class _TokenLoginForm extends StatelessWidget {
             fontFamily: 'monospace',
             height: 1.35,
           ),
-          decoration: _inputDecoration('粘贴 Token 或 Authorization: Bearer ...')
-              .copyWith(
+          decoration:
+              _inputDecoration(
+                context,
+                '粘贴 Token 或 Authorization: Bearer ...',
+              ).copyWith(
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.content_paste, size: AppIconSizes.sm),
                   onPressed: onPaste,
@@ -568,10 +517,10 @@ class _TokenLoginForm extends StatelessWidget {
         Text(
           '支持直接粘贴 Authorization 值，或带 Bearer 前缀 / '
           'Authorization 头整行。登录后写入安全存储并同步车辆。',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             height: 1.45,
-            color: AppColors.textTertiary,
+            color: colors.textTertiary,
           ),
         ),
         const SizedBox(height: 24),
@@ -607,6 +556,7 @@ class _AgreementRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -616,7 +566,7 @@ class _AgreementRow extends StatelessWidget {
           child: Checkbox(
             value: agreed,
             onChanged: (v) => onChanged(v ?? false),
-            activeColor: AppColors.brandRed,
+            activeColor: colors.primary,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadii.xs),
@@ -628,22 +578,22 @@ class _AgreementRow extends StatelessWidget {
           child: GestureDetector(
             onTap: () => onChanged(!agreed),
             child: RichText(
-              text: const TextSpan(
+              text: TextSpan(
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.5,
-                  color: AppColors.textSecondary,
+                  color: colors.textSecondary,
                 ),
                 children: [
                   TextSpan(text: '我已阅读并同意'),
                   TextSpan(
                     text: '《用户协议》',
-                    style: TextStyle(color: AppColors.brandRed),
+                    style: TextStyle(color: colors.primary),
                   ),
                   TextSpan(text: '和'),
                   TextSpan(
                     text: '《隐私政策》',
-                    style: TextStyle(color: AppColors.brandRed),
+                    style: TextStyle(color: colors.primary),
                   ),
                 ],
               ),
@@ -662,16 +612,17 @@ class _TokenSafetyNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.08),
+        color: colors.warning.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppRadii.card),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.shield_outlined, size: 18, color: AppColors.warning),
+          Icon(Icons.shield_outlined, size: 18, color: colors.warning),
           SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -680,7 +631,7 @@ class _TokenSafetyNote extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 height: 1.45,
-                color: AppColors.textSecondary,
+                color: colors.textSecondary,
               ),
             ),
           ),
@@ -699,24 +650,30 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w700,
-        color: AppColors.textSecondary,
+        color: colors.textSecondary,
       ),
     );
   }
 }
 
-InputDecoration _inputDecoration(String hint, {String? errorText}) {
+InputDecoration _inputDecoration(
+  BuildContext context,
+  String hint, {
+  String? errorText,
+}) {
+  final colors = AppColors.of(context);
   return InputDecoration(
     hintText: hint,
     errorText: errorText,
-    hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 14),
+    hintStyle: TextStyle(color: colors.textTertiary, fontSize: 14),
     filled: true,
-    fillColor: AppColors.surface,
+    fillColor: colors.surface,
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppRadii.card),
       borderSide: BorderSide.none,
@@ -727,15 +684,15 @@ InputDecoration _inputDecoration(String hint, {String? errorText}) {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppRadii.card),
-      borderSide: const BorderSide(color: AppColors.brandRed, width: 1.5),
+      borderSide: BorderSide(color: colors.primary, width: 1.5),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppRadii.card),
-      borderSide: const BorderSide(color: AppColors.danger, width: 1),
+      borderSide: BorderSide(color: colors.danger, width: 1),
     ),
     focusedErrorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppRadii.card),
-      borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+      borderSide: BorderSide(color: colors.danger, width: 1.5),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
   );

@@ -439,7 +439,6 @@ class _TailgBleAppState extends State<TailgBleApp> {
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
-            boldText: false,
             textScaler: _respectTextScale
                 ? TextScaler.linear(
                     MediaQuery.textScalerOf(context).scale(1.0).clamp(0.9, 1.3),
@@ -616,15 +615,16 @@ class _AuroraBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Material(
-      color: AppColors.surface.withValues(alpha: 0.96),
+      color: colors.surface.withValues(alpha: 0.96),
       elevation: 0,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: AppColors.surface.withValues(alpha: 0.96),
-          border: const Border(top: BorderSide(color: AppColors.hairline)),
+          color: colors.surface.withValues(alpha: 0.96),
+          border: Border(top: BorderSide(color: colors.outlineVariant)),
         ),
         child: SizedBox(
           key: const ValueKey('official-bottom-nav-bar'),
@@ -686,7 +686,8 @@ class _AuroraNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.primaryDark : AppColors.navInactive;
+    final colors = AppColors.of(context);
+    final color = selected ? colors.primary : colors.textTertiary;
 
     return AppPressable(
       onTap: onTap,
@@ -710,7 +711,7 @@ class _AuroraNavItem extends StatelessWidget {
                 fontSize: 10,
                 height: 1,
                 fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
+                letterSpacing: 0,
                 color: color,
               ),
             ),

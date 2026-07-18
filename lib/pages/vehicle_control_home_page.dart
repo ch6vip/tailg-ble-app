@@ -975,12 +975,13 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     final percent = battery.percent ?? 0;
     final signedIn = cloudState.signedIn;
     final hasVehicle = cloudVehicle != null;
+    final colors = AppColors.of(context);
     // Leave room for the shell bottom nav (see AppNav.contentBottomPadding).
     final bottomPad =
         AppNav.contentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: _Aurora.pageBg,
+      backgroundColor: colors.pageBg,
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
@@ -1005,6 +1006,22 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 onSettings: _openSettings,
               ),
               const SizedBox(height: 10),
+              _ShortcutsRow(
+                armed: isArmed,
+                powered: isPowerOn,
+                // Dim when channel/session not ready, but keep taps so P0-A2
+                // always surfaces a reason (never "点了没反应").
+                dimmed:
+                    _busy ||
+                    !hasVehicle ||
+                    !signedIn ||
+                    !_controlAvailability().enabled,
+                onFind: () => _sendCommand(CommandCode.find),
+                onArm: _sendArmToggle,
+                onSeat: () => _sendCommand(CommandCode.openSeat),
+                onPower: _sendPower,
+              ),
+              const SizedBox(height: 12),
               _BatteryHeroCard(
                 percent: percent,
                 healthLabel: _healthLabel(battery),
@@ -1022,22 +1039,6 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 onTap: _openLocation,
               ),
               const SizedBox(height: 12),
-              _ShortcutsRow(
-                armed: isArmed,
-                powered: isPowerOn,
-                // Dim when channel/session not ready, but keep taps so P0-A2
-                // always surfaces a reason (never "点了没反应").
-                dimmed:
-                    _busy ||
-                    !hasVehicle ||
-                    !signedIn ||
-                    !_controlAvailability().enabled,
-                onFind: () => _sendCommand(CommandCode.find),
-                onArm: _sendArmToggle,
-                onSeat: () => _sendCommand(CommandCode.openSeat),
-                onPower: _sendPower,
-              ),
-              const SizedBox(height: 12),
               _RecentCommandsCard(commands: _commands),
             ],
           ),
@@ -1051,20 +1052,6 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
 // Design tokens mapped onto theme/
 // ═══════════════════════════════════════════════════════════════════════════
 abstract final class _Aurora {
-  static const accent = AppColors.primary;
-  static const accentDeep = AppColors.primaryDark;
-  static const accentSoft = AppColors.energySoft;
-  static const warning = AppColors.warning;
-  static const pageBg = AppColors.pageBg;
-  static const surface = AppColors.surface;
-  static const surfaceSoft = AppColors.surfaceContainerHigh;
-  static const fg = AppColors.textPrimary;
-  static const fgSecondary = AppColors.textSecondary;
-  static const muted = AppColors.textTertiary;
-
-  static const warningInk = Color(0xFFC56A10);
-  static const ringTrack = Color(0xFFEEF0F2);
-
   static const cardMargin = EdgeInsets.symmetric(horizontal: 20);
   static const cardRadius = AppRadii.lg;
   static const cardShadow = AppShadows.elevation2;
@@ -1097,6 +1084,7 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 6),
       child: Row(
@@ -1115,12 +1103,12 @@ class _TopBar extends StatelessWidget {
                     vehicleName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: -0.6,
+                      letterSpacing: 0,
                       height: 1.2,
-                      color: _Aurora.fg,
+                      color: colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -1131,10 +1119,10 @@ class _TopBar extends StatelessWidget {
                         height: 6,
                         decoration: BoxDecoration(
                           color: channelActive
-                              ? _Aurora.accent
+                              ? colors.primary
                               : (online
-                                    ? _Aurora.accent.withValues(alpha: 0.55)
-                                    : _Aurora.muted),
+                                    ? colors.primary.withValues(alpha: 0.55)
+                                    : colors.textTertiary),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -1144,9 +1132,9 @@ class _TopBar extends StatelessWidget {
                           statusText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: _Aurora.fgSecondary,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ),
@@ -1177,13 +1165,16 @@ class _PowerPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return AnimatedContainer(
       duration: AppMotion.standard,
       height: 22,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: powered ? _Aurora.accentSoft : _Aurora.surfaceSoft,
+        color: powered
+            ? colors.primary.withValues(alpha: 0.12)
+            : colors.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
       child: Text(
@@ -1191,7 +1182,7 @@ class _PowerPill extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: powered ? _Aurora.accentDeep : _Aurora.muted,
+          color: powered ? colors.primary : colors.textTertiary,
         ),
       ),
     );
@@ -1211,6 +1202,8 @@ class _IconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return AppPressable(
       onTap: onTap,
       pressedScale: AppMotion.pressScale,
@@ -1219,12 +1212,12 @@ class _IconButton extends StatelessWidget {
       child: Container(
         width: 36,
         height: 36,
-        decoration: const BoxDecoration(
-          color: _Aurora.surface,
+        decoration: BoxDecoration(
+          color: colors.surface,
           shape: BoxShape.circle,
-          boxShadow: _Aurora.cardShadow,
+          boxShadow: dark ? const [] : _Aurora.cardShadow,
         ),
-        child: Icon(icon, size: 18, color: _Aurora.fgSecondary),
+        child: Icon(icon, size: 18, color: colors.textSecondary),
       ),
     );
   }
@@ -1254,6 +1247,8 @@ class _BatteryHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final compact = MediaQuery.sizeOf(context).width < 360;
     final ringSize = compact ? 92.0 : 104.0;
     return Padding(
@@ -1262,8 +1257,8 @@ class _BatteryHeroCard extends StatelessWidget {
         onTap: onTap,
         pressedScale: AppMotion.pressScale,
         borderRadius: BorderRadius.circular(_Aurora.cardRadius),
-        background: _Aurora.surface,
-        boxShadow: _Aurora.cardShadow,
+        background: colors.surface,
+        boxShadow: dark ? const [] : _Aurora.cardShadow,
         semanticsLabel: '电池详情 电量 $percent%',
         semanticsButton: true,
         child: Padding(
@@ -1274,20 +1269,17 @@ class _BatteryHeroCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     '电池',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: _Aurora.muted,
+                      color: colors.textTertiary,
                     ),
                   ),
                   Text(
                     healthLabel,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: _Aurora.fgSecondary,
-                    ),
+                    style: TextStyle(fontSize: 12, color: colors.textSecondary),
                   ),
                 ],
               ),
@@ -1351,6 +1343,7 @@ class _BatteryRingState extends State<_BatteryRing> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final reduceMotion = MediaQuery.of(context).disableAnimations;
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: _target),
@@ -1358,7 +1351,11 @@ class _BatteryRingState extends State<_BatteryRing> {
       curve: _Aurora.ringCurve,
       builder: (context, value, _) {
         return CustomPaint(
-          painter: _BatteryRingPainter(progress: value),
+          painter: _BatteryRingPainter(
+            progress: value,
+            trackColor: colors.surfaceContainerHigh,
+            valueColor: colors.primary,
+          ),
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1370,14 +1367,14 @@ class _BatteryRingState extends State<_BatteryRing> {
                     fontWeight: FontWeight.w700,
                     letterSpacing: -1,
                     height: 1,
-                    color: _Aurora.fg,
+                    color: colors.textPrimary,
                     fontFeatures: _Aurora.tabularNums,
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   '剩余',
-                  style: TextStyle(fontSize: 11, color: _Aurora.muted),
+                  style: TextStyle(fontSize: 11, color: colors.textTertiary),
                 ),
               ],
             ),
@@ -1389,9 +1386,15 @@ class _BatteryRingState extends State<_BatteryRing> {
 }
 
 class _BatteryRingPainter extends CustomPainter {
-  const _BatteryRingPainter({required this.progress});
+  const _BatteryRingPainter({
+    required this.progress,
+    required this.trackColor,
+    required this.valueColor,
+  });
 
   final double progress;
+  final Color trackColor;
+  final Color valueColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1402,7 +1405,7 @@ class _BatteryRingPainter extends CustomPainter {
     final track = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
-      ..color = _Aurora.ringTrack;
+      ..color = trackColor;
     canvas.drawCircle(center, radius, track);
 
     if (progress <= 0) return;
@@ -1410,7 +1413,7 @@ class _BatteryRingPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round
-      ..color = _Aurora.accent;
+      ..color = valueColor;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       -math.pi / 2,
@@ -1422,7 +1425,9 @@ class _BatteryRingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_BatteryRingPainter oldDelegate) =>
-      oldDelegate.progress != progress;
+      oldDelegate.progress != progress ||
+      oldDelegate.trackColor != trackColor ||
+      oldDelegate.valueColor != valueColor;
 }
 
 class _Metric {
@@ -1438,21 +1443,22 @@ class _MetricsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     Widget cell(_Metric m) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           m.label,
-          style: const TextStyle(fontSize: 11, color: _Aurora.muted),
+          style: TextStyle(fontSize: 11, color: colors.textTertiary),
         ),
         const SizedBox(height: 3),
         Text(
           m.value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            letterSpacing: -0.3,
-            color: _Aurora.fg,
+            letterSpacing: 0,
+            color: colors.textPrimary,
             fontFeatures: _Aurora.tabularNums,
           ),
         ),
@@ -1505,13 +1511,17 @@ class _ShortcutsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: _Aurora.cardMargin,
       padding: const EdgeInsets.fromLTRB(8, 16, 8, 14),
-      decoration: const BoxDecoration(
-        color: _Aurora.surface,
-        borderRadius: BorderRadius.all(Radius.circular(_Aurora.cardRadius)),
-        boxShadow: _Aurora.cardShadow,
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: const BorderRadius.all(
+          Radius.circular(_Aurora.cardRadius),
+        ),
+        boxShadow: dark ? const [] : _Aurora.cardShadow,
       ),
       child: Opacity(
         opacity: dimmed ? 0.55 : 1,
@@ -1581,26 +1591,23 @@ class _Shortcut extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final (glyphBg, glyphFg, labelColor) = switch (style) {
       _ShortcutStyle.neutral => (
-        _Aurora.surfaceSoft,
-        _Aurora.fgSecondary,
-        _Aurora.fg,
+        colors.surfaceContainerHigh,
+        colors.textSecondary,
+        colors.textPrimary,
       ),
       _ShortcutStyle.armed => (
-        _Aurora.warning.withValues(alpha: 0.12),
-        _Aurora.warning,
-        _Aurora.warningInk,
+        colors.warning.withValues(alpha: 0.12),
+        colors.warning,
+        colors.warning,
       ),
-      _ShortcutStyle.powerOn => (
-        _Aurora.accent,
-        Colors.white,
-        _Aurora.accentDeep,
-      ),
+      _ShortcutStyle.powerOn => (colors.primary, Colors.white, colors.primary),
       _ShortcutStyle.powerOff => (
-        _Aurora.surfaceSoft,
-        _Aurora.muted,
-        _Aurora.muted,
+        colors.surfaceContainerHigh,
+        colors.textTertiary,
+        colors.textTertiary,
       ),
     };
 
@@ -1640,10 +1647,10 @@ class _Shortcut extends StatelessWidget {
               sub,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 height: 1.2,
-                color: _Aurora.muted,
+                color: colors.textTertiary,
               ),
             ),
           ],
@@ -1671,14 +1678,16 @@ class _LocationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: _Aurora.cardMargin,
       child: AppPressable(
         onTap: onTap,
         pressedScale: AppMotion.pressScale,
         borderRadius: BorderRadius.circular(_Aurora.cardRadius),
-        background: _Aurora.surface,
-        boxShadow: _Aurora.cardShadow,
+        background: colors.surface,
+        boxShadow: dark ? const [] : _Aurora.cardShadow,
         semanticsLabel: '车辆位置 $title，$updated，$walk',
         semanticsButton: true,
         child: Padding(
@@ -1695,10 +1704,10 @@ class _LocationCard extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: _Aurora.fg,
+                        color: colors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1706,9 +1715,9 @@ class _LocationCard extends StatelessWidget {
                       updated,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: _Aurora.muted,
+                        color: colors.textTertiary,
                       ),
                     ),
                   ],
@@ -1718,15 +1727,15 @@ class _LocationCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _Aurora.surfaceSoft,
+                  color: colors.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(AppRadii.pill),
                 ),
                 child: Text(
                   walk,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: _Aurora.fgSecondary,
+                    color: colors.textSecondary,
                   ),
                 ),
               ),
@@ -1743,20 +1752,17 @@ class _MapThumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadii.md),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFE6F7F1), Color(0xFFEEF2F6)],
-        ),
+        color: colors.surfaceContainerHigh,
       ),
       clipBehavior: Clip.antiAlias,
-      child: const Center(
-        child: Icon(Icons.location_on, size: 18, color: _Aurora.accent),
+      child: Center(
+        child: Icon(Icons.location_on, size: 18, color: colors.primary),
       ),
     );
   }
@@ -1800,12 +1806,16 @@ class _RecentCommandsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: _Aurora.cardMargin,
-      decoration: const BoxDecoration(
-        color: _Aurora.surface,
-        borderRadius: BorderRadius.all(Radius.circular(_Aurora.cardRadius)),
-        boxShadow: _Aurora.cardShadow,
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: const BorderRadius.all(
+          Radius.circular(_Aurora.cardRadius),
+        ),
+        boxShadow: dark ? const [] : _Aurora.cardShadow,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -1817,27 +1827,27 @@ class _RecentCommandsCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Text(
+                Text(
                   '最近命令',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: _Aurora.fg,
+                    color: colors.textPrimary,
                   ),
                 ),
                 Text(
                   commands.isEmpty ? '暂无' : '${commands.length} 条',
-                  style: const TextStyle(fontSize: 12, color: _Aurora.muted),
+                  style: TextStyle(fontSize: 12, color: colors.textTertiary),
                 ),
               ],
             ),
           ),
           if (commands.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(16, 8, 16, 18),
               child: Text(
                 '发送控车指令后会显示在这里',
-                style: TextStyle(fontSize: 12, color: _Aurora.muted),
+                style: TextStyle(fontSize: 12, color: colors.textTertiary),
               ),
             )
           else
@@ -1860,11 +1870,12 @@ class _CommandRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final ok = entry.status == _CommandStatus.ok;
     final iconBg = ok
-        ? _Aurora.accentSoft
-        : _Aurora.warning.withValues(alpha: 0.12);
-    final iconFg = ok ? _Aurora.accentDeep : _Aurora.warning;
+        ? colors.primary.withValues(alpha: 0.12)
+        : colors.warning.withValues(alpha: 0.12);
+    final iconFg = ok ? colors.primary : colors.warning;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 11),
       child: Row(
@@ -1884,10 +1895,10 @@ class _CommandRow extends StatelessWidget {
                   entry.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: _Aurora.fg,
+                    color: colors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1895,7 +1906,7 @@ class _CommandRow extends StatelessWidget {
                   entry.subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 11, color: _Aurora.muted),
+                  style: TextStyle(fontSize: 11, color: colors.textTertiary),
                 ),
               ],
             ),
@@ -1903,9 +1914,9 @@ class _CommandRow extends StatelessWidget {
           const SizedBox(width: 10),
           Text(
             entry.time,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: _Aurora.muted,
+              color: colors.textTertiary,
               fontFeatures: _Aurora.tabularNums,
             ),
           ),
