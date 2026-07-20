@@ -6,8 +6,9 @@ import 'package:flutter/services.dart';
 
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
-import '../ble/constants.dart' show BikeState;
+import '../ble/constants.dart' show BikeState, QgjCommandIds, QgjHidModes;
 import '../ble/official_ble_connection_context.dart';
+import '../ble/qgj_protocol.dart';
 import '../models/battery_snapshot.dart';
 import '../models/command_types.dart';
 import '../models/official_vehicle.dart';
@@ -37,6 +38,7 @@ import 'battery_details_page.dart';
 import 'location_page.dart';
 import 'login_page.dart';
 import 'official_cloud_page.dart';
+import 'qgj_settings_page.dart';
 import 'vehicle_settings_page.dart';
 
 /// 控车主页 · Tailg Aurora (Open Design `vehicle-control-home`).
@@ -89,6 +91,11 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   PermissionCheckResult? _blePermission;
   BikeState? _bleBikeState;
 
+  /// Official QGJ proximity unlock latch (`0x2030` / `0x2031`).
+  bool? _proximityEnabled;
+  bool _proximityBusy = false;
+  bool _proximityLoaded = false;
+
   @override
   bool get wantKeepAlive => true;
 
@@ -102,6 +109,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     });
     _bleStateSub = connectionManager.stateStream.listen((_) {
       if (mounted) setState(() {});
+      unawaited(_maybeLoadProximity());
     });
     _bleBikeState = connectionManager.latestBikeState;
     _bleBikeStateSub = connectionManager.bikeStateStream.listen((state) {
@@ -115,6 +123,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     unawaited(_silentRefresh());
     unawaited(officialMqttService.preconnectForCloud(officialCloudService));
     unawaited(_ensureNearFieldLink(auto: true));
+    unawaited(_maybeLoadProximity());
   }
 
   @override
@@ -1102,6 +1111,116 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     );
   }
 
+  bool get _isQgjVehicle {
+    final type = officialCloudService.state.selectedVehicle?.modelType;
+    return type == 8 || type == 283;
+  }
+
+  bool get _qgjBleReady =>
+      _isQgjVehicle &&
+      connectionManager.isProtocolLoggedIn &&
+      connectionManager.protocol == ble.ProtocolType.qgj;
+
+  Future<void> _maybeLoadProximity({bool force = false}) async {
+    if (_disposed) return;
+    if (!_qgjBleReady) {
+      if (_proximityEnabled != null || _proximityLoaded) {
+        _proximityEnabled = null;
+        _proximityLoaded = false;
+        if (mounted) setState(() {});
+      }
+      return;
+    }
+    if (_proximityBusy) return;
+    if (_proximityLoaded && !force) return;
+    _proximityBusy = true;
+    try {
+      final status = await connectionManager.sendQgjCommand(
+        QgjCommandIds.proximityStatusGet,
+      );
+      if (_disposed) return;
+      if (status != null && status.success) {
+        _proximityEnabled = parseQgjProximityEnabled(status.payload);
+        _proximityLoaded = true;
+      }
+    } catch (e) {
+      logService.operation(
+        '读取感应解锁失败',
+        detail: e.toString(),
+        level: LogLevel.debug,
+      );
+    } finally {
+      _proximityBusy = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _toggleProximity() async {
+    if (_busy || _proximityBusy) {
+      AppSnack.error(context, '正在执行控车指令，请稍候');
+      return;
+    }
+    if (!_isQgjVehicle) {
+      AppSnack.info(context, '当前车型不支持 QGJ 感应解锁');
+      return;
+    }
+    if (!_qgjBleReady) {
+      AppSnack.info(context, '请先连接车辆蓝牙后再开关感应');
+      unawaited(_ensureNearFieldLink(auto: false));
+      return;
+    }
+    final next = !(_proximityEnabled ?? false);
+    _proximityBusy = true;
+    if (mounted) setState(() {});
+    try {
+      // Official ControlFragment QGJ path also toggles HID when enabling.
+      if (next) {
+        await connectionManager.sendQgjCommand(
+          QgjCommandIds.hidStatusSet,
+          buildQgjHidPayload(QgjHidModes.open),
+        );
+      }
+      final response = await connectionManager.sendQgjCommand(
+        QgjCommandIds.proximityStatusSet,
+        buildQgjProximityStatusPayload(next),
+      );
+      if (!next) {
+        await connectionManager.sendQgjCommand(
+          QgjCommandIds.hidStatusSet,
+          buildQgjHidPayload(QgjHidModes.close),
+        );
+      }
+      if (!mounted) return;
+      if (response?.success != true) {
+        AppSnack.error(context, '感应解锁操作失败');
+        return;
+      }
+      _proximityEnabled = next;
+      _proximityLoaded = true;
+      AppSnack.success(context, next ? '感应解锁已开启' : '感应解锁已关闭');
+    } catch (e) {
+      if (mounted) {
+        AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
+      }
+    } finally {
+      _proximityBusy = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  void _openProximitySettings() {
+    if (!requireCloudVehicle(context)) return;
+    unawaited(
+      Navigator.of(context)
+          .push(
+            MaterialPageRoute<void>(builder: (_) => const QgjSettingsPage()),
+          )
+          .then((_) {
+            unawaited(_maybeLoadProximity(force: true));
+          }),
+    );
+  }
+
   void _openBattery() {
     if (!requireCloudVehicle(context)) return;
     unawaited(
@@ -1208,6 +1327,16 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 busy: _busy,
                 onChanged: _selectControlChannel,
               ),
+              if (_isQgjVehicle) ...[
+                const SizedBox(height: 12),
+                _ProximityCard(
+                  enabled: _proximityEnabled,
+                  busy: _proximityBusy || _busy,
+                  bleReady: _qgjBleReady,
+                  onToggle: _toggleProximity,
+                  onOpenSettings: _openProximitySettings,
+                ),
+              ],
               const SizedBox(height: 12),
               _ShortcutsRow(
                 armed: isArmed,
@@ -1863,6 +1992,97 @@ class _ControlChannelCard extends StatelessWidget {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// QGJ proximity unlock (official ControlFragment iv_mode_qgj)
+// ═══════════════════════════════════════════════════════════════════════════
+class _ProximityCard extends StatelessWidget {
+  const _ProximityCard({
+    required this.enabled,
+    required this.busy,
+    required this.bleReady,
+    required this.onToggle,
+    required this.onOpenSettings,
+  });
+
+  final bool? enabled;
+  final bool busy;
+  final bool bleReady;
+  final VoidCallback onToggle;
+  final VoidCallback onOpenSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final on = enabled == true;
+    final subtitle = !bleReady
+        ? '需蓝牙协议登录后开关'
+        : enabled == null
+        ? '点击读取 / 切换'
+        : (on ? '靠近自动解防 · 车端感应' : '已关闭 · 点右侧开启');
+    return Container(
+      margin: _Aurora.cardMargin,
+      padding: const EdgeInsets.fromLTRB(16, 12, 10, 12),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: const BorderRadius.all(
+          Radius.circular(_Aurora.cardRadius),
+        ),
+        boxShadow: dark ? const [] : _Aurora.cardShadow,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: (on ? colors.primary : colors.textTertiary).withValues(
+                alpha: 0.12,
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.sensors,
+              color: on ? colors.primary : colors.textTertiary,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '感应解锁',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 12, color: colors.textTertiary),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: '感应设置',
+            onPressed: onOpenSettings,
+            icon: Icon(Icons.tune, color: colors.textTertiary, size: 20),
+          ),
+          Switch.adaptive(
+            value: on,
+            onChanged: busy ? null : (_) => onToggle(),
           ),
         ],
       ),

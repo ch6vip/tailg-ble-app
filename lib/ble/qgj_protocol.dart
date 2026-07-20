@@ -34,16 +34,41 @@ Uint8List buildQgjUInt16Payload(int value) {
   return payload;
 }
 
+/// Official OpCode encoding for proximity status set (`0x2031`):
+/// OPEN / SET / ADD → 1, everything else (incl. CLOSE) → 0.
+/// See `com.kuyi.h.a1.encode(OpCode)`.
 Uint8List buildQgjSwitchPayload(bool enabled) {
   return Uint8List.fromList([enabled ? 1 : 0]);
 }
+
+/// Official proximity status set payload (alias of [buildQgjSwitchPayload]).
+Uint8List buildQgjProximityStatusPayload(bool enabled) =>
+    buildQgjSwitchPayload(enabled);
+
+/// Official proximity distance set (`0x2033`) — single UInt8 level.
+Uint8List buildQgjProximityDistancePayload(int level) =>
+    buildQgjUInt8Payload(level.clamp(0, 100));
 
 Uint8List buildQgjAutoLockPayload(bool enabled) {
   return buildQgjUInt16Payload(enabled ? 45 : 0);
 }
 
+/// Official OpHID ordinal payload for `0x2140`:
+/// Close=0, Open=1, OpenWithAutolock=2 (`com.kuyi.h.j`).
 Uint8List buildQgjHidPayload(int mode) {
-  return buildQgjUInt8Payload(mode);
+  return buildQgjUInt8Payload(mode.clamp(0, 2));
+}
+
+/// Parse proximity ON/OFF from a status get (`0x2030`) payload.
+bool? parseQgjProximityEnabled(List<int> payload) {
+  if (payload.isEmpty) return null;
+  return payload[0] != 0;
+}
+
+/// Parse proximity distance level from a distance get (`0x2032`) payload.
+int? parseQgjProximityDistance(List<int> payload) {
+  if (payload.isEmpty) return null;
+  return payload[0] & 0xFF;
 }
 
 Uint8List? buildQgjControlFrame(CommandCode cmd) {

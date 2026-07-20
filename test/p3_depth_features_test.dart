@@ -52,6 +52,14 @@ void main() {
         contains('proximityStatusGet'),
       );
       expect(
+        readSource('lib/pages/qgj_settings_page.dart'),
+        contains('proximityDistanceSet'),
+      );
+      expect(
+        readSource('lib/pages/vehicle_control_home_page.dart'),
+        contains('_ProximityCard'),
+      );
+      expect(
         readSource('lib/pages/firmware_ota_page.dart'),
         contains('writeOtaOrder'),
       );
