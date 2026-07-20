@@ -261,8 +261,16 @@ class OfficialMqttService {
     client.setProtocolV311();
     client.secure = parsed.secure;
     if (parsed.secure) {
-      // Official MqttUtil installs a trust-all miTM for non-KKS/YJ SSL brokers.
-      client.onBadCertificate = (_) => true;
+      // Official MqttUtil installs a trust-all path for non-KKS/YJ SSL brokers.
+      //
+      // mqtt_client casts onBadCertificate to `bool Function(Object)?` at
+      // connect time. A `bool Function(X509Certificate)` closure is *not* a
+      // subtype of that (parameter contravariance), so `(_) => true` throws:
+      //   type '(X509Certificate) => bool' is not a subtype of
+      //   type '((Object) => bool)?'
+      // Assign a Function(Object) instead — it is a valid subtype of the
+      // public X509Certificate typedef *and* survives the internal cast.
+      client.onBadCertificate = _trustAllCertificates;
       client.securityContext = SecurityContext.defaultContext;
     }
 
@@ -506,3 +514,7 @@ class OfficialMqttService {
     }
   }
 }
+
+/// Trust-all SSL callback compatible with mqtt_client's internal cast to
+/// `bool Function(Object)?` (see [MqttServerClient.connect]).
+bool _trustAllCertificates(Object certificate) => true;

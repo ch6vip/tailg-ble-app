@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart';
 
+import 'helpers/source_scan.dart';
+
 /// P0-1 回归测试：`_disconnectHandled` 重连成功后必须复位，
 /// 否则二次断连时 `_onDisconnected()` 直接 return，App 假死。
 ///
@@ -58,6 +60,55 @@ void main() {
           reason: '第 ${i + 1} 轮：重连成功后应复位',
         );
       }
+    });
+  });
+
+  group('reconnect race with successful LOGIN', () {
+    test('attemptReconnect exit must not force-disconnect a ready session', () {
+      final source = readSource('lib/ble/connection_manager.dart');
+      final method = source.indexOf('Future<void> _attemptReconnect()');
+      final exit = source.indexOf(
+        '_setState(ConnectionState.disconnected);',
+        method,
+      );
+      final guard = source.indexOf(
+        'if (_state == ConnectionState.reconnecting)',
+        method,
+      );
+
+      expect(method, greaterThanOrEqualTo(0));
+      expect(guard, greaterThan(method));
+      expect(exit, greaterThan(guard));
+      expect(source, contains('重连结束（保留当前状态'));
+      expect(source, contains('握手期断连，交由 connect() 处理'));
+    });
+
+    test('LOGIN cancels in-flight reconnect', () {
+      final source = readSource('lib/ble/connection_manager.dart');
+      final login = source.indexOf(
+        'void _markProtocolLoggedIn(String credential)',
+      );
+      final cancel = source.indexOf('_reconnectCancelled = true;', login);
+      final nextMethod = source.indexOf('void _clearProtocolLogin()', login);
+
+      expect(login, greaterThanOrEqualTo(0));
+      expect(cancel, greaterThan(login));
+      expect(cancel, lessThan(nextMethod));
+    });
+  });
+
+  group('MQTT SSL callback', () {
+    test('uses Object-typed onBadCertificate to survive mqtt_client cast', () {
+      final source = readSource('lib/services/official_mqtt_service.dart');
+      expect(
+        source,
+        contains('bool _trustAllCertificates(Object certificate)'),
+      );
+      expect(
+        source,
+        contains('client.onBadCertificate = _trustAllCertificates'),
+      );
+      expect(source, isNot(contains('client.onBadCertificate = (_) => true')));
     });
   });
 }

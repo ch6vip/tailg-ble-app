@@ -1347,8 +1347,15 @@ class ConnectionManager {
     _fbb2NotifySub = null;
     await _connectionSub?.cancel();
     _connectionSub = null;
+
+    // During the initial connect handshake, connect() still owns the session.
+    // Starting a parallel reconnect race is what produced the diagnostic log:
+    // login succeeds → reconnect exit forces disconnected → commands die.
+    final wasHandshaking =
+        _state == ConnectionState.connecting ||
+        _state == ConnectionState.connected;
     _resetCharacteristics();
-    if (!_userDisconnected && _device != null) {
+    if (!_userDisconnected && _device != null && !wasHandshaking) {
       _setState(ConnectionState.reconnecting);
       unawaited(
         _attemptReconnect().catchError((Object e, StackTrace st) {
@@ -1357,6 +1364,9 @@ class ConnectionManager {
       );
     } else {
       _setState(ConnectionState.disconnected);
+      if (wasHandshaking && !_userDisconnected) {
+        _log.ble('握手期断连，交由 connect() 处理', level: LogLevel.info);
+      }
     }
   }
 
@@ -1385,12 +1395,22 @@ class ConnectionManager {
       await Future<void>.delayed(delay);
 
       if (_state != ConnectionState.reconnecting) break;
+      if (_reconnectCancelled) break;
 
       try {
         await _device!.connect(
           timeout: BleTimings.reconnectConnectTimeout,
           mtu: null,
         );
+
+        if (_state != ConnectionState.reconnecting || _reconnectCancelled) {
+          try {
+            await _device?.disconnect();
+          } catch (e) {
+            _log.ble('取消重连时断开失败', detail: e.toString(), level: LogLevel.debug);
+          }
+          break;
+        }
 
         _connectionSub = _device!.connectionState.listen((state) {
           if (state == BluetoothConnectionState.disconnected) {
@@ -1401,6 +1421,9 @@ class ConnectionManager {
         _setState(ConnectionState.connected);
         await _requestQgjMtu(_device!);
         await Future<void>.delayed(BleTimings.serviceSetupDelay);
+        if (_state != ConnectionState.connected || _reconnectCancelled) {
+          break;
+        }
         await _discoverAndSetup();
 
         _reconnecting = false;
@@ -1419,14 +1442,24 @@ class ConnectionManager {
 
     _reconnecting = false;
     _reconnectAttempt = 0;
-    _setState(ConnectionState.disconnected);
-    _log.ble('重连次数已用尽', level: LogLevel.warning);
+    // Critical: do NOT clobber a session that already became ready/connected
+    // while this loop was sleeping (race with the original connect path).
+    if (_state == ConnectionState.reconnecting) {
+      _setState(ConnectionState.disconnected);
+      _log.ble('重连次数已用尽', level: LogLevel.warning);
+    } else {
+      _log.ble('重连结束（保留当前状态: ${_state.name}）', level: LogLevel.info);
+    }
   }
 
   /// Latch official LOGIN: store credential, mark flag, enter ready.
   void _markProtocolLoggedIn(String credential) {
     _token = credential;
     _protocolLoggedIn = true;
+    // Any in-flight reconnect must not tear down a successful LOGIN.
+    _reconnectCancelled = true;
+    _reconnecting = false;
+    _disconnectHandled = false;
     _setState(ConnectionState.ready);
   }
 
