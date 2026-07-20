@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/ble/constants.dart';
 import 'package:tailg_ble_app/ble/qgj_protocol.dart';
+import 'package:tailg_ble_app/ble/tlink_protocol.dart';
+import 'package:tailg_ble_app/services/induction_mode_service.dart';
 
 import 'helpers/source_scan.dart';
 
@@ -40,22 +42,52 @@ void main() {
     });
   });
 
-  group('control home QGJ proximity surface', () {
-    test('home hosts proximity card and official command path', () {
+  group('TLink induction frames', () {
+    test('official open/close/check/distance plaintexts', () {
+      expect(tlinkInductionOpenPlain, startsWith('85054A330201'));
+      expect(tlinkInductionClosePlain, startsWith('85054A330202'));
+      expect(tlinkInductionCheckPlain, startsWith('85034A3301'));
+      expect(buildTLinkInductionDistancePlain(7), contains('85044A3303'));
+    });
+  });
+
+  group('control home induction surface', () {
+    test('home hosts unlock-mode card and induction service path', () {
       final source = readSource('lib/pages/vehicle_control_home_page.dart');
-      expect(source, contains('_ProximityCard'));
-      expect(source, contains('_toggleProximity'));
-      expect(source, contains('proximityStatusSet'));
-      expect(source, contains('hidStatusSet'));
-      expect(source, contains('QgjSettingsPage'));
-      expect(source, contains('感应解锁'));
+      expect(source, contains('_UnlockModeCard'));
+      expect(source, contains('_selectUnlockMode'));
+      expect(source, contains('inductionModeService'));
+      expect(source, contains('manualModeService'));
+      expect(source, contains('解锁模式'));
+      expect(source, contains('感应'));
+      expect(source, contains('手动'));
     });
 
-    test('settings page can write distance and HID', () {
+    test('settings page is product-facing and stack-aware', () {
       final source = readSource('lib/pages/qgj_settings_page.dart');
-      expect(source, contains('proximityDistanceSet'));
-      expect(source, contains('hidStatusSet'));
-      expect(source, contains('感应距离'));
+      expect(source, contains('InductionModeService'));
+      expect(source, contains('InductionStack'));
+      expect(source, contains('感应解锁'));
+      // No raw opcode dump in user-facing help.
+      expect(source, isNot(contains('0x2031')));
+      expect(source, isNot(contains('4A33')));
+    });
+
+    test('connection manager exposes bond + tlink induction APIs', () {
+      final source = readSource('lib/ble/connection_manager.dart');
+      expect(source, contains('openTlinkInduction'));
+      expect(source, contains('closeTlinkInduction'));
+      expect(source, contains('checkTlinkInduction'));
+      expect(source, contains('setTlinkInductionDistance'));
+      expect(source, contains('createBond'));
+      expect(source, contains('removeBond'));
+      expect(source, contains('readRemoteRssi'));
+    });
+
+    test('induction service routes model types', () {
+      expect(InductionModeService.stackForModelType(8), InductionStack.qgj);
+      expect(InductionModeService.stackForModelType(3), InductionStack.tlink);
+      expect(InductionModeService.stackForModelType(1), InductionStack.rssi);
     });
   });
 }

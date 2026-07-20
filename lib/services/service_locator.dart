@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../ble/connection_manager.dart' as ble;
 import 'app_preferences_service.dart';
 import 'auto_connect_service.dart';
+import 'induction_mode_service.dart';
 import 'location_service.dart';
 import 'log_service.dart';
 import 'manual_mode_service.dart';
@@ -23,6 +24,7 @@ class AppServices {
   final ble.ConnectionManager connectionManager;
   final AutoConnectService autoConnectService;
   final ManualModeService manualModeService;
+  final InductionModeService inductionModeService;
   final LocationService locationService;
   final LogService logService;
   final VehicleStore vehicleStore;
@@ -37,6 +39,7 @@ class AppServices {
     required this.connectionManager,
     required this.autoConnectService,
     required this.manualModeService,
+    InductionModeService? inductionModeService,
     required this.locationService,
     required this.logService,
     required this.vehicleStore,
@@ -46,15 +49,30 @@ class AppServices {
     required this.appPreferencesService,
     required this.permissionService,
     required this.homeTabIndex,
-  }) : officialMqttService = officialMqttService ?? OfficialMqttService();
+  }) : inductionModeService =
+           inductionModeService ??
+           InductionModeService(
+             connectionManager: connectionManager,
+             manualModeService: manualModeService,
+             logService: logService,
+           ),
+       officialMqttService = officialMqttService ?? OfficialMqttService();
 
   factory AppServices.production() {
+    final connectionManager = ble.ConnectionManager();
+    final manualModeService = ManualModeService();
+    final logService = LogService();
     return AppServices(
-      connectionManager: ble.ConnectionManager(),
+      connectionManager: connectionManager,
       autoConnectService: AutoConnectService(),
-      manualModeService: ManualModeService(),
+      manualModeService: manualModeService,
+      inductionModeService: InductionModeService(
+        connectionManager: connectionManager,
+        manualModeService: manualModeService,
+        logService: logService,
+      ),
       locationService: LocationService(),
-      logService: LogService(),
+      logService: logService,
       vehicleStore: VehicleStore(),
       messageReadStore: MessageReadStore(),
       officialCloudService: OfficialCloudService(),
@@ -82,6 +100,10 @@ class AppServices {
     await _runCleanup(
       'manualModeService.resetForTest',
       old.manualModeService.resetForTest,
+    );
+    await _runCleanup(
+      'inductionModeService.resetForTest',
+      old.inductionModeService.resetForTest,
     );
     await _runCleanup(
       'locationService.resetForTest',
@@ -127,6 +149,10 @@ class AppServices {
     );
     await _runCleanup('autoConnectService.dispose', autoConnectService.dispose);
     await _runCleanup('manualModeService.dispose', manualModeService.dispose);
+    await _runCleanup(
+      'inductionModeService.dispose',
+      inductionModeService.dispose,
+    );
     await _runCleanup('vehicleStore.dispose', vehicleStore.dispose);
     await _runCleanup(
       'appPreferencesService.dispose',

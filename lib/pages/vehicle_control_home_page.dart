@@ -6,9 +6,8 @@ import 'package:flutter/services.dart';
 
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
-import '../ble/constants.dart' show BikeState, QgjCommandIds, QgjHidModes;
+import '../ble/constants.dart' show BikeState;
 import '../ble/official_ble_connection_context.dart';
-import '../ble/qgj_protocol.dart';
 import '../models/battery_snapshot.dart';
 import '../models/command_types.dart';
 import '../models/official_vehicle.dart';
@@ -21,6 +20,7 @@ import '../services/control_command_policy.dart';
 import '../services/control_command_result.dart';
 import '../services/display_number_formatter.dart';
 import '../services/display_time_formatter.dart';
+import '../services/induction_mode_service.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../services/official_mqtt_service.dart';
@@ -82,6 +82,8 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   StreamSubscription<ble.ConnectionState>? _bleStateSub;
   StreamSubscription<BikeState?>? _bleBikeStateSub;
   StreamSubscription<OfficialMqttLinkState>? _mqttLinkSub;
+  StreamSubscription<InductionModeSnapshot>? _inductionSub;
+  StreamSubscription<bool>? _manualModeSub;
   bool _busy = false;
   bool _disposed = false;
   bool _nearFieldBusy = false;
@@ -91,10 +93,11 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   PermissionCheckResult? _blePermission;
   BikeState? _bleBikeState;
 
-  /// Official QGJ proximity unlock latch (`0x2030` / `0x2031`).
-  bool? _proximityEnabled;
-  bool _proximityBusy = false;
-  bool _proximityLoaded = false;
+  /// Unified induction snapshot (QGJ / TLink / RSSI).
+  InductionModeSnapshot _induction = InductionModeSnapshot.empty;
+
+  /// Official "手动模式" — disables auto-connect and induction auto-actions.
+  bool _manualMode = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -103,13 +106,15 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _induction = inductionModeService.snapshot;
+    _manualMode = manualModeService.enabled;
     _cloudSub = officialCloudService.stateStream.listen((_) {
       if (mounted) setState(() {});
+      _bindInductionVehicle();
       unawaited(_ensureNearFieldLink(auto: true));
     });
     _bleStateSub = connectionManager.stateStream.listen((_) {
       if (mounted) setState(() {});
-      unawaited(_maybeLoadProximity());
     });
     _bleBikeState = connectionManager.latestBikeState;
     _bleBikeStateSub = connectionManager.bikeStateStream.listen((state) {
@@ -119,11 +124,23 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     _mqttLinkSub = officialMqttService.linkStateStream.listen((_) {
       if (mounted) setState(() {});
     });
+    _inductionSub = inductionModeService.snapshotStream.listen((snap) {
+      _induction = snap;
+      if (mounted) setState(() {});
+    });
+    _manualModeSub = manualModeService.enabledStream.listen((enabled) {
+      _manualMode = enabled;
+      if (mounted) setState(() {});
+    });
+    unawaited(manualModeService.init().then((_) {
+      if (_disposed || !mounted) return;
+      setState(() => _manualMode = manualModeService.enabled);
+    }));
+    _bindInductionVehicle();
     unawaited(_refreshBlePermission(request: false));
     unawaited(_silentRefresh());
     unawaited(officialMqttService.preconnectForCloud(officialCloudService));
     unawaited(_ensureNearFieldLink(auto: true));
-    unawaited(_maybeLoadProximity());
   }
 
   @override
@@ -138,7 +155,19 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     if (bleBikeStateSub != null) unawaited(bleBikeStateSub.cancel());
     final mqttSub = _mqttLinkSub;
     if (mqttSub != null) unawaited(mqttSub.cancel());
+    final inductionSub = _inductionSub;
+    if (inductionSub != null) unawaited(inductionSub.cancel());
+    final manualSub = _manualModeSub;
+    if (manualSub != null) unawaited(manualSub.cancel());
     super.dispose();
+  }
+
+  void _bindInductionVehicle() {
+    final vehicle = officialCloudService.state.selectedVehicle;
+    inductionModeService.bindVehicle(
+      modelType: vehicle?.modelType,
+      carId: vehicle?.carId,
+    );
   }
 
   @override
@@ -1111,101 +1140,59 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     );
   }
 
-  bool get _isQgjVehicle {
-    final type = officialCloudService.state.selectedVehicle?.modelType;
-    return type == 8 || type == 283;
-  }
+  bool get _supportsInduction => _induction.stack != InductionStack.none;
 
-  bool get _qgjBleReady =>
-      _isQgjVehicle &&
-      connectionManager.isProtocolLoggedIn &&
-      connectionManager.protocol == ble.ProtocolType.qgj;
+  /// Official ControlFragment style: induction vs manual are mutually exclusive.
+  bool get _inductionModeSelected =>
+      !_manualMode && (_induction.enabled ?? false);
 
-  Future<void> _maybeLoadProximity({bool force = false}) async {
-    if (_disposed) return;
-    if (!_qgjBleReady) {
-      if (_proximityEnabled != null || _proximityLoaded) {
-        _proximityEnabled = null;
-        _proximityLoaded = false;
-        if (mounted) setState(() {});
-      }
-      return;
-    }
-    if (_proximityBusy) return;
-    if (_proximityLoaded && !force) return;
-    _proximityBusy = true;
-    try {
-      final status = await connectionManager.sendQgjCommand(
-        QgjCommandIds.proximityStatusGet,
-      );
-      if (_disposed) return;
-      if (status != null && status.success) {
-        _proximityEnabled = parseQgjProximityEnabled(status.payload);
-        _proximityLoaded = true;
-      }
-    } catch (e) {
-      logService.operation(
-        '读取感应解锁失败',
-        detail: e.toString(),
-        level: LogLevel.debug,
-      );
-    } finally {
-      _proximityBusy = false;
-      if (mounted) setState(() {});
-    }
-  }
-
-  Future<void> _toggleProximity() async {
-    if (_busy || _proximityBusy) {
+  Future<void> _selectUnlockMode({required bool induction}) async {
+    if (_busy || _induction.busy) {
       AppSnack.error(context, '正在执行控车指令，请稍候');
       return;
     }
-    if (!_isQgjVehicle) {
-      AppSnack.info(context, '当前车型不支持 QGJ 感应解锁');
+
+    // Manual mode: no BLE required; just disable auto paths.
+    if (!induction) {
+      if (_manualMode && !(_induction.enabled ?? false)) return;
+      if (_induction.enabled == true) {
+        final closed = await inductionModeService.setEnabled(false);
+        if (!mounted) return;
+        if (!closed) {
+          AppSnack.error(context, _induction.lastError ?? '关闭感应失败');
+          return;
+        }
+      }
+      await manualModeService.setEnabled(true);
+      if (!mounted) return;
+      setState(() => _manualMode = true);
+      AppSnack.success(context, '已切换为手动模式');
       return;
     }
-    if (!_qgjBleReady) {
-      AppSnack.info(context, '请先连接车辆蓝牙后再开关感应');
+
+    // Induction mode.
+    if (!_supportsInduction) {
+      AppSnack.info(context, '当前车型不支持感应解锁');
+      return;
+    }
+    if (!_induction.bleReady) {
+      AppSnack.info(context, '请先连接车辆蓝牙后再开启感应');
       unawaited(_ensureNearFieldLink(auto: false));
       return;
     }
-    final next = !(_proximityEnabled ?? false);
-    _proximityBusy = true;
-    if (mounted) setState(() {});
-    try {
-      // Official ControlFragment QGJ path also toggles HID when enabling.
-      if (next) {
-        await connectionManager.sendQgjCommand(
-          QgjCommandIds.hidStatusSet,
-          buildQgjHidPayload(QgjHidModes.open),
-        );
-      }
-      final response = await connectionManager.sendQgjCommand(
-        QgjCommandIds.proximityStatusSet,
-        buildQgjProximityStatusPayload(next),
-      );
-      if (!next) {
-        await connectionManager.sendQgjCommand(
-          QgjCommandIds.hidStatusSet,
-          buildQgjHidPayload(QgjHidModes.close),
-        );
-      }
+    if (_manualMode) {
+      await manualModeService.setEnabled(false);
       if (!mounted) return;
-      if (response?.success != true) {
-        AppSnack.error(context, '感应解锁操作失败');
-        return;
-      }
-      _proximityEnabled = next;
-      _proximityLoaded = true;
-      AppSnack.success(context, next ? '感应解锁已开启' : '感应解锁已关闭');
-    } catch (e) {
-      if (mounted) {
-        AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
-      }
-    } finally {
-      _proximityBusy = false;
-      if (mounted) setState(() {});
+      setState(() => _manualMode = false);
     }
+    if (_induction.enabled == true) return;
+    final ok = await inductionModeService.setEnabled(true);
+    if (!mounted) return;
+    if (!ok) {
+      AppSnack.error(context, _induction.lastError ?? '开启感应失败');
+      return;
+    }
+    AppSnack.success(context, '感应解锁已开启');
   }
 
   void _openProximitySettings() {
@@ -1216,7 +1203,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
             MaterialPageRoute<void>(builder: (_) => const QgjSettingsPage()),
           )
           .then((_) {
-            unawaited(_maybeLoadProximity(force: true));
+            unawaited(inductionModeService.refresh(force: true));
           }),
     );
   }
@@ -1327,16 +1314,21 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 busy: _busy,
                 onChanged: _selectControlChannel,
               ),
-              if (_isQgjVehicle) ...[
-                const SizedBox(height: 12),
-                _ProximityCard(
-                  enabled: _proximityEnabled,
-                  busy: _proximityBusy || _busy,
-                  bleReady: _qgjBleReady,
-                  onToggle: _toggleProximity,
-                  onOpenSettings: _openProximitySettings,
-                ),
-              ],
+              const SizedBox(height: 12),
+              _UnlockModeCard(
+                supportsInduction: _supportsInduction,
+                inductionSelected: _inductionModeSelected,
+                manualSelected: _manualMode,
+                busy: _induction.busy || _busy,
+                bleReady: _induction.bleReady,
+                distance: _induction.distance,
+                onSelectInduction: () =>
+                    unawaited(_selectUnlockMode(induction: true)),
+                onSelectManual: () =>
+                    unawaited(_selectUnlockMode(induction: false)),
+                onConnectBle: () => unawaited(_ensureNearFieldLink(auto: false)),
+                onOpenSettings: _openProximitySettings,
+              ),
               const SizedBox(height: 12),
               _ShortcutsRow(
                 armed: isArmed,
@@ -2000,36 +1992,57 @@ class _ControlChannelCard extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// QGJ proximity unlock (official ControlFragment iv_mode_qgj)
+// Unlock mode: 感应 | 手动  (official ControlFragment mode switch)
 // ═══════════════════════════════════════════════════════════════════════════
-class _ProximityCard extends StatelessWidget {
-  const _ProximityCard({
-    required this.enabled,
+class _UnlockModeCard extends StatelessWidget {
+  const _UnlockModeCard({
+    required this.supportsInduction,
+    required this.inductionSelected,
+    required this.manualSelected,
     required this.busy,
     required this.bleReady,
-    required this.onToggle,
+    required this.distance,
+    required this.onSelectInduction,
+    required this.onSelectManual,
+    required this.onConnectBle,
     required this.onOpenSettings,
   });
 
-  final bool? enabled;
+  final bool supportsInduction;
+  final bool inductionSelected;
+  final bool manualSelected;
   final bool busy;
   final bool bleReady;
-  final VoidCallback onToggle;
+  final int? distance;
+  final VoidCallback onSelectInduction;
+  final VoidCallback onSelectManual;
+  final VoidCallback onConnectBle;
   final VoidCallback onOpenSettings;
+
+  String get _statusLine {
+    if (manualSelected) {
+      return '手动控车 · 已关闭自动连接与感应';
+    }
+    if (!supportsInduction) {
+      return '当前车型仅支持手动控车';
+    }
+    if (!bleReady) {
+      return '开启感应前请先连接车辆蓝牙';
+    }
+    if (inductionSelected) {
+      final dist = distance == null ? '' : ' · 距离档 $distance';
+      return '靠近自动解防，离开自动上锁$dist';
+    }
+    return '点选「感应」开启靠近解锁';
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final on = enabled == true;
-    final subtitle = !bleReady
-        ? '需蓝牙协议登录后开关'
-        : enabled == null
-        ? '点击读取 / 切换'
-        : (on ? '靠近自动解防 · 车端感应' : '已关闭 · 点右侧开启');
     return Container(
       margin: _Aurora.cardMargin,
-      padding: const EdgeInsets.fromLTRB(16, 12, 10, 12),
+      padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: const BorderRadius.all(
@@ -2037,54 +2050,159 @@ class _ProximityCard extends StatelessWidget {
         ),
         boxShadow: dark ? const [] : _Aurora.cardShadow,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: (on ? colors.primary : colors.textTertiary).withValues(
-                alpha: 0.12,
+          Row(
+            children: [
+              Text(
+                '解锁模式',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                ),
               ),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.sensors,
-              color: on ? colors.primary : colors.textTertiary,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '感应解锁',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: colors.textPrimary,
+              const Spacer(),
+              if (busy)
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                IconButton(
+                  tooltip: '感应设置',
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  onPressed: supportsInduction ? onOpenSettings : null,
+                  icon: Icon(
+                    Icons.tune,
+                    size: 20,
+                    color: supportsInduction
+                        ? colors.textTertiary
+                        : colors.textTertiary.withValues(alpha: 0.4),
                   ),
                 ),
-                const SizedBox(height: 2),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _ModeChip(
+                  label: '感应',
+                  icon: Icons.sensors,
+                  selected: inductionSelected,
+                  enabled: supportsInduction && !busy,
+                  onTap: onSelectInduction,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _ModeChip(
+                  label: '手动',
+                  icon: Icons.touch_app_outlined,
+                  selected: manualSelected || !supportsInduction,
+                  enabled: !busy,
+                  onTap: onSelectManual,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (supportsInduction && !bleReady && !manualSelected)
+            AppPressable(
+              onTap: onConnectBle,
+              child: Row(
+                children: [
+                  Icon(Icons.bluetooth, size: 16, color: colors.primary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      _statusLine,
+                      style: TextStyle(fontSize: 12, color: colors.primary),
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: colors.primary,
+                  ),
+                ],
+              ),
+            )
+          else
+            Text(
+              _statusLine,
+              style: TextStyle(fontSize: 12, color: colors.textTertiary),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ModeChip extends StatelessWidget {
+  const _ModeChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final bg = selected
+        ? colors.primary.withValues(alpha: 0.12)
+        : colors.pageBg;
+    final fg = selected ? colors.primary : colors.textSecondary;
+    final border = selected
+        ? colors.primary.withValues(alpha: 0.45)
+        : colors.border.withValues(alpha: 0.6);
+    return Opacity(
+      opacity: enabled ? 1 : 0.45,
+      child: Material(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadii.card),
+              border: Border.all(color: border),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 18, color: fg),
+                const SizedBox(width: 6),
                 Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 12, color: colors.textTertiary),
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                    color: fg,
+                  ),
                 ),
               ],
             ),
           ),
-          IconButton(
-            tooltip: '感应设置',
-            onPressed: onOpenSettings,
-            icon: Icon(Icons.tune, color: colors.textTertiary, size: 20),
-          ),
-          Switch.adaptive(
-            value: on,
-            onChanged: busy ? null : (_) => onToggle(),
-          ),
-        ],
+        ),
       ),
     );
   }

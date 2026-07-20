@@ -43,6 +43,33 @@ Uint8List buildTLinkCommand({
   );
 }
 
+// ---------------------------------------------------------------------------
+// Induction / proximity mode (official TLinkBleManager openMode/closeMode)
+//
+// All plaintexts are 24 hex chars (12 bytes). ConnectionManager.writeStandardHex
+// appends the 4-byte session token → 16-byte AES block, matching official
+// writeData("8505…ABCDE") after LOGIN.
+// ---------------------------------------------------------------------------
+
+/// Query induction switch + distance: `checkMode()`.
+const tlinkInductionCheckPlain = '85034A3301123456789ABCDE';
+
+/// Open induction: `openMode()` → ECU then system BLE bond.
+const tlinkInductionOpenPlain = '85054A3302010056789ABCDE';
+
+/// Close induction: `closeMode()` → ECU then remove bond.
+const tlinkInductionClosePlain = '85054A3302020056789ABCDE';
+
+/// After bond success official also writes HID open (`pairingDevice` BOND_BONDED).
+const tlinkHidOpenAfterBondPlain = '85044A3402003456789ABCDE';
+
+/// Set proximity distance level (official `setModeDistance`, 1–30).
+String buildTLinkInductionDistancePlain(int progress) {
+  final level = progress.clamp(0, 30);
+  final hex = level.toRadixString(16).padLeft(2, '0').toUpperCase();
+  return '85044A3303${hex}3456789ABCDE';
+}
+
 sealed class TLinkResponse {
   final String raw;
   const TLinkResponse(this.raw);
@@ -70,6 +97,30 @@ class TLinkCommandResponse extends TLinkResponse {
   });
 }
 
+/// `HEADER_RECEIVE_INDUCTION_STATUS` = `8506B53301`
+/// switch @ [10,12): `02`=closed else open; distance @ [12,14) hex 1–30.
+class TLinkInductionStatusResponse extends TLinkResponse {
+  final bool enabled;
+  final int? distance;
+  const TLinkInductionStatusResponse(
+    super.raw, {
+    required this.enabled,
+    required this.distance,
+  });
+}
+
+/// `HEADER_RECEIVE_SET_INDUCTION_STATUS` = `8504B53302`
+class TLinkInductionSetResponse extends TLinkResponse {
+  final bool success;
+  const TLinkInductionSetResponse(super.raw, {required this.success});
+}
+
+/// `HEADER_RECEIVE_PROXIMITYDISTANCE_SET` = `8504B53303`
+class TLinkProximityDistanceSetResponse extends TLinkResponse {
+  final bool success;
+  const TLinkProximityDistanceSetResponse(super.raw, {required this.success});
+}
+
 class TLinkUnknownResponse extends TLinkResponse {
   const TLinkUnknownResponse(super.raw);
 }
@@ -82,6 +133,33 @@ TLinkResponse parseTLinkResponse(String keyHex, Uint8List encrypted) {
     }
     if (hex.startsWith('8503B511') && hex.length >= 10) {
       return TLinkLoginResponse(hex, hex.substring(8, 10) == '01');
+    }
+    // Induction status query reply (official HEADER_RECEIVE_INDUCTION_STATUS).
+    if (hex.startsWith('8506B53301') && hex.length >= 14) {
+      final switchByte = hex.substring(10, 12).toUpperCase();
+      final distByte = hex.substring(12, 14);
+      final enabled = switchByte != '02';
+      final dist = int.tryParse(distByte, radix: 16);
+      final distance = (dist != null && dist > 0 && dist < 31) ? dist : null;
+      return TLinkInductionStatusResponse(
+        hex,
+        enabled: enabled,
+        distance: distance,
+      );
+    }
+    // Induction open/close set reply.
+    if (hex.startsWith('8504B53302') && hex.length >= 12) {
+      return TLinkInductionSetResponse(
+        hex,
+        success: hex.substring(10, 12) == '01',
+      );
+    }
+    // Proximity distance set reply.
+    if (hex.startsWith('8504B53303') && hex.length >= 12) {
+      return TLinkProximityDistanceSetResponse(
+        hex,
+        success: hex.substring(10, 12) == '01',
+      );
     }
     if (hex.startsWith('8503B5') && hex.length >= 10) {
       final commandType = hex.substring(6, 8);

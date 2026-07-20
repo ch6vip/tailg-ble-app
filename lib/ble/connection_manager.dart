@@ -100,6 +100,9 @@ class ConnectionManager {
   Completer<bool>? _standardCommandAckCompleter;
   String? _standardPendingCommandType;
   Completer<BikeState?>? _standardStateCompleter;
+  Completer<TLinkInductionStatusResponse?>? _tlinkInductionStatusCompleter;
+  Completer<bool>? _tlinkInductionSetCompleter;
+  Completer<bool>? _tlinkProximityDistanceCompleter;
   final Map<int, Completer<QgjResponse?>> _qgjResponseCompleters = {};
   final Map<GattOperationPriority, List<_QueuedGattOperation<dynamic>>>
   _gattPendingByPriority = {
@@ -741,6 +744,33 @@ class ConnectionManager {
       return;
     }
 
+    if (response is TLinkInductionStatusResponse) {
+      final completer = _tlinkInductionStatusCompleter;
+      _tlinkInductionStatusCompleter = null;
+      if (completer != null && !completer.isCompleted) {
+        completer.complete(response);
+      }
+      return;
+    }
+
+    if (response is TLinkInductionSetResponse) {
+      final completer = _tlinkInductionSetCompleter;
+      _tlinkInductionSetCompleter = null;
+      if (completer != null && !completer.isCompleted) {
+        completer.complete(response.success);
+      }
+      return;
+    }
+
+    if (response is TLinkProximityDistanceSetResponse) {
+      final completer = _tlinkProximityDistanceCompleter;
+      _tlinkProximityDistanceCompleter = null;
+      if (completer != null && !completer.isCompleted) {
+        completer.complete(response.success);
+      }
+      return;
+    }
+
     if (response is TLinkCommandResponse) {
       final commandType = switch (response.commandType) {
         '20' => CommandCode.lock.code,
@@ -1198,6 +1228,198 @@ class ConnectionManager {
     return true;
   }
 
+  // ---------------------------------------------------------------------------
+  // TLink induction mode (official openMode / closeMode / setModeDistance)
+  // ---------------------------------------------------------------------------
+
+  /// Query induction switch + distance (`checkMode`).
+  Future<TLinkInductionStatusResponse?> checkTlinkInduction() async {
+    // Official openMode path is TLink AES writeData only (token-appended 16B block).
+    if (!isProtocolLoggedIn || _protocol != ProtocolType.tlink) {
+      return null;
+    }
+    final previous = _tlinkInductionStatusCompleter;
+    if (previous != null && !previous.isCompleted) {
+      previous.complete(null);
+    }
+    final completer = Completer<TLinkInductionStatusResponse?>();
+    _tlinkInductionStatusCompleter = completer;
+    final written = await writeStandardHex(tlinkInductionCheckPlain);
+    if (!written) {
+      if (identical(_tlinkInductionStatusCompleter, completer)) {
+        _tlinkInductionStatusCompleter = null;
+      }
+      return null;
+    }
+    try {
+      return await completer.future.timeout(
+        BleTimings.commandAckTimeout,
+        onTimeout: () => null,
+      );
+    } finally {
+      if (identical(_tlinkInductionStatusCompleter, completer)) {
+        _tlinkInductionStatusCompleter = null;
+      }
+    }
+  }
+
+  /// Open induction mode (`openMode`). Pairing is left to the caller.
+  Future<bool> openTlinkInduction() async {
+    if (!isProtocolLoggedIn || _protocol != ProtocolType.tlink) {
+      return false;
+    }
+    final previous = _tlinkInductionSetCompleter;
+    if (previous != null && !previous.isCompleted) {
+      previous.complete(false);
+    }
+    final completer = Completer<bool>();
+    _tlinkInductionSetCompleter = completer;
+    final written = await writeStandardHex(tlinkInductionOpenPlain);
+    if (!written) {
+      if (identical(_tlinkInductionSetCompleter, completer)) {
+        _tlinkInductionSetCompleter = null;
+      }
+      return false;
+    }
+    try {
+      return await completer.future.timeout(
+        BleTimings.commandAckTimeout,
+        onTimeout: () => false,
+      );
+    } finally {
+      if (identical(_tlinkInductionSetCompleter, completer)) {
+        _tlinkInductionSetCompleter = null;
+      }
+    }
+  }
+
+  /// Close induction mode (`closeMode`). Bond removal is left to the caller.
+  Future<bool> closeTlinkInduction() async {
+    if (!isProtocolLoggedIn || _protocol != ProtocolType.tlink) {
+      return false;
+    }
+    final previous = _tlinkInductionSetCompleter;
+    if (previous != null && !previous.isCompleted) {
+      previous.complete(false);
+    }
+    final completer = Completer<bool>();
+    _tlinkInductionSetCompleter = completer;
+    final written = await writeStandardHex(tlinkInductionClosePlain);
+    if (!written) {
+      if (identical(_tlinkInductionSetCompleter, completer)) {
+        _tlinkInductionSetCompleter = null;
+      }
+      return false;
+    }
+    try {
+      return await completer.future.timeout(
+        BleTimings.commandAckTimeout,
+        onTimeout: () => false,
+      );
+    } finally {
+      if (identical(_tlinkInductionSetCompleter, completer)) {
+        _tlinkInductionSetCompleter = null;
+      }
+    }
+  }
+
+  /// Set TLink proximity distance level 0–30 (`setModeDistance`).
+  Future<bool> setTlinkInductionDistance(int progress) async {
+    if (!isProtocolLoggedIn || _protocol != ProtocolType.tlink) {
+      return false;
+    }
+    final previous = _tlinkProximityDistanceCompleter;
+    if (previous != null && !previous.isCompleted) {
+      previous.complete(false);
+    }
+    final completer = Completer<bool>();
+    _tlinkProximityDistanceCompleter = completer;
+    final written = await writeStandardHex(
+      buildTLinkInductionDistancePlain(progress),
+    );
+    if (!written) {
+      if (identical(_tlinkProximityDistanceCompleter, completer)) {
+        _tlinkProximityDistanceCompleter = null;
+      }
+      return false;
+    }
+    try {
+      return await completer.future.timeout(
+        BleTimings.commandAckTimeout,
+        onTimeout: () => false,
+      );
+    } finally {
+      if (identical(_tlinkProximityDistanceCompleter, completer)) {
+        _tlinkProximityDistanceCompleter = null;
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // System BLE bond (official pairingDevice / removeBleBond)
+  // ---------------------------------------------------------------------------
+
+  /// Create system bond with the connected peripheral (Android/iOS).
+  Future<bool> createBond({bool quiet = false}) async {
+    final device = _device;
+    if (device == null) return false;
+    try {
+      final state = await device.bondState.first.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => BluetoothBondState.none,
+      );
+      if (state == BluetoothBondState.bonded) return true;
+      await device.createBond();
+      final after = await device.bondState
+          .firstWhere((s) => s == BluetoothBondState.bonded)
+          .timeout(const Duration(seconds: 15), onTimeout: () => state);
+      final ok = after == BluetoothBondState.bonded;
+      if (!quiet) {
+        _log.ble(
+          ok ? '系统蓝牙配对成功' : '系统蓝牙配对未完成',
+          level: ok ? LogLevel.info : LogLevel.warning,
+        );
+      }
+      return ok;
+    } catch (e) {
+      _log.ble('系统蓝牙配对失败', detail: e.toString(), level: LogLevel.warning);
+      return false;
+    }
+  }
+
+  /// Remove system bond (official `removeBleBond` / HID close path).
+  Future<bool> removeBond({bool quiet = false}) async {
+    final device = _device;
+    if (device == null) return false;
+    try {
+      final state = await device.bondState.first.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => BluetoothBondState.none,
+      );
+      if (state == BluetoothBondState.none) return true;
+      await device.removeBond();
+      if (!quiet) {
+        _log.ble('系统蓝牙配对已移除', level: LogLevel.info);
+      }
+      return true;
+    } catch (e) {
+      _log.ble('移除系统配对失败', detail: e.toString(), level: LogLevel.warning);
+      return false;
+    }
+  }
+
+  /// Read remote RSSI once (official `readRemoteRssi` path).
+  Future<int?> readRemoteRssi() async {
+    final device = _device;
+    if (device == null || _state == ConnectionState.disconnected) return null;
+    try {
+      return await device.readRssi();
+    } catch (e) {
+      _log.ble('读取 RSSI 失败', detail: e.toString(), level: LogLevel.debug);
+      return null;
+    }
+  }
+
   /// Official OTA control characteristic write (`gatt7000` / otaOrder).
   Future<bool> writeOtaOrder(List<int> message) async {
     if (_state != ConnectionState.ready) return false;
@@ -1551,6 +1773,21 @@ class ConnectionManager {
       _standardStateCompleter!.complete(null);
     }
     _standardStateCompleter = null;
+    if (_tlinkInductionStatusCompleter != null &&
+        !_tlinkInductionStatusCompleter!.isCompleted) {
+      _tlinkInductionStatusCompleter!.complete(null);
+    }
+    _tlinkInductionStatusCompleter = null;
+    if (_tlinkInductionSetCompleter != null &&
+        !_tlinkInductionSetCompleter!.isCompleted) {
+      _tlinkInductionSetCompleter!.complete(false);
+    }
+    _tlinkInductionSetCompleter = null;
+    if (_tlinkProximityDistanceCompleter != null &&
+        !_tlinkProximityDistanceCompleter!.isCompleted) {
+      _tlinkProximityDistanceCompleter!.complete(false);
+    }
+    _tlinkProximityDistanceCompleter = null;
     for (final completer in _qgjResponseCompleters.values) {
       if (!completer.isCompleted) {
         completer.completeError(error);

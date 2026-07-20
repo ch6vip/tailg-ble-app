@@ -49,15 +49,23 @@ void main() {
       );
       expect(
         readSource('lib/pages/qgj_settings_page.dart'),
-        contains('proximityStatusGet'),
+        contains('InductionModeService'),
       );
       expect(
         readSource('lib/pages/qgj_settings_page.dart'),
-        contains('proximityDistanceSet'),
+        contains('InductionStack'),
+      );
+      expect(
+        readSource('lib/services/induction_mode_service.dart'),
+        contains('proximityStatusSet'),
+      );
+      expect(
+        readSource('lib/services/induction_mode_service.dart'),
+        contains('openTlinkInduction'),
       );
       expect(
         readSource('lib/pages/vehicle_control_home_page.dart'),
-        contains('_ProximityCard'),
+        contains('_UnlockModeCard'),
       );
       expect(
         readSource('lib/pages/firmware_ota_page.dart'),

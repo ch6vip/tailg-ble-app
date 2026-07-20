@@ -2,21 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../ble/connection_manager.dart' as ble;
-import '../ble/constants.dart';
-import '../ble/qgj_protocol.dart';
 import '../main.dart';
-import '../services/official_cloud_service.dart';
+import '../services/induction_mode_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_snack.dart';
 
-/// P3-3 / P3-4: QGJ common settings + proximity unlock over BLE LOGIN.
+/// 感应解锁设置页（QGJ / TLink / RSSI 统一入口）。
 ///
-/// Official path (`EVBikeQgjSettingFragment` / ControlFragment QGJ mode):
-/// - status get/set: `0x2030` / `0x2031` (OpCode OPEN=1 / CLOSE=0)
-/// - distance get/set: `0x2032` / `0x2033` (UInt8 level)
-/// - optional HID: `0x2140` Open/Close when pairing proximity
+/// 产品文案面向用户；协议细节仅开发可见（不展示指令码）。
 class QgjSettingsPage extends StatefulWidget {
   const QgjSettingsPage({super.key});
 
@@ -25,170 +19,157 @@ class QgjSettingsPage extends StatefulWidget {
 }
 
 class _QgjSettingsPageState extends State<QgjSettingsPage> {
-  static const _maxDistanceLevel = 10;
-
+  StreamSubscription<InductionModeSnapshot>? _sub;
+  InductionModeSnapshot _snap = InductionModeSnapshot.empty;
+  double _distanceDraft = InductionModeService.defaultDistanceLevel.toDouble();
   var _busy = false;
-  bool? _proximityEnabled;
-  int? _proximityDistance;
-  double _distanceDraft = 5;
 
   @override
   void initState() {
     super.initState();
-    if (connectionManager.isProtocolLoggedIn &&
-        connectionManager.protocol == ble.ProtocolType.qgj) {
-      unawaited(_readProximity(silent: true));
-    }
-  }
-
-  bool get _qgjReady =>
-      connectionManager.isProtocolLoggedIn &&
-      connectionManager.protocol == ble.ProtocolType.qgj;
-
-  Future<void> _readProximity({bool silent = false}) async {
-    if (!_qgjReady) {
-      if (!silent && mounted) {
-        AppSnack.info(context, '请先 BLE 协议登录到 QGJ 车型');
-      }
-      return;
-    }
-    setState(() => _busy = true);
-    try {
-      final status = await connectionManager.sendQgjCommand(
-        QgjCommandIds.proximityStatusGet,
-      );
-      final distance = await connectionManager.sendQgjCommand(
-        QgjCommandIds.proximityDistanceGet,
-      );
+    final vehicle = officialCloudService.state.selectedVehicle;
+    inductionModeService.bindVehicle(
+      modelType: vehicle?.modelType,
+      carId: vehicle?.carId,
+    );
+    _snap = inductionModeService.snapshot;
+    _distanceDraft =
+        (_snap.distance ?? InductionModeService.defaultDistanceLevel)
+            .toDouble();
+    _sub = inductionModeService.snapshotStream.listen((snap) {
       if (!mounted) return;
       setState(() {
-        final enabled = status != null && status.success
-            ? parseQgjProximityEnabled(status.payload)
-            : null;
-        final level = distance != null && distance.success
-            ? parseQgjProximityDistance(distance.payload)
-            : null;
-        if (enabled != null) _proximityEnabled = enabled;
-        if (level != null) {
-          _proximityDistance = level.clamp(0, _maxDistanceLevel);
-          _distanceDraft = _proximityDistance!.toDouble();
+        _snap = snap;
+        if (snap.distance != null) {
+          _distanceDraft = snap.distance!.toDouble();
         }
       });
-      if (!silent) AppSnack.success(context, '已读取感应解锁状态');
-    } catch (e) {
-      if (!silent && mounted) {
-        AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
+    });
+    unawaited(inductionModeService.refresh(force: true));
   }
 
-  Future<void> _setProximity(bool enabled) async {
-    if (!_qgjReady) {
-      AppSnack.info(context, '请先 BLE 协议登录到 QGJ 车型');
-      return;
+  @override
+  void dispose() {
+    unawaited(_sub?.cancel());
+    super.dispose();
+  }
+
+  /// 仅 QGJ / TLink 车端有真实距离档；RSSI 路径不展示滑条（避免误导）。
+  bool get _showDistanceSlider =>
+      _snap.stack == InductionStack.qgj || _snap.stack == InductionStack.tlink;
+
+  int get _maxDistanceLevel => _snap.stack == InductionStack.qgj
+      ? 10
+      : InductionModeService.maxDistanceLevel;
+
+  String get _helpText => switch (_snap.stack) {
+    InductionStack.qgj || InductionStack.tlink =>
+      '开启后，手机靠近车辆会自动解锁，离开后自动上锁。'
+          '首次开启可能弹出系统蓝牙配对请求，请点允许。'
+          '距离档越大，越容易触发感应。',
+    InductionStack.rssi =>
+      '开启后，App 会根据蓝牙信号强弱自动解防或上锁。'
+          '请保持手机蓝牙已连接车辆；手动模式开启时不会自动控车。',
+    InductionStack.none => '当前车辆暂不支持本地感应解锁，请使用手动控车。',
+  };
+
+  String get _statusSubtitle {
+    if (!_snap.bleReady && _snap.stack != InductionStack.none) {
+      return '请先连接车辆蓝牙';
+    }
+    if (_snap.enabled == null && _snap.stack != InductionStack.none) {
+      return '尚未读取 · 可点下方刷新';
+    }
+    if (_snap.enabled == true) {
+      if (_showDistanceSlider && _snap.distance != null) {
+        return '已开启 · 距离档 ${_snap.distance}';
+      }
+      return '已开启 · 靠近自动解锁';
+    }
+    if (_snap.enabled == false) {
+      return '已关闭';
+    }
+    return '不可用';
+  }
+
+  Future<void> _setEnabled(bool enabled) async {
+    if (_busy) return;
+    if (manualModeService.enabled && enabled) {
+      await manualModeService.setEnabled(false);
     }
     setState(() => _busy = true);
-    try {
-      // Official ControlFragment QGJ path also toggles HID when enabling.
-      if (enabled) {
-        await connectionManager.sendQgjCommand(
-          QgjCommandIds.hidStatusSet,
-          buildQgjHidPayload(QgjHidModes.open),
-        );
-      }
-      final response = await connectionManager.sendQgjCommand(
-        QgjCommandIds.proximityStatusSet,
-        buildQgjProximityStatusPayload(enabled),
-      );
-      if (!enabled) {
-        await connectionManager.sendQgjCommand(
-          QgjCommandIds.hidStatusSet,
-          buildQgjHidPayload(QgjHidModes.close),
-        );
-      }
-      if (!mounted) return;
-      if (response?.success != true) {
-        AppSnack.error(context, '写入感应解锁失败');
-        return;
-      }
-      setState(() => _proximityEnabled = enabled);
-      AppSnack.success(context, enabled ? '感应解锁已开启（配对成功）' : '感应解锁已关闭（配对移除）');
-    } catch (e) {
-      if (mounted) {
-        AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
+    final ok = await inductionModeService.setEnabled(enabled);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (!ok) {
+      AppSnack.error(context, _snap.lastError ?? '设置失败，请稍后重试');
+      return;
     }
+    AppSnack.success(context, enabled ? '感应解锁已开启' : '感应解锁已关闭');
   }
 
   Future<void> _setDistance(int level) async {
-    if (!_qgjReady) {
-      AppSnack.info(context, '请先 BLE 协议登录到 QGJ 车型');
+    if (_busy) return;
+    setState(() => _busy = true);
+    final ok = await inductionModeService.setDistance(level);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (!ok) {
+      AppSnack.error(context, _snap.lastError ?? '距离设置失败');
       return;
     }
-    final value = level.clamp(0, _maxDistanceLevel);
+    AppSnack.success(context, '感应距离已更新');
+  }
+
+  Future<void> _read() async {
+    if (_busy) return;
     setState(() => _busy = true);
-    try {
-      final response = await connectionManager.sendQgjCommand(
-        QgjCommandIds.proximityDistanceSet,
-        buildQgjProximityDistancePayload(value),
-      );
-      if (!mounted) return;
-      if (response?.success != true) {
-        AppSnack.error(context, '写入感应距离失败');
-        return;
-      }
-      setState(() {
-        _proximityDistance = value;
-        _distanceDraft = value.toDouble();
-      });
-      AppSnack.success(context, '感应距离已设为 $value');
-    } catch (e) {
-      if (mounted) {
-        AppSnack.error(context, OfficialCloudRedactor.errorMessage(e));
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
+    await inductionModeService.refresh(force: true);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (_snap.lastError != null) {
+      AppSnack.error(context, _snap.lastError!);
+      return;
     }
+    AppSnack.success(context, '状态已刷新');
   }
 
   @override
   Widget build(BuildContext context) {
-    final protocol = connectionManager.protocol;
-    final loggedIn = connectionManager.isProtocolLoggedIn;
-    final distanceLabel = _proximityDistance?.toString() ?? '未读取';
+    final canWrite = _snap.bleReady && _snap.stack != InductionStack.none;
+    final maxLevel = _maxDistanceLevel;
+
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 24),
           children: [
-            const AppPageHeader(title: 'QGJ 设置'),
+            const AppPageHeader(title: '感应解锁'),
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '协议: ${protocol.name} · LOGIN: ${loggedIn ? "是" : "否"}',
+                    _helpText,
                     style: const TextStyle(
                       fontSize: 13,
+                      height: 1.45,
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '对照官方 QGJ：感应开关 0x2031（OPEN=1/CLOSE=0），'
-                    '距离档 0x2033；开启时同步 HID(0x2140)。'
-                    '真正靠近解锁由车端 ECU 完成，App 只负责配置。',
-                    style: TextStyle(
-                      fontSize: 12,
-                      height: 1.4,
-                      color: AppColors.textTertiary,
+                  if (!_snap.bleReady && _snap.stack != InductionStack.none) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      connectionManager.isProtocolLoggedIn
+                          ? '蓝牙已连接，正在同步状态…'
+                          : '当前未完成蓝牙协议登录，开关可能不可用。请返回爱车页连接车辆。',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textTertiary,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -199,46 +180,75 @@ class _QgjSettingsPageState extends State<QgjSettingsPage> {
                 children: [
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('感应解锁 / 靠近解锁'),
-                    subtitle: Text(
-                      _proximityEnabled == null
-                          ? '未读取 · 需 BLE LOGIN'
-                          : '${_proximityEnabled! ? '已开启' : '已关闭'} · 距离档 $distanceLabel',
+                    title: const Text(
+                      '感应解锁',
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    value: _proximityEnabled ?? false,
-                    onChanged: _busy || !_qgjReady
+                    subtitle: Text(_statusSubtitle),
+                    value: _snap.enabled ?? false,
+                    onChanged: _busy || !canWrite
                         ? null
-                        : (v) => unawaited(_setProximity(v)),
+                        : (v) => unawaited(_setEnabled(v)),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '感应距离档 ${_distanceDraft.round()}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                  if (_showDistanceSlider) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '感应距离  ${_distanceDraft.round()}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                  ),
-                  Slider(
-                    value: _distanceDraft.clamp(
-                      0,
-                      _maxDistanceLevel.toDouble(),
+                    const SizedBox(height: 2),
+                    const Text(
+                      '档位越高，越远就能触发解锁',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textTertiary,
+                      ),
                     ),
-                    min: 0,
-                    max: _maxDistanceLevel.toDouble(),
-                    divisions: _maxDistanceLevel,
-                    label: '${_distanceDraft.round()}',
-                    onChanged: _busy || !_qgjReady
-                        ? null
-                        : (v) => setState(() => _distanceDraft = v),
-                    onChangeEnd: _busy || !_qgjReady
-                        ? null
-                        : (v) => unawaited(_setDistance(v.round())),
-                  ),
-                  const SizedBox(height: 4),
+                    Slider(
+                      value: _distanceDraft.clamp(0, maxLevel.toDouble()),
+                      min: 0,
+                      max: maxLevel.toDouble(),
+                      divisions: maxLevel > 0 ? maxLevel : null,
+                      label: '${_distanceDraft.round()}',
+                      onChanged: _busy || !canWrite
+                          ? null
+                          : (v) => setState(() => _distanceDraft = v),
+                      onChangeEnd: _busy || !canWrite
+                          ? null
+                          : (v) => unawaited(_setDistance(v.round())),
+                    ),
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '近',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                        Text(
+                          '远',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 8),
                   OutlinedButton(
-                    onPressed: _busy ? null : () => unawaited(_readProximity()),
-                    child: Text(_busy ? '处理中…' : '读取状态'),
+                    onPressed: _busy || _snap.busy
+                        ? null
+                        : () => unawaited(_read()),
+                    child: Text(
+                      _busy || _snap.busy ? '处理中…' : '刷新状态',
+                    ),
                   ),
                 ],
               ),

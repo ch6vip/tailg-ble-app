@@ -145,14 +145,14 @@ class VehicleSettingsPage extends StatelessWidget {
                             color: AppColors.textSecondary,
                           ),
                           title: const Text(
-                            'QGJ / 感应解锁',
+                            '感应解锁',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           subtitle: const Text(
-                            'BLE LOGIN 后读写靠近解锁',
+                            '靠近解锁 · 离开上锁 · 距离设置',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.textTertiary,

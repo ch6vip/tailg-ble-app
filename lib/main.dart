@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'ble/connection_manager.dart' as ble;
 import 'models/vehicle_profile.dart';
 import 'services/auto_connect_service.dart';
+import 'services/induction_mode_service.dart';
 import 'services/location_service.dart';
 import 'services/log_service.dart';
 import 'services/manual_mode_service.dart';
@@ -29,6 +30,8 @@ AutoConnectService get autoConnectService =>
     AppServices.instance.autoConnectService;
 ManualModeService get manualModeService =>
     AppServices.instance.manualModeService;
+InductionModeService get inductionModeService =>
+    AppServices.instance.inductionModeService;
 LocationService get locationService => AppServices.instance.locationService;
 LogService get logService => AppServices.instance.logService;
 VehicleStore get vehicleStore => AppServices.instance.vehicleStore;

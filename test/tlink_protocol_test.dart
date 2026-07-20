@@ -88,4 +88,42 @@ void main() {
       isA<TLinkUnknownResponse>(),
     );
   });
+
+  test('induction plaintexts are 24 hex chars (pre-token)', () {
+    expect(tlinkInductionCheckPlain.length, 24);
+    expect(tlinkInductionOpenPlain.length, 24);
+    expect(tlinkInductionClosePlain.length, 24);
+    expect(tlinkHidOpenAfterBondPlain.length, 24);
+    expect(buildTLinkInductionDistancePlain(5).length, 24);
+    expect(buildTLinkInductionDistancePlain(5), '85044A3303053456789ABCDE');
+    expect(buildTLinkInductionDistancePlain(30), '85044A33031E3456789ABCDE');
+    expect(buildTLinkInductionDistancePlain(99), '85044A33031E3456789ABCDE');
+  });
+
+  test('induction response parsers match official B533 headers', () {
+    // AES plaintext must be 16-byte (32 hex) blocks.
+    TLinkResponse parse(String plaintext) {
+      final padded = plaintext.padRight(32, '0');
+      return parseTLinkResponse(key, aesEcbEncrypt(key, padded));
+    }
+
+    // open: switch != 02, distance 0x05
+    final open = parse('8506B533010105');
+    expect(open, isA<TLinkInductionStatusResponse>());
+    expect((open as TLinkInductionStatusResponse).enabled, isTrue);
+    expect(open.distance, 5);
+
+    // closed: switch 02
+    final closed = parse('8506B533010200');
+    expect(closed, isA<TLinkInductionStatusResponse>());
+    expect((closed as TLinkInductionStatusResponse).enabled, isFalse);
+
+    final setOk = parse('8504B5330201');
+    expect(setOk, isA<TLinkInductionSetResponse>());
+    expect((setOk as TLinkInductionSetResponse).success, isTrue);
+
+    final distOk = parse('8504B5330301');
+    expect(distOk, isA<TLinkProximityDistanceSetResponse>());
+    expect((distOk as TLinkProximityDistanceSetResponse).success, isTrue);
+  });
 }
