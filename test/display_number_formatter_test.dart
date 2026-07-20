@@ -32,18 +32,21 @@ void main() {
     expect(parseTravelMileageMeters(null), 0);
   });
 
-  test('formatTravelMileageMeters matches ViewAdapter.setHisListItemMilage', () {
-    // Real bug case: 57291 m → 57.29 km (official).
-    expect(formatTravelMileageMeters(57291), '57.29km');
-    expect(formatTravelMileageMetersText('57291.0'), '57.29km');
-    expect(formatTravelMileageMeters(500), '500m');
-    expect(formatTravelMileageMeters(999), '999m');
-    expect(formatTravelMileageMeters(1000), '1km');
-    expect(formatTravelMileageMeters(1500), '1.5km');
-    // Ride-stats style always uses km.
-    expect(formatTravelMileageMeters(500, alwaysKm: true), '0.5km');
-    expect(formatTravelMileageMeters(57291, alwaysKm: true), '57.29km');
-  });
+  test(
+    'formatTravelMileageMeters matches ViewAdapter.setHisListItemMilage',
+    () {
+      // Real bug case: 57291 m → 57.29 km (official).
+      expect(formatTravelMileageMeters(57291), '57.29km');
+      expect(formatTravelMileageMetersText('57291.0'), '57.29km');
+      expect(formatTravelMileageMeters(500), '500m');
+      expect(formatTravelMileageMeters(999), '999m');
+      expect(formatTravelMileageMeters(1000), '1km');
+      expect(formatTravelMileageMeters(1500), '1.5km');
+      // Ride-stats style always uses km.
+      expect(formatTravelMileageMeters(500, alwaysKm: true), '0.5km');
+      expect(formatTravelMileageMeters(57291, alwaysKm: true), '57.29km');
+    },
+  );
 
   test('formatDecimalDown truncates toward zero like RoundingMode.DOWN', () {
     expect(formatDecimalDown(57.291, fractionDigits: 2), '57.29');

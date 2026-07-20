@@ -717,10 +717,7 @@ class _TrackEndpointRow extends StatelessWidget {
   if (intMeters < 1000) {
     return ('$intMeters', 'm');
   }
-  return (
-    formatDecimalDown(intMeters / 1000.0, fractionDigits: 2),
-    'km',
-  );
+  return (formatDecimalDown(intMeters / 1000.0, fractionDigits: 2), 'km');
 }
 
 class _SummaryValue extends StatelessWidget {
