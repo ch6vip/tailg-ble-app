@@ -132,10 +132,12 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       _manualMode = enabled;
       if (mounted) setState(() {});
     });
-    unawaited(manualModeService.init().then((_) {
-      if (_disposed || !mounted) return;
-      setState(() => _manualMode = manualModeService.enabled);
-    }));
+    unawaited(
+      manualModeService.init().then((_) {
+        if (_disposed || !mounted) return;
+        setState(() => _manualMode = manualModeService.enabled);
+      }),
+    );
     _bindInductionVehicle();
     unawaited(_refreshBlePermission(request: false));
     unawaited(_silentRefresh());
@@ -1326,7 +1328,8 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                     unawaited(_selectUnlockMode(induction: true)),
                 onSelectManual: () =>
                     unawaited(_selectUnlockMode(induction: false)),
-                onConnectBle: () => unawaited(_ensureNearFieldLink(auto: false)),
+                onConnectBle: () =>
+                    unawaited(_ensureNearFieldLink(auto: false)),
                 onOpenSettings: _openProximitySettings,
               ),
               const SizedBox(height: 12),
@@ -2128,11 +2131,7 @@ class _UnlockModeCard extends StatelessWidget {
                       style: TextStyle(fontSize: 12, color: colors.primary),
                     ),
                   ),
-                  Icon(
-                    Icons.chevron_right,
-                    size: 18,
-                    color: colors.primary,
-                  ),
+                  Icon(Icons.chevron_right, size: 18, color: colors.primary),
                 ],
               ),
             )

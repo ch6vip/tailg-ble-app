@@ -59,12 +59,7 @@ RssiProximityAction classifyDistance(
 }
 
 /// Official task latch (`mRssiTaskState`): avoid re-firing until opposite side.
-enum RssiTaskState {
-  idle,
-  pending,
-  poweredOn,
-  locked,
-}
+enum RssiTaskState { idle, pending, poweredOn, locked }
 
 /// Decide whether a classified action may fire given the last completed state.
 bool shouldFireRssiAction(RssiProximityAction action, RssiTaskState state) {

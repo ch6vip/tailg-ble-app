@@ -158,7 +158,8 @@ class _QgjSettingsPageState extends State<QgjSettingsPage> {
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  if (!_snap.bleReady && _snap.stack != InductionStack.none) ...[
+                  if (!_snap.bleReady &&
+                      _snap.stack != InductionStack.none) ...[
                     const SizedBox(height: 10),
                     Text(
                       connectionManager.isProtocolLoggedIn
@@ -246,9 +247,7 @@ class _QgjSettingsPageState extends State<QgjSettingsPage> {
                     onPressed: _busy || _snap.busy
                         ? null
                         : () => unawaited(_read()),
-                    child: Text(
-                      _busy || _snap.busy ? '处理中…' : '刷新状态',
-                    ),
+                    child: Text(_busy || _snap.busy ? '处理中…' : '刷新状态'),
                   ),
                 ],
               ),

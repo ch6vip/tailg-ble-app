@@ -240,7 +240,11 @@ class InductionModeService {
     } catch (e) {
       _log.operation('读取感应状态失败', detail: e.toString(), level: LogLevel.debug);
       _publish(
-        _snapshot.copyWith(busy: false, lastError: e.toString(), bleReady: true),
+        _snapshot.copyWith(
+          busy: false,
+          lastError: e.toString(),
+          bleReady: true,
+        ),
       );
     }
   }
@@ -430,11 +434,7 @@ class InductionModeService {
       }
       await _saveDistancePref(value);
       _publish(
-        _snapshot.copyWith(
-          distance: value,
-          busy: false,
-          clearError: true,
-        ),
+        _snapshot.copyWith(distance: value, busy: false, clearError: true),
       );
       return true;
     } catch (e) {
@@ -525,7 +525,11 @@ class InductionModeService {
         _rssiTaskState = ok ? RssiTaskState.locked : RssiTaskState.idle;
       }
     } catch (e) {
-      _log.operation('RSSI 感应指令失败', detail: e.toString(), level: LogLevel.warning);
+      _log.operation(
+        'RSSI 感应指令失败',
+        detail: e.toString(),
+        level: LogLevel.warning,
+      );
       _rssiTaskState = RssiTaskState.idle;
     } finally {
       _rssiFiring = false;
