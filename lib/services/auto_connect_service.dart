@@ -472,7 +472,12 @@ class AutoConnectService {
           .where((state) => state != BluetoothAdapterState.unknown)
           .first
           .timeout(const Duration(seconds: 2));
-    } catch (_) {
+    } catch (e) {
+      _log.operation(
+        '自动连接: 读取蓝牙开关状态失败',
+        detail: e.toString(),
+        level: LogLevel.debug,
+      );
       return BluetoothAdapterState.unknown;
     }
   }
