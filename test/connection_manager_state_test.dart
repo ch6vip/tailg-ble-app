@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/ble/connection_manager.dart';
 import 'package:tailg_ble_app/ble/constants.dart';
+import 'package:tailg_ble_app/ble/parser.dart';
 
 import 'helpers/source_scan.dart';
 
@@ -129,6 +130,49 @@ void main() {
     );
     expect(source, contains('completer.complete(response.success);'));
   });
+
+  test(
+    'standard command ACK completes only for the matching command type',
+    () async {
+      final manager = ConnectionManager();
+      addTearDown(manager.dispose);
+
+      final lockAck = manager.createPendingStandardCommandAckForTest('01');
+      manager.handleStandardResponseForTest(
+        const CommandResponse(
+          '7803C20100',
+          commandType: '01',
+          statusCode: '00',
+          success: true,
+        ),
+      );
+
+      await expectLater(lockAck, completion(isTrue));
+      expect(manager.latestBikeState?.isLocked, isTrue);
+      expect(manager.latestBikeState?.isPowerOn, isFalse);
+    },
+  );
+
+  test(
+    'standard command failure is returned from the device response',
+    () async {
+      final manager = ConnectionManager();
+      addTearDown(manager.dispose);
+
+      final powerAck = manager.createPendingStandardCommandAckForTest('06');
+      manager.handleStandardResponseForTest(
+        const CommandResponse(
+          '7803C206FF',
+          commandType: '06',
+          statusCode: 'FF',
+          success: false,
+        ),
+      );
+
+      await expectLater(powerAck, completion(isFalse));
+      expect(manager.latestBikeState, isNull);
+    },
+  );
 
   testWidgets('ready watchdog disconnects stale connected state', (
     tester,

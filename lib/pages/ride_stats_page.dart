@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../models/official_vehicle.dart';
+import '../services/display_number_formatter.dart';
 import '../services/display_time_formatter.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
@@ -318,7 +319,8 @@ class _SummaryCard extends StatelessWidget {
           Row(
             children: [
               _StatItem(
-                value: totalKm.toStringAsFixed(1),
+                // Official ride-stats always shows km (setTextViewSetMilageValue).
+                value: formatDecimalDown(totalKm, fractionDigits: 2),
                 unit: 'km',
                 label: '总里程',
               ),
@@ -465,7 +467,7 @@ class _DayBreakdown extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${sumTravelMileageKm(day.records).toStringAsFixed(1)} km',
+                  '${formatDecimalDown(sumTravelMileageKm(day.records), fractionDigits: 2)} km',
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.textSecondary,

@@ -1907,7 +1907,8 @@ void main() {
         'travelDate': '2026-05-29',
         'startTime': '10:00',
         'endTime': '10:30',
-        'mileage': '12.5',
+        // Official deviceTravel mileage is meters.
+        'mileage': '12500',
         'averageSpeed': '25',
         'maxSpeed': '42',
         'min': '30',
@@ -1915,7 +1916,7 @@ void main() {
       final day = OfficialTravelDay.fromJson({
         'travelDate': '2026-05-29',
         'totalTime': '1800',
-        'totalMileage': '12.5',
+        'totalMileage': '12500',
         'deviceTravelDtoList': [42, 'bad-entry', recordJson],
       });
       final point = OfficialTravelPoint.fromJson({
@@ -1932,6 +1933,8 @@ void main() {
       expect(day.records, hasLength(1));
       expect(day.records.first.deviceTravelId, 'travel-1');
       expect(day.records.first.raw['min'], '30');
+      expect(day.records.first.mileageMeters, 12500);
+      expect(day.records.first.mileageKm, 12.5);
       expect(day.records.first.mileageLabel, '12.5km');
       expect(day.records.first.averageSpeedLabel, '25km/h');
       expect(point.hasCoordinate, isTrue);
@@ -1955,9 +1958,15 @@ void main() {
         'deviceTravelDtoList': [
           {
             'deviceTravelId': 'travel-2',
-            'mileage': '604.0',
+            // meters: 604000 → 604 km; speeds stay km/h as-is.
+            'mileage': '604000.0',
             'averageSpeed': '20.133333333333333',
             'maxSpeed': '45.6789',
+          },
+          {
+            'deviceTravelId': 'travel-short',
+            // <1000 m stays in meters on list labels.
+            'mileage': '604.0',
           },
         ],
       });
@@ -1965,6 +1974,14 @@ void main() {
       expect(record.averageSpeedLabel, '20.1km/h');
       expect(record.maxSpeedLabel, '45.7km/h');
       expect(record.mileageLabel, '604km');
+      expect(day.records[1].mileageLabel, '604m');
+      // Real reported case: 57291 m → 57.29 km.
+      final longTrip = OfficialTravelRecord.fromJson({
+        'deviceTravelId': 'travel-long',
+        'mileage': '57291.0',
+      });
+      expect(longTrip.mileageLabel, '57.29km');
+      expect(longTrip.mileageKm, closeTo(57.291, 1e-9));
     });
 
     test('aggregates travel mileage and duration across records', () {
@@ -1973,14 +1990,14 @@ void main() {
         'deviceTravelDtoList': [
           {
             'deviceTravelId': 'a',
-            'mileage': '12.5',
+            'mileage': '12500',
             'hours': '1',
             'min': '30',
             'sec': '0',
           },
           {
             'deviceTravelId': 'b',
-            'mileage': '7.5',
+            'mileage': '7500',
             'hours': '0',
             'min': '45',
             'sec': '30',
@@ -2049,8 +2066,8 @@ OfficialCloudState _cloudState({
   final vehicle = OfficialVehicle.fromJson({
     'carId': 'official-1',
     'carNickName': '测试车辆',
-    if (modelType != null) 'modelType': modelType,
-    if (isGps != null) 'isGps': isGps,
+    'modelType': modelType ?? 8,
+    'isGps': isGps ?? 1,
     if (withGpsService) ...{
       // Official remote-capable QGJ with isGps==1.
       'modelType': modelType ?? 8,

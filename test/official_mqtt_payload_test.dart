@@ -31,5 +31,22 @@ void main() {
       expect(OfficialMqttStatusPayload.tryParse('not-json'), isNull);
       expect(OfficialMqttStatusPayload.tryParse(''), isNull);
     });
+
+    test('parses official control errors and exposes policy state', () {
+      final moving = OfficialMqttStatusPayload.tryParse(
+        '{"accErrorStatus":4,"defenceErrorStatus":0}',
+      );
+      final keyed = OfficialMqttStatusPayload.tryParse('{"accErrorStatus":8}');
+      final notPoweredOff = OfficialMqttStatusPayload.tryParse(
+        '{"defenceErrorStatus":3,"bikeSetSourceValue":3}',
+      );
+
+      expect(moving?.isMoving, isTrue);
+      expect(moving?.controlErrorMessage('start'), '车辆行驶中，请勿操作');
+      expect(keyed?.isKeyStarted, isTrue);
+      expect(keyed?.controlErrorMessage('stop'), '您已使用钥匙启动车辆，当前不支持此操作');
+      expect(notPoweredOff?.isNotPoweredOff, isTrue);
+      expect(notPoweredOff?.controlErrorMessage('lock'), '车辆未断电，请勿操作');
+    });
   });
 }

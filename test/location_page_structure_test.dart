@@ -435,7 +435,8 @@ void main() {
       days: '',
       startTime: '08:00',
       endTime: '08:15',
-      mileage: '12.5',
+      // Official travel mileage is meters (12500 m → 12.5 km).
+      mileage: '12500',
       frame: '',
       maxSpeed: '',
     );
@@ -448,7 +449,7 @@ void main() {
       totalTime: '15m',
       records: [travelRecord],
       days: '',
-      totalMileage: '12.5',
+      totalMileage: '12500',
     );
     final travelState = OfficialCloudState.initial().copyWith(
       initialized: true,
@@ -521,7 +522,8 @@ void main() {
       days: '',
       startTime: '08:00',
       endTime: '08:15',
-      mileage: '12.5',
+      // Official travel mileage is meters (12500 m → 12.5 km).
+      mileage: '12500',
       frame: '',
       maxSpeed: '',
     );
@@ -534,7 +536,7 @@ void main() {
       totalTime: '15m',
       records: [travelRecord],
       days: '',
-      totalMileage: '12.5',
+      totalMileage: '12500',
     );
     final points = List.generate(13, (index) => _travelPoint(index + 1));
     final travelState = OfficialCloudState.initial().copyWith(
@@ -591,7 +593,8 @@ void main() {
       days: '',
       startTime: '08:00',
       endTime: '08:15',
-      mileage: '12.5',
+      // Official travel mileage is meters (12500 m → 12.5 km).
+      mileage: '12500',
       frame: '',
       maxSpeed: '',
     );
@@ -604,7 +607,7 @@ void main() {
       totalTime: '15m',
       records: [travelRecord],
       days: '',
-      totalMileage: '12.5',
+      totalMileage: '12500',
     );
     final points = [
       for (var index = 1; index <= 12; index++) _travelPoint(index),

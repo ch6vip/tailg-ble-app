@@ -104,10 +104,7 @@ void main() {
     );
 
     test('gpsCombo modelTypes fall back to cloud without isGps gate', () {
-      for (final type in {
-        ...OfficialControlRoute.gpsComboModelTypes,
-        ...OfficialControlRoute.gpsComboNoOpLockModelTypes,
-      }) {
+      for (final type in OfficialControlRoute.gpsComboModelTypes) {
         final ble = OfficialControlRoute.resolve(
           bindingCar: true,
           modelType: type,
@@ -124,6 +121,22 @@ void main() {
         );
         expect(ble.usesBle, isTrue, reason: 'type $type BLE');
         expect(cloud.usesCloud, isTrue, reason: 'type $type cloud');
+      }
+    });
+
+    test('official no-op and unknown model types are unavailable', () {
+      for (final type in {
+        ...OfficialControlRoute.unsupportedControlModelTypes,
+        9999,
+      }) {
+        final decision = OfficialControlRoute.resolve(
+          bindingCar: true,
+          modelType: type,
+          isGps: 1,
+          bleReady: true,
+          cloudSessionReady: true,
+        );
+        expect(decision.isUnavailable, isTrue, reason: 'type $type');
       }
     });
 
@@ -196,8 +209,8 @@ void main() {
         _RouteCase(3, 1, false, true, true, expectsCloud: true),
         _RouteCase(3, 0, true, true, true, expectsBle: true),
         _RouteCase(3, 0, false, true, true, expectsUnavailable: true),
-        // no-op lock gps combo
-        _RouteCase(1501, 0, false, true, true, expectsCloud: true),
+        // no-op control family
+        _RouteCase(1501, 0, false, true, true, expectsUnavailable: true),
       ];
 
       for (final c in cases) {

@@ -39,6 +39,8 @@ class OfficialMqttService {
   String? _connectedBroker;
   String? _connectedImei;
   String? _pendingCommandApiName;
+  String? _pendingCommandError;
+  OfficialMqttStatusPayload? _latestStatusPayload;
   OfficialRemoteSendPath? _lastSendPath;
   String? _lastPreconnectError;
   bool _disposed = false;
@@ -55,6 +57,8 @@ class OfficialMqttService {
   Stream<OfficialMqttLinkState> get linkStateStream => _linkController.stream;
 
   String? get pendingCommandApiName => _pendingCommandApiName;
+  String? get pendingCommandError => _pendingCommandError;
+  OfficialMqttStatusPayload? get latestStatusPayload => _latestStatusPayload;
 
   /// Last path used by [sendCommandPreferMqtt] (null before first send).
   OfficialRemoteSendPath? get lastSendPath => _lastSendPath;
@@ -93,6 +97,8 @@ class OfficialMqttService {
     _cloudSub = null;
     _boundCloud = null;
     _pendingCommandApiName = null;
+    _pendingCommandError = null;
+    _latestStatusPayload = null;
     _lastSendPath = null;
     _lastPreconnectError = null;
     publishCommandOverride = null;
@@ -200,6 +206,8 @@ class OfficialMqttService {
     _connectedBroker = null;
     _connectedImei = null;
     _pendingCommandApiName = null;
+    _pendingCommandError = null;
+    _latestStatusPayload = null;
     if (client != null) {
       try {
         client.disconnect();
@@ -349,14 +357,37 @@ class OfficialMqttService {
     final payload = OfficialMqttStatusPayload.tryParse(raw);
     if (payload == null) return;
 
+    final cloud = _boundCloud ?? OfficialCloudService();
+    final selectedImei = cloud.state.selectedVehicle?.commandImei.trim() ?? '';
+    final payloadImei = payload.imei?.trim() ?? '';
+    if (payloadImei.isNotEmpty &&
+        selectedImei.isNotEmpty &&
+        payloadImei != selectedImei) {
+      _log.operation(
+        '忽略非当前车辆 MQTT 状态',
+        detail: 'payload=$payloadImei selected=$selectedImei',
+        level: LogLevel.warning,
+      );
+      return;
+    }
+    _latestStatusPayload = payload;
+
     final pending = _pendingCommandApiName;
-    if (pending != null && payload.confirmsCommand(pending)) {
+    final controlError = payload.controlErrorMessage(pending);
+    if (pending != null && controlError != null) {
+      _pendingCommandError = controlError;
+      _log.operation(
+        '官方 MQTT 指令失败: $pending',
+        detail: controlError,
+        level: LogLevel.warning,
+      );
+    } else if (pending != null && payload.confirmsCommand(pending)) {
       _pendingCommandApiName = null;
+      _pendingCommandError = null;
       _log.operation('官方 MQTT 指令已确认: $pending');
     }
 
     // Official also applies ACC/defence fields opportunistically on any status.
-    final cloud = _boundCloud ?? OfficialCloudService();
     if (!payload.hasVehicleState) return;
     cloud.applyMqttVehicleStatus(
       acc: payload.accInt,
@@ -378,6 +409,7 @@ class OfficialMqttService {
         commandApiName: commandApiName,
       );
       _pendingCommandApiName = commandApiName;
+      _pendingCommandError = null;
       return;
     }
     await ensureConnected(vehicle: vehicle, userId: userId);
@@ -393,6 +425,7 @@ class OfficialMqttService {
     );
 
     _pendingCommandApiName = commandApiName;
+    _pendingCommandError = null;
     final builder = MqttClientPayloadBuilder()..addString(payload);
     client.publishMessage(
       topic,
@@ -451,6 +484,7 @@ class OfficialMqttService {
       return 'mqtt:success';
     } catch (e) {
       _pendingCommandApiName = null;
+      _pendingCommandError = null;
       _lastSendPath = OfficialRemoteSendPath.http;
       _log.operation(
         '官方 MQTT 发令失败，回退 HTTP',

@@ -4,6 +4,7 @@ import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/services/control_channel_resolver.dart';
 import 'package:tailg_ble_app/services/control_command_confirmation.dart';
 import 'package:tailg_ble_app/services/control_command_executor.dart';
+import 'package:tailg_ble_app/services/control_command_route.dart';
 import 'package:tailg_ble_app/services/control_command_result.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 
@@ -34,6 +35,7 @@ void main() {
       'btmac': 'AA:BB:CC:DD:EE:FF',
       'defenceStatus': 0,
       'acc': 0,
+      'isCushionLock': 1,
     });
     return OfficialCloudState.initial().copyWith(
       token: 'accept-token',
@@ -60,9 +62,16 @@ void main() {
       expect(availability.willUseBle, isTrue);
 
       for (final cmd in sixKeys) {
+        final commandAvailability = ControlCommandRoute.resolve(
+          base: availability,
+          command: cmd,
+          vehicle: availability.officialDecision == null
+              ? null
+              : vehicleState(modelType: 3, isGps: 0).selectedVehicle,
+        );
         final result = await executor.send(
           command: cmd,
-          availability: availability,
+          availability: commandAvailability,
         );
         expect(result.success, isTrue, reason: cmd.name);
         expect(result.transport, ControlCommandTransport.ble);
@@ -86,7 +95,7 @@ void main() {
   });
 
   group('P0-B5 remote six-key matrix (mock cloud, GPS vehicle)', () {
-    test('all six keys succeed on cloud when BLE not LOGIN', () async {
+    test('remote-supported keys succeed and seat remains BLE-only', () async {
       final sent = <CommandCode>[];
       final executor = ControlCommandExecutor(
         sendBleCommand: (_) async => fail('must not use BLE for remote path'),
@@ -104,14 +113,23 @@ void main() {
       expect(availability.willUseBle, isFalse);
 
       for (final cmd in sixKeys) {
+        final commandAvailability = ControlCommandRoute.resolve(
+          base: availability,
+          command: cmd,
+          vehicle: vehicleState(modelType: 8, isGps: 1).selectedVehicle,
+        );
+        if (cmd == CommandCode.openSeat) {
+          expect(commandAvailability.enabled, isFalse);
+          continue;
+        }
         final result = await executor.send(
           command: cmd,
-          availability: availability,
+          availability: commandAvailability,
         );
         expect(result.success, isTrue, reason: cmd.name);
         expect(result.transport, ControlCommandTransport.officialCloud);
       }
-      expect(sent, sixKeys);
+      expect(sent, sixKeys.where((cmd) => cmd != CommandCode.openSeat));
     });
 
     test('lock/power require state flip or MQTT ACK to confirm', () {

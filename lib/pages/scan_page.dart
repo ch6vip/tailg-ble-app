@@ -108,7 +108,10 @@ class _ScanPageState extends State<ScanPage>
       return;
     }
     try {
-      await FlutterBluePlus.startScan(timeout: BleTimings.manualScanTimeout);
+      await FlutterBluePlus.startScan(
+        timeout: BleTimings.manualScanTimeout,
+        androidUsesFineLocation: true,
+      );
     } on PlatformException catch (e) {
       logService.ble('手动扫描启动失败', detail: e.toString(), level: LogLevel.warning);
       if (!mounted) return;

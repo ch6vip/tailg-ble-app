@@ -43,6 +43,37 @@ class ControlChannelAvailability {
     required this.cloudUnavailableReason,
     required this.disabledReason,
   });
+
+  ControlChannelAvailability copyWith({
+    OfficialControlChannel? channel,
+    OfficialControlRouteDecision? officialDecision,
+    bool? canUseBle,
+    bool? canUseCloud,
+    bool? enabled,
+    bool? willUseBle,
+    bool? vehicleAllowsCloudFallback,
+    String? effectiveChannelLabel,
+    String? bleUnavailableReason,
+    String? cloudUnavailableReason,
+    String? disabledReason,
+  }) {
+    return ControlChannelAvailability(
+      channel: channel ?? this.channel,
+      officialDecision: officialDecision ?? this.officialDecision,
+      canUseBle: canUseBle ?? this.canUseBle,
+      canUseCloud: canUseCloud ?? this.canUseCloud,
+      enabled: enabled ?? this.enabled,
+      willUseBle: willUseBle ?? this.willUseBle,
+      vehicleAllowsCloudFallback:
+          vehicleAllowsCloudFallback ?? this.vehicleAllowsCloudFallback,
+      effectiveChannelLabel:
+          effectiveChannelLabel ?? this.effectiveChannelLabel,
+      bleUnavailableReason: bleUnavailableReason ?? this.bleUnavailableReason,
+      cloudUnavailableReason:
+          cloudUnavailableReason ?? this.cloudUnavailableReason,
+      disabledReason: disabledReason ?? this.disabledReason,
+    );
+  }
 }
 
 class ControlChannelResolver {
@@ -84,26 +115,24 @@ class ControlChannelResolver {
     );
 
     final canUseBle = switch (channel) {
-      OfficialControlChannel.ble => effectiveBleReady,
+      OfficialControlChannel.ble =>
+        officialDecision.usesBle && effectiveBleReady,
       OfficialControlChannel.officialCloud => false,
       OfficialControlChannel.automatic =>
         officialDecision.usesBle && effectiveBleReady,
     };
 
+    final vehicleAllowsCloudFallback = _officialAllowsCloudFallback(
+      selected: selected,
+      decision: officialDecision,
+    );
+
     final canUseCloud = switch (channel) {
-      OfficialControlChannel.officialCloud => cloudSessionReady && networkReady,
+      OfficialControlChannel.officialCloud =>
+        vehicleAllowsCloudFallback && cloudSessionReady && networkReady,
       OfficialControlChannel.ble => false,
       OfficialControlChannel.automatic =>
         officialDecision.usesCloud && cloudSessionReady && networkReady,
-    };
-
-    final vehicleAllowsCloudFallback = switch (channel) {
-      OfficialControlChannel.officialCloud => true,
-      OfficialControlChannel.ble => false,
-      OfficialControlChannel.automatic => _officialAllowsCloudFallback(
-        selected: selected,
-        decision: officialDecision,
-      ),
     };
 
     final bleUnavailableReason = canUseBle
@@ -154,7 +183,9 @@ class ControlChannelResolver {
       canUseCloud: canUseCloud,
       enabled: enabled,
       willUseBle: willUseBle,
-      vehicleAllowsCloudFallback: vehicleAllowsCloudFallback,
+      vehicleAllowsCloudFallback: channel == OfficialControlChannel.ble
+          ? false
+          : vehicleAllowsCloudFallback,
       effectiveChannelLabel: _effectiveChannelLabel(
         enabled: enabled,
         willUseBle: willUseBle,

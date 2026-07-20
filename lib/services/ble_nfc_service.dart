@@ -12,7 +12,8 @@ class BleNfcService {
 
   bool get canWriteOfficialNfc =>
       connectionManager.isProtocolLoggedIn &&
-      connectionManager.protocol == ProtocolType.standard;
+      (connectionManager.protocol == ProtocolType.kks ||
+          connectionManager.protocol == ProtocolType.tlink);
 
   Future<bool> addUserKey({required int keyType, required String type}) {
     final hex = OfficialNfcBleFrames.addUserKeyHex(

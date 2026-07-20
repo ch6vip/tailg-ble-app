@@ -181,11 +181,12 @@ void main() {
           '${now.year}-${now.month.toString().padLeft(2, '0')}';
       final day = OfficialTravelDay.fromJson({
         'travelDate': '$currentMonth-01',
-        'totalMileage': '12.5',
+        // Official deviceTravel totalMileage / mileage are meters.
+        'totalMileage': '12500',
         'deviceTravelDtoList': [
           {
             'deviceTravelId': 'trip-1',
-            'mileage': '12.5',
+            'mileage': '12500',
             'hours': '1',
             'min': '30',
             'sec': '0',
@@ -404,9 +405,10 @@ String _monthLabel(DateTime value) {
 OfficialTravelDay _travelDay(String date) {
   return OfficialTravelDay.fromJson({
     'travelDate': date,
-    'totalMileage': '1.0',
+    // meters (1 km)
+    'totalMileage': '1000',
     'deviceTravelDtoList': [
-      {'deviceTravelId': 'trip-$date', 'mileage': '1.0'},
+      {'deviceTravelId': 'trip-$date', 'mileage': '1000'},
     ],
   });
 }

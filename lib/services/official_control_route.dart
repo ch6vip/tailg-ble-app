@@ -60,8 +60,25 @@ class OfficialControlRoute {
   /// without an extra `isGps == 1` gate (see lock cases 401/928/2103/2201).
   static const gpsComboModelTypes = {401, 928, 2103, 2201};
 
-  /// Official lock() has empty cases; treated like GPS combo for transport.
-  static const gpsComboNoOpLockModelTypes = {1501, 1601, 1701};
+  /// Model types for which ControlFragment has no implementation for the
+  /// primary control actions. Keep them unavailable instead of guessing a
+  /// transport and sending a command the official app would ignore.
+  static const unsupportedControlModelTypes = {1501, 1601, 1701};
+
+  /// Known model types handled by the official control fragment.
+  static const supportedControlModelTypes = {
+    1,
+    2,
+    3,
+    8,
+    10,
+    14,
+    283,
+    401,
+    928,
+    2103,
+    2201,
+  };
 
   /// Resolve which transport official control would take for a bound vehicle.
   ///
@@ -91,6 +108,15 @@ class OfficialControlRoute {
 
     final cloudReady = networkReady && cloudSessionReady;
     final type = modelType ?? -1;
+
+    if (!supportedControlModelTypes.contains(type) ||
+        unsupportedControlModelTypes.contains(type)) {
+      return const OfficialControlRouteDecision(
+        transport: OfficialControlTransportChoice.unavailable,
+        bleStack: OfficialBleStackKind.none,
+        reason: '当前车型暂不支持控车',
+      );
+    }
 
     // --- modelType 1: KKS ---
     // if (bleIsConnected) BLE else MQTT
@@ -159,8 +185,7 @@ class OfficialControlRoute {
 
     // --- modelType 401 / 928 / 2103 / 2201 ---
     // if (ble != LOGIN) → MQTT else BLE (no isGps gate)
-    if (gpsComboModelTypes.contains(type) ||
-        gpsComboNoOpLockModelTypes.contains(type)) {
+    if (gpsComboModelTypes.contains(type)) {
       if (bleReady) {
         return const OfficialControlRouteDecision(
           transport: OfficialControlTransportChoice.ble,
@@ -182,8 +207,7 @@ class OfficialControlRoute {
       );
     }
 
-    // --- modelType 3 (BB) and default ---
-    // falls through in official lock() to isGps hybrid + standard BLE
+    // --- modelType 3 (BB) ---
     return _hybridIsGpsGate(
       isGps: isGps,
       bleReady: bleReady,

@@ -179,10 +179,12 @@ class _TravelDayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final records = day.records;
-    final summedMileage = sumTravelMileageKm(records);
-    final mileage = day.totalMileage.isNotEmpty
-        ? day.totalMileage
-        : (summedMileage == 0 ? '' : summedMileage.toStringAsFixed(1));
+    final summedKm = sumTravelMileageKm(records);
+    // Official day.totalMileage is meters (ViewAdapter.setHisListItemMilage).
+    final totalMeters = day.totalMileage.trim().isNotEmpty
+        ? parseTravelMileageMeters(day.totalMileage)
+        : summedKm * 1000;
+    final mileageParts = _travelMileageSummaryParts(totalMeters);
     final duration = day.totalTime.isNotEmpty
         ? day.totalTime
         : formatCompactDuration(
@@ -222,8 +224,8 @@ class _TravelDayCard extends StatelessWidget {
                 Expanded(
                   child: _SummaryValue(
                     label: '总里程',
-                    value: mileage.isEmpty ? '--' : mileage,
-                    unit: mileage.isEmpty ? '' : 'km',
+                    value: mileageParts.$1,
+                    unit: mileageParts.$2,
                   ),
                 ),
                 const VerticalDivider(width: 1, color: Colors.white),
@@ -703,6 +705,22 @@ class _TrackEndpointRow extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Day-card summary: split number + unit the way `_SummaryValue` expects.
+/// Official still converts meters→km at 1000 (`setHisListItemMilage`).
+(String, String) _travelMileageSummaryParts(double meters) {
+  if (meters <= 0 || meters.isNaN || meters.isInfinite) {
+    return ('--', '');
+  }
+  final intMeters = meters.abs().truncate();
+  if (intMeters < 1000) {
+    return ('$intMeters', 'm');
+  }
+  return (
+    formatDecimalDown(intMeters / 1000.0, fractionDigits: 2),
+    'km',
+  );
 }
 
 class _SummaryValue extends StatelessWidget {

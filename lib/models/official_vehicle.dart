@@ -156,6 +156,42 @@ class OfficialVehicle {
     return pairs.join(':');
   }
 
+  /// QGJ compares this backend identity with advertisement manufacturer data.
+  /// Other stacks usually return the same value as [normalizedDeviceMac].
+  String get bleIdentityMac {
+    final rawMac = parsePersistedString(raw['mac']);
+    final source = rawMac.isNotEmpty ? rawMac : btmac;
+    final compact = source.replaceAll(_btmacSeparatorPattern, '').toUpperCase();
+    return compact.length == 12 ? compact : '';
+  }
+
+  int? get mainBlePassword {
+    final passwordInfo = parsePersistedMap(raw['passwordInfo']);
+    final direct = parsePersistedInt(passwordInfo?['main']);
+    if (direct != null) return direct;
+    final password = parsePersistedMap(raw['password']);
+    return parsePersistedInt(
+      password?['main'] ?? raw['mainPassword'] ?? raw['password'],
+    );
+  }
+
+  List<int> get childBlePasswords {
+    final passwordInfo = parsePersistedMap(raw['passwordInfo']);
+    final password = parsePersistedMap(raw['password']);
+    final source =
+        passwordInfo?['children'] ??
+        password?['children'] ??
+        raw['childrenPassword'] ??
+        raw['children'];
+    if (source is! Iterable) return const [];
+    return source
+        .map(parsePersistedInt)
+        .whereType<int>()
+        .toList(growable: false);
+  }
+
+  bool get shareCarFlag => parsePersistedBool(raw['shareCarFlag']);
+
   bool get hasDeviceMac => normalizedDeviceMac.isNotEmpty;
 
   bool get hasGpsService {
@@ -172,6 +208,28 @@ class OfficialVehicle {
 
   bool get isLocked => defenceStatus == 1;
   bool get isPowerOn => acc == 1;
+
+  /// Official `CarControlInfoBean.isCushionLock`. Null means the backend did
+  /// not provide the capability, which is intentionally treated as unknown.
+  bool? get isCushionLockSupported {
+    const keys = <String>[
+      'isCushionLock',
+      'cushionLock',
+      'isSeatLock',
+      'seatLock',
+    ];
+    for (final key in keys) {
+      if (!raw.containsKey(key)) continue;
+      final value = raw[key];
+      if (value is bool) return value;
+      if (value is num) return value != 0;
+      final text = value?.toString().trim().toLowerCase();
+      if (text == '1' || text == 'true') return true;
+      if (text == '0' || text == 'false') return false;
+      return null;
+    }
+    return null;
+  }
 
   OfficialVehicle copyWith({
     int? defenceStatus,
@@ -365,16 +423,20 @@ class OfficialTravelRecord {
     return '待读取';
   }
 
+  /// Official travel `mileage` is meters → display via [formatTravelMileageMetersText].
   String get mileageLabel =>
-      mileage.isEmpty ? '待读取' : '${formatCompactDecimalText(mileage)}km';
+      mileage.isEmpty ? '待读取' : formatTravelMileageMetersText(mileage);
   String get averageSpeedLabel => averageSpeed.isEmpty
       ? '待读取'
       : '${formatCompactDecimalText(averageSpeed)}km/h';
   String get maxSpeedLabel =>
       maxSpeed.isEmpty ? '待读取' : '${formatCompactDecimalText(maxSpeed)}km/h';
 
-  /// Parsed mileage in km; non-numeric payloads count as 0.
-  double get mileageKm => double.tryParse(mileage) ?? 0;
+  /// Raw travel mileage in meters (official `deviceTravel` unit).
+  double get mileageMeters => parseTravelMileageMeters(mileage);
+
+  /// Travel mileage converted to km (`meters / 1000`).
+  double get mileageKm => travelMetersToKm(mileageMeters);
 
   /// Duration from hours/min/sec fields; non-numeric parts count as 0.
   int get durationSeconds =>

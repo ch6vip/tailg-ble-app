@@ -82,6 +82,49 @@ void main() {
       expect(mqtt.lastSendPath, OfficialRemoteSendPath.http);
       expect(mqtt.pendingCommandApiName, isNull);
     });
+
+    test(
+      'records official command errors without treating them as ACK',
+      () async {
+        final mqtt = OfficialMqttService();
+        final cloud = signedInCloud();
+        mqtt.publishCommandOverride =
+            ({
+              required OfficialVehicle vehicle,
+              required String userId,
+              required String commandApiName,
+            }) async {};
+
+        await mqtt.sendCommandPreferMqtt(
+          command: CommandCode.lock,
+          cloud: cloud,
+        );
+        mqtt.handleStatusPayload(
+          '{"imei":"860000000000001","defenceErrorStatus":3,'
+          '"bikeSetSourceValue":3}',
+        );
+
+        expect(mqtt.pendingCommandApiName, 'lock');
+        expect(mqtt.pendingCommandError, '车辆未断电，请勿操作');
+      },
+    );
+
+    test('ignores status payloads belonging to another vehicle', () async {
+      final mqtt = OfficialMqttService();
+      final cloud = signedInCloud();
+      mqtt.publishCommandOverride =
+          ({
+            required OfficialVehicle vehicle,
+            required String userId,
+            required String commandApiName,
+          }) async {};
+
+      await mqtt.sendCommandPreferMqtt(command: CommandCode.lock, cloud: cloud);
+      mqtt.handleStatusPayload('{"imei":"another-imei","defenceStatus":"1"}');
+
+      expect(mqtt.pendingCommandApiName, 'lock');
+      expect(cloud.state.selectedVehicle?.defenceStatus, isNull);
+    });
   });
 
   group('AppServices MQTT lifecycle (P4-1)', () {

@@ -3,13 +3,16 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import '../services/log_service.dart';
+import 'aes.dart';
 import 'constants.dart';
 import 'hex.dart';
+import 'official_ble_connection_context.dart';
 import 'protocol.dart';
 import 'qgj_protocol.dart';
+import 'tlink_protocol.dart';
 import 'parser.dart';
 
-enum ProtocolType { standard, qgj, unknown }
+enum ProtocolType { kks, tlink, qgj, unknown }
 
 /// Local connection lifecycle.
 ///
@@ -52,11 +55,12 @@ class ConnectionManager {
   BluetoothDevice? _device;
   ProtocolType _protocol = ProtocolType.unknown;
   ProtocolType _lastKnownProtocol = ProtocolType.unknown;
+  OfficialBleConnectionContext? _connectionContext;
   ConnectionState _state = ConnectionState.disconnected;
   String? _token;
 
   /// Explicit protocol-login latch (official LoginStatus.LOGIN).
-  /// Set only on TokenResponse / QGJ login success; cleared on teardown.
+  /// Set only on KKS token + TLink LOGIN ACK / QGJ login success; cleared on teardown.
   bool _protocolLoggedIn = false;
   ModelType _model = ModelType.KKS;
   int _qgjLoginPassword = 0;
@@ -93,6 +97,9 @@ class ConnectionManager {
   static const _maxReconnectAttempts = 8;
 
   Completer<bool>? _cmdAckCompleter;
+  Completer<bool>? _standardCommandAckCompleter;
+  String? _standardPendingCommandType;
+  Completer<BikeState?>? _standardStateCompleter;
   final Map<int, Completer<QgjResponse?>> _qgjResponseCompleters = {};
   final Map<GattOperationPriority, List<_QueuedGattOperation<dynamic>>>
   _gattPendingByPriority = {
@@ -115,6 +122,7 @@ class ConnectionManager {
   ProtocolType get lastKnownProtocol => _lastKnownProtocol;
   String? get token => _token;
   BluetoothDevice? get device => _device;
+  OfficialBleConnectionContext? get connectionContext => _connectionContext;
   BikeState? get latestBikeState => _latestBikeState;
   int get qgjLoginPassword => _qgjLoginPassword;
   int get qgjUserId => _qgjUserId;
@@ -144,6 +152,21 @@ class ConnectionManager {
   }
 
   void setModel(ModelType model) => _model = model;
+
+  /// Set the selected official vehicle before starting a BLE connection.
+  /// Credentials remain in memory for this session only.
+  void setOfficialConnectionContext(OfficialBleConnectionContext? context) {
+    _connectionContext = context;
+    final cipher = context?.cipherModel;
+    _model = cipher ?? ModelType.KKS;
+    if (context?.stack == OfficialBleStack.qgj) {
+      _qgjLoginPassword = context?.selectedPassword ?? 0;
+      _qgjUserId = context?.userIdValue ?? 0;
+    } else if (context == null) {
+      _qgjLoginPassword = 0;
+      _qgjUserId = 0;
+    }
+  }
 
   void setQgjCredentials({int? password, int? userId}) {
     _qgjLoginPassword = password ?? 0;
@@ -218,6 +241,41 @@ class ConnectionManager {
   }
 
   Future<BikeState?> refreshBikeState() async {
+    if (_protocol == ProtocolType.kks) {
+      final writeChar = _writeChar;
+      final token = _token;
+      if (_state != ConnectionState.ready ||
+          writeChar == null ||
+          token == null) {
+        return null;
+      }
+
+      return runGattOperation(() async {
+        final previous = _standardStateCompleter;
+        if (previous != null && !previous.isCompleted) {
+          previous.complete(null);
+        }
+        final completer = Completer<BikeState?>();
+        _standardStateCompleter = completer;
+        try {
+          final frame = buildCommand(
+            _model.aesKey,
+            CommandCode.readState,
+            token,
+          );
+          await writeChar.write(frame.toList(), withoutResponse: false);
+          return await completer.future.timeout(
+            BleTimings.commandAckTimeout,
+            onTimeout: () => null,
+          );
+        } finally {
+          if (identical(_standardStateCompleter, completer)) {
+            _standardStateCompleter = null;
+          }
+        }
+      }, priority: GattOperationPriority.high);
+    }
+
     final data = await readFeb3();
     if (data == null || data.isEmpty) return null;
     final state = BikeState.fromFeb3(data);
@@ -227,7 +285,10 @@ class ConnectionManager {
     return state;
   }
 
-  Future<void> connect(BluetoothDevice device) async {
+  Future<void> connect(
+    BluetoothDevice device, {
+    OfficialBleConnectionContext? context,
+  }) async {
     if (_disposed) {
       throw StateError('ConnectionManager disposed');
     }
@@ -253,6 +314,8 @@ class ConnectionManager {
     _disconnectHandled = false;
     await _clearRuntimeResources(disconnectDevice: false);
 
+    if (context != null) setOfficialConnectionContext(context);
+
     _device = device;
     _lastKnownProtocol = ProtocolType.unknown;
     _setState(ConnectionState.connecting);
@@ -270,11 +333,15 @@ class ConnectionManager {
       await _connectDeviceWithRetry(
         device,
         timeout: BleTimings.connectTimeout,
-        attempts: 3,
+        attempts: _connectionContext?.stack == OfficialBleStack.tlink ? 6 : 3,
+        retryDelay: _connectionContext?.stack == OfficialBleStack.qgj
+            ? const Duration(milliseconds: 300)
+            : const Duration(milliseconds: 500),
       );
 
       _setState(ConnectionState.connected);
 
+      await _ensureKksBond(device);
       await _requestQgjMtu(device);
       await Future<void>.delayed(BleTimings.serviceSetupDelay);
       await _discoverAndSetup();
@@ -323,19 +390,34 @@ class ConnectionManager {
         (s) => s.serviceUuid.toString().contains('fee5'),
       );
 
-      if (hasFeb0) {
+      final expectedStack = _connectionContext?.stack;
+      if (expectedStack == OfficialBleStack.qgj && hasFeb0 ||
+          expectedStack == null && hasFeb0) {
         _protocol = ProtocolType.qgj;
         _lastKnownProtocol = _protocol;
         _log.ble('识别协议: QGJ (feb0)', level: LogLevel.info);
         await _setupQgj(services);
-      } else if (hasFee5) {
-        _protocol = ProtocolType.standard;
+      } else if (hasFee5 &&
+          (expectedStack == null ||
+              expectedStack == OfficialBleStack.kks ||
+              expectedStack == OfficialBleStack.tlink)) {
+        _protocol = expectedStack == OfficialBleStack.tlink
+            ? ProtocolType.tlink
+            : ProtocolType.kks;
         _lastKnownProtocol = _protocol;
-        _log.ble('识别协议: Standard (fee5)', level: LogLevel.info);
-        await _setupStandard(services);
+        if (_protocol == ProtocolType.tlink) {
+          await _setupTLink(services);
+        } else {
+          await _setupKks(services);
+        }
       } else {
         _protocol = ProtocolType.unknown;
         _log.ble('未识别协议', level: LogLevel.warning);
+        if (expectedStack != null) {
+          throw StateError(
+            'GATT services do not match ${expectedStack.name} model',
+          );
+        }
       }
     } catch (e) {
       _log.ble('服务发现/设置失败', detail: e.toString(), level: LogLevel.error);
@@ -346,7 +428,7 @@ class ConnectionManager {
     }
   }
 
-  Future<void> _setupStandard(List<BluetoothService> services) async {
+  Future<void> _setupKks(List<BluetoothService> services) async {
     final service = services.firstWhere(
       (s) => s.serviceUuid.toString().contains('fee5'),
     );
@@ -357,17 +439,75 @@ class ConnectionManager {
       if (uuid.contains('feb6')) _notifyChar = c;
     }
 
-    if (_notifyChar != null) {
-      await _enableNotifyOrIndicate(_notifyChar!);
-      _notifySub = _notifyChar!.onValueReceived.listen(_onStandardNotify);
+    if (_notifyChar == null || _writeChar == null) {
+      throw StateError('KKS fee5 characteristics are incomplete');
+    }
+    await _enableNotifyOrIndicate(_notifyChar!);
+    _notifySub = _notifyChar!.onValueReceived.listen(_onStandardNotify);
+    final tokenReq = buildTokenRequest(_model.aesKey);
+    await runGattOperation(
+      () => _writeChar!.write(tokenReq.toList(), withoutResponse: false),
+      priority: GattOperationPriority.high,
+    );
+  }
+
+  Future<void> _setupTLink(List<BluetoothService> services) async {
+    final service = services.firstWhere(
+      (s) => s.serviceUuid.toString().contains('fee5'),
+    );
+    final hasDeviceInfo = services.any(
+      (s) => s.serviceUuid.toString().contains('180a'),
+    );
+    if (!hasDeviceInfo ||
+        !services.any((s) => s.serviceUuid.toString().contains('fcc0'))) {
+      throw StateError('TLink GATT services are incomplete');
     }
 
-    if (_writeChar != null) {
-      final tokenReq = buildTokenRequest(_model.aesKey);
-      await runGattOperation(
-        () => _writeChar!.write(tokenReq.toList(), withoutResponse: false),
-        priority: GattOperationPriority.high,
-      );
+    for (final c in service.characteristics) {
+      final uuid = c.characteristicUuid.toString();
+      if (uuid.contains('feb5')) _writeChar = c;
+      if (uuid.contains('feb6')) _notifyChar = c;
+    }
+    await _subscribeFcc0(services);
+    await _subscribeOptionalTLinkServices(services);
+
+    if (_notifyChar == null || _writeChar == null) {
+      throw StateError('TLink fee5 characteristics are incomplete');
+    }
+    await _enableNotifyOrIndicate(_notifyChar!);
+    _notifySub = _notifyChar!.onValueReceived.listen(_onStandardNotify);
+    final tokenReq = buildTLinkTokenRequest(_model.aesKey);
+    await runGattOperation(
+      () => _writeChar!.write(tokenReq.toList(), withoutResponse: false),
+      priority: GattOperationPriority.high,
+    );
+  }
+
+  Future<void> _subscribeOptionalTLinkServices(
+    List<BluetoothService> services,
+  ) async {
+    for (final service in services) {
+      final serviceUuid = service.serviceUuid.toString();
+      if (!serviceUuid.contains('2000') &&
+          !serviceUuid.contains('7000') &&
+          !serviceUuid.contains('fe01')) {
+        continue;
+      }
+      for (final characteristic in service.characteristics) {
+        if (!characteristic.properties.notify &&
+            !characteristic.properties.indicate) {
+          continue;
+        }
+        try {
+          await _enableNotifyOrIndicate(characteristic);
+        } catch (e) {
+          _log.ble(
+            '订阅 TLink 可选特征失败',
+            detail: characteristic.characteristicUuid.toString(),
+            level: LogLevel.debug,
+          );
+        }
+      }
     }
   }
 
@@ -399,6 +539,10 @@ class ConnectionManager {
     }
 
     if (_feb1Char != null) {
+      final context = _connectionContext;
+      if (context != null && !context.hasQgjCredentials) {
+        throw StateError('QGJ login credentials are unavailable');
+      }
       final loginFrame = buildQgjLoginFrame(
         password: _qgjLoginPassword,
         userId: _qgjUserId,
@@ -414,6 +558,7 @@ class ConnectionManager {
     BluetoothDevice device, {
     required Duration timeout,
     required int attempts,
+    required Duration retryDelay,
   }) async {
     for (var attempt = 1; attempt <= attempts; attempt++) {
       try {
@@ -427,14 +572,33 @@ class ConnectionManager {
           level: LogLevel.debug,
         );
         await _recoverFailedConnect(device, e);
-        await Future<void>.delayed(BleTimings.initialConnectRetryDelay);
+        await Future<void>.delayed(retryDelay);
       }
     }
     throw StateError('连接失败');
   }
 
+  Future<void> _ensureKksBond(BluetoothDevice device) async {
+    if (_connectionContext?.stack != OfficialBleStack.kks ||
+        defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+    try {
+      final bonded = await device.bondState.first;
+      if (bonded != BluetoothBondState.bonded) {
+        await device.createBond();
+      }
+    } catch (e) {
+      _log.ble('KKS 配对失败', detail: e.toString(), level: LogLevel.warning);
+      rethrow;
+    }
+  }
+
   Future<void> _requestQgjMtu(BluetoothDevice device) async {
-    if (defaultTargetPlatform != TargetPlatform.android) return;
+    if (defaultTargetPlatform != TargetPlatform.android ||
+        _connectionContext?.stack != OfficialBleStack.qgj) {
+      return;
+    }
     try {
       final mtu = await device.requestMtu(BleTimings.qgjRequestedMtu);
       _log.ble('MTU 已请求', detail: mtu.toString(), level: LogLevel.debug);
@@ -535,13 +699,153 @@ class ConnectionManager {
     if (_disposed) return;
     final data = Uint8List.fromList(value);
     _log.ble('← 收到数据', detail: bytesToSpacedHex(data));
+    if (_protocol == ProtocolType.tlink) {
+      final response = parseTLinkResponse(_model.aesKey, data);
+      unawaited(_handleTLinkResponse(response));
+      return;
+    }
     final response = parseResponse(_model.aesKey, data);
     _addResponse(response);
 
+    _handleStandardResponse(response);
+  }
+
+  Future<void> _handleTLinkResponse(TLinkResponse response) async {
+    if (response is TLinkTokenResponse) {
+      final context = _connectionContext;
+      final writeChar = _writeChar;
+      if (context == null ||
+          !context.hasTLinkCredentials ||
+          writeChar == null) {
+        await _rejectProtocolLogin('TLink 登录凭据缺失');
+        return;
+      }
+      _acceptTLinkToken(response.token);
+      final loginFrame = buildTLinkLoginFrame(
+        keyHex: _model.aesKey,
+        password: context.selectedPassword!,
+        userId: context.userIdValue!,
+        token: response.token,
+      );
+      await runGattOperation(
+        () => writeChar.write(loginFrame.toList(), withoutResponse: false),
+        priority: GattOperationPriority.high,
+      );
+      return;
+    }
+
+    if (response is TLinkLoginResponse) {
+      if (!_acceptTLinkLogin(response.success)) {
+        await _rejectProtocolLogin('TLink 登录被车辆拒绝');
+      }
+      return;
+    }
+
+    if (response is TLinkCommandResponse) {
+      final commandType = switch (response.commandType) {
+        '20' => CommandCode.lock.code,
+        '21' => CommandCode.unlock.code,
+        '22' => CommandCode.powerOn.code,
+        '23' => CommandCode.powerOff.code,
+        '24' => CommandCode.openSeat.code,
+        '25' => CommandCode.find.code,
+        _ => response.commandType,
+      };
+      _handleStandardResponse(
+        CommandResponse(
+          response.raw,
+          commandType: commandType,
+          statusCode: response.statusCode,
+          success: response.success,
+        ),
+      );
+    }
+  }
+
+  void _acceptTLinkToken(String token) {
+    _token = token;
+    _protocolLoggedIn = false;
+  }
+
+  bool _acceptTLinkLogin(bool success) {
+    final token = _token;
+    if (!success || token == null) return false;
+    _markProtocolLoggedIn(token);
+    return true;
+  }
+
+  Future<void> _rejectProtocolLogin(String reason) async {
+    _log.ble(reason, level: LogLevel.error);
+    _clearProtocolLogin();
+    _userDisconnected = true;
+    await _clearRuntimeResources(disconnectDevice: true);
+    _resetCharacteristics();
+    _setState(ConnectionState.disconnected);
+  }
+
+  void _handleStandardResponse(ParsedResponse response) {
+    if (response is StateResponse) {
+      final stateCompleter = _standardStateCompleter;
+      if (response.bikeState != null) {
+        _publishBikeState(response.bikeState);
+      }
+      if (stateCompleter != null && !stateCompleter.isCompleted) {
+        stateCompleter.complete(response.bikeState);
+      }
+      return;
+    }
+
     if (response is TokenResponse) {
       _markProtocolLoggedIn(response.token);
-    } else if (response is StateResponse && response.bikeState != null) {
-      _publishBikeState(response.bikeState);
+      return;
+    }
+
+    if (response is CommandResponse) {
+      _applyStandardCommandState(response);
+      final expected = _standardPendingCommandType;
+      if (expected == null || expected != response.commandType) return;
+      final completer = _standardCommandAckCompleter;
+      _standardCommandAckCompleter = null;
+      _standardPendingCommandType = null;
+      if (completer != null && !completer.isCompleted) {
+        completer.complete(response.success);
+      }
+    }
+  }
+
+  void _applyStandardCommandState(CommandResponse response) {
+    if (!response.success) return;
+    final current = _latestBikeState;
+    final next = switch (response.commandType.toUpperCase()) {
+      '01' => BikeState(
+        isLocked: true,
+        isPowerOn: false,
+        isMuted: current?.isMuted ?? false,
+        voltage: current?.voltage,
+        temperature: current?.temperature,
+        batteryPercent: current?.batteryPercent,
+        signalStrength: current?.signalStrength,
+        faultMotor: current?.faultMotor ?? false,
+        faultController: current?.faultController ?? false,
+        faultBrake: current?.faultBrake ?? false,
+        faultLowVoltage: current?.faultLowVoltage ?? false,
+      ),
+      '02' =>
+        current == null
+            ? const BikeState(isLocked: false, isPowerOn: false)
+            : current.copyWith(isLocked: false),
+      '06' =>
+        current == null
+            ? const BikeState(isLocked: false, isPowerOn: true)
+            : current.copyWith(isLocked: false, isPowerOn: true),
+      '07' =>
+        current == null
+            ? const BikeState(isLocked: false, isPowerOn: false)
+            : current.copyWith(isPowerOn: false),
+      _ => null,
+    };
+    if (next != null && (current == null || next != current)) {
+      _publishBikeState(next);
     }
   }
 
@@ -690,6 +994,29 @@ class ConnectionManager {
   }
 
   @visibleForTesting
+  Future<bool> createPendingStandardCommandAckForTest(String commandType) {
+    final completer = Completer<bool>();
+    _standardCommandAckCompleter = completer;
+    _standardPendingCommandType = commandType.toUpperCase();
+    return completer.future;
+  }
+
+  @visibleForTesting
+  void handleStandardResponseForTest(ParsedResponse response) {
+    _handleStandardResponse(response);
+  }
+
+  @visibleForTesting
+  void acceptTLinkTokenForTest(String token) {
+    _protocol = ProtocolType.tlink;
+    _state = ConnectionState.connected;
+    _acceptTLinkToken(token);
+  }
+
+  @visibleForTesting
+  bool acceptTLinkLoginForTest(bool success) => _acceptTLinkLogin(success);
+
+  @visibleForTesting
   Future<QgjResponse?> createPendingQgjResponseForTest(int cmdId) {
     final completer = Completer<QgjResponse?>();
     _qgjResponseCompleters[cmdId] = completer;
@@ -755,14 +1082,36 @@ class ConnectionManager {
 
     _log.operation('发送指令: ${cmd.label}', detail: 'code=${cmd.code}');
 
-    if (_protocol == ProtocolType.standard) {
+    if (_protocol == ProtocolType.kks || _protocol == ProtocolType.tlink) {
       if (_writeChar == null || _token == null) return false;
-      final frame = buildCommand(_model.aesKey, cmd, _token!);
-      await runGattOperation(
-        () => _writeChar!.write(frame.toList(), withoutResponse: false),
-        priority: GattOperationPriority.high,
-      );
-      return true;
+      final frame = _protocol == ProtocolType.tlink
+          ? buildTLinkCommand(
+              keyHex: _model.aesKey,
+              command: cmd,
+              token: _token!,
+            )
+          : buildCommand(_model.aesKey, cmd, _token!);
+      return runGattOperation(() async {
+        final previous = _standardCommandAckCompleter;
+        if (previous != null && !previous.isCompleted) {
+          previous.complete(false);
+        }
+        final completer = Completer<bool>();
+        _standardCommandAckCompleter = completer;
+        _standardPendingCommandType = cmd.code.toUpperCase();
+        try {
+          await _writeChar!.write(frame.toList(), withoutResponse: false);
+          return await completer.future.timeout(
+            BleTimings.commandAckTimeout,
+            onTimeout: () => false,
+          );
+        } finally {
+          if (identical(_standardCommandAckCompleter, completer)) {
+            _standardCommandAckCompleter = null;
+            _standardPendingCommandType = null;
+          }
+        }
+      }, priority: GattOperationPriority.high);
     } else if (_protocol == ProtocolType.qgj) {
       if (_feb1Char == null) return false;
       final frame = buildQgjControlFrame(cmd);
@@ -834,11 +1183,14 @@ class ConnectionManager {
   /// Standard-stack raw hex write (official `writeData` path) after LOGIN.
   Future<bool> writeStandardHex(String hexData) async {
     if (_state != ConnectionState.ready ||
-        _protocol != ProtocolType.standard ||
+        (_protocol != ProtocolType.kks && _protocol != ProtocolType.tlink) ||
         _writeChar == null) {
       return false;
     }
-    final bytes = hexToBytes(hexData);
+    final frame = _protocol == ProtocolType.tlink
+        ? '$hexData${_token!}'
+        : hexData;
+    final bytes = aesEcbEncrypt(_model.aesKey, frame);
     await runGattOperation(
       () => _writeChar!.write(bytes.toList(), withoutResponse: false),
       priority: GattOperationPriority.high,
@@ -991,6 +1343,8 @@ class ConnectionManager {
     _notifySub = null;
     await _gpsNotifySub?.cancel();
     _gpsNotifySub = null;
+    await _fbb2NotifySub?.cancel();
+    _fbb2NotifySub = null;
     await _connectionSub?.cancel();
     _connectionSub = null;
     _resetCharacteristics();
@@ -1153,6 +1507,17 @@ class ConnectionManager {
       _cmdAckCompleter!.complete(false);
     }
     _cmdAckCompleter = null;
+    if (_standardCommandAckCompleter != null &&
+        !_standardCommandAckCompleter!.isCompleted) {
+      _standardCommandAckCompleter!.complete(false);
+    }
+    _standardCommandAckCompleter = null;
+    _standardPendingCommandType = null;
+    if (_standardStateCompleter != null &&
+        !_standardStateCompleter!.isCompleted) {
+      _standardStateCompleter!.complete(null);
+    }
+    _standardStateCompleter = null;
     for (final completer in _qgjResponseCompleters.values) {
       if (!completer.isCompleted) {
         completer.completeError(error);

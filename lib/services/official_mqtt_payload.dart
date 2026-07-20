@@ -1,18 +1,33 @@
 import 'dart:convert';
 
+import 'control_command_policy.dart';
+
 /// Parsed subset of official `MqttPayloadBean` used for control UI refresh.
 class OfficialMqttStatusPayload {
   final String? acc;
   final String? defenceStatus;
   final String? imei;
   final int? muteStatus;
+  final int? accErrorStatus;
+  final int? defenceErrorStatus;
+  final int? bikeSetSourceValue;
 
   const OfficialMqttStatusPayload({
     this.acc,
     this.defenceStatus,
     this.imei,
     this.muteStatus,
+    this.accErrorStatus,
+    this.defenceErrorStatus,
+    this.bikeSetSourceValue,
   });
+
+  bool get isMoving => accErrorStatus == 4 || defenceErrorStatus == 2;
+  bool get isKeyStarted => accErrorStatus == 8;
+  bool get isNotPoweredOff {
+    if (defenceErrorStatus != 3) return false;
+    return !const {0, 2, 5, 6}.contains(bikeSetSourceValue);
+  }
 
   int? get accInt {
     final text = acc?.trim();
@@ -43,6 +58,9 @@ class OfficialMqttStatusPayload {
         ),
         imei: _asString(map['imei']),
         muteStatus: _asInt(map['muteStatus']),
+        accErrorStatus: _asInt(map['accErrorStatus']),
+        defenceErrorStatus: _asInt(map['defenceErrorStatus']),
+        bikeSetSourceValue: _asInt(map['bikeSetSourceValue']),
       );
     } on Object {
       // Malformed status payload — treat as no update.
@@ -66,6 +84,22 @@ class OfficialMqttStatusPayload {
       // find / openCushion: official still refreshes ACC/defence opportunistically
       _ => hasVehicleState,
     };
+  }
+
+  String? controlErrorMessage(String? pendingCommandApiName) {
+    if (isMoving) return ControlCommandPolicy.vehicleMovingDisabledReason;
+    if (isKeyStarted) return ControlCommandPolicy.keyStartedDisabledReason;
+    if (isNotPoweredOff) {
+      return ControlCommandPolicy.notPoweredOffDisabledReason;
+    }
+    if (const {5, 6, 7, 20}.contains(accErrorStatus)) {
+      return switch (pendingCommandApiName) {
+        'start' => '车辆当前状态不支持启动',
+        'stop' => '车辆当前状态不支持熄火',
+        _ => '车辆当前状态不支持此操作',
+      };
+    }
+    return null;
   }
 
   static String? _asString(Object? value) {

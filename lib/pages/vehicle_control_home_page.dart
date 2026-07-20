@@ -6,11 +6,14 @@ import 'package:flutter/services.dart';
 
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
+import '../ble/constants.dart' show BikeState;
+import '../ble/official_ble_connection_context.dart';
 import '../models/battery_snapshot.dart';
 import '../models/command_types.dart';
 import '../models/official_vehicle.dart';
 import '../services/control_channel_resolver.dart';
 import '../services/control_channel_status.dart';
+import '../services/control_command_route.dart';
 import '../services/control_command_confirmation.dart';
 import '../services/control_command_executor.dart';
 import '../services/control_command_policy.dart';
@@ -75,6 +78,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
 
   StreamSubscription<OfficialCloudState>? _cloudSub;
   StreamSubscription<ble.ConnectionState>? _bleStateSub;
+  StreamSubscription<BikeState?>? _bleBikeStateSub;
   StreamSubscription<OfficialMqttLinkState>? _mqttLinkSub;
   bool _busy = false;
   bool _disposed = false;
@@ -83,6 +87,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
 
   /// Cached BLE/location permission probe for near-field banner + six-key copy.
   PermissionCheckResult? _blePermission;
+  BikeState? _bleBikeState;
 
   @override
   bool get wantKeepAlive => true;
@@ -96,6 +101,11 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       unawaited(_ensureNearFieldLink(auto: true));
     });
     _bleStateSub = connectionManager.stateStream.listen((_) {
+      if (mounted) setState(() {});
+    });
+    _bleBikeState = connectionManager.latestBikeState;
+    _bleBikeStateSub = connectionManager.bikeStateStream.listen((state) {
+      _bleBikeState = state;
       if (mounted) setState(() {});
     });
     _mqttLinkSub = officialMqttService.linkStateStream.listen((_) {
@@ -115,6 +125,8 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     if (cloudSub != null) unawaited(cloudSub.cancel());
     final bleSub = _bleStateSub;
     if (bleSub != null) unawaited(bleSub.cancel());
+    final bleBikeStateSub = _bleBikeStateSub;
+    if (bleBikeStateSub != null) unawaited(bleBikeStateSub.cancel());
     final mqttSub = _mqttLinkSub;
     if (mqttSub != null) unawaited(mqttSub.cancel());
     super.dispose();
@@ -171,11 +183,45 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     if (!officialCloudService.state.signedIn) return;
     final vehicle = officialCloudService.state.selectedVehicle;
     if (vehicle == null) return;
-    final mac = vehicle.normalizedDeviceMac;
-    if (mac.isEmpty) return;
+    final bleContext = OfficialBleConnectionContext.fromVehicle(
+      vehicle,
+      userId: officialCloudService.state.userId,
+    );
+    if (bleContext.stack == OfficialBleStack.unsupported) {
+      logService.operation(
+        '爱车近场跳过: 不支持的 BLE 机型',
+        detail: 'modelType=${vehicle.modelType}',
+        level: LogLevel.warning,
+      );
+      return;
+    }
+    final targetId = bleContext.targetMacCompact;
+    if (targetId.isEmpty) {
+      logService.operation(
+        '爱车近场跳过: 车辆无 MAC',
+        detail: 'btmac=${vehicle.btmac} mac=${vehicle.raw['mac']}',
+        level: LogLevel.warning,
+      );
+      if (!auto && mounted) {
+        AppSnack.error(context, '车辆未返回蓝牙地址，无法近场连接');
+      }
+      return;
+    }
+    if ((bleContext.stack == OfficialBleStack.tlink &&
+            !bleContext.hasTLinkCredentials) ||
+        (bleContext.stack == OfficialBleStack.qgj &&
+            !bleContext.hasQgjCredentials)) {
+      logService.operation(
+        '爱车近场: 登录凭据可能不完整',
+        detail:
+            'stack=${bleContext.stack.name} uidEmpty=${bleContext.userId.isEmpty} '
+            'passwordMissing=${bleContext.selectedPassword == null}',
+        level: LogLevel.warning,
+      );
+    }
 
     // Already linked to this car — do not restart connection.
-    if (autoConnectService.isLinkedTo(mac)) {
+    if (autoConnectService.isLinkedTo(targetId)) {
       return;
     }
 
@@ -202,8 +248,9 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     if (mounted) setState(() {});
     try {
       await autoConnectService.linkOfficialTarget(
-        deviceId: mac,
+        deviceId: targetId,
         displayName: vehicle.displayName,
+        context: bleContext,
         enable: true,
         connectNow: true,
       );
@@ -297,11 +344,31 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     }
   }
 
-  bool _currentIsPowerOn() {
-    return officialCloudService.state.selectedVehicle?.isPowerOn ?? false;
+  BikeState? _activeBleState() {
+    final availability = _controlAvailability(ignoreBusy: true);
+    if (!availability.willUseBle || !connectionManager.isProtocolLoggedIn) {
+      return null;
+    }
+    return _bleBikeState ?? connectionManager.latestBikeState;
   }
 
-  ControlChannelAvailability _controlAvailability() {
+  bool? _currentPowerState() {
+    final bleState = _activeBleState();
+    if (bleState != null) return bleState.isPowerOn;
+    final vehicle = officialCloudService.state.selectedVehicle;
+    final acc = vehicle?.acc;
+    return acc == null ? null : acc == 1;
+  }
+
+  bool? _currentLockState() {
+    final bleState = _activeBleState();
+    if (bleState != null) return bleState.isLocked;
+    final vehicle = officialCloudService.state.selectedVehicle;
+    final defence = vehicle?.defenceStatus;
+    return defence == null ? null : defence == 1;
+  }
+
+  ControlChannelAvailability _controlAvailability({bool ignoreBusy = false}) {
     return ControlChannelResolver.resolve(
       cloudState: officialCloudService.state,
       // Official LoginStatus.LOGIN — not mere GATT connected / raw ready.
@@ -309,7 +376,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       bleNotReadyReason: connectionManager.protocolLoginUnavailableReason,
       defaultVehicleId: vehicleStore.defaultVehicle?.id,
       channel: _controlChannel,
-      busy: _busy,
+      busy: ignoreBusy ? false : _busy,
     );
   }
 
@@ -328,6 +395,14 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     }
   }
 
+  ControlChannelAvailability _commandAvailability(CommandCode command) {
+    return ControlCommandRoute.resolve(
+      base: _controlAvailability(),
+      command: command,
+      vehicle: officialCloudService.state.selectedVehicle,
+    );
+  }
+
   bool _isControlDebounced() {
     if (_controlDebounceWatch.isRunning &&
         _controlDebounceWatch.elapsed < _controlCommandDebounce) {
@@ -340,16 +415,59 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   }
 
   Future<void> _sendPower() async {
-    final isPowerOn = _currentIsPowerOn();
+    if (_busy) {
+      AppSnack.error(context, '正在执行控车指令，请稍候');
+      return;
+    }
+    if (!await _ensureKnownControlState(power: true)) return;
+    if (!mounted) return;
+    final isPowerOn = _currentPowerState();
+    if (isPowerOn == null) return;
+    final vehicleKey = officialCloudService.state.selectedVehicle?.key;
     final cmd = isPowerOn ? CommandCode.powerOff : CommandCode.powerOn;
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: AppColors.of(context).surface,
+      builder: (_) => _PowerConfirmationSheet(poweringOn: !isPowerOn),
+    );
+    if (!mounted || confirmed != true) return;
+    if (officialCloudService.state.selectedVehicle?.key != vehicleKey ||
+        _currentPowerState() != isPowerOn) {
+      AppSnack.error(context, '车辆状态已变化，请重新操作');
+      return;
+    }
     await _sendCommand(cmd);
   }
 
   Future<void> _sendArmToggle() async {
-    final locked =
-        officialCloudService.state.selectedVehicle?.isLocked ?? false;
+    if (!await _ensureKnownControlState(lock: true)) return;
+    final locked = _currentLockState();
+    if (locked == null) return;
     final cmd = locked ? CommandCode.unlock : CommandCode.lock;
     await _sendCommand(cmd);
+  }
+
+  Future<bool> _ensureKnownControlState({
+    bool power = false,
+    bool lock = false,
+  }) async {
+    bool isKnown() {
+      final powerKnown = !power || _currentPowerState() != null;
+      final lockKnown = !lock || _currentLockState() != null;
+      return powerKnown && lockKnown;
+    }
+
+    if (isKnown()) return true;
+    await _refreshStateForConfirmation(
+      preferBle: _controlAvailability().willUseBle,
+    );
+    if (isKnown()) return true;
+    if (mounted) {
+      AppSnack.error(context, '车辆状态未知，请刷新后重试');
+    }
+    return false;
   }
 
   Future<void> _sendCommand(CommandCode cmd) async {
@@ -361,9 +479,17 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       if (mounted) AppSnack.error(context, '请勿频繁操作');
       return;
     }
+    if (cmd == CommandCode.find &&
+        !await _ensureKnownControlState(power: true)) {
+      return;
+    }
+    final mqttStatus = officialMqttService.latestStatusPayload;
     final policy = ControlCommandPolicy.evaluate(
       command: cmd,
-      isPowerOn: _currentIsPowerOn(),
+      isPowerOn: _currentPowerState() == true,
+      isMoving: mqttStatus?.isMoving ?? false,
+      keyStarted: mqttStatus?.isKeyStarted ?? false,
+      notPoweredOff: mqttStatus?.isNotPoweredOff ?? false,
     );
     if (!policy.allowed) {
       if (mounted) {
@@ -371,7 +497,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       }
       return;
     }
-    final availability = _controlAvailability();
+    final availability = _commandAvailability(cmd);
     if (!availability.enabled) {
       // P0-A2: never silent — surface BLE off / connecting / not LOGIN / cloud.
       // Prefer permission-specific copy when BLE is the missing piece.
@@ -385,6 +511,9 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     setState(() => _busy = true);
     unawaited(HapticFeedback.mediumImpact());
     final vehicleKeyAtSend = officialCloudService.state.selectedVehicle?.key;
+    final bleDeviceAtSend = availability.willUseBle
+        ? connectionManager.device?.remoteId.toString()
+        : null;
     final baseline = _vehicleStateSnapshot();
     _pushCommand(
       _CommandEntry(
@@ -399,12 +528,31 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     try {
       await Future<void>.delayed(_controlCommandSendDelay);
       if (!mounted || _disposed) return;
+      if (officialCloudService.state.selectedVehicle?.key != vehicleKeyAtSend ||
+          (availability.willUseBle &&
+              connectionManager.device?.remoteId.toString() !=
+                  bleDeviceAtSend)) {
+        AppSnack.error(context, '车辆或控车渠道已变化，本次指令已取消');
+        _pushCommand(
+          _CommandEntry(
+            kind: _kindFor(cmd),
+            title: '${cmd.label}已取消',
+            subtitle: '目标车辆或连接已变化',
+            time: '刚刚',
+            status: _CommandStatus.pending,
+          ),
+        );
+        return;
+      }
 
       final result = await _commandExecutor.send(
         command: cmd,
         availability: availability,
       );
       if (result.success) {
+        if (result.shouldRefreshBikeState) {
+          await _refreshStateForConfirmation(preferBle: true);
+        }
         _runBackgroundTask(
           locationService.recordDefaultVehicleLocation(),
           failureMessage: '控车后记录车辆位置失败',
@@ -431,12 +579,15 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
         if (!confirmed) {
           await _refreshStateForConfirmation();
           if (!mounted) return;
-          AppSnack.error(context, _unconfirmedMessage(cmd));
+          final commandError = officialMqttService.pendingCommandError;
+          AppSnack.error(context, commandError ?? _unconfirmedMessage(cmd));
           _pushCommand(
             _CommandEntry(
               kind: _kindFor(cmd),
-              title: '${cmd.label}未确认',
-              subtitle: '请稍后重试',
+              title: commandError == null
+                  ? '${cmd.label}未确认'
+                  : '${cmd.label}失败',
+              subtitle: commandError ?? '请稍后重试',
               time: '刚刚',
               status: _CommandStatus.pending,
             ),
@@ -610,6 +761,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
 
     final confirmationTimer = Stopwatch()..start();
     while (mounted && !_disposed) {
+      if (officialMqttService.pendingCommandError != null) return false;
       final mqttAcked = ControlCommandConfirmation.mqttPendingAcknowledged(
         pendingAtSend: mqttPendingAtSend,
         pendingNow: officialMqttService.pendingCommandApiName,
@@ -628,6 +780,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       if (confirmationTimer.elapsed > _controlConfirmTimeout) return false;
 
       await _refreshStateForConfirmation();
+      if (officialMqttService.pendingCommandError != null) return false;
       final mqttAckedAfterRefresh =
           ControlCommandConfirmation.mqttPendingAcknowledged(
             pendingAtSend: mqttPendingAtSend,
@@ -651,13 +804,17 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     return false;
   }
 
-  Future<void> _refreshStateForConfirmation() async {
+  Future<void> _refreshStateForConfirmation({bool preferBle = false}) async {
     try {
-      await officialCloudService.refreshVehicles(
-        silent: true,
-        refreshReplicaDetails: false,
-        force: true,
-      );
+      if (preferBle) {
+        await connectionManager.refreshBikeState();
+      } else {
+        await officialCloudService.refreshVehicles(
+          silent: true,
+          refreshReplicaDetails: false,
+          force: true,
+        );
+      }
     } catch (e) {
       logService.operation(
         'Aurora 控车后确认车辆状态失败',
@@ -869,15 +1026,23 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       return direct.toLowerCase().contains('km') ? direct : '$direct km';
     }
     // Fallback if monthly travel history already loaded for today.
+    // deviceTravel totalMileage / record.mileage are meters.
     final todayKey = formatDateText(DateTime.now());
     for (final day in cloudState.travelDays) {
       if (normalizeOfficialDateKey(day.travelDate) != todayKey) continue;
       final total = day.totalMileage.trim();
       if (total.isNotEmpty) {
-        return '${formatCompactDecimalText(total)} km';
+        final label = formatTravelMileageMetersText(total, alwaysKm: true);
+        if (label.isEmpty) continue;
+        // Keep home-card spacing style: "12.5 km".
+        return label.endsWith('km')
+            ? '${label.substring(0, label.length - 2)} km'
+            : label;
       }
       final km = sumTravelMileageKm(day.records);
-      if (km > 0) return '${formatCompactDecimal(km)} km';
+      if (km > 0) {
+        return '${formatDecimalDown(km, fractionDigits: 2)} km';
+      }
     }
     return '--';
   }
@@ -970,6 +1135,10 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   }
 
   void _openVehicleHeader() {
+    if (_busy) {
+      AppSnack.error(context, '正在执行控车指令，请稍候');
+      return;
+    }
     final vehicles = officialCloudService.state.vehicles;
     if (vehicles.length > 1) {
       unawaited(showVehicleSwitchSheet(context));
@@ -989,8 +1158,8 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     final cloudVehicle = cloudState.selectedVehicle;
     final battery = _batterySnapshot(cloudState);
     final location = _location(cloudState);
-    final isPowerOn = cloudVehicle?.isPowerOn ?? false;
-    final isArmed = cloudVehicle?.isLocked ?? false;
+    final isPowerOn = _currentPowerState();
+    final isArmed = _currentLockState();
     final percent = battery.percent ?? 0;
     final signedIn = cloudState.signedIn;
     final hasVehicle = cloudVehicle != null;
@@ -1109,7 +1278,7 @@ class _TopBar extends StatelessWidget {
   final String statusText;
   final bool online;
   final bool channelActive;
-  final bool powered;
+  final bool? powered;
   final VoidCallback onTitleTap;
   final VoidCallback onSettings;
 
@@ -1192,7 +1361,7 @@ class _TopBar extends StatelessWidget {
 class _PowerPill extends StatelessWidget {
   const _PowerPill({required this.powered});
 
-  final bool powered;
+  final bool? powered;
 
   @override
   Widget build(BuildContext context) {
@@ -1203,17 +1372,17 @@ class _PowerPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: powered
+        color: powered == true
             ? colors.primary.withValues(alpha: 0.12)
             : colors.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
       child: Text(
-        powered ? '通电中' : '已断电',
+        powered == null ? '电源未知' : (powered == true ? '通电中' : '已断电'),
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: powered ? colors.primary : colors.textTertiary,
+          color: powered == true ? colors.primary : colors.textTertiary,
         ),
       ),
     );
@@ -1729,8 +1898,8 @@ class _ShortcutsRow extends StatelessWidget {
     required this.onPower,
   });
 
-  final bool armed;
-  final bool powered;
+  final bool? armed;
+  final bool? powered;
   final bool dimmed;
   final VoidCallback onFind;
   final VoidCallback onArm;
@@ -1766,10 +1935,14 @@ class _ShortcutsRow extends StatelessWidget {
             ),
             Expanded(
               child: _Shortcut(
-                icon: armed ? Icons.lock_outline : Icons.lock_open,
-                label: armed ? '已设防' : '未设防',
-                sub: armed ? '车锁已锁' : '点击设防',
-                style: armed ? _ShortcutStyle.armed : _ShortcutStyle.neutral,
+                icon: armed == null
+                    ? Icons.help_outline
+                    : (armed! ? Icons.lock_outline : Icons.lock_open),
+                label: armed == null ? '设防未知' : (armed! ? '已设防' : '未设防'),
+                sub: armed == null ? '刷新后重试' : (armed! ? '车锁已锁' : '点击设防'),
+                style: armed == true
+                    ? _ShortcutStyle.armed
+                    : _ShortcutStyle.neutral,
                 onTap: onArm,
               ),
             ),
@@ -1785,9 +1958,9 @@ class _ShortcutsRow extends StatelessWidget {
             Expanded(
               child: _Shortcut(
                 icon: Icons.power_settings_new,
-                label: powered ? '已通电' : '已断电',
-                sub: powered ? '动力已开' : '点击通电',
-                style: powered
+                label: powered == null ? '电源未知' : (powered! ? '已通电' : '已断电'),
+                sub: powered == null ? '刷新后重试' : (powered! ? '动力已开' : '点击通电'),
+                style: powered == true
                     ? _ShortcutStyle.powerOn
                     : _ShortcutStyle.powerOff,
                 onTap: onPower,
@@ -1883,6 +2056,129 @@ class _Shortcut extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PowerConfirmationSheet extends StatefulWidget {
+  const _PowerConfirmationSheet({required this.poweringOn});
+
+  final bool poweringOn;
+
+  @override
+  State<_PowerConfirmationSheet> createState() =>
+      _PowerConfirmationSheetState();
+}
+
+class _PowerConfirmationSheetState extends State<_PowerConfirmationSheet> {
+  double _progress = 0;
+
+  void _finish(double value) {
+    if (value >= 0.9) {
+      unawaited(HapticFeedback.heavyImpact());
+      Navigator.of(context).pop(true);
+      return;
+    }
+    setState(() => _progress = 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final actionColor = widget.poweringOn ? colors.primary : colors.danger;
+    final title = widget.poweringOn ? '启动车辆' : '关闭车辆电源';
+    final slideLabel = widget.poweringOn ? '滑动启动' : '滑动熄火';
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        14,
+        20,
+        20 + MediaQuery.paddingOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: actionColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.power_settings_new,
+                  color: actionColor,
+                  size: 21,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: '取消',
+                onPressed: () => Navigator.of(context).pop(false),
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Semantics(
+            label: slideLabel,
+            slider: true,
+            value: '${(_progress * 100).round()}%',
+            child: Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(AppRadii.md),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Text(
+                    slideLabel,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 48,
+                      activeTrackColor: actionColor.withValues(alpha: 0.18),
+                      inactiveTrackColor: Colors.transparent,
+                      thumbColor: actionColor,
+                      overlayShape: SliderComponentShape.noOverlay,
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 22,
+                      ),
+                    ),
+                    child: Slider(
+                      value: _progress,
+                      onChanged: (value) => setState(() => _progress = value),
+                      onChangeEnd: _finish,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

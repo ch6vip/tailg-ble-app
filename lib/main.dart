@@ -50,7 +50,7 @@ final RouteObserver<ModalRoute<void>> appRouteObserver =
 
 VehicleProtocol vehicleProtocolFromBle(ble.ProtocolType protocol) {
   return switch (protocol) {
-    ble.ProtocolType.standard => VehicleProtocol.standard,
+    ble.ProtocolType.kks || ble.ProtocolType.tlink => VehicleProtocol.standard,
     ble.ProtocolType.qgj => VehicleProtocol.qgj,
     ble.ProtocolType.unknown => VehicleProtocol.auto,
   };
@@ -62,6 +62,7 @@ VehicleProtocol vehicleProtocolFromBle(ble.ProtocolType protocol) {
 /// cloud-only cleanup; ConnectionManager still accepts credentials for the
 /// QGJ login frame, so we intentionally reset them to zero defaults here.
 void applyVehicleBleCredentials(VehicleProfile? vehicle) {
+  connectionManager.setOfficialConnectionContext(null);
   connectionManager.setQgjCredentials(password: 0, userId: 0);
 }
 

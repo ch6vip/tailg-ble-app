@@ -299,6 +299,45 @@ void main() {
       );
     });
 
+    test('formatBleMacAddress normalizes to colon MAC', () {
+      expect(
+        AutoConnectService.formatBleMacAddress('AABBCCDDEEFF'),
+        'AA:BB:CC:DD:EE:FF',
+      );
+      expect(
+        AutoConnectService.formatBleMacAddress('aa:bb:cc:dd:ee:ff'),
+        'AA:BB:CC:DD:EE:FF',
+      );
+      expect(AutoConnectService.formatBleMacAddress('short'), '');
+    });
+
+    test('tryAutoConnect prefers direct MAC connect before scan on Android', () {
+      final source = readSource('lib/services/auto_connect_service.dart');
+      final methodStart = source.indexOf('Future<void> _tryAutoConnectOnce()');
+      final direct = source.indexOf('_tryDirectMacConnect', methodStart);
+      final scanStart = source.indexOf(
+        'FlutterBluePlus.startScan',
+        methodStart,
+      );
+
+      expect(methodStart, greaterThanOrEqualTo(0));
+      expect(direct, greaterThan(methodStart));
+      expect(scanStart, greaterThan(direct));
+      expect(source, contains('androidUsesFineLocation: true'));
+      expect(source, contains('BluetoothDevice.fromId'));
+    });
+
+    test('TLink/KKS scan matching accepts MAC or advertised name', () {
+      final source = readSource('lib/services/auto_connect_service.dart');
+      expect(source, contains('_advertisedNameMatches'));
+      expect(source, contains('OfficialBleStack.tlink =>'));
+      expect(source, contains('matchesSystemId ||'));
+      expect(
+        source,
+        contains('_advertisedNameMatches(result, context.advertisedName)'),
+      );
+    });
+
     test(
       'linkOfficialTarget disconnects BLE when retargeting another car',
       () async {

@@ -14,7 +14,7 @@
 | 技术栈 | Flutter 3.44.6 · Dart 3.12.2 · Android API 23+ |
 | 包名 | Dart `tailg_ble_app` · Android `de.tttq.tailg_ble_app` · 显示名「台铃智能」 |
 | 版本 | 以 `pubspec.yaml` 为准（当前 `1.1.0+14`） |
-| **复刻进度** | **完全 96.2%** · 完美 82.3% · 工程 91.7%（见 [PLAN.md §0](PLAN.md)；代码/mock 已有但未完成真机或 CI 验收的任务按 `[~]` 计） |
+| **复刻进度** | **完全 94.7%** · 完美 81.3% · 工程 91.7%（见 [PLAN.md §0](PLAN.md)；代码/mock 已有但未完成真机或 CI 验收的任务按 `[~]` 计） |
 
 ---
 

@@ -1,11 +1,13 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../ble/constants.dart';
 import '../ble/connection_manager.dart';
+import '../ble/official_ble_connection_context.dart';
+import '../ble/qgj_scan_identity.dart';
 import '../models/vehicle_profile.dart';
-import 'package:flutter/foundation.dart';
 
 import 'ble_connection_snapshot_guard.dart';
 import 'log_service.dart';
@@ -83,6 +85,8 @@ class AutoConnectService {
   bool get enabled => _enabled;
   String? _lastDeviceId;
   String? _lastDeviceName;
+  OfficialBleConnectionContext? _officialContext;
+  OfficialBleConnectionContext? _scanContext;
   String? get lastDeviceName => _lastDeviceName;
 
   /// Test hook: replace BLE permission gate used before auto-scan.
@@ -140,6 +144,8 @@ class AutoConnectService {
     _enabled = false;
     _lastDeviceId = null;
     _lastDeviceName = null;
+    _officialContext = null;
+    _scanContext = null;
     _initialized = false;
     _initializing = null;
     permissionRequestOverride = null;
@@ -177,13 +183,16 @@ class AutoConnectService {
   Future<void> linkOfficialTarget({
     required String deviceId,
     required String displayName,
+    OfficialBleConnectionContext? context,
     bool enable = true,
     bool connectNow = true,
   }) async {
     final id = deviceId.trim();
     if (id.isEmpty) return;
 
-    await _disconnectIfDifferentTarget(id);
+    await _disconnectIfDifferentTarget(id, context: context);
+    _officialContext = context;
+    _connectionManager?.setOfficialConnectionContext(context);
 
     await VehicleStore().init();
     await VehicleStore().upsert(
@@ -212,10 +221,19 @@ class AutoConnectService {
   /// Disconnect when the active BLE session is for another MAC/device id.
   ///
   /// [ConnectionManager.disconnect] also completes pending commands / GATT ops.
-  Future<void> _disconnectIfDifferentTarget(String targetDeviceId) async {
+  Future<void> _disconnectIfDifferentTarget(
+    String targetDeviceId, {
+    OfficialBleConnectionContext? context,
+  }) async {
     final manager = _connectionManager;
     if (manager == null) return;
     if (manager.state == ConnectionState.disconnected) return;
+
+    final currentTarget = manager.connectionContext?.targetMacCompact ?? '';
+    if (currentTarget.isNotEmpty &&
+        sameDeviceId(currentTarget, targetDeviceId)) {
+      return;
+    }
 
     final currentId = manager.device?.remoteId.toString() ?? '';
     if (currentId.isNotEmpty && sameDeviceId(currentId, targetDeviceId)) {
@@ -248,6 +266,10 @@ class AutoConnectService {
     final manager = _connectionManager;
     if (manager == null) return false;
     if (manager.state == ConnectionState.disconnected) return false;
+    final officialTarget = manager.connectionContext?.targetMacCompact ?? '';
+    if (officialTarget.isNotEmpty) {
+      return sameDeviceId(officialTarget, targetDeviceId);
+    }
     final currentId = manager.device?.remoteId.toString() ?? '';
     if (currentId.isEmpty) return false;
     return sameDeviceId(currentId, targetDeviceId);
@@ -300,6 +322,8 @@ class AutoConnectService {
     final manager = _connectionManager;
     final targetDeviceId = _lastDeviceId;
     final targetDeviceName = _lastDeviceName;
+    final targetContext = _officialContext;
+    _scanContext = targetContext;
     if (!_enabled || targetDeviceId == null || manager == null) {
       return;
     }
@@ -317,16 +341,54 @@ class AutoConnectService {
       return;
     }
 
+    final adapterState = await _readAdapterState();
+    if (adapterState != BluetoothAdapterState.on) {
+      _log.operation(
+        '自动连接: 蓝牙未开启',
+        detail: adapterState.name,
+        level: LogLevel.warning,
+      );
+      return;
+    }
+
+    if (targetContext != null) {
+      _logMissingCredentials(targetContext);
+    }
+
+    // Official TLink ControlFragment.initBleTLink connects via
+    // BluetoothAdapter.getRemoteDevice(mac) first — no scan required when the
+    // classic MAC is known. Mirror that on Android before falling back to scan.
+    if (await _tryDirectMacConnect(
+      targetDeviceId: targetDeviceId,
+      targetDeviceName: targetDeviceName,
+      context: targetContext,
+    )) {
+      return;
+    }
+    if (manager.state != ConnectionState.disconnected) return;
+
     _log.operation('自动连接: 扫描 $targetDeviceName ($targetDeviceId)');
 
     StreamSubscription<List<ScanResult>>? scanSub;
     Timer? timeout;
+    var sawHarmonyQgj = false;
     final completer = Completer<void>();
     try {
       scanSub = FlutterBluePlus.scanResults.listen((results) {
         for (final r in results) {
           final foundId = r.device.remoteId.toString();
-          if (!_sameDeviceId(foundId, targetDeviceId)) {
+          final matchesSystemId = _sameDeviceId(foundId, targetDeviceId);
+          final match = _matchesScanResult(
+            r,
+            targetDeviceId: targetDeviceId,
+            context: targetContext,
+            matchesSystemId: matchesSystemId,
+          );
+          if (targetContext?.stack == OfficialBleStack.qgj &&
+              parseQgjScanIdentity(r.advertisementData).harmony) {
+            sawHarmonyQgj = true;
+          }
+          if (!match) {
             continue;
           }
           if (!_enabled) {
@@ -366,13 +428,17 @@ class AutoConnectService {
       timeout = Timer(BleTimings.autoConnectScanTimeout, () {
         unawaited(scanSub?.cancel());
         unawaited(FlutterBluePlus.stopScan());
-        _log.operation('自动连接: 超时未找到设备', level: LogLevel.warning);
+        _log.operation(
+          sawHarmonyQgj ? '自动连接: Harmony QGJ 缺少 systemId' : '自动连接: 超时未找到设备',
+          level: LogLevel.warning,
+        );
         if (!completer.isCompleted) completer.complete();
       });
 
       try {
         await FlutterBluePlus.startScan(
           timeout: BleTimings.autoConnectScanTimeout,
+          androidUsesFineLocation: true,
         );
       } on PlatformException catch (e) {
         _log.operation(
@@ -393,9 +459,84 @@ class AutoConnectService {
       }
       await completer.future;
     } finally {
+      _scanContext = null;
       unawaited(scanSub?.cancel());
       timeout?.cancel();
       unawaited(FlutterBluePlus.stopScan());
+    }
+  }
+
+  Future<BluetoothAdapterState> _readAdapterState() async {
+    try {
+      return await FlutterBluePlus.adapterState
+          .where((state) => state != BluetoothAdapterState.unknown)
+          .first
+          .timeout(const Duration(seconds: 2));
+    } catch (_) {
+      return BluetoothAdapterState.unknown;
+    }
+  }
+
+  void _logMissingCredentials(OfficialBleConnectionContext context) {
+    if (context.stack == OfficialBleStack.tlink &&
+        !context.hasTLinkCredentials) {
+      _log.operation(
+        '自动连接: TLink 登录凭据不完整',
+        detail:
+            'uid=${context.userId.isEmpty ? "empty" : "ok"} '
+            'password=${context.selectedPassword == null ? "missing" : "ok"} '
+            'shared=${context.shared}',
+        level: LogLevel.warning,
+      );
+    }
+    if (context.stack == OfficialBleStack.qgj && !context.hasQgjCredentials) {
+      _log.operation(
+        '自动连接: QGJ 登录凭据不完整',
+        detail:
+            'uid=${context.userId.isEmpty ? "empty" : "ok"} '
+            'password=${context.selectedPassword == null ? "missing" : "ok"}',
+        level: LogLevel.warning,
+      );
+    }
+  }
+
+  /// Official TLink path: `getBluetoothDeviceByMac(getRealMacForMac(mac))`
+  /// then `connectDevice` without a prior LE scan.
+  ///
+  /// Returns true when a connect attempt was started (success or hard failure
+  /// already logged). Returns false to fall through to scan matching.
+  Future<bool> _tryDirectMacConnect({
+    required String targetDeviceId,
+    required String? targetDeviceName,
+    required OfficialBleConnectionContext? context,
+  }) async {
+    // iOS remoteIds are opaque UUIDs — MAC direct connect is Android-only.
+    if (defaultTargetPlatform != TargetPlatform.android) return false;
+    final stack = context?.stack;
+    // QGJ identity lives in manufacturer data, not the radio address.
+    if (stack == OfficialBleStack.qgj) return false;
+
+    final colonMac = formatBleMacAddress(targetDeviceId);
+    if (colonMac.isEmpty) return false;
+
+    _log.operation(
+      '自动连接: 直连 MAC',
+      detail: '$targetDeviceName ($colonMac) stack=${stack?.name ?? "unknown"}',
+    );
+    try {
+      final device = BluetoothDevice.fromId(colonMac);
+      await _doConnect(device, context: context);
+      final manager = _connectionManager;
+      if (manager == null) return true;
+      // GATT up or still handshaking counts as "attempt consumed".
+      return manager.state != ConnectionState.disconnected;
+    } catch (e) {
+      _log.operation(
+        '自动连接: 直连失败，改扫描',
+        detail: e.toString(),
+        level: LogLevel.info,
+      );
+      return false;
     }
   }
 
@@ -405,15 +546,18 @@ class AutoConnectService {
     _lastDeviceName = defaultVehicle?.displayName ?? _lastDeviceName;
   }
 
-  Future<void> _doConnect(BluetoothDevice device) async {
+  Future<void> _doConnect(
+    BluetoothDevice device, {
+    OfficialBleConnectionContext? context,
+  }) async {
     final manager = _connectionManager;
     if (manager == null) return;
+    final connectionContext = context ?? _scanContext;
     final deviceId = device.remoteId.toString();
     try {
       final vehicle = VehicleStore().defaultVehicle;
-      // Local QGJ credentials were scrubbed; keep zero defaults for login frame.
-      manager.setQgjCredentials(password: 0, userId: 0);
-      await manager.connect(device);
+      manager.setOfficialConnectionContext(connectionContext);
+      await manager.connect(device, context: connectionContext);
       if (_isConnectedAutoTarget(
         manager: manager,
         device: device,
@@ -426,11 +570,101 @@ class AutoConnectService {
     }
   }
 
+  static bool _matchesScanResult(
+    ScanResult result, {
+    required String targetDeviceId,
+    required OfficialBleConnectionContext? context,
+    required bool matchesSystemId,
+  }) {
+    if (context == null) return matchesSystemId;
+    return switch (context.stack) {
+      // Official KKS BleConnectService matches getBtname(); also accept MAC.
+      OfficialBleStack.kks =>
+        matchesSystemId ||
+            _advertisedNameMatches(result, context.advertisedName),
+      // Official TLink connects by mac; name is a useful scan fallback when
+      // the cloud classic MAC differs from the current LE address.
+      OfficialBleStack.tlink =>
+        matchesSystemId ||
+            _advertisedNameMatches(result, context.advertisedName),
+      OfficialBleStack.qgj =>
+        _matchesQgjAdvertisement(
+              targetMac: targetDeviceId,
+              identity: parseQgjScanIdentity(result.advertisementData),
+            ) &&
+            result.advertisementData.serviceUuids.any(
+              (uuid) =>
+                  uuid.toString().toLowerCase().contains('feb0') ||
+                  uuid.toString().toLowerCase().contains('ffe1'),
+            ),
+      OfficialBleStack.unsupported => false,
+    };
+  }
+
+  static bool _advertisedNameMatches(ScanResult result, String expected) {
+    final name = expected.trim();
+    if (name.isEmpty) return false;
+    final adv = result.advertisementData.advName.trim();
+    final platform = result.device.platformName.trim();
+    return (adv.isNotEmpty && adv == name) ||
+        (platform.isNotEmpty && platform == name);
+  }
+
+  /// Android classic/LE address form `AA:BB:CC:DD:EE:FF` for [BluetoothDevice.fromId].
+  @visibleForTesting
+  static String formatBleMacAddress(String raw) {
+    final compact = raw.replaceAll(RegExp(r'[^0-9a-fA-F]'), '').toUpperCase();
+    if (compact.length != 12) return '';
+    final parts = <String>[];
+    for (var i = 0; i < 12; i += 2) {
+      parts.add(compact.substring(i, i + 2));
+    }
+    return parts.join(':');
+  }
+
+  @visibleForTesting
+  static bool matchesQgjIdentity({
+    required String targetMac,
+    required String? observedMac,
+    required int bootMode,
+    required bool harmony,
+  }) {
+    return !harmony &&
+        bootMode == 0 &&
+        observedMac != null &&
+        _sameDeviceId(observedMac, targetMac);
+  }
+
+  static bool _matchesQgjAdvertisement({
+    required String targetMac,
+    required QgjScanIdentity identity,
+  }) {
+    return matchesQgjIdentity(
+      targetMac: targetMac,
+      observedMac: identity.identityMac,
+      bootMode: identity.bootMode,
+      harmony: identity.harmony,
+    );
+  }
+
   bool _isConnectedAutoTarget({
     required ConnectionManager manager,
     required BluetoothDevice device,
     required String deviceId,
   }) {
+    final context = _officialContext;
+    if (context != null) {
+      return _enabled &&
+          !ManualModeService().enabled &&
+          manager.isProtocolLoggedIn &&
+          manager.state == ConnectionState.ready &&
+          identical(manager, _connectionManager) &&
+          identical(device, manager.device) &&
+          sameDeviceId(
+            manager.connectionContext?.targetMacCompact ?? '',
+            context.targetMacCompact,
+          );
+    }
     return _targetGuard.allowsConnectedTarget(
       autoConnectEnabled: _enabled,
       manualModeEnabled: ManualModeService().enabled,
