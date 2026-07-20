@@ -48,11 +48,11 @@ void main() {
         contains('app/car/bikeBind'),
       );
       expect(
-        readSource('lib/pages/qgj_settings_page.dart'),
+        readSource('lib/pages/induction_settings_page.dart'),
         contains('InductionModeService'),
       );
       expect(
-        readSource('lib/pages/qgj_settings_page.dart'),
+        readSource('lib/pages/induction_settings_page.dart'),
         contains('InductionStack'),
       );
       expect(
@@ -65,7 +65,11 @@ void main() {
       );
       expect(
         readSource('lib/pages/vehicle_control_home_page.dart'),
-        contains('_UnlockModeCard'),
+        contains('ControlAndUnlockCard'),
+      );
+      expect(
+        readSource('lib/widgets/control_and_unlock_card.dart'),
+        contains('class ControlAndUnlockCard'),
       );
       expect(
         readSource('lib/pages/firmware_ota_page.dart'),

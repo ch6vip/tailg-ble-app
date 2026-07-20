@@ -45,32 +45,30 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.textContaining('冒烟测试车'), findsWidgets);
-    expect(find.text('控车渠道'), findsOneWidget);
+    // Unified card: channel + unlock mode.
+    expect(find.text('控车与解锁'), findsOneWidget);
     expect(find.text('智能'), findsOneWidget);
     expect(find.text('仅蓝牙'), findsOneWidget);
     expect(find.text('仅云端'), findsOneWidget);
-    // Unlock mode switch (感应 | 手动) sits above six-key shortcuts.
-    expect(find.text('解锁模式'), findsOneWidget);
     expect(find.text('感应'), findsWidgets);
     expect(find.text('手动'), findsWidgets);
+    expect(find.text('渠道'), findsOneWidget);
+    // 「解锁」标签与「控车与解锁」标题并存。
+    expect(find.text('解锁'), findsWidgets);
     expect(
-      tester.getTopLeft(find.text('控车渠道')).dy,
+      tester.getTopLeft(find.text('控车与解锁')).dy,
       greaterThan(tester.getTopLeft(find.text('暂无位置')).dy),
     );
     expect(
-      tester.getTopLeft(find.text('解锁模式')).dy,
-      greaterThan(tester.getTopLeft(find.text('控车渠道')).dy),
-    );
-    expect(
       tester.getTopLeft(find.text('寻车')).dy,
-      greaterThan(tester.getTopLeft(find.text('解锁模式')).dy),
+      greaterThan(tester.getTopLeft(find.text('控车与解锁')).dy),
     );
 
     await tester.tap(find.text('仅云端'));
     await tester.pump();
-    expect(find.text('仅使用官方账号远程控车'), findsOneWidget);
+    expect(find.text('仅官方账号远程'), findsOneWidget);
 
-    // Recent commands may be below the fold after the mode card — scroll.
+    // Recent commands may be below the fold — scroll if needed.
     await tester.scrollUntilVisible(
       find.text('最近命令'),
       200,

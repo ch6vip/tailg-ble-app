@@ -52,25 +52,36 @@ void main() {
   });
 
   group('control home induction surface', () {
-    test('home hosts unlock-mode card and induction service path', () {
-      final source = readSource('lib/pages/vehicle_control_home_page.dart');
-      expect(source, contains('_UnlockModeCard'));
-      expect(source, contains('_selectUnlockMode'));
-      expect(source, contains('inductionModeService'));
-      expect(source, contains('manualModeService'));
-      expect(source, contains('解锁模式'));
-      expect(source, contains('感应'));
-      expect(source, contains('手动'));
-    });
+    test(
+      'home hosts unified control+unlock card and induction service path',
+      () {
+        final home = readSource('lib/pages/vehicle_control_home_page.dart');
+        final card = readSource('lib/widgets/control_and_unlock_card.dart');
+        expect(home, contains('ControlAndUnlockCard'));
+        expect(home, contains('_selectUnlockMode'));
+        expect(home, contains('inductionModeService'));
+        expect(home, contains('manualModeService'));
+        expect(card, contains('控车与解锁'));
+        expect(home, isNot(contains('_ControlChannelCard')));
+        expect(home, isNot(contains('_UnlockModeCard')));
+        expect(home, isNot(contains('class _ControlAndUnlockCard')));
+      },
+    );
 
     test('settings page is product-facing and stack-aware', () {
-      final source = readSource('lib/pages/qgj_settings_page.dart');
+      final source = readSource('lib/pages/induction_settings_page.dart');
       expect(source, contains('InductionModeService'));
       expect(source, contains('InductionStack'));
       expect(source, contains('感应解锁'));
-      // No raw opcode dump in user-facing help.
       expect(source, isNot(contains('0x2031')));
       expect(source, isNot(contains('4A33')));
+    });
+
+    test('control card widget extracted', () {
+      final source = readSource('lib/widgets/control_and_unlock_card.dart');
+      expect(source, contains('class ControlAndUnlockCard'));
+      expect(source, contains('emptySelectionAllowed'));
+      expect(source, contains('unlockSelection'));
     });
 
     test('connection manager exposes bond + tlink induction APIs', () {

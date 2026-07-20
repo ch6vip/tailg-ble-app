@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:flutter/widgets.dart' hide ConnectionState;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../ble/connection_manager.dart';
@@ -36,6 +37,9 @@ class InductionModeSnapshot {
   final bool bleReady;
   final String? lastError;
 
+  /// ECU mode is on, but system BLE bond did not complete.
+  final bool bondIncomplete;
+
   const InductionModeSnapshot({
     required this.stack,
     required this.enabled,
@@ -43,6 +47,7 @@ class InductionModeSnapshot {
     required this.busy,
     required this.bleReady,
     this.lastError,
+    this.bondIncomplete = false,
   });
 
   static const empty = InductionModeSnapshot(
@@ -53,6 +58,13 @@ class InductionModeSnapshot {
     bleReady: false,
   );
 
+  /// true = induction, false = manual, null = unknown / still reading.
+  bool? get unlockSelection {
+    if (stack == InductionStack.none) return false;
+    if (enabled == null) return null;
+    return enabled;
+  }
+
   InductionModeSnapshot copyWith({
     InductionStack? stack,
     bool? enabled,
@@ -60,15 +72,58 @@ class InductionModeSnapshot {
     bool? busy,
     bool? bleReady,
     String? lastError,
+    bool? bondIncomplete,
     bool clearError = false,
+    bool clearEnabled = false,
   }) {
     return InductionModeSnapshot(
       stack: stack ?? this.stack,
-      enabled: enabled ?? this.enabled,
+      enabled: clearEnabled ? null : (enabled ?? this.enabled),
       distance: distance ?? this.distance,
       busy: busy ?? this.busy,
       bleReady: bleReady ?? this.bleReady,
       lastError: clearError ? null : (lastError ?? this.lastError),
+      bondIncomplete: bondIncomplete ?? this.bondIncomplete,
+    );
+  }
+}
+
+/// Optional RSSI path-loss calibration (official CarControlInfoBean fields).
+class RssiCalibration {
+  final double rssiA;
+  final double rssiFactor;
+  final double minDistanceM;
+  final double maxDistanceM;
+
+  const RssiCalibration({
+    this.rssiA = defaultRssiA,
+    this.rssiFactor = defaultRssiFactor,
+    this.minDistanceM = defaultMinDistanceM,
+    this.maxDistanceM = defaultMaxDistanceM,
+  });
+
+  factory RssiCalibration.fromMap(Map<String, dynamic>? map) {
+    if (map == null || map.isEmpty) return const RssiCalibration();
+    double parse(dynamic v, double fallback) {
+      if (v is num) return v.toDouble();
+      if (v is String) return double.tryParse(v) ?? fallback;
+      return fallback;
+    }
+
+    return RssiCalibration(
+      rssiA: parse(map['rssiA'] ?? map['RssiA'], defaultRssiA),
+      rssiFactor: parse(
+        map['rssiFactor'] ?? map['RssiFactor'],
+        defaultRssiFactor,
+      ),
+      minDistanceM: parse(
+        map['minRssiDistance'] ?? map['MinRssiDistance'],
+        defaultMinDistanceM,
+      ),
+      maxDistanceM: parse(
+        map['maxRssiDistance'] ?? map['MaxRssiDistance'],
+        defaultMaxDistanceM,
+      ),
     );
   }
 }
@@ -79,7 +134,7 @@ class InductionModeSnapshot {
 /// - QGJ: `setProximityStatus` + `setHidStatus` + system bond
 /// - TLink: `openMode` / `closeMode` / `setModeDistance` + system bond
 /// - RSSI: phone `readRemoteRssi` → auto lock/unlock (KKS / legacy)
-class InductionModeService {
+class InductionModeService with WidgetsBindingObserver {
   InductionModeService({
     required ConnectionManager connectionManager,
     ManualModeService? manualModeService,
@@ -100,22 +155,31 @@ class InductionModeService {
   InductionModeSnapshot _snapshot = InductionModeSnapshot.empty;
   final _controller = StreamController<InductionModeSnapshot>.broadcast();
   StreamSubscription<ConnectionState>? _connSub;
+  bool _observingLifecycle = false;
+  bool _appInForeground = true;
 
   // RSSI path runtime
   Timer? _rssiTimer;
   final ListQueue<int> _rssiSamples = ListQueue<int>();
   RssiTaskState _rssiTaskState = RssiTaskState.idle;
   bool _rssiFiring = false;
+  RssiCalibration _rssiCalibration = const RssiCalibration();
   int? _boundModelType;
   String? _boundCarId;
 
   Stream<InductionModeSnapshot> get snapshotStream => _controller.stream;
   InductionModeSnapshot get snapshot => _snapshot;
 
-  void bindVehicle({required int? modelType, required String? carId}) {
+  void bindVehicle({
+    required int? modelType,
+    required String? carId,
+    Map<String, dynamic>? vehicleRaw,
+  }) {
+    _ensureLifecycleObserver();
     final changed = _boundModelType != modelType || _boundCarId != carId;
     _boundModelType = modelType;
     _boundCarId = carId;
+    _rssiCalibration = RssiCalibration.fromMap(vehicleRaw);
     _connSub ??= _cm.stateStream.listen((_) {
       unawaited(_onConnectionChanged());
     });
@@ -136,6 +200,36 @@ class InductionModeService {
     }
   }
 
+  void _ensureLifecycleObserver() {
+    if (_observingLifecycle) return;
+    WidgetsBinding.instance.addObserver(this);
+    _observingLifecycle = true;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final fg =
+        state == AppLifecycleState.resumed ||
+        state == AppLifecycleState.inactive;
+    setAppForeground(fg);
+  }
+
+  /// Pause RSSI polling in background to save battery.
+  void setAppForeground(bool foreground) {
+    if (_appInForeground == foreground) return;
+    _appInForeground = foreground;
+    if (!foreground) {
+      _stopRssiLoop();
+      return;
+    }
+    final stack = resolveStack(_boundModelType);
+    if (stack == InductionStack.rssi &&
+        _snapshot.enabled == true &&
+        _bleReadyFor(stack)) {
+      _startRssiLoop();
+    }
+  }
+
   static InductionStack stackForModelType(int? modelType) {
     final type = modelType ?? -1;
     if (OfficialControlRoute.qgjModelTypes.contains(type)) {
@@ -151,7 +245,6 @@ class InductionModeService {
     if (type == 1) return InductionStack.rssi;
     // YJ remote-only — no local induction over BLE in our route table.
     if (type == 2) return InductionStack.none;
-    // If already on a live TLink/QGJ session without known modelType, infer.
     return InductionStack.none;
   }
 
@@ -279,7 +372,7 @@ class InductionModeService {
           stack: InductionStack.tlink,
           busy: false,
           bleReady: true,
-          lastError: '读取 TLink 感应状态超时',
+          lastError: '读取感应状态超时，请重试',
         ),
       );
       return;
@@ -307,47 +400,66 @@ class InductionModeService {
         bleReady: true,
       ),
     );
-    if (enabled) {
+    if (enabled && _appInForeground) {
       _startRssiLoop();
     } else {
       _stopRssiLoop();
     }
   }
 
-  Future<bool> setEnabled(bool enabled) async {
+  /// Toggle induction. When [enabled] is true, clears manual mode first so the
+  /// home-page 感应|手动 switch cannot race with ManualModeService prefs.
+  Future<bool> setEnabled(bool enabled, {bool clearManualMode = true}) async {
     final stack = resolveStack(_boundModelType);
     if (!_bleReadyFor(stack)) {
       _publish(_snapshot.copyWith(lastError: '请先连接车辆蓝牙并完成协议登录'));
       return false;
     }
-    if (_manual.enabled) {
+
+    if (enabled && clearManualMode && _manual.enabled) {
+      await _manual.setEnabled(false);
+    }
+    if (enabled && _manual.enabled) {
       _publish(_snapshot.copyWith(lastError: '已开启手动模式，无法开关感应解锁'));
       return false;
     }
-    _publish(_snapshot.copyWith(busy: true, clearError: true, stack: stack));
+
+    _publish(
+      _snapshot.copyWith(
+        busy: true,
+        clearError: true,
+        stack: stack,
+        bondIncomplete: false,
+      ),
+    );
     try {
-      final ok = switch (stack) {
+      final result = switch (stack) {
         InductionStack.qgj => await _setQgjEnabled(enabled),
         InductionStack.tlink => await _setTlinkEnabled(enabled),
         InductionStack.rssi => await _setRssiEnabled(enabled),
-        InductionStack.none => false,
+        InductionStack.none => const _EnableResult(ok: false),
       };
-      if (!ok) {
+      if (!result.ok) {
         _publish(
           _snapshot.copyWith(
             busy: false,
-            lastError: enabled ? '开启感应解锁失败' : '关闭感应解锁失败',
+            lastError: result.message ?? (enabled ? '开启感应解锁失败' : '关闭感应解锁失败'),
           ),
         );
         return false;
       }
       await _saveEnabledPref(enabled);
       _publish(
-        _snapshot.copyWith(
+        InductionModeSnapshot(
+          stack: stack,
           enabled: enabled,
+          distance: _snapshot.distance,
           busy: false,
           bleReady: true,
-          clearError: true,
+          bondIncomplete: result.bondIncomplete,
+          lastError: result.bondIncomplete
+              ? '感应已开启，但系统蓝牙配对未完成。请在系统弹窗中允许配对，否则靠近解锁可能无效'
+              : null,
         ),
       );
       return true;
@@ -357,10 +469,8 @@ class InductionModeService {
     }
   }
 
-  Future<bool> _setQgjEnabled(bool enabled) async {
-    // Official: open HID first, then proximity; close proximity then HID + remove.
+  Future<_EnableResult> _setQgjEnabled(bool enabled) async {
     if (enabled) {
-      // Drop stale bond so createBond can re-pair (official setHidStatus).
       await _cm.removeBond(quiet: true);
       await _cm.sendQgjCommand(
         QgjCommandIds.hidStatusSet,
@@ -370,9 +480,11 @@ class InductionModeService {
         QgjCommandIds.proximityStatusSet,
         buildQgjProximityStatusPayload(true),
       );
-      if (response?.success != true) return false;
-      await _cm.createBond(quiet: true);
-      return true;
+      if (response?.success != true) {
+        return const _EnableResult(ok: false, message: '车辆未确认开启感应');
+      }
+      final bonded = await _cm.createBond(quiet: true);
+      return _EnableResult(ok: true, bondIncomplete: !bonded);
     }
     final response = await _cm.sendQgjCommand(
       QgjCommandIds.proximityStatusSet,
@@ -383,34 +495,39 @@ class InductionModeService {
       buildQgjHidPayload(QgjHidModes.close),
     );
     await _cm.removeBond(quiet: true);
-    return response?.success == true;
+    return _EnableResult(
+      ok: response?.success == true,
+      message: response?.success == true ? null : '车辆未确认关闭感应',
+    );
   }
 
-  Future<bool> _setTlinkEnabled(bool enabled) async {
+  Future<_EnableResult> _setTlinkEnabled(bool enabled) async {
     if (enabled) {
       final ok = await _cm.openTlinkInduction();
-      if (!ok) return false;
-      // Official pairingDevice after open ACK.
+      if (!ok) {
+        return const _EnableResult(ok: false, message: '车辆未确认开启感应');
+      }
       final bonded = await _cm.createBond(quiet: true);
       if (bonded) {
         await _cm.writeStandardHex(tlinkHidOpenAfterBondPlain);
       }
-      return true;
+      return _EnableResult(ok: true, bondIncomplete: !bonded);
     }
     final ok = await _cm.closeTlinkInduction();
-    // C39 (10/14) official still removes bond for non-C39; we always remove.
     await _cm.removeBond(quiet: true);
-    return ok;
+    return _EnableResult(ok: ok, message: ok ? null : '车辆未确认关闭感应');
   }
 
-  Future<bool> _setRssiEnabled(bool enabled) async {
+  Future<_EnableResult> _setRssiEnabled(bool enabled) async {
     if (enabled) {
-      _startRssiLoop();
+      if (_appInForeground) {
+        _startRssiLoop();
+      }
     } else {
       _stopRssiLoop();
       _rssiTaskState = RssiTaskState.idle;
     }
-    return true;
+    return const _EnableResult(ok: true);
   }
 
   Future<bool> setDistance(int level) async {
@@ -456,6 +573,7 @@ class InductionModeService {
   // ---------------------------------------------------------------------------
 
   void _startRssiLoop() {
+    if (!_appInForeground) return;
     if (_rssiTimer != null) return;
     _rssiSamples.clear();
     _rssiTaskState = RssiTaskState.idle;
@@ -473,6 +591,7 @@ class InductionModeService {
   }
 
   Future<void> _rssiTick() async {
+    if (!_appInForeground) return;
     if (_manual.enabled) return;
     if (!_cm.isProtocolLoggedIn) return;
     if (_rssiFiring) return;
@@ -484,15 +603,17 @@ class InductionModeService {
     }
     if (_rssiSamples.length < rssiSampleWindow) return;
 
-    final distance = estimateDistanceFromRssiSamples(_rssiSamples);
-    final action = classifyDistance(distance);
+    final distance = estimateDistanceFromRssiSamples(
+      _rssiSamples,
+      rssiA: _rssiCalibration.rssiA,
+      rssiFactor: _rssiCalibration.rssiFactor,
+    );
+    final action = classifyDistance(
+      distance,
+      minDistanceM: _rssiCalibration.minDistanceM,
+      maxDistanceM: _rssiCalibration.maxDistanceM,
+    );
     if (!shouldFireRssiAction(action, _rssiTaskState)) {
-      if (action == RssiProximityAction.hold) {
-        // Official clears task state when in the dead-band.
-        if (_rssiTaskState == RssiTaskState.pending) {
-          // keep pending until ACK
-        }
-      }
       _rssiSamples.removeFirst();
       return;
     }
@@ -508,7 +629,6 @@ class InductionModeService {
         );
         final ok = await _cm.sendCommand(CommandCode.unlock);
         if (ok) {
-          // Follow with power on like official START path.
           await _cm.sendCommand(CommandCode.powerOn);
           _rssiTaskState = RssiTaskState.poweredOn;
         } else {
@@ -576,15 +696,33 @@ class InductionModeService {
     _rssiTaskState = RssiTaskState.idle;
     _boundModelType = null;
     _boundCarId = null;
+    _rssiCalibration = const RssiCalibration();
+    _appInForeground = true;
     _publish(InductionModeSnapshot.empty);
   }
 
   void dispose() {
     _stopRssiLoop();
+    if (_observingLifecycle) {
+      WidgetsBinding.instance.removeObserver(this);
+      _observingLifecycle = false;
+    }
     unawaited(_connSub?.cancel());
     _connSub = null;
     if (!_controller.isClosed) {
       unawaited(_controller.close());
     }
   }
+}
+
+class _EnableResult {
+  final bool ok;
+  final bool bondIncomplete;
+  final String? message;
+
+  const _EnableResult({
+    required this.ok,
+    this.bondIncomplete = false,
+    this.message,
+  });
 }

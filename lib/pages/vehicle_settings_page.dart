@@ -7,7 +7,7 @@ import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_snack.dart';
 import 'notification_prefs_page.dart';
-import 'qgj_settings_page.dart';
+import 'induction_settings_page.dart';
 
 class VehicleSettingsPage extends StatelessWidget {
   const VehicleSettingsPage({super.key});
@@ -161,7 +161,7 @@ class VehicleSettingsPage extends StatelessWidget {
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute<void>(
-                              builder: (_) => const QgjSettingsPage(),
+                              builder: (_) => const InductionSettingsPage(),
                             ),
                           ),
                         ),

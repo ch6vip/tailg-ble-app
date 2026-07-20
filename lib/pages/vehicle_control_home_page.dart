@@ -31,14 +31,15 @@ import '../theme/app_motion.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/cloud_vehicle_gate.dart';
+import '../widgets/control_and_unlock_card.dart';
 import '../widgets/vehicle_control_gate.dart';
 import '../widgets/vehicle_switch_sheet.dart';
 import 'add_vehicle_page.dart';
 import 'battery_details_page.dart';
+import 'induction_settings_page.dart';
 import 'location_page.dart';
 import 'login_page.dart';
 import 'official_cloud_page.dart';
-import 'qgj_settings_page.dart';
 import 'vehicle_settings_page.dart';
 
 /// 控车主页 · Tailg Aurora (Open Design `vehicle-control-home`).
@@ -169,13 +170,15 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     inductionModeService.bindVehicle(
       modelType: vehicle?.modelType,
       carId: vehicle?.carId,
+      vehicleRaw: vehicle?.raw,
     );
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // RSSI polling is paused/resumed inside InductionModeService observer;
+    // home page still refreshes cloud status when returning to foreground.
     if (state == AppLifecycleState.resumed) {
-      // P1-2: back to foreground → refresh carStatus + preconnect as needed.
       unawaited(_onForegroundResume());
     }
   }
@@ -1144,9 +1147,12 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
 
   bool get _supportsInduction => _induction.stack != InductionStack.none;
 
-  /// Official ControlFragment style: induction vs manual are mutually exclusive.
-  bool get _inductionModeSelected =>
-      !_manualMode && (_induction.enabled ?? false);
+  /// true = induction, false = manual, null = unknown (still reading).
+  bool? get _unlockSelection {
+    if (_manualMode) return false;
+    if (!_supportsInduction) return false;
+    return _induction.unlockSelection;
+  }
 
   Future<void> _selectUnlockMode({required bool induction}) async {
     if (_busy || _induction.busy) {
@@ -1156,7 +1162,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
 
     // Manual mode: no BLE required; just disable auto paths.
     if (!induction) {
-      if (_manualMode && !(_induction.enabled ?? false)) return;
+      if (_manualMode && _induction.enabled != true) return;
       if (_induction.enabled == true) {
         final closed = await inductionModeService.setEnabled(false);
         if (!mounted) return;
@@ -1174,7 +1180,10 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
 
     // Induction mode.
     if (!_supportsInduction) {
-      AppSnack.info(context, '当前车型不支持感应解锁');
+      AppSnack.info(context, _induction.bleReady ? '当前车型不支持感应解锁' : '连接蓝牙后识别车型');
+      if (!_induction.bleReady) {
+        unawaited(_ensureNearFieldLink(auto: false));
+      }
       return;
     }
     if (!_induction.bleReady) {
@@ -1182,19 +1191,28 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       unawaited(_ensureNearFieldLink(auto: false));
       return;
     }
-    if (_manualMode) {
-      await manualModeService.setEnabled(false);
-      if (!mounted) return;
-      setState(() => _manualMode = false);
+    if (_induction.enabled == true && !_manualMode) {
+      if (_induction.bondIncomplete) {
+        AppSnack.info(context, '请在系统弹窗中允许蓝牙配对，否则靠近解锁可能无效');
+      }
+      return;
     }
-    if (_induction.enabled == true) return;
-    final ok = await inductionModeService.setEnabled(true);
+    // Service clears manual mode first (avoids prefs race).
+    final ok = await inductionModeService.setEnabled(
+      true,
+      clearManualMode: true,
+    );
     if (!mounted) return;
+    setState(() => _manualMode = manualModeService.enabled);
     if (!ok) {
       AppSnack.error(context, _induction.lastError ?? '开启感应失败');
       return;
     }
-    AppSnack.success(context, '感应解锁已开启');
+    if (_induction.bondIncomplete) {
+      AppSnack.info(context, _induction.lastError ?? '感应已开启，请允许系统蓝牙配对');
+    } else {
+      AppSnack.success(context, '感应解锁已开启');
+    }
   }
 
   void _openProximitySettings() {
@@ -1202,7 +1220,9 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     unawaited(
       Navigator.of(context)
           .push(
-            MaterialPageRoute<void>(builder: (_) => const QgjSettingsPage()),
+            MaterialPageRoute<void>(
+              builder: (_) => const InductionSettingsPage(),
+            ),
           )
           .then((_) {
             unawaited(inductionModeService.refresh(force: true));
@@ -1309,21 +1329,18 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 onTap: _openLocation,
               ),
               const SizedBox(height: 12),
-              _ControlChannelCard(
-                selected: _controlChannel,
+              ControlAndUnlockCard(
+                channelSelected: _controlChannel,
                 availability: controlAvailability,
-                status: controlChannelStatus,
-                busy: _busy,
-                onChanged: _selectControlChannel,
-              ),
-              const SizedBox(height: 12),
-              _UnlockModeCard(
+                channelStatus: controlChannelStatus,
+                channelBusy: _busy,
+                onChannelChanged: _selectControlChannel,
                 supportsInduction: _supportsInduction,
-                inductionSelected: _inductionModeSelected,
-                manualSelected: _manualMode,
-                busy: _induction.busy || _busy,
+                unlockSelection: _unlockSelection,
+                unlockBusy: _induction.busy || _busy,
                 bleReady: _induction.bleReady,
                 distance: _induction.distance,
+                bondIncomplete: _induction.bondIncomplete,
                 onSelectInduction: () =>
                     unawaited(_selectUnlockMode(induction: true)),
                 onSelectManual: () =>
@@ -1331,6 +1348,11 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 onConnectBle: () =>
                     unawaited(_ensureNearFieldLink(auto: false)),
                 onOpenSettings: _openProximitySettings,
+                cardMargin: _Aurora.cardMargin,
+                cardRadius: _Aurora.cardRadius,
+                cardShadow: Theme.of(context).brightness == Brightness.dark
+                    ? const []
+                    : _Aurora.cardShadow,
               ),
               const SizedBox(height: 12),
               _ShortcutsRow(
@@ -1793,416 +1815,6 @@ class _MetricsGrid extends StatelessWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Control channel
-// ═══════════════════════════════════════════════════════════════════════════
-class _ControlChannelCard extends StatelessWidget {
-  const _ControlChannelCard({
-    required this.selected,
-    required this.availability,
-    required this.status,
-    required this.busy,
-    required this.onChanged,
-  });
-
-  final OfficialControlChannel selected;
-  final ControlChannelAvailability availability;
-  final ControlTopBarChannel status;
-  final bool busy;
-  final ValueChanged<OfficialControlChannel> onChanged;
-
-  String get _statusLabel {
-    if (busy) return '指令执行中';
-    if (availability.enabled ||
-        status.kind == ControlTopBarChannelKind.bleConnecting ||
-        status.kind == ControlTopBarChannelKind.mqttConnecting ||
-        status.kind == ControlTopBarChannelKind.mqttRetry) {
-      return status.label;
-    }
-    return '当前不可用';
-  }
-
-  String get _description {
-    if (busy) return '当前指令执行中，暂不能切换控车渠道';
-    if (!availability.enabled) {
-      final reason = switch (selected) {
-        OfficialControlChannel.automatic => availability.disabledReason,
-        OfficialControlChannel.ble => availability.bleUnavailableReason,
-        OfficialControlChannel.officialCloud =>
-          availability.cloudUnavailableReason,
-      };
-      if (reason.trim().isNotEmpty) return reason.trim();
-    }
-    return switch (selected) {
-      OfficialControlChannel.automatic => '根据车辆能力自动选择蓝牙或云端',
-      OfficialControlChannel.ble => '仅使用附近车辆的蓝牙直连',
-      OfficialControlChannel.officialCloud => '仅使用官方账号远程控车',
-    };
-  }
-
-  Color _statusColor(AppColorsData colors) {
-    if (busy) return colors.warning;
-    return switch (status.kind) {
-      ControlTopBarChannelKind.bleDirect ||
-      ControlTopBarChannelKind.mqttRemote ||
-      ControlTopBarChannelKind.cloudStandby => colors.success,
-      ControlTopBarChannelKind.bleConnecting ||
-      ControlTopBarChannelKind.mqttConnecting ||
-      ControlTopBarChannelKind.mqttRetry => colors.warning,
-      ControlTopBarChannelKind.unavailable => colors.danger,
-    };
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      margin: _Aurora.cardMargin,
-      padding: const EdgeInsets.fromLTRB(14, 13, 14, 12),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: const BorderRadius.all(
-          Radius.circular(_Aurora.cardRadius),
-        ),
-        boxShadow: dark ? const [] : _Aurora.cardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.alt_route, size: 18, color: colors.textSecondary),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Text(
-                  '控车渠道',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: colors.textPrimary,
-                  ),
-                ),
-              ),
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: _statusColor(colors),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  _statusLabel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: colors.textSecondary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SegmentedButton<OfficialControlChannel>(
-            segments: const [
-              ButtonSegment(
-                value: OfficialControlChannel.automatic,
-                icon: Icon(Icons.alt_route, size: 16),
-                label: Text('智能'),
-              ),
-              ButtonSegment(
-                value: OfficialControlChannel.ble,
-                icon: Icon(Icons.bluetooth, size: 16),
-                label: Text('仅蓝牙'),
-              ),
-              ButtonSegment(
-                value: OfficialControlChannel.officialCloud,
-                icon: Icon(Icons.cloud_outlined, size: 16),
-                label: Text('仅云端'),
-              ),
-            ],
-            selected: {selected},
-            showSelectedIcon: false,
-            expandedInsets: EdgeInsets.zero,
-            onSelectionChanged: busy
-                ? null
-                : (selection) => onChanged(selection.first),
-            style: ButtonStyle(
-              minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
-              padding: const WidgetStatePropertyAll(
-                EdgeInsets.symmetric(horizontal: 6),
-              ),
-              textStyle: const WidgetStatePropertyAll(
-                TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-              foregroundColor: WidgetStateProperty.resolveWith((states) {
-                return states.contains(WidgetState.selected)
-                    ? Colors.white
-                    : colors.textSecondary;
-              }),
-              backgroundColor: WidgetStateProperty.resolveWith((states) {
-                return states.contains(WidgetState.selected)
-                    ? colors.primary
-                    : colors.surfaceContainerHigh;
-              }),
-              side: WidgetStateProperty.resolveWith((states) {
-                return BorderSide(
-                  color: states.contains(WidgetState.selected)
-                      ? colors.primary
-                      : colors.outlineVariant,
-                );
-              }),
-              shape: WidgetStatePropertyAll(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.sm),
-                ),
-              ),
-              visualDensity: VisualDensity.compact,
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 30,
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: Text(
-                _description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  height: 1.35,
-                  color: availability.enabled
-                      ? colors.textTertiary
-                      : colors.danger,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Unlock mode: 感应 | 手动  (official ControlFragment mode switch)
-// ═══════════════════════════════════════════════════════════════════════════
-class _UnlockModeCard extends StatelessWidget {
-  const _UnlockModeCard({
-    required this.supportsInduction,
-    required this.inductionSelected,
-    required this.manualSelected,
-    required this.busy,
-    required this.bleReady,
-    required this.distance,
-    required this.onSelectInduction,
-    required this.onSelectManual,
-    required this.onConnectBle,
-    required this.onOpenSettings,
-  });
-
-  final bool supportsInduction;
-  final bool inductionSelected;
-  final bool manualSelected;
-  final bool busy;
-  final bool bleReady;
-  final int? distance;
-  final VoidCallback onSelectInduction;
-  final VoidCallback onSelectManual;
-  final VoidCallback onConnectBle;
-  final VoidCallback onOpenSettings;
-
-  String get _statusLine {
-    if (manualSelected) {
-      return '手动控车 · 已关闭自动连接与感应';
-    }
-    if (!supportsInduction) {
-      return '当前车型仅支持手动控车';
-    }
-    if (!bleReady) {
-      return '开启感应前请先连接车辆蓝牙';
-    }
-    if (inductionSelected) {
-      final dist = distance == null ? '' : ' · 距离档 $distance';
-      return '靠近自动解防，离开自动上锁$dist';
-    }
-    return '点选「感应」开启靠近解锁';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      margin: _Aurora.cardMargin,
-      padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: const BorderRadius.all(
-          Radius.circular(_Aurora.cardRadius),
-        ),
-        boxShadow: dark ? const [] : _Aurora.cardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Text(
-                '解锁模式',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
-                ),
-              ),
-              const Spacer(),
-              if (busy)
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                IconButton(
-                  tooltip: '感应设置',
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 36,
-                    minHeight: 36,
-                  ),
-                  onPressed: supportsInduction ? onOpenSettings : null,
-                  icon: Icon(
-                    Icons.tune,
-                    size: 20,
-                    color: supportsInduction
-                        ? colors.textTertiary
-                        : colors.textTertiary.withValues(alpha: 0.4),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _ModeChip(
-                  label: '感应',
-                  icon: Icons.sensors,
-                  selected: inductionSelected,
-                  enabled: supportsInduction && !busy,
-                  onTap: onSelectInduction,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _ModeChip(
-                  label: '手动',
-                  icon: Icons.touch_app_outlined,
-                  selected: manualSelected || !supportsInduction,
-                  enabled: !busy,
-                  onTap: onSelectManual,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          if (supportsInduction && !bleReady && !manualSelected)
-            AppPressable(
-              onTap: onConnectBle,
-              child: Row(
-                children: [
-                  Icon(Icons.bluetooth, size: 16, color: colors.primary),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      _statusLine,
-                      style: TextStyle(fontSize: 12, color: colors.primary),
-                    ),
-                  ),
-                  Icon(Icons.chevron_right, size: 18, color: colors.primary),
-                ],
-              ),
-            )
-          else
-            Text(
-              _statusLine,
-              style: TextStyle(fontSize: 12, color: colors.textTertiary),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ModeChip extends StatelessWidget {
-  const _ModeChip({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final bg = selected
-        ? colors.primary.withValues(alpha: 0.12)
-        : colors.pageBg;
-    final fg = selected ? colors.primary : colors.textSecondary;
-    final border = selected
-        ? colors.primary.withValues(alpha: 0.45)
-        : colors.border.withValues(alpha: 0.6);
-    return Opacity(
-      opacity: enabled ? 1 : 0.45,
-      child: Material(
-        color: bg,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        child: InkWell(
-          onTap: enabled ? onTap : null,
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadii.card),
-              border: Border.all(color: border),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 18, color: fg),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                    color: fg,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
