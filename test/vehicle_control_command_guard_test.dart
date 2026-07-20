@@ -10,7 +10,8 @@ void main() {
     expect(source, contains('_ensureKnownControlState'));
     expect(source, contains('vehicleKeyAtSend'));
     expect(source, contains('车辆或控车渠道已变化，本次指令已取消'));
-    expect(source, contains('showModalBottomSheet<bool>'));
-    expect(source, contains('_PowerConfirmationSheet'));
+    // Power on/off is immediate — no slide-to-start confirmation sheet.
+    expect(source, isNot(contains('_PowerConfirmationSheet')));
+    expect(source, isNot(contains('滑动启动')));
   });
 }
