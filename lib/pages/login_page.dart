@@ -51,7 +51,20 @@ class _LoginPageState extends State<LoginPage> {
     if (officialCloudService.state.token.isNotEmpty) {
       _tokenController.text = officialCloudService.state.token;
     }
+    // Parent owns enabled-state for 获取验证码 / 登录. Controllers only notify
+    // listeners — without this, typing a valid phone never rebuilds the parent
+    // and the buttons stay disabled until an unrelated setState (e.g. mode
+    // toggle) forces a rebuild. That matches the reported "switch to Token
+    // then back and it works" symptom.
+    _phoneController.addListener(_onFieldsChanged);
+    _smsController.addListener(_onFieldsChanged);
+    _tokenController.addListener(_onFieldsChanged);
     _sub = officialCloudService.stateStream.listen(_onStateChanged);
+  }
+
+  void _onFieldsChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   void _onStateChanged(OfficialCloudState state) {
@@ -67,6 +80,9 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    _phoneController.removeListener(_onFieldsChanged);
+    _smsController.removeListener(_onFieldsChanged);
+    _tokenController.removeListener(_onFieldsChanged);
     _smsCountdown.dispose();
     final sub = _sub;
     if (sub != null) unawaited(sub.cancel());
@@ -387,14 +403,23 @@ class _SmsLoginFormState extends State<_SmsLoginForm> {
 
   @override
   Widget build(BuildContext context) {
-    final canRequest = !widget.loading && widget.validPhone;
-    final canLogin = !widget.loading && widget.validPhone && widget.validSms;
+    // Recompute from controllers on every build so parent-driven rebuilds
+    // (after typing) always pass fresh validity into canRequest/canLogin.
+    final validPhone = OfficialCloudLoginValidator.isValidPhone(
+      OfficialCloudLoginValidator.compactPhone(widget.phoneController.text),
+    );
+    final validSms = OfficialCloudLoginValidator.isValidSmsCode(
+      widget.smsController.text.trim(),
+    );
+    final canRequest = !widget.loading && validPhone;
+    final canLogin = !widget.loading && validPhone && validSms;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _FieldLabel('手机号'),
         const SizedBox(height: 8),
         TextField(
+          key: const ValueKey('login-phone-field'),
           controller: widget.phoneController,
           keyboardType: TextInputType.phone,
           autofillHints: const [AutofillHints.telephoneNumber],
@@ -415,6 +440,7 @@ class _SmsLoginFormState extends State<_SmsLoginForm> {
           children: [
             Expanded(
               child: TextField(
+                key: const ValueKey('login-sms-field'),
                 controller: widget.smsController,
                 keyboardType: TextInputType.number,
                 autofillHints: const [AutofillHints.oneTimeCode],
@@ -436,6 +462,7 @@ class _SmsLoginFormState extends State<_SmsLoginForm> {
                 valueListenable: widget.smsCountdown,
                 builder: (context, count, _) {
                   return OutlinedButton(
+                    key: const ValueKey('login-request-code'),
                     onPressed: canRequest && count == 0
                         ? widget.onRequestCode
                         : null,
@@ -451,6 +478,7 @@ class _SmsLoginFormState extends State<_SmsLoginForm> {
           width: double.infinity,
           height: 50,
           child: FilledButton(
+            key: const ValueKey('login-sms-submit'),
             onPressed: canLogin ? widget.onLogin : null,
             child: widget.loading
                 ? const SizedBox(

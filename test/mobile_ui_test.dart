@@ -47,6 +47,44 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    'SMS get-code and login enable after typing without mode toggle',
+    (tester) async {
+      setTestViewSize(tester, const Size(390, 844));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(useMaterial3: true),
+          home: const LoginPage(),
+        ),
+      );
+      await tester.pump();
+
+      final requestCode = find.byKey(const ValueKey('login-request-code'));
+      final loginSubmit = find.byKey(const ValueKey('login-sms-submit'));
+      expect(requestCode, findsOneWidget);
+      expect(tester.widget<OutlinedButton>(requestCode).onPressed, isNull);
+      expect(tester.widget<FilledButton>(loginSubmit).onPressed, isNull);
+
+      await tester.enterText(
+        find.byKey(const ValueKey('login-phone-field')),
+        '13800138000',
+      );
+      await tester.pump();
+
+      // Must enable immediately after typing — not only after Token round-trip.
+      expect(tester.widget<OutlinedButton>(requestCode).onPressed, isNotNull);
+      expect(tester.widget<FilledButton>(loginSubmit).onPressed, isNull);
+
+      await tester.enterText(
+        find.byKey(const ValueKey('login-sms-field')),
+        '123456',
+      );
+      await tester.pump();
+      expect(tester.widget<FilledButton>(loginSubmit).onPressed, isNotNull);
+    },
+  );
+
   testWidgets('main mobile tabs use dark surfaces in system dark mode', (
     tester,
   ) async {
