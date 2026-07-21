@@ -173,7 +173,7 @@ void main() {
 
     test('tryAutoConnect snapshots target id before scan listener starts', () {
       final source = readSource('lib/services/auto_connect_service.dart');
-      final methodStart = source.indexOf('Future<void> _tryAutoConnectOnce()');
+      final methodStart = source.indexOf('Future<void> _tryAutoConnectOnce({');
       final targetSnapshot = source.indexOf(
         'final targetDeviceId = _lastDeviceId;',
         methodStart,
@@ -199,7 +199,7 @@ void main() {
 
     test('tryAutoConnect rechecks enabled state before connecting', () {
       final source = readSource('lib/services/auto_connect_service.dart');
-      final methodStart = source.indexOf('Future<void> _tryAutoConnectOnce()');
+      final methodStart = source.indexOf('Future<void> _tryAutoConnectOnce({');
       final listenerStart = source.indexOf(
         'FlutterBluePlus.scanResults.listen',
         methodStart,
@@ -215,14 +215,14 @@ void main() {
 
     test('tryAutoConnect rechecks manual mode before connecting', () {
       final source = readSource('lib/services/auto_connect_service.dart');
-      final methodStart = source.indexOf('Future<void> _tryAutoConnectOnce()');
+      final methodStart = source.indexOf('Future<void> _tryAutoConnectOnce({');
       final listenerStart = source.indexOf(
         'FlutterBluePlus.scanResults.listen',
         methodStart,
       );
       final enabledGuard = source.indexOf('if (!_enabled) {', listenerStart);
       final manualGuard = source.indexOf(
-        'if (ManualModeService().enabled) {',
+        'if (!ignoreManualMode && ManualModeService().enabled) {',
         listenerStart,
       );
       final connectCall = source.indexOf('_doConnect(r.device)', listenerStart);
@@ -248,7 +248,7 @@ void main() {
 
     test('tryAutoConnect requests BLE permissions before scan', () {
       final source = readSource('lib/services/auto_connect_service.dart');
-      final methodStart = source.indexOf('Future<void> _tryAutoConnectOnce()');
+      final methodStart = source.indexOf('Future<void> _tryAutoConnectOnce({');
       final permissionGate = source.indexOf(
         '_ensureBleScanPermissions',
         methodStart,
@@ -316,7 +316,7 @@ void main() {
       () {
         final source = readSource('lib/services/auto_connect_service.dart');
         final methodStart = source.indexOf(
-          'Future<void> _tryAutoConnectOnce()',
+          'Future<void> _tryAutoConnectOnce({',
         );
         final direct = source.indexOf('_tryDirectMacConnect', methodStart);
         final scanStart = source.indexOf(
@@ -329,6 +329,7 @@ void main() {
         expect(scanStart, greaterThan(direct));
         expect(source, contains('androidUsesFineLocation: true'));
         expect(source, contains('BluetoothDevice.fromId'));
+        expect(source, contains('ignoreManualMode'));
       },
     );
 

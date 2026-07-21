@@ -88,6 +88,40 @@ class OfficialVehicle {
   });
 
   factory OfficialVehicle.fromJson(Map<String, dynamic> json) {
+    // Official ControlFragment reads both `mac` (identity) and `btmac`.
+    // Some payloads only fill one of them; keep both usable for BLE near-field.
+    final btmacRaw = parsePersistedString(
+      json['btmac'] ?? json['btMac'] ?? json['BTMAC'] ?? json['bluetoothMac'],
+    );
+    final identityMacRaw = parsePersistedString(
+      json['mac'] ?? json['Mac'] ?? json['identityMac'] ?? json['bleMac'],
+    );
+    final normalizedBtmac = btmacRaw.isNotEmpty ? btmacRaw : identityMacRaw;
+
+    // passwordInfo may arrive nested, stringified, or under alternate keys.
+    final passwordInfo =
+        parsePersistedMap(json['passwordInfo']) ??
+        parsePersistedMap(json['password_info']) ??
+        parsePersistedMap(json['pwdInfo']) ??
+        parsePersistedMap(json['password']);
+    final enriched = Map<String, dynamic>.of(json);
+    if (normalizedBtmac.isNotEmpty &&
+        parsePersistedString(enriched['btmac']).isEmpty) {
+      enriched['btmac'] = normalizedBtmac;
+    }
+    if (identityMacRaw.isNotEmpty &&
+        parsePersistedString(enriched['mac']).isEmpty) {
+      enriched['mac'] = identityMacRaw;
+    } else if (identityMacRaw.isEmpty &&
+        normalizedBtmac.isNotEmpty &&
+        parsePersistedString(enriched['mac']).isEmpty) {
+      // Fall back so QGJ identity path still has a mac-like field.
+      enriched['mac'] = normalizedBtmac;
+    }
+    if (passwordInfo != null && enriched['passwordInfo'] is! Map) {
+      enriched['passwordInfo'] = passwordInfo;
+    }
+
     return OfficialVehicle(
       imei: parsePersistedString(json['imei']),
       imeiGps: parsePersistedString(json['imeiGps']),
@@ -101,8 +135,10 @@ class OfficialVehicle {
       electricQuantity: parsePersistedInt(json['electricQuantity']),
       voltage: parsePersistedDouble(json['voltage']),
       online: parsePersistedBool(json['online']),
-      btname: parsePersistedString(json['btname']),
-      btmac: parsePersistedString(json['btmac']),
+      btname: parsePersistedString(
+        json['btname'] ?? json['btName'] ?? json['bluetoothName'],
+      ),
+      btmac: normalizedBtmac,
       longitude: parsePersistedString(json['longitude']),
       latitude: parsePersistedString(json['latitude']),
       modelType: parsePersistedInt(json['modelType']),
@@ -116,7 +152,7 @@ class OfficialVehicle {
         json['mqPassword'] ?? json['mqttPassword'],
       ),
       mileage: parsePersistedDouble(json['mileage']),
-      raw: Map<String, dynamic>.unmodifiable(json),
+      raw: Map<String, dynamic>.unmodifiable(enriched),
     );
   }
 
@@ -175,28 +211,41 @@ class OfficialVehicle {
   /// QGJ compares this backend identity with advertisement manufacturer data.
   /// Other stacks usually return the same value as [normalizedDeviceMac].
   String get bleIdentityMac {
-    final rawMac = parsePersistedString(raw['mac']);
+    final rawMac = parsePersistedString(
+      raw['mac'] ?? raw['Mac'] ?? raw['identityMac'] ?? raw['bleMac'],
+    );
     final source = rawMac.isNotEmpty ? rawMac : btmac;
     final compact = source.replaceAll(_btmacSeparatorPattern, '').toUpperCase();
     return compact.length == 12 ? compact : '';
   }
 
   int? get mainBlePassword {
-    final passwordInfo = parsePersistedMap(raw['passwordInfo']);
-    final direct = parsePersistedInt(passwordInfo?['main']);
+    final passwordInfo =
+        parsePersistedMap(raw['passwordInfo']) ??
+        parsePersistedMap(raw['password_info']) ??
+        parsePersistedMap(raw['pwdInfo']) ??
+        parsePersistedMap(raw['password']);
+    final direct = parsePersistedInt(
+      passwordInfo?['main'] ??
+          passwordInfo?['mainPassword'] ??
+          passwordInfo?['password'],
+    );
     if (direct != null) return direct;
-    final password = parsePersistedMap(raw['password']);
     return parsePersistedInt(
-      password?['main'] ?? raw['mainPassword'] ?? raw['password'],
+      raw['mainPassword'] ?? raw['mainPwd'] ?? raw['password'],
     );
   }
 
   List<int> get childBlePasswords {
-    final passwordInfo = parsePersistedMap(raw['passwordInfo']);
-    final password = parsePersistedMap(raw['password']);
+    final passwordInfo =
+        parsePersistedMap(raw['passwordInfo']) ??
+        parsePersistedMap(raw['password_info']) ??
+        parsePersistedMap(raw['pwdInfo']) ??
+        parsePersistedMap(raw['password']);
     final source =
         passwordInfo?['children'] ??
-        password?['children'] ??
+        passwordInfo?['child'] ??
+        passwordInfo?['childrenPassword'] ??
         raw['childrenPassword'] ??
         raw['children'];
     if (source is! Iterable) return const [];

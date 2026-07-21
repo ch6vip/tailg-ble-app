@@ -186,6 +186,9 @@ class AutoConnectService {
     OfficialBleConnectionContext? context,
     bool enable = true,
     bool connectNow = true,
+
+    /// Chip / explicit user action: connect even when 手动模式 is on.
+    bool ignoreManualMode = false,
   }) async {
     final id = deviceId.trim();
     if (id.isEmpty) return;
@@ -214,7 +217,7 @@ class AutoConnectService {
       _refreshTarget();
     }
     if (connectNow) {
-      await tryAutoConnect();
+      await tryAutoConnect(ignoreManualMode: ignoreManualMode);
     }
   }
 
@@ -307,15 +310,17 @@ class AutoConnectService {
     return profile;
   }
 
-  Future<void> tryAutoConnect() async {
-    await _runGate.run(_tryAutoConnectOnce);
+  Future<void> tryAutoConnect({bool ignoreManualMode = false}) async {
+    await _runGate.run(
+      () => _tryAutoConnectOnce(ignoreManualMode: ignoreManualMode),
+    );
   }
 
-  Future<void> _tryAutoConnectOnce() async {
+  Future<void> _tryAutoConnectOnce({bool ignoreManualMode = false}) async {
     await VehicleStore().init();
     _refreshTarget();
     await ManualModeService().init();
-    if (ManualModeService().enabled) {
+    if (!ignoreManualMode && ManualModeService().enabled) {
       _log.operation('自动连接: 已开启手动模式，跳过', level: LogLevel.info);
       return;
     }
@@ -358,6 +363,7 @@ class AutoConnectService {
     // Official TLink ControlFragment.initBleTLink connects via
     // BluetoothAdapter.getRemoteDevice(mac) first — no scan required when the
     // classic MAC is known. Mirror that on Android before falling back to scan.
+    // Also try identity/btmac for non-QGJ stacks when they differ.
     if (await _tryDirectMacConnect(
       targetDeviceId: targetDeviceId,
       targetDeviceName: targetDeviceName,
@@ -398,7 +404,7 @@ class AutoConnectService {
             if (!completer.isCompleted) completer.complete();
             return;
           }
-          if (ManualModeService().enabled) {
+          if (!ignoreManualMode && ManualModeService().enabled) {
             unawaited(scanSub?.cancel());
             timeout?.cancel();
             unawaited(FlutterBluePlus.stopScan());

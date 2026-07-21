@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide LogLevel;
 
 import '../main.dart';
 import '../ble/connection_manager.dart' as ble;
@@ -82,9 +84,12 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   StreamSubscription<ble.ConnectionState>? _bleStateSub;
   StreamSubscription<BikeState?>? _bleBikeStateSub;
   StreamSubscription<OfficialMqttLinkState>? _mqttLinkSub;
+  StreamSubscription<BluetoothAdapterState>? _adapterSub;
   bool _busy = false;
   bool _disposed = false;
   bool _nearFieldBusy = false;
+  bool _disconnecting = false;
+  BluetoothAdapterState _adapterState = BluetoothAdapterState.unknown;
   OfficialControlChannel _controlChannel = OfficialControlChannel.automatic;
 
   /// Cached BLE/location permission probe for near-field banner + six-key copy.
@@ -114,6 +119,30 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     _mqttLinkSub = officialMqttService.linkStateStream.listen((_) {
       if (mounted) setState(() {});
     });
+    // Desktop/widget tests have no BLE platform channel; keep unknown there.
+    // Accessing FlutterBluePlus.adapterState on Windows throws
+    // "unsupported on this platform" (sync or via stream errors).
+    final isMobileBleHost =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+    if (isMobileBleHost) {
+      try {
+        _adapterSub = FlutterBluePlus.adapterState.listen(
+          (state) {
+            _adapterState = state;
+            if (mounted) setState(() {});
+          },
+          onError: (_) {
+            _adapterState = BluetoothAdapterState.unknown;
+            if (mounted) setState(() {});
+          },
+        );
+      } on Object {
+        _adapterState = BluetoothAdapterState.unknown;
+        _adapterSub = null;
+      }
+    }
     // Keep induction service bound for settings page / auto-connect side effects.
     unawaited(manualModeService.init());
     _bindInductionVehicle();
@@ -135,6 +164,8 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     if (bleBikeStateSub != null) unawaited(bleBikeStateSub.cancel());
     final mqttSub = _mqttLinkSub;
     if (mqttSub != null) unawaited(mqttSub.cancel());
+    final adapterSub = _adapterSub;
+    if (adapterSub != null) unawaited(adapterSub.cancel());
     super.dispose();
   }
 
@@ -194,8 +225,14 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   ///
   /// **P0-A4:** if BLE is active on another vehicle, retarget via
   /// [AutoConnectService.linkOfficialTarget] (disconnect + clear pending).
-  Future<void> _ensureNearFieldLink({required bool auto}) async {
-    if (_disposed || _nearFieldBusy) return;
+  ///
+  /// [forceUserAction] is true for the right-top chip / banner tap so we still
+  /// connect even when 手动模式 is enabled (official chip is always explicit).
+  Future<void> _ensureNearFieldLink({
+    required bool auto,
+    bool forceUserAction = false,
+  }) async {
+    if (_disposed || _nearFieldBusy || _disconnecting) return;
     if (!officialCloudService.state.signedIn) return;
     final vehicle = officialCloudService.state.selectedVehicle;
     if (vehicle == null) return;
@@ -237,14 +274,15 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     }
 
     // Already linked to this car — do not restart connection.
-    if (autoConnectService.isLinkedTo(targetId)) {
+    if (autoConnectService.isLinkedTo(targetId) &&
+        connectionManager.isProtocolLoggedIn) {
       return;
     }
 
     // Auto path: check first so we don't spam the system dialog on every
     // resume; if denied, leave the near-field banner for an explicit request.
     // Manual path still goes through _manualNearFieldConnect which requests.
-    if (auto) {
+    if (auto && !forceUserAction) {
       final permission = await permissionService.requestBleScanPermissions(
         request: false,
       );
@@ -269,6 +307,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
         context: bleContext,
         enable: true,
         connectNow: true,
+        ignoreManualMode: forceUserAction || !auto,
       );
     } catch (e) {
       logService.operation(
@@ -304,13 +343,19 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       }
       return;
     }
+    if (_adapterState == BluetoothAdapterState.off ||
+        _adapterState == BluetoothAdapterState.turningOff) {
+      AppSnack.error(context, '请先打开手机蓝牙');
+      return;
+    }
     AppSnack.info(context, '正在连接车辆蓝牙…');
-    await _ensureNearFieldLink(auto: false);
+    await _ensureNearFieldLink(auto: false, forceUserAction: true);
     if (!mounted) return;
     if (connectionManager.isProtocolLoggedIn) {
       AppSnack.success(context, '蓝牙已连接');
     } else if (connectionManager.state == ble.ConnectionState.connecting ||
-        connectionManager.state == ble.ConnectionState.connected) {
+        connectionManager.state == ble.ConnectionState.connected ||
+        connectionManager.state == ble.ConnectionState.reconnecting) {
       AppSnack.info(context, '蓝牙连接中…');
     } else {
       AppSnack.error(context, '未找到车辆，请靠近车辆后重试');
@@ -319,19 +364,22 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
 
   /// Official ControlFragment right-top BLE chip: connect / disconnect toggle.
   Future<void> _onOfficialBleChipTap() async {
-    if (_nearFieldBusy) return;
+    if (_nearFieldBusy || _disconnecting) return;
     final vehicle = officialCloudService.state.selectedVehicle;
     if (vehicle == null) {
       AppSnack.info(context, '请先选择车辆');
       return;
     }
 
-    // Already LOGIN → confirm disconnect (official AppCommDialog path).
-    if (connectionManager.isProtocolLoggedIn ||
-        connectionManager.state == ble.ConnectionState.ready ||
-        connectionManager.state == ble.ConnectionState.connected ||
-        connectionManager.state == ble.ConnectionState.connecting ||
-        connectionManager.state == ble.ConnectionState.reconnecting) {
+    final chip = _officialBleChipState(vehicle);
+    // Connecting again: ignore (official keeps showing 连接中).
+    if (chip == _OfficialBleChipState.connecting ||
+        chip == _OfficialBleChipState.disconnecting) {
+      return;
+    }
+
+    // Only LOGIN shows 已连接 and offers disconnect confirmation.
+    if (chip == _OfficialBleChipState.connected) {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
@@ -350,6 +398,8 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
         ),
       );
       if (confirmed != true || !mounted || _disposed) return;
+      _disconnecting = true;
+      if (mounted) setState(() {});
       try {
         await connectionManager.disconnect();
         if (mounted) AppSnack.info(context, '蓝牙已断开');
@@ -360,7 +410,21 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
           level: LogLevel.warning,
         );
         if (mounted) AppSnack.error(context, '断开蓝牙失败，请重试');
+      } finally {
+        _disconnecting = false;
+        if (mounted) setState(() {});
       }
+      return;
+    }
+
+    if (chip == _OfficialBleChipState.noBle) {
+      if (_adapterState == BluetoothAdapterState.off ||
+          _adapterState == BluetoothAdapterState.turningOff) {
+        AppSnack.error(context, '请先打开手机蓝牙');
+        return;
+      }
+      // Permission path.
+      await _manualNearFieldConnect();
       return;
     }
 
@@ -375,6 +439,13 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     }
     if (bleContext.targetMacCompact.isEmpty) {
       AppSnack.error(context, '车辆未返回蓝牙地址，无法近场连接');
+      return;
+    }
+    if ((bleContext.stack == OfficialBleStack.tlink &&
+            !bleContext.hasTLinkCredentials) ||
+        (bleContext.stack == OfficialBleStack.qgj &&
+            !bleContext.hasQgjCredentials)) {
+      AppSnack.error(context, '车辆未返回蓝牙登录密码，无法近场连接');
       return;
     }
 
@@ -392,24 +463,37 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
       return _OfficialBleChipState.hidden;
     }
 
-    final perm = _blePermission;
-    if (perm != null && !perm.granted) {
-      // Map "no permission / radio off" to official-like 无蓝牙 entry.
+    // Official BLE_STATE_OFF → 无蓝牙 (radio off), distinct from permission deny.
+    if (_adapterState == BluetoothAdapterState.off ||
+        _adapterState == BluetoothAdapterState.turningOff ||
+        _adapterState == BluetoothAdapterState.unavailable) {
       return _OfficialBleChipState.noBle;
     }
+
+    if (_disconnecting) {
+      return _OfficialBleChipState.disconnecting;
+    }
+
+    // Protocol LOGIN only (not mere GATT connected).
     if (connectionManager.isProtocolLoggedIn) {
       return _OfficialBleChipState.connected;
     }
+
     if (_nearFieldBusy ||
         connectionManager.state == ble.ConnectionState.connecting ||
         connectionManager.state == ble.ConnectionState.connected ||
         connectionManager.state == ble.ConnectionState.reconnecting) {
       return _OfficialBleChipState.connecting;
     }
-    if (bleContext.targetMacCompact.isEmpty) {
-      // Still show the chip so user can see why connect fails when tapped.
-      return _OfficialBleChipState.clickToConnect;
+
+    // Permission missing still shows 点击连接 so tap can request auth
+    // (official only shows 无蓝牙 for radio-off). Keep 无蓝牙 only when
+    // permanently denied after a probe.
+    final perm = _blePermission;
+    if (perm != null && !perm.granted && perm.openSettingsRecommended) {
+      return _OfficialBleChipState.noBle;
     }
+
     return _OfficialBleChipState.clickToConnect;
   }
 
@@ -1386,6 +1470,7 @@ enum _OfficialBleChipState {
   noBle,
   clickToConnect,
   connecting,
+  disconnecting,
   connected,
 }
 
@@ -1504,6 +1589,7 @@ class _OfficialBleChip extends StatelessWidget {
     _OfficialBleChipState.noBle => '无蓝牙',
     _OfficialBleChipState.clickToConnect => '点击连接',
     _OfficialBleChipState.connecting => '连接中',
+    _OfficialBleChipState.disconnecting => '断开中',
     _OfficialBleChipState.connected => '已连接',
   };
 
@@ -1512,6 +1598,7 @@ class _OfficialBleChip extends StatelessWidget {
     _OfficialBleChipState.noBle => Icons.bluetooth_disabled,
     _OfficialBleChipState.clickToConnect => Icons.bluetooth,
     _OfficialBleChipState.connecting => Icons.bluetooth_searching,
+    _OfficialBleChipState.disconnecting => Icons.bluetooth_disabled,
     _OfficialBleChipState.connected => Icons.bluetooth_connected,
   };
 
@@ -1519,7 +1606,9 @@ class _OfficialBleChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final connected = state == _OfficialBleChipState.connected;
-    final connecting = state == _OfficialBleChipState.connecting;
+    final connecting =
+        state == _OfficialBleChipState.connecting ||
+        state == _OfficialBleChipState.disconnecting;
     final bg = connected
         ? colors.primary.withValues(alpha: 0.12)
         : colors.surfaceContainerHigh;
