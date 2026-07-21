@@ -65,6 +65,29 @@ void main() {
     expect(cloudOnly.bms.fields[8].displayValue, '12');
   });
 
+  test('BatterySnapshot keeps zero consume/loop and alternate field names', () {
+    final zeros = OfficialBatteryInfo.fromJson({
+      'consumePowerPercent': 0,
+      'loopCount': '0',
+      'batteryTemperature': '28.5',
+      'batteryCyclesNum': null,
+    });
+    expect(zeros.consumePowerPercent, '0');
+    expect(zeros.loopCount, '0');
+    expect(zeros.temperature, '28.5');
+    expect(zeros.hasData, isTrue);
+
+    final snapshot = BatterySnapshot.fromSources(officialBatteryInfo: zeros);
+    expect(snapshot.consumePowerPercent, '0');
+    expect(snapshot.loopCount, '0');
+    expect(snapshot.temperature, 28.5);
+    expect(
+      BatterySnapshot.displayMetric(snapshot.consumePowerPercent, unit: '%'),
+      '0%',
+    );
+    expect(BatterySnapshot.displayMetric(snapshot.loopCount), '0');
+  });
+
   test('BatterySnapshot selects mileage source by available data', () {
     final officialBattery = OfficialBatteryInfo.fromJson({
       'remainingMileage': '45',

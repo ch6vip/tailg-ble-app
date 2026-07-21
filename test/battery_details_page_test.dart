@@ -82,6 +82,8 @@ void main() {
         batteryInfo: OfficialBatteryInfo.fromJson({
           'voltage': 52.4,
           'temperature': 31.2,
+          'consumePowerPercent': 0,
+          'loopCount': 0,
         }),
       ),
     );
@@ -91,6 +93,12 @@ void main() {
 
     expect(find.text('52.4V'), findsWidgets);
     expect(find.text('31.2°C'), findsWidgets);
+    // Real zeros from API must render, not collapse to 待读取.
+    expect(find.text('0%'), findsWidgets);
+    expect(find.text('0'), findsWidgets);
+    expect(find.text('今日耗电'), findsWidgets);
+    expect(find.text('循环次数'), findsWidgets);
+    expect(find.text('当前温度'), findsWidgets);
   });
   testWidgets('signed-in battery page shows last sync age', (tester) async {
     setTestViewSize(tester, const Size(430, 1200));

@@ -597,22 +597,88 @@ class OfficialBatteryInfo {
   });
 
   factory OfficialBatteryInfo.fromJson(Map<String, dynamic> json) {
-    final dumpEnergyPercent = _clean(json['dumpEnergyPercent']);
+    // Official BatteryInfoBean field names, plus common alternates seen in
+    // nested / BMS payloads. Numeric 0 must be kept (今日耗电/循环次数 can be 0).
+    final dumpEnergyPercent = _batteryField(json, const [
+      'dumpEnergyPercent',
+      'dumpEnergy',
+      'soc',
+      'SOC',
+      'electricQuantity',
+      'batteryPercent',
+    ]);
     final dumpEnergyPercentLabel =
-        _clean(json['dumpEnergyPercentLabel']) ??
+        _batteryField(json, const ['dumpEnergyPercentLabel', 'socLabel']) ??
         (dumpEnergyPercent == null ? '' : '$dumpEnergyPercent%');
     return OfficialBatteryInfo(
       raw: _stringKeyedMap(json),
       dumpEnergyPercent: dumpEnergyPercent ?? '',
       dumpEnergyPercentLabel: dumpEnergyPercentLabel,
-      remainingMileage: _clean(json['remainingMileage']) ?? '',
-      mileage: _clean(json['mileage']) ?? '',
-      capacitance: _clean(json['capacitance']) ?? '',
-      consumePowerPercent: _clean(json['consumePowerPercent']) ?? '',
-      loopCount: _clean(json['loopCount']) ?? '',
-      temperature: _clean(json['temperature']) ?? '',
-      batteryScore: _clean(json['batteryScore']) ?? '',
-      voltage: _clean(json['voltage']) ?? '',
+      remainingMileage:
+          _batteryField(json, const [
+            'remainingMileage',
+            'remainMileage',
+            'leftMileage',
+            'estimateMileage',
+          ]) ??
+          '',
+      mileage:
+          _batteryField(json, const ['mileage', 'totalMileage', 'odometer']) ??
+          '',
+      capacitance:
+          _batteryField(json, const [
+            'capacitance',
+            'capacity',
+            'batteryCapacity',
+            'estimateBatteryCapacity',
+          ]) ??
+          '',
+      consumePowerPercent:
+          _batteryField(json, const [
+            'consumePowerPercent',
+            'consumePower',
+            'todayConsumePower',
+            'todayPowerConsume',
+            'powerConsumePercent',
+            'dayConsumePower',
+          ]) ??
+          '',
+      loopCount:
+          _batteryField(json, const [
+            'loopCount',
+            'cycleCount',
+            'cycles',
+            'batteryCyclesNum',
+            'batteryCycle',
+            'cycleTimes',
+          ]) ??
+          '',
+      temperature:
+          _batteryField(json, const [
+            'temperature',
+            'batteryTemperature',
+            'temp',
+            'batteryTemp',
+            'currentTemperature',
+          ]) ??
+          '',
+      batteryScore:
+          _batteryField(json, const [
+            'batteryScore',
+            'score',
+            'soh',
+            'SOH',
+            'healthScore',
+          ]) ??
+          '',
+      voltage:
+          _batteryField(json, const [
+            'voltage',
+            'batteryVoltage',
+            'currentBatteryVoltage',
+            'vol',
+          ]) ??
+          '',
     );
   }
 
@@ -628,8 +694,20 @@ class OfficialBatteryInfo {
       voltage.isNotEmpty;
 }
 
+/// Read first non-empty battery metric. Keeps numeric `0` / `"0"`.
+String? _batteryField(Map<String, dynamic> json, List<String> keys) {
+  for (final key in keys) {
+    if (!json.containsKey(key)) continue;
+    final cleaned = _clean(json[key]);
+    if (cleaned != null) return cleaned;
+  }
+  return null;
+}
+
 String? _clean(Object? value) {
   if (value == null) return null;
+  // Keep real zero values from the official battery API.
+  if (value is num) return value.toString();
   final text = value.toString().trim();
   if (text.isEmpty || text == '--' || text.toLowerCase() == 'null') {
     return null;

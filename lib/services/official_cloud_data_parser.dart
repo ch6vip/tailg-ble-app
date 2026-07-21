@@ -11,7 +11,41 @@ class OfficialCloudDataParser {
   }
 
   static OfficialBatteryInfo batteryInfo(Object? data) {
-    return OfficialBatteryInfo.fromJson(_map(data));
+    // Official app/mine/batteryInfo usually returns a flat BatteryInfoBean map.
+    // Some builds nest it under data/info/batteryInfo — unwrap those shapes.
+    final map = _unwrapBatteryPayload(_map(data));
+    return OfficialBatteryInfo.fromJson(map);
+  }
+
+  static Map<String, dynamic> _unwrapBatteryPayload(Map<String, dynamic> map) {
+    if (map.isEmpty) return map;
+    // Already looks like BatteryInfoBean.
+    const directKeys = {
+      'dumpEnergyPercent',
+      'consumePowerPercent',
+      'loopCount',
+      'temperature',
+      'voltage',
+      'remainingMileage',
+      'capacitance',
+      'batteryScore',
+    };
+    if (map.keys.any(directKeys.contains)) return map;
+
+    for (final key in const [
+      'batteryInfo',
+      'info',
+      'data',
+      'result',
+      'bean',
+      'battery',
+    ]) {
+      final nested = parsePersistedMap(map[key]);
+      if (nested != null && nested.isNotEmpty) {
+        return _unwrapBatteryPayload(Map<String, dynamic>.from(nested));
+      }
+    }
+    return map;
   }
 
   static OfficialVehicleLocation vehicleLocation(Object? data) {

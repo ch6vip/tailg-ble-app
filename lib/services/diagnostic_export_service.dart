@@ -193,10 +193,22 @@ class DiagnosticExportService {
   List<String> _buildOfficialBatteryLines(OfficialBatteryInfo? batteryInfo) {
     if (batteryInfo == null) return const ['Official battery detail: none'];
 
+    String metric(String value, {String unit = ''}) {
+      final text = value.trim();
+      if (text.isEmpty) return 'missing';
+      if (unit.isEmpty) return text;
+      return text.endsWith(unit) ? text : '$text$unit';
+    }
+
     return [
       'Official battery detail: ${batteryInfo.dumpEnergyPercentLabel.isEmpty ? 'none' : batteryInfo.dumpEnergyPercentLabel}',
-      'Official battery detail voltage: ${batteryInfo.voltage.isEmpty ? 'none' : '${batteryInfo.voltage}V'}',
-      'Official battery detail temperature: ${batteryInfo.temperature.isEmpty ? 'none' : '${batteryInfo.temperature}C'}',
+      'Official battery detail voltage: ${metric(batteryInfo.voltage, unit: 'V')}',
+      'Official battery detail temperature: ${metric(batteryInfo.temperature, unit: 'C')}',
+      'Official battery consumePowerPercent: ${metric(batteryInfo.consumePowerPercent, unit: '%')}',
+      'Official battery loopCount: ${metric(batteryInfo.loopCount)}',
+      'Official battery capacitance: ${metric(batteryInfo.capacitance)}',
+      'Official battery score: ${metric(batteryInfo.batteryScore)}',
+      'Official battery raw keys: ${batteryInfo.raw.keys.take(20).join(',')}',
     ];
   }
 

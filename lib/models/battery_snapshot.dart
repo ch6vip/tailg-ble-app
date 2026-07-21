@@ -182,8 +182,23 @@ class BatterySnapshot {
 
   static String? _cleanText(String? value) {
     final text = value?.trim();
+    // Official battery API may return "0" for 今日耗电 / 循环次数 — keep it.
     if (text == null || text.isEmpty || text == '--') return null;
+    if (text.toLowerCase() == 'null') return null;
     return text;
+  }
+
+  /// Display helper: empty/missing → fallback; keeps zero values.
+  static String displayMetric(
+    String? value, {
+    String unit = '',
+    String missing = '待读取',
+  }) {
+    final cleaned = _cleanText(value);
+    if (cleaned == null) return missing;
+    if (unit.isEmpty) return cleaned;
+    if (cleaned.endsWith(unit)) return cleaned;
+    return '$cleaned$unit';
   }
 
   static String? _estimatedMileageText(int? percent) {

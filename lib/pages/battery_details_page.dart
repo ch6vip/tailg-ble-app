@@ -570,22 +570,21 @@ class _OfficialMetricGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final temperature = snapshot.temperature;
     final items = [
       _Metric(
         '今日耗电',
-        _withUnit(snapshot.consumePowerPercent, '%'),
+        BatterySnapshot.displayMetric(snapshot.consumePowerPercent, unit: '%'),
         icon: Icons.bolt_outlined,
       ),
-      _Metric('循环次数', snapshot.loopCount ?? '待读取', icon: Icons.autorenew),
       _Metric(
-        '当前温度',
-        temperature == null ? '待读取' : '${temperature.toStringAsFixed(1)}°C',
-        icon: Icons.thermostat,
+        '循环次数',
+        BatterySnapshot.displayMetric(snapshot.loopCount),
+        icon: Icons.autorenew,
       ),
+      _Metric('当前温度', _temperatureDisplay(snapshot), icon: Icons.thermostat),
       _Metric(
         '电池评分',
-        _withUnit(snapshot.batteryScore, '分'),
+        BatterySnapshot.displayMetric(snapshot.batteryScore, unit: '分'),
         icon: Icons.speed_outlined,
       ),
     ];
@@ -909,8 +908,22 @@ class _Metric {
 }
 
 String _withUnit(String? value, String unit) {
-  final text = value?.trim();
-  if (text == null || text.isEmpty) return '待读取';
-  if (text.endsWith(unit)) return text;
-  return '$text$unit';
+  return BatterySnapshot.displayMetric(value, unit: unit);
+}
+
+/// Prefer parsed temperature; fall back to raw string (e.g. "31℃") if present.
+String _temperatureDisplay(BatterySnapshot snapshot) {
+  final parsed = snapshot.temperature;
+  if (parsed != null) {
+    final text = parsed == parsed.roundToDouble()
+        ? parsed.toStringAsFixed(0)
+        : parsed.toStringAsFixed(1);
+    return '$text°C';
+  }
+  final raw = snapshot.officialBatteryInfo?.temperature.trim() ?? '';
+  if (raw.isEmpty || raw == '--') return '待读取';
+  if (raw.contains('°') || raw.contains('℃') || raw.contains('C')) {
+    return raw.replaceAll('℃', '°C');
+  }
+  return '$raw°C';
 }
