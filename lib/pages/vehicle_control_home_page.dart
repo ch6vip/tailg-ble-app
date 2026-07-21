@@ -1732,7 +1732,7 @@ class _ShortcutsRow extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: _Aurora.cardMargin,
-      padding: const EdgeInsets.fromLTRB(8, 16, 8, 14),
+      padding: const EdgeInsets.fromLTRB(14, 12, 8, 14),
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: const BorderRadius.all(
@@ -1742,49 +1742,67 @@ class _ShortcutsRow extends StatelessWidget {
       ),
       child: Opacity(
         opacity: dimmed ? 0.55 : 1,
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: _Shortcut(
-                icon: Icons.campaign_outlined,
-                label: '寻车',
-                sub: '鸣笛闪灯',
-                style: _ShortcutStyle.neutral,
-                onTap: onFind,
+            Text(
+              '控车',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: colors.textPrimary,
               ),
             ),
-            Expanded(
-              child: _Shortcut(
-                icon: armed == null
-                    ? Icons.help_outline
-                    : (armed! ? Icons.lock_outline : Icons.lock_open),
-                label: armed == null ? '设防未知' : (armed! ? '已设防' : '未设防'),
-                sub: armed == null ? '刷新后重试' : (armed! ? '车锁已锁' : '点击设防'),
-                style: armed == true
-                    ? _ShortcutStyle.armed
-                    : _ShortcutStyle.neutral,
-                onTap: onArm,
-              ),
-            ),
-            Expanded(
-              child: _Shortcut(
-                icon: Icons.event_seat_outlined,
-                label: '开坐垫',
-                sub: '解锁储物',
-                style: _ShortcutStyle.neutral,
-                onTap: onSeat,
-              ),
-            ),
-            Expanded(
-              child: _Shortcut(
-                icon: Icons.power_settings_new,
-                label: powered == null ? '电源未知' : (powered! ? '已通电' : '已断电'),
-                sub: powered == null ? '刷新后重试' : (powered! ? '动力已开' : '点击通电'),
-                style: powered == true
-                    ? _ShortcutStyle.powerOn
-                    : _ShortcutStyle.powerOff,
-                onTap: onPower,
-              ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _Shortcut(
+                    icon: Icons.campaign_outlined,
+                    label: '寻车',
+                    sub: '鸣笛闪灯',
+                    style: _ShortcutStyle.neutral,
+                    onTap: onFind,
+                  ),
+                ),
+                Expanded(
+                  child: _Shortcut(
+                    icon: armed == null
+                        ? Icons.help_outline
+                        : (armed! ? Icons.lock_outline : Icons.lock_open),
+                    label: armed == null ? '设防未知' : (armed! ? '已设防' : '未设防'),
+                    sub: armed == null ? '刷新后重试' : (armed! ? '车锁已锁' : '点击设防'),
+                    style: armed == true
+                        ? _ShortcutStyle.armed
+                        : _ShortcutStyle.neutral,
+                    onTap: onArm,
+                  ),
+                ),
+                Expanded(
+                  child: _Shortcut(
+                    icon: Icons.event_seat_outlined,
+                    label: '开坐垫',
+                    sub: '解锁储物',
+                    style: _ShortcutStyle.neutral,
+                    onTap: onSeat,
+                  ),
+                ),
+                Expanded(
+                  child: _Shortcut(
+                    icon: Icons.power_settings_new,
+                    label: powered == null
+                        ? '电源未知'
+                        : (powered! ? '已通电' : '已断电'),
+                    sub: powered == null
+                        ? '刷新后重试'
+                        : (powered! ? '动力已开' : '点击通电'),
+                    style: powered == true
+                        ? _ShortcutStyle.powerOn
+                        : _ShortcutStyle.powerOff,
+                    onTap: onPower,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

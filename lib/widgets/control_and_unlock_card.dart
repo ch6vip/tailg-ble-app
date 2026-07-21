@@ -131,63 +131,69 @@ class ControlAndUnlockCard extends StatelessWidget {
             children: [
               Icon(Icons.alt_route, size: 18, color: colors.textSecondary),
               const SizedBox(width: 7),
-              Expanded(
-                child: Text(
-                  '控车渠道',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: colors.textPrimary,
-                  ),
+              Text(
+                '控车渠道',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
                 ),
               ),
-              if (channelBusy)
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else ...[
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: _channelDotColor(colors),
-                    shape: BoxShape.circle,
+              const SizedBox(width: 8),
+              Expanded(
+                child: channelBusy
+                    ? const Align(
+                        alignment: Alignment.centerRight,
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _channelDotColor(colors),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              _channelStatusLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: colors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+              if (onOpenInductionSettings != null)
+                IconButton(
+                  tooltip: '感应设置',
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  onPressed: onOpenInductionSettings,
+                  icon: Icon(
+                    Icons.sensors,
+                    size: 20,
+                    color: colors.textTertiary,
                   ),
                 ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    _channelStatusLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: colors.textSecondary,
-                    ),
-                  ),
-                ),
-                if (onOpenInductionSettings != null) ...[
-                  const SizedBox(width: 4),
-                  IconButton(
-                    tooltip: '感应设置',
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
-                    ),
-                    onPressed: onOpenInductionSettings,
-                    icon: Icon(
-                      Icons.sensors,
-                      size: 18,
-                      color: colors.textTertiary,
-                    ),
-                  ),
-                ],
-              ],
             ],
           ),
           const SizedBox(height: 12),
