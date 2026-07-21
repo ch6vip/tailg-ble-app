@@ -22,6 +22,12 @@ class OfficialMqttConfig {
   static const connectTimeout = Duration(seconds: 10);
   static const keepAliveSeconds = 60;
 
+  /// Preconnect retries after the first failed attempt (total attempts = 1 + this).
+  static const preconnectMaxRetries = 2;
+
+  /// Base delay for exponential backoff between preconnect attempts.
+  static const preconnectRetryBaseDelay = Duration(milliseconds: 600);
+
   /// Whether this model uses the plain TCP KKS/YJ broker (no SSL).
   static bool usesKksYjBroker(int? modelType) =>
       modelType == 1 || modelType == 2;

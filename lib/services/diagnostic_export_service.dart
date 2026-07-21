@@ -5,6 +5,8 @@ import 'control_channel_resolver.dart';
 import 'display_time_formatter.dart';
 import 'log_service.dart';
 import 'official_cloud_service.dart';
+import 'official_mqtt_config.dart';
+import 'official_mqtt_service.dart';
 import 'sensitive_value_masker.dart';
 import 'vehicle_store.dart';
 
@@ -12,14 +14,17 @@ class DiagnosticExportService {
   final LogService logService;
   final VehicleStore vehicleStore;
   final OfficialCloudService officialCloudService;
+  final OfficialMqttService officialMqttService;
   final DateTime Function()? _clock;
 
-  const DiagnosticExportService({
+  DiagnosticExportService({
     required this.logService,
     required this.vehicleStore,
     required this.officialCloudService,
+    OfficialMqttService? officialMqttService,
     DateTime Function()? clock,
-  }) : _clock = clock;
+  }) : officialMqttService = officialMqttService ?? OfficialMqttService(),
+       _clock = clock;
 
   String buildReport(List<LogEntry> entries) {
     return [
@@ -29,8 +34,29 @@ class DiagnosticExportService {
       '',
       _buildOfficialCloudSection(),
       '',
+      _buildMqttSection(),
+      '',
       _buildLogSectionHeading(entries.length),
       ...entries.map(_formatEntry),
+    ].join('\n');
+  }
+
+  String _buildMqttSection() {
+    final mqtt = officialMqttService;
+    final vehicle = officialCloudService.state.selectedVehicle;
+    final broker = vehicle == null
+        ? 'none'
+        : OfficialMqttConfig.brokerUriFor(vehicle);
+    return [
+      '## Official MQTT',
+      'Link state: ${mqtt.linkState.name}',
+      'Link label: ${mqtt.linkStateLabel}',
+      'Connected: ${mqtt.isConnected}',
+      'Preconnect in flight: ${mqtt.preconnectInFlight}',
+      'Broker: $broker',
+      'Last user error: ${mqtt.lastPreconnectError ?? 'none'}',
+      'Last raw error: ${mqtt.lastPreconnectRawError ?? 'none'}',
+      'Last send path: ${mqtt.lastSendPath?.name ?? 'none'}',
     ].join('\n');
   }
 

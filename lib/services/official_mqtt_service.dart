@@ -43,6 +43,9 @@ class OfficialMqttService {
   OfficialMqttStatusPayload? _latestStatusPayload;
   OfficialRemoteSendPath? _lastSendPath;
   String? _lastPreconnectError;
+
+  /// Last raw connect failure for diagnostics (type + message), not user-facing.
+  String? _lastPreconnectRawError;
   bool _disposed = false;
   bool _preconnectInFlight = false;
   OfficialMqttLinkState _linkState = OfficialMqttLinkState.disconnected;
@@ -65,6 +68,9 @@ class OfficialMqttService {
 
   /// Last preconnect failure message (null after success). Used for UI retry.
   String? get lastPreconnectError => _lastPreconnectError;
+
+  /// Last raw connect error (`Type: message`) for diagnostics / export.
+  String? get lastPreconnectRawError => _lastPreconnectRawError;
 
   bool get preconnectInFlight => _preconnectInFlight;
 
@@ -101,6 +107,7 @@ class OfficialMqttService {
     _latestStatusPayload = null;
     _lastSendPath = null;
     _lastPreconnectError = null;
+    _lastPreconnectRawError = null;
     publishCommandOverride = null;
     await disconnect();
     _disposed = false;
@@ -146,8 +153,10 @@ class OfficialMqttService {
 
   /// Best-effort pre-connect used on vehicle select / home enter.
   ///
-  /// Failures are recorded in [lastPreconnectError] and **must not** block a
-  /// later [ensureConnected] on first command send (P0-B4).
+  /// Failures are recorded in [lastPreconnectError] / [lastPreconnectRawError]
+  /// and **must not** block a later [ensureConnected] on first command send
+  /// (P0-B4). Uses a short exponential backoff retry so transient TLS/port
+  /// blips do not leave MQTT permanently down for the session.
   Future<void> preconnect({
     required OfficialVehicle vehicle,
     required String userId,
@@ -159,23 +168,91 @@ class OfficialMqttService {
         isConnected &&
         _connectedImei == OfficialMqttConfig.commandImei(vehicle)) {
       _lastPreconnectError = null;
+      _lastPreconnectRawError = null;
       return;
     }
     _preconnectInFlight = true;
+    Object? lastError;
     try {
-      await ensureConnected(vehicle: vehicle, userId: userId);
-      _lastPreconnectError = null;
-    } catch (e) {
-      _setLinkState(OfficialMqttLinkState.disconnected);
-      _lastPreconnectError = OfficialRemoteErrorMessages.describe(e);
-      _log.operation(
-        '官方 MQTT 预连接失败',
-        detail: _lastPreconnectError ?? e.toString(),
-        level: LogLevel.warning,
-      );
+      final maxAttempts = 1 + OfficialMqttConfig.preconnectMaxRetries;
+      for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+        if (_disposed) return;
+        try {
+          await ensureConnected(vehicle: vehicle, userId: userId);
+          _lastPreconnectError = null;
+          _lastPreconnectRawError = null;
+          if (attempt > 1) {
+            _log.operation(
+              '官方 MQTT 预连接重试成功',
+              detail: 'attempt=$attempt/$maxAttempts',
+            );
+          }
+          return;
+        } catch (e) {
+          lastError = e;
+          final raw = formatConnectError(e);
+          _lastPreconnectRawError = raw;
+          _setLinkState(OfficialMqttLinkState.disconnected);
+          final isLast = attempt >= maxAttempts;
+          _log.operation(
+            isLast ? '官方 MQTT 预连接失败' : '官方 MQTT 预连接失败，准备重试',
+            detail:
+                'attempt=$attempt/$maxAttempts '
+                'broker=${OfficialMqttConfig.brokerUriFor(vehicle)} '
+                'raw=$raw '
+                'user=${OfficialRemoteErrorMessages.describe(e)}',
+            level: LogLevel.warning,
+          );
+          if (isLast) break;
+          final delay = OfficialMqttConfig.preconnectRetryBaseDelay * attempt;
+          await Future<void>.delayed(delay);
+        }
+      }
+      if (lastError != null) {
+        _lastPreconnectError = OfficialRemoteErrorMessages.describe(lastError);
+      }
     } finally {
       _preconnectInFlight = false;
     }
+  }
+
+  /// Compact raw error for logs/diagnostics (type + message, no stack).
+  @visibleForTesting
+  static String formatConnectError(Object error) {
+    if (error is SocketException) {
+      final code = error.osError?.errorCode;
+      final msg = error.message.trim();
+      final os = error.osError?.message.trim();
+      final parts = <String>[
+        'SocketException',
+        if (code != null) 'code=$code',
+        if (msg.isNotEmpty) msg,
+        if (os != null && os.isNotEmpty && os != msg) os,
+      ];
+      return parts.join(': ');
+    }
+    if (error is TimeoutException) {
+      return 'TimeoutException: ${error.message ?? error.duration ?? 'timed out'}';
+    }
+    if (error is HandshakeException) {
+      return 'HandshakeException: ${error.message}';
+    }
+    if (error is TlsException) {
+      return 'TlsException: ${error.message}';
+    }
+    if (error is NoConnectionException) {
+      return 'NoConnectionException: $error';
+    }
+    if (error is OfficialCloudApiException) {
+      final code = error.statusCode;
+      return code == null
+          ? 'OfficialCloudApiException: ${error.message}'
+          : 'OfficialCloudApiException($code): ${error.message}';
+    }
+    final type = error.runtimeType.toString();
+    final text = error.toString().trim();
+    if (text.startsWith(type)) return text;
+    return '$type: $text';
   }
 
   /// Explicit retry after a failed preconnect (network restored, user retry).
@@ -294,31 +371,54 @@ class OfficialMqttService {
       if (status?.state != MqttConnectionState.connected) {
         client.disconnect();
         _setLinkState(OfficialMqttLinkState.disconnected);
+        final stateName = status?.state.name ?? 'unknown';
+        // Keep machine-readable state in the exception so formatConnectError
+        // and diagnostics can distinguish refused vs timeout vs auth.
         throw OfficialCloudApiException(
-          '官方 MQTT 连接失败: ${status?.state.name ?? 'unknown'}',
+          '官方 MQTT 连接失败: state=$stateName broker=$broker',
         );
       }
     } on NoConnectionException catch (e) {
       _setLinkState(OfficialMqttLinkState.disconnected);
-      throw OfficialCloudApiException(
-        OfficialRemoteErrorMessages.describe(
-          OfficialCloudApiException('官方 MQTT 连接失败: $e'),
-        ),
+      _log.operation(
+        '官方 MQTT 底层连接异常',
+        detail: formatConnectError(e),
+        level: LogLevel.debug,
       );
-    } on SocketException {
+      rethrow;
+    } on SocketException catch (e) {
       _setLinkState(OfficialMqttLinkState.disconnected);
-      throw const OfficialCloudApiException(
-        OfficialRemoteErrorMessages.networkUnavailable,
+      _log.operation(
+        '官方 MQTT 底层连接异常',
+        detail: formatConnectError(e),
+        level: LogLevel.debug,
       );
+      rethrow;
+    } on HandshakeException catch (e) {
+      _setLinkState(OfficialMqttLinkState.disconnected);
+      _log.operation(
+        '官方 MQTT 底层连接异常',
+        detail: formatConnectError(e),
+        level: LogLevel.debug,
+      );
+      rethrow;
+    } on TlsException catch (e) {
+      _setLinkState(OfficialMqttLinkState.disconnected);
+      _log.operation(
+        '官方 MQTT 底层连接异常',
+        detail: formatConnectError(e),
+        level: LogLevel.debug,
+      );
+      rethrow;
     } catch (e) {
       _setLinkState(OfficialMqttLinkState.disconnected);
-      if (e is OfficialCloudApiException) {
-        throw OfficialCloudApiException(
-          OfficialRemoteErrorMessages.describe(e),
-          statusCode: e.statusCode,
-        );
-      }
-      throw OfficialCloudApiException(OfficialRemoteErrorMessages.describe(e));
+      if (e is OfficialCloudApiException) rethrow;
+      _log.operation(
+        '官方 MQTT 底层连接异常',
+        detail: formatConnectError(e),
+        level: LogLevel.debug,
+      );
+      rethrow;
     }
 
     for (final topic in OfficialMqttConfig.subscribeTopics(
@@ -494,9 +594,13 @@ class OfficialMqttService {
       _pendingCommandApiName = null;
       _pendingCommandError = null;
       _lastSendPath = OfficialRemoteSendPath.http;
+      _lastPreconnectRawError = formatConnectError(e);
+      _lastPreconnectError = OfficialRemoteErrorMessages.describe(e);
       _log.operation(
         '官方 MQTT 发令失败，回退 HTTP',
-        detail: e.toString(),
+        detail:
+            'raw=${formatConnectError(e)} '
+            'user=${OfficialRemoteErrorMessages.describe(e)}',
         level: LogLevel.warning,
       );
       final httpMsg = await cloud.sendCommand(command);

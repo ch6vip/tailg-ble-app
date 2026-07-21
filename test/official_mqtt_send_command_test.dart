@@ -1,7 +1,11 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/models/command_types.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/services/official_mqtt_config.dart';
 import 'package:tailg_ble_app/services/official_mqtt_service.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
 
@@ -14,6 +18,51 @@ void main() {
   tearDown(() async {
     await OfficialMqttService().resetForTest();
     OfficialCloudService().resetForTest();
+  });
+
+  group('formatConnectError', () {
+    test('includes SocketException code and message', () {
+      final err = SocketException(
+        'Connection timed out',
+        osError: const OSError('Connection timed out', 110),
+      );
+      final raw = OfficialMqttService.formatConnectError(err);
+      expect(raw, contains('SocketException'));
+      expect(raw, contains('110'));
+      expect(raw, contains('Connection timed out'));
+    });
+
+    test('includes TimeoutException message or duration', () {
+      final withMessage = OfficialMqttService.formatConnectError(
+        TimeoutException('connect', const Duration(seconds: 10)),
+      );
+      expect(withMessage, contains('TimeoutException'));
+      expect(withMessage, contains('connect'));
+
+      final durationOnly = OfficialMqttService.formatConnectError(
+        TimeoutException(null, const Duration(seconds: 10)),
+      );
+      expect(durationOnly, contains('TimeoutException'));
+      expect(durationOnly, contains('0:00:10.000000'));
+    });
+
+    test('includes OfficialCloudApiException message', () {
+      final raw = OfficialMqttService.formatConnectError(
+        const OfficialCloudApiException('官方 MQTT 连接失败: state=faulted'),
+      );
+      expect(raw, contains('OfficialCloudApiException'));
+      expect(raw, contains('state=faulted'));
+    });
+  });
+
+  group('preconnect retry config', () {
+    test('exposes bounded retry settings', () {
+      expect(OfficialMqttConfig.preconnectMaxRetries, greaterThanOrEqualTo(1));
+      expect(
+        OfficialMqttConfig.preconnectRetryBaseDelay.inMilliseconds,
+        greaterThan(0),
+      );
+    });
   });
 
   OfficialCloudService signedInCloud() {
