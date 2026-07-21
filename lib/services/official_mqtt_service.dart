@@ -399,6 +399,7 @@ class OfficialMqttService {
       vehicle: vehicle,
       userId: userId,
     );
+    final credentials = OfficialMqttConfig.credentialsFor(vehicle);
     final client = MqttServerClient.withPort(
       parsed.host,
       clientId,
@@ -428,20 +429,20 @@ class OfficialMqttService {
 
     final connMess = MqttConnectMessage()
         .withClientIdentifier(clientId)
-        .authenticateAs(
-          OfficialMqttConfig.username,
-          OfficialMqttConfig.password,
-        )
+        .authenticateAs(credentials.username, credentials.password)
         .startClean()
         .withWillQos(MqttQos.atMostOnce);
     client.connectionMessage = connMess;
 
-    _log.operation('官方 MQTT 连接中', detail: 'broker=$broker clientId=$clientId');
+    _log.operation(
+      '官方 MQTT 连接中',
+      detail: 'broker=$broker clientId=$clientId user=${credentials.username}',
+    );
 
     try {
       final status = await client.connect(
-        OfficialMqttConfig.username,
-        OfficialMqttConfig.password,
+        credentials.username,
+        credentials.password,
       );
       if (status?.state != MqttConnectionState.connected) {
         client.disconnect();

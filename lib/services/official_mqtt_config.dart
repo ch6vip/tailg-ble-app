@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import '../models/official_vehicle.dart';
+import 'official_cloud_service.dart';
 
 /// Official MQTT endpoints and topic/payload helpers from decompiled
 /// `TailgHost` + `TailgMqttUtil` + `ControlFragment.mqttPublish`.
@@ -12,7 +13,8 @@ class OfficialMqttConfig {
   /// Production C18/QGJ/GPS broker (`TailgHost.MQTT_HOST_URL_LINE_C18`).
   static const c18HostUri = 'ssl://www.tailgdd.com:6668';
 
-  /// Official hardcoded MQTT credentials (`MqttUtil.userName/passWord`).
+  /// Default hardcoded MQTT credentials used by KKS/YJ
+  /// (`MqttUtil.userName/passWord` before ControlFragment overwrites them).
   static const username = 'client_app';
   static const password = '123456';
 
@@ -47,6 +49,27 @@ class OfficialMqttConfig {
       return 'ssl://$host:$port';
     }
     return c18HostUri;
+  }
+
+  /// Resolve MQTT username/password for [vehicle].
+  ///
+  /// Official ControlFragment:
+  /// - KKS/YJ keep the hardcoded `client_app` / `123456`
+  /// - C18/QGJ/GPS overwrite `MqttUtil.userName/passWord` from
+  ///   `CarControlInfoBean.mqUsername/mqPassword` and refuse to connect when
+  ///   either is empty.
+  static ({String username, String password}) credentialsFor(
+    OfficialVehicle vehicle,
+  ) {
+    if (usesKksYjBroker(vehicle.modelType)) {
+      return (username: username, password: password);
+    }
+    final user = vehicle.mqUsername.trim();
+    final pass = vehicle.mqPassword.trim();
+    if (user.isEmpty || pass.isEmpty) {
+      throw const OfficialCloudApiException('官方车辆未返回 MQTT 账号/密码，无法连接远程通道');
+    }
+    return (username: user, password: pass);
   }
 
   /// Official clientId:

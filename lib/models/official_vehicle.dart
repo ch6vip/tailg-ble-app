@@ -51,6 +51,12 @@ class OfficialVehicle {
   final int? isGps;
   final String mqHost;
   final String mqPort;
+
+  /// Official C18/QGJ MQTT auth (`CarControlInfoBean.mqUsername`).
+  final String mqUsername;
+
+  /// Official C18/QGJ MQTT auth (`CarControlInfoBean.mqPassword`).
+  final String mqPassword;
   final double? mileage;
   final Map<String, dynamic> raw;
 
@@ -75,6 +81,8 @@ class OfficialVehicle {
     required this.isGps,
     required this.mqHost,
     required this.mqPort,
+    required this.mqUsername,
+    required this.mqPassword,
     required this.mileage,
     this.raw = const {},
   });
@@ -101,6 +109,12 @@ class OfficialVehicle {
       isGps: parsePersistedInt(json['isGps']),
       mqHost: parsePersistedString(json['mqHost']),
       mqPort: parsePersistedString(json['mqPort']),
+      mqUsername: parsePersistedString(
+        json['mqUsername'] ?? json['mqUserName'] ?? json['mqttUsername'],
+      ),
+      mqPassword: parsePersistedString(
+        json['mqPassword'] ?? json['mqttPassword'],
+      ),
       mileage: parsePersistedDouble(json['mileage']),
       raw: Map<String, dynamic>.unmodifiable(json),
     );
@@ -129,6 +143,8 @@ class OfficialVehicle {
       'isGps': isGps,
       'mqHost': mqHost,
       'mqPort': mqPort,
+      'mqUsername': mqUsername,
+      'mqPassword': mqPassword,
       'mileage': mileage,
     });
     return json;
@@ -263,6 +279,8 @@ class OfficialVehicle {
       isGps: isGps,
       mqHost: mqHost,
       mqPort: mqPort,
+      mqUsername: mqUsername,
+      mqPassword: mqPassword,
       mileage: mileage ?? this.mileage,
       raw: raw,
     );

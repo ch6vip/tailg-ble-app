@@ -158,6 +158,8 @@ OfficialVehicle _officialVehicle({
     isGps: null,
     mqHost: '',
     mqPort: '',
+    mqUsername: '',
+    mqPassword: '',
     mileage: mileage,
   );
 }

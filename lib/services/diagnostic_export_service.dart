@@ -47,6 +47,14 @@ class DiagnosticExportService {
     final broker = vehicle == null
         ? 'none'
         : OfficialMqttConfig.brokerUriFor(vehicle);
+    final mqUser = vehicle == null
+        ? 'none'
+        : (vehicle.mqUsername.trim().isEmpty
+              ? 'missing'
+              : SensitiveValueMasker.compact(vehicle.mqUsername));
+    final mqPass = vehicle == null
+        ? 'none'
+        : (vehicle.mqPassword.trim().isEmpty ? 'missing' : 'present');
     return [
       '## Official MQTT',
       'Link state: ${mqtt.linkState.name}',
@@ -54,6 +62,8 @@ class DiagnosticExportService {
       'Connected: ${mqtt.isConnected}',
       'Preconnect in flight: ${mqtt.preconnectInFlight}',
       'Broker: $broker',
+      'Vehicle mqUsername: $mqUser',
+      'Vehicle mqPassword: $mqPass',
       'Last user error: ${mqtt.lastPreconnectError ?? 'none'}',
       'Last raw error: ${mqtt.lastPreconnectRawError ?? 'none'}',
       'Last send path: ${mqtt.lastSendPath?.name ?? 'none'}',

@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
+import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/services/official_mqtt_config.dart';
 
 void main() {
@@ -54,6 +55,34 @@ void main() {
   test('vehicle mqHost/mqPort override C18 default', () {
     final v = vehicle(modelType: 8, mqHost: 'mqtt.example.com', mqPort: '8883');
     expect(OfficialMqttConfig.brokerUriFor(v), 'ssl://mqtt.example.com:8883');
+  });
+
+  test('KKS uses hardcoded MQTT credentials', () {
+    final kks = vehicle(modelType: 1);
+    final creds = OfficialMqttConfig.credentialsFor(kks);
+    expect(creds.username, OfficialMqttConfig.username);
+    expect(creds.password, OfficialMqttConfig.password);
+  });
+
+  test('QGJ uses vehicle mqUsername/mqPassword', () {
+    final qgj = OfficialVehicle.fromJson({
+      'carId': 'c1',
+      'modelType': 8,
+      'imeiGps': 'G',
+      'mqUsername': 'veh_user',
+      'mqPassword': 'veh_pass',
+    });
+    final creds = OfficialMqttConfig.credentialsFor(qgj);
+    expect(creds.username, 'veh_user');
+    expect(creds.password, 'veh_pass');
+  });
+
+  test('QGJ refuses empty MQTT credentials', () {
+    final qgj = vehicle(modelType: 8, imeiGps: 'G');
+    expect(
+      () => OfficialMqttConfig.credentialsFor(qgj),
+      throwsA(isA<OfficialCloudApiException>()),
+    );
   });
 
   test('command payload matches MqttCmdBean JSON', () {
