@@ -18,8 +18,8 @@ void main() {
 
   test('BatteryDetailsPage redacts refresh failure snack messages', () {
     final source = readSource('lib/pages/battery_details_page.dart');
-    final refreshStart = source.indexOf('Future<void> _refreshOfficialBattery');
-    final refreshEnd = source.indexOf('class _BatteryHero', refreshStart);
+    final refreshStart = source.indexOf('Future<void> _refreshAllBatteryData');
+    final refreshEnd = source.indexOf('void _showCorrectBatterySheet', refreshStart);
 
     expect(refreshStart, greaterThanOrEqualTo(0));
     expect(refreshEnd, greaterThan(refreshStart));
@@ -55,7 +55,7 @@ void main() {
     expect(snackIcon(Icons.info_outline), findsOneWidget);
   });
 
-  testWidgets('battery correction action keeps a 44dp touch target', (
+  testWidgets('battery refresh and correct actions keep 44dp touch targets', (
     tester,
   ) async {
     setTestViewSize(tester, const Size(430, 1200));
@@ -63,12 +63,18 @@ void main() {
     await tester.pumpWidget(const TestApp(home: BatteryDetailsPage()));
     await tester.pump();
 
+    final refreshAction = find.ancestor(
+      of: find.text('刷新'),
+      matching: find.byType(TextButton),
+    );
     final correctionAction = find.ancestor(
       of: find.text('更正电池'),
       matching: find.byType(TextButton),
     );
-    expect(correctionAction, findsOneWidget);
-    expectMinTouchTargetHeight(tester, correctionAction);
+    expect(refreshAction, findsOneWidget);
+    expect(correctionAction, findsWidgets);
+    expectMinTouchTargetHeight(tester, refreshAction);
+    expectMinTouchTargetHeight(tester, correctionAction.first);
   });
 
   testWidgets('official battery metrics render voltage and temperature', (
@@ -100,6 +106,33 @@ void main() {
     expect(find.text('循环次数'), findsWidgets);
     expect(find.text('当前温度'), findsWidgets);
   });
+
+  testWidgets('cycle help sheet opens from metric help icon', (tester) async {
+    setTestViewSize(tester, const Size(430, 1400));
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        batteryInfo: OfficialBatteryInfo.fromJson({
+          'loopCount': 3,
+          'batteryScore': 90,
+        }),
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: BatteryDetailsPage()));
+    await tester.pump();
+
+    final helpIcons = find.byIcon(Icons.help_outline);
+    expect(helpIcons, findsWidgets);
+    await tester.ensureVisible(helpIcons.first);
+    await tester.tap(helpIcons.first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('关于循环次数'), findsOneWidget);
+    expect(find.text('知道了'), findsOneWidget);
+  });
+
   testWidgets('signed-in battery page shows last sync age', (tester) async {
     setTestViewSize(tester, const Size(430, 1200));
     app.officialCloudService.setStateForTest(

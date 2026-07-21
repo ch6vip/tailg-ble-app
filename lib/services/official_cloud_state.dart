@@ -71,6 +71,9 @@ class OfficialCloudState {
   final OfficialBatteryInfo? batteryInfo;
   final bool batteryInfoLoading;
   final String? batteryInfoError;
+  final OfficialBmsInfo? bmsInfo;
+  final bool bmsInfoLoading;
+  final String? bmsInfoError;
   final OfficialVehicleLocation? vehicleLocation;
   final bool vehicleLocationLoading;
   final String? vehicleLocationError;
@@ -106,6 +109,9 @@ class OfficialCloudState {
     required this.batteryInfo,
     required this.batteryInfoLoading,
     required this.batteryInfoError,
+    required this.bmsInfo,
+    required this.bmsInfoLoading,
+    required this.bmsInfoError,
     required this.vehicleLocation,
     required this.vehicleLocationLoading,
     required this.vehicleLocationError,
@@ -140,6 +146,9 @@ class OfficialCloudState {
     batteryInfo: null,
     batteryInfoLoading: false,
     batteryInfoError: null,
+    bmsInfo: null,
+    bmsInfoLoading: false,
+    bmsInfoError: null,
     vehicleLocation: null,
     vehicleLocationLoading: false,
     vehicleLocationError: null,
@@ -189,6 +198,9 @@ class OfficialCloudState {
     Object? batteryInfo = _sentinel,
     bool? batteryInfoLoading,
     Object? batteryInfoError = _sentinel,
+    Object? bmsInfo = _sentinel,
+    bool? bmsInfoLoading,
+    Object? bmsInfoError = _sentinel,
     Object? vehicleLocation = _sentinel,
     bool? vehicleLocationLoading,
     Object? vehicleLocationError = _sentinel,
@@ -230,6 +242,13 @@ class OfficialCloudState {
       batteryInfoError: identical(batteryInfoError, _sentinel)
           ? this.batteryInfoError
           : batteryInfoError as String?,
+      bmsInfo: identical(bmsInfo, _sentinel)
+          ? this.bmsInfo
+          : bmsInfo as OfficialBmsInfo?,
+      bmsInfoLoading: bmsInfoLoading ?? this.bmsInfoLoading,
+      bmsInfoError: identical(bmsInfoError, _sentinel)
+          ? this.bmsInfoError
+          : bmsInfoError as String?,
       vehicleLocation: identical(vehicleLocation, _sentinel)
           ? this.vehicleLocation
           : vehicleLocation as OfficialVehicleLocation?,

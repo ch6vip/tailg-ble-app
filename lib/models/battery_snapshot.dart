@@ -1,8 +1,10 @@
+import 'official_bms_info.dart';
 import 'official_vehicle.dart';
 
 enum BatteryDataSource {
   officialVehicle('官方车辆状态'),
   officialBattery('官方电池接口'),
+  officialBms('官方 BMS 接口'),
   bmsReserved('官方字段预留');
 
   final String label;
@@ -28,6 +30,7 @@ class BatterySnapshot {
   final String? batteryScore;
   final OfficialVehicle? officialVehicle;
   final OfficialBatteryInfo? officialBatteryInfo;
+  final OfficialBmsInfo? officialBmsInfo;
   final BatteryDataSource percentSource;
   final BatteryDataSource voltageSource;
   final BatteryDataSource temperatureSource;
@@ -48,6 +51,7 @@ class BatterySnapshot {
     required this.batteryScore,
     required this.officialVehicle,
     required this.officialBatteryInfo,
+    required this.officialBmsInfo,
     required this.percentSource,
     required this.voltageSource,
     required this.temperatureSource,
@@ -60,9 +64,11 @@ class BatterySnapshot {
       temperature != null ||
       signalStrength != null ||
       hasOfficialBatteryInfo ||
+      hasOfficialBmsInfo ||
       officialVehicle != null;
 
   bool get hasOfficialBatteryInfo => officialBatteryInfo?.hasData == true;
+  bool get hasOfficialBmsInfo => officialBmsInfo?.hasData == true;
 
   String get dataSourceLabel {
     final labels = <String>{};
@@ -71,6 +77,9 @@ class BatterySnapshot {
     if (temperature != null) labels.add(temperatureSource.label);
     if (hasOfficialBatteryInfo) {
       labels.add(BatteryDataSource.officialBattery.label);
+    }
+    if (hasOfficialBmsInfo) {
+      labels.add(BatteryDataSource.officialBms.label);
     }
     if (officialVehicle != null) {
       labels.add(BatteryDataSource.officialVehicle.label);
@@ -99,24 +108,32 @@ class BatterySnapshot {
   factory BatterySnapshot.fromSources({
     OfficialVehicle? officialVehicle,
     OfficialBatteryInfo? officialBatteryInfo,
+    OfficialBmsInfo? officialBmsInfo,
     DateTime? updatedAt,
     DateTime Function()? clock,
   }) {
+    final bmsDetail = officialBmsInfo?.primaryDetail;
     final officialPercent = _parsePercent(
       officialBatteryInfo?.dumpEnergyPercent,
     );
+    final bmsPercent = _parsePercent(bmsDetail?.soc ?? officialBmsInfo?.soc);
     final vehiclePercent = officialVehicle?.electricQuantity;
     final officialVoltage = _parseNumber(officialBatteryInfo?.voltage);
+    final bmsVoltage = _parseNumber(bmsDetail?.currentBatteryVoltage);
     final vehicleVoltage = officialVehicle?.voltage;
     final officialTemperature = _parseNumber(officialBatteryInfo?.temperature);
+    final bmsTemperature = _parseNumber(bmsDetail?.batteryTemperature);
     final vehicleMileage = officialVehicle?.mileage;
     final officialRemainingMileage = _cleanText(
       officialBatteryInfo?.remainingMileage,
     );
 
-    final percent = (officialPercent ?? vehiclePercent)?.clamp(0, 100);
-    final voltage = officialVoltage ?? vehicleVoltage;
-    final temperature = officialTemperature;
+    final percent = (officialPercent ?? bmsPercent ?? vehiclePercent)?.clamp(
+      0,
+      100,
+    );
+    final voltage = officialVoltage ?? bmsVoltage ?? vehicleVoltage;
+    final temperature = officialTemperature ?? bmsTemperature;
     final remainingMileage = _firstText([
       officialRemainingMileage,
       _estimatedMileageText(percent),
@@ -124,6 +141,19 @@ class BatterySnapshot {
     final totalMileage = _firstText([
       officialBatteryInfo?.mileage,
       vehicleMileage?.toStringAsFixed(1),
+    ]);
+    final loopCount = _firstText([
+      officialBatteryInfo?.loopCount,
+      bmsDetail?.batteryCyclesNum,
+    ]);
+    final capacitance = _firstText([
+      officialBatteryInfo?.capacitance,
+      bmsDetail?.batteryCapacity,
+      officialBmsInfo?.batterySpec,
+    ]);
+    final batteryScore = _firstText([
+      officialBatteryInfo?.batteryScore,
+      bmsDetail?.soh,
     ]);
 
     return BatterySnapshot(
@@ -135,21 +165,27 @@ class BatterySnapshot {
       updatedAt: updatedAt ?? (clock ?? DateTime.now)(),
       remainingMileage: remainingMileage,
       totalMileage: totalMileage,
-      capacitance: _cleanText(officialBatteryInfo?.capacitance),
+      capacitance: capacitance,
       consumePowerPercent: _cleanText(officialBatteryInfo?.consumePowerPercent),
-      loopCount: _cleanText(officialBatteryInfo?.loopCount),
-      batteryScore: _cleanText(officialBatteryInfo?.batteryScore),
+      loopCount: loopCount,
+      batteryScore: batteryScore,
       officialVehicle: officialVehicle,
       officialBatteryInfo: officialBatteryInfo,
+      officialBmsInfo: officialBmsInfo,
       percentSource: _dataSource(
         officialBatteryValue: officialPercent,
+        officialBmsValue: bmsPercent,
         officialVehicleValue: vehiclePercent,
       ),
       voltageSource: _dataSource(
         officialBatteryValue: officialVoltage,
+        officialBmsValue: bmsVoltage,
         officialVehicleValue: vehicleVoltage,
       ),
-      temperatureSource: _dataSource(officialBatteryValue: officialTemperature),
+      temperatureSource: _dataSource(
+        officialBatteryValue: officialTemperature,
+        officialBmsValue: bmsTemperature,
+      ),
       mileageSource: _mileageSource(
         officialRemainingMileage: officialRemainingMileage,
         vehicleMileage: vehicleMileage,
@@ -209,9 +245,11 @@ class BatterySnapshot {
 
 BatteryDataSource _dataSource({
   Object? officialBatteryValue,
+  Object? officialBmsValue,
   Object? officialVehicleValue,
 }) {
   if (officialBatteryValue != null) return BatteryDataSource.officialBattery;
+  if (officialBmsValue != null) return BatteryDataSource.officialBms;
   if (officialVehicleValue != null) return BatteryDataSource.officialVehicle;
   return BatteryDataSource.bmsReserved;
 }
@@ -274,17 +312,36 @@ class BmsSnapshot {
   });
 
   factory BmsSnapshot.fromBatterySnapshot(BatterySnapshot snapshot) {
+    final detail = snapshot.officialBmsInfo?.primaryDetail;
+    final soh = detail?.soh;
+    final current = detail?.batteryCurrent;
+    final type = detail?.batteryType;
+    final version = detail?.batteryVersion;
+    final chargeStatus = detail == null
+        ? null
+        : (detail.batteryChargeNum.isNotEmpty
+              ? '充电 ${detail.batteryChargeNum}'
+              : null);
     return BmsSnapshot(
       estimateBatteryCapacity: snapshot.capacitance,
-      soc: snapshot.percent?.toString(),
-      currentBatteryVoltage: snapshot.voltage?.toStringAsFixed(1),
-      batteryCapacity: snapshot.capacitance,
-      batteryCyclesNum: snapshot.loopCount,
-      batteryTemperature: snapshot.temperature?.toStringAsFixed(1),
+      soc: snapshot.percent?.toString() ?? detail?.soc,
+      soh: soh?.isEmpty == true ? null : soh,
+      currentBatteryVoltage:
+          snapshot.voltage?.toStringAsFixed(1) ?? detail?.currentBatteryVoltage,
+      batteryChargeStatus: chargeStatus,
+      batteryCapacity: snapshot.capacitance ?? detail?.batteryCapacity,
+      batteryCurrent: current?.isEmpty == true ? null : current,
+      batteryCyclesNum: snapshot.loopCount ?? detail?.batteryCyclesNum,
+      batteryTemperature:
+          snapshot.temperature?.toStringAsFixed(1) ??
+          detail?.batteryTemperature,
+      batteryType: type?.isEmpty == true ? null : type,
+      hwVer: version?.isEmpty == true ? null : version,
+      swVer: version?.isEmpty == true ? null : version,
       remainingMileage: snapshot.remainingMileage,
       totalMileage: snapshot.totalMileage,
       consumePowerPercent: snapshot.consumePowerPercent,
-      batteryScore: snapshot.batteryScore,
+      batteryScore: snapshot.batteryScore ?? soh,
       socSource: snapshot.percentSource,
       voltageSource: snapshot.voltageSource,
       temperatureSource: snapshot.temperatureSource,
@@ -306,7 +363,9 @@ List<BmsField> _bmsFields(BmsSnapshot snapshot) {
       'SOH',
       snapshot.soh,
       unit: '%',
-      source: BatteryDataSource.bmsReserved,
+      source: snapshot.soh == null
+          ? BatteryDataSource.bmsReserved
+          : BatteryDataSource.officialBms,
     ),
     BmsField(
       '当前电压',
@@ -317,18 +376,24 @@ List<BmsField> _bmsFields(BmsSnapshot snapshot) {
     BmsField(
       '充电状态',
       snapshot.batteryChargeStatus,
-      source: BatteryDataSource.bmsReserved,
+      source: snapshot.batteryChargeStatus == null
+          ? BatteryDataSource.bmsReserved
+          : BatteryDataSource.officialBms,
     ),
     BmsField(
       '电池容量',
       snapshot.batteryCapacity,
-      source: BatteryDataSource.officialBattery,
+      source: snapshot.batteryCapacity == null
+          ? BatteryDataSource.bmsReserved
+          : BatteryDataSource.officialBattery,
     ),
     BmsField(
       '电池电流',
       snapshot.batteryCurrent,
       unit: 'A',
-      source: BatteryDataSource.bmsReserved,
+      source: snapshot.batteryCurrent == null
+          ? BatteryDataSource.bmsReserved
+          : BatteryDataSource.officialBms,
     ),
     BmsField(
       '环境温度',
@@ -339,7 +404,9 @@ List<BmsField> _bmsFields(BmsSnapshot snapshot) {
     BmsField(
       '循环次数',
       snapshot.batteryCyclesNum,
-      source: BatteryDataSource.officialBattery,
+      source: snapshot.batteryCyclesNum == null
+          ? BatteryDataSource.bmsReserved
+          : BatteryDataSource.officialBattery,
     ),
     BmsField(
       '电池温度',
@@ -350,10 +417,24 @@ List<BmsField> _bmsFields(BmsSnapshot snapshot) {
     BmsField(
       '电池类型',
       snapshot.batteryType,
-      source: BatteryDataSource.bmsReserved,
+      source: snapshot.batteryType == null
+          ? BatteryDataSource.bmsReserved
+          : BatteryDataSource.officialBms,
     ),
-    BmsField('硬件版本', snapshot.hwVer, source: BatteryDataSource.bmsReserved),
-    BmsField('软件版本', snapshot.swVer, source: BatteryDataSource.bmsReserved),
+    BmsField(
+      '硬件版本',
+      snapshot.hwVer,
+      source: snapshot.hwVer == null
+          ? BatteryDataSource.bmsReserved
+          : BatteryDataSource.officialBms,
+    ),
+    BmsField(
+      '软件版本',
+      snapshot.swVer,
+      source: snapshot.swVer == null
+          ? BatteryDataSource.bmsReserved
+          : BatteryDataSource.officialBms,
+    ),
   ];
 }
 

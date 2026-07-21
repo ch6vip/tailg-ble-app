@@ -17,6 +17,24 @@ class OfficialCloudDataParser {
     return OfficialBatteryInfo.fromJson(map);
   }
 
+  static OfficialBmsInfo bmsInfo(Object? data) {
+    if (data is Iterable) {
+      return OfficialBmsInfo.fromJson({
+        'details': data.toList(growable: false),
+      });
+    }
+    final map = _map(data);
+    if (map.isEmpty) return OfficialBmsInfo.fromJson(const {});
+    // Nested: { data: { details: ... } } / { info: ... }
+    for (final key in const ['data', 'info', 'result', 'bmsBatteryInfo']) {
+      final nested = parsePersistedMap(map[key]);
+      if (nested != null && nested.isNotEmpty) {
+        return OfficialBmsInfo.fromJson(Map<String, dynamic>.from(nested));
+      }
+    }
+    return OfficialBmsInfo.fromJson(map);
+  }
+
   static Map<String, dynamic> _unwrapBatteryPayload(Map<String, dynamic> map) {
     if (map.isEmpty) return map;
     // Already looks like BatteryInfoBean.

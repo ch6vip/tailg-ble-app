@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../models/battery_snapshot.dart';
+import '../models/official_vehicle.dart';
+import '../services/battery_help_copy.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
@@ -21,17 +23,17 @@ class BatteryDetailsPage extends StatelessWidget {
       initialData: officialCloudService.state,
       builder: (context, cloudSnapshot) {
         final cloudState = cloudSnapshot.data ?? officialCloudService.state;
+        final vehicle = cloudState.signedIn ? cloudState.selectedVehicle : null;
         final data = BatterySnapshot.fromSources(
-          officialVehicle: cloudState.signedIn
-              ? cloudState.selectedVehicle
-              : null,
+          officialVehicle: vehicle,
           officialBatteryInfo: cloudState.batteryInfo,
+          officialBmsInfo: cloudState.bmsInfo,
         );
         return Scaffold(
           backgroundColor: AppColors.pageBg,
           body: SafeArea(
             child: RefreshIndicator(
-              onRefresh: () => _refreshOfficialBattery(context),
+              onRefresh: () => _refreshAllBatteryData(context),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics(),
@@ -42,7 +44,10 @@ class BatteryDetailsPage extends StatelessWidget {
                     snapshot: data,
                     cloudState: cloudState,
                     onRefresh: cloudState.signedIn
-                        ? () => _refreshOfficialBattery(context)
+                        ? () => unawaited(_refreshAllBatteryData(context))
+                        : null,
+                    onCorrectBattery: cloudState.signedIn
+                        ? () => _showCorrectBatterySheet(context)
                         : null,
                   ),
                   Padding(
@@ -52,14 +57,48 @@ class BatteryDetailsPage extends StatelessWidget {
                         _SourceStrip(snapshot: data, cloudState: cloudState),
                         const SizedBox(height: 14),
                         _BatterySyncCard(cloudState: cloudState),
+                        if (vehicle != null) ...[
+                          const SizedBox(height: 14),
+                          _VehicleBatteryMetaCard(vehicle: vehicle),
+                        ],
                         const SizedBox(height: 14),
                         _OfficialSummaryRow(snapshot: data),
                         const SizedBox(height: 14),
-                        _OfficialMetricGrid(snapshot: data),
+                        _OfficialMetricGrid(
+                          snapshot: data,
+                          onCycleHelp: () => _showBatteryHelpSheet(
+                            context,
+                            title: BatteryHelpCopy.cycleTitle,
+                            sections: BatteryHelpCopy.cycleSections,
+                          ),
+                          onScoreHelp: () => _showBatteryHelpSheet(
+                            context,
+                            title: BatteryHelpCopy.scoreTitle,
+                            sections: BatteryHelpCopy.scoreSections,
+                          ),
+                        ),
                         const SizedBox(height: 14),
                         _FaultCard(snapshot: data),
                         const SizedBox(height: 14),
-                        _BmsDetailsCard(snapshot: data),
+                        _BmsDetailsCard(
+                          snapshot: data,
+                          loading: cloudState.bmsInfoLoading,
+                          error: cloudState.bmsInfoError,
+                        ),
+                        const SizedBox(height: 14),
+                        _BatteryRouteHintCard(vehicle: vehicle),
+                        const SizedBox(height: 14),
+                        _BatteryActionsCard(
+                          signedIn: cloudState.signedIn,
+                          shareCar: vehicle?.shareCarFlag == true,
+                          onSwapService: () => _showInfoSheet(
+                            context,
+                            title: BatteryHelpCopy.swapServiceTitle,
+                            body: BatteryHelpCopy.swapServiceBody,
+                          ),
+                          onCorrectBattery: () =>
+                              _showCorrectBatterySheet(context),
+                        ),
                         const SizedBox(height: 14),
                         const _BatteryReadOnlyCard(),
                       ],
@@ -74,16 +113,20 @@ class BatteryDetailsPage extends StatelessWidget {
     );
   }
 
-  Future<void> _refreshOfficialBattery(BuildContext context) async {
+  Future<void> _refreshAllBatteryData(BuildContext context) async {
     if (!officialCloudService.state.signedIn) {
       AppSnack.info(context, OfficialCloudMessages.signInRequired);
       return;
     }
     try {
-      await officialCloudService.refreshBatteryInfo(force: true);
+      await Future.wait<void>([
+        officialCloudService.refreshBatteryInfo(force: true),
+        officialCloudService.refreshBmsInfo(force: true, silent: true),
+      ]);
       if (!context.mounted) return;
       final info = officialCloudService.state.batteryInfo;
-      if (info?.hasData == true) {
+      final bms = officialCloudService.state.bmsInfo;
+      if (info?.hasData == true || bms?.hasData == true) {
         AppSnack.success(context, '电池信息已同步');
       } else {
         AppSnack.info(context, '已同步，当前暂无电池明细');
@@ -100,10 +143,144 @@ class BatteryDetailsPage extends StatelessWidget {
         OfficialCloudRedactor.errorMessage(e),
         actionLabel: '重试',
         onAction: () {
-          unawaited(_refreshOfficialBattery(context));
+          unawaited(_refreshAllBatteryData(context));
         },
       );
     }
+  }
+
+  void _showCorrectBatterySheet(BuildContext context) {
+    _showInfoSheet(
+      context,
+      title: BatteryHelpCopy.correctBatteryTitle,
+      body: BatteryHelpCopy.correctBatteryBody,
+      primaryLabel: '刷新电池数据',
+      onPrimary: () {
+        Navigator.of(context).pop();
+        unawaited(_refreshAllBatteryData(context));
+      },
+    );
+  }
+
+  void _showBatteryHelpSheet(
+    BuildContext context, {
+    required String title,
+    required List<({String title, String body})> sections,
+  }) {
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: AppColors.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadii.lg),
+          ),
+        ),
+        builder: (sheetContext) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.border,
+                          borderRadius: BorderRadius.circular(AppRadii.pill),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(title, style: AppTextStyles.sectionTitle),
+                    const SizedBox(height: 12),
+                    for (final section in sections) ...[
+                      Text(
+                        section.title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(section.body, style: AppTextStyles.bodySmall),
+                      const SizedBox(height: 14),
+                    ],
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        child: const Text('知道了'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showInfoSheet(
+    BuildContext context, {
+    required String title,
+    required String body,
+    String primaryLabel = '知道了',
+    VoidCallback? onPrimary,
+  }) {
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: AppColors.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadii.lg),
+          ),
+        ),
+        builder: (sheetContext) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(AppRadii.pill),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(title, style: AppTextStyles.sectionTitle),
+                  const SizedBox(height: 10),
+                  Text(body, style: AppTextStyles.bodySmall),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: onPrimary ?? () => Navigator.pop(sheetContext),
+                      child: Text(primaryLabel),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }
 
@@ -111,11 +288,13 @@ class _BatteryHero extends StatelessWidget {
   final BatterySnapshot snapshot;
   final OfficialCloudState cloudState;
   final VoidCallback? onRefresh;
+  final VoidCallback? onCorrectBattery;
 
   const _BatteryHero({
     required this.snapshot,
     required this.cloudState,
     required this.onRefresh,
+    required this.onCorrectBattery,
   });
 
   @override
@@ -186,22 +365,50 @@ class _BatteryHero extends StatelessWidget {
             ),
           ),
           Positioned(
-            right: 20,
-            top: 14,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: AppTouchTargets.min),
-              child: TextButton(
-                onPressed: cloudState.batteryInfoLoading ? null : onRefresh,
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
+            right: 8,
+            top: 8,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: AppTouchTargets.min,
+                  ),
+                  child: TextButton(
+                    onPressed:
+                        (cloudState.batteryInfoLoading ||
+                            cloudState.bmsInfoLoading)
+                        ? null
+                        : onRefresh,
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.textSecondary,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                    ),
+                    child: Text(
+                      (cloudState.batteryInfoLoading ||
+                              cloudState.bmsInfoLoading)
+                          ? '刷新中'
+                          : '刷新',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
                 ),
-                child: Text(
-                  cloudState.batteryInfoLoading ? '刷新中' : '更正电池',
-                  style: const TextStyle(fontSize: 14),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: AppTouchTargets.min,
+                  ),
+                  child: TextButton(
+                    onPressed: onCorrectBattery,
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                    ),
+                    child: const Text('更正电池', style: TextStyle(fontSize: 14)),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
           Positioned.fill(
@@ -566,7 +773,13 @@ class _OfficialSummaryRow extends StatelessWidget {
 
 class _OfficialMetricGrid extends StatelessWidget {
   final BatterySnapshot snapshot;
-  const _OfficialMetricGrid({required this.snapshot});
+  final VoidCallback onCycleHelp;
+  final VoidCallback onScoreHelp;
+  const _OfficialMetricGrid({
+    required this.snapshot,
+    required this.onCycleHelp,
+    required this.onScoreHelp,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -580,12 +793,14 @@ class _OfficialMetricGrid extends StatelessWidget {
         '循环次数',
         BatterySnapshot.displayMetric(snapshot.loopCount),
         icon: Icons.autorenew,
+        onHelp: onCycleHelp,
       ),
       _Metric('当前温度', _temperatureDisplay(snapshot), icon: Icons.thermostat),
       _Metric(
         '电池评分',
         BatterySnapshot.displayMetric(snapshot.batteryScore, unit: '分'),
         icon: Icons.speed_outlined,
+        onHelp: onScoreHelp,
       ),
     ];
     return LayoutBuilder(
@@ -674,7 +889,28 @@ class _MetricTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(metric.label, style: AppTextStyles.caption),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(metric.label, style: AppTextStyles.caption),
+                    ),
+                    if (metric.onHelp != null) ...[
+                      const SizedBox(width: 2),
+                      InkWell(
+                        onTap: metric.onHelp,
+                        borderRadius: BorderRadius.circular(AppRadii.pill),
+                        child: const Padding(
+                          padding: EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.help_outline,
+                            size: 16,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
                 const SizedBox(height: 5),
                 if (hasValue)
                   Text(
@@ -731,30 +967,66 @@ class _FaultCard extends StatelessWidget {
 
 class _BmsDetailsCard extends StatelessWidget {
   final BatterySnapshot snapshot;
-  const _BmsDetailsCard({required this.snapshot});
+  final bool loading;
+  final String? error;
+  const _BmsDetailsCard({
+    required this.snapshot,
+    required this.loading,
+    required this.error,
+  });
 
   @override
   Widget build(BuildContext context) {
     final fields = snapshot.bms.fields;
+    final hasBms = snapshot.hasOfficialBmsInfo;
     return Container(
       decoration: cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.list_alt_outlined,
                   color: AppColors.primary,
                   size: AppIconSizes.md,
                 ),
-                SizedBox(width: 8),
-                Text('BMS 详情', style: AppTextStyles.itemTitle),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text('BMS 详情', style: AppTextStyles.itemTitle),
+                ),
+                if (loading)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  Text(
+                    hasBms ? '已同步' : (error == null ? '待同步' : '同步失败'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: hasBms
+                          ? AppColors.success
+                          : (error == null
+                                ? AppColors.textTertiary
+                                : AppColors.warning),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
               ],
             ),
           ),
+          if (error != null && !hasBms)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                error!,
+                style: const TextStyle(fontSize: 12, color: AppColors.warning),
+              ),
+            ),
           ...List.generate(fields.length, (index) {
             final field = fields[index];
             return Column(
@@ -851,6 +1123,10 @@ class _BmsFieldRow extends StatelessWidget {
         '电池服务',
         AppColors.success,
       ),
+      BatteryDataSource.officialBms => const _SourceChip(
+        'BMS 服务',
+        AppColors.success,
+      ),
       BatteryDataSource.bmsReserved => const _SourceChip(
         '待同步',
         AppColors.warning,
@@ -899,12 +1175,201 @@ class _BatteryReadOnlyCard extends StatelessWidget {
   }
 }
 
+class _VehicleBatteryMetaCard extends StatelessWidget {
+  final OfficialVehicle vehicle;
+  const _VehicleBatteryMetaCard({required this.vehicle});
+
+  @override
+  Widget build(BuildContext context) {
+    final spec = vehicle.batterySpecLabel.trim();
+    final bind = vehicle.batteryBindDate.trim();
+    final typeId = vehicle.batteryTypeId.trim();
+    final tlv = vehicle.bmsTlvType.trim();
+    if (spec.isEmpty && bind.isEmpty && typeId.isEmpty && tlv.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    String bindLabel = bind;
+    if (bind.length >= 10) bindLabel = bind.substring(0, 10);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('电池绑定信息', style: AppTextStyles.itemTitle),
+          const SizedBox(height: 10),
+          if (spec.isNotEmpty)
+            _MetaLine(
+              label: '当前使用',
+              value: spec.startsWith('当前使用') ? spec : '当前使用：$spec',
+            ),
+          if (bindLabel.isNotEmpty)
+            _MetaLine(label: '绑定日期', value: '$bindLabel 绑定'),
+          if (typeId.isNotEmpty) _MetaLine(label: '电池类型 ID', value: typeId),
+          if (tlv.isNotEmpty) _MetaLine(label: 'BMS TLV', value: tlv),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetaLine extends StatelessWidget {
+  final String label;
+  final String value;
+  const _MetaLine({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(width: 88, child: Text(label, style: AppTextStyles.caption)),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BatteryRouteHintCard extends StatelessWidget {
+  final OfficialVehicle? vehicle;
+  const _BatteryRouteHintCard({required this.vehicle});
+
+  @override
+  Widget build(BuildContext context) {
+    final modelType = vehicle?.modelType;
+    final tlv = vehicle?.bmsTlvType.trim() ?? '';
+    final isGps = vehicle?.isGps == 1 || vehicle?.hasGpsService == true;
+    final route = _officialBatteryRoute(
+      modelType: modelType,
+      isGps: isGps,
+      bmsTlvType: tlv,
+    );
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('官方页面分流', style: AppTextStyles.itemTitle),
+          const SizedBox(height: 8),
+          Text(
+            '当前机型 modelType=${modelType ?? "--"} · isGps=${isGps ? "1" : "0"}'
+            '${tlv.isEmpty ? "" : " · bmsTlvType=$tlv"}',
+            style: AppTextStyles.caption,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            route,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            '本页合并展示官方通用电池信息 + BMS 明细；C39 / TLV 专页 UI 后续按需补齐。',
+            style: AppTextStyles.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _officialBatteryRoute({
+    required int? modelType,
+    required bool isGps,
+    required String bmsTlvType,
+  }) {
+    if (modelType == 1 || modelType == 2) {
+      return '官方路由：BatteryInfoActivity（KKS/YJ）';
+    }
+    if (modelType == 10 || modelType == 14) {
+      return '官方路由：BatteryInfoC39Activity（C39）';
+    }
+    if (isGps &&
+        (bmsTlvType == '176' || bmsTlvType == '208' || bmsTlvType == '6000')) {
+      return bmsTlvType == '176'
+          ? '官方路由：BmsBatteryTlvActivity'
+          : '官方路由：BatteryInfoTlvActivity';
+    }
+    if (isGps) return '官方路由：BatteryInfoActivity（GPS 通用）';
+    return '官方路由：可能进入换电/绑定流程（无 GPS）';
+  }
+}
+
+class _BatteryActionsCard extends StatelessWidget {
+  final bool signedIn;
+  final bool shareCar;
+  final VoidCallback onSwapService;
+  final VoidCallback onCorrectBattery;
+
+  const _BatteryActionsCard({
+    required this.signedIn,
+    required this.shareCar,
+    required this.onSwapService,
+    required this.onCorrectBattery,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('电池服务', style: AppTextStyles.itemTitle),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: signedIn ? onCorrectBattery : null,
+                  child: const Text('更正电池'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: signedIn && !shareCar ? onSwapService : null,
+                  child: Text(shareCar ? '共享车不可换电' : '换电服务'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Metric {
   final String label;
   final String value;
   final IconData icon;
+  final VoidCallback? onHelp;
 
-  const _Metric(this.label, this.value, {this.icon = Icons.info_outline});
+  const _Metric(
+    this.label,
+    this.value, {
+    this.icon = Icons.info_outline,
+    this.onHelp,
+  });
 }
 
 String _withUnit(String? value, String unit) {

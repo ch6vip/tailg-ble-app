@@ -257,6 +257,32 @@ class OfficialVehicle {
 
   bool get shareCarFlag => parsePersistedBool(raw['shareCarFlag']);
 
+  /// Official `CarControlInfoBean.batterySpecLabel` — "当前使用：xx".
+  String get batterySpecLabel => parsePersistedString(
+    raw['batterySpecLabel'] ??
+        raw['batterySpec'] ??
+        raw['batteryTypeLabel'] ??
+        raw['batteryType'],
+  );
+
+  /// Official `CarControlInfoBean.batteryTypeId`.
+  String get batteryTypeId =>
+      parsePersistedString(raw['batteryTypeId'] ?? raw['batteryTypeID']);
+
+  /// Official `CarControlInfoBean.batteryBindDate` (yyyy-MM-dd…).
+  String get batteryBindDate => parsePersistedString(
+    raw['batteryBindDate'] ?? raw['bindDate'] ?? raw['batteryBindTime'],
+  );
+
+  /// Official `CarControlInfoBean.bmsTlvType` for BMS/TLV page routing.
+  String get bmsTlvType =>
+      parsePersistedString(raw['bmsTlvType'] ?? raw['bmsTlv']);
+
+  /// Official `CarControlInfoBean.cityAddress` (weather lookup seed).
+  String get cityAddress => parsePersistedString(
+    raw['cityAddress'] ?? raw['city'] ?? raw['cityName'],
+  );
+
   bool get hasDeviceMac => normalizedDeviceMac.isNotEmpty;
 
   bool get hasGpsService {

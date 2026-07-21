@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/command_types.dart';
+import '../models/official_bms_info.dart';
 import '../models/official_user_profile.dart';
 import '../models/official_vehicle.dart';
 import '../models/persistence_value.dart';
@@ -53,6 +54,7 @@ class OfficialCloudService {
   OfficialCloudRequestSummary? get lastRequest => _apiClient.lastRequest;
   DateTime? get lastVehiclesRefreshAt => _lastSuccessfulRefresh['vehicles'];
   DateTime? get lastBatteryRefreshAt => _lastSuccessfulRefresh['batteryInfo'];
+  DateTime? get lastBmsRefreshAt => _lastSuccessfulRefresh['bmsInfo'];
 
   Future<void> init() => _init(refreshOnSignedIn: true);
 
@@ -344,6 +346,9 @@ class OfficialCloudService {
       batteryInfo: null,
       batteryInfoLoading: false,
       batteryInfoError: null,
+      bmsInfo: null,
+      bmsInfoLoading: false,
+      bmsInfoError: null,
       vehicleLocation: null,
       vehicleLocationLoading: false,
       vehicleLocationError: null,
@@ -717,6 +722,8 @@ class OfficialCloudService {
         selectedVehicleKey: vehicle.key,
         batteryInfo: null,
         batteryInfoError: null,
+        bmsInfo: null,
+        bmsInfoError: null,
         vehicleLocation: null,
         vehicleLocationError: null,
         fenceData: null,
@@ -835,6 +842,87 @@ class OfficialCloudService {
     } finally {
       if (!silent && _isCurrentSession(token) && _state.batteryInfoLoading) {
         _state = _state.copyWith(batteryInfoLoading: false);
+        _emit();
+      }
+    }
+  }
+
+  /// Official `POST app/mine/bmsBatteryInfo` with `{uid, imei}`.
+  Future<void> refreshBmsInfo({bool silent = false, bool force = false}) async {
+    final token = _state.token;
+    final vehicle = _state.selectedVehicle;
+    final uid = _state.userId.trim();
+    final imei = vehicle?.imei.trim().isNotEmpty == true
+        ? vehicle!.imei.trim()
+        : (vehicle?.commandImei.trim() ?? '');
+    if (token.isEmpty || uid.isEmpty || imei.isEmpty) return;
+    final refreshKey = 'bmsInfo:${vehicle?.key ?? imei}';
+    await _coalesceRefresh(
+      refreshKey: refreshKey,
+      silent: silent,
+      force: force,
+      run: () => _refreshBmsInfoNow(
+        silent: silent,
+        refreshKey: refreshKey,
+        token: token,
+        uid: uid,
+        imei: imei,
+      ),
+    );
+  }
+
+  Future<void> _refreshBmsInfoNow({
+    required bool silent,
+    required String refreshKey,
+    required String token,
+    required String uid,
+    required String imei,
+  }) async {
+    if (!silent) {
+      _state = _state.copyWith(bmsInfoLoading: true, bmsInfoError: null);
+      _emit();
+    }
+    try {
+      final response = await _apiClient.request(
+        'app/mine/bmsBatteryInfo',
+        method: 'POST',
+        token: token,
+        body: {'uid': uid, 'imei': imei},
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
+      );
+      _ensureSuccess(response.body, fallback: '获取官方 BMS 信息失败');
+      if (!_isCurrentSession(token)) return;
+      final info = OfficialCloudDataParser.bmsInfo(response.body['data']);
+      _state = _state.copyWith(
+        bmsInfo: info.hasData ? info : null,
+        bmsInfoLoading: false,
+        bmsInfoError: null,
+      );
+      _emit();
+      _log.operation(
+        '官方 BMS 信息已刷新',
+        detail:
+            'hasData=${info.hasData} details=${info.details.length} '
+            'soc=${info.soc.isEmpty ? "none" : "present"}',
+      );
+      _markRefreshSuccess(refreshKey);
+    } catch (e) {
+      if (!_isCurrentSession(token)) return;
+      await _handleAuthFailureIfNeeded(e);
+      if (_state.signedIn) {
+        final message = OfficialCloudRedactor.errorMessage(e);
+        _state = _state.copyWith(bmsInfoLoading: false, bmsInfoError: message);
+        _emit();
+      }
+      if (!silent) rethrow;
+      _log.operation(
+        '官方 BMS 信息刷新失败',
+        detail: OfficialCloudRedactor.errorMessage(e),
+        level: LogLevel.warning,
+      );
+    } finally {
+      if (!silent && _isCurrentSession(token) && _state.bmsInfoLoading) {
+        _state = _state.copyWith(bmsInfoLoading: false);
         _emit();
       }
     }
@@ -1696,6 +1784,10 @@ class OfficialCloudService {
     _runSilentRefresh(
       refreshBatteryInfo(silent: true),
       failureMessage: '官方电池信息静默刷新失败',
+    );
+    _runSilentRefresh(
+      refreshBmsInfo(silent: true),
+      failureMessage: '官方 BMS 信息静默刷新失败',
     );
     _runSilentRefresh(
       refreshTodayRideMileage(silent: true),

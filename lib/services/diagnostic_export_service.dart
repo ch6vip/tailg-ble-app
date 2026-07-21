@@ -100,6 +100,21 @@ class DiagnosticExportService {
 
     lines.addAll(_buildSelectedVehicleLines(state));
     lines.addAll(_buildOfficialBatteryLines(state.batteryInfo));
+    lines.addAll(_buildOfficialBmsLines(state));
+    if (vehicle != null) {
+      lines.add(
+        'Battery spec label: ${vehicle.batterySpecLabel.isEmpty ? 'none' : vehicle.batterySpecLabel}',
+      );
+      lines.add(
+        'Battery bind date: ${vehicle.batteryBindDate.isEmpty ? 'none' : vehicle.batteryBindDate}',
+      );
+      lines.add(
+        'Battery type id: ${vehicle.batteryTypeId.isEmpty ? 'none' : vehicle.batteryTypeId}',
+      );
+      lines.add(
+        'BMS TLV type: ${vehicle.bmsTlvType.isEmpty ? 'none' : vehicle.bmsTlvType}',
+      );
+    }
 
     if (state.error != null) {
       lines.add('Error: ${OfficialCloudRedactor.text(state.error!)}');
@@ -209,6 +224,27 @@ class DiagnosticExportService {
       'Official battery capacitance: ${metric(batteryInfo.capacitance)}',
       'Official battery score: ${metric(batteryInfo.batteryScore)}',
       'Official battery raw keys: ${batteryInfo.raw.keys.take(20).join(',')}',
+    ];
+  }
+
+  List<String> _buildOfficialBmsLines(OfficialCloudState state) {
+    final bms = state.bmsInfo;
+    if (bms == null) {
+      return [
+        'Official BMS detail: none',
+        'Official BMS loading: ${state.bmsInfoLoading}',
+        'Official BMS error: ${state.bmsInfoError ?? 'none'}',
+      ];
+    }
+    final detail = bms.primaryDetail;
+    return [
+      'Official BMS detail: present',
+      'Official BMS soc: ${bms.soc.isEmpty ? 'missing' : bms.soc}',
+      'Official BMS details count: ${bms.details.length}',
+      'Official BMS primary temp: ${detail?.batteryTemperature.isEmpty == false ? detail!.batteryTemperature : 'missing'}',
+      'Official BMS primary cycles: ${detail?.batteryCyclesNum.isEmpty == false ? detail!.batteryCyclesNum : 'missing'}',
+      'Official BMS loading: ${state.bmsInfoLoading}',
+      'Official BMS error: ${state.bmsInfoError ?? 'none'}',
     ];
   }
 
