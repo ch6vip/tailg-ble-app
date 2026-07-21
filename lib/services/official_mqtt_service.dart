@@ -48,6 +48,8 @@ class OfficialMqttService {
   String? _lastPreconnectRawError;
   bool _disposed = false;
   bool _preconnectInFlight = false;
+  Timer? _preconnectRetryTimer;
+  Completer<void>? _preconnectRetryCompleter;
   OfficialMqttLinkState _linkState = OfficialMqttLinkState.disconnected;
   StreamController<OfficialMqttLinkState> _linkController =
       StreamController<OfficialMqttLinkState>.broadcast();
@@ -83,6 +85,11 @@ class OfficialMqttService {
   })?
   publishCommandOverride;
 
+  /// When false, [ensureConnected] fails immediately without opening sockets.
+  /// Widget tests set this so home smoke does not leave network timers pending.
+  @visibleForTesting
+  static bool liveConnectEnabled = true;
+
   String get linkStateLabel => switch (_linkState) {
     OfficialMqttLinkState.connected => 'MQTT 已连接',
     OfficialMqttLinkState.connecting => 'MQTT 连接中',
@@ -99,9 +106,21 @@ class OfficialMqttService {
   }
 
   Future<void> resetForTest() async {
-    await _cloudSub?.cancel();
+    // Stop in-flight preconnect/retry first so subscription cancel cannot wait
+    // forever on a hung ensureConnected / socket path (Windows + widget tests).
+    _disposed = true;
+    _cancelPreconnectRetry();
+    _preconnectInFlight = false;
+    final cloudSub = _cloudSub;
     _cloudSub = null;
     _boundCloud = null;
+    if (cloudSub != null) {
+      try {
+        await cloudSub.cancel().timeout(const Duration(milliseconds: 200));
+      } on Object {
+        // Best-effort; a stuck cloud handler must not hang test teardown.
+      }
+    }
     _pendingCommandApiName = null;
     _pendingCommandError = null;
     _latestStatusPayload = null;
@@ -109,7 +128,14 @@ class OfficialMqttService {
     _lastPreconnectError = null;
     _lastPreconnectRawError = null;
     publishCommandOverride = null;
-    await disconnect();
+    try {
+      await disconnect().timeout(const Duration(milliseconds: 500));
+    } on Object {
+      // Best-effort teardown for tests.
+    }
+    // Default back to production sockets. Widget smoke must re-disable after
+    // reset (AppServices.reset also calls this).
+    liveConnectEnabled = true;
     _disposed = false;
     _preconnectInFlight = false;
     if (_linkController.isClosed) {
@@ -120,6 +146,7 @@ class OfficialMqttService {
 
   Future<void> dispose() async {
     _disposed = true;
+    _cancelPreconnectRetry();
     await _cloudSub?.cancel();
     _cloudSub = null;
     _boundCloud = null;
@@ -171,6 +198,14 @@ class OfficialMqttService {
       _lastPreconnectRawError = null;
       return;
     }
+    // Widget tests disable live sockets; skip entirely (no retry timers).
+    if (!liveConnectEnabled) {
+      _lastPreconnectError = OfficialRemoteErrorMessages.brokerUnreachable;
+      _lastPreconnectRawError =
+          'OfficialCloudApiException: live connect disabled (test)';
+      _setLinkState(OfficialMqttLinkState.disconnected);
+      return;
+    }
     _preconnectInFlight = true;
     Object? lastError;
     try {
@@ -205,14 +240,46 @@ class OfficialMqttService {
           );
           if (isLast) break;
           final delay = OfficialMqttConfig.preconnectRetryBaseDelay * attempt;
-          await Future<void>.delayed(delay);
+          await _delayPreconnectRetry(delay);
+          if (_disposed) return;
         }
       }
       if (lastError != null) {
         _lastPreconnectError = OfficialRemoteErrorMessages.describe(lastError);
       }
     } finally {
+      _cancelPreconnectRetry();
       _preconnectInFlight = false;
+    }
+  }
+
+  /// Cancellable delay so [resetForTest]/[dispose] leave no pending timers
+  /// for widget tests (`!timersPending`).
+  Future<void> _delayPreconnectRetry(Duration delay) async {
+    _cancelPreconnectRetry();
+    final completer = Completer<void>();
+    _preconnectRetryCompleter = completer;
+    _preconnectRetryTimer = Timer(delay, () {
+      if (!completer.isCompleted) completer.complete();
+    });
+    try {
+      await completer.future;
+    } finally {
+      _preconnectRetryTimer?.cancel();
+      _preconnectRetryTimer = null;
+      if (identical(_preconnectRetryCompleter, completer)) {
+        _preconnectRetryCompleter = null;
+      }
+    }
+  }
+
+  void _cancelPreconnectRetry() {
+    _preconnectRetryTimer?.cancel();
+    _preconnectRetryTimer = null;
+    final completer = _preconnectRetryCompleter;
+    _preconnectRetryCompleter = null;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete();
     }
   }
 
@@ -275,6 +342,7 @@ class OfficialMqttService {
   }
 
   Future<void> disconnect() async {
+    _cancelPreconnectRetry();
     await _updatesSub?.cancel();
     _updatesSub = null;
     final client = _client;
@@ -318,6 +386,13 @@ class OfficialMqttService {
 
     await disconnect();
     _setLinkState(OfficialMqttLinkState.connecting);
+
+    if (!liveConnectEnabled) {
+      _setLinkState(OfficialMqttLinkState.disconnected);
+      throw const OfficialCloudApiException(
+        '官方 MQTT 连接失败: live connect disabled (test)',
+      );
+    }
 
     final parsed = OfficialMqttConfig.parseBrokerUri(broker);
     final clientId = OfficialMqttConfig.clientIdFor(

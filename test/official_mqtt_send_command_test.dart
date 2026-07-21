@@ -11,12 +11,14 @@ import 'package:tailg_ble_app/services/service_locator.dart';
 
 void main() {
   setUp(() async {
+    OfficialMqttService.liveConnectEnabled = true;
     await OfficialMqttService().resetForTest();
     OfficialCloudService().resetForTest();
   });
 
   tearDown(() async {
     await OfficialMqttService().resetForTest();
+    OfficialMqttService.liveConnectEnabled = true;
     OfficialCloudService().resetForTest();
   });
 
@@ -62,6 +64,31 @@ void main() {
         OfficialMqttConfig.preconnectRetryBaseDelay.inMilliseconds,
         greaterThan(0),
       );
+    });
+  });
+
+  group('liveConnectEnabled', () {
+    test('skips preconnect sockets without leaving retry work', () async {
+      final mqtt = OfficialMqttService();
+      OfficialMqttService.liveConnectEnabled = false;
+      addTearDown(() {
+        OfficialMqttService.liveConnectEnabled = true;
+      });
+
+      final vehicle = OfficialVehicle.fromJson({
+        'carId': 'car-live-off',
+        'carNickName': '离线车',
+        'imei': '860000000000099',
+        'modelType': 8,
+        'isGps': 1,
+      });
+
+      await mqtt.preconnect(vehicle: vehicle, userId: 'u-live-off');
+
+      expect(mqtt.preconnectInFlight, isFalse);
+      expect(mqtt.isConnected, isFalse);
+      expect(mqtt.lastPreconnectError, isNotNull);
+      expect(mqtt.lastPreconnectRawError, contains('live connect disabled'));
     });
   });
 

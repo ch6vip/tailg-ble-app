@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -24,6 +25,11 @@ class AppPermissionService {
   factory AppPermissionService() => _instance;
   AppPermissionService._();
 
+  /// Widget-test hook: skip platform channels (Windows native permission can hang).
+  @visibleForTesting
+  static Future<PermissionCheckResult> Function({bool request})?
+  requestBleScanPermissionsOverride;
+
   /// BLE scan/connect permissions (Android 12+ Scan/Connect + location for older
   /// stacks / OEM scan requirements).
   ///
@@ -31,6 +37,10 @@ class AppPermissionService {
   Future<PermissionCheckResult> requestBleScanPermissions({
     bool request = true,
   }) async {
+    final override = requestBleScanPermissionsOverride;
+    if (override != null) {
+      return override(request: request);
+    }
     const permissions = <Permission>[
       Permission.bluetoothScan,
       Permission.bluetoothConnect,
