@@ -19,7 +19,10 @@ void main() {
   test('BatteryDetailsPage redacts refresh failure snack messages', () {
     final source = readSource('lib/pages/battery_details_page.dart');
     final refreshStart = source.indexOf('Future<void> _refreshAllBatteryData');
-    final refreshEnd = source.indexOf('void _showCorrectBatterySheet', refreshStart);
+    final refreshEnd = source.indexOf(
+      'void _showCorrectBatterySheet',
+      refreshStart,
+    );
 
     expect(refreshStart, greaterThanOrEqualTo(0));
     expect(refreshEnd, greaterThan(refreshStart));
@@ -59,6 +62,20 @@ void main() {
     tester,
   ) async {
     setTestViewSize(tester, const Size(430, 1200));
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        vehicles: [
+          OfficialVehicle.fromJson({
+            'carId': 'car-1',
+            'carNickName': '测试车',
+            'modelType': 8,
+          }),
+        ],
+        selectedVehicleKey: 'car-1',
+      ),
+    );
 
     await tester.pumpWidget(const TestApp(home: BatteryDetailsPage()));
     await tester.pump();

@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/battery_setup_models.dart';
 import '../models/command_types.dart';
 import '../models/official_bms_info.dart';
 import '../models/official_user_profile.dart';
@@ -869,6 +870,104 @@ class OfficialCloudService {
         imei: imei,
       ),
     );
+  }
+
+  /// Official battery type catalog (`app/centralControl/batteryType/ext`).
+  Future<List<OfficialBatteryType>> fetchBatteryTypes() async {
+    final token = _state.token;
+    if (token.isEmpty) {
+      throw const OfficialCloudApiException(
+        OfficialCloudMessages.signInRequired,
+      );
+    }
+    try {
+      final response = await _apiClient.request(
+        'app/centralControl/batteryType/ext',
+        method: 'POST',
+        token: token,
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
+      );
+      _ensureSuccess(response.body, fallback: '获取电池类型失败');
+      final types = OfficialCloudDataParser.batteryTypes(response.body['data']);
+      if (types.isNotEmpty) return types;
+
+      // Fallback to non-ext endpoint if ext returns empty.
+      final fallback = await _apiClient.request(
+        'app/centralControl/batteryType',
+        method: 'POST',
+        token: token,
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
+      );
+      _ensureSuccess(fallback.body, fallback: '获取电池类型失败');
+      return OfficialCloudDataParser.batteryTypes(fallback.body['data']);
+    } catch (e) {
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
+    }
+  }
+
+  /// Official specs for a battery type (`app/centralControl/batterySpecByType`).
+  Future<List<OfficialBatterySpec>> fetchBatterySpecsByType(
+    String typeId,
+  ) async {
+    final token = _state.token;
+    final normalized = typeId.trim();
+    if (token.isEmpty) {
+      throw const OfficialCloudApiException(
+        OfficialCloudMessages.signInRequired,
+      );
+    }
+    if (normalized.isEmpty || normalized == '0') return const [];
+    try {
+      final response = await _apiClient.request(
+        'app/centralControl/batterySpecByType',
+        method: 'POST',
+        token: token,
+        body: {'typeId': normalized},
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
+      );
+      _ensureSuccess(response.body, fallback: '获取电池规格失败');
+      return OfficialCloudDataParser.batterySpecs(response.body['data']);
+    } catch (e) {
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
+    }
+  }
+
+  /// Official affirm/correct battery (`app/centralControl/batterySetUp`).
+  Future<void> affirmBatteryInfo(AffirmBatteryInfoRequest request) async {
+    final token = _state.token;
+    if (token.isEmpty) {
+      throw const OfficialCloudApiException(
+        OfficialCloudMessages.signInRequired,
+      );
+    }
+    if (request.carId.trim().isEmpty) {
+      throw const OfficialCloudApiException('缺少车辆信息，无法更正电池');
+    }
+    try {
+      final response = await _apiClient.request(
+        'app/centralControl/batterySetUp',
+        method: 'POST',
+        token: token,
+        body: request.toBody(),
+        retryPolicy: OfficialCloudRetryPolicy.transportOnly,
+      );
+      _ensureSuccess(response.body, fallback: '更正电池失败');
+      _log.operation(
+        '官方更正电池已提交',
+        detail: 'carId=${SensitiveValueMasker.compact(request.carId)}',
+      );
+      // Refresh vehicle + battery so bind/spec labels update.
+      await Future.wait<void>([
+        refreshVehicles(force: true, silent: true),
+        refreshBatteryInfo(force: true, silent: true),
+        refreshBmsInfo(force: true, silent: true),
+      ]);
+    } catch (e) {
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
+    }
   }
 
   Future<void> _refreshBmsInfoNow({

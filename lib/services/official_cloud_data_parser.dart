@@ -120,6 +120,20 @@ class OfficialCloudDataParser {
     return profile;
   }
 
+  static List<OfficialBatteryType> batteryTypes(Object? data) {
+    return _maps(data)
+        .map(OfficialBatteryType.fromJson)
+        .where((type) => type.isValid)
+        .toList(growable: false);
+  }
+
+  static List<OfficialBatterySpec> batterySpecs(Object? data) {
+    return _maps(data)
+        .map(OfficialBatterySpec.fromJson)
+        .where((spec) => spec.isValid)
+        .toList(growable: false);
+  }
+
   static Iterable<Map<String, dynamic>> _pageRecords(Object? data) {
     if (data is Map) {
       final records = data['records'] ?? data['list'] ?? data['rows'];

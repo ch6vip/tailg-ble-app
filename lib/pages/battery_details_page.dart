@@ -12,6 +12,7 @@ import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/app_snack.dart';
+import 'replace_battery_page.dart';
 
 class BatteryDetailsPage extends StatelessWidget {
   const BatteryDetailsPage({super.key});
@@ -150,15 +151,24 @@ class BatteryDetailsPage extends StatelessWidget {
   }
 
   void _showCorrectBatterySheet(BuildContext context) {
-    _showInfoSheet(
-      context,
-      title: BatteryHelpCopy.correctBatteryTitle,
-      body: BatteryHelpCopy.correctBatteryBody,
-      primaryLabel: '刷新电池数据',
-      onPrimary: () {
-        Navigator.of(context).pop();
-        unawaited(_refreshAllBatteryData(context));
-      },
+    if (!officialCloudService.state.signedIn) {
+      AppSnack.info(context, OfficialCloudMessages.signInRequired);
+      return;
+    }
+    if (officialCloudService.state.selectedVehicle == null) {
+      AppSnack.info(context, '请先选择车辆');
+      return;
+    }
+    unawaited(
+      Navigator.of(context)
+          .push<bool>(
+            MaterialPageRoute<bool>(builder: (_) => const ReplaceBatteryPage()),
+          )
+          .then((changed) {
+            if (changed == true && context.mounted) {
+              unawaited(_refreshAllBatteryData(context));
+            }
+          }),
     );
   }
 
