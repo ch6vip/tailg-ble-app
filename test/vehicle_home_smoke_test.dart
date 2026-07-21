@@ -73,6 +73,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.textContaining('冒烟测试车'), findsWidgets);
+    // Official right-top BLE chip: smoke denies permission → 无蓝牙.
+    expect(find.text('无蓝牙'), findsOneWidget);
     // Channel-only card on home; unlock/induction lives in settings.
     expect(find.text('控车渠道'), findsOneWidget);
     expect(find.text('智能'), findsOneWidget);

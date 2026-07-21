@@ -317,6 +317,102 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     }
   }
 
+  /// Official ControlFragment right-top BLE chip: connect / disconnect toggle.
+  Future<void> _onOfficialBleChipTap() async {
+    if (_nearFieldBusy) return;
+    final vehicle = officialCloudService.state.selectedVehicle;
+    if (vehicle == null) {
+      AppSnack.info(context, '请先选择车辆');
+      return;
+    }
+
+    // Already LOGIN → confirm disconnect (official AppCommDialog path).
+    if (connectionManager.isProtocolLoggedIn ||
+        connectionManager.state == ble.ConnectionState.ready ||
+        connectionManager.state == ble.ConnectionState.connected ||
+        connectionManager.state == ble.ConnectionState.connecting ||
+        connectionManager.state == ble.ConnectionState.reconnecting) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('提示'),
+          content: const Text('确定断开车辆蓝牙连接？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('断开'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted || _disposed) return;
+      try {
+        await connectionManager.disconnect();
+        if (mounted) AppSnack.info(context, '蓝牙已断开');
+      } catch (e) {
+        logService.operation(
+          '爱车断开蓝牙失败',
+          detail: e.toString(),
+          level: LogLevel.warning,
+        );
+        if (mounted) AppSnack.error(context, '断开蓝牙失败，请重试');
+      }
+      return;
+    }
+
+    // No BLE identity → same hard stop as official initBleTLinkQgj.
+    final bleContext = OfficialBleConnectionContext.fromVehicle(
+      vehicle,
+      userId: officialCloudService.state.userId,
+    );
+    if (bleContext.stack == OfficialBleStack.unsupported) {
+      AppSnack.error(context, '当前机型不支持近场蓝牙连接');
+      return;
+    }
+    if (bleContext.targetMacCompact.isEmpty) {
+      AppSnack.error(context, '车辆未返回蓝牙地址，无法近场连接');
+      return;
+    }
+
+    await _manualNearFieldConnect();
+  }
+
+  /// Official ViewAdapter.setQgjControlBleText / setBbLLControlBle states.
+  _OfficialBleChipState _officialBleChipState(OfficialVehicle? vehicle) {
+    if (vehicle == null) return _OfficialBleChipState.hidden;
+    final bleContext = OfficialBleConnectionContext.fromVehicle(
+      vehicle,
+      userId: officialCloudService.state.userId,
+    );
+    if (bleContext.stack == OfficialBleStack.unsupported) {
+      return _OfficialBleChipState.hidden;
+    }
+
+    final perm = _blePermission;
+    if (perm != null && !perm.granted) {
+      // Map "no permission / radio off" to official-like 无蓝牙 entry.
+      return _OfficialBleChipState.noBle;
+    }
+    if (connectionManager.isProtocolLoggedIn) {
+      return _OfficialBleChipState.connected;
+    }
+    if (_nearFieldBusy ||
+        connectionManager.state == ble.ConnectionState.connecting ||
+        connectionManager.state == ble.ConnectionState.connected ||
+        connectionManager.state == ble.ConnectionState.reconnecting) {
+      return _OfficialBleChipState.connecting;
+    }
+    if (bleContext.targetMacCompact.isEmpty) {
+      // Still show the chip so user can see why connect fails when tapped.
+      return _OfficialBleChipState.clickToConnect;
+    }
+    return _OfficialBleChipState.clickToConnect;
+  }
+
   Future<void> _silentRefresh() async {
     if (!officialCloudService.state.signedIn) return;
     try {
@@ -1205,8 +1301,10 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 online: cloudVehicle?.online ?? false,
                 channelActive: controlChannelStatus.isActive,
                 powered: isPowerOn,
+                bleChip: _officialBleChipState(cloudVehicle),
                 onTitleTap: _openVehicleHeader,
                 onSettings: _openSettings,
+                onBleChipTap: () => unawaited(_onOfficialBleChipTap()),
               ),
               const SizedBox(height: 10),
               _BatteryHeroCard(
@@ -1280,6 +1378,17 @@ abstract final class _Aurora {
 // ═══════════════════════════════════════════════════════════════════════════
 // Top bar
 // ═══════════════════════════════════════════════════════════════════════════
+
+/// Official control-home BLE chip states
+/// (`ViewAdapter.setQgjControlBleText` / `setBbLLControlBle`).
+enum _OfficialBleChipState {
+  hidden,
+  noBle,
+  clickToConnect,
+  connecting,
+  connected,
+}
+
 class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.vehicleName,
@@ -1287,8 +1396,10 @@ class _TopBar extends StatelessWidget {
     required this.online,
     required this.channelActive,
     required this.powered,
+    required this.bleChip,
     required this.onTitleTap,
     required this.onSettings,
+    required this.onBleChipTap,
   });
 
   final String vehicleName;
@@ -1296,8 +1407,10 @@ class _TopBar extends StatelessWidget {
   final bool online;
   final bool channelActive;
   final bool? powered;
+  final _OfficialBleChipState bleChip;
   final VoidCallback onTitleTap;
   final VoidCallback onSettings;
+  final VoidCallback onBleChipTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1363,13 +1476,97 @@ class _TopBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          if (bleChip != _OfficialBleChipState.hidden) ...[
+            const SizedBox(width: 8),
+            _OfficialBleChip(state: bleChip, onTap: onBleChipTap),
+          ],
+          const SizedBox(width: 8),
           _IconButton(
             icon: Icons.settings_outlined,
             semanticsLabel: '设置',
             onTap: onSettings,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Official right-top BLE chip: 点击连接 / 连接中 / 已连接 / 无蓝牙.
+class _OfficialBleChip extends StatelessWidget {
+  const _OfficialBleChip({required this.state, required this.onTap});
+
+  final _OfficialBleChipState state;
+  final VoidCallback onTap;
+
+  String get _label => switch (state) {
+    _OfficialBleChipState.hidden => '',
+    _OfficialBleChipState.noBle => '无蓝牙',
+    _OfficialBleChipState.clickToConnect => '点击连接',
+    _OfficialBleChipState.connecting => '连接中',
+    _OfficialBleChipState.connected => '已连接',
+  };
+
+  IconData get _icon => switch (state) {
+    _OfficialBleChipState.hidden => Icons.bluetooth,
+    _OfficialBleChipState.noBle => Icons.bluetooth_disabled,
+    _OfficialBleChipState.clickToConnect => Icons.bluetooth,
+    _OfficialBleChipState.connecting => Icons.bluetooth_searching,
+    _OfficialBleChipState.connected => Icons.bluetooth_connected,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final connected = state == _OfficialBleChipState.connected;
+    final connecting = state == _OfficialBleChipState.connecting;
+    final bg = connected
+        ? colors.primary.withValues(alpha: 0.12)
+        : colors.surfaceContainerHigh;
+    final fg = connected
+        ? colors.primary
+        : (connecting ? colors.warning : colors.textSecondary);
+
+    return AppPressable(
+      onTap: onTap,
+      pressedScale: AppMotion.pressScale,
+      semanticsLabel: '蓝牙 $_label',
+      semanticsButton: true,
+      child: AnimatedContainer(
+        duration: AppMotion.standard,
+        height: 34,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+          border: Border.all(
+            color: connected
+                ? colors.primary.withValues(alpha: 0.28)
+                : colors.outlineVariant.withValues(alpha: 0.9),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (connecting)
+              SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 1.8, color: fg),
+              )
+            else
+              Icon(_icon, size: 16, color: fg),
+            const SizedBox(width: 6),
+            Text(
+              _label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: fg,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

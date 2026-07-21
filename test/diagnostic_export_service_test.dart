@@ -74,6 +74,11 @@ void main() {
         'imeiGps': '987654321098765',
         'btname': 'TAILG-BLE',
         'btmac': 'AA:BB:CC:DD:EE:FF',
+        'mac': 'AABBCCDDEEFF',
+        'passwordInfo': {
+          'main': 123456,
+          'children': [654321],
+        },
         'latitude': '31.2304',
         'longitude': '121.4737',
       });
@@ -113,6 +118,14 @@ void main() {
       expect(lines, contains('Command IMEI: 987***765'));
       expect(lines, contains('BT name: TAILG-BLE'));
       expect(lines, contains('BT MAC: AA:***:FF'));
+      expect(lines, contains('Raw mac field: AAB***EFF'));
+      expect(lines, contains('Raw btmac field: AA:***:FF'));
+      expect(lines, contains('BLE identity MAC: AAB***EFF'));
+      expect(lines, contains('BLE stack: tlink'));
+      expect(lines, contains('passwordInfo key: present'));
+      expect(lines, contains('passwordInfo.main: present'));
+      expect(lines, contains('mainBlePassword: present'));
+      expect(lines, contains('childBlePasswords: 1'));
       expect(lines, contains('Location: present (hidden)'));
       expect(lines, contains('Official battery detail: 86%'));
       expect(lines, contains('Official battery detail voltage: 52.3V'));

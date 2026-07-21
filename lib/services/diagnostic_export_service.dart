@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import '../ble/official_ble_connection_context.dart';
 import '../models/official_vehicle.dart';
+import '../models/persistence_value.dart';
 import 'control_channel_resolver.dart';
 import 'display_time_formatter.dart';
 import 'log_service.dart';
@@ -124,6 +126,32 @@ class DiagnosticExportService {
     if (vehicle == null) return const <String>[];
 
     final linkedId = state.linkedLocalVehicleId(vehicle.key);
+    final rawMac = parsePersistedString(vehicle.raw['mac']);
+    final bleContext = OfficialBleConnectionContext.fromVehicle(
+      vehicle,
+      userId: state.userId,
+    );
+    final passwordInfo = parsePersistedMap(vehicle.raw['passwordInfo']);
+    final passwordMap = parsePersistedMap(vehicle.raw['password']);
+    final mainFromInfo = passwordInfo == null
+        ? null
+        : parsePersistedInt(passwordInfo['main']);
+    final mainFromPassword = passwordMap == null
+        ? null
+        : parsePersistedInt(passwordMap['main']);
+    final childrenSource =
+        passwordInfo?['children'] ??
+        passwordMap?['children'] ??
+        vehicle.raw['childrenPassword'] ??
+        vehicle.raw['children'];
+    final childrenCount = childrenSource is Iterable
+        ? childrenSource.length
+        : 0;
+    final hasPasswordInfoKey = vehicle.raw.containsKey('passwordInfo');
+    final hasPasswordKey = vehicle.raw.containsKey('password');
+    final hasMacKey = vehicle.raw.containsKey('mac');
+    final hasBtmacKey = vehicle.raw.containsKey('btmac');
+
     return [
       'Selected key: ${SensitiveValueMasker.compact(vehicle.key, emptyValue: 'none', trim: false)}',
       'Linked local vehicle: ${linkedId == null ? 'none' : SensitiveValueMasker.compact(linkedId, emptyValue: 'none', trim: false)}',
@@ -138,6 +166,26 @@ class DiagnosticExportService {
       'GPS IMEI: ${SensitiveValueMasker.compact(vehicle.imeiGps, emptyValue: 'none', trim: false)}',
       'BT name: ${vehicle.btname.isEmpty ? 'none' : vehicle.btname}',
       'BT MAC: ${SensitiveValueMasker.compact(vehicle.btmac, emptyValue: 'none', trim: false)}',
+      // Official ControlFragment QGJ uses CarControlInfoBean.mac as identity.
+      'Raw mac field: ${rawMac.isEmpty ? (hasMacKey ? 'empty' : 'missing') : SensitiveValueMasker.compact(rawMac, emptyValue: 'none', trim: false)}',
+      'Raw btmac field: ${vehicle.btmac.isEmpty ? (hasBtmacKey ? 'empty' : 'missing') : SensitiveValueMasker.compact(vehicle.btmac, emptyValue: 'none', trim: false)}',
+      'BLE identity MAC: ${SensitiveValueMasker.compact(vehicle.bleIdentityMac, emptyValue: 'none', trim: false)}',
+      'BLE stack: ${bleContext.stack.name}',
+      'BLE target MAC compact: ${SensitiveValueMasker.compact(bleContext.targetMacCompact, emptyValue: 'none', trim: false)}',
+      'passwordInfo key: ${hasPasswordInfoKey ? 'present' : 'missing'}',
+      'password key: ${hasPasswordKey ? 'present' : 'missing'}',
+      'passwordInfo.main: ${mainFromInfo == null ? 'missing' : 'present'}',
+      'password.main: ${mainFromPassword == null ? 'missing' : 'present'}',
+      'mainBlePassword: ${vehicle.mainBlePassword == null ? 'missing' : 'present'}',
+      'childBlePasswords: $childrenCount',
+      'shareCarFlag: ${vehicle.shareCarFlag}',
+      'BLE uid present: ${bleContext.userId.isNotEmpty}',
+      'BLE credentials ready: ${switch (bleContext.stack) {
+        OfficialBleStack.tlink => bleContext.hasTLinkCredentials,
+        OfficialBleStack.qgj => bleContext.hasQgjCredentials,
+        OfficialBleStack.kks => bleContext.targetMacCompact.isNotEmpty,
+        OfficialBleStack.unsupported => false,
+      }}',
       'Location: ${vehicle.latitude.isEmpty || vehicle.longitude.isEmpty ? 'none' : 'present (hidden)'}',
     ];
   }
