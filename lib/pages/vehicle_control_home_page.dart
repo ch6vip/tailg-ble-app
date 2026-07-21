@@ -20,7 +20,6 @@ import '../services/control_command_policy.dart';
 import '../services/control_command_result.dart';
 import '../services/display_number_formatter.dart';
 import '../services/display_time_formatter.dart';
-import '../services/induction_mode_service.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../services/official_mqtt_service.dart';
@@ -83,8 +82,6 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   StreamSubscription<ble.ConnectionState>? _bleStateSub;
   StreamSubscription<BikeState?>? _bleBikeStateSub;
   StreamSubscription<OfficialMqttLinkState>? _mqttLinkSub;
-  StreamSubscription<InductionModeSnapshot>? _inductionSub;
-  StreamSubscription<bool>? _manualModeSub;
   bool _busy = false;
   bool _disposed = false;
   bool _nearFieldBusy = false;
@@ -94,12 +91,6 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   PermissionCheckResult? _blePermission;
   BikeState? _bleBikeState;
 
-  /// Unified induction snapshot (QGJ / TLink / RSSI).
-  InductionModeSnapshot _induction = InductionModeSnapshot.empty;
-
-  /// Official "手动模式" — disables auto-connect and induction auto-actions.
-  bool _manualMode = false;
-
   @override
   bool get wantKeepAlive => true;
 
@@ -107,8 +98,6 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _induction = inductionModeService.snapshot;
-    _manualMode = manualModeService.enabled;
     _cloudSub = officialCloudService.stateStream.listen((_) {
       if (mounted) setState(() {});
       _bindInductionVehicle();
@@ -125,20 +114,8 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     _mqttLinkSub = officialMqttService.linkStateStream.listen((_) {
       if (mounted) setState(() {});
     });
-    _inductionSub = inductionModeService.snapshotStream.listen((snap) {
-      _induction = snap;
-      if (mounted) setState(() {});
-    });
-    _manualModeSub = manualModeService.enabledStream.listen((enabled) {
-      _manualMode = enabled;
-      if (mounted) setState(() {});
-    });
-    unawaited(
-      manualModeService.init().then((_) {
-        if (_disposed || !mounted) return;
-        setState(() => _manualMode = manualModeService.enabled);
-      }),
-    );
+    // Keep induction service bound for settings page / auto-connect side effects.
+    unawaited(manualModeService.init());
     _bindInductionVehicle();
     unawaited(_refreshBlePermission(request: false));
     unawaited(_silentRefresh());
@@ -158,10 +135,6 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     if (bleBikeStateSub != null) unawaited(bleBikeStateSub.cancel());
     final mqttSub = _mqttLinkSub;
     if (mqttSub != null) unawaited(mqttSub.cancel());
-    final inductionSub = _inductionSub;
-    if (inductionSub != null) unawaited(inductionSub.cancel());
-    final manualSub = _manualModeSub;
-    if (manualSub != null) unawaited(manualSub.cancel());
     super.dispose();
   }
 
@@ -1145,88 +1118,12 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     );
   }
 
-  bool get _supportsInduction => _induction.stack != InductionStack.none;
-
-  /// true = induction, false = manual, null = unknown (still reading).
-  bool? get _unlockSelection {
-    if (_manualMode) return false;
-    if (!_supportsInduction) return false;
-    return _induction.unlockSelection;
-  }
-
-  Future<void> _selectUnlockMode({required bool induction}) async {
-    if (_busy || _induction.busy) {
-      AppSnack.error(context, '正在执行控车指令，请稍候');
-      return;
-    }
-
-    // Manual mode: no BLE required; just disable auto paths.
-    if (!induction) {
-      if (_manualMode && _induction.enabled != true) return;
-      if (_induction.enabled == true) {
-        final closed = await inductionModeService.setEnabled(false);
-        if (!mounted) return;
-        if (!closed) {
-          AppSnack.error(context, _induction.lastError ?? '关闭感应失败');
-          return;
-        }
-      }
-      await manualModeService.setEnabled(true);
-      if (!mounted) return;
-      setState(() => _manualMode = true);
-      AppSnack.success(context, '已切换为手动模式');
-      return;
-    }
-
-    // Induction mode.
-    if (!_supportsInduction) {
-      AppSnack.info(context, _induction.bleReady ? '当前车型不支持感应解锁' : '连接蓝牙后识别车型');
-      if (!_induction.bleReady) {
-        unawaited(_ensureNearFieldLink(auto: false));
-      }
-      return;
-    }
-    if (!_induction.bleReady) {
-      AppSnack.info(context, '请先连接车辆蓝牙后再开启感应');
-      unawaited(_ensureNearFieldLink(auto: false));
-      return;
-    }
-    if (_induction.enabled == true && !_manualMode) {
-      if (_induction.bondIncomplete) {
-        AppSnack.info(context, '请在系统弹窗中允许蓝牙配对，否则靠近解锁可能无效');
-      }
-      return;
-    }
-    // Service clears manual mode first (avoids prefs race).
-    final ok = await inductionModeService.setEnabled(
-      true,
-      clearManualMode: true,
-    );
-    if (!mounted) return;
-    setState(() => _manualMode = manualModeService.enabled);
-    if (!ok) {
-      AppSnack.error(context, _induction.lastError ?? '开启感应失败');
-      return;
-    }
-    if (_induction.bondIncomplete) {
-      AppSnack.info(context, _induction.lastError ?? '感应已开启，请允许系统蓝牙配对');
-    } else {
-      AppSnack.success(context, '感应解锁已开启');
-    }
-  }
-
   void _openProximitySettings() {
     if (!requireCloudVehicle(context)) return;
     unawaited(
-      Navigator.of(context)
-          .push(
-            MaterialPageRoute<void>(
-              builder: (_) => const InductionSettingsPage(),
-            ),
-          )
-          .then((_) {
-            unawaited(inductionModeService.refresh(force: true));
-          }),
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const InductionSettingsPage()),
+      ),
     );
   }
 
@@ -1335,19 +1232,7 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
                 channelStatus: controlChannelStatus,
                 channelBusy: _busy,
                 onChannelChanged: _selectControlChannel,
-                supportsInduction: _supportsInduction,
-                unlockSelection: _unlockSelection,
-                unlockBusy: _induction.busy || _busy,
-                bleReady: _induction.bleReady,
-                distance: _induction.distance,
-                bondIncomplete: _induction.bondIncomplete,
-                onSelectInduction: () =>
-                    unawaited(_selectUnlockMode(induction: true)),
-                onSelectManual: () =>
-                    unawaited(_selectUnlockMode(induction: false)),
-                onConnectBle: () =>
-                    unawaited(_ensureNearFieldLink(auto: false)),
-                onOpenSettings: _openProximitySettings,
+                onOpenInductionSettings: _openProximitySettings,
                 cardMargin: _Aurora.cardMargin,
                 cardRadius: _Aurora.cardRadius,
                 cardShadow: Theme.of(context).brightness == Brightness.dark

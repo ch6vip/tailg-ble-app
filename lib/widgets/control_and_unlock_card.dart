@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import '../services/control_channel_resolver.dart';
 import '../services/control_channel_status.dart';
 import '../theme/app_colors.dart';
-import 'app_pressable.dart';
 
-/// Unified home card: control channel (智能/蓝牙/云端) + unlock mode (感应/手动).
+/// Home card for **control channel only** (智能 / 仅蓝牙 / 仅云端).
 ///
-/// Extracted from [VehicleControlHomePage] to keep the page thinner.
+/// Unlock / induction controls live on [InductionSettingsPage].
 class ControlAndUnlockCard extends StatelessWidget {
   const ControlAndUnlockCard({
     super.key,
@@ -16,16 +15,7 @@ class ControlAndUnlockCard extends StatelessWidget {
     required this.channelStatus,
     required this.channelBusy,
     required this.onChannelChanged,
-    required this.supportsInduction,
-    required this.unlockSelection,
-    required this.unlockBusy,
-    required this.bleReady,
-    required this.distance,
-    required this.bondIncomplete,
-    required this.onSelectInduction,
-    required this.onSelectManual,
-    required this.onConnectBle,
-    required this.onOpenSettings,
+    this.onOpenInductionSettings,
     this.cardMargin = const EdgeInsets.symmetric(horizontal: 20),
     this.cardRadius = 20,
     this.cardShadow = const <BoxShadow>[],
@@ -37,18 +27,8 @@ class ControlAndUnlockCard extends StatelessWidget {
   final bool channelBusy;
   final ValueChanged<OfficialControlChannel> onChannelChanged;
 
-  final bool supportsInduction;
-
-  /// `true` = induction, `false` = manual, `null` = unknown / reading.
-  final bool? unlockSelection;
-  final bool unlockBusy;
-  final bool bleReady;
-  final int? distance;
-  final bool bondIncomplete;
-  final VoidCallback onSelectInduction;
-  final VoidCallback onSelectManual;
-  final VoidCallback onConnectBle;
-  final VoidCallback onOpenSettings;
+  /// Optional gear → induction settings (unlock mode / distance).
+  final VoidCallback? onOpenInductionSettings;
 
   final EdgeInsetsGeometry cardMargin;
   final double cardRadius;
@@ -81,24 +61,6 @@ class ControlAndUnlockCard extends StatelessWidget {
       OfficialControlChannel.ble => '仅附近蓝牙直连',
       OfficialControlChannel.officialCloud => '仅官方账号远程',
     };
-  }
-
-  String get _unlockStatusLine {
-    if (!supportsInduction) {
-      return bleReady ? '当前车型仅支持手动控车' : '连接蓝牙后识别车型';
-    }
-    if (unlockSelection == null) {
-      return bleReady ? '正在读取解锁模式…' : '连接蓝牙后可开启感应';
-    }
-    if (unlockSelection == false) {
-      return '手动控车 · 已关闭自动连接与感应';
-    }
-    if (!bleReady) return '开启感应前请先连接车辆蓝牙';
-    if (bondIncomplete) {
-      return '感应已开 · 请允许系统蓝牙配对';
-    }
-    final dist = distance == null ? '' : ' · 距离档 $distance';
-    return '靠近自动解防，离开自动上锁$dist';
   }
 
   Color _channelDotColor(AppColorsData colors) {
@@ -153,9 +115,6 @@ class ControlAndUnlockCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final anyBusy = channelBusy || unlockBusy;
-    final selection = unlockSelection;
-    final showConnectCta = supportsInduction && !bleReady && selection != false;
 
     return Container(
       margin: cardMargin,
@@ -170,11 +129,11 @@ class ControlAndUnlockCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.tune_rounded, size: 18, color: colors.textSecondary),
+              Icon(Icons.alt_route, size: 18, color: colors.textSecondary),
               const SizedBox(width: 7),
               Expanded(
                 child: Text(
-                  '控车与解锁',
+                  '控车渠道',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -182,7 +141,7 @@ class ControlAndUnlockCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (anyBusy)
+              if (channelBusy)
                 const SizedBox(
                   width: 16,
                   height: 16,
@@ -210,7 +169,7 @@ class ControlAndUnlockCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (supportsInduction) ...[
+                if (onOpenInductionSettings != null) ...[
                   const SizedBox(width: 4),
                   IconButton(
                     tooltip: '感应设置',
@@ -220,9 +179,9 @@ class ControlAndUnlockCard extends StatelessWidget {
                       minWidth: 32,
                       minHeight: 32,
                     ),
-                    onPressed: onOpenSettings,
+                    onPressed: onOpenInductionSettings,
                     icon: Icon(
-                      Icons.settings_outlined,
+                      Icons.sensors,
                       size: 18,
                       color: colors.textTertiary,
                     ),
@@ -232,15 +191,6 @@ class ControlAndUnlockCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            '渠道',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: colors.textTertiary,
-            ),
-          ),
-          const SizedBox(height: 6),
           SegmentedButton<OfficialControlChannel>(
             segments: const [
               ButtonSegment(
@@ -267,93 +217,17 @@ class ControlAndUnlockCard extends StatelessWidget {
                 : (selection) => onChannelChanged(selection.first),
             style: _segmentStyle(colors),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             _channelDescription,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 11,
-              height: 1.3,
+              height: 1.35,
               color: availability.enabled ? colors.textTertiary : colors.danger,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Divider(height: 1, color: colors.outlineVariant),
-          ),
-          Text(
-            '解锁',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: colors.textTertiary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          SegmentedButton<bool>(
-            emptySelectionAllowed: true,
-            segments: [
-              ButtonSegment(
-                value: true,
-                icon: const Icon(Icons.sensors, size: 15),
-                label: const Text('感应'),
-                enabled: supportsInduction,
-              ),
-              const ButtonSegment(
-                value: false,
-                icon: Icon(Icons.touch_app_outlined, size: 15),
-                label: Text('手动'),
-              ),
-            ],
-            selected: {
-              if (selection != null) selection,
-              if (selection == null && !supportsInduction) false,
-            },
-            showSelectedIcon: false,
-            expandedInsets: EdgeInsets.zero,
-            onSelectionChanged: unlockBusy
-                ? null
-                : (next) {
-                    if (next.isEmpty) return;
-                    if (next.first) {
-                      onSelectInduction();
-                    } else {
-                      onSelectManual();
-                    }
-                  },
-            style: _segmentStyle(colors),
-          ),
-          const SizedBox(height: 6),
-          if (showConnectCta)
-            AppPressable(
-              onTap: onConnectBle,
-              child: Row(
-                children: [
-                  Icon(Icons.bluetooth, size: 14, color: colors.primary),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: Text(
-                      _unlockStatusLine,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 11, color: colors.primary),
-                    ),
-                  ),
-                  Icon(Icons.chevron_right, size: 16, color: colors.primary),
-                ],
-              ),
-            )
-          else
-            Text(
-              _unlockStatusLine,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11,
-                color: bondIncomplete ? colors.warning : colors.textTertiary,
-              ),
-            ),
         ],
       ),
     );

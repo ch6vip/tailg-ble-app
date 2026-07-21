@@ -11,6 +11,7 @@ import '../widgets/app_snack.dart';
 /// 感应解锁设置页（QGJ / TLink / RSSI 统一入口）。
 ///
 /// 产品文案面向用户；协议细节不展示。
+/// 解锁模式（感应 / 手动）开关在此页，不在爱车主页合卡。
 class InductionSettingsPage extends StatefulWidget {
   const InductionSettingsPage({super.key});
 
@@ -24,9 +25,11 @@ typedef QgjSettingsPage = InductionSettingsPage;
 
 class _InductionSettingsPageState extends State<InductionSettingsPage> {
   StreamSubscription<InductionModeSnapshot>? _sub;
+  StreamSubscription<bool>? _manualSub;
   InductionModeSnapshot _snap = InductionModeSnapshot.empty;
   double _distanceDraft = InductionModeService.defaultDistanceLevel.toDouble();
   var _busy = false;
+  var _manualMode = false;
 
   @override
   void initState() {
@@ -38,6 +41,7 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
       vehicleRaw: vehicle?.raw,
     );
     _snap = inductionModeService.snapshot;
+    _manualMode = manualModeService.enabled;
     _distanceDraft =
         (_snap.distance ?? InductionModeService.defaultDistanceLevel)
             .toDouble();
@@ -50,13 +54,33 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
         }
       });
     });
+    _manualSub = manualModeService.enabledStream.listen((enabled) {
+      if (!mounted) return;
+      setState(() => _manualMode = enabled);
+    });
+    unawaited(
+      manualModeService.init().then((_) {
+        if (!mounted) return;
+        setState(() => _manualMode = manualModeService.enabled);
+      }),
+    );
     unawaited(inductionModeService.refresh(force: true));
   }
 
   @override
   void dispose() {
     unawaited(_sub?.cancel());
+    unawaited(_manualSub?.cancel());
     super.dispose();
+  }
+
+  bool get _supportsInduction => _snap.stack != InductionStack.none;
+
+  /// true = induction, false = manual, null = unknown / reading.
+  bool? get _unlockSelection {
+    if (_manualMode) return false;
+    if (!_supportsInduction) return false;
+    return _snap.unlockSelection;
   }
 
   /// 仅 QGJ / TLink 车端有真实距离档；RSSI 路径不展示滑条（避免误导）。
@@ -79,45 +103,83 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
     InductionStack.none => '当前车辆暂不支持本地感应解锁，请使用手动控车。',
   };
 
-  String get _statusSubtitle {
-    if (!_snap.bleReady && _snap.stack != InductionStack.none) {
-      return '请先连接车辆蓝牙';
+  String get _unlockStatusLine {
+    if (!_supportsInduction) {
+      return _snap.bleReady ? '当前车型仅支持手动控车' : '连接蓝牙后识别车型';
     }
-    if (_snap.enabled == null && _snap.stack != InductionStack.none) {
-      return '尚未读取 · 可点下方刷新';
+    final selection = _unlockSelection;
+    if (selection == null) {
+      return _snap.bleReady ? '正在读取解锁模式…' : '连接蓝牙后可开启感应';
     }
-    if (_snap.enabled == true) {
-      if (_snap.bondIncomplete) {
-        return '已开启 · 请允许系统蓝牙配对';
-      }
-      if (_showDistanceSlider && _snap.distance != null) {
-        return '已开启 · 距离档 ${_snap.distance}';
-      }
-      return '已开启 · 靠近自动解锁';
+    if (selection == false) {
+      return '手动控车 · 已关闭自动连接与感应';
     }
-    if (_snap.enabled == false) {
-      return '已关闭';
+    if (!_snap.bleReady) return '开启感应前请先连接车辆蓝牙';
+    if (_snap.bondIncomplete) {
+      return '感应已开 · 请允许系统蓝牙配对';
     }
-    return '不可用';
+    final dist = _snap.distance == null ? '' : ' · 距离档 ${_snap.distance}';
+    return '靠近自动解防，离开自动上锁$dist';
   }
 
-  Future<void> _setEnabled(bool enabled) async {
-    if (_busy) return;
+  Future<void> _selectUnlockMode({required bool induction}) async {
+    if (_busy || _snap.busy) return;
+
+    if (!induction) {
+      if (_manualMode && _snap.enabled != true) return;
+      setState(() => _busy = true);
+      if (_snap.enabled == true) {
+        final closed = await inductionModeService.setEnabled(false);
+        if (!mounted) return;
+        if (!closed) {
+          setState(() => _busy = false);
+          AppSnack.error(context, _snap.lastError ?? '关闭感应失败');
+          return;
+        }
+      }
+      await manualModeService.setEnabled(true);
+      if (!mounted) return;
+      setState(() {
+        _manualMode = true;
+        _busy = false;
+      });
+      AppSnack.success(context, '已切换为手动模式');
+      return;
+    }
+
+    if (!_supportsInduction) {
+      AppSnack.info(context, _snap.bleReady ? '当前车型不支持感应解锁' : '连接蓝牙后识别车型');
+      return;
+    }
+    if (!_snap.bleReady) {
+      AppSnack.info(context, '请先连接车辆蓝牙后再开启感应');
+      return;
+    }
+    if (_snap.enabled == true && !_manualMode) {
+      if (_snap.bondIncomplete) {
+        AppSnack.info(context, '请在系统弹窗中允许蓝牙配对，否则靠近解锁可能无效');
+      }
+      return;
+    }
+
     setState(() => _busy = true);
     final ok = await inductionModeService.setEnabled(
-      enabled,
+      true,
       clearManualMode: true,
     );
     if (!mounted) return;
-    setState(() => _busy = false);
+    setState(() {
+      _manualMode = manualModeService.enabled;
+      _busy = false;
+    });
     if (!ok) {
-      AppSnack.error(context, _snap.lastError ?? '设置失败，请稍后重试');
+      AppSnack.error(context, _snap.lastError ?? '开启感应失败');
       return;
     }
-    if (enabled && _snap.bondIncomplete) {
+    if (_snap.bondIncomplete) {
       AppSnack.info(context, _snap.lastError ?? '感应已开启，请允许系统蓝牙配对');
     } else {
-      AppSnack.success(context, enabled ? '感应解锁已开启' : '感应解锁已关闭');
+      AppSnack.success(context, '感应解锁已开启');
     }
   }
 
@@ -147,10 +209,47 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
     AppSnack.success(context, '状态已刷新');
   }
 
+  ButtonStyle _segmentStyle(AppColorsData colors) {
+    return ButtonStyle(
+      minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
+      padding: const WidgetStatePropertyAll(
+        EdgeInsets.symmetric(horizontal: 8),
+      ),
+      textStyle: const WidgetStatePropertyAll(
+        TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      ),
+      foregroundColor: WidgetStateProperty.resolveWith((states) {
+        return states.contains(WidgetState.selected)
+            ? Colors.white
+            : colors.textSecondary;
+      }),
+      backgroundColor: WidgetStateProperty.resolveWith((states) {
+        return states.contains(WidgetState.selected)
+            ? colors.primary
+            : colors.surfaceContainerHigh;
+      }),
+      side: WidgetStateProperty.resolveWith((states) {
+        return BorderSide(
+          color: states.contains(WidgetState.selected)
+              ? colors.primary
+              : colors.outlineVariant,
+        );
+      }),
+      shape: WidgetStatePropertyAll(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final canWrite = _snap.bleReady && _snap.stack != InductionStack.none;
+    final colors = AppColors.of(context);
+    final canWrite = _snap.bleReady && _supportsInduction;
     final maxLevel = _maxDistanceLevel;
+    final selection = _unlockSelection;
+    final anyBusy = _busy || _snap.busy;
 
     return Scaffold(
       backgroundColor: AppColors.pageBg,
@@ -171,8 +270,7 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  if (!_snap.bleReady &&
-                      _snap.stack != InductionStack.none) ...[
+                  if (!_snap.bleReady && _supportsInduction) ...[
                     const SizedBox(height: 10),
                     Text(
                       connectionManager.isProtocolLoggedIn
@@ -192,20 +290,57 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text(
-                      '感应解锁',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                  Text(
+                    '解锁模式',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: colors.textPrimary,
                     ),
-                    subtitle: Text(_statusSubtitle),
-                    value: _snap.enabled ?? false,
-                    onChanged: _busy || !canWrite
-                        ? null
-                        : (v) => unawaited(_setEnabled(v)),
                   ),
-                  if (_showDistanceSlider) ...[
-                    const SizedBox(height: 8),
+                  const SizedBox(height: 4),
+                  Text(
+                    _unlockStatusLine,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.35,
+                      color: _snap.bondIncomplete
+                          ? colors.warning
+                          : colors.textTertiary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SegmentedButton<bool>(
+                    emptySelectionAllowed: true,
+                    segments: [
+                      ButtonSegment(
+                        value: true,
+                        icon: const Icon(Icons.sensors, size: 16),
+                        label: const Text('感应'),
+                        enabled: _supportsInduction,
+                      ),
+                      const ButtonSegment(
+                        value: false,
+                        icon: Icon(Icons.touch_app_outlined, size: 16),
+                        label: Text('手动'),
+                      ),
+                    ],
+                    selected: {
+                      if (selection != null) selection,
+                      if (selection == null && !_supportsInduction) false,
+                    },
+                    showSelectedIcon: false,
+                    expandedInsets: EdgeInsets.zero,
+                    onSelectionChanged: anyBusy
+                        ? null
+                        : (next) {
+                            if (next.isEmpty) return;
+                            unawaited(_selectUnlockMode(induction: next.first));
+                          },
+                    style: _segmentStyle(colors),
+                  ),
+                  if (_showDistanceSlider && selection == true) ...[
+                    const SizedBox(height: 16),
                     Text(
                       '感应距离  ${_distanceDraft.round()}',
                       style: const TextStyle(
@@ -228,10 +363,10 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
                       max: maxLevel.toDouble(),
                       divisions: maxLevel > 0 ? maxLevel : null,
                       label: '${_distanceDraft.round()}',
-                      onChanged: _busy || !canWrite
+                      onChanged: anyBusy || !canWrite
                           ? null
                           : (v) => setState(() => _distanceDraft = v),
-                      onChangeEnd: _busy || !canWrite
+                      onChangeEnd: anyBusy || !canWrite
                           ? null
                           : (v) => unawaited(_setDistance(v.round())),
                     ),
@@ -255,12 +390,10 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
                       ],
                     ),
                   ],
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   OutlinedButton(
-                    onPressed: _busy || _snap.busy
-                        ? null
-                        : () => unawaited(_read()),
-                    child: Text(_busy || _snap.busy ? '处理中…' : '刷新状态'),
+                    onPressed: anyBusy ? null : () => unawaited(_read()),
+                    child: Text(anyBusy ? '处理中…' : '刷新状态'),
                   ),
                 ],
               ),

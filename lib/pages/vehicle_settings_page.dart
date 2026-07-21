@@ -152,7 +152,7 @@ class VehicleSettingsPage extends StatelessWidget {
                             ),
                           ),
                           subtitle: const Text(
-                            '靠近解锁 · 离开上锁 · 距离设置',
+                            '感应 / 手动 · 靠近解锁 · 距离',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.textTertiary,
