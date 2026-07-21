@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../ble/connection_manager.dart' as ble;
 import '../main.dart';
 import '../models/battery_snapshot.dart';
 import '../models/official_vehicle.dart';
 import '../services/battery_help_copy.dart';
+import '../services/coulomb_meter_service.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
@@ -62,6 +64,8 @@ class BatteryDetailsPage extends StatelessWidget {
                           const SizedBox(height: 14),
                           _VehicleBatteryMetaCard(vehicle: vehicle),
                         ],
+                        const SizedBox(height: 14),
+                        _CoulombMeterCard(vehicle: vehicle),
                         const SizedBox(height: 14),
                         _OfficialSummaryRow(snapshot: data),
                         const SizedBox(height: 14),
@@ -1178,6 +1182,192 @@ class _BatteryReadOnlyCard extends StatelessWidget {
           Text(
             '当前页面用于查看电量、电压、温度、健康状态和 BMS 信息。涉及电池校准、更换和升级的操作，请通过官方服务渠道完成。',
             style: AppTextStyles.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Official TLV page "库仑计" switch (BLE FBB2 D0018A*).
+class _CoulombMeterCard extends StatefulWidget {
+  final OfficialVehicle? vehicle;
+  const _CoulombMeterCard({required this.vehicle});
+
+  @override
+  State<_CoulombMeterCard> createState() => _CoulombMeterCardState();
+}
+
+class _CoulombMeterCardState extends State<_CoulombMeterCard> {
+  StreamSubscription<ble.ConnectionState>? _bleSub;
+  bool _busy = false;
+  bool? _enabled; // null = unknown / need power+query
+  String? _message;
+
+  bool get _supported {
+    final v = widget.vehicle;
+    if (v == null) return false;
+    return CoulombMeterService.isSupported(
+      modelType: v.modelType,
+      bmsTlvType: v.bmsTlvType,
+    );
+  }
+
+  bool get _bleReady => connectionManager.isProtocolLoggedIn;
+
+  @override
+  void initState() {
+    super.initState();
+    _bleSub = connectionManager.stateStream.listen((_) {
+      if (mounted) setState(() {});
+      if (_bleReady && _enabled == null && !_busy) {
+        unawaited(_query(silent: true));
+      }
+    });
+    if (_bleReady) {
+      unawaited(_query(silent: true));
+    }
+  }
+
+  @override
+  void dispose() {
+    unawaited(_bleSub?.cancel() ?? Future<void>.value());
+    super.dispose();
+  }
+
+  Future<void> _query({bool silent = false}) async {
+    if (!_supported || _busy) return;
+    if (!_bleReady) {
+      if (!silent && mounted) {
+        AppSnack.info(context, '请先连接车辆蓝牙后再操作库仑计');
+      }
+      setState(() {
+        _message = '需 BLE 已协议登录';
+        _enabled = null;
+      });
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      final on = await CoulombMeterService.instance.queryStatus();
+      if (!mounted) return;
+      setState(() {
+        _enabled = on;
+        _message = on == null ? '请点「刷新状态」：车辆上电后获取开关' : null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _message = e is StateError ? e.message : '查询失败';
+      });
+      if (!silent) {
+        AppSnack.error(
+          context,
+          e is StateError ? e.message : OfficialCloudRedactor.errorMessage(e),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _toggle(bool value) async {
+    if (!_supported || _busy) return;
+    if (!_bleReady) {
+      AppSnack.info(context, '请先连接车辆蓝牙后再操作库仑计');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      final on = await CoulombMeterService.instance.setEnabled(value);
+      if (!mounted) return;
+      setState(() {
+        _enabled = on;
+        _message = null;
+      });
+      AppSnack.success(context, value ? '库仑计已开启' : '库仑计已关闭');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _message = e is StateError ? e.message : '设置失败';
+      });
+      AppSnack.error(
+        context,
+        e is StateError ? e.message : OfficialCloudRedactor.errorMessage(e),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_supported) return const SizedBox.shrink();
+    final lithium = widget.vehicle?.bmsTlvType.trim() == '208';
+    if (lithium) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.battery_saver_outlined,
+                color: AppColors.primary,
+                size: AppIconSizes.md,
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text('库仑计', style: AppTextStyles.itemTitle),
+              ),
+              if (_busy)
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                Switch.adaptive(
+                  value: _enabled == true,
+                  onChanged: !_bleReady || _enabled == null
+                      ? null
+                      : (v) => unawaited(_toggle(v)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text('开启后可自学习电量（锂电不可用）', style: AppTextStyles.bodySmall),
+          const SizedBox(height: 8),
+          if (!_bleReady)
+            const Text(
+              '需先近场连接并完成协议登录',
+              style: TextStyle(fontSize: 12, color: AppColors.warning),
+            )
+          else if (_message != null)
+            Text(
+              _message!,
+              style: const TextStyle(fontSize: 12, color: AppColors.warning),
+            ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: _busy || !_bleReady
+                  ? null
+                  : () => unawaited(_query(silent: false)),
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('刷新状态'),
+            ),
           ),
         ],
       ),
