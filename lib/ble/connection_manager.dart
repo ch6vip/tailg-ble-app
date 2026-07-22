@@ -1062,6 +1062,18 @@ class ConnectionManager {
     _markProtocolLoggedIn(token);
   }
 
+  /// Simulate a QGJ session that has a bound device and is ready.
+  ///
+  /// Attaches a fake device so the reconnect branch in [_onDisconnected]
+  /// is reachable (it requires `_device != null`), and sets `_protocol`
+  /// to QGJ so the "no auto-reconnect" guard can actually be exercised.
+  @visibleForTesting
+  void enterReadyForQgjWithDeviceForTest({String deviceId = 'qgj-test'}) {
+    _device = BluetoothDevice(remoteId: DeviceIdentifier(deviceId));
+    _protocol = ProtocolType.qgj;
+    _markProtocolLoggedIn('qgj');
+  }
+
   /// Simulate GATT-up without protocol login (must NOT route as bleReady).
   @visibleForTesting
   void enterConnectedWithoutLoginForTest() {
@@ -1576,8 +1588,17 @@ class ConnectionManager {
     final wasHandshaking =
         _state == ConnectionState.connecting ||
         _state == ConnectionState.connected;
+    // QGJ (电动车) shuts BLE off after 熄火/休眠. The official app does NOT
+    // auto-reconnect QGJ — it只更新 DISCONNECTED 状态, 回到「点击连接」等用户。
+    // Mirror that: no reconnect race, no scan spam, saves battery.
+    final protocolIsQgj =
+        _protocol == ProtocolType.qgj ||
+        _lastKnownProtocol == ProtocolType.qgj;
     _resetCharacteristics();
-    if (!_userDisconnected && _device != null && !wasHandshaking) {
+    if (!_userDisconnected &&
+        _device != null &&
+        !wasHandshaking &&
+        !protocolIsQgj) {
       _setState(ConnectionState.reconnecting);
       unawaited(
         _attemptReconnect().catchError((Object e, StackTrace st) {
@@ -1588,6 +1609,8 @@ class ConnectionManager {
       _setState(ConnectionState.disconnected);
       if (wasHandshaking && !_userDisconnected) {
         _log.ble('握手期断连，交由 connect() 处理', level: LogLevel.info);
+      } else if (protocolIsQgj && !_userDisconnected) {
+        _log.ble('QGJ 断连（对齐官方：不自动重连，等待用户重连）', level: LogLevel.info);
       }
     }
   }

@@ -226,6 +226,25 @@ void main() {
     await Future<void>.delayed(Duration.zero);
   });
 
+  test(
+    'QGJ disconnect goes straight to disconnected without reconnecting',
+    () async {
+      final manager = ConnectionManager();
+      addTearDown(manager.dispose);
+
+      // QGJ (电动车) cuts BLE off after 熄火/休眠. Official app does not
+      // auto-reconnect QGJ; mirror that — no reconnecting state, no scan spam.
+      // The helper binds a device so the reconnect branch is reachable; the
+      // QGJ guard is the only reason we land on disconnected instead.
+      manager.enterReadyForQgjWithDeviceForTest();
+      expect(manager.state, ConnectionState.ready);
+
+      await manager.handleDisconnectedForTest();
+
+      expect(manager.state, ConnectionState.disconnected);
+    },
+  );
+
   testWidgets('ready watchdog is disarmed after ready transition', (
     tester,
   ) async {
