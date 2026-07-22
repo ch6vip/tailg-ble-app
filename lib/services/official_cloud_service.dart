@@ -989,6 +989,26 @@ class OfficialCloudService {
         body: {'uid': uid, 'imei': imei},
         retryPolicy: OfficialCloudRetryPolicy.readRequest,
       );
+      // code=100 "电池未识别" is a terminal/expected state for lead-acid
+      // packs without a smart BMS — not an error. Treat it as "no BMS".
+      final code = response.body['code']?.toString();
+      final isBatteryNotRecognized = code == '100';
+      if (isBatteryNotRecognized) {
+        if (!_isCurrentSession(token)) return;
+        _state = _state.copyWith(
+          bmsInfo: null,
+          bmsInfoLoading: false,
+          bmsInfoError: null,
+        );
+        _emit();
+        _log.operation(
+          '官方 BMS: 该电池不支持 BMS 明细',
+          detail: 'code=100 电池未识别（铅酸等无智能 BMS）',
+          level: LogLevel.info,
+        );
+        _markRefreshSuccess(refreshKey);
+        return;
+      }
       _ensureSuccess(response.body, fallback: '获取官方 BMS 信息失败');
       if (!_isCurrentSession(token)) return;
       final info = OfficialCloudDataParser.bmsInfo(response.body['data']);

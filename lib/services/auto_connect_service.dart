@@ -378,6 +378,8 @@ class AutoConnectService {
     StreamSubscription<List<ScanResult>>? scanSub;
     Timer? timeout;
     var sawHarmonyQgj = false;
+    // Dedup scan-log per session: each addr logged at most once per scan.
+    final loggedAddresses = <String>{};
     final completer = Completer<void>();
     try {
       scanSub = FlutterBluePlus.scanResults.listen((results) {
@@ -389,6 +391,7 @@ class AutoConnectService {
             targetDeviceId: targetDeviceId,
             context: targetContext,
             matchesSystemId: matchesSystemId,
+            logSeen: loggedAddresses.add(foundId),
           );
           if (targetContext?.stack == OfficialBleStack.qgj &&
               parseQgjScanIdentity(r.advertisementData).harmony) {
@@ -586,6 +589,7 @@ class AutoConnectService {
     required String targetDeviceId,
     required OfficialBleConnectionContext? context,
     required bool matchesSystemId,
+    bool logSeen = false,
   }) {
     if (context == null) return matchesSystemId;
     return switch (context.stack) {
@@ -601,6 +605,7 @@ class AutoConnectService {
       OfficialBleStack.qgj => _matchesQgjAdvertisement(
         targetMac: targetDeviceId,
         result: result,
+        logSeen: logSeen,
       ),
       OfficialBleStack.unsupported => false,
     };
@@ -643,6 +648,7 @@ class AutoConnectService {
   static bool _matchesQgjAdvertisement({
     required String targetMac,
     required ScanResult result,
+    bool logSeen = false,
   }) {
     final parsed = parseQgjScanIdentity(result.advertisementData);
     final radioAddress = result.device.remoteId.toString();
@@ -656,8 +662,9 @@ class AutoConnectService {
       bootMode: identity.bootMode,
       harmony: identity.harmony,
     );
-    // Diagnostic: log what we saw (helps debug scan-match failures).
-    if (!matched) {
+    // Diagnostic: log each unmatched device once per scan (logSeen == true when
+    // this addr was newly added to the per-scan dedup set).
+    if (!matched && logSeen) {
       final mfgHex = result.advertisementData.manufacturerData.values
           .map((d) => d.map((b) => b.toRadixString(16).padLeft(2, '0')).join())
           .join(',');
