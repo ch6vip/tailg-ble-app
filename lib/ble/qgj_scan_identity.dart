@@ -5,10 +5,15 @@ class QgjScanIdentity {
   final int bootMode;
   final bool harmony;
 
+  /// When true, identityMac came from the radio address fallback
+  /// (official ScannedDevice.getIdentityMac() does the same).
+  final bool fromRadioAddress;
+
   const QgjScanIdentity({
     required this.identityMac,
     required this.bootMode,
     required this.harmony,
+    this.fromRadioAddress = false,
   });
 }
 
@@ -29,8 +34,6 @@ QgjScanIdentity parseQgjManufacturerPayloads(
   required bool harmony,
 }) {
   if (harmony) {
-    // The official app obtains Harmony's systemId from its SDK connection
-    // view-model. A plain Flutter scan cannot reproduce that value safely.
     return const QgjScanIdentity(identityMac: null, bootMode: 0, harmony: true);
   }
 
@@ -52,6 +55,27 @@ QgjScanIdentity parseQgjManufacturerPayloads(
     }
   }
   return const QgjScanIdentity(identityMac: null, bootMode: 0, harmony: false);
+}
+
+/// Official ScannedDevice.getIdentityMac() fallback: when manufacturer data
+/// has no identity MAC, use the BLE radio address (without colons, uppercase).
+QgjScanIdentity identityWithRadioFallback({
+  required QgjScanIdentity parsed,
+  required String radioAddress,
+}) {
+  if (parsed.identityMac != null && parsed.identityMac!.isNotEmpty) {
+    return parsed;
+  }
+  final compact = radioAddress
+      .replaceAll(RegExp(r'[^0-9a-fA-F]'), '')
+      .toUpperCase();
+  if (compact.isEmpty) return parsed;
+  return QgjScanIdentity(
+    identityMac: compact,
+    bootMode: parsed.bootMode,
+    harmony: parsed.harmony,
+    fromRadioAddress: true,
+  );
 }
 
 String _compactMac(List<int> bytes) => bytes

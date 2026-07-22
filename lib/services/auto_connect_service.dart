@@ -598,16 +598,10 @@ class AutoConnectService {
       OfficialBleStack.tlink =>
         matchesSystemId ||
             _advertisedNameMatches(result, context.advertisedName),
-      OfficialBleStack.qgj =>
-        _matchesQgjAdvertisement(
-              targetMac: targetDeviceId,
-              identity: parseQgjScanIdentity(result.advertisementData),
-            ) &&
-            result.advertisementData.serviceUuids.any(
-              (uuid) =>
-                  uuid.toString().toLowerCase().contains('feb0') ||
-                  uuid.toString().toLowerCase().contains('ffe1'),
-            ),
+      OfficialBleStack.qgj => _matchesQgjAdvertisement(
+        targetMac: targetDeviceId,
+        result: result,
+      ),
       OfficialBleStack.unsupported => false,
     };
   }
@@ -648,14 +642,41 @@ class AutoConnectService {
 
   static bool _matchesQgjAdvertisement({
     required String targetMac,
-    required QgjScanIdentity identity,
+    required ScanResult result,
   }) {
-    return matchesQgjIdentity(
+    final parsed = parseQgjScanIdentity(result.advertisementData);
+    final radioAddress = result.device.remoteId.toString();
+    final identity = identityWithRadioFallback(
+      parsed: parsed,
+      radioAddress: radioAddress,
+    );
+    final matched = matchesQgjIdentity(
       targetMac: targetMac,
       observedMac: identity.identityMac,
       bootMode: identity.bootMode,
       harmony: identity.harmony,
     );
+    // Diagnostic: log what we saw (helps debug scan-match failures).
+    if (!matched) {
+      final mfgHex = result.advertisementData.manufacturerData.values
+          .map((d) => d.map((b) => b.toRadixString(16).padLeft(2, '0')).join())
+          .join(',');
+      final svcUuids = result.advertisementData.serviceUuids
+          .map((u) => u.toString())
+          .join(',');
+      LogService().operation(
+        '自动连接: 扫描到设备',
+        detail:
+            'addr=$radioAddress name=${result.advertisementData.advName} '
+            'mfgLen=${result.advertisementData.manufacturerData.length} '
+            'mfgHex=$mfgHex svcUuids=$svcUuids '
+            'identity=${identity.identityMac ?? "null"} '
+            'radioFallback=${identity.fromRadioAddress} '
+            'target=$targetMac matched=$matched',
+        level: LogLevel.debug,
+      );
+    }
+    return matched;
   }
 
   bool _isConnectedAutoTarget({
