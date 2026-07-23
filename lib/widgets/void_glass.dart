@@ -41,31 +41,20 @@ class VoidGlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final effectiveGlow =
-        glowColor ??
-        (dark ? VoidColors.energy : VoidColors.energyDim);
+        glowColor ?? (dark ? VoidColors.energy : VoidColors.energyDim);
     final effectiveBorder =
         borderColor ??
-        (dark
-            ? const Color(0x2AFFFFFF)
-            : const Color(0x1A0B1220));
+        (dark ? const Color(0x2AFFFFFF) : const Color(0x1A0B1220));
 
     Widget card = ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: BackdropFilter(
-        filter: ui.ImageFilter.blur(
-          sigmaX: blurSigma,
-          sigmaY: blurSigma,
-        ),
+        filter: ui.ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(borderRadius),
-            color: dark
-                ? const Color(0x1A151B26)
-                : const Color(0xCCFFFFFF),
-            border: Border.all(
-              color: effectiveBorder,
-              width: borderWidth,
-            ),
+            color: dark ? const Color(0x1A151B26) : const Color(0xCCFFFFFF),
+            border: Border.all(color: effectiveBorder, width: borderWidth),
             boxShadow: [
               BoxShadow(
                 color: effectiveGlow.withValues(alpha: glowOpacity * 0.3),
@@ -123,20 +112,13 @@ class VoidGlassPanel extends StatelessWidget {
 
     final panel = ClipRRect(
       child: BackdropFilter(
-        filter: ui.ImageFilter.blur(
-          sigmaX: blurSigma,
-          sigmaY: blurSigma,
-        ),
+        filter: ui.ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
         child: Container(
           decoration: BoxDecoration(
-            color: dark
-                ? const Color(0x0AFFFFFF)
-                : const Color(0x080B1220),
+            color: dark ? const Color(0x0AFFFFFF) : const Color(0x080B1220),
             border: Border(
               bottom: BorderSide(
-                color: dark
-                    ? const Color(0x1AFFFFFF)
-                    : const Color(0x0A0B1220),
+                color: dark ? const Color(0x1AFFFFFF) : const Color(0x0A0B1220),
                 width: 0.5,
               ),
             ),

@@ -59,9 +59,7 @@ class ServiceHubPage extends StatelessWidget {
                     const SizedBox(height: 8),
                     VoidGlowText(
                       '定位 · 轨迹 · 车辆 · 能耗',
-                      style: VoidType.body.copyWith(
-                        color: VoidColors.inkMuted,
-                      ),
+                      style: VoidType.body.copyWith(color: VoidColors.inkMuted),
                       glowColor: VoidColors.energy,
                       glowIntensity: 0.4,
                     ),

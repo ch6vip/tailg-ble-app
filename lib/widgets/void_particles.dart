@@ -51,16 +51,18 @@ class _VoidParticleFieldState extends State<VoidParticleField>
     final rng = math.Random(42);
     _particles.clear();
     for (var i = 0; i < widget.particleCount; i++) {
-      _particles.add(_Particle(
-        x: rng.nextDouble(),
-        y: rng.nextDouble(),
-        size: 1.2 + rng.nextDouble() * 3.2,
-        speedX: (rng.nextDouble() - 0.5) * widget.driftSpeed,
-        speedY: (rng.nextDouble() - 0.5) * widget.driftSpeed * 0.6,
-        phase: rng.nextDouble() * math.pi * 2,
-        pulsePeriod: 1.2 + rng.nextDouble() * 2.8,
-        opacity: 0.12 + rng.nextDouble() * 0.35,
-      ));
+      _particles.add(
+        _Particle(
+          x: rng.nextDouble(),
+          y: rng.nextDouble(),
+          size: 1.2 + rng.nextDouble() * 3.2,
+          speedX: (rng.nextDouble() - 0.5) * widget.driftSpeed,
+          speedY: (rng.nextDouble() - 0.5) * widget.driftSpeed * 0.6,
+          phase: rng.nextDouble() * math.pi * 2,
+          pulsePeriod: 1.2 + rng.nextDouble() * 2.8,
+          opacity: 0.12 + rng.nextDouble() * 0.35,
+        ),
+      );
     }
   }
 
@@ -237,15 +239,17 @@ class _VoidNebulaState extends State<VoidNebula>
     ];
     final colors = widget.colors ?? defaultColors;
     for (var i = 0; i < widget.blobCount; i++) {
-      _blobs.add(_NebulaBlob(
-        x: rng.nextDouble(),
-        y: rng.nextDouble(),
-        size: 120 + rng.nextDouble() * 200,
-        color: colors[i % colors.length],
-        driftX: (rng.nextDouble() - 0.5) * 0.02,
-        driftY: (rng.nextDouble() - 0.5) * 0.02,
-        phase: rng.nextDouble() * math.pi * 2,
-      ));
+      _blobs.add(
+        _NebulaBlob(
+          x: rng.nextDouble(),
+          y: rng.nextDouble(),
+          size: 120 + rng.nextDouble() * 200,
+          color: colors[i % colors.length],
+          driftX: (rng.nextDouble() - 0.5) * 0.02,
+          driftY: (rng.nextDouble() - 0.5) * 0.02,
+          phase: rng.nextDouble() * math.pi * 2,
+        ),
+      );
     }
     _ticker = createTicker((elapsed) {
       _elapsed = elapsed.inMicroseconds / 1000;

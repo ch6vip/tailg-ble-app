@@ -51,9 +51,7 @@ class VoidCanvas extends StatelessWidget {
               child: IgnorePointer(
                 child: VoidParticleField(
                   particleCount: particleCount,
-                  energyColor: dark
-                      ? VoidColors.energy
-                      : VoidColors.energyDim,
+                  energyColor: dark ? VoidColors.energy : VoidColors.energyDim,
                   driftSpeed: 0.06,
                   scale: intensity,
                 ),

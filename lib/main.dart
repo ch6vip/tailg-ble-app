@@ -126,7 +126,8 @@ class ImmersiveTokens extends ThemeExtension<ImmersiveTokens> {
       onSurface: onSurface ?? this.onSurface,
       cardColor: cardColor ?? this.cardColor,
       dividerColor: dividerColor ?? this.dividerColor,
-      scaffoldBackgroundColor: scaffoldBackgroundColor ?? this.scaffoldBackgroundColor,
+      scaffoldBackgroundColor:
+          scaffoldBackgroundColor ?? this.scaffoldBackgroundColor,
     );
   }
 
@@ -139,13 +140,25 @@ class ImmersiveTokens extends ThemeExtension<ImmersiveTokens> {
       glowPrimary: Color.lerp(glowPrimary, other.glowPrimary, t)!,
       glowAccent: Color.lerp(glowAccent, other.glowAccent, t)!,
       glowIntensity: lerpDouble(glowIntensity, other.glowIntensity, t)!,
-      energyGradientStart: Color.lerp(energyGradientStart, other.energyGradientStart, t)!,
-      energyGradientEnd: Color.lerp(energyGradientEnd, other.energyGradientEnd, t)!,
+      energyGradientStart: Color.lerp(
+        energyGradientStart,
+        other.energyGradientStart,
+        t,
+      )!,
+      energyGradientEnd: Color.lerp(
+        energyGradientEnd,
+        other.energyGradientEnd,
+        t,
+      )!,
       surface: Color.lerp(surface, other.surface, t)!,
       onSurface: Color.lerp(onSurface, other.onSurface, t)!,
       cardColor: Color.lerp(cardColor, other.cardColor, t)!,
       dividerColor: Color.lerp(dividerColor, other.dividerColor, t)!,
-      scaffoldBackgroundColor: Color.lerp(scaffoldBackgroundColor, other.scaffoldBackgroundColor, t)!,
+      scaffoldBackgroundColor: Color.lerp(
+        scaffoldBackgroundColor,
+        other.scaffoldBackgroundColor,
+        t,
+      )!,
     );
   }
 }
@@ -419,36 +432,38 @@ class _TailgBleAppState extends State<TailgBleApp> {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme lightColorScheme = ColorScheme.fromSeed(
-      seedColor: VoidColors.energyDim,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: VoidColors.energyDim,
-      onPrimary: Colors.white,
-      secondary: VoidColors.energyDim,
-      onSecondary: Colors.white,
-      surface: VoidColors.lightPanel,
-      onSurface: VoidColors.lightInk,
-      surfaceContainerLow: VoidColors.lightVoid,
-      surfaceContainerHigh: const Color(0xFFE8ECF2),
-      outline: VoidColors.lightHairline,
-      outlineVariant: VoidColors.lightHairline,
-    );
-    final ColorScheme darkColorScheme = ColorScheme.fromSeed(
-      seedColor: VoidColors.energy,
-      brightness: Brightness.dark,
-    ).copyWith(
-      primary: VoidColors.energy,
-      onPrimary: Colors.black,
-      secondary: VoidColors.energyDim,
-      onSecondary: Colors.black,
-      surface: VoidColors.voidPanel,
-      onSurface: VoidColors.ink,
-      surfaceContainerLow: VoidColors.voidLift,
-      surfaceContainerHigh: VoidColors.voidPanelHi,
-      outline: VoidColors.hairline,
-      outlineVariant: VoidColors.hairlineStrong,
-    );
+    final ColorScheme lightColorScheme =
+        ColorScheme.fromSeed(
+          seedColor: VoidColors.energyDim,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: VoidColors.energyDim,
+          onPrimary: Colors.white,
+          secondary: VoidColors.energyDim,
+          onSecondary: Colors.white,
+          surface: VoidColors.lightPanel,
+          onSurface: VoidColors.lightInk,
+          surfaceContainerLow: VoidColors.lightVoid,
+          surfaceContainerHigh: const Color(0xFFE8ECF2),
+          outline: VoidColors.lightHairline,
+          outlineVariant: VoidColors.lightHairline,
+        );
+    final ColorScheme darkColorScheme =
+        ColorScheme.fromSeed(
+          seedColor: VoidColors.energy,
+          brightness: Brightness.dark,
+        ).copyWith(
+          primary: VoidColors.energy,
+          onPrimary: Colors.black,
+          secondary: VoidColors.energyDim,
+          onSecondary: Colors.black,
+          surface: VoidColors.voidPanel,
+          onSurface: VoidColors.ink,
+          surfaceContainerLow: VoidColors.voidLift,
+          surfaceContainerHigh: VoidColors.voidPanelHi,
+          outline: VoidColors.hairline,
+          outlineVariant: VoidColors.hairlineStrong,
+        );
     return MaterialApp(
       title: '台铃智能',
       navigatorKey: AppToast.navigatorKey,

@@ -88,14 +88,18 @@ class _KineticTypeState extends State<KineticType>
     _controller.duration = totalDuration;
     for (var i = 0; i < _items.length; i++) {
       final start = (i * widget.staggerDelay) / totalDuration.inMilliseconds;
-      final end = (widget.duration.inMilliseconds + i * widget.staggerDelay) /
+      final end =
+          (widget.duration.inMilliseconds + i * widget.staggerDelay) /
           totalDuration.inMilliseconds;
       _itemAnims.add(
         _controller.drive(
           Tween<double>(begin: 0, end: 1).chain(
             CurveTween(
-              curve: Interval(start.clamp(0.0, 1.0), end.clamp(0.0, 1.0),
-                  curve: widget.curve),
+              curve: Interval(
+                start.clamp(0.0, 1.0),
+                end.clamp(0.0, 1.0),
+                curve: widget.curve,
+              ),
             ),
           ),
         ),
@@ -148,7 +152,12 @@ class _KineticTypeState extends State<KineticType>
               child: Transform(
                 alignment: Alignment.center,
                 transform: Matrix4.identity()
-                  ..scaleByDouble(0.4 + 0.6 * anim.value, 0.4 + 0.6 * anim.value, 0.4 + 0.6 * anim.value, 1)
+                  ..scaleByDouble(
+                    0.4 + 0.6 * anim.value,
+                    0.4 + 0.6 * anim.value,
+                    0.4 + 0.6 * anim.value,
+                    1,
+                  )
                   ..translateByDouble(0, (1 - anim.value) * 20, 0, 1),
                 child: Text(
                   widget.mode == KineticTypeMode.word
@@ -163,8 +172,11 @@ class _KineticTypeState extends State<KineticType>
         return DefaultTextStyle(
           style: widget.style ?? const TextStyle(),
           child: Wrap(
-            alignment: WrapAlignment.values[
-                widget.alignment.index.clamp(0, WrapAlignment.values.length - 1)],
+            alignment:
+                WrapAlignment.values[widget.alignment.index.clamp(
+                  0,
+                  WrapAlignment.values.length - 1,
+                )],
             crossAxisAlignment: WrapCrossAlignment.center,
             children: children,
           ),
@@ -221,12 +233,7 @@ class VoidGlowText extends StatelessWidget {
           ),
         ),
         // Core text
-        Text(
-          text,
-          maxLines: maxLines,
-          textAlign: textAlign,
-          style: style,
-        ),
+        Text(text, maxLines: maxLines, textAlign: textAlign, style: style),
       ],
     );
   }
@@ -299,10 +306,12 @@ class _VoidMetricCounterState extends State<VoidMetricCounter>
     final formatted = _displayValue.toStringAsFixed(widget.decimalPlaces);
     return Text(
       '${widget.prefix}$formatted${widget.suffix}',
-      style: widget.style?.copyWith(fontFeatures: [
-        const FontFeature.tabularFigures(),
-        ...?widget.style?.fontFeatures,
-      ]),
+      style: widget.style?.copyWith(
+        fontFeatures: [
+          const FontFeature.tabularFigures(),
+          ...?widget.style?.fontFeatures,
+        ],
+      ),
     );
   }
 }
