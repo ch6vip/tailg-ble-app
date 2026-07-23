@@ -8,6 +8,7 @@ import 'package:tailg_ble_app/pages/notification_prefs_page.dart';
 import 'package:tailg_ble_app/pages/ride_stats_page.dart';
 import 'package:tailg_ble_app/pages/vehicle_settings_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 import 'package:tailg_ble_app/widgets/vehicle_switch_sheet.dart';
 
 import 'helpers/snack_finders.dart';
@@ -68,7 +69,7 @@ void main() {
     expect(find.text('切换车辆'), findsOneWidget);
     expect(find.text('第一辆车'), findsOneWidget);
     expect(find.text('第二辆车'), findsOneWidget);
-    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    expect(find.byIcon(Lucide.checkCircle), findsOneWidget);
 
     await tester.tap(find.text('第二辆车'));
     await tester.pumpAndSettle();
@@ -167,7 +168,7 @@ void main() {
 
     expect(find.text('切换车辆'), findsOneWidget);
     expect(find.text('Exception: token=abc***456'), findsOneWidget);
-    expect(snackIcon(Icons.error_outline), findsOneWidget);
+    expect(snackIcon(Lucide.alertCircle), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(app.officialCloudService.state.selectedVehicleKey, first.key);
   });
@@ -222,7 +223,7 @@ void main() {
       expect(find.textContaining('0.26 kg CO₂'), findsOneWidget);
       expect(find.text(currentMonth), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.chevron_right));
+      await tester.tap(find.byIcon(Lucide.chevronRight));
       await tester.pump();
 
       expect(find.text(currentMonth), findsOneWidget);
@@ -327,7 +328,7 @@ void main() {
     await tester.pump();
     expect(completions, contains(currentLabel));
 
-    await tester.tap(find.byIcon(Icons.chevron_left));
+    await tester.tap(find.byIcon(Lucide.chevronLeft));
     await tester.pump();
     expect(completions, contains(previousLabel));
 

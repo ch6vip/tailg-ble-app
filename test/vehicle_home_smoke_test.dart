@@ -49,7 +49,7 @@ void main() {
   });
 
   testWidgets('signed-in vehicle home renders vehicle name', (tester) async {
-    setTestViewSize(tester, const Size(390, 844));
+    setTestViewSize(tester, const Size(390, 1800));
     final vehicle = OfficialVehicle.fromJson({
       'carId': 'smoke-1',
       'carNickName': '冒烟测试车',

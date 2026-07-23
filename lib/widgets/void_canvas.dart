@@ -445,25 +445,34 @@ class VoidMetric extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: VoidType.micro.copyWith(color: muted)),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: VoidType.micro.copyWith(color: muted),
+        ),
         const SizedBox(height: 6),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              value,
-              style: VoidType.displaySm.copyWith(
-                fontSize: 26,
-                color: accent ? VoidColors.energy : ink,
+            Flexible(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: VoidType.displaySm.copyWith(
+                  fontSize: 26,
+                  color: accent ? VoidColors.energy : ink,
+                ),
               ),
             ),
             if (unit != null) ...[
-              const SizedBox(width: 4),
+              const SizedBox(width: 2),
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
                   unit!,
-                  style: VoidType.caption.copyWith(color: muted),
+                  style: VoidType.caption.copyWith(color: muted, fontSize: 11),
                 ),
               ),
             ],

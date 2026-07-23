@@ -149,22 +149,20 @@ class _NavItem extends StatelessWidget {
                       ? VoidGlow.energy(intensity: 0.45)
                       : const [],
                 ),
-                child: LucideIcon(icon, size: primary ? 24 : 20, color: active),
+                child: LucideIcon(icon, size: primary ? 22 : 20, color: active),
               ),
-              if (!primary) ...[
-                const SizedBox(height: 4),
-                AnimatedDefaultTextStyle(
-                  duration: VoidMotion.snap,
-                  style: TextStyle(
-                    fontSize: 10,
-                    height: 1,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    letterSpacing: 0.4,
-                    color: active,
-                  ),
-                  child: Text(label),
+              const SizedBox(height: 4),
+              AnimatedDefaultTextStyle(
+                duration: VoidMotion.snap,
+                style: TextStyle(
+                  fontSize: 10,
+                  height: 1,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  letterSpacing: 0.4,
+                  color: active,
                 ),
-              ],
+                child: Text(label),
+              ),
             ],
           ),
         ),

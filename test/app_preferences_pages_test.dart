@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/app_preferences_pages.dart';
+import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 
 import 'helpers/platform_mocks.dart';
 import 'helpers/snack_finders.dart';
@@ -31,7 +31,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('已复制诊断报告'), findsOneWidget);
-    expect(snackIcon(Icons.check_circle_outline), findsOneWidget);
+    expect(snackIcon(Lucide.checkCircle), findsOneWidget);
   });
 
   testWidgets('about action rows expose semantics and 44dp targets', (

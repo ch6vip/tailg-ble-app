@@ -1766,7 +1766,7 @@ class _BatteryHeroCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('ENERGY', style: VoidType.micro),
+                  Text('电池', style: VoidType.micro),
                   Text(
                     healthLabel,
                     style: VoidType.caption.copyWith(
@@ -1783,34 +1783,51 @@ class _BatteryHeroCard extends StatelessWidget {
                 sublabel: '剩余电量',
               ),
               const SizedBox(height: 22),
-              Row(
-                children: [
-                  Expanded(
-                    child: VoidMetric(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final tight = constraints.maxWidth < 300;
+                  final metrics = [
+                    VoidMetric(
                       value: rangeKm.replaceAll(' km', ''),
                       unit: 'km',
                       label: '预估里程',
                       accent: true,
                     ),
-                  ),
-                  Expanded(
-                    child: VoidMetric(
+                    VoidMetric(
                       value: enduranceHours.replaceAll(' h', ''),
                       unit: 'h',
                       label: '预计续航',
                     ),
-                  ),
-                  Expanded(
-                    child: VoidMetric(value: chargeCount, label: '充电次数'),
-                  ),
-                  Expanded(
-                    child: VoidMetric(
+                    VoidMetric(value: chargeCount, label: '充电次数'),
+                    VoidMetric(
                       value: todayKm.replaceAll(' km', ''),
                       unit: 'km',
                       label: '今日骑行',
                     ),
-                  ),
-                ],
+                  ];
+                  if (tight) {
+                    return Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(child: metrics[0]),
+                            Expanded(child: metrics[1]),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(child: metrics[2]),
+                            Expanded(child: metrics[3]),
+                          ],
+                        ),
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [for (final m in metrics) Expanded(child: m)],
+                  );
+                },
               ),
             ],
           ),
@@ -1862,7 +1879,7 @@ class _ShortcutsRow extends StatelessWidget {
                     color: VoidColors.energy.withValues(alpha: 0.7),
                   ),
                   const SizedBox(width: 8),
-                  Text('CONTROL', style: VoidType.micro),
+                  Text('控车', style: VoidType.micro),
                 ],
               ),
               const SizedBox(height: 16),
@@ -2176,7 +2193,7 @@ class _RecentCommandsCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('RECENT', style: VoidType.micro),
+                  Text('最近命令', style: VoidType.micro),
                   Text(
                     commands.isEmpty ? '暂无' : '${commands.length} 条',
                     style: VoidType.caption,

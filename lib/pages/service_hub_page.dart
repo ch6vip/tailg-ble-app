@@ -46,7 +46,7 @@ class ServiceHubPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('SERVICES', style: VoidType.micro),
+                    Text('服务', style: VoidType.micro),
                     const SizedBox(height: 10),
                     Text('服务中心', style: VoidType.hero.copyWith(fontSize: 34)),
                     const SizedBox(height: 8),
@@ -345,8 +345,8 @@ class _ServiceListTile extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: AppTouchTargets.min,
+              height: AppTouchTargets.min,
               decoration: BoxDecoration(
                 color: VoidColors.voidPanelHi,
                 shape: BoxShape.circle,

@@ -8,6 +8,8 @@ import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
 import 'helpers/view_size.dart';
 
+Finder _backButton() => find.byKey(const ValueKey('app-page-header-back'));
+
 void main() {
   setUp(() {
     resetMockPreferences();
@@ -137,7 +139,7 @@ void main() {
       expect(find.text('故障诊断'), findsOneWidget);
       expect(find.text('日志'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('返回'));
+      await tester.tap(_backButton());
       await tester.pumpAndSettle();
 
       const tokenLabel = '官方会话 / Token，调试用：粘贴或复制官方登录凭证';
@@ -154,7 +156,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Token'), findsWidgets);
 
-      await tester.tap(find.byTooltip('返回'));
+      await tester.tap(_backButton());
       await tester.pumpAndSettle();
 
       await tester.scrollUntilVisible(

@@ -48,7 +48,7 @@ void main() {
       expect(find.text('诊断报告'), findsNothing);
       expect(find.text('工具与服务'), findsNothing);
       expect(find.text('手机号'), findsOneWidget);
-      expect(find.text('Tailg Cloud 1.0.0'), findsOneWidget);
+      expect(find.text('Tailg Cloud · VOID'), findsOneWidget);
       expect(find.text('退出登录'), findsNothing);
     } finally {
       semantics.dispose();

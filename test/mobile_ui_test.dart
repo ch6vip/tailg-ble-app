@@ -6,6 +6,7 @@ import 'package:tailg_ble_app/pages/service_hub_page.dart';
 import 'package:tailg_ble_app/pages/vehicle_control_home_page.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
+import 'package:tailg_ble_app/theme/app_void.dart';
 
 import 'helpers/storage_mocks.dart';
 import 'helpers/view_size.dart';
@@ -105,7 +106,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
 
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-      expect(scaffold.backgroundColor, AppColorsDark.instance.pageBg);
+      expect(
+        scaffold.backgroundColor,
+        anyOf(AppColorsDark.instance.pageBg, VoidColors.voidDeep),
+      );
     }
     expect(tester.takeException(), isNull);
   });

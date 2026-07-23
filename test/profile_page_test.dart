@@ -6,6 +6,7 @@ import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/profile_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
+import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/source_scan.dart';
@@ -68,7 +69,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('我的积分暂未开放，可先使用官方云端控车'), findsOneWidget);
-      expect(snackIcon(Icons.info_outline), findsOneWidget);
+      expect(snackIcon(Lucide.info), findsOneWidget);
     } finally {
       semantics.dispose();
     }
@@ -172,7 +173,7 @@ void main() {
         await tester.pump();
 
         expect(find.text('${entry.value}暂未开放，可先使用官方云端控车'), findsOneWidget);
-        expect(snackIcon(Icons.info_outline), findsOneWidget);
+        expect(snackIcon(Lucide.info), findsOneWidget);
       }
     } finally {
       semantics.dispose();

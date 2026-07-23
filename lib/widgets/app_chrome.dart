@@ -27,6 +27,7 @@ class AppPageHeader extends StatelessWidget {
         children: [
           if (showBack) ...[
             AppPressable(
+              key: const ValueKey('app-page-header-back'),
               onTap: () => Navigator.pop(context),
               pressedScale: VoidMotion.pressScale,
               semanticsLabel: '返回',

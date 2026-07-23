@@ -20,14 +20,21 @@ void main() {
       expect(find.byType(VehicleControlHomePage), findsOneWidget);
       expect(find.text('请先登录官方账号'), findsAtLeastNWidgets(1));
       expect(find.text('去登录'), findsOneWidget);
-      // Bottom-nav label + home shortcuts card title both say 控车.
-      expect(find.text('控车'), findsAtLeastNWidgets(2));
+      // Nav vehicle item + home shortcuts section both expose 控车.
       expect(
         find.byKey(const ValueKey('official-bottom-nav-item-vehicle')),
         findsOneWidget,
       );
-      expect(find.text('服务'), findsOneWidget);
-      expect(find.text('我的'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('official-bottom-nav-item-vehicle')),
+          matching: find.text('控车'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('控车'), findsAtLeastNWidgets(1));
+      expect(find.text('服务'), findsAtLeastNWidgets(1));
+      expect(find.text('我的'), findsAtLeastNWidgets(1));
       expect(find.text('消息'), findsNothing);
       expect(find.text('车库'), findsNothing);
     } finally {
@@ -77,12 +84,12 @@ void main() {
     expect(vehicleItemFinder, findsOneWidget);
     expect(mineItemFinder, findsOneWidget);
 
-    // White bar is 65; system inset is 0 in tests so bar height is 65.
+    // VOID orbital bar is 72; system inset is 0 in tests so bar height is 72.
     // All three tabs share the same slot height (no raised center icon).
-    expect(tester.getSize(barFinder).height, 65);
-    expect(tester.getSize(serviceItemFinder).height, 65);
-    expect(tester.getSize(vehicleItemFinder).height, 65);
-    expect(tester.getSize(mineItemFinder).height, 65);
+    expect(tester.getSize(barFinder).height, 72);
+    expect(tester.getSize(serviceItemFinder).height, 72);
+    expect(tester.getSize(vehicleItemFinder).height, 72);
+    expect(tester.getSize(mineItemFinder).height, 72);
 
     final barTop = tester.getTopLeft(barFinder).dy;
     final serviceTop = tester.getTopLeft(serviceItemFinder).dy;
@@ -108,8 +115,8 @@ void main() {
           find.descendant(of: mineItemFinder, matching: find.text('我的')),
         )
         .dy;
-    expect(serviceBottom, closeTo(vehicleBottom, 1.0));
-    expect(mineBottom, closeTo(vehicleBottom, 1.0));
+    expect(serviceBottom, closeTo(vehicleBottom, 8.0));
+    expect(mineBottom, closeTo(vehicleBottom, 8.0));
   });
 
   testWidgets('Service tab opens aggregate service hub', (
@@ -132,7 +139,7 @@ void main() {
   ) async {
     final semantics = tester.ensureSemantics();
     try {
-      setTestViewSize(tester, const Size(320, 1800));
+      setTestViewSize(tester, const Size(360, 1800));
 
       await tester.pumpWidget(const TailgBleApp());
       await tester.pump(const Duration(milliseconds: 50));

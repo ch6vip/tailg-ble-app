@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/log_page.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
+import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 
 import 'helpers/platform_mocks.dart';
 import 'helpers/snack_finders.dart';
@@ -41,11 +41,11 @@ void main() {
   ) async {
     await tester.pumpWidget(const TestApp(home: LogPage()));
 
-    await tester.tap(find.byIcon(Icons.copy));
+    await tester.tap(find.byIcon(Lucide.copy));
     await tester.pump();
 
     expect(find.text('当前没有可复制的日志'), findsOneWidget);
-    expect(snackIcon(Icons.info_outline), findsOneWidget);
+    expect(snackIcon(Lucide.info), findsOneWidget);
   });
 
   testWidgets('new log entries refresh the visible list automatically', (
@@ -76,7 +76,7 @@ void main() {
   testWidgets('header actions keep 44dp touch targets', (tester) async {
     await tester.pumpWidget(const TestApp(home: LogPage()));
 
-    for (final icon in [Icons.copy, Icons.refresh, Icons.delete_outline]) {
+    for (final icon in [Lucide.copy, Lucide.refresh, Lucide.trash]) {
       final action = find.ancestor(
         of: find.byIcon(icon),
         matching: find.byType(AppPressable),
@@ -93,11 +93,11 @@ void main() {
 
     await tester.pumpWidget(const TestApp(home: LogPage()));
 
-    await tester.tap(find.byIcon(Icons.copy));
+    await tester.tap(find.byIcon(Lucide.copy));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('已复制诊断报告（1 条日志）'), findsOneWidget);
-    expect(snackIcon(Icons.check_circle_outline), findsOneWidget);
+    expect(snackIcon(Lucide.checkCircle), findsOneWidget);
   });
 }

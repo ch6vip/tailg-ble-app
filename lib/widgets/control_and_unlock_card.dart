@@ -129,7 +129,7 @@ class ControlAndUnlockCard extends StatelessWidget {
                   color: VoidColors.inkMuted,
                 ),
                 const SizedBox(width: 8),
-                Text('CHANNEL', style: VoidType.micro),
+                Text('控车渠道', style: VoidType.micro),
                 const SizedBox(width: 8),
                 Expanded(
                   child: channelBusy

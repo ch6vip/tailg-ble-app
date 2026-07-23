@@ -6,6 +6,7 @@ import 'package:tailg_ble_app/pages/official_cloud_page.dart';
 import 'package:tailg_ble_app/pages/vehicle_message_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
+import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/source_scan.dart';
@@ -40,8 +41,9 @@ void main() {
 
     expect(source, contains('_bootstrap().catchError((Object error)'));
     expect(source, contains('OfficialCloudRedactor.errorMessage(error)'));
+    final normalized = bootstrap.replaceAll('\r\n', '\n');
     expect(
-      bootstrap,
+      normalized,
       contains('await _loadMessageState();\n    if (!mounted) return;'),
     );
   });
@@ -209,12 +211,12 @@ void main() {
     expect(find.text('车辆移动告警'), findsOneWidget);
     expect(find.text('系统维护通知'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.delete_sweep_outlined));
+    await tester.tap(find.byIcon(Lucide.trash));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('已清空 2 条消息'), findsOneWidget);
-    expect(snackIcon(Icons.check_circle_outline), findsOneWidget);
+    expect(snackIcon(Lucide.checkCircle), findsOneWidget);
     expect(find.text('车辆移动告警'), findsNothing);
     expect(find.text('系统维护通知'), findsNothing);
     expect(app.officialCloudService.state.vehicleMessages, isEmpty);
@@ -245,7 +247,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    await tester.tap(find.byIcon(Icons.delete_sweep_outlined));
+    await tester.tap(find.byIcon(Lucide.trash));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 

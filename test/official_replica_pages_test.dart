@@ -5,6 +5,7 @@ import 'package:tailg_ble_app/pages/official_replica_pages.dart';
 import 'package:tailg_ble_app/services/log_service.dart';
 import 'package:tailg_ble_app/services/replica_feature_store.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
+import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/source_scan.dart';
@@ -77,7 +78,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('请输入有效坐标'), findsOneWidget);
-    expect(snackIcon(Icons.info_outline), findsOneWidget);
+    expect(snackIcon(Lucide.info), findsOneWidget);
   });
 
   testWidgets('electric fence use last location fills coordinate fields', (

@@ -4,6 +4,7 @@ import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/battery_details_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 
 import 'helpers/snack_finders.dart';
 import 'helpers/source_scan.dart';
@@ -55,7 +56,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     expect(find.text('请先登录官方账号'), findsOneWidget);
-    expect(snackIcon(Icons.info_outline), findsOneWidget);
+    expect(snackIcon(Lucide.info), findsOneWidget);
   });
 
   testWidgets('battery refresh and correct actions keep 44dp touch targets', (
@@ -140,7 +141,7 @@ void main() {
     await tester.pumpWidget(const TestApp(home: BatteryDetailsPage()));
     await tester.pump();
 
-    final helpIcons = find.byIcon(Icons.help_outline);
+    final helpIcons = find.byIcon(Lucide.help);
     expect(helpIcons, findsWidgets);
     await tester.ensureVisible(helpIcons.first);
     await tester.tap(helpIcons.first);
