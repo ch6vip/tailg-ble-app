@@ -8,6 +8,8 @@ import '../widgets/app_snack.dart';
 import '../widgets/cloud_vehicle_gate.dart';
 import '../widgets/lucide_icon.dart';
 import '../widgets/void_canvas.dart';
+import '../widgets/void_glass.dart';
+import '../widgets/void_typography.dart';
 import 'battery_details_page.dart';
 import 'diagnostic_page.dart';
 import 'location_page.dart';
@@ -36,6 +38,7 @@ class ServiceHubPage extends StatelessWidget {
             physics: const BouncingScrollPhysics(),
             padding: EdgeInsets.only(bottom: bottomPad),
             children: [
+              // ── Immersive hero header ───────────────────────────────
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   VoidSpace.screenX,
@@ -46,11 +49,22 @@ class ServiceHubPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('服务', style: VoidType.micro),
-                    const SizedBox(height: 10),
-                    Text('服务中心', style: VoidType.hero.copyWith(fontSize: 34)),
+                    KineticType(
+                      '服务中心',
+                      mode: KineticTypeMode.word,
+                      staggerDelay: 40,
+                      duration: const Duration(milliseconds: 500),
+                      style: VoidType.hero.copyWith(fontSize: 34),
+                    ),
                     const SizedBox(height: 8),
-                    Text('定位 · 轨迹 · 车辆 · 能耗 — 全部车务入口', style: VoidType.body),
+                    VoidGlowText(
+                      '定位 · 轨迹 · 车辆 · 能耗',
+                      style: VoidType.body.copyWith(
+                        color: VoidColors.inkMuted,
+                      ),
+                      glowColor: VoidColors.energy,
+                      glowIntensity: 0.4,
+                    ),
                   ],
                 ),
               ),
@@ -116,8 +130,7 @@ class ServiceHubPage extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                   horizontal: VoidSpace.screenX,
                 ),
-                child: VoidGlass(
-                  radius: VoidRadii.lg,
+                child: VoidGlassCard(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: _ServiceListTile(
                     icon: Lucide.more,
@@ -189,8 +202,7 @@ class _MoreServicesPage extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                   horizontal: VoidSpace.screenX,
                 ),
-                child: VoidGlass(
-                  radius: VoidRadii.lg,
+                child: VoidGlassCard(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Column(
                     children: [
@@ -251,8 +263,7 @@ class _GlyphSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: VoidSpace.screenX),
-      child: VoidGlass(
-        radius: VoidRadii.lg,
+      child: VoidGlassCard(
         padding: const EdgeInsets.fromLTRB(8, 14, 8, 14),
         child: Row(
           children: [

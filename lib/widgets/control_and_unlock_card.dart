@@ -5,7 +5,7 @@ import '../services/control_channel_status.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_void.dart';
 import 'lucide_icon.dart';
-import 'void_canvas.dart';
+import 'void_glass.dart';
 
 /// Home card for **control channel only** (智能 / 仅蓝牙 / 仅云端).
 ///
@@ -115,8 +115,8 @@ class ControlAndUnlockCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: cardMargin,
-      child: VoidGlass(
-        radius: cardRadius,
+      child: VoidGlassCard(
+        borderRadius: cardRadius,
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

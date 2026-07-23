@@ -6,6 +6,7 @@ import '../theme/app_motion.dart';
 import '../theme/app_void.dart';
 import 'app_pressable.dart';
 import 'lucide_icon.dart';
+import 'void_typography.dart';
 
 class AppPageHeader extends StatelessWidget {
   final String title;
@@ -51,7 +52,15 @@ class AppPageHeader extends StatelessWidget {
             const SizedBox(width: 10),
           ],
           Expanded(
-            child: Text(title, style: VoidType.hero.copyWith(fontSize: 20)),
+            child: KineticType(
+              title,
+              mode: KineticTypeMode.word,
+              staggerDelay: 25,
+              duration: const Duration(milliseconds: 350),
+              style: VoidType.hero.copyWith(fontSize: 20),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           ...actions,
         ],

@@ -36,6 +36,8 @@ import '../widgets/lucide_icon.dart';
 import '../widgets/vehicle_control_gate.dart';
 import '../widgets/vehicle_switch_sheet.dart';
 import '../widgets/void_canvas.dart';
+import '../widgets/void_glass.dart';
+import '../widgets/void_typography.dart';
 import 'add_vehicle_page.dart';
 import 'battery_details_page.dart';
 import 'induction_settings_page.dart';
@@ -1516,11 +1518,14 @@ class _TopBar extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  KineticType(
                     vehicleName,
+                    mode: KineticTypeMode.word,
+                    staggerDelay: 30,
+                    duration: const Duration(milliseconds: 400),
+                    style: VoidType.hero,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: VoidType.hero,
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -1757,9 +1762,10 @@ class _BatteryHeroCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(VoidRadii.xl),
         semanticsLabel: '电池详情 电量 $percent%',
         semanticsButton: true,
-        child: VoidGlass(
-          radius: VoidRadii.xl,
-          glow: percent > 0,
+        child: VoidGlassCard(
+          borderRadius: VoidRadii.xl,
+          glowColor: percent > 0 ? VoidColors.energy : null,
+          glowOpacity: 0.15,
           padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
           child: Column(
             children: [
@@ -1863,8 +1869,8 @@ class _ShortcutsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: _VoidUi.cardMargin,
-      child: VoidGlass(
-        radius: VoidRadii.lg,
+      child: VoidGlassCard(
+        borderRadius: VoidRadii.lg,
         padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
         child: Opacity(
           opacity: dimmed ? 0.5 : 1,
@@ -2071,8 +2077,8 @@ class _LocationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(VoidRadii.lg),
         semanticsLabel: '车辆位置 $title，$updated，$walk',
         semanticsButton: true,
-        child: VoidGlass(
-          radius: VoidRadii.lg,
+        child: VoidGlassCard(
+          borderRadius: VoidRadii.lg,
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
@@ -2181,8 +2187,8 @@ class _RecentCommandsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: _VoidUi.cardMargin,
-      child: VoidGlass(
-        radius: VoidRadii.lg,
+      child: VoidGlassCard(
+        borderRadius: VoidRadii.lg,
         padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

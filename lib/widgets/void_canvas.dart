@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../theme/app_void.dart';
+import 'void_particles.dart';
 
 /// Full-bleed immersive void field with soft energy nebula.
 class VoidCanvas extends StatelessWidget {
@@ -13,11 +14,15 @@ class VoidCanvas extends StatelessWidget {
     required this.child,
     this.intensity = 1.0,
     this.lightMode = false,
+    this.particleCount = 32,
+    this.showParticles = true,
   });
 
   final Widget child;
   final double intensity;
   final bool lightMode;
+  final int particleCount;
+  final bool showParticles;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +45,20 @@ class VoidCanvas extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
+          // Volumetric particle field — deepest layer
+          if (showParticles)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: VoidParticleField(
+                  particleCount: particleCount,
+                  energyColor: dark
+                      ? VoidColors.energy
+                      : VoidColors.energyDim,
+                  driftSpeed: 0.06,
+                  scale: intensity,
+                ),
+              ),
+            ),
           // Top-right energy nebula
           Positioned(
             top: -80,

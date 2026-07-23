@@ -18,6 +18,8 @@ import '../widgets/app_snack.dart';
 import '../widgets/lucide_icon.dart';
 import '../widgets/vehicle_switch_sheet.dart';
 import '../widgets/void_canvas.dart';
+import '../widgets/void_glass.dart';
+import '../widgets/void_typography.dart';
 import 'app_preferences_pages.dart';
 import 'garage_page.dart';
 import 'login_page.dart';
@@ -352,6 +354,16 @@ class _ProfileMinePageState extends State<ProfileMinePage>
             ),
             children: [
               // ── Profile header ──────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: KineticType(
+                  signedIn ? _nickname : '我的',
+                  mode: KineticTypeMode.word,
+                  staggerDelay: 30,
+                  duration: const Duration(milliseconds: 400),
+                  style: VoidType.hero.copyWith(fontSize: 28),
+                ),
+              ),
               _ProfileHeader(
                 avatarGlyph: _avatarGlyph,
                 avatarUrl: _avatarUrl,
@@ -431,7 +443,6 @@ class _ProfileMinePageState extends State<ProfileMinePage>
 abstract final class _Aurora {
   static const cardMargin = EdgeInsets.fromLTRB(20, 12, 20, 0);
   static const cardRadius = AppRadii.lg; // 20 ≈ HTML 18
-  static const cardShadow = AppShadows.elevation1;
   static const tabularNums = <FontFeature>[FontFeature.tabularFigures()];
 }
 
@@ -622,19 +633,15 @@ class _VehicleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
       child: AppPressable(
         onTap: onTap,
         pressedScale: AppMotion.pressScale,
         borderRadius: BorderRadius.circular(_Aurora.cardRadius),
-        background: colors.surface,
-        pressedBackground: colors.surfaceContainerHigh,
-        boxShadow: dark ? const [] : _Aurora.cardShadow,
         semanticsLabel: '切换默认车辆 $name',
         semanticsButton: true,
-        child: Padding(
+        child: VoidGlassCard(
           padding: const EdgeInsets.all(16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -769,7 +776,6 @@ class _SupportCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
     final rows = <_SupportRowData>[
       _SupportRowData(title: '设置', onTap: onSettings),
       _SupportRowData(title: '消息中心', badge: messageBadge, onTap: onMessages),
@@ -777,14 +783,9 @@ class _SupportCard extends StatelessWidget {
       _SupportRowData(title: '关于我们', onTap: onAbout),
     ];
 
-    return Container(
+    return VoidGlassCard(
       margin: _Aurora.cardMargin,
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(_Aurora.cardRadius),
-        boxShadow: dark ? const [] : _Aurora.cardShadow,
-      ),
-      clipBehavior: Clip.antiAlias,
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -897,15 +898,9 @@ class _AccountCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
+    return VoidGlassCard(
       margin: _Aurora.cardMargin,
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(_Aurora.cardRadius),
-        boxShadow: dark ? const [] : _Aurora.cardShadow,
-      ),
-      clipBehavior: Clip.antiAlias,
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           AppPressable(

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'ble/connection_manager.dart' as ble;
@@ -24,6 +25,130 @@ import 'theme/app_void.dart';
 import 'widgets/app_toast.dart';
 import 'widgets/lucide_icon.dart';
 import 'widgets/void_nav.dart';
+
+// ── Immersive Theme Extension ─────────────────────────────────────────────
+
+/// Custom design tokens injected via ThemeExtension for immersive VOID UX.
+///
+/// Provides glassy surface tokens, glow parameters, gradient energies, and
+/// full Material surface/onSurface/card mappings so pages can access the
+/// canonical VOID palette without depending on [VoidColors] directly.
+class ImmersiveTokens extends ThemeExtension<ImmersiveTokens> {
+  const ImmersiveTokens({
+    required this.glassBg,
+    required this.glassBorder,
+    required this.glowPrimary,
+    required this.glowAccent,
+    required this.glowIntensity,
+    required this.energyGradientStart,
+    required this.energyGradientEnd,
+    required this.surface,
+    required this.onSurface,
+    required this.cardColor,
+    required this.dividerColor,
+    required this.scaffoldBackgroundColor,
+  });
+
+  // ── Glass / Frost ─────────────────────────────────────────────────────────
+  final Color glassBg;
+  final Color glassBorder;
+
+  // ── Glow ──────────────────────────────────────────────────────────────────
+  final Color glowPrimary;
+  final Color glowAccent;
+  final double glowIntensity;
+
+  // ── Energy gradient ───────────────────────────────────────────────────────
+  final Color energyGradientStart;
+  final Color energyGradientEnd;
+
+  // ── Material surfaces ─────────────────────────────────────────────────────
+  final Color surface;
+  final Color onSurface;
+  final Color cardColor;
+  final Color dividerColor;
+  final Color scaffoldBackgroundColor;
+
+  static const dark = ImmersiveTokens(
+    glassBg: Color(0x1A151B26),
+    glassBorder: Color(0x2AFFFFFF),
+    glowPrimary: Color(0x3300FFB2),
+    glowAccent: Color(0x227B61FF),
+    glowIntensity: 1.0,
+    energyGradientStart: Color(0xFF00FFB2),
+    energyGradientEnd: Color(0xFF00C896),
+    surface: Color(0xFF151B26),
+    onSurface: Color(0xFFF4F6FA),
+    cardColor: Color(0xFF151B26),
+    dividerColor: Color(0x22FFFFFF),
+    scaffoldBackgroundColor: Color(0xFF05070B),
+  );
+
+  static const light = ImmersiveTokens(
+    glassBg: Color(0xCCFFFFFF),
+    glassBorder: Color(0x1A0B1220),
+    glowPrimary: Color(0x1A00A57C),
+    glowAccent: Color(0x127B61FF),
+    glowIntensity: 0.7,
+    energyGradientStart: Color(0xFF00A57C),
+    energyGradientEnd: Color(0xFF008F6A),
+    surface: Color(0xFFFFFFFF),
+    onSurface: Color(0xFF0B1220),
+    cardColor: Color(0xFFFFFFFF),
+    dividerColor: Color(0x140B1220),
+    scaffoldBackgroundColor: Color(0xFFF3F5F8),
+  );
+
+  @override
+  ImmersiveTokens copyWith({
+    Color? glassBg,
+    Color? glassBorder,
+    Color? glowPrimary,
+    Color? glowAccent,
+    double? glowIntensity,
+    Color? energyGradientStart,
+    Color? energyGradientEnd,
+    Color? surface,
+    Color? onSurface,
+    Color? cardColor,
+    Color? dividerColor,
+    Color? scaffoldBackgroundColor,
+  }) {
+    return ImmersiveTokens(
+      glassBg: glassBg ?? this.glassBg,
+      glassBorder: glassBorder ?? this.glassBorder,
+      glowPrimary: glowPrimary ?? this.glowPrimary,
+      glowAccent: glowAccent ?? this.glowAccent,
+      glowIntensity: glowIntensity ?? this.glowIntensity,
+      energyGradientStart: energyGradientStart ?? this.energyGradientStart,
+      energyGradientEnd: energyGradientEnd ?? this.energyGradientEnd,
+      surface: surface ?? this.surface,
+      onSurface: onSurface ?? this.onSurface,
+      cardColor: cardColor ?? this.cardColor,
+      dividerColor: dividerColor ?? this.dividerColor,
+      scaffoldBackgroundColor: scaffoldBackgroundColor ?? this.scaffoldBackgroundColor,
+    );
+  }
+
+  @override
+  ImmersiveTokens lerp(ThemeExtension<ImmersiveTokens>? other, double t) {
+    if (other is! ImmersiveTokens) return this;
+    return ImmersiveTokens(
+      glassBg: Color.lerp(glassBg, other.glassBg, t)!,
+      glassBorder: Color.lerp(glassBorder, other.glassBorder, t)!,
+      glowPrimary: Color.lerp(glowPrimary, other.glowPrimary, t)!,
+      glowAccent: Color.lerp(glowAccent, other.glowAccent, t)!,
+      glowIntensity: lerpDouble(glowIntensity, other.glowIntensity, t)!,
+      energyGradientStart: Color.lerp(energyGradientStart, other.energyGradientStart, t)!,
+      energyGradientEnd: Color.lerp(energyGradientEnd, other.energyGradientEnd, t)!,
+      surface: Color.lerp(surface, other.surface, t)!,
+      onSurface: Color.lerp(onSurface, other.onSurface, t)!,
+      cardColor: Color.lerp(cardColor, other.cardColor, t)!,
+      dividerColor: Color.lerp(dividerColor, other.dividerColor, t)!,
+      scaffoldBackgroundColor: Color.lerp(scaffoldBackgroundColor, other.scaffoldBackgroundColor, t)!,
+    );
+  }
+}
 
 ble.ConnectionManager get connectionManager =>
     AppServices.instance.connectionManager;
@@ -231,9 +356,9 @@ const _buttonShape = RoundedRectangleBorder(
   borderRadius: BorderRadius.all(Radius.circular(AppRadii.md)),
 );
 
-/// 统一的页面转场：新页面淡入并轻微上滑，呼应 App 内列表/卡片的入场动画。
-class _FadeUpPageTransitionsBuilder extends PageTransitionsBuilder {
-  const _FadeUpPageTransitionsBuilder();
+/// 沉浸式 VOID 页面转场：缩放 + 淡入 + 轻微旋转，对标 Awwwards 级感官体验。
+class _VoidPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _VoidPageTransitionsBuilder();
 
   @override
   Widget buildTransitions<T>(
@@ -250,12 +375,15 @@ class _FadeUpPageTransitionsBuilder extends PageTransitionsBuilder {
     );
     return FadeTransition(
       opacity: curved,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.035),
-          end: Offset.zero,
-        ).animate(curved),
-        child: child,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.96, end: 1.0).animate(curved),
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.025),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
       ),
     );
   }
@@ -291,28 +419,43 @@ class _TailgBleAppState extends State<TailgBleApp> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme lightColorScheme = ColorScheme.fromSeed(
+      seedColor: VoidColors.energyDim,
+      brightness: Brightness.light,
+    ).copyWith(
+      primary: VoidColors.energyDim,
+      onPrimary: Colors.white,
+      secondary: VoidColors.energyDim,
+      onSecondary: Colors.white,
+      surface: VoidColors.lightPanel,
+      onSurface: VoidColors.lightInk,
+      surfaceContainerLow: VoidColors.lightVoid,
+      surfaceContainerHigh: const Color(0xFFE8ECF2),
+      outline: VoidColors.lightHairline,
+      outlineVariant: VoidColors.lightHairline,
+    );
+    final ColorScheme darkColorScheme = ColorScheme.fromSeed(
+      seedColor: VoidColors.energy,
+      brightness: Brightness.dark,
+    ).copyWith(
+      primary: VoidColors.energy,
+      onPrimary: Colors.black,
+      secondary: VoidColors.energyDim,
+      onSecondary: Colors.black,
+      surface: VoidColors.voidPanel,
+      onSurface: VoidColors.ink,
+      surfaceContainerLow: VoidColors.voidLift,
+      surfaceContainerHigh: VoidColors.voidPanelHi,
+      outline: VoidColors.hairline,
+      outlineVariant: VoidColors.hairlineStrong,
+    );
     return MaterialApp(
       title: '台铃智能',
       navigatorKey: AppToast.navigatorKey,
       navigatorObservers: [appRouteObserver],
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme:
-            ColorScheme.fromSeed(
-              seedColor: VoidColors.energyDim,
-              brightness: Brightness.light,
-            ).copyWith(
-              primary: VoidColors.energyDim,
-              onPrimary: Colors.white,
-              secondary: VoidColors.energyDim,
-              onSecondary: Colors.white,
-              surface: VoidColors.lightPanel,
-              onSurface: VoidColors.lightInk,
-              surfaceContainerLow: VoidColors.lightVoid,
-              surfaceContainerHigh: const Color(0xFFE8ECF2),
-              outline: VoidColors.lightHairline,
-              outlineVariant: VoidColors.lightHairline,
-            ),
+        colorScheme: lightColorScheme,
         scaffoldBackgroundColor: VoidColors.lightVoid,
         useMaterial3: true,
         filledButtonTheme: FilledButtonThemeData(
@@ -329,7 +472,7 @@ class _TailgBleAppState extends State<TailgBleApp> {
         ),
         // M3 Card theme: elevated surface, no border
         cardTheme: CardThemeData(
-          color: AppColors.surface,
+          color: lightColorScheme.surface,
           elevation: 0,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
@@ -345,9 +488,9 @@ class _TailgBleAppState extends State<TailgBleApp> {
           }),
           trackColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return AppColors.accentTeal;
+              return lightColorScheme.primary;
             }
-            return AppColors.border;
+            return lightColorScheme.outline;
           }),
           trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
         ),
@@ -360,32 +503,18 @@ class _TailgBleAppState extends State<TailgBleApp> {
         ),
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: _FadeUpPageTransitionsBuilder(),
-            TargetPlatform.iOS: _FadeUpPageTransitionsBuilder(),
-            TargetPlatform.fuchsia: _FadeUpPageTransitionsBuilder(),
+            TargetPlatform.android: _VoidPageTransitionsBuilder(),
+            TargetPlatform.iOS: _VoidPageTransitionsBuilder(),
+            TargetPlatform.fuchsia: _VoidPageTransitionsBuilder(),
           },
         ),
+        extensions: const [ImmersiveTokens.light],
       ),
       // P0-2: 接线暗色主题。AppColorsDark 已完整定义（app_colors.dart:223-283）
       // 但此前被 ThemeMode.light 硬编码旁路。现改为跟随系统。
       // Sprint 3 Token 重建后通过 ThemeExtension<AppTokens> 统一注入。
       darkTheme: ThemeData(
-        colorScheme:
-            ColorScheme.fromSeed(
-              seedColor: VoidColors.energy,
-              brightness: Brightness.dark,
-            ).copyWith(
-              primary: VoidColors.energy,
-              onPrimary: Colors.black,
-              secondary: VoidColors.energyDim,
-              onSecondary: Colors.black,
-              surface: VoidColors.voidPanel,
-              onSurface: VoidColors.ink,
-              surfaceContainerLow: VoidColors.voidLift,
-              surfaceContainerHigh: VoidColors.voidPanelHi,
-              outline: VoidColors.hairline,
-              outlineVariant: VoidColors.hairlineStrong,
-            ),
+        colorScheme: darkColorScheme,
         scaffoldBackgroundColor: VoidColors.voidDeep,
         useMaterial3: true,
         filledButtonTheme: FilledButtonThemeData(
@@ -401,7 +530,7 @@ class _TailgBleAppState extends State<TailgBleApp> {
           style: TextButton.styleFrom(shape: _buttonShape),
         ),
         cardTheme: CardThemeData(
-          color: AppColorsDark.instance.surface,
+          color: darkColorScheme.surface,
           elevation: 0,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
@@ -413,9 +542,9 @@ class _TailgBleAppState extends State<TailgBleApp> {
           thumbColor: WidgetStateProperty.all(Colors.white),
           trackColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return AppColorsDark.instance.primary;
+              return darkColorScheme.secondary;
             }
-            return AppColorsDark.instance.border;
+            return darkColorScheme.outline;
           }),
           trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
         ),
@@ -427,11 +556,12 @@ class _TailgBleAppState extends State<TailgBleApp> {
         ),
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: _FadeUpPageTransitionsBuilder(),
-            TargetPlatform.iOS: _FadeUpPageTransitionsBuilder(),
-            TargetPlatform.fuchsia: _FadeUpPageTransitionsBuilder(),
+            TargetPlatform.android: _VoidPageTransitionsBuilder(),
+            TargetPlatform.iOS: _VoidPageTransitionsBuilder(),
+            TargetPlatform.fuchsia: _VoidPageTransitionsBuilder(),
           },
         ),
+        extensions: const [ImmersiveTokens.dark],
       ),
       // VOID COCKPIT is dark-first; system light still works via light tokens.
       themeMode: ThemeMode.dark,

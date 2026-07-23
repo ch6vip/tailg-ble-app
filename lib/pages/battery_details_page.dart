@@ -16,6 +16,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/void_canvas.dart';
+import '../widgets/void_typography.dart';
 import '../widgets/app_snack.dart';
 import 'replace_battery_page.dart';
 
@@ -382,7 +383,13 @@ class _BatteryHero extends StatelessWidget {
             right: 0,
             top: 14,
             child: Center(
-              child: Text('电池信息', style: AppTextStyles.sectionTitle),
+              child: KineticType(
+                '电池信息',
+                mode: KineticTypeMode.word,
+                staggerDelay: 30,
+                duration: Duration(milliseconds: 400),
+                style: AppTextStyles.sectionTitle,
+              ),
             ),
           ),
           Positioned(
