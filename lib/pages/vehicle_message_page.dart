@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 
 import '../main.dart';
 import '../models/official_vehicle.dart';
@@ -8,8 +9,10 @@ import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../theme/app_motion.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import 'official_cloud_page.dart';
@@ -183,7 +186,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
       title: message.title,
       subtitle: message.content.isEmpty ? '暂无详细内容' : message.content,
       time: message.time,
-      icon: isSystem ? Icons.campaign_outlined : _iconFor(lower, severity),
+      icon: isSystem ? Lucide.megaphone : _iconFor(lower, severity),
       category: isSystem
           ? _VehicleMessageCategory.system
           : _VehicleMessageCategory.device,
@@ -210,15 +213,15 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
 
   IconData _iconFor(String lower, _VehicleMessageSeverity severity) {
     if (lower.contains('位置') || lower.contains('定位')) {
-      return Icons.location_on_outlined;
+      return Lucide.mapPin;
     }
     if (lower.contains('电') || lower.contains('电池')) {
-      return Icons.battery_alert_outlined;
+      return Lucide.batteryWarning;
     }
     if (severity == _VehicleMessageSeverity.error) {
-      return Icons.warning_amber_rounded;
+      return Lucide.alert;
     }
-    return Icons.two_wheeler_outlined;
+    return Lucide.vehicle;
   }
 
   Future<void> _markReadAll() async {
@@ -285,8 +288,9 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
         .where((message) => !_readIds.contains(message.id))
         .length;
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: Column(
           children: [
             AppPageHeader(
@@ -298,7 +302,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
                   icon: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      const Icon(Icons.done_all, semanticLabel: '全部已读'),
+                      const Icon(Lucide.check, semanticLabel: '全部已读'),
                       if (unreadCount > 0)
                         Positioned(
                           right: -6,
@@ -336,7 +340,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(
-                          Icons.delete_sweep_outlined,
+                          Lucide.trash,
                           semanticLabel: '清空全部消息',
                         ),
                 ),
@@ -345,7 +349,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
                   onPressed: _loading
                       ? null
                       : () => _refreshMessages(force: true),
-                  icon: const Icon(Icons.refresh),
+                  icon: const Icon(Lucide.refresh),
                 ),
               ],
             ),
@@ -356,6 +360,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -371,7 +376,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
             mainAxisSize: MainAxisSize.min,
             children: [
               const AppEmptyState(
-                icon: Icons.lock_outline,
+                icon: Lucide.lock,
                 title: OfficialCloudMessages.signInRequired,
                 subtitle: '登录后可同步官方车辆消息与系统通知。',
                 padding: EdgeInsets.zero,
@@ -407,7 +412,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
             mainAxisSize: MainAxisSize.min,
             children: [
               AppEmptyState(
-                icon: Icons.wifi_off_outlined,
+                icon: Lucide.wifiOff,
                 title: '消息加载失败',
                 subtitle: _error,
                 padding: EdgeInsets.zero,
@@ -427,7 +432,8 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
 
     return RefreshIndicator(
       onRefresh: () => _refreshMessages(force: true),
-      color: AppColors.primary,
+      color: VoidColors.energy,
+      backgroundColor: VoidColors.voidPanel,
       child: TabBarView(
         controller: _tabController,
         children: [
@@ -590,7 +596,7 @@ class _MessageList extends StatelessWidget {
                           _Tag(text: readLabel),
                           const Spacer(),
                           const Icon(
-                            Icons.chevron_right,
+                            Lucide.chevronRight,
                             size: AppIconSizes.sm,
                             color: AppColors.textTertiary,
                           ),
@@ -729,7 +735,7 @@ class _EmptyMessageState extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: AppEmptyState(
-        icon: Icons.mark_email_unread_outlined,
+        icon: Lucide.message,
         title: '暂无消息',
         subtitle: '官方车辆告警、系统通知会显示在这里。',
       ),

@@ -87,9 +87,9 @@ class _MapMarker extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(Icons.two_wheeler, color: color, size: AppIconSizes.md),
+          child: Icon(Lucide.vehicle, color: color, size: AppIconSizes.md),
         ),
-        Icon(Icons.arrow_drop_down, color: color, size: AppIconSizes.lg),
+        Icon(Lucide.chevronDown, color: color, size: AppIconSizes.lg),
       ],
     );
   }

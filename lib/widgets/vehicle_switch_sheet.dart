@@ -5,6 +5,7 @@ import '../models/official_vehicle.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import 'app_snack.dart';
+import 'lucide_icon.dart';
 
 Future<void> showVehicleSwitchSheet(BuildContext context) {
   return showModalBottomSheet<void>(
@@ -153,7 +154,7 @@ class _VehicleTile extends StatelessWidget {
               )
             else if (selected)
               const Icon(
-                Icons.check_circle,
+                Lucide.checkCircle,
                 size: 20,
                 color: AppColors.primary,
               ),

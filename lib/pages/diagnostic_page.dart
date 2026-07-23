@@ -2,13 +2,16 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../models/persistence_value.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 
 class FaultInfo {
   final int code;
@@ -131,8 +134,9 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: Column(
           children: [
             const AppPageHeader(title: '故障诊断'),
@@ -143,7 +147,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.info_outline,
+                      Lucide.info,
                       color: AppColors.textTertiary,
                       size: 20,
                     ),
@@ -164,7 +168,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
             Expanded(
               child: _history.isEmpty
                   ? const AppEmptyState(
-                      icon: Icons.health_and_safety_outlined,
+                      icon: Lucide.stethoscope,
                       title: '暂无诊断记录',
                       subtitle: '历史诊断记录将在此显示',
                     )
@@ -183,8 +187,8 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                 children: [
                                   Icon(
                                     hasFaults
-                                        ? Icons.warning
-                                        : Icons.check_circle,
+                                        ? Lucide.alert
+                                        : Lucide.checkCircle,
                                     color: hasFaults
                                         ? AppColors.danger
                                         : AppColors.success,
@@ -233,6 +237,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
           ],
         ),
       ),
+    ),
     );
   }
 }

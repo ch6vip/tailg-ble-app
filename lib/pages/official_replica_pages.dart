@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../main.dart'; // P0-6: service locator getters
@@ -162,7 +163,7 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
                 IconButton(
                   tooltip: '添加钥匙',
                   onPressed: () => _editKey(),
-                  icon: const Icon(Icons.add, semanticLabel: '添加'),
+                  icon: const Icon(Lucide.plus, semanticLabel: '添加'),
                 ),
               ],
             ),
@@ -173,7 +174,7 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
                 children: [
                   const AppSectionLabel('官方 / 本地'),
                   _ReplicaNotice(
-                    icon: Icons.nfc,
+                    icon: Lucide.nfc,
                     title: canBle ? '官方 BLE NFC 可用' : '官方 NFC 待 LOGIN',
                     subtitle: canBle
                         ? '当前 standard 协议已 LOGIN：添加/删除将下发官方 writeData 帧（TailgBleConfig NFC 头），并同步本地列表。'
@@ -189,7 +190,7 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
                     )
                   else if (_records.isEmpty)
                     const _EmptyReplicaCard(
-                      icon: Icons.key_off_outlined,
+                      icon: Lucide.keyOff,
                       title: '暂无钥匙',
                       subtitle: '添加后可在这里查看钥匙名称和类型。',
                     )
@@ -324,7 +325,7 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
                 children: [
                   const AppSectionLabel('本地草稿（非官方）'),
                   const _ReplicaNotice(
-                    icon: Icons.location_searching,
+                    icon: Lucide.locationSearching,
                     title: '非官方云围栏',
                     subtitle: '此页只写本地草稿，不会同步官方电子围栏。正式围栏请用定位页「电子围栏」云端能力。',
                   ),
@@ -358,7 +359,7 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
                             ),
                             decoration: const InputDecoration(
                               labelText: '中心纬度',
-                              prefixIcon: Icon(Icons.explore_outlined),
+                              prefixIcon: Icon(Lucide.explore),
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -370,7 +371,7 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
                             ),
                             decoration: const InputDecoration(
                               labelText: '中心经度',
-                              prefixIcon: Icon(Icons.explore),
+                              prefixIcon: Icon(Lucide.explore),
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -379,7 +380,7 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               labelText: '半径（米）',
-                              prefixIcon: Icon(Icons.radio_button_checked),
+                              prefixIcon: Icon(Lucide.circleDot),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -399,7 +400,7 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
                                               .longitude
                                               .toStringAsFixed(6);
                                         },
-                                  icon: const Icon(Icons.my_location),
+                                  icon: const Icon(Lucide.locate),
                                   label: const Text('使用最后位置'),
                                 ),
                               ),
@@ -407,7 +408,7 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
                               Expanded(
                                 child: OutlinedButton.icon(
                                   onPressed: _openMap,
-                                  icon: const Icon(Icons.map_outlined),
+                                  icon: const Icon(Lucide.map),
                                   label: const Text('打开地图'),
                                 ),
                               ),
@@ -418,7 +419,7 @@ class _ElectricFencePageState extends State<ElectricFencePage> {
                             width: double.infinity,
                             child: FilledButton.icon(
                               onPressed: _save,
-                              icon: const Icon(Icons.save_outlined),
+                              icon: const Icon(Lucide.save),
                               label: const Text('保存围栏'),
                             ),
                           ),
@@ -548,7 +549,7 @@ class _ShareBikePageState extends State<ShareBikePage> {
                 IconButton(
                   tooltip: '添加成员',
                   onPressed: () => _editMember(),
-                  icon: const Icon(Icons.person_add_alt_1),
+                  icon: const Icon(Lucide.userPlus),
                 ),
               ],
             ),
@@ -559,7 +560,7 @@ class _ShareBikePageState extends State<ShareBikePage> {
                 children: [
                   const AppSectionLabel('家庭共享（本地演示）'),
                   const _ReplicaNotice(
-                    icon: Icons.ios_share,
+                    icon: Lucide.share,
                     title: '本地演示 · 非官方家庭共享',
                     subtitle: '仅本机记录联系人草稿，不会调用官方家庭共享 API。正式分享请使用官方 App 授权流程。',
                   ),
@@ -573,7 +574,7 @@ class _ShareBikePageState extends State<ShareBikePage> {
                     )
                   else if (_members.isEmpty)
                     const _EmptyReplicaCard(
-                      icon: Icons.group_off_outlined,
+                      icon: Lucide.groupOff,
                       title: '暂无共享成员',
                       subtitle: '添加成员后可在这里查看共享联系人。',
                     )
@@ -663,7 +664,7 @@ class RideRecordPage extends StatelessWidget {
                         child: Row(
                           children: [
                             const Icon(
-                              Icons.location_on_outlined,
+                              Lucide.mapPin,
                               color: AppColors.primary,
                             ),
                             const SizedBox(width: 12),
@@ -681,7 +682,7 @@ class RideRecordPage extends StatelessWidget {
                       const AppSectionLabel('最近操作'),
                       if (logs.isEmpty)
                         const _EmptyReplicaCard(
-                          icon: Icons.route_outlined,
+                          icon: Lucide.route,
                           title: '暂无骑行记录',
                           subtitle: '控车、定位、诊断等本地事件会出现在这里。',
                         )
@@ -692,7 +693,7 @@ class RideRecordPage extends StatelessWidget {
                             children: [
                               for (var i = 0; i < logs.length; i++) ...[
                                 ListTile(
-                                  leading: const Icon(Icons.history),
+                                  leading: const Icon(Lucide.history),
                                   title: Text(logs[i].message),
                                   subtitle: Text(_logSubtitle(logs[i])),
                                 ),
@@ -754,10 +755,10 @@ class _NfcKeyTile extends StatelessWidget {
     return ListTile(
       leading: _CircleIcon(
         icon: record.type == '卡片'
-            ? Icons.credit_card
+            ? Lucide.creditCard
             : record.type == '手表'
-            ? Icons.watch_outlined
-            : Icons.phone_android,
+            ? Lucide.watch
+            : Lucide.smartphone,
       ),
       title: Text(record.name),
       subtitle: Text('${record.type} · ${formatDateText(record.createdAt)}'),
@@ -786,7 +787,7 @@ class _ShareMemberTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: const _CircleIcon(icon: Icons.person_outline),
+      leading: const _CircleIcon(icon: Lucide.mine),
       title: Text(member.name),
       subtitle: Text(
         member.phone.isEmpty

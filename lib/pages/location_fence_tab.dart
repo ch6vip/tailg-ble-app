@@ -42,7 +42,7 @@ class _FenceTab extends StatelessWidget {
                   child: IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(
-                      Icons.arrow_back,
+                      Lucide.arrowLeft,
                       color: AppColors.textPrimary,
                     ),
                     style: IconButton.styleFrom(
@@ -219,7 +219,7 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
               ),
               const SizedBox(width: 8),
               const Icon(
-                Icons.help_outline,
+                Lucide.help,
                 size: AppIconSizes.sm,
                 color: AppColors.textTertiary,
               ),
@@ -236,7 +236,7 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.refresh, size: AppIconSizes.md),
+                      : const Icon(Lucide.refresh, size: AppIconSizes.md),
                 ),
               ),
             ],
@@ -324,7 +324,7 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
                     title: '时间设置',
                     subtitle: '$_timeFrom - $_timeTo',
                     trailing: const Icon(
-                      Icons.chevron_right,
+                      Lucide.chevronRight,
                       color: AppColors.textTertiary,
                     ),
                     dense: true,

@@ -44,13 +44,13 @@ class _MineHeader extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               _HeaderIconButton(
-                icon: Icons.settings_outlined,
+                icon: Lucide.settings,
                 label: '设置',
                 onTap: onSettingsTap,
               ),
               const SizedBox(width: 8),
               _HeaderIconButton(
-                icon: Icons.notifications_none_outlined,
+                icon: Lucide.message,
                 label: '消息中心',
                 showDot: hasUnreadMessages,
                 onTap: onMessageTap,
@@ -117,7 +117,7 @@ class _MineHeader extends StatelessWidget {
                     child: const CircleAvatar(
                       backgroundColor: Color(0xFFE9EDF4),
                       child: Icon(
-                        Icons.person,
+                        Lucide.mine,
                         color: AppColors.officialTextLight,
                         size: 44,
                       ),
@@ -195,7 +195,7 @@ class _ShortcutPair extends StatelessWidget {
         children: [
           Expanded(
             child: _ShortcutCard(
-              icon: Icons.toll_outlined,
+              icon: Lucide.wallet,
               title: '我的积分',
               subtitle: '赚更多积分',
               color: AppColors.accentAmber,
@@ -205,7 +205,7 @@ class _ShortcutPair extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: _ShortcutCard(
-              icon: Icons.event_available_outlined,
+              icon: Lucide.calendarCheck,
               title: '签到中心',
               subtitle: '连续签到抽盲盒',
               color: AppColors.brandRed,
@@ -283,7 +283,7 @@ class _ShortcutCard extends StatelessWidget {
                         ),
                       ),
                       const Icon(
-                        Icons.chevron_right,
+                        Lucide.chevronRight,
                         size: 15,
                         color: AppColors.officialTextMuted,
                       ),

@@ -6,7 +6,9 @@ import '../main.dart';
 import '../services/firmware_ota_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import '../widgets/app_snack.dart';
 
 /// P3-5: experimental official OTA flow (query -> download -> BLE chunks).
@@ -79,8 +81,9 @@ class _FirmwareOtaPageState extends State<FirmwareOtaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 24),
           children: [
@@ -131,6 +134,7 @@ class _FirmwareOtaPageState extends State<FirmwareOtaPage> {
           ],
         ),
       ),
+    ),
     );
   }
 }

@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
+import '../theme/app_void.dart';
 import 'app_pressable.dart';
+import 'lucide_icon.dart';
 
 class AppPageHeader extends StatelessWidget {
   final String title;
@@ -17,36 +21,36 @@ class AppPageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 16, 0),
       child: Row(
         children: [
           if (showBack) ...[
-            IconButton(
-              icon: Icon(
-                Icons.arrow_back,
-                color: colors.textPrimary,
-                semanticLabel: '返回',
+            AppPressable(
+              onTap: () => Navigator.pop(context),
+              pressedScale: VoidMotion.pressScale,
+              semanticsLabel: '返回',
+              semanticsButton: true,
+              child: Container(
+                width: AppTouchTargets.min,
+                height: AppTouchTargets.min,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: VoidColors.voidPanel.withValues(alpha: 0.7),
+                  border: Border.all(color: VoidColors.hairline),
+                ),
+                child: const LucideIcon(
+                  Lucide.arrowLeft,
+                  size: 18,
+                  color: VoidColors.inkMuted,
+                ),
               ),
-              onPressed: () => Navigator.pop(context),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: AppTouchTargets.min,
-                minHeight: AppTouchTargets.min,
-              ),
-              tooltip: '返回',
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
           ],
           Expanded(
-            child: Text(
-              title,
-              style: AppTextStyles.subPageTitle.copyWith(
-                color: colors.textPrimary,
-                letterSpacing: 0,
-              ),
-            ),
+            child: Text(title, style: VoidType.hero.copyWith(fontSize: 20)),
           ),
           ...actions,
         ],
@@ -62,15 +66,21 @@ class AppSectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
-      child: Text(
-        text,
-        style: AppTextStyles.sectionLabel.copyWith(
-          color: colors.textTertiary,
-          letterSpacing: 0,
-        ),
+      child: Row(
+        children: [
+          Container(
+            width: 14,
+            height: 1.5,
+            color: VoidColors.energy.withValues(alpha: 0.7),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: VoidType.micro.copyWith(color: VoidColors.inkFaint),
+          ),
+        ],
       ),
     );
   }
@@ -92,21 +102,25 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final fill =
+        color ??
+        (dark
+            ? VoidColors.voidPanel.withValues(alpha: 0.72)
+            : Colors.white.withValues(alpha: 0.9));
     return Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: color ?? colors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        boxShadow: dark ? const [] : AppShadows.elevation1,
+        color: fill,
+        borderRadius: BorderRadius.circular(VoidRadii.lg),
+        border: Border.all(
+          color: dark ? VoidColors.hairline : VoidColors.lightHairline,
+        ),
+        boxShadow: dark ? VoidGlow.panel : AppShadows.elevation1,
       ),
-      // ListTile / SwitchListTile paint ink on the nearest Material ancestor.
-      // Without a local Material here, Flutter asserts that a colored parent
-      // DecoratedBox would hide those effects (Flutter 3.32+).
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
+        borderRadius: BorderRadius.circular(VoidRadii.lg),
         clipBehavior: Clip.antiAlias,
         child: Padding(padding: padding, child: child),
       ),
@@ -128,21 +142,20 @@ class AppHeaderAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     final tooltip = this.tooltip;
     Widget button = AppPressable(
       onTap: onTap,
       enabled: onTap != null,
-      haptic: false,
+      pressedScale: AppMotion.pressScale,
       semanticsLabel: tooltip,
       semanticsButton: true,
       semanticsEnabled: onTap != null,
-      borderRadius: BorderRadius.circular(AppRadii.sheet),
-      pressedBackground: colors.primary.withValues(alpha: 0.08),
       child: SizedBox(
         width: AppTouchTargets.min,
         height: AppTouchTargets.min,
-        child: Icon(icon, size: AppIconSizes.md, color: colors.textSecondary),
+        child: Center(
+          child: LucideIcon(icon, size: 20, color: VoidColors.inkMuted),
+        ),
       ),
     );
     if (tooltip != null) {
@@ -156,8 +169,7 @@ class AppHeaderAction extends StatelessWidget {
   }
 }
 
-/// 极简骨架占位：浅灰圆角条配上呼吸式高光，用于数据加载/待读取态，
-/// 替代静态的「等待数据 / 待读取」文字，给出更高级的加载反馈。
+/// Skeleton placeholder for loading metrics.
 class AppSkeleton extends StatefulWidget {
   final double width;
   final double height;
@@ -179,7 +191,13 @@ class _AppSkeletonState extends State<AppSkeleton>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: AppMotion.pulsePeriod,
-  )..repeat(reverse: true);
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_controller.repeat(reverse: true));
+  }
 
   @override
   void dispose() {
@@ -200,8 +218,8 @@ class _AppSkeletonState extends State<AppSkeleton>
           height: widget.height,
           decoration: BoxDecoration(
             color: Color.lerp(
-              const Color(0xFFEDEDEA),
-              const Color(0xFFF7F7F4),
+              VoidColors.voidPanelHi,
+              VoidColors.voidLift,
               t,
             ),
             borderRadius: radius,
@@ -212,7 +230,7 @@ class _AppSkeletonState extends State<AppSkeleton>
   }
 }
 
-/// 极简空状态：圆形浅底图标 + 标题 + 副标题，统一各页面的空白区表达。
+/// Empty-state: circular glyph + title + optional subtitle.
 class AppEmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -229,7 +247,6 @@ class AppEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     final subtitle = this.subtitle;
     return Padding(
       padding: padding,
@@ -237,35 +254,33 @@ class AppEmptyState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 64,
-            height: 64,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
-              color: colors.surfaceContainerHigh,
+              color: VoidColors.voidPanelHi,
               shape: BoxShape.circle,
+              border: Border.all(color: VoidColors.hairline),
             ),
-            child: Icon(
+            child: LucideIcon(
               icon,
               size: AppIconSizes.md,
-              color: colors.textTertiary,
+              color: VoidColors.inkFaint,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: AppTextStyles.itemTitle.copyWith(
-              color: colors.textSecondary,
-            ),
+            style: VoidType.bodyStrong.copyWith(color: VoidColors.inkMuted),
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
+              style: VoidType.caption.copyWith(
                 height: 1.5,
-                color: colors.textTertiary,
+                color: VoidColors.inkFaint,
               ),
             ),
           ],

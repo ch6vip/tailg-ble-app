@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -19,8 +20,10 @@ import '../services/display_time_formatter.dart';
 import '../services/official_cloud_service.dart';
 import '../services/vehicle_location_resolver.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../theme/app_motion.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/cached_tile_provider.dart';
@@ -317,8 +320,9 @@ class _LocationPageState extends State<LocationPage> {
       _ => '电子围栏',
     };
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         // P0-5: 用 ValueListenableBuilder 替代 Builder + 直接读取，
         // 仅在 cloudState/vehicles 变化时重建依赖子树，FlutterMap 被 RepaintBoundary 隔离
         child: ValueListenableBuilder<OfficialCloudState>(
@@ -350,7 +354,7 @@ class _LocationPageState extends State<LocationPage> {
                         showBack: !widget.embedded,
                         actions: [
                           AppHeaderAction(
-                            icon: Icons.refresh,
+                            icon: Lucide.refresh,
                             tooltip: '刷新地图数据',
                             onTap: loading
                                 ? null
@@ -413,6 +417,7 @@ class _LocationPageState extends State<LocationPage> {
           },
         ),
       ),
+    ),
     );
   }
 }
@@ -426,9 +431,9 @@ class _SegmentedTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      _TabItem(Icons.location_on_outlined, '位置'),
-      _TabItem(Icons.route_outlined, '轨迹'),
-      _TabItem(Icons.radar_outlined, '围栏'),
+      _TabItem(Lucide.mapPin, '位置'),
+      _TabItem(Lucide.route, '轨迹'),
+      _TabItem(Lucide.radar, '围栏'),
     ];
     return Container(
       padding: const EdgeInsets.all(4),
@@ -669,7 +674,7 @@ class _MapPanel extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.map_outlined,
+                          Lucide.map,
                           size: compact ? AppIconSizes.xl : 58,
                           color: Colors.grey.shade300,
                         ),
@@ -689,7 +694,7 @@ class _MapPanel extends StatelessWidget {
               left: 14,
               top: 14,
               child: _MapChip(
-                icon: Icons.layers_outlined,
+                icon: Lucide.layers,
                 label: points.length >= 2
                     ? '${MapTileConfig.providerLabel} · 轨迹'
                     : '${MapTileConfig.providerLabel} · 位置',
@@ -700,7 +705,7 @@ class _MapPanel extends StatelessWidget {
                 right: 14,
                 top: 14,
                 child: _MapChip(
-                  icon: Icons.radar_outlined,
+                  icon: Lucide.radar,
                   label: activeFence.statusLabel,
                 ),
               ),
@@ -792,7 +797,7 @@ class _LocationDetailCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadii.md),
                 ),
                 child: const Icon(
-                  Icons.location_on,
+                  Lucide.mapPin,
                   color: AppColors.primary,
                   size: AppIconSizes.lg,
                 ),
@@ -869,7 +874,7 @@ class _LocationDetailCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _LocationActionButton(
-                  icon: Icons.my_location,
+                  icon: Lucide.locate,
                   label: '刷新',
                   loading: loading,
                   onTap: loading ? null : onRefresh,
@@ -878,7 +883,7 @@ class _LocationDetailCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _LocationActionButton(
-                  icon: Icons.copy_outlined,
+                  icon: Lucide.copy,
                   label: '复制',
                   onTap: onCopy,
                 ),
@@ -886,7 +891,7 @@ class _LocationDetailCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _LocationActionButton(
-                  icon: Icons.navigation_outlined,
+                  icon: Lucide.navigation,
                   label: '导航',
                   primary: true,
                   onTap: onOpenMap,
@@ -1182,7 +1187,7 @@ class _MapCaption extends StatelessWidget {
       child: Row(
         children: [
           const Icon(
-            Icons.location_on_outlined,
+            Lucide.mapPin,
             color: AppColors.primary,
             size: AppIconSizes.sm,
           ),
@@ -1221,7 +1226,7 @@ class _ReadOnlyNotice extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
-            Icons.lock_outline,
+            Lucide.lock,
             color: AppColors.info,
             size: AppIconSizes.sm,
           ),

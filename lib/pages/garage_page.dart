@@ -9,9 +9,12 @@ import '../models/vehicle_profile.dart';
 import '../services/app_navigation.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/lucide_icon.dart';
 import '../widgets/status_badge.dart';
 import '../widgets/vehicle_stage.dart';
 import 'add_vehicle_page.dart';
@@ -110,8 +113,9 @@ class _GaragePageState extends State<GaragePage> {
     final hasLocal = localVehicles.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: Column(
           children: [
             AppPageHeader(
@@ -128,13 +132,13 @@ class _GaragePageState extends State<GaragePage> {
                             height: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.sync, semanticLabel: '同步车辆'),
+                        : const Icon(Lucide.refresh, semanticLabel: '同步车辆'),
                   ),
                 IconButton(
                   tooltip: '添加车辆',
                   onPressed: signedIn ? _openAddVehicle : _openLogin,
                   icon: const Icon(
-                    Icons.add_circle_outline,
+                    Lucide.plusCircle,
                     semanticLabel: '添加车辆',
                   ),
                 ),
@@ -193,6 +197,7 @@ class _GaragePageState extends State<GaragePage> {
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -229,7 +234,7 @@ class _UnsignedEmptyGarage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const AppEmptyState(
-              icon: Icons.electric_bike_outlined,
+              icon: Lucide.vehicle,
               title: '登录后查看账号车辆',
               subtitle: '登录官方账号后会同步已绑定车辆到车库。',
               padding: EdgeInsets.zero,
@@ -237,7 +242,7 @@ class _UnsignedEmptyGarage extends StatelessWidget {
             const SizedBox(height: 20),
             FilledButton.icon(
               onPressed: onLogin,
-              icon: const Icon(Icons.login, size: AppIconSizes.md),
+              icon: const Icon(Lucide.login, size: AppIconSizes.md),
               label: const Text('登录账号'),
             ),
           ],
@@ -267,7 +272,7 @@ class _SignedEmptyGarage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             AppEmptyState(
-              icon: Icons.garage_outlined,
+              icon: Lucide.garage,
               title: '账号下暂无车辆',
               subtitle: loading ? '正在同步账号车辆…' : '可同步账号车辆，或通过官方流程添加绑定。',
               padding: EdgeInsets.zero,
@@ -281,13 +286,13 @@ class _SignedEmptyGarage extends StatelessWidget {
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.sync, size: AppIconSizes.md),
+                  : const Icon(Lucide.refresh, size: AppIconSizes.md),
               label: Text(loading ? '同步中…' : '同步车辆'),
             ),
             const SizedBox(height: 10),
             OutlinedButton.icon(
               onPressed: onAddVehicle,
-              icon: const Icon(Icons.add_circle_outline, size: AppIconSizes.md),
+              icon: const Icon(Lucide.plusCircle, size: AppIconSizes.md),
               label: const Text('添加车辆'),
             ),
           ],
@@ -494,7 +499,7 @@ class _CloudVehicleCard extends StatelessWidget {
                       ),
                       const Spacer(),
                       _MiniActionButton(
-                        icon: Icons.location_on_outlined,
+                        icon: Lucide.mapPin,
                         label: '定位',
                         onTap: () {
                           final nav = Navigator.of(
@@ -507,7 +512,7 @@ class _CloudVehicleCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       _MiniActionButton(
-                        icon: Icons.sensors_rounded,
+                        icon: Lucide.sensors,
                         label: '控车',
                         onTap: onSelect,
                       ),
@@ -633,13 +638,13 @@ class _LocalVehicleCardState extends State<_LocalVehicleCard> {
                         ),
                         const Spacer(),
                         _MiniActionButton(
-                          icon: Icons.location_on_outlined,
+                          icon: Lucide.mapPin,
                           label: '定位',
                           onTap: () => homeTabIndex.value = 0,
                         ),
                         const SizedBox(width: 12),
                         _MiniActionButton(
-                          icon: Icons.sensors_rounded,
+                          icon: Lucide.sensors,
                           label: '控车',
                           onTap: () => homeTabIndex.value = 1,
                         ),

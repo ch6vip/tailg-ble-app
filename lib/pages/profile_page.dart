@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 import 'package:flutter/services.dart';
 import '../main.dart';
 import '../services/app_navigation.dart';
@@ -163,14 +164,14 @@ class _ProfilePageState extends State<ProfilePage> {
               _FunctionCenter(onUnavailable: _showUnavailable),
               const SizedBox(height: 10),
               _MineActionTile(
-                icon: Icons.query_stats_outlined,
+                icon: Lucide.chartBar,
                 title: '骑行统计',
                 minHeight: 88,
                 onTap: () => _showUnavailable('骑行统计'),
               ),
               const SizedBox(height: 10),
               _MineActionTile(
-                icon: Icons.watch_outlined,
+                icon: Lucide.watch,
                 title: '扫码手表控车',
                 minHeight: 70,
                 trailingHelp: true,

@@ -1,13 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 
 import '../main.dart';
 import '../services/app_preferences_service.dart';
 import '../services/clipboard_text.dart';
 import '../services/diagnostic_export_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import '../widgets/app_snack.dart';
 
 const _appVersion = '1.0.0+1';
@@ -54,8 +57,9 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: Column(
           children: [
             const AppPageHeader(title: '语言设置'),
@@ -105,6 +109,7 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -140,8 +145,9 @@ class _UnitSettingsPageState extends State<UnitSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: Column(
           children: [
             const AppPageHeader(title: '单位设置'),
@@ -180,6 +186,7 @@ class _UnitSettingsPageState extends State<UnitSettingsPage> {
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -202,8 +209,9 @@ class AboutAppPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: Column(
           children: [
             const AppPageHeader(title: '关于台铃智能'),
@@ -224,7 +232,7 @@ class AboutAppPage extends StatelessWidget {
                             borderRadius: BorderRadius.circular(AppRadii.sheet),
                           ),
                           child: const Icon(
-                            Icons.electric_moped,
+                            Lucide.vehicle,
                             color: AppColors.primary,
                             size: AppIconSizes.xl,
                           ),
@@ -253,21 +261,21 @@ class AboutAppPage extends StatelessWidget {
                     child: Column(
                       children: [
                         _ActionRow(
-                          icon: Icons.support_agent_outlined,
+                          icon: Lucide.support,
                           title: '服务诊断',
                           subtitle: '复制信息用于客服排查问题',
                           onTap: () => _copyDiagnosticReport(context),
                         ),
                         const _InsetDivider(),
                         _ActionRow(
-                          icon: Icons.description_outlined,
+                          icon: Lucide.fileText,
                           title: '用户协议',
                           subtitle: '查看服务使用条款',
                           onTap: () => AppSnack.notYetOpen(context, '用户协议'),
                         ),
                         _InsetDivider(),
                         _ActionRow(
-                          icon: Icons.privacy_tip_outlined,
+                          icon: Lucide.privacy,
                           title: '隐私政策',
                           subtitle: '了解个人信息保护规则',
                           onTap: () => AppSnack.notYetOpen(context, '隐私政策'),
@@ -285,6 +293,7 @@ class AboutAppPage extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -328,8 +337,8 @@ class _OptionRow extends StatelessWidget {
             ),
             Icon(
               selected
-                  ? Icons.check_circle_outline
-                  : Icons.radio_button_unchecked,
+                  ? Lucide.checkCircle
+                  : Lucide.radioUnchecked,
               color: selected ? AppColors.primary : AppColors.textTertiary,
             ),
           ],
@@ -374,7 +383,7 @@ class _ActionRow extends StatelessWidget {
               ),
             ),
             const Icon(
-              Icons.chevron_right,
+              Lucide.chevronRight,
               color: AppColors.textTertiary,
               size: AppIconSizes.md,
             ),

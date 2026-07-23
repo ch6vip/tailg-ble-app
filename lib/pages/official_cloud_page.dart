@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 import 'package:flutter/services.dart';
 
 import '../main.dart';
@@ -12,7 +13,9 @@ import '../services/official_cloud_service.dart';
 import '../services/sensitive_value_masker.dart';
 import '../services/sms_countdown.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import '../widgets/app_snack.dart';
 
 class OfficialCloudPage extends StatefulWidget {
@@ -101,8 +104,9 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: StreamBuilder<OfficialCloudState>(
           stream: officialCloudService.stateStream,
           initialData: officialCloudService.state,
@@ -120,7 +124,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
                   actions: [
                     if (state.signedIn)
                       AppHeaderAction(
-                        icon: Icons.refresh,
+                        icon: Lucide.refresh,
                         tooltip: '刷新车辆',
                         onTap: state.loading ? null : _refresh,
                       ),
@@ -168,6 +172,7 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
           },
         ),
       ),
+    ),
     );
   }
 }
@@ -417,7 +422,7 @@ class _OfficialVehicleCard extends StatelessWidget {
                 if (selected) ...[
                   const SizedBox(width: 6),
                   const Icon(
-                    Icons.check_circle_outline,
+                    Lucide.checkCircle,
                     color: AppColors.primary,
                     size: AppIconSizes.sm,
                   ),
@@ -461,7 +466,7 @@ class _OfficialVehicleCard extends StatelessWidget {
                     builder: (_) => OfficialVehicleDetailPage(vehicle: vehicle),
                   ),
                 ),
-                icon: const Icon(Icons.info_outline, size: AppIconSizes.sm),
+                icon: const Icon(Lucide.info, size: AppIconSizes.sm),
                 label: const Text('详情'),
               ),
             ),
@@ -560,8 +565,9 @@ class _OfficialVehicleDetailPageState extends State<OfficialVehicleDetailPage> {
           snapshot.data ?? officialCloudService.state,
         );
         return Scaffold(
-          backgroundColor: AppColors.pageBg,
-          body: SafeArea(
+          backgroundColor: VoidColors.voidDeep,
+          body: VoidCanvas(
+        child: SafeArea(
             child: ListView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.only(
@@ -584,7 +590,7 @@ class _OfficialVehicleDetailPageState extends State<OfficialVehicleDetailPage> {
                           height: 120,
                           child: Center(
                             child: Icon(
-                              Icons.electric_bike,
+                              Lucide.vehicle,
                               size: AppIconSizes.xl,
                               semanticLabel: '车辆',
                             ),
@@ -609,7 +615,7 @@ class _OfficialVehicleDetailPageState extends State<OfficialVehicleDetailPage> {
                                 ),
                               )
                             : const Icon(
-                                Icons.edit_outlined,
+                                Lucide.edit,
                                 size: AppIconSizes.sm,
                                 color: AppColors.textTertiary,
                               ),
@@ -683,7 +689,7 @@ class _OfficialVehicleDetailPageState extends State<OfficialVehicleDetailPage> {
                               OfficialVehicleSelfCheckPage(vehicle: vehicle),
                         ),
                       ),
-                      icon: const Icon(Icons.health_and_safety_outlined),
+                      icon: const Icon(Lucide.stethoscope),
                       label: const Text('云端自检'),
                     ),
                   ),
@@ -691,6 +697,7 @@ class _OfficialVehicleDetailPageState extends State<OfficialVehicleDetailPage> {
               ],
             ),
           ),
+        ),
         );
       },
     );
@@ -747,8 +754,9 @@ class _OfficialVehicleSelfCheckPageState
     final error = _error;
     final result = _result;
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
@@ -757,7 +765,7 @@ class _OfficialVehicleSelfCheckPageState
               title: '云端自检',
               actions: [
                 AppHeaderAction(
-                  icon: Icons.refresh,
+                  icon: Lucide.refresh,
                   tooltip: '重新自检',
                   onTap: _loading ? null : _runCheck,
                 ),
@@ -813,6 +821,7 @@ class _OfficialVehicleSelfCheckPageState
           ],
         ),
       ),
+    ),
     );
   }
 }

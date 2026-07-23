@@ -12,9 +12,12 @@ import '../services/official_cloud_service.dart';
 import '../services/sensitive_value_masker.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/lucide_icon.dart';
 import '../widgets/vehicle_switch_sheet.dart';
+import '../widgets/void_canvas.dart';
 import 'app_preferences_pages.dart';
 import 'garage_page.dart';
 import 'login_page.dart';
@@ -332,22 +335,22 @@ class _ProfileMinePageState extends State<ProfileMinePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final colors = AppColors.of(context);
     final signedIn = officialCloudService.state.signedIn;
     final bottomPad =
         AppNav.contentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: colors.pageBg,
-      body: SafeArea(
-        bottom: false,
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: EdgeInsets.only(
-            top: 6,
-            bottom: widget.showBottomNav ? 24 : bottomPad,
-          ),
-          children: [
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
+          bottom: false,
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.only(
+              top: 6,
+              bottom: widget.showBottomNav ? 24 : bottomPad,
+            ),
+            children: [
             // ── Profile header ──────────────────────────────────────────
             _ProfileHeader(
               avatarGlyph: _avatarGlyph,
@@ -373,18 +376,7 @@ class _ProfileMinePageState extends State<ProfileMinePage>
             ),
 
             // ── Account & support (list, not equal-weight grid) ────────
-            Padding(
-              padding: EdgeInsets.fromLTRB(20, 18, 20, 0),
-              child: Text(
-                '账户与支持',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0,
-                  color: colors.textTertiary,
-                ),
-              ),
-            ),
+            const VoidSectionLabel('账户与支持'),
             ValueListenableBuilder<int>(
               valueListenable: messageReadStore.unreadCount,
               builder: (context, unread, _) {
@@ -408,18 +400,15 @@ class _ProfileMinePageState extends State<ProfileMinePage>
 
             // ── Version ─────────────────────────────────────────────────
             Padding(
-              padding: EdgeInsets.fromLTRB(20, 18, 20, 6),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
               child: Text(
-                'Tailg Cloud 1.0.0',
+                'Tailg Cloud · VOID',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: colors.textTertiary,
-                  letterSpacing: 0,
-                ),
+                style: VoidType.micro.copyWith(letterSpacing: 2),
               ),
             ),
           ],
+          ),
         ),
       ),
       bottomNavigationBar: widget.showBottomNav
@@ -660,10 +649,10 @@ class _VehicleCard extends StatelessWidget {
                         color: colors.surfaceContainerHigh,
                         borderRadius: BorderRadius.circular(AppRadii.md),
                       ),
-                      child: Icon(
-                        Icons.electric_moped_outlined,
-                        size: 24,
-                        color: colors.textSecondary,
+                      child: LucideIcon(
+                        Lucide.vehicle,
+                        size: 22,
+                        color: VoidColors.energy,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -742,10 +731,10 @@ class _VehicleCard extends StatelessWidget {
                         letterSpacing: 0,
                       ),
                     ),
-                    Icon(
-                      Icons.chevron_right,
+                    LucideIcon(
+                      Lucide.chevronRight,
                       size: 16,
-                      color: colors.textSecondary,
+                      color: VoidColors.inkMuted,
                     ),
                   ],
                 ),
@@ -876,7 +865,11 @@ class _SupportRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
               ],
-              Icon(Icons.chevron_right, size: 16, color: colors.textTertiary),
+              const LucideIcon(
+                Lucide.chevronRight,
+                size: 16,
+                color: VoidColors.inkFaint,
+              ),
             ],
           ),
         ),
@@ -949,10 +942,10 @@ class _AccountCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Icon(
-                      Icons.chevron_right,
+                    const LucideIcon(
+                      Lucide.chevronRight,
                       size: 16,
-                      color: colors.textTertiary,
+                      color: VoidColors.inkFaint,
                     ),
                   ],
                 ),
@@ -1112,9 +1105,9 @@ class _PreviewBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final items = const [
-      (Icons.control_camera_outlined, '控车'),
-      (Icons.work_outline, '服务'),
-      (Icons.person_outline, '我的'),
+      (Lucide.vehicle, '控车'),
+      (Lucide.service, '服务'),
+      (Lucide.mine, '我的'),
     ];
     return Material(
       color: colors.surface.withValues(alpha: 0.96),
@@ -1139,12 +1132,12 @@ class _PreviewBottomNav extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
+                        LucideIcon(
                           items[i].$1,
                           size: 22,
                           color: currentIndex == i
-                              ? colors.primary
-                              : colors.textTertiary,
+                              ? VoidColors.energy
+                              : VoidColors.inkFaint,
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -1154,8 +1147,8 @@ class _PreviewBottomNav extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0,
                             color: currentIndex == i
-                                ? colors.primary
-                                : colors.textTertiary,
+                                ? VoidColors.energy
+                                : VoidColors.inkFaint,
                           ),
                         ),
                       ],

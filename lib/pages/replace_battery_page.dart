@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
+import '../widgets/void_canvas.dart';
 import 'package:flutter/services.dart';
 
 import '../main.dart';
@@ -9,6 +11,7 @@ import '../models/official_vehicle.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_snack.dart';
 
 /// Official-like "更正电池信息" flow
@@ -248,18 +251,19 @@ class _ReplaceBatteryPageState extends State<ReplaceBatteryPage> {
     final custom = _selectedType?.isCustom == true;
 
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
+      backgroundColor: VoidColors.voidDeep,
       appBar: AppBar(
         title: const Text('更正电池信息'),
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),
-      body: _loadingTypes
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              children: [
+      body: VoidCanvas(
+        child: _loadingTypes
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                children: [
                 if (vehicle != null) ...[
                   Text(
                     vehicle.displayName,
@@ -428,7 +432,7 @@ class _ReplaceBatteryPageState extends State<ReplaceBatteryPage> {
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(_bindDateLabel),
-                    trailing: const Icon(Icons.calendar_today_outlined),
+                    trailing: const Icon(Lucide.calendar),
                     onTap: _submitting ? null : _pickBindDate,
                   ),
                 ),
@@ -457,6 +461,7 @@ class _ReplaceBatteryPageState extends State<ReplaceBatteryPage> {
                 ),
               ],
             ),
+      ),
     );
   }
 }

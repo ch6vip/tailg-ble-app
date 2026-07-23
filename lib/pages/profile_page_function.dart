@@ -29,27 +29,27 @@ class _FunctionCenter extends StatelessWidget {
             child: Row(
               children: [
                 _FunctionEntry(
-                  icon: Icons.collections_bookmark_outlined,
+                  icon: Lucide.bookmark,
                   label: '我的收藏',
                   onTap: () => onUnavailable('我的收藏'),
                 ),
                 _FunctionEntry(
-                  icon: Icons.assignment_outlined,
+                  icon: Lucide.clipboardList,
                   label: '任务中心',
                   onTap: () => onUnavailable('任务中心'),
                 ),
                 _FunctionEntry(
-                  icon: Icons.receipt_long_outlined,
+                  icon: Lucide.receipt,
                   label: '我的订单',
                   onTap: () => onUnavailable('我的订单'),
                 ),
                 _FunctionEntry(
-                  icon: Icons.person_add_alt_outlined,
+                  icon: Lucide.userPlus,
                   label: '邀请好友',
                   onTap: () => onUnavailable('邀请好友'),
                 ),
                 _FunctionEntry(
-                  icon: Icons.confirmation_number_outlined,
+                  icon: Lucide.ticket,
                   label: '优惠券',
                   onTap: () => onUnavailable('优惠券'),
                 ),

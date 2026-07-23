@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 
 import '../main.dart';
 import '../models/official_vehicle.dart';
@@ -8,7 +9,9 @@ import '../services/display_number_formatter.dart';
 import '../services/display_time_formatter.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import 'add_vehicle_page.dart';
 import 'login_page.dart';
 
@@ -116,8 +119,9 @@ class _RideStatsPageState extends State<RideStatsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.officialPageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: Column(
           children: [
             const AppPageHeader(title: '骑行统计'),
@@ -130,6 +134,7 @@ class _RideStatsPageState extends State<RideStatsPage> {
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -269,7 +274,7 @@ class _MonthSelector extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          IconButton(icon: const Icon(Icons.chevron_left), onPressed: onPrev),
+          IconButton(icon: const Icon(Lucide.chevronLeft), onPressed: onPrev),
           Text(
             month,
             style: const TextStyle(
@@ -278,7 +283,7 @@ class _MonthSelector extends StatelessWidget {
               color: AppColors.textPrimary,
             ),
           ),
-          IconButton(icon: const Icon(Icons.chevron_right), onPressed: onNext),
+          IconButton(icon: const Icon(Lucide.chevronRight), onPressed: onNext),
         ],
       ),
     );
@@ -406,7 +411,7 @@ class _CarbonCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.eco_outlined, color: AppColors.success),
+          const Icon(Lucide.leaf, color: AppColors.success),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

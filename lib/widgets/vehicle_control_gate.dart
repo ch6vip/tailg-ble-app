@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
+import '../theme/app_void.dart';
 import 'app_pressable.dart';
 
 /// 爱车空态 / 门控（PLAN P1-1）：未登录 / 无车 / 刷新中 / 错误。
@@ -36,7 +36,7 @@ class VehicleControlHomeGate {
   }
 }
 
-/// Shared banner used by 爱车 empty/gate states.
+/// Shared banner used by 爱车 empty/gate states — VOID glass strip.
 class VehicleControlGateBanner extends StatelessWidget {
   const VehicleControlGateBanner({
     super.key,
@@ -54,21 +54,22 @@ class VehicleControlGateBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+      margin: const EdgeInsets.fromLTRB(VoidSpace.screenX, 8, VoidSpace.screenX, 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F3FF),
-        borderRadius: BorderRadius.circular(AppRadii.md),
+        color: VoidColors.voidPanel.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(VoidRadii.md),
+        border: Border.all(color: VoidColors.energy.withValues(alpha: 0.28)),
+        boxShadow: VoidGlow.energy(intensity: 0.25),
       ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
+              style: VoidType.bodyStrong.copyWith(
                 fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF0B4F8A),
+                color: VoidColors.ink,
               ),
             ),
           ),
@@ -81,15 +82,16 @@ class VehicleControlGateBanner extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: busy ? AppColors.textSecondary : const Color(0xFF1A73E8),
-                borderRadius: BorderRadius.circular(AppRadii.pill),
+                color: busy ? VoidColors.inkFaint : VoidColors.energy,
+                borderRadius: BorderRadius.circular(VoidRadii.pill),
+                boxShadow: busy ? const [] : VoidGlow.energy(intensity: 0.4),
               ),
               child: Text(
                 actionLabel,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  color: busy ? VoidColors.inkMuted : Colors.black,
                 ),
               ),
             ),

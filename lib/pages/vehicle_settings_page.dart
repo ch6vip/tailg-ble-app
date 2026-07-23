@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 import '../main.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import '../widgets/app_snack.dart';
 import 'notification_prefs_page.dart';
 import 'induction_settings_page.dart';
@@ -46,8 +49,9 @@ class VehicleSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: Column(
           children: [
             const AppPageHeader(title: '车辆设置'),
@@ -60,7 +64,7 @@ class VehicleSettingsPage extends StatelessWidget {
                   final vehicle = state.selectedVehicle;
                   if (vehicle == null) {
                     return const AppEmptyState(
-                      icon: Icons.directions_bike,
+                      icon: Lucide.vehicle,
                       title: '未选择车辆',
                       subtitle: '请先在官方云端登录并选择一辆车',
                     );
@@ -106,7 +110,7 @@ class VehicleSettingsPage extends StatelessWidget {
                         child: ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(
-                            Icons.notifications_outlined,
+                            Lucide.message,
                             color: AppColors.textSecondary,
                           ),
                           title: const Text(
@@ -125,7 +129,7 @@ class VehicleSettingsPage extends StatelessWidget {
                             ),
                           ),
                           trailing: const Icon(
-                            Icons.chevron_right,
+                            Lucide.chevronRight,
                             color: AppColors.textTertiary,
                           ),
                           onTap: () => Navigator.of(context).push(
@@ -141,7 +145,7 @@ class VehicleSettingsPage extends StatelessWidget {
                         child: ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(
-                            Icons.sensors,
+                            Lucide.sensors,
                             color: AppColors.textSecondary,
                           ),
                           title: const Text(
@@ -158,7 +162,7 @@ class VehicleSettingsPage extends StatelessWidget {
                               color: AppColors.textTertiary,
                             ),
                           ),
-                          trailing: const Icon(Icons.chevron_right),
+                          trailing: const Icon(Lucide.chevronRight),
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute<void>(
                               builder: (_) => const InductionSettingsPage(),
@@ -172,7 +176,7 @@ class VehicleSettingsPage extends StatelessWidget {
                         child: ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(
-                            Icons.link_off,
+                            Lucide.unlink,
                             color: AppColors.danger,
                           ),
                           title: const Text(
@@ -201,6 +205,7 @@ class VehicleSettingsPage extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }

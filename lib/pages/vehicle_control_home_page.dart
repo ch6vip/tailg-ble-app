@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -28,13 +27,15 @@ import '../services/official_mqtt_service.dart';
 import '../services/permission_service.dart';
 import '../services/vehicle_location_resolver.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_motion.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/cloud_vehicle_gate.dart';
 import '../widgets/control_and_unlock_card.dart';
+import '../widgets/lucide_icon.dart';
 import '../widgets/vehicle_control_gate.dart';
 import '../widgets/vehicle_switch_sheet.dart';
+import '../widgets/void_canvas.dart';
 import 'add_vehicle_page.dart';
 import 'battery_details_page.dart';
 import 'induction_settings_page.dart';
@@ -1358,88 +1359,89 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
     final controlChannelStatus = _topBarChannel(
       availability: controlAvailability,
     );
-    final colors = AppColors.of(context);
-    // Leave room for the shell bottom nav (see AppNav.contentBottomPadding).
+    // Leave room for the floating orbital nav.
     final bottomPad =
         AppNav.contentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: colors.pageBg,
-      body: SafeArea(
-        bottom: false,
-        child: RefreshIndicator(
-          onRefresh: _handleRefresh,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.only(top: 4, bottom: bottomPad),
-            children: [
-              ..._buildHomeGates(
-                cloudState: cloudState,
-                cloudVehicle: cloudVehicle,
-                signedIn: signedIn,
-                hasVehicle: hasVehicle,
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
+          bottom: false,
+          child: RefreshIndicator(
+            color: VoidColors.energy,
+            backgroundColor: VoidColors.voidPanel,
+            onRefresh: _handleRefresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
               ),
-              _TopBar(
-                vehicleName: _vehicleName(cloudVehicle),
-                statusText: _statusText(cloudVehicle),
-                online: cloudVehicle?.online ?? false,
-                channelActive: controlChannelStatus.isActive,
-                powered: isPowerOn,
-                bleChip: _officialBleChipState(cloudVehicle),
-                onTitleTap: _openVehicleHeader,
-                onSettings: _openSettings,
-                onBleChipTap: () => unawaited(_onOfficialBleChipTap()),
-              ),
-              const SizedBox(height: 10),
-              _BatteryHeroCard(
-                percent: percent,
-                healthLabel: _healthLabel(battery),
-                rangeKm: _rangeLabel(battery),
-                enduranceHours: _enduranceLabel(battery),
-                chargeCount: _chargeCountLabel(battery),
-                todayKm: _todayRideLabel(cloudState),
-                onTap: _openBattery,
-              ),
-              const SizedBox(height: 12),
-              _LocationCard(
-                title: _locationTitle(location),
-                updated: _locationUpdated(location),
-                walk: _locationWalk(location),
-                onTap: _openLocation,
-              ),
-              const SizedBox(height: 12),
-              ControlAndUnlockCard(
-                channelSelected: _controlChannel,
-                availability: controlAvailability,
-                channelStatus: controlChannelStatus,
-                channelBusy: _busy,
-                onChannelChanged: _selectControlChannel,
-                onOpenInductionSettings: _openProximitySettings,
-                cardMargin: _Aurora.cardMargin,
-                cardRadius: _Aurora.cardRadius,
-                cardShadow: Theme.of(context).brightness == Brightness.dark
-                    ? const []
-                    : _Aurora.cardShadow,
-              ),
-              const SizedBox(height: 12),
-              _ShortcutsRow(
-                armed: isArmed,
-                powered: isPowerOn,
-                // Dim when channel/session not ready, but keep taps so P0-A2
-                // always surfaces a reason (never "点了没反应").
-                dimmed:
-                    _busy ||
-                    !hasVehicle ||
-                    !signedIn ||
-                    !controlAvailability.enabled,
-                onFind: () => _sendCommand(CommandCode.find),
-                onArm: _sendArmToggle,
-                onSeat: () => _sendCommand(CommandCode.openSeat),
-                onPower: _sendPower,
-              ),
-              const SizedBox(height: 12),
-              _RecentCommandsCard(commands: _commands),
-            ],
+              padding: EdgeInsets.only(top: 8, bottom: bottomPad),
+              children: [
+                ..._buildHomeGates(
+                  cloudState: cloudState,
+                  cloudVehicle: cloudVehicle,
+                  signedIn: signedIn,
+                  hasVehicle: hasVehicle,
+                ),
+                _TopBar(
+                  vehicleName: _vehicleName(cloudVehicle),
+                  statusText: _statusText(cloudVehicle),
+                  online: cloudVehicle?.online ?? false,
+                  channelActive: controlChannelStatus.isActive,
+                  powered: isPowerOn,
+                  bleChip: _officialBleChipState(cloudVehicle),
+                  onTitleTap: _openVehicleHeader,
+                  onSettings: _openSettings,
+                  onBleChipTap: () => unawaited(_onOfficialBleChipTap()),
+                ),
+                const SizedBox(height: 18),
+                _BatteryHeroCard(
+                  percent: percent,
+                  healthLabel: _healthLabel(battery),
+                  rangeKm: _rangeLabel(battery),
+                  enduranceHours: _enduranceLabel(battery),
+                  chargeCount: _chargeCountLabel(battery),
+                  todayKm: _todayRideLabel(cloudState),
+                  onTap: _openBattery,
+                ),
+                const SizedBox(height: 14),
+                _LocationCard(
+                  title: _locationTitle(location),
+                  updated: _locationUpdated(location),
+                  walk: _locationWalk(location),
+                  onTap: _openLocation,
+                ),
+                const SizedBox(height: 14),
+                ControlAndUnlockCard(
+                  channelSelected: _controlChannel,
+                  availability: controlAvailability,
+                  channelStatus: controlChannelStatus,
+                  channelBusy: _busy,
+                  onChannelChanged: _selectControlChannel,
+                  onOpenInductionSettings: _openProximitySettings,
+                  cardMargin: _VoidUi.cardMargin,
+                  cardRadius: VoidRadii.lg,
+                  cardShadow: const [],
+                ),
+                const SizedBox(height: 14),
+                _ShortcutsRow(
+                  armed: isArmed,
+                  powered: isPowerOn,
+                  dimmed:
+                      _busy ||
+                      !hasVehicle ||
+                      !signedIn ||
+                      !controlAvailability.enabled,
+                  onFind: () => _sendCommand(CommandCode.find),
+                  onArm: _sendArmToggle,
+                  onSeat: () => _sendCommand(CommandCode.openSeat),
+                  onPower: _sendPower,
+                ),
+                const SizedBox(height: 14),
+                _RecentCommandsCard(commands: _commands),
+              ],
+            ),
           ),
         ),
       ),
@@ -1448,15 +1450,11 @@ class _VehicleControlHomePageState extends State<VehicleControlHomePage>
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Design tokens mapped onto theme/
+// VOID COCKPIT UI tokens (page-local)
 // ═══════════════════════════════════════════════════════════════════════════
-abstract final class _Aurora {
-  static const cardMargin = EdgeInsets.symmetric(horizontal: 20);
-  static const cardRadius = AppRadii.lg;
-  static const cardShadow = AppShadows.elevation2;
+abstract final class _VoidUi {
+  static const cardMargin = EdgeInsets.symmetric(horizontal: VoidSpace.screenX);
   static const tabularNums = <FontFeature>[FontFeature.tabularFigures()];
-  static const ringDuration = Duration(milliseconds: 850);
-  static const ringCurve = Cubic(0.22, 1, 0.36, 1);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1499,16 +1497,15 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 6),
+      padding: const EdgeInsets.fromLTRB(VoidSpace.screenX, 12, VoidSpace.screenX, 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: AppPressable(
               onTap: onTitleTap,
-              pressedScale: AppMotion.pressScale,
+              pressedScale: VoidMotion.pressScale,
               semanticsLabel: '切换车辆 $vehicleName',
               semanticsButton: true,
               child: Column(
@@ -1518,27 +1515,24 @@ class _TopBar extends StatelessWidget {
                     vehicleName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0,
-                      height: 1.2,
-                      color: colors.textPrimary,
-                    ),
+                    style: VoidType.hero,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Container(
-                        width: 6,
-                        height: 6,
+                        width: 7,
+                        height: 7,
                         decoration: BoxDecoration(
                           color: channelActive
-                              ? colors.primary
+                              ? VoidColors.energy
                               : (online
-                                    ? colors.primary.withValues(alpha: 0.55)
-                                    : colors.textTertiary),
+                                    ? VoidColors.energy.withValues(alpha: 0.45)
+                                    : VoidColors.inkFaint),
                           shape: BoxShape.circle,
+                          boxShadow: channelActive
+                              ? VoidGlow.energy(intensity: 0.5)
+                              : const [],
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1547,10 +1541,7 @@ class _TopBar extends StatelessWidget {
                           statusText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: colors.textSecondary,
-                          ),
+                          style: VoidType.caption,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1567,7 +1558,7 @@ class _TopBar extends StatelessWidget {
           ],
           const SizedBox(width: 8),
           _IconButton(
-            icon: Icons.settings_outlined,
+            icon: Lucide.settings,
             semanticsLabel: '设置',
             onTap: onSettings,
           ),
@@ -1594,45 +1585,45 @@ class _OfficialBleChip extends StatelessWidget {
   };
 
   IconData get _icon => switch (state) {
-    _OfficialBleChipState.hidden => Icons.bluetooth,
-    _OfficialBleChipState.noBle => Icons.bluetooth_disabled,
-    _OfficialBleChipState.clickToConnect => Icons.bluetooth,
-    _OfficialBleChipState.connecting => Icons.bluetooth_searching,
-    _OfficialBleChipState.disconnecting => Icons.bluetooth_disabled,
-    _OfficialBleChipState.connected => Icons.bluetooth_connected,
+    _OfficialBleChipState.hidden => Lucide.bluetooth,
+    _OfficialBleChipState.noBle => Lucide.bluetoothOff,
+    _OfficialBleChipState.clickToConnect => Lucide.bluetooth,
+    _OfficialBleChipState.connecting => Lucide.bluetooth,
+    _OfficialBleChipState.disconnecting => Lucide.bluetoothOff,
+    _OfficialBleChipState.connected => Lucide.bluetooth,
   };
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     final connected = state == _OfficialBleChipState.connected;
     final connecting =
         state == _OfficialBleChipState.connecting ||
         state == _OfficialBleChipState.disconnecting;
     final bg = connected
-        ? colors.primary.withValues(alpha: 0.12)
-        : colors.surfaceContainerHigh;
+        ? VoidColors.energy.withValues(alpha: 0.14)
+        : VoidColors.voidPanelHi;
     final fg = connected
-        ? colors.primary
-        : (connecting ? colors.warning : colors.textSecondary);
+        ? VoidColors.energy
+        : (connecting ? VoidColors.energyAmber : VoidColors.inkMuted);
 
     return AppPressable(
       onTap: onTap,
-      pressedScale: AppMotion.pressScale,
+      pressedScale: VoidMotion.pressScale,
       semanticsLabel: '蓝牙 $_label',
       semanticsButton: true,
       child: AnimatedContainer(
-        duration: AppMotion.standard,
+        duration: VoidMotion.soft,
         height: 34,
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(AppRadii.pill),
+          borderRadius: BorderRadius.circular(VoidRadii.pill),
           border: Border.all(
             color: connected
-                ? colors.primary.withValues(alpha: 0.28)
-                : colors.outlineVariant.withValues(alpha: 0.9),
+                ? VoidColors.energy.withValues(alpha: 0.35)
+                : VoidColors.hairline,
           ),
+          boxShadow: connected ? VoidGlow.energy(intensity: 0.35) : const [],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1644,7 +1635,7 @@ class _OfficialBleChip extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 1.8, color: fg),
               )
             else
-              Icon(_icon, size: 16, color: fg),
+              LucideIcon(_icon, size: 14, color: fg),
             const SizedBox(width: 6),
             Text(
               _label,
@@ -1668,24 +1659,27 @@ class _PowerPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
+    final on = powered == true;
     return AnimatedContainer(
-      duration: AppMotion.standard,
+      duration: VoidMotion.soft,
       height: 22,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: powered == true
-            ? colors.primary.withValues(alpha: 0.12)
-            : colors.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(AppRadii.pill),
+        color: on
+            ? VoidColors.energy.withValues(alpha: 0.14)
+            : VoidColors.voidPanelHi,
+        borderRadius: BorderRadius.circular(VoidRadii.pill),
+        border: Border.all(
+          color: on ? VoidColors.energy.withValues(alpha: 0.3) : VoidColors.hairline,
+        ),
       ),
       child: Text(
-        powered == null ? '电源未知' : (powered == true ? '通电中' : '已断电'),
+        powered == null ? '电源未知' : (on ? '通电中' : '已断电'),
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: powered == true ? colors.primary : colors.textTertiary,
+          color: on ? VoidColors.energy : VoidColors.inkFaint,
         ),
       ),
     );
@@ -1705,29 +1699,27 @@ class _IconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
     return AppPressable(
       onTap: onTap,
-      pressedScale: AppMotion.pressScale,
+      pressedScale: VoidMotion.pressScale,
       semanticsLabel: semanticsLabel,
       semanticsButton: true,
       child: Container(
-        width: 36,
-        height: 36,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
-          color: colors.surface,
+          color: VoidColors.voidPanel.withValues(alpha: 0.8),
           shape: BoxShape.circle,
-          boxShadow: dark ? const [] : _Aurora.cardShadow,
+          border: Border.all(color: VoidColors.hairline),
         ),
-        child: Icon(icon, size: 18, color: colors.textSecondary),
+        child: LucideIcon(icon, size: 18, color: VoidColors.inkMuted),
       ),
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Battery card
+// Battery card — kinetic energy ring hero
 // ═══════════════════════════════════════════════════════════════════════════
 class _BatteryHeroCard extends StatelessWidget {
   const _BatteryHeroCard({
@@ -1750,59 +1742,66 @@ class _BatteryHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final compact = MediaQuery.sizeOf(context).width < 360;
-    final ringSize = compact ? 92.0 : 104.0;
     return Padding(
-      padding: _Aurora.cardMargin,
+      padding: _VoidUi.cardMargin,
       child: AppPressable(
         onTap: onTap,
-        pressedScale: AppMotion.pressScale,
-        borderRadius: BorderRadius.circular(_Aurora.cardRadius),
-        background: colors.surface,
-        boxShadow: dark ? const [] : _Aurora.cardShadow,
+        pressedScale: VoidMotion.pressScale,
+        borderRadius: BorderRadius.circular(VoidRadii.xl),
         semanticsLabel: '电池详情 电量 $percent%',
         semanticsButton: true,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+        child: VoidGlass(
+          radius: VoidRadii.xl,
+          glow: percent > 0,
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '电池',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: colors.textTertiary,
-                    ),
-                  ),
+                  Text('ENERGY', style: VoidType.micro),
                   Text(
                     healthLabel,
-                    style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                    style: VoidType.caption.copyWith(color: VoidColors.inkMuted),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
+              VoidEnergyRing(
+                percent: percent.toDouble(),
+                size: 168,
+                stroke: 7,
+                sublabel: '剩余电量',
+              ),
+              const SizedBox(height: 22),
               Row(
                 children: [
-                  SizedBox(
-                    width: ringSize,
-                    height: ringSize,
-                    child: _BatteryRing(percent: percent, size: ringSize),
-                  ),
-                  const SizedBox(width: 14),
                   Expanded(
-                    child: _MetricsGrid(
-                      metrics: [
-                        _Metric('预估里程', rangeKm),
-                        _Metric('预计续航', enduranceHours),
-                        _Metric('充电次数', chargeCount),
-                        _Metric('今日骑行', todayKm),
-                      ],
+                    child: VoidMetric(
+                      value: rangeKm.replaceAll(' km', ''),
+                      unit: 'km',
+                      label: '预估里程',
+                      accent: true,
+                    ),
+                  ),
+                  Expanded(
+                    child: VoidMetric(
+                      value: enduranceHours.replaceAll(' h', ''),
+                      unit: 'h',
+                      label: '预计续航',
+                    ),
+                  ),
+                  Expanded(
+                    child: VoidMetric(
+                      value: chargeCount,
+                      label: '充电次数',
+                    ),
+                  ),
+                  Expanded(
+                    child: VoidMetric(
+                      value: todayKm.replaceAll(' km', ''),
+                      unit: 'km',
+                      label: '今日骑行',
                     ),
                   ),
                 ],
@@ -1815,183 +1814,8 @@ class _BatteryHeroCard extends StatelessWidget {
   }
 }
 
-class _BatteryRing extends StatefulWidget {
-  const _BatteryRing({required this.percent, required this.size});
-
-  final int percent;
-  final double size;
-
-  @override
-  State<_BatteryRing> createState() => _BatteryRingState();
-}
-
-class _BatteryRingState extends State<_BatteryRing> {
-  double _target = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() => _target = widget.percent / 100.0);
-    });
-  }
-
-  @override
-  void didUpdateWidget(covariant _BatteryRing oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.percent != widget.percent) {
-      _target = widget.percent / 100.0;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: _target),
-      duration: reduceMotion ? Duration.zero : _Aurora.ringDuration,
-      curve: _Aurora.ringCurve,
-      builder: (context, value, _) {
-        return CustomPaint(
-          painter: _BatteryRingPainter(
-            progress: value,
-            trackColor: colors.surfaceContainerHigh,
-            valueColor: colors.primary,
-          ),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '${widget.percent}%',
-                  style: TextStyle(
-                    fontSize: widget.size < 100 ? 22 : 26,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -1,
-                    height: 1,
-                    color: colors.textPrimary,
-                    fontFeatures: _Aurora.tabularNums,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '剩余',
-                  style: TextStyle(fontSize: 11, color: colors.textTertiary),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _BatteryRingPainter extends CustomPainter {
-  const _BatteryRingPainter({
-    required this.progress,
-    required this.trackColor,
-    required this.valueColor,
-  });
-
-  final double progress;
-  final Color trackColor;
-  final Color valueColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const strokeWidth = 9.0;
-    final center = size.center(Offset.zero);
-    final radius = (math.min(size.width, size.height) - strokeWidth) / 2;
-
-    final track = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..color = trackColor;
-    canvas.drawCircle(center, radius, track);
-
-    if (progress <= 0) return;
-    final value = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round
-      ..color = valueColor;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2,
-      2 * math.pi * progress.clamp(0.0, 1.0),
-      false,
-      value,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_BatteryRingPainter oldDelegate) =>
-      oldDelegate.progress != progress ||
-      oldDelegate.trackColor != trackColor ||
-      oldDelegate.valueColor != valueColor;
-}
-
-class _Metric {
-  const _Metric(this.label, this.value);
-  final String label;
-  final String value;
-}
-
-class _MetricsGrid extends StatelessWidget {
-  const _MetricsGrid({required this.metrics});
-
-  final List<_Metric> metrics;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    Widget cell(_Metric m) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          m.label,
-          style: TextStyle(fontSize: 11, color: colors.textTertiary),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          m.value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0,
-            color: colors.textPrimary,
-            fontFeatures: _Aurora.tabularNums,
-          ),
-        ),
-      ],
-    );
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(child: cell(metrics[0])),
-            const SizedBox(width: 10),
-            Expanded(child: cell(metrics[1])),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(child: cell(metrics[2])),
-            const SizedBox(width: 10),
-            Expanded(child: cell(metrics[3])),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
-// Shortcuts
+// Shortcuts — orbital control cluster
 // ═══════════════════════════════════════════════════════════════════════════
 class _ShortcutsRow extends StatelessWidget {
   const _ShortcutsRow({
@@ -2014,83 +1838,82 @@ class _ShortcutsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      margin: _Aurora.cardMargin,
-      padding: const EdgeInsets.fromLTRB(14, 12, 8, 14),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: const BorderRadius.all(
-          Radius.circular(_Aurora.cardRadius),
-        ),
-        boxShadow: dark ? const [] : _Aurora.cardShadow,
-      ),
-      child: Opacity(
-        opacity: dimmed ? 0.55 : 1,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              '控车',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: colors.textPrimary,
+    return Padding(
+      padding: _VoidUi.cardMargin,
+      child: VoidGlass(
+        radius: VoidRadii.lg,
+        padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
+        child: Opacity(
+          opacity: dimmed ? 0.5 : 1,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 14,
+                    height: 1.5,
+                    color: VoidColors.energy.withValues(alpha: 0.7),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('CONTROL', style: VoidType.micro),
+                ],
               ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: _Shortcut(
-                    icon: Icons.campaign_outlined,
-                    label: '寻车',
-                    sub: '鸣笛闪灯',
-                    style: _ShortcutStyle.neutral,
-                    onTap: onFind,
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _Shortcut(
+                      icon: Lucide.find,
+                      label: '寻车',
+                      sub: '鸣笛闪灯',
+                      style: _ShortcutStyle.neutral,
+                      onTap: onFind,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _Shortcut(
-                    icon: armed == null
-                        ? Icons.help_outline
-                        : (armed! ? Icons.lock_outline : Icons.lock_open),
-                    label: armed == null ? '设防未知' : (armed! ? '已设防' : '未设防'),
-                    sub: armed == null ? '刷新后重试' : (armed! ? '车锁已锁' : '点击设防'),
-                    style: armed == true
-                        ? _ShortcutStyle.armed
-                        : _ShortcutStyle.neutral,
-                    onTap: onArm,
+                  Expanded(
+                    child: _Shortcut(
+                      icon: armed == null
+                          ? Lucide.help
+                          : (armed! ? Lucide.lock : Lucide.unlock),
+                      label: armed == null ? '设防未知' : (armed! ? '已设防' : '未设防'),
+                      sub: armed == null
+                          ? '刷新后重试'
+                          : (armed! ? '车锁已锁' : '点击设防'),
+                      style: armed == true
+                          ? _ShortcutStyle.armed
+                          : _ShortcutStyle.neutral,
+                      onTap: onArm,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _Shortcut(
-                    icon: Icons.event_seat_outlined,
-                    label: '开坐垫',
-                    sub: '解锁储物',
-                    style: _ShortcutStyle.neutral,
-                    onTap: onSeat,
+                  Expanded(
+                    child: _Shortcut(
+                      icon: Lucide.seat,
+                      label: '开坐垫',
+                      sub: '解锁储物',
+                      style: _ShortcutStyle.neutral,
+                      onTap: onSeat,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _Shortcut(
-                    icon: Icons.power_settings_new,
-                    label: powered == null
-                        ? '电源未知'
-                        : (powered! ? '已通电' : '已断电'),
-                    sub: powered == null
-                        ? '刷新后重试'
-                        : (powered! ? '动力已开' : '点击通电'),
-                    style: powered == true
-                        ? _ShortcutStyle.powerOn
-                        : _ShortcutStyle.powerOff,
-                    onTap: onPower,
+                  Expanded(
+                    child: _Shortcut(
+                      icon: Lucide.power,
+                      label: powered == null
+                          ? '电源未知'
+                          : (powered! ? '已通电' : '已断电'),
+                      sub: powered == null
+                          ? '刷新后重试'
+                          : (powered! ? '动力已开' : '点击通电'),
+                      style: powered == true
+                          ? _ShortcutStyle.powerOn
+                          : _ShortcutStyle.powerOff,
+                      onTap: onPower,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -2116,30 +1939,37 @@ class _Shortcut extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final (glyphBg, glyphFg, labelColor) = switch (style) {
+    final (glyphBg, glyphFg, labelColor, glow) = switch (style) {
       _ShortcutStyle.neutral => (
-        colors.surfaceContainerHigh,
-        colors.textSecondary,
-        colors.textPrimary,
+        VoidColors.voidPanelHi,
+        VoidColors.inkMuted,
+        VoidColors.ink,
+        false,
       ),
       _ShortcutStyle.armed => (
-        colors.warning.withValues(alpha: 0.12),
-        colors.warning,
-        colors.warning,
+        VoidColors.energyAmber.withValues(alpha: 0.14),
+        VoidColors.energyAmber,
+        VoidColors.energyAmber,
+        false,
       ),
-      _ShortcutStyle.powerOn => (colors.primary, Colors.white, colors.primary),
+      _ShortcutStyle.powerOn => (
+        VoidColors.energy,
+        Colors.black,
+        VoidColors.energy,
+        true,
+      ),
       _ShortcutStyle.powerOff => (
-        colors.surfaceContainerHigh,
-        colors.textTertiary,
-        colors.textTertiary,
+        VoidColors.voidPanelHi,
+        VoidColors.inkFaint,
+        VoidColors.inkFaint,
+        false,
       ),
     };
 
     return AppPressable(
       enabled: true,
       onTap: onTap,
-      pressedScale: AppMotion.pressScale,
+      pressedScale: VoidMotion.pressScale,
       semanticsLabel: '$label，$sub',
       semanticsButton: true,
       semanticsEnabled: true,
@@ -2149,19 +1979,29 @@ class _Shortcut extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             AnimatedContainer(
-              duration: AppMotion.standard,
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(color: glyphBg, shape: BoxShape.circle),
-              child: Icon(icon, size: 22, color: glyphFg),
+              duration: VoidMotion.soft,
+              curve: VoidMotion.outExpo,
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: glyphBg,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: glow
+                      ? VoidColors.energy.withValues(alpha: 0.5)
+                      : VoidColors.hairline,
+                ),
+                boxShadow: glow ? VoidGlow.energy(intensity: 0.7) : const [],
+              ),
+              child: LucideIcon(icon, size: 22, color: glyphFg),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 height: 1.2,
                 color: labelColor,
@@ -2172,10 +2012,9 @@ class _Shortcut extends StatelessWidget {
               sub,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11,
-                height: 1.2,
-                color: colors.textTertiary,
+              style: VoidType.caption.copyWith(
+                fontSize: 10,
+                color: VoidColors.inkFaint,
               ),
             ),
           ],
@@ -2203,24 +2042,36 @@ class _LocationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: _Aurora.cardMargin,
+      padding: _VoidUi.cardMargin,
       child: AppPressable(
         onTap: onTap,
-        pressedScale: AppMotion.pressScale,
-        borderRadius: BorderRadius.circular(_Aurora.cardRadius),
-        background: colors.surface,
-        boxShadow: dark ? const [] : _Aurora.cardShadow,
+        pressedScale: VoidMotion.pressScale,
+        borderRadius: BorderRadius.circular(VoidRadii.lg),
         semanticsLabel: '车辆位置 $title，$updated，$walk',
         semanticsButton: true,
-        child: Padding(
+        child: VoidGlass(
+          radius: VoidRadii.lg,
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              const _MapThumb(),
-              const SizedBox(width: 12),
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(VoidRadii.md),
+                  color: VoidColors.energy.withValues(alpha: 0.1),
+                  border: Border.all(
+                    color: VoidColors.energy.withValues(alpha: 0.25),
+                  ),
+                ),
+                child: const LucideIcon(
+                  Lucide.mapPin,
+                  size: 20,
+                  color: VoidColors.energy,
+                ),
+              ),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2229,65 +2080,33 @@ class _LocationCard extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: colors.textPrimary,
-                      ),
+                      style: VoidType.bodyStrong,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      updated,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colors.textTertiary,
-                      ),
-                    ),
+                    const SizedBox(height: 4),
+                    Text(updated, maxLines: 1, overflow: TextOverflow.ellipsis, style: VoidType.caption),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: colors.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                  color: VoidColors.voidPanelHi,
+                  borderRadius: BorderRadius.circular(VoidRadii.pill),
+                  border: Border.all(color: VoidColors.hairline),
                 ),
                 child: Text(
                   walk,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: colors.textSecondary,
+                    color: VoidColors.inkMuted,
                   ),
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _MapThumb extends StatelessWidget {
-  const _MapThumb();
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        color: colors.surfaceContainerHigh,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Center(
-        child: Icon(Icons.location_on, size: 18, color: colors.primary),
       ),
     );
   }
@@ -2316,11 +2135,11 @@ class _CommandEntry {
   final _CommandStatus status;
 
   IconData get icon => switch (kind) {
-    _CommandKind.power => Icons.power_settings_new,
-    _CommandKind.lock => Icons.lock_outline,
-    _CommandKind.unlock => Icons.lock_open,
-    _CommandKind.find => Icons.campaign_outlined,
-    _CommandKind.seat => Icons.event_seat_outlined,
+    _CommandKind.power => Lucide.power,
+    _CommandKind.lock => Lucide.lock,
+    _CommandKind.unlock => Lucide.unlock,
+    _CommandKind.find => Lucide.find,
+    _CommandKind.seat => Lucide.seat,
   };
 }
 
@@ -2331,58 +2150,45 @@ class _RecentCommandsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      margin: _Aurora.cardMargin,
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: const BorderRadius.all(
-          Radius.circular(_Aurora.cardRadius),
-        ),
-        boxShadow: dark ? const [] : _Aurora.cardShadow,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '最近命令',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: colors.textPrimary,
+    return Padding(
+      padding: _VoidUi.cardMargin,
+      child: VoidGlass(
+        radius: VoidRadii.lg,
+        padding: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('RECENT', style: VoidType.micro),
+                  Text(
+                    commands.isEmpty ? '暂无' : '${commands.length} 条',
+                    style: VoidType.caption,
                   ),
-                ),
-                Text(
-                  commands.isEmpty ? '暂无' : '${commands.length} 条',
-                  style: TextStyle(fontSize: 12, color: colors.textTertiary),
-                ),
-              ],
-            ),
-          ),
-          if (commands.isEmpty)
-            Padding(
-              padding: EdgeInsets.fromLTRB(16, 8, 16, 18),
-              child: Text(
-                '发送控车指令后会显示在这里',
-                style: TextStyle(fontSize: 12, color: colors.textTertiary),
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 2, 8, 8),
-              child: Column(
-                children: [for (final c in commands) _CommandRow(entry: c)],
+                ],
               ),
             ),
-        ],
+            if (commands.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 18),
+                child: Text(
+                  '发送控车指令后会显示在这里',
+                  style: VoidType.caption.copyWith(color: VoidColors.inkFaint),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 2, 8, 10),
+                child: Column(
+                  children: [for (final c in commands) _CommandRow(entry: c)],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -2395,23 +2201,22 @@ class _CommandRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     final ok = entry.status == _CommandStatus.ok;
     final iconBg = ok
-        ? colors.primary.withValues(alpha: 0.12)
-        : colors.warning.withValues(alpha: 0.12);
-    final iconFg = ok ? colors.primary : colors.warning;
+        ? VoidColors.energy.withValues(alpha: 0.14)
+        : VoidColors.energyAmber.withValues(alpha: 0.14);
+    final iconFg = ok ? VoidColors.energy : VoidColors.energyAmber;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 11),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       child: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-            child: Icon(entry.icon, size: 15, color: iconFg),
+            child: LucideIcon(entry.icon, size: 15, color: iconFg),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2420,18 +2225,14 @@ class _CommandRow extends StatelessWidget {
                   entry.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: colors.textPrimary,
-                  ),
+                  style: VoidType.bodyStrong.copyWith(fontSize: 13),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   entry.subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 11, color: colors.textTertiary),
+                  style: VoidType.caption,
                 ),
               ],
             ),
@@ -2439,10 +2240,8 @@ class _CommandRow extends StatelessWidget {
           const SizedBox(width: 10),
           Text(
             entry.time,
-            style: TextStyle(
-              fontSize: 11,
-              color: colors.textTertiary,
-              fontFeatures: _Aurora.tabularNums,
+            style: VoidType.caption.copyWith(
+              fontFeatures: _VoidUi.tabularNums,
             ),
           ),
         ],

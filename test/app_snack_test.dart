@@ -1,74 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tailg_ble_app/theme/app_void.dart';
 import 'package:tailg_ble_app/widgets/app_snack.dart';
+import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 
 void main() {
-  testWidgets('AppSnack resolves colors from theme colorScheme', (
-    tester,
-  ) async {
-    final scheme = ColorScheme.fromSeed(seedColor: Colors.teal);
-
+  testWidgets('AppSnack uses VOID energy palette', (tester) async {
     await _pumpSnack(
       tester,
-      scheme: scheme,
       message: 'error',
-      icon: Icons.error_outline,
+      icon: Lucide.alertCircle,
       show: (context) => AppSnack.error(
         context,
         'error',
         actionLabel: 'UNDO',
         onAction: () {},
       ),
-      expectedBackground: scheme.error,
-      expectedForeground: scheme.onError,
+      expectedBackground: VoidColors.energyRed,
+      expectedForeground: Colors.white,
       expectAction: true,
     );
 
     await _pumpSnack(
       tester,
-      scheme: scheme,
       message: 'success',
-      icon: Icons.check_circle_outline,
+      icon: Lucide.checkCircle,
       show: (context) => AppSnack.success(context, 'success'),
-      expectedBackground: scheme.primary,
-      expectedForeground: scheme.onPrimary,
+      expectedBackground: VoidColors.energy,
+      expectedForeground: Colors.black,
     );
 
     await _pumpSnack(
       tester,
-      scheme: scheme,
       message: 'info',
-      icon: Icons.info_outline,
+      icon: Lucide.info,
       show: (context) => AppSnack.info(context, 'info'),
-      expectedBackground: scheme.inverseSurface,
-      expectedForeground: scheme.onInverseSurface,
+      expectedBackground: VoidColors.voidPanelHi,
+      expectedForeground: VoidColors.ink,
     );
 
     await _pumpSnack(
       tester,
-      scheme: scheme,
       message: '导航投屏暂未开放，可先使用官方云端控车',
-      icon: Icons.info_outline,
+      icon: Lucide.info,
       show: (context) => AppSnack.featureUnavailable(context, '导航投屏'),
-      expectedBackground: scheme.inverseSurface,
-      expectedForeground: scheme.onInverseSurface,
+      expectedBackground: VoidColors.voidPanelHi,
+      expectedForeground: VoidColors.ink,
     );
 
     await _pumpSnack(
       tester,
-      scheme: scheme,
       message: '用户协议暂未开放',
-      icon: Icons.info_outline,
+      icon: Lucide.info,
       show: (context) => AppSnack.notYetOpen(context, '用户协议'),
-      expectedBackground: scheme.inverseSurface,
-      expectedForeground: scheme.onInverseSurface,
+      expectedBackground: VoidColors.voidPanelHi,
+      expectedForeground: VoidColors.ink,
     );
   });
 }
 
 Future<void> _pumpSnack(
   WidgetTester tester, {
-  required ColorScheme scheme,
   required String message,
   required IconData icon,
   required void Function(BuildContext context) show,
@@ -78,7 +70,6 @@ Future<void> _pumpSnack(
 }) async {
   await tester.pumpWidget(
     MaterialApp(
-      theme: ThemeData(colorScheme: scheme),
       home: Scaffold(
         body: Builder(
           builder: (context) {

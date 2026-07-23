@@ -20,9 +20,10 @@ import 'pages/scan_page.dart';
 import 'pages/service_hub_page.dart';
 import 'pages/vehicle_control_home_page.dart';
 import 'theme/app_colors.dart';
-import 'theme/app_motion.dart';
-import 'widgets/app_pressable.dart';
+import 'theme/app_void.dart';
 import 'widgets/app_toast.dart';
+import 'widgets/lucide_icon.dart';
+import 'widgets/void_nav.dart';
 
 ble.ConnectionManager get connectionManager =>
     AppServices.instance.connectionManager;
@@ -166,8 +167,8 @@ class _StartupErrorView extends StatelessWidget {
                             color: AppColors.danger.withValues(alpha: 0.12),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
-                            Icons.error_outline,
+                          child: const LucideIcon(
+                            Lucide.alert,
                             color: AppColors.danger,
                             size: 34,
                           ),
@@ -298,21 +299,21 @@ class _TailgBleAppState extends State<TailgBleApp> {
       theme: ThemeData(
         colorScheme:
             ColorScheme.fromSeed(
-              seedColor: AppColors.primary,
+              seedColor: VoidColors.energyDim,
               brightness: Brightness.light,
             ).copyWith(
-              primary: AppColors.primary,
+              primary: VoidColors.energyDim,
               onPrimary: Colors.white,
-              secondary: AppColors.accentTeal,
+              secondary: VoidColors.energyDim,
               onSecondary: Colors.white,
-              surface: AppColors.surface,
-              onSurface: AppColors.textPrimary,
-              surfaceContainerLow: AppColors.surfaceContainerLow,
-              surfaceContainerHigh: AppColors.surfaceContainerHigh,
-              outline: AppColors.border,
-              outlineVariant: AppColors.outlineVariant,
+              surface: VoidColors.lightPanel,
+              onSurface: VoidColors.lightInk,
+              surfaceContainerLow: VoidColors.lightVoid,
+              surfaceContainerHigh: const Color(0xFFE8ECF2),
+              outline: VoidColors.lightHairline,
+              outlineVariant: VoidColors.lightHairline,
             ),
-        scaffoldBackgroundColor: AppColors.pageBg,
+        scaffoldBackgroundColor: VoidColors.lightVoid,
         useMaterial3: true,
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(shape: _buttonShape),
@@ -371,21 +372,21 @@ class _TailgBleAppState extends State<TailgBleApp> {
       darkTheme: ThemeData(
         colorScheme:
             ColorScheme.fromSeed(
-              seedColor: AppColors.primary,
+              seedColor: VoidColors.energy,
               brightness: Brightness.dark,
             ).copyWith(
-              primary: AppColorsDark.instance.primary,
+              primary: VoidColors.energy,
               onPrimary: Colors.black,
-              secondary: AppColorsDark.instance.accentSky,
+              secondary: VoidColors.energyDim,
               onSecondary: Colors.black,
-              surface: AppColorsDark.instance.surface,
-              onSurface: AppColorsDark.instance.textPrimary,
-              surfaceContainerLow: AppColorsDark.instance.surfaceContainerLow,
-              surfaceContainerHigh: AppColorsDark.instance.surfaceContainerHigh,
-              outline: AppColorsDark.instance.border,
-              outlineVariant: AppColorsDark.instance.outlineVariant,
+              surface: VoidColors.voidPanel,
+              onSurface: VoidColors.ink,
+              surfaceContainerLow: VoidColors.voidLift,
+              surfaceContainerHigh: VoidColors.voidPanelHi,
+              outline: VoidColors.hairline,
+              outlineVariant: VoidColors.hairlineStrong,
             ),
-        scaffoldBackgroundColor: AppColorsDark.instance.pageBg,
+        scaffoldBackgroundColor: VoidColors.voidDeep,
         useMaterial3: true,
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(shape: _buttonShape),
@@ -432,7 +433,8 @@ class _TailgBleAppState extends State<TailgBleApp> {
           },
         ),
       ),
-      themeMode: ThemeMode.system,
+      // VOID COCKPIT is dark-first; system light still works via light tokens.
+      themeMode: ThemeMode.dark,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -561,6 +563,7 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: VoidColors.voidDeep,
       body: FadeTransition(
         opacity: _fadeAnim,
         child: SlideTransition(
@@ -585,142 +588,11 @@ class _HomePageState extends State<HomePage>
         ),
       ),
       extendBody: true,
-      bottomNavigationBar: _AuroraBottomNav(
+      bottomNavigationBar: VoidOrbitalNav(
         currentIndex: _currentIndex,
         onService: () => _switchTab(_serviceTabIndex),
         onVehicle: () => _switchTab(_vehicleTabIndex),
         onMine: () => _switchTab(_mineTabIndex),
-      ),
-    );
-  }
-}
-
-/// Aurora shell bottom nav — Open Design 控车 / 服务 / 我的.
-///
-/// Tab **indices** stay 服务=0 / 控车=1 / 我的=2 so [AppNavigation] and
-/// existing home-tab call sites keep working. Visual language uses
-/// emerald accent + outline icons instead of official red assets.
-class _AuroraBottomNav extends StatelessWidget {
-  const _AuroraBottomNav({
-    required this.currentIndex,
-    required this.onService,
-    required this.onVehicle,
-    required this.onMine,
-  });
-
-  final int currentIndex;
-  final VoidCallback onService;
-  final VoidCallback onVehicle;
-  final VoidCallback onMine;
-
-  /// Visual height of the bar (keeps shell geometry tests stable).
-  static const double _barHeight = 65;
-  static const double _iconSize = 22;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final bottomInset = MediaQuery.paddingOf(context).bottom;
-
-    return Material(
-      color: colors.surface.withValues(alpha: 0.96),
-      elevation: 0,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: colors.surface.withValues(alpha: 0.96),
-          border: Border(top: BorderSide(color: colors.outlineVariant)),
-        ),
-        child: SizedBox(
-          key: const ValueKey('official-bottom-nav-bar'),
-          height: _barHeight + bottomInset,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: bottomInset),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _AuroraNavItem(
-                    itemKey: const ValueKey('official-bottom-nav-item-service'),
-                    label: '服务',
-                    icon: Icons.work_outline_rounded,
-                    selected: currentIndex == 0,
-                    onTap: onService,
-                  ),
-                ),
-                Expanded(
-                  child: _AuroraNavItem(
-                    itemKey: const ValueKey('official-bottom-nav-item-vehicle'),
-                    label: '控车',
-                    icon: Icons.control_camera_outlined,
-                    selected: currentIndex == 1,
-                    onTap: onVehicle,
-                  ),
-                ),
-                Expanded(
-                  child: _AuroraNavItem(
-                    itemKey: const ValueKey('official-bottom-nav-item-mine'),
-                    label: '我的',
-                    icon: Icons.person_outline_rounded,
-                    selected: currentIndex == 2,
-                    onTap: onMine,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AuroraNavItem extends StatelessWidget {
-  const _AuroraNavItem({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-    this.itemKey,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-  final Key? itemKey;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final color = selected ? colors.primary : colors.textTertiary;
-
-    return AppPressable(
-      onTap: onTap,
-      pressedScale: AppMotion.pressScale,
-      semanticsLabel: label,
-      semanticsButton: true,
-      semanticsSelected: selected,
-      child: SizedBox(
-        key: itemKey,
-        height: _AuroraBottomNav._barHeight,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: _AuroraBottomNav._iconSize, color: color),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 10,
-                height: 1,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0,
-                color: color,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

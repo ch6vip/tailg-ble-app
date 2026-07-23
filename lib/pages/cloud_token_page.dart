@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 
 import '../main.dart';
 import '../services/clipboard_text.dart';
@@ -8,7 +9,9 @@ import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../services/sensitive_value_masker.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import '../widgets/app_snack.dart';
 
 /// Copy the current official session token, or paste a token to sign in
@@ -108,8 +111,9 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
     final loading = _busy || _state.loading;
 
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
@@ -143,7 +147,7 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                           onPressed: signedIn && !loading
                               ? _copyCurrentToken
                               : null,
-                          icon: const Icon(Icons.copy, size: AppIconSizes.sm),
+                          icon: const Icon(Lucide.copy, size: AppIconSizes.sm),
                           label: const Text('复制 Token'),
                         ),
                       ),
@@ -152,7 +156,7 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                         child: OutlinedButton.icon(
                           onPressed: loading ? null : _pasteFromClipboard,
                           icon: const Icon(
-                            Icons.content_paste,
+                            Lucide.clipboardPaste,
                             size: AppIconSizes.sm,
                           ),
                           label: const Text('粘贴'),
@@ -212,7 +216,7 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.login),
+                          : const Icon(Lucide.login),
                       label: Text(signedIn ? '用此 Token 重新登录' : '用 Token 登录'),
                     ),
                   ),
@@ -234,6 +238,7 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
           ],
         ),
       ),
+    ),
     );
   }
 }

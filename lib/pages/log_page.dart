@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 import '../main.dart';
 import '../services/clipboard_text.dart';
 import '../services/diagnostic_export_service.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import '../widgets/app_snack.dart';
 
 class LogPage extends StatefulWidget {
@@ -87,20 +90,21 @@ class _LogPageState extends State<LogPage> {
   Widget build(BuildContext context) {
     final entries = _log.all;
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: Column(
           children: [
             AppPageHeader(
               title: '日志',
               actions: [
                 AppHeaderAction(
-                  icon: Icons.copy,
+                  icon: Lucide.copy,
                   tooltip: '复制全部',
                   onTap: _copyAll,
                 ),
                 AppHeaderAction(
-                  icon: Icons.refresh,
+                  icon: Lucide.refresh,
                   tooltip: '刷新',
                   // LogService.changes now auto-refreshes the page, but keep
                   // the manual button for cases where the user wants to force
@@ -108,7 +112,7 @@ class _LogPageState extends State<LogPage> {
                   onTap: _refreshVisibleLogs,
                 ),
                 AppHeaderAction(
-                  icon: Icons.delete_outline,
+                  icon: Lucide.trash,
                   tooltip: '清空',
                   onTap: _confirmClear,
                 ),
@@ -123,6 +127,7 @@ class _LogPageState extends State<LogPage> {
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -136,7 +141,7 @@ class _LogList extends StatelessWidget {
     if (entries.isEmpty) {
       return const Center(
         child: AppEmptyState(
-          icon: Icons.receipt_long_outlined,
+          icon: Lucide.receipt,
           title: '暂无日志',
           subtitle: '云端控车与诊断操作的运行日志会显示在这里。',
         ),

@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import '../services/app_preferences_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/lucide_icon.dart';
+import '../widgets/void_canvas.dart';
 import 'app_preferences_pages.dart';
 import 'battery_details_page.dart';
 import 'cloud_token_page.dart';
@@ -29,20 +32,21 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Text('设置', style: AppTextStyles.pageTitle),
-            ),
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: Text('设置', style: AppTextStyles.pageTitle),
+              ),
             const AppSectionLabel('账号与车辆'),
             _group([
               _settingItem(
-                icon: Icons.garage_outlined,
+                icon: Lucide.garage,
                 title: '我的车辆',
                 subtitle: '账号车辆、默认车辆与同步',
                 onTap: () => Navigator.push(
@@ -51,7 +55,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               _settingItem(
-                icon: Icons.mark_email_unread_outlined,
+                icon: Lucide.message,
                 title: '消息中心',
                 subtitle: '系统消息、设备消息和安全提醒',
                 onTap: () => Navigator.push(
@@ -65,7 +69,7 @@ class _SettingsPageState extends State<SettingsPage> {
             const AppSectionLabel('用车设置'),
             _group([
               _settingItem(
-                icon: Icons.tune,
+                icon: Lucide.tune,
                 title: '车辆设置',
                 subtitle: '声音、灵敏度、车辆功能、骑行设置',
                 onTap: () => Navigator.push(
@@ -76,7 +80,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               _settingItem(
-                icon: Icons.battery_charging_full,
+                icon: Lucide.battery,
                 title: '电池/BMS',
                 subtitle: '电量、电压、温度、故障和预留 BMS 数据',
                 onTap: () => Navigator.push(
@@ -96,7 +100,7 @@ class _SettingsPageState extends State<SettingsPage> {
             const AppSectionLabel('高级'),
             _group([
               _settingItem(
-                icon: Icons.admin_panel_settings_outlined,
+                icon: Lucide.shieldCheck,
                 title: '高级诊断',
                 subtitle: '设备信息、日志、协议和升级前检测',
                 onTap: () => Navigator.push(
@@ -107,7 +111,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               _settingItem(
-                icon: Icons.key_outlined,
+                icon: Lucide.key,
                 title: '官方会话 / Token',
                 subtitle: '调试用：粘贴或复制官方登录凭证',
                 onTap: () => Navigator.push(
@@ -121,7 +125,7 @@ class _SettingsPageState extends State<SettingsPage> {
             const AppSectionLabel('关于'),
             _group([
               _settingItem(
-                icon: Icons.info_outline,
+                icon: Lucide.info,
                 title: '关于台铃智能',
                 subtitle: '版本信息、用户协议和隐私政策',
                 onTap: () => Navigator.push(
@@ -131,6 +135,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ]),
           ],
+        ),
         ),
       ),
     );
@@ -143,8 +148,9 @@ class _AdvancedDiagnosticsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
@@ -153,7 +159,7 @@ class _AdvancedDiagnosticsPage extends StatelessWidget {
             const SizedBox(height: 12),
             _group([
               _settingItem(
-                icon: Icons.health_and_safety_outlined,
+                icon: Lucide.stethoscope,
                 title: '故障诊断',
                 subtitle: '读取车辆错误码',
                 onTap: () => Navigator.push(
@@ -164,7 +170,7 @@ class _AdvancedDiagnosticsPage extends StatelessWidget {
                 ),
               ),
               _settingItem(
-                icon: Icons.article_outlined,
+                icon: Lucide.fileText,
                 title: '日志',
                 subtitle: '查看操作记录',
                 onTap: () => Navigator.push(
@@ -174,6 +180,7 @@ class _AdvancedDiagnosticsPage extends StatelessWidget {
               ),
             ]),
           ],
+        ),
         ),
       ),
     );
@@ -243,7 +250,7 @@ Widget _settingItem({
               trailing
             else if (showChevron)
               const Icon(
-                Icons.chevron_right,
+                Lucide.chevronRight,
                 size: 22,
                 color: AppColors.textTertiary,
               ),
@@ -298,7 +305,7 @@ class _LanguageSettingTile extends StatelessWidget {
       initialData: _prefs.language,
       builder: (context, snapshot) {
         return _settingItem(
-          icon: Icons.language_outlined,
+          icon: Lucide.languages,
           title: '语言设置',
           subtitle: snapshot.data?.label ?? '跟随系统',
           onTap: () => Navigator.push(
@@ -326,7 +333,7 @@ class _DistanceUnitSettingTile extends StatelessWidget {
       builder: (context, snapshot) {
         final unit = snapshot.data ?? DistanceUnitPreference.metric;
         return _settingItem(
-          icon: Icons.straighten,
+          icon: Lucide.ruler,
           title: '单位设置',
           subtitle: '${unit.label} · ${unit.hint}',
           onTap: () => Navigator.push(
@@ -352,7 +359,7 @@ class _RespectTextScaleSettingTile extends StatelessWidget {
       builder: (context, snapshot) {
         final enabled = snapshot.data ?? true;
         return _settingItem(
-          icon: Icons.text_fields,
+          icon: Lucide.type,
           title: '跟随系统字号',
           subtitle: enabled ? '允许系统字号设置生效（限 0.9-1.3 倍）' : '关闭后忽略系统字号',
           trailing: _buildToggle(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/theme/app_motion.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
+import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 
 /// Global unified Toast — slides down from the top of the screen.
 ///
@@ -106,7 +107,10 @@ class _ToastWidgetState extends State<_ToastWidget>
     super.dispose();
   }
 
-  Color get _bg => widget.isError ? AppColors.energyRed : AppColors.energyGreen;
+  Color get _bg =>
+      widget.isError ? AppColors.energyRed : AppColors.energyGreen;
+
+  Color get _fg => widget.isError ? Colors.white : Colors.black;
 
   @override
   Widget build(BuildContext context) {
@@ -137,16 +141,16 @@ class _ToastWidgetState extends State<_ToastWidget>
               child: Row(
                 children: [
                   Icon(
-                    widget.isError ? Icons.close : Icons.check_circle,
-                    color: Colors.white,
+                    widget.isError ? Lucide.x : Lucide.checkCircle,
+                    color: _fg,
                     size: 18,
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       widget.message,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: _fg,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -159,13 +163,13 @@ class _ToastWidgetState extends State<_ToastWidget>
                     semanticsLabel: '关闭提示',
                     semanticsButton: true,
                     semanticsEnabled: true,
-                    child: const SizedBox(
+                    child: SizedBox(
                       width: AppTouchTargets.min,
                       height: AppTouchTargets.min,
                       child: Center(
                         child: Icon(
-                          Icons.close,
-                          color: Colors.white70,
+                          Lucide.x,
+                          color: _fg.withValues(alpha: 0.7),
                           size: 16,
                         ),
                       ),

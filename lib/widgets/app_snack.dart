@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
+import 'lucide_icon.dart';
 
 /// 统一的 SnackBar 提示封装，避免 30+ 处 ScaffoldMessenger 调用散落各页。
 ///
@@ -18,49 +20,43 @@ abstract final class AppSnack {
     String? actionLabel,
     VoidCallback? onAction,
   }) {
-    final scheme = Theme.of(context).colorScheme;
     _show(
       context,
       message: message,
-      background: scheme.error,
-      foreground: scheme.onError,
-      icon: Icons.error_outline,
+      background: VoidColors.energyRed,
+      foreground: Colors.white,
+      icon: Lucide.alertCircle,
       duration: _errorDuration,
       actionLabel: actionLabel,
       onAction: onAction,
     );
   }
 
-  /// 成功提示：绿色背景，2s 停留。
+  /// 成功提示：energy 背景，2s 停留。
   static void success(BuildContext context, String message) {
-    final scheme = Theme.of(context).colorScheme;
     _show(
       context,
       message: message,
-      background: scheme.primary,
-      foreground: scheme.onPrimary,
-      icon: Icons.check_circle_outline,
+      background: VoidColors.energy,
+      foreground: Colors.black,
+      icon: Lucide.checkCircle,
       duration: _infoDuration,
     );
   }
 
-  /// 普通提示：深灰背景，2s 停留。
+  /// 普通提示：void panel 背景，2s 停留。
   static void info(BuildContext context, String message) {
-    final scheme = Theme.of(context).colorScheme;
     _show(
       context,
       message: message,
-      background: scheme.inverseSurface,
-      foreground: scheme.onInverseSurface,
-      icon: Icons.info_outline,
+      background: VoidColors.voidPanelHi,
+      foreground: VoidColors.ink,
+      icon: Lucide.info,
       duration: _infoDuration,
     );
   }
 
   /// Placeholder / not-yet-open feature entry (cloud-only product boundary).
-  ///
-  /// [label] is the feature name shown before the fixed suffix, e.g.
-  /// `导航投屏` → `导航投屏暂未开放，可先使用官方云端控车`.
   static void featureUnavailable(BuildContext context, String label) {
     info(context, '$label暂未开放，可先使用官方云端控车');
   }
@@ -71,8 +67,6 @@ abstract final class AppSnack {
   }
 
   /// Short not-yet-open notice for legal/support entries without a cloud fallback.
-  ///
-  /// e.g. `用户协议` → `用户协议暂未开放`.
   static void notYetOpen(BuildContext context, String label) {
     info(context, '$label暂未开放');
   }

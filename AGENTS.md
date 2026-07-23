@@ -19,7 +19,7 @@ This repository is an **unofficial full-logic replica** of the official Tailg ap
 
 - Match official **features, control-channel rules, state machines, and API semantics**
 - Channels: **local BLE** + **remote MQTT** + **cloud HTTP**
-- UI uses the in-house Aurora design system — **not** a pixel-perfect skin clone
+- UI uses the in-house **VOID COCKPIT** design system (Lucide icons only, no emoji) — **not** a pixel-perfect skin clone
 - Out of scope by default: mall, payment, insurance, community, and other L3 ops features
 
 Task plan (source-code based): [PLAN.md](PLAN.md).  
@@ -64,7 +64,8 @@ flutter run --dart-define=TIANDITU_TOKEN=<token>
 ## Coding Style
 
 - Dart defaults: 2-space indent, trailing commas, `lower_snake_case.dart`, `PascalCase` types, `camelCase` members
-- Colors / radii / motion: only via `lib/theme/` — no raw Material brand colors in pages
+- Colors / radii / motion: only via `lib/theme/` (`app_void.dart` + `app_colors.dart`) — no raw Material brand colors in pages
+- Icons: only `Lucide.*` / `LucideIcon` from `lib/widgets/lucide_icon.dart` (`flutter_lucide`) — never `Icons.*` or emoji
 - Prefer existing service patterns (`OfficialCloud*`, `OfficialMqtt*`, `ControlCommand*`, `ConnectionManager`) before new layers
 - `flutter_lints` enabled; `constant_identifier_names` is intentionally off for protocol constants
 

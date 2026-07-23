@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 
 import '../main.dart';
 import '../services/induction_mode_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import '../widgets/app_snack.dart';
 
 /// 感应解锁设置页（QGJ / TLink / RSSI 统一入口）。
@@ -252,8 +255,9 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
     final anyBusy = _busy || _snap.busy;
 
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 24),
           children: [
@@ -315,13 +319,13 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
                     segments: [
                       ButtonSegment(
                         value: true,
-                        icon: const Icon(Icons.sensors, size: 16),
+                        icon: const Icon(Lucide.sensors, size: 16),
                         label: const Text('感应'),
                         enabled: _supportsInduction,
                       ),
                       const ButtonSegment(
                         value: false,
-                        icon: Icon(Icons.touch_app_outlined, size: 16),
+                        icon: Icon(Lucide.pointer, size: 16),
                         label: Text('手动'),
                       ),
                     ],
@@ -401,6 +405,7 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
           ],
         ),
       ),
+    ),
     );
   }
 }

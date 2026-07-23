@@ -11,7 +11,7 @@ class _SettingsSection extends StatelessWidget {
       child: Column(
         children: [
           _MineListTile(
-            icon: Icons.notifications_none_outlined,
+            icon: Lucide.message,
             title: '消息通知',
             onTap: () => Navigator.push(
               context,
@@ -22,25 +22,25 @@ class _SettingsSection extends StatelessWidget {
           ),
           const _MineDivider(),
           _MineListTile(
-            icon: Icons.lock_outline,
+            icon: Lucide.lock,
             title: '隐私与安全',
             onTap: () => onUnavailable('隐私与安全'),
           ),
           const _MineDivider(),
           _MineListTile(
-            icon: Icons.system_update_outlined,
+            icon: Lucide.download,
             title: '固件升级',
             onTap: () => onUnavailable('固件升级'),
           ),
           const _MineDivider(),
           _MineListTile(
-            icon: Icons.help_outline,
+            icon: Lucide.help,
             title: '帮助与反馈',
             onTap: () => onUnavailable('帮助与反馈'),
           ),
           const _MineDivider(),
           _MineListTile(
-            icon: Icons.info_outline,
+            icon: Lucide.info,
             title: '关于台铃',
             value: 'v8.0.1',
             onTap: () => Navigator.push(
@@ -148,14 +148,14 @@ class _MineListTile extends StatelessWidget {
               ],
               if (trailingHelp) ...[
                 const Icon(
-                  Icons.help_outline,
+                  Lucide.help,
                   size: 22,
                   color: AppColors.officialTextMuted,
                 ),
                 const SizedBox(width: 12),
               ],
               const Icon(
-                Icons.chevron_right,
+                Lucide.chevronRight,
                 size: 20,
                 color: AppColors.officialTextMuted,
               ),

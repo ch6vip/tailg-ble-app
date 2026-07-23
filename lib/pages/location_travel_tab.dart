@@ -46,19 +46,19 @@ class _TravelTab extends StatelessWidget {
             const _LoadingCard(text: '正在读取官方历史轨迹')
           else if (!cloudState.signedIn)
             const _EmptyCard(
-              icon: Icons.cloud_off,
+              icon: Lucide.cloudOff,
               title: '未登录官方账号',
               subtitle: '登录官方账号后可同步本月骑行轨迹。',
             )
           else if (travelError != null)
             _EmptyCard(
-              icon: Icons.info_outline,
+              icon: Lucide.info,
               title: '历史轨迹暂不可用',
               subtitle: travelError,
             )
           else if (records.isEmpty)
             const _EmptyCard(
-              icon: Icons.route_outlined,
+              icon: Lucide.route,
               title: '暂无轨迹记录',
               subtitle: '本月还没有可显示的骑行轨迹，可点右上角刷新或切换月份。',
             )
@@ -115,7 +115,7 @@ class _TravelMonthSelector extends StatelessWidget {
             ),
             padding: EdgeInsets.zero,
             icon: const Icon(
-              Icons.chevron_left,
+              Lucide.chevronLeft,
               size: AppIconSizes.md,
               semanticLabel: '上一月',
             ),
@@ -135,7 +135,7 @@ class _TravelMonthSelector extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   const Icon(
-                    Icons.keyboard_arrow_down,
+                    Lucide.chevronDown,
                     color: AppColors.textTertiary,
                     size: AppIconSizes.sm,
                   ),
@@ -152,7 +152,7 @@ class _TravelMonthSelector extends StatelessWidget {
             ),
             padding: EdgeInsets.zero,
             icon: const Icon(
-              Icons.chevron_right,
+              Lucide.chevronRight,
               size: AppIconSizes.md,
               semanticLabel: '下一月',
             ),
@@ -343,7 +343,7 @@ class _TravelRecordCard extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             const Icon(
-              Icons.chevron_right,
+              Lucide.chevronRight,
               color: AppColors.textTertiary,
               size: AppIconSizes.md,
             ),
@@ -471,7 +471,7 @@ class _TravelDetailSheet extends StatelessWidget {
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, semanticLabel: '关闭'),
+                      icon: const Icon(Lucide.x, semanticLabel: '关闭'),
                       tooltip: '关闭',
                     ),
                   ],
@@ -501,7 +501,7 @@ class _TravelDetailSheet extends StatelessWidget {
                     const SizedBox(height: 14),
                     if (points.isEmpty)
                       const _EmptyCard(
-                        icon: Icons.route_outlined,
+                        icon: Lucide.route,
                         title: '未返回轨迹点',
                         subtitle: '该行程暂时没有可绘制的坐标。',
                       )
@@ -777,7 +777,7 @@ class _PointRow extends StatelessWidget {
       child: Row(
         children: [
           const Icon(
-            Icons.trip_origin,
+            Lucide.tripOrigin,
             color: AppColors.info,
             size: AppIconSizes.sm,
           ),

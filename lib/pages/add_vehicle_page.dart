@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 
 import '../main.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import '../widgets/app_pressable.dart';
 import 'bind_imei_page.dart';
 import 'official_cloud_page.dart';
@@ -37,8 +40,9 @@ class AddVehiclePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
@@ -50,7 +54,7 @@ class AddVehiclePage extends StatelessWidget {
             AppCard(
               padding: EdgeInsets.zero,
               child: _AddVehicleAction(
-                icon: Icons.cloud_done_outlined,
+                icon: Lucide.cloud,
                 title: '我的车辆',
                 subtitle: '登录官方账号后同步账号下已绑定车辆',
                 onTap: () => _openOfficialVehicles(context),
@@ -61,7 +65,7 @@ class AddVehiclePage extends StatelessWidget {
             AppCard(
               padding: EdgeInsets.zero,
               child: _AddVehicleAction(
-                icon: Icons.pin_outlined,
+                icon: Lucide.pin,
                 title: 'IMEI 绑车',
                 subtitle: '手写/粘贴坐垫二维码中的设备 IMEI（官方 bikeBind）',
                 onTap: () => _openImeiBind(context),
@@ -72,7 +76,7 @@ class AddVehiclePage extends StatelessWidget {
             AppCard(
               padding: EdgeInsets.zero,
               child: _AddVehicleAction(
-                icon: Icons.bluetooth_searching,
+                icon: Lucide.bluetoothSearching,
                 title: '扫描附近车辆',
                 subtitle: '通过蓝牙扫描并连接本地车辆',
                 onTap: () => _openBleScan(context),
@@ -92,6 +96,7 @@ class AddVehiclePage extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -112,7 +117,7 @@ class _AddVehicleHero extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.two_wheeler,
+              Lucide.vehicle,
               color: AppColors.primary,
               size: AppIconSizes.lg,
             ),
@@ -185,7 +190,7 @@ class _AddVehicleAction extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             const Icon(
-              Icons.chevron_right,
+              Lucide.chevronRight,
               color: AppColors.textTertiary,
               size: AppIconSizes.md,
             ),

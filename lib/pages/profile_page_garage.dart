@@ -59,7 +59,7 @@ class _GaragePanel extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.add, size: 17, color: Colors.white),
+                          Icon(Lucide.plus, size: 17, color: Colors.white),
                           SizedBox(width: 2),
                           Text(
                             '添加设备',
@@ -242,7 +242,7 @@ class _GarageInfo extends StatelessWidget {
               ),
             ),
             const Icon(
-              Icons.chevron_right,
+              Lucide.chevronRight,
               size: 18,
               color: AppColors.officialTextMuted,
             ),

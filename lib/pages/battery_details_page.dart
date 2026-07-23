@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 
 import '../ble/connection_manager.dart' as ble;
 import '../main.dart';
@@ -12,7 +13,9 @@ import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import '../widgets/app_snack.dart';
 import 'replace_battery_page.dart';
 
@@ -33,10 +36,13 @@ class BatteryDetailsPage extends StatelessWidget {
           officialBmsInfo: cloudState.bmsInfo,
         );
         return Scaffold(
-          backgroundColor: AppColors.pageBg,
-          body: SafeArea(
+          backgroundColor: VoidColors.voidDeep,
+          body: VoidCanvas(
+        child: SafeArea(
             child: RefreshIndicator(
               onRefresh: () => _refreshAllBatteryData(context),
+              color: VoidColors.energy,
+              backgroundColor: VoidColors.voidPanel,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics(),
@@ -113,6 +119,7 @@ class BatteryDetailsPage extends StatelessWidget {
               ),
             ),
           ),
+        ),
         );
       },
     );
@@ -361,7 +368,7 @@ class _BatteryHero extends StatelessWidget {
             top: 0,
             child: IconButton(
               icon: const Icon(
-                Icons.arrow_back,
+                Lucide.arrowLeft,
                 color: AppColors.textPrimary,
                 semanticLabel: '返回',
               ),
@@ -646,7 +653,7 @@ class _BatterySyncCard extends StatelessWidget {
       child: Row(
         children: [
           const Icon(
-            Icons.sync_outlined,
+            Lucide.refresh,
             size: AppIconSizes.sm,
             color: AppColors.textTertiary,
           ),
@@ -714,7 +721,7 @@ class _SourceStrip extends StatelessWidget {
             )
           else
             Icon(
-              error == null ? Icons.verified_outlined : Icons.info_outline,
+              error == null ? Lucide.badgeCheck : Lucide.info,
               color: color,
               size: AppIconSizes.md,
             ),
@@ -801,19 +808,19 @@ class _OfficialMetricGrid extends StatelessWidget {
       _Metric(
         '今日耗电',
         BatterySnapshot.displayMetric(snapshot.consumePowerPercent, unit: '%'),
-        icon: Icons.bolt_outlined,
+        icon: Lucide.zap,
       ),
       _Metric(
         '循环次数',
         BatterySnapshot.displayMetric(snapshot.loopCount),
-        icon: Icons.autorenew,
+        icon: Lucide.rotateCcw,
         onHelp: onCycleHelp,
       ),
-      _Metric('当前温度', _temperatureDisplay(snapshot), icon: Icons.thermostat),
+      _Metric('当前温度', _temperatureDisplay(snapshot), icon: Lucide.thermometer),
       _Metric(
         '电池评分',
         BatterySnapshot.displayMetric(snapshot.batteryScore, unit: '分'),
-        icon: Icons.speed_outlined,
+        icon: Lucide.gauge,
         onHelp: onScoreHelp,
       ),
     ];
@@ -916,7 +923,7 @@ class _MetricTile extends StatelessWidget {
                         child: const Padding(
                           padding: EdgeInsets.all(4),
                           child: Icon(
-                            Icons.help_outline,
+                            Lucide.help,
                             size: 16,
                             color: AppColors.textTertiary,
                           ),
@@ -960,7 +967,7 @@ class _FaultCard extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            faults.isEmpty ? Icons.check_circle_outline : Icons.error_outline,
+            faults.isEmpty ? Lucide.checkCircle : Lucide.alertCircle,
             color: faults.isEmpty ? AppColors.success : AppColors.danger,
           ),
           const SizedBox(width: 12),
@@ -1003,7 +1010,7 @@ class _BmsDetailsCard extends StatelessWidget {
             child: Row(
               children: [
                 const Icon(
-                  Icons.list_alt_outlined,
+                  Lucide.list,
                   color: AppColors.primary,
                   size: AppIconSizes.md,
                 ),
@@ -1170,7 +1177,7 @@ class _BatteryReadOnlyCard extends StatelessWidget {
           Row(
             children: [
               Icon(
-                Icons.lock_outline,
+                Lucide.lock,
                 size: AppIconSizes.sm,
                 color: AppColors.textSecondary,
               ),
@@ -1322,7 +1329,7 @@ class _CoulombMeterCardState extends State<_CoulombMeterCard> {
           Row(
             children: [
               const Icon(
-                Icons.battery_saver_outlined,
+                Lucide.battery,
                 color: AppColors.primary,
                 size: AppIconSizes.md,
               ),
@@ -1365,7 +1372,7 @@ class _CoulombMeterCardState extends State<_CoulombMeterCard> {
               onPressed: _busy || !_bleReady
                   ? null
                   : () => unawaited(_query(silent: false)),
-              icon: const Icon(Icons.refresh, size: 18),
+              icon: const Icon(Lucide.refresh, size: 18),
               label: const Text('刷新状态'),
             ),
           ),
@@ -1567,7 +1574,7 @@ class _Metric {
   const _Metric(
     this.label,
     this.value, {
-    this.icon = Icons.info_outline,
+    this.icon = Lucide.info,
     this.onHelp,
   });
 }

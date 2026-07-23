@@ -2,9 +2,9 @@
 
 台铃电动车 **官方 App（台铃智能）的非官方 Flutter 复刻实验**。
 
-目标不是「只做云端遥控器」，而是在功能、业务逻辑、数据通道与状态机上 **对齐官方**：近场 BLE、远程 MQTT、云 API、绑车与车况全链路可用。UI 采用自有 Aurora 设计语言，**不要求像素级抄皮肤**。
+目标不是「只做云端遥控器」，而是在功能、业务逻辑、数据通道与状态机上 **对齐官方**：近场 BLE、远程 MQTT、云 API、绑车与车况全链路可用。UI 采用自有 **VOID COCKPIT** 设计语言（Awwwards 级暗色画布 + Lucide 图标），**不要求像素级抄皮肤**。
 
-> ⚠️ 仅供学习研究与个人车辆管理。请勿用于未授权车辆或任何违法用途。
+> 仅供学习研究与个人车辆管理。请勿用于未授权车辆或任何违法用途。
 
 | | |
 |--|--|
@@ -80,8 +80,8 @@ lib/
   services/     云 API、MQTT、通道路由、自动连、持久化、日志脱敏
   models/       车辆 / 电池 / 命令 / 坐标等
   pages/        爱车、定位、车库、消息、登录、扫描、设置…
-  widgets/      AppPressable、StatusBadge、VehicleStage…
-  theme/        Aurora 设计 token（禁止硬编码 Material 色）
+  widgets/      VoidCanvas / VoidOrbitalNav / LucideIcon / AppPressable…
+  theme/        VOID 设计 token（app_void + app_colors；禁止 Material Icons / emoji）
 test/           单元 / 组件测试
 android|ios…    平台工程（含 BLE / 定位权限）
 ```
@@ -151,7 +151,17 @@ flutter run --dart-define=TIANDITU_TOKEN=<token>
 
 ## 设计
 
-**v8 Aurora Cockpit**：主色翡翠绿 `#00C896`，token 在 `lib/theme/`。触控目标 ≥ 44×44；颜色不作唯一信息载体。
+**VOID COCKPIT**（暗色优先 · 实验排版 · 动能环可视化）
+
+| 层 | 路径 | 说明 |
+|----|------|------|
+| Tokens | `lib/theme/app_void.dart` | `VoidColors` / `VoidType` / `VoidMotion` / `Glow` |
+| 兼容 | `lib/theme/app_colors.dart` | 静态 token 对齐 void 深色；`AppColors.of` 仍可用 |
+| Canvas | `lib/widgets/void_canvas.dart` | 星云底、玻璃面板、能量环、section label |
+| 底栏 | `lib/widgets/void_nav.dart` | 悬浮轨道导航（控车主入口发光） |
+| 图标 | `flutter_lucide` + `lib/widgets/lucide_icon.dart` | **仅 Lucide**；禁止 `Icons.*` 与 emoji |
+
+触控目标 ≥ 44×44；颜色不作唯一信息载体。ThemeMode 默认 dark。
 
 ---
 

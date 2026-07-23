@@ -11,7 +11,10 @@ import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../services/sms_countdown.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/lucide_icon.dart';
+import '../widgets/void_canvas.dart';
 
 /// 登录页 — 参考官方 LoginOnActivity / LoginPhoneCodeActivity，
 /// 顶部品牌区 + 手机号验证码登录，底部附加粘贴 Token 登录入口。
@@ -220,66 +223,68 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final loading = _busy || officialCloudService.state.loading;
-    final colors = AppColors.of(context);
     return Scaffold(
-      backgroundColor: colors.pageBg,
-      body: SafeArea(
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-          children: [
-            const _BrandHeader(),
-            const SizedBox(height: 32),
-            if (_mode == _LoginMode.sms)
-              _SmsLoginForm(
-                phoneController: _phoneController,
-                smsController: _smsController,
-                smsCountdown: _smsCountdown.remaining,
-                loading: loading,
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        intensity: 1.2,
+        child: SafeArea(
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+            children: [
+              const _BrandHeader(),
+              const SizedBox(height: 32),
+              if (_mode == _LoginMode.sms)
+                _SmsLoginForm(
+                  phoneController: _phoneController,
+                  smsController: _smsController,
+                  smsCountdown: _smsCountdown.remaining,
+                  loading: loading,
+                  agreed: _agreed,
+                  validPhone: _validPhone,
+                  validSms: _validSms,
+                  onRequestCode: _requestCode,
+                  onLogin: _loginWithSms,
+                )
+              else
+                _TokenLoginForm(
+                  tokenController: _tokenController,
+                  loading: loading,
+                  onPaste: _pasteFromClipboard,
+                  onLogin: _loginWithToken,
+                ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.center,
+                child: TextButton.icon(
+                  key: const ValueKey('login-mode-toggle'),
+                  onPressed: loading
+                      ? null
+                      : () => _switchMode(
+                          _mode == _LoginMode.sms
+                              ? _LoginMode.token
+                              : _LoginMode.sms,
+                        ),
+                  icon: LucideIcon(
+                    _mode == _LoginMode.sms ? Lucide.key : Lucide.phone,
+                    size: AppIconSizes.sm,
+                    color: VoidColors.energy,
+                  ),
+                  label: Text(
+                    _mode == _LoginMode.sms ? '使用 Token 登录' : '返回手机号登录',
+                    style: const TextStyle(color: VoidColors.energy),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _AgreementRow(
                 agreed: _agreed,
-                validPhone: _validPhone,
-                validSms: _validSms,
-                onRequestCode: _requestCode,
-                onLogin: _loginWithSms,
-              )
-            else
-              _TokenLoginForm(
-                tokenController: _tokenController,
-                loading: loading,
-                onPaste: _pasteFromClipboard,
-                onLogin: _loginWithToken,
+                onChanged: (v) => setState(() => _agreed = v),
               ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.center,
-              child: TextButton.icon(
-                key: const ValueKey('login-mode-toggle'),
-                onPressed: loading
-                    ? null
-                    : () => _switchMode(
-                        _mode == _LoginMode.sms
-                            ? _LoginMode.token
-                            : _LoginMode.sms,
-                      ),
-                icon: Icon(
-                  _mode == _LoginMode.sms
-                      ? Icons.key_outlined
-                      : Icons.phone_android_outlined,
-                  size: AppIconSizes.sm,
-                ),
-                label: Text(
-                  _mode == _LoginMode.sms ? '使用 Token 登录' : '返回手机号登录',
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _AgreementRow(
-              agreed: _agreed,
-              onChanged: (v) => setState(() => _agreed = v),
-            ),
-            const SizedBox(height: 24),
-            if (_mode == _LoginMode.token) const _TokenSafetyNote(),
-          ],
+              const SizedBox(height: 24),
+              if (_mode == _LoginMode.token) const _TokenSafetyNote(),
+            ],
+          ),
         ),
       ),
     );
@@ -293,49 +298,40 @@ class _BrandHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     return Column(
       children: [
-        const SizedBox(height: 20),
+        const SizedBox(height: 28),
         Container(
-          width: 72,
-          height: 72,
+          width: 88,
+          height: 88,
           decoration: BoxDecoration(
-            color: colors.surface,
-            borderRadius: BorderRadius.circular(AppRadii.lg),
-            boxShadow: Theme.of(context).brightness == Brightness.dark
-                ? const []
-                : AppShadows.elevation1,
+            color: VoidColors.voidPanel.withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(VoidRadii.xl),
+            border: Border.all(color: VoidColors.hairlineStrong),
+            boxShadow: VoidGlow.energy(intensity: 0.8),
           ),
-          child: const Icon(
-            Icons.electric_bike,
+          child: const LucideIcon(
+            Lucide.vehicle,
             size: 40,
-            color: AppColors.brandRed,
+            color: VoidColors.energy,
           ),
         ),
-        const SizedBox(height: 16),
-        const Text(
-          'TAILG',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0,
-          ),
-        ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 22),
         Text(
-          '台铃智能',
-          style: TextStyle(
-            fontSize: 14,
-            color: colors.textSecondary,
-            fontWeight: FontWeight.w600,
+          'TAILG',
+          style: VoidType.hero.copyWith(
+            fontSize: 36,
+            letterSpacing: 8,
+            fontWeight: FontWeight.w300,
           ),
         ),
         const SizedBox(height: 8),
+        Text('台铃智能 · VOID COCKPIT', style: VoidType.micro),
+        const SizedBox(height: 12),
         Text(
           '登录后同步车辆，享受控车、定位、电池等服务',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 12, color: colors.textTertiary),
+          style: VoidType.body,
         ),
       ],
     );
@@ -535,7 +531,7 @@ class _TokenLoginForm extends StatelessWidget {
                 '粘贴 Token 或 Authorization: Bearer ...',
               ).copyWith(
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.content_paste, size: AppIconSizes.sm),
+                  icon: const LucideIcon(Lucide.copy, size: AppIconSizes.sm),
                   onPressed: onPaste,
                   tooltip: '从剪贴板粘贴',
                 ),
@@ -650,7 +646,7 @@ class _TokenSafetyNote extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.shield_outlined, size: 18, color: colors.warning),
+          const LucideIcon(Lucide.shield, size: 18, color: VoidColors.energyAmber),
           SizedBox(width: 10),
           Expanded(
             child: Text(

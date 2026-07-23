@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/widgets/app_chrome.dart';
+import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
@@ -19,7 +20,7 @@ void main() {
             body: Center(
               child: AppHeaderAction(
                 key: const ValueKey('header-action'),
-                icon: Icons.refresh,
+                icon: Lucide.refresh,
                 tooltip: '刷新',
                 onTap: () => taps++,
               ),
@@ -62,7 +63,7 @@ void main() {
         const TestApp(
           home: Scaffold(
             body: Center(
-              child: AppHeaderAction(icon: Icons.refresh, tooltip: '刷新'),
+              child: AppHeaderAction(icon: Lucide.refresh, tooltip: '刷新'),
             ),
           ),
         ),
@@ -88,7 +89,7 @@ void main() {
       const TestApp(
         home: Scaffold(
           body: AppEmptyState(
-            icon: Icons.inbox_outlined,
+            icon: Lucide.mail,
             title: '暂无记录',
             subtitle: '车辆连接后会自动显示',
           ),

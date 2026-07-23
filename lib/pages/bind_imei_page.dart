@@ -1,12 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/lucide_icon.dart';
 import 'package:flutter/services.dart';
 
 import '../main.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import '../widgets/app_snack.dart';
 
 /// P3-1: manual IMEI bind (`app/car/bikeBind`).
@@ -50,8 +53,9 @@ class _BindImeiPageState extends State<BindImeiPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 24),
           children: [
@@ -78,7 +82,7 @@ class _BindImeiPageState extends State<BindImeiPage> {
                     decoration: const InputDecoration(
                       labelText: '设备 IMEI',
                       hintText: '请输入 15 位左右 IMEI',
-                      prefixIcon: Icon(Icons.pin_outlined),
+                      prefixIcon: Icon(Lucide.pin),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -95,6 +99,7 @@ class _BindImeiPageState extends State<BindImeiPage> {
           ],
         ),
       ),
+    ),
     );
   }
 }

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/void_canvas.dart';
 import '../widgets/app_snack.dart';
 
 class NotificationPrefsPage extends StatefulWidget {
@@ -68,8 +70,9 @@ class _NotificationPrefsPageState extends State<NotificationPrefsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.officialPageBg,
-      body: SafeArea(
+      backgroundColor: VoidColors.voidDeep,
+      body: VoidCanvas(
+        child: SafeArea(
         child: Column(
           children: [
             const AppPageHeader(title: '通知偏好'),
@@ -77,6 +80,7 @@ class _NotificationPrefsPageState extends State<NotificationPrefsPage> {
           ],
         ),
       ),
+    ),
     );
   }
 

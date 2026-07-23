@@ -9,9 +9,12 @@ import '../services/ble_connection_snapshot_guard.dart';
 import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_void.dart';
 import '../theme/app_motion.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/lucide_icon.dart';
+import '../widgets/void_canvas.dart';
 
 class ScanPage extends StatefulWidget {
   final DateTime Function()? clock;
@@ -201,8 +204,9 @@ class _ScanPageState extends State<ScanPage>
       builder: (context, adapterSnapshot) {
         final bluetoothOn = adapterSnapshot.data == BluetoothAdapterState.on;
         return Scaffold(
-          backgroundColor: AppColors.pageBg,
-          body: SafeArea(
+          backgroundColor: VoidColors.voidDeep,
+          body: VoidCanvas(
+        child: SafeArea(
             child: Stack(
               children: [
                 SingleChildScrollView(
@@ -222,7 +226,7 @@ class _ScanPageState extends State<ScanPage>
                       ),
                       if (!bluetoothOn)
                         const _ScanHintCard(
-                          icon: Icons.bluetooth_disabled,
+                          icon: Lucide.bluetoothOff,
                           title: '蓝牙未开启',
                           subtitle: '开启蓝牙后即可搜索附近车辆',
                         ),
@@ -277,6 +281,7 @@ class _ScanPageState extends State<ScanPage>
               ],
             ),
           ),
+        ),
         );
       },
     );
@@ -375,7 +380,7 @@ class _RadarWidget extends StatelessWidget {
                 ],
               ),
               child: const Icon(
-                Icons.bluetooth_searching,
+                Lucide.bluetoothSearching,
                 color: Colors.white,
                 size: AppIconSizes.md,
               ),
@@ -577,7 +582,7 @@ class _DeviceCardState extends State<_DeviceCard> {
                 borderRadius: BorderRadius.circular(AppRadii.card),
               ),
               child: Icon(
-                isTailg ? Icons.electric_bike : Icons.bluetooth_outlined,
+                isTailg ? Lucide.vehicle : Lucide.bluetooth,
                 size: AppIconSizes.md,
                 color: isTailg ? AppColors.primary : const Color(0xFF9E9E9E),
               ),
@@ -728,7 +733,7 @@ class ScanFab extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              scanning ? Icons.stop_rounded : Icons.bluetooth_searching,
+              scanning ? Lucide.stop : Lucide.bluetoothSearching,
               color: Colors.white,
               size: AppIconSizes.md,
             ),

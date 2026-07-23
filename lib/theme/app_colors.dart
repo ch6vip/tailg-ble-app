@@ -16,20 +16,19 @@ import 'package:flutter/material.dart';
 abstract final class AppColors {
   // 主操作色：v8 翡翠绿（Aurora Cockpit 设计语言）。原黑色 #1A1A1A 已下线为
   // 主操作；纯黑仍保留在 [dark] token 上用于高对比深色表面（电池详情、骑行模式）。
-  static const primary = Color(0xFF00C896);
-  static const primaryDark = Color(0xFF00A57C);
-  static const pageBg = Color(0xFFF5F5F7); // M3: slightly cooler, more modern
-  static const textPrimary = Color(0xFF1A1A1A);
-  static const textSecondary = Color(0xFF666666);
-  static const textTertiary = Color(0xFF8A8A8A);
-  static const border = Color(0xFFEBEBEB);
-  static const success = Color(0xFF00A896);
-  static const warning = Color(0xFFFF9800);
-  static const danger = Color(0xFFFF5252);
-  // 信息提示色统一为极简高端 teal（原 #2196F3 蓝已下线）。
-  // 类别色冲突处已就地改用其它 token 以保持区分。
-  static const info = Color(0xFF00A896);
-  static const navInactive = Color(0xFF929292);
+  // VOID COCKPIT dark-first statics (ThemeMode.dark). Light companions live on AppColorsLight.
+  static const primary = Color(0xFF00FFB2);
+  static const primaryDark = Color(0xFF00C896);
+  static const pageBg = Color(0xFF05070B);
+  static const textPrimary = Color(0xFFF4F6FA);
+  static const textSecondary = Color(0xFF8B93A7);
+  static const textTertiary = Color(0xFF5A6278);
+  static const border = Color(0xFF1C2433);
+  static const success = Color(0xFF00FFB2);
+  static const warning = Color(0xFFFFB84D);
+  static const danger = Color(0xFFFF4D6A);
+  static const info = Color(0xFF00FFB2);
+  static const navInactive = Color(0xFF5A6278);
 
   /// 官方品牌红，仅复刻保真场景使用。
   static const brandRed = Color(0xFFF11C2C);
@@ -78,49 +77,23 @@ abstract final class AppColors {
   static const hairline = Color(0x120F1620);
   static const hairline2 = Color(0x1A0F1620);
 
-  // ── Material 3 surface tokens ──────────────────────────────────────────
-  /// Card / elevated surface (pure white on light theme).
-  static const surface = Color(0xFFFFFFFF);
+  // ── Material 3 surface tokens (VOID dark-first) ────────────────────────
+  static const surface = Color(0xFF151B26);
+  static const surfaceContainerLow = Color(0xFF11161F);
+  static const surfaceContainerHigh = Color(0xFF1C2433);
+  static const outlineVariant = Color(0xFF2A3142);
+  static const darkSurface = Color(0xFF05070B);
 
-  /// Subtle tinted background for nested containers.
-  static const surfaceContainerLow = Color(0xFFF8F8FA);
-
-  /// Slightly stronger tint for pressed / hovered states.
-  static const surfaceContainerHigh = Color(0xFFF0F0F4);
-
-  /// Outline variant: lighter than [border], for dividers and hairlines.
-  static const outlineVariant = Color(0xFFE8E8EC);
-
-  /// Dark surface for contrast panels (e.g., battery detail dark card).
-  static const darkSurface = Color(0xFF1A1A1A);
-
-  // ── v8 Ninebot tokens ──────────────────────────────────────────────────
-  /// Page top background (cool teal-tinted light, v8 radial gradient top).
-  static const pageBgTop = Color(0xFFE9EEF4);
-
-  /// Page bottom background (warm light grey, v8 gradient bottom).
-  static const pageBgBot = Color(0xFFF6F8FB);
-
-  /// Deep ink button primary (Ninebot-style central knob).
-  static const inkBtn = Color(0xFF1B2230);
-
-  /// Lighter ink button variant (hover / secondary).
-  static const inkBtn2 = Color(0xFF2A3342);
-
-  /// Teal tinted surface (brand-coloured card background).
-  static const surfaceBrandTint = Color(0xFFF0FAF8);
-
-  /// Red soft surface (warning/alert card background).
-  static const surfaceBrandRedTint = Color(0xFFFFF1F2);
-
-  /// Amber soft surface (reconnecting/warning card background).
-  static const surfaceBrandAmberTint = Color(0xFFFFF4D6);
-
-  /// Teal soft surface (info/connected card background).
-  static const surfaceBrandTealTint = Color(0xFFE5F6F4);
-
-  /// Energy / battery green.
-  static const energyGreen = Color(0xFF00C896);
+  // ── VOID field companions ──────────────────────────────────────────────
+  static const pageBgTop = Color(0xFF0A0E14);
+  static const pageBgBot = Color(0xFF05070B);
+  static const inkBtn = Color(0xFF1C2433);
+  static const inkBtn2 = Color(0xFF2A3142);
+  static const surfaceBrandTint = Color(0x1A00FFB2);
+  static const surfaceBrandRedTint = Color(0x22FF4D6A);
+  static const surfaceBrandAmberTint = Color(0x22FFB84D);
+  static const surfaceBrandTealTint = Color(0x1A00FFB2);
+  static const energyGreen = Color(0xFF00FFB2);
 
   /// Energy amber (medium battery).
   static const energyAmber = Color(0xFFF5A623);
@@ -175,67 +148,67 @@ abstract class AppColorsData {
   Color get pageBgBot;
 }
 
-/// Light-mode token set (current default).
+/// Light-mode companion token set (rarely used — app is dark-first).
 class AppColorsLight extends AppColorsData {
   const AppColorsLight._();
   static const instance = AppColorsLight._();
 
   @override
-  Color get primary => AppColors.primary;
+  Color get primary => const Color(0xFF00A57C);
   @override
-  Color get primaryDark => AppColors.primaryDark;
+  Color get primaryDark => const Color(0xFF008F6A);
   @override
-  Color get pageBg => AppColors.pageBg;
+  Color get pageBg => const Color(0xFFF3F5F8);
   @override
-  Color get textPrimary => AppColors.textPrimary;
+  Color get textPrimary => const Color(0xFF0B1220);
   @override
-  Color get textSecondary => AppColors.textSecondary;
+  Color get textSecondary => const Color(0xFF5C667A);
   @override
-  Color get textTertiary => AppColors.textTertiary;
+  Color get textTertiary => const Color(0xFF8A93A5);
   @override
-  Color get border => AppColors.border;
+  Color get border => const Color(0x140B1220);
   @override
-  Color get success => AppColors.success;
+  Color get success => const Color(0xFF00A57C);
   @override
-  Color get warning => AppColors.warning;
+  Color get warning => const Color(0xFFF5A623);
   @override
-  Color get danger => AppColors.danger;
+  Color get danger => const Color(0xFFFF4D5E);
   @override
-  Color get surface => AppColors.surface;
+  Color get surface => const Color(0xFFFFFFFF);
   @override
-  Color get surfaceContainerLow => AppColors.surfaceContainerLow;
+  Color get surfaceContainerLow => const Color(0xFFF6F7FA);
   @override
-  Color get surfaceContainerHigh => AppColors.surfaceContainerHigh;
+  Color get surfaceContainerHigh => const Color(0xFFE8ECF2);
   @override
-  Color get outlineVariant => AppColors.outlineVariant;
+  Color get outlineVariant => const Color(0x1A0B1220);
   @override
-  Color get darkSurface => AppColors.darkSurface;
+  Color get darkSurface => const Color(0xFF0B1220);
   @override
-  Color get energyGreen => AppColors.energyGreen;
+  Color get energyGreen => const Color(0xFF00C896);
   @override
-  Color get energyAmber => AppColors.energyAmber;
+  Color get energyAmber => const Color(0xFFF5A623);
   @override
-  Color get energyRed => AppColors.energyRed;
+  Color get energyRed => const Color(0xFFFF4D5E);
   @override
-  Color get inkBtn => AppColors.inkBtn;
+  Color get inkBtn => const Color(0xFF1B2230);
   @override
-  Color get inkBtn2 => AppColors.inkBtn2;
+  Color get inkBtn2 => const Color(0xFF2A3342);
   @override
-  Color get accentSky => AppColors.accentSky;
+  Color get accentSky => const Color(0xFF2E9BFF);
   @override
-  Color get accentViolet => AppColors.accentViolet;
+  Color get accentViolet => const Color(0xFF7C6CFF);
   @override
-  Color get accentAmber => AppColors.accentAmber;
+  Color get accentAmber => const Color(0xFFF5A623);
   @override
-  Color get accentPurple => AppColors.accentPurple;
+  Color get accentPurple => const Color(0xFF7B61FF);
   @override
-  Color get accentOrange => AppColors.accentOrange;
+  Color get accentOrange => const Color(0xFFFF8A00);
   @override
-  Color get brandRed => AppColors.brandRed;
+  Color get brandRed => const Color(0xFFF11C2C);
   @override
-  Color get pageBgTop => AppColors.pageBgTop;
+  Color get pageBgTop => const Color(0xFFE8ECF2);
   @override
-  Color get pageBgBot => AppColors.pageBgBot;
+  Color get pageBgBot => const Color(0xFFF6F7FA);
 }
 
 /// Dark-mode token set.
@@ -249,45 +222,45 @@ class AppColorsDark extends AppColorsData {
   static const instance = AppColorsDark._();
 
   @override
-  Color get primary => const Color(0xFF00E0A8);
+  Color get primary => const Color(0xFF00FFB2);
   @override
   Color get primaryDark => const Color(0xFF00C896);
   @override
-  Color get pageBg => const Color(0xFF0F1117);
+  Color get pageBg => const Color(0xFF05070B);
   @override
-  Color get textPrimary => const Color(0xFFF0F0F2);
+  Color get textPrimary => const Color(0xFFF4F6FA);
   @override
-  Color get textSecondary => const Color(0xFFA0A4B0);
+  Color get textSecondary => const Color(0xFF8B93A7);
   @override
-  Color get textTertiary => const Color(0xFF6B7080);
+  Color get textTertiary => const Color(0xFF5A6278);
   @override
-  Color get border => const Color(0xFF2A2D38);
+  Color get border => const Color(0xFF1C2433);
   @override
-  Color get success => const Color(0xFF00D8A8);
+  Color get success => const Color(0xFF00FFB2);
   @override
-  Color get warning => const Color(0xFFFFB74D);
+  Color get warning => const Color(0xFFFFB84D);
   @override
-  Color get danger => const Color(0xFFFF6B6B);
+  Color get danger => const Color(0xFFFF4D6A);
   @override
-  Color get surface => const Color(0xFF1A1D27);
+  Color get surface => const Color(0xFF151B26);
   @override
-  Color get surfaceContainerLow => const Color(0xFF151820);
+  Color get surfaceContainerLow => const Color(0xFF11161F);
   @override
-  Color get surfaceContainerHigh => const Color(0xFF22252F);
+  Color get surfaceContainerHigh => const Color(0xFF1C2433);
   @override
-  Color get outlineVariant => const Color(0xFF2E3140);
+  Color get outlineVariant => const Color(0xFF2A3142);
   @override
-  Color get darkSurface => const Color(0xFF0A0C12);
+  Color get darkSurface => const Color(0xFF05070B);
   @override
-  Color get energyGreen => const Color(0xFF00E0A8);
+  Color get energyGreen => const Color(0xFF00FFB2);
   @override
-  Color get energyAmber => const Color(0xFFFFC04D);
+  Color get energyAmber => const Color(0xFFFFB84D);
   @override
-  Color get energyRed => const Color(0xFFFF6B6B);
+  Color get energyRed => const Color(0xFFFF4D6A);
   @override
-  Color get inkBtn => const Color(0xFF2A2D38);
+  Color get inkBtn => const Color(0xFF1C2433);
   @override
-  Color get inkBtn2 => const Color(0xFF363A48);
+  Color get inkBtn2 => const Color(0xFF2A3142);
   @override
   Color get accentSky => const Color(0xFF5CB8FF);
   @override
@@ -301,9 +274,9 @@ class AppColorsDark extends AppColorsData {
   @override
   Color get brandRed => const Color(0xFFFF4D5E);
   @override
-  Color get pageBgTop => const Color(0xFF11141C);
+  Color get pageBgTop => const Color(0xFF0A0E14);
   @override
-  Color get pageBgBot => const Color(0xFF0F1117);
+  Color get pageBgBot => const Color(0xFF05070B);
 }
 
 /// 车体 painter 专用灰阶 token（replica 复刻保真）。
@@ -417,8 +390,9 @@ abstract final class AppTouchTargets {
 }
 
 abstract final class AppNav {
-  static const barBaseHeight = 82.0;
-  static const contentBottomPadding = 104.0;
+  /// Floating orbital nav clearance (VoidOrbitalNav.barHeight + margin).
+  static const barBaseHeight = 96.0;
+  static const contentBottomPadding = 118.0;
 }
 
 abstract final class AppTextStyles {
@@ -507,9 +481,9 @@ abstract final class AppTextStyles {
   );
 }
 
-/// Default card decoration: M3 elevated surface (no border, soft shadow).
+/// Default card decoration for VOID dark surfaces.
 const cardDecoration = BoxDecoration(
-  color: Colors.white,
+  color: AppColors.surface,
   borderRadius: BorderRadius.all(Radius.circular(AppRadii.card)),
   boxShadow: AppShadows.elevation1,
 );
