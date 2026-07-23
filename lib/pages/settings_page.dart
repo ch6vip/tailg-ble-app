@@ -43,99 +43,101 @@ class _SettingsPageState extends State<SettingsPage> {
                 padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
                 child: Text('设置', style: AppTextStyles.pageTitle),
               ),
-            const AppSectionLabel('账号与车辆'),
-            _group([
-              _settingItem(
-                icon: Lucide.garage,
-                title: '我的车辆',
-                subtitle: '账号车辆、默认车辆与同步',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(builder: (_) => const GaragePage()),
-                ),
-              ),
-              _settingItem(
-                icon: Lucide.message,
-                title: '消息中心',
-                subtitle: '系统消息、设备消息和安全提醒',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const VehicleMessagePage(),
+              const AppSectionLabel('账号与车辆'),
+              _group([
+                _settingItem(
+                  icon: Lucide.garage,
+                  title: '我的车辆',
+                  subtitle: '账号车辆、默认车辆与同步',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(builder: (_) => const GaragePage()),
                   ),
                 ),
-              ),
-            ]),
-            const AppSectionLabel('用车设置'),
-            _group([
-              _settingItem(
-                icon: Lucide.tune,
-                title: '车辆设置',
-                subtitle: '声音、灵敏度、车辆功能、骑行设置',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const VehicleSettingsPage(),
+                _settingItem(
+                  icon: Lucide.message,
+                  title: '消息中心',
+                  subtitle: '系统消息、设备消息和安全提醒',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const VehicleMessagePage(),
+                    ),
                   ),
                 ),
-              ),
-              _settingItem(
-                icon: Lucide.battery,
-                title: '电池/BMS',
-                subtitle: '电量、电压、温度、故障和预留 BMS 数据',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const BatteryDetailsPage(),
+              ]),
+              const AppSectionLabel('用车设置'),
+              _group([
+                _settingItem(
+                  icon: Lucide.tune,
+                  title: '车辆设置',
+                  subtitle: '声音、灵敏度、车辆功能、骑行设置',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const VehicleSettingsPage(),
+                    ),
                   ),
                 ),
-              ),
-            ]),
-            const AppSectionLabel('通用'),
-            _group(const [
-              _LanguageSettingTile(),
-              _DistanceUnitSettingTile(),
-              _RespectTextScaleSettingTile(),
-            ]),
-            const AppSectionLabel('高级'),
-            _group([
-              _settingItem(
-                icon: Lucide.shieldCheck,
-                title: '高级诊断',
-                subtitle: '设备信息、日志、协议和升级前检测',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const _AdvancedDiagnosticsPage(),
+                _settingItem(
+                  icon: Lucide.battery,
+                  title: '电池/BMS',
+                  subtitle: '电量、电压、温度、故障和预留 BMS 数据',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const BatteryDetailsPage(),
+                    ),
                   ),
                 ),
-              ),
-              _settingItem(
-                icon: Lucide.key,
-                title: '官方会话 / Token',
-                subtitle: '调试用：粘贴或复制官方登录凭证',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const CloudTokenPage(),
+              ]),
+              const AppSectionLabel('通用'),
+              _group(const [
+                _LanguageSettingTile(),
+                _DistanceUnitSettingTile(),
+                _RespectTextScaleSettingTile(),
+              ]),
+              const AppSectionLabel('高级'),
+              _group([
+                _settingItem(
+                  icon: Lucide.shieldCheck,
+                  title: '高级诊断',
+                  subtitle: '设备信息、日志、协议和升级前检测',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const _AdvancedDiagnosticsPage(),
+                    ),
                   ),
                 ),
-              ),
-            ]),
-            const AppSectionLabel('关于'),
-            _group([
-              _settingItem(
-                icon: Lucide.info,
-                title: '关于台铃智能',
-                subtitle: '版本信息、用户协议和隐私政策',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(builder: (_) => const AboutAppPage()),
+                _settingItem(
+                  icon: Lucide.key,
+                  title: '官方会话 / Token',
+                  subtitle: '调试用：粘贴或复制官方登录凭证',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const CloudTokenPage(),
+                    ),
+                  ),
                 ),
-              ),
-            ]),
-          ],
-        ),
+              ]),
+              const AppSectionLabel('关于'),
+              _group([
+                _settingItem(
+                  icon: Lucide.info,
+                  title: '关于台铃智能',
+                  subtitle: '版本信息、用户协议和隐私政策',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AboutAppPage(),
+                    ),
+                  ),
+                ),
+              ]),
+            ],
+          ),
         ),
       ),
     );
@@ -151,36 +153,36 @@ class _AdvancedDiagnosticsPage extends StatelessWidget {
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
-          children: [
-            const AppPageHeader(title: '高级诊断'),
-            const SizedBox(height: 12),
-            _group([
-              _settingItem(
-                icon: Lucide.stethoscope,
-                title: '故障诊断',
-                subtitle: '读取车辆错误码',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const DiagnosticPage(),
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
+            children: [
+              const AppPageHeader(title: '高级诊断'),
+              const SizedBox(height: 12),
+              _group([
+                _settingItem(
+                  icon: Lucide.stethoscope,
+                  title: '故障诊断',
+                  subtitle: '读取车辆错误码',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const DiagnosticPage(),
+                    ),
                   ),
                 ),
-              ),
-              _settingItem(
-                icon: Lucide.fileText,
-                title: '日志',
-                subtitle: '查看操作记录',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(builder: (_) => const LogPage()),
+                _settingItem(
+                  icon: Lucide.fileText,
+                  title: '日志',
+                  subtitle: '查看操作记录',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(builder: (_) => const LogPage()),
+                  ),
                 ),
-              ),
-            ]),
-          ],
-        ),
+              ]),
+            ],
+          ),
         ),
       ),
     );

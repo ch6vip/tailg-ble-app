@@ -663,10 +663,7 @@ class RideRecordPage extends StatelessWidget {
                       AppCard(
                         child: Row(
                           children: [
-                            const Icon(
-                              Lucide.mapPin,
-                              color: AppColors.primary,
-                            ),
+                            const Icon(Lucide.mapPin, color: AppColors.primary),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(

@@ -73,14 +73,14 @@ class _NotificationPrefsPageState extends State<NotificationPrefsPage> {
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: Column(
-          children: [
-            const AppPageHeader(title: '通知偏好'),
-            Expanded(child: _buildBody()),
-          ],
+          child: Column(
+            children: [
+              const AppPageHeader(title: '通知偏好'),
+              Expanded(child: _buildBody()),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 

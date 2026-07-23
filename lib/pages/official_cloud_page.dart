@@ -107,72 +107,72 @@ class _OfficialCloudPageState extends State<OfficialCloudPage> {
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: StreamBuilder<OfficialCloudState>(
-          stream: officialCloudService.stateStream,
-          initialData: officialCloudService.state,
-          builder: (context, snapshot) {
-            final state = snapshot.data ?? officialCloudService.state;
-            final error = state.error;
-            return ListView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(
-                bottom: AppNav.contentBottomPadding,
-              ),
-              children: [
-                AppPageHeader(
-                  title: '我的车辆',
-                  actions: [
-                    if (state.signedIn)
-                      AppHeaderAction(
-                        icon: Lucide.refresh,
-                        tooltip: '刷新车辆',
-                        onTap: state.loading ? null : _refresh,
-                      ),
+          child: StreamBuilder<OfficialCloudState>(
+            stream: officialCloudService.stateStream,
+            initialData: officialCloudService.state,
+            builder: (context, snapshot) {
+              final state = snapshot.data ?? officialCloudService.state;
+              final error = state.error;
+              return ListView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(
+                  bottom: AppNav.contentBottomPadding,
+                ),
+                children: [
+                  AppPageHeader(
+                    title: '我的车辆',
+                    actions: [
+                      if (state.signedIn)
+                        AppHeaderAction(
+                          icon: Lucide.refresh,
+                          tooltip: '刷新车辆',
+                          onTap: state.loading ? null : _refresh,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (!state.signedIn)
+                    _LoginCard(
+                      phoneController: _phoneController,
+                      smsController: _smsController,
+                      loading: state.loading,
+                      smsCountdown: _smsCountdown.remaining,
+                      onRequestCode: _requestCode,
+                      onLogin: _login,
+                    )
+                  else ...[
+                    _VehicleListCard(state: state),
                   ],
-                ),
-                const SizedBox(height: 12),
-                if (!state.signedIn)
-                  _LoginCard(
-                    phoneController: _phoneController,
-                    smsController: _smsController,
-                    loading: state.loading,
-                    smsCountdown: _smsCountdown.remaining,
-                    onRequestCode: _requestCode,
-                    onLogin: _login,
-                  )
-                else ...[
-                  _VehicleListCard(state: state),
-                ],
-                if (error != null) ...[
+                  if (error != null) ...[
+                    const SizedBox(height: 14),
+                    AppCard(
+                      color: AppColors.danger.withValues(alpha: 0.08),
+                      child: Text(
+                        error,
+                        style: const TextStyle(
+                          color: AppColors.danger,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 14),
-                  AppCard(
-                    color: AppColors.danger.withValues(alpha: 0.08),
+                  const AppCard(
                     child: Text(
-                      error,
-                      style: const TextStyle(
-                        color: AppColors.danger,
-                        fontSize: 13,
+                      '登录后会同步账号下已绑定车辆。车辆绑定、解绑和转让请按官方服务流程完成。',
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.45,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ),
                 ],
-                const SizedBox(height: 14),
-                const AppCard(
-                  child: Text(
-                    '登录后会同步账号下已绑定车辆。车辆绑定、解绑和转让请按官方服务流程完成。',
-                    style: TextStyle(
-                      fontSize: 12,
-                      height: 1.45,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
-    ),
     );
   }
 }
@@ -567,137 +567,139 @@ class _OfficialVehicleDetailPageState extends State<OfficialVehicleDetailPage> {
         return Scaffold(
           backgroundColor: VoidColors.voidDeep,
           body: VoidCanvas(
-        child: SafeArea(
-            child: ListView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(
-                bottom: AppNav.contentBottomPadding,
-              ),
-              children: [
-                AppPageHeader(title: vehicle.displayName),
-                const SizedBox(height: 12),
-                if (vehicle.carPhoto.isNotEmpty)
-                  AppCard(
-                    padding: EdgeInsets.zero,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AppRadii.lg),
-                      child: Image.network(
-                        vehicle.carPhoto,
-                        height: 160,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox(
-                          height: 120,
-                          child: Center(
-                            child: Icon(
-                              Lucide.vehicle,
-                              size: AppIconSizes.xl,
-                              semanticLabel: '车辆',
+            child: SafeArea(
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(
+                  bottom: AppNav.contentBottomPadding,
+                ),
+                children: [
+                  AppPageHeader(title: vehicle.displayName),
+                  const SizedBox(height: 12),
+                  if (vehicle.carPhoto.isNotEmpty)
+                    AppCard(
+                      padding: EdgeInsets.zero,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(AppRadii.lg),
+                        child: Image.network(
+                          vehicle.carPhoto,
+                          height: 160,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const SizedBox(
+                            height: 120,
+                            child: Center(
+                              child: Icon(
+                                Lucide.vehicle,
+                                size: AppIconSizes.xl,
+                                semanticLabel: '车辆',
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                const SizedBox(height: 12),
-                AppCard(
-                  child: Column(
-                    children: [
-                      _DetailLine(
-                        '车辆昵称',
-                        vehicle.carNickName,
-                        trailing: _savingNick
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                  const SizedBox(height: 12),
+                  AppCard(
+                    child: Column(
+                      children: [
+                        _DetailLine(
+                          '车辆昵称',
+                          vehicle.carNickName,
+                          trailing: _savingNick
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(
+                                  Lucide.edit,
+                                  size: AppIconSizes.sm,
+                                  color: AppColors.textTertiary,
                                 ),
-                              )
-                            : const Icon(
-                                Lucide.edit,
-                                size: AppIconSizes.sm,
-                                color: AppColors.textTertiary,
-                              ),
-                        onTap: _savingNick
-                            ? null
-                            : () => _editCarNickName(vehicle),
-                      ),
-                      _DetailLine('车辆名称', vehicle.carName),
-                      _DetailLine('车架号', vehicle.frame),
-                      _DetailLine(
-                        '官方 IMEI',
-                        SensitiveValueMasker.compact(
-                          vehicle.imei,
-                          emptyValue: '未返回',
-                          trim: false,
+                          onTap: _savingNick
+                              ? null
+                              : () => _editCarNickName(vehicle),
                         ),
-                      ),
-                      _DetailLine(
-                        'GPS IMEI',
-                        SensitiveValueMasker.compact(
-                          vehicle.imeiGps,
-                          emptyValue: '未返回',
-                          trim: false,
+                        _DetailLine('车辆名称', vehicle.carName),
+                        _DetailLine('车架号', vehicle.frame),
+                        _DetailLine(
+                          '官方 IMEI',
+                          SensitiveValueMasker.compact(
+                            vehicle.imei,
+                            emptyValue: '未返回',
+                            trim: false,
+                          ),
                         ),
-                      ),
-                      _DetailLine(
-                        '命令 IMEI',
-                        SensitiveValueMasker.compact(
-                          vehicle.commandImei,
-                          emptyValue: '未返回',
-                          trim: false,
+                        _DetailLine(
+                          'GPS IMEI',
+                          SensitiveValueMasker.compact(
+                            vehicle.imeiGps,
+                            emptyValue: '未返回',
+                            trim: false,
+                          ),
                         ),
-                      ),
-                      _DetailLine(
-                        '车型 modelType',
-                        vehicle.modelType?.toString() ?? '未返回',
-                      ),
-                      _DetailLine('在线状态', vehicle.onlineLabel),
-                      _DetailLine('设防状态', vehicle.defenceLabel),
-                      _DetailLine('启动状态', vehicle.powerLabel),
-                      _DetailLine(
-                        '电量',
-                        vehicle.electricQuantity == null
-                            ? '未返回'
-                            : '${vehicle.electricQuantity}%',
-                      ),
-                      _DetailLine(
-                        '电压',
-                        vehicle.voltage == null ? '未返回' : '${vehicle.voltage}V',
-                      ),
-                      _DetailLine(
-                        '里程',
-                        vehicle.mileage == null
-                            ? '未返回'
-                            : '${vehicle.mileage} km',
-                      ),
-                      _DetailLine('经度', vehicle.longitude),
-                      _DetailLine('纬度', vehicle.latitude),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                AppCard(
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (_) =>
-                              OfficialVehicleSelfCheckPage(vehicle: vehicle),
+                        _DetailLine(
+                          '命令 IMEI',
+                          SensitiveValueMasker.compact(
+                            vehicle.commandImei,
+                            emptyValue: '未返回',
+                            trim: false,
+                          ),
                         ),
-                      ),
-                      icon: const Icon(Lucide.stethoscope),
-                      label: const Text('云端自检'),
+                        _DetailLine(
+                          '车型 modelType',
+                          vehicle.modelType?.toString() ?? '未返回',
+                        ),
+                        _DetailLine('在线状态', vehicle.onlineLabel),
+                        _DetailLine('设防状态', vehicle.defenceLabel),
+                        _DetailLine('启动状态', vehicle.powerLabel),
+                        _DetailLine(
+                          '电量',
+                          vehicle.electricQuantity == null
+                              ? '未返回'
+                              : '${vehicle.electricQuantity}%',
+                        ),
+                        _DetailLine(
+                          '电压',
+                          vehicle.voltage == null
+                              ? '未返回'
+                              : '${vehicle.voltage}V',
+                        ),
+                        _DetailLine(
+                          '里程',
+                          vehicle.mileage == null
+                              ? '未返回'
+                              : '${vehicle.mileage} km',
+                        ),
+                        _DetailLine('经度', vehicle.longitude),
+                        _DetailLine('纬度', vehicle.latitude),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  AppCard(
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) =>
+                                OfficialVehicleSelfCheckPage(vehicle: vehicle),
+                          ),
+                        ),
+                        icon: const Icon(Lucide.stethoscope),
+                        label: const Text('云端自检'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
         );
       },
     );
@@ -757,71 +759,74 @@ class _OfficialVehicleSelfCheckPageState
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
-          children: [
-            AppPageHeader(
-              title: '云端自检',
-              actions: [
-                AppHeaderAction(
-                  icon: Lucide.refresh,
-                  tooltip: '重新自检',
-                  onTap: _loading ? null : _runCheck,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.vehicle.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.subtitle,
-                  ),
-                  const SizedBox(height: 8),
-                  _DetailLine(
-                    '命令 IMEI',
-                    SensitiveValueMasker.compact(
-                      widget.vehicle.commandImei,
-                      emptyValue: '未返回',
-                      trim: false,
-                    ),
-                  ),
-                  _DetailLine(
-                    '车型 modelType',
-                    widget.vehicle.modelType?.toString() ?? '未返回',
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
+            children: [
+              AppPageHeader(
+                title: '云端自检',
+                actions: [
+                  AppHeaderAction(
+                    icon: Lucide.refresh,
+                    tooltip: '重新自检',
+                    onTap: _loading ? null : _runCheck,
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 12),
-            if (_loading)
-              const AppCard(child: Center(child: CircularProgressIndicator()))
-            else if (error != null)
+              const SizedBox(height: 12),
               AppCard(
-                color: AppColors.danger.withValues(alpha: 0.08),
-                child: Text(
-                  error,
-                  style: const TextStyle(color: AppColors.danger, fontSize: 13),
-                ),
-              )
-            else if (result != null)
-              _SelfCheckResultCard(result: result)
-            else
-              const AppCard(
-                child: Text(
-                  '暂未返回自检结果',
-                  style: TextStyle(color: AppColors.textSecondary),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.vehicle.displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.subtitle,
+                    ),
+                    const SizedBox(height: 8),
+                    _DetailLine(
+                      '命令 IMEI',
+                      SensitiveValueMasker.compact(
+                        widget.vehicle.commandImei,
+                        emptyValue: '未返回',
+                        trim: false,
+                      ),
+                    ),
+                    _DetailLine(
+                      '车型 modelType',
+                      widget.vehicle.modelType?.toString() ?? '未返回',
+                    ),
+                  ],
                 ),
               ),
-          ],
+              const SizedBox(height: 12),
+              if (_loading)
+                const AppCard(child: Center(child: CircularProgressIndicator()))
+              else if (error != null)
+                AppCard(
+                  color: AppColors.danger.withValues(alpha: 0.08),
+                  child: Text(
+                    error,
+                    style: const TextStyle(
+                      color: AppColors.danger,
+                      fontSize: 13,
+                    ),
+                  ),
+                )
+              else if (result != null)
+                _SelfCheckResultCard(result: result)
+              else
+                const AppCard(
+                  child: Text(
+                    '暂未返回自检结果',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }

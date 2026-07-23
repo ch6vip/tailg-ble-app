@@ -291,76 +291,73 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: Column(
-          children: [
-            AppPageHeader(
-              title: '消息中心',
-              actions: [
-                IconButton(
-                  tooltip: '全部已读',
-                  onPressed: !signedIn || all.isEmpty ? null : _markReadAll,
-                  icon: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      const Icon(Lucide.check, semanticLabel: '全部已读'),
-                      if (unreadCount > 0)
-                        Positioned(
-                          right: -6,
-                          top: -6,
-                          child: Container(
-                            width: 16,
-                            height: 16,
-                            decoration: const BoxDecoration(
-                              color: AppColors.danger,
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              unreadCount > 9 ? '9+' : unreadCount.toString(),
-                              style: const TextStyle(
-                                fontSize: 9,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
+          child: Column(
+            children: [
+              AppPageHeader(
+                title: '消息中心',
+                actions: [
+                  IconButton(
+                    tooltip: '全部已读',
+                    onPressed: !signedIn || all.isEmpty ? null : _markReadAll,
+                    icon: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(Lucide.check, semanticLabel: '全部已读'),
+                        if (unreadCount > 0)
+                          Positioned(
+                            right: -6,
+                            top: -6,
+                            child: Container(
+                              width: 16,
+                              height: 16,
+                              decoration: const BoxDecoration(
+                                color: AppColors.danger,
+                                shape: BoxShape.circle,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                unreadCount > 9 ? '9+' : unreadCount.toString(),
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                IconButton(
-                  tooltip: '清空全部消息',
-                  onPressed: !signedIn || all.isEmpty || _clearing
-                      ? null
-                      : _clearAllMessages,
-                  icon: _clearing
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(
-                          Lucide.trash,
-                          semanticLabel: '清空全部消息',
-                        ),
-                ),
-                IconButton(
-                  tooltip: '刷新',
-                  onPressed: _loading
-                      ? null
-                      : () => _refreshMessages(force: true),
-                  icon: const Icon(Lucide.refresh),
-                ),
-              ],
-            ),
-            _buildTabs(),
-            Expanded(
-              child: _buildBody(signedIn: signedIn, tabMessages: tabMessages),
-            ),
-          ],
+                  IconButton(
+                    tooltip: '清空全部消息',
+                    onPressed: !signedIn || all.isEmpty || _clearing
+                        ? null
+                        : _clearAllMessages,
+                    icon: _clearing
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Lucide.trash, semanticLabel: '清空全部消息'),
+                  ),
+                  IconButton(
+                    tooltip: '刷新',
+                    onPressed: _loading
+                        ? null
+                        : () => _refreshMessages(force: true),
+                    icon: const Icon(Lucide.refresh),
+                  ),
+                ],
+              ),
+              _buildTabs(),
+              Expanded(
+                child: _buildBody(signedIn: signedIn, tabMessages: tabMessages),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 

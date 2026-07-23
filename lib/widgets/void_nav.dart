@@ -53,7 +53,9 @@ class VoidOrbitalNav extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _NavItem(
-                      itemKey: const ValueKey('official-bottom-nav-item-service'),
+                      itemKey: const ValueKey(
+                        'official-bottom-nav-item-service',
+                      ),
                       label: '服务',
                       icon: Lucide.service,
                       selected: currentIndex == 0,
@@ -62,7 +64,9 @@ class VoidOrbitalNav extends StatelessWidget {
                   ),
                   Expanded(
                     child: _NavItem(
-                      itemKey: const ValueKey('official-bottom-nav-item-vehicle'),
+                      itemKey: const ValueKey(
+                        'official-bottom-nav-item-vehicle',
+                      ),
                       label: '控车',
                       icon: Lucide.vehicle,
                       selected: currentIndex == 1,
@@ -112,9 +116,7 @@ class _NavItem extends StatelessWidget {
     final idle = dark ? VoidColors.inkFaint : VoidColors.lightInkMuted;
     final active = primary && selected
         ? VoidColors.energy
-        : (selected
-              ? (dark ? VoidColors.ink : VoidColors.lightInk)
-              : idle);
+        : (selected ? (dark ? VoidColors.ink : VoidColors.lightInk) : idle);
 
     return Semantics(
       button: true,

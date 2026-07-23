@@ -1498,7 +1498,12 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(VoidSpace.screenX, 12, VoidSpace.screenX, 4),
+      padding: const EdgeInsets.fromLTRB(
+        VoidSpace.screenX,
+        12,
+        VoidSpace.screenX,
+        4,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1671,7 +1676,9 @@ class _PowerPill extends StatelessWidget {
             : VoidColors.voidPanelHi,
         borderRadius: BorderRadius.circular(VoidRadii.pill),
         border: Border.all(
-          color: on ? VoidColors.energy.withValues(alpha: 0.3) : VoidColors.hairline,
+          color: on
+              ? VoidColors.energy.withValues(alpha: 0.3)
+              : VoidColors.hairline,
         ),
       ),
       child: Text(
@@ -1762,7 +1769,9 @@ class _BatteryHeroCard extends StatelessWidget {
                   Text('ENERGY', style: VoidType.micro),
                   Text(
                     healthLabel,
-                    style: VoidType.caption.copyWith(color: VoidColors.inkMuted),
+                    style: VoidType.caption.copyWith(
+                      color: VoidColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
@@ -1792,10 +1801,7 @@ class _BatteryHeroCard extends StatelessWidget {
                     ),
                   ),
                   Expanded(
-                    child: VoidMetric(
-                      value: chargeCount,
-                      label: '充电次数',
-                    ),
+                    child: VoidMetric(value: chargeCount, label: '充电次数'),
                   ),
                   Expanded(
                     child: VoidMetric(
@@ -1877,9 +1883,7 @@ class _ShortcutsRow extends StatelessWidget {
                           ? Lucide.help
                           : (armed! ? Lucide.lock : Lucide.unlock),
                       label: armed == null ? '设防未知' : (armed! ? '已设防' : '未设防'),
-                      sub: armed == null
-                          ? '刷新后重试'
-                          : (armed! ? '车锁已锁' : '点击设防'),
+                      sub: armed == null ? '刷新后重试' : (armed! ? '车锁已锁' : '点击设防'),
                       style: armed == true
                           ? _ShortcutStyle.armed
                           : _ShortcutStyle.neutral,
@@ -2083,13 +2087,21 @@ class _LocationCard extends StatelessWidget {
                       style: VoidType.bodyStrong,
                     ),
                     const SizedBox(height: 4),
-                    Text(updated, maxLines: 1, overflow: TextOverflow.ellipsis, style: VoidType.caption),
+                    Text(
+                      updated,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: VoidType.caption,
+                    ),
                   ],
                 ),
               ),
               const SizedBox(width: 10),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: VoidColors.voidPanelHi,
                   borderRadius: BorderRadius.circular(VoidRadii.pill),
@@ -2240,9 +2252,7 @@ class _CommandRow extends StatelessWidget {
           const SizedBox(width: 10),
           Text(
             entry.time,
-            style: VoidType.caption.copyWith(
-              fontFeatures: _VoidUi.tabularNums,
-            ),
+            style: VoidType.caption.copyWith(fontFeatures: _VoidUi.tabularNums),
           ),
         ],
       ),

@@ -206,82 +206,85 @@ class _ScanPageState extends State<ScanPage>
         return Scaffold(
           backgroundColor: VoidColors.voidDeep,
           body: VoidCanvas(
-        child: SafeArea(
-            child: Stack(
-              children: [
-                SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.only(
-                    bottom: AppNav.contentBottomPadding,
-                  ),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-                        child: Row(
-                          children: [
-                            Text('搜索设备', style: AppTextStyles.pageTitle),
-                          ],
+            child: SafeArea(
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.only(
+                      bottom: AppNav.contentBottomPadding,
+                    ),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                          child: Row(
+                            children: [
+                              Text('搜索设备', style: AppTextStyles.pageTitle),
+                            ],
+                          ),
                         ),
-                      ),
-                      if (!bluetoothOn)
-                        const _ScanHintCard(
-                          icon: Lucide.bluetoothOff,
-                          title: '蓝牙未开启',
-                          subtitle: '开启蓝牙后即可搜索附近车辆',
+                        if (!bluetoothOn)
+                          const _ScanHintCard(
+                            icon: Lucide.bluetoothOff,
+                            title: '蓝牙未开启',
+                            subtitle: '开启蓝牙后即可搜索附近车辆',
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16, bottom: 20),
+                          child: _RadarWidget(animation: _radarController),
                         ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16, bottom: 20),
-                        child: _RadarWidget(animation: _radarController),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 20),
-                        child: Column(
-                          children: [
-                            Text(
-                              !bluetoothOn
-                                  ? '等待蓝牙开启'
-                                  : _scanning
-                                  ? '正在搜索附近设备...'
-                                  : '点击下方按钮开始搜索',
-                              style: AppTextStyles.itemTitle.copyWith(
-                                fontWeight: FontWeight.w600,
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: Column(
+                            children: [
+                              Text(
+                                !bluetoothOn
+                                    ? '等待蓝牙开启'
+                                    : _scanning
+                                    ? '正在搜索附近设备...'
+                                    : '点击下方按钮开始搜索',
+                                style: AppTextStyles.itemTitle.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text('请确保蓝牙已开启且靠近车辆', style: AppTextStyles.caption),
-                          ],
+                              const SizedBox(height: 4),
+                              Text(
+                                '请确保蓝牙已开启且靠近车辆',
+                                style: AppTextStyles.caption,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      ValueListenableBuilder<List<ScanResult>>(
-                        valueListenable: _resultsNotifier,
-                        builder: (context, results, _) {
-                          return _DeviceList(
-                            results: results,
-                            connectingRemoteId: _connectingRemoteId,
-                            onTap: _connectDevice,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                Positioned(
-                  bottom: 16,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: ScanFab(
-                      scanning: _scanning,
-                      enabled: bluetoothOn,
-                      onTap: _scanning ? _stopScan : _startScan,
+                        ValueListenableBuilder<List<ScanResult>>(
+                          valueListenable: _resultsNotifier,
+                          builder: (context, results, _) {
+                            return _DeviceList(
+                              results: results,
+                              connectingRemoteId: _connectingRemoteId,
+                              onTap: _connectDevice,
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  Positioned(
+                    bottom: 16,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: ScanFab(
+                        scanning: _scanning,
+                        enabled: bluetoothOn,
+                        onTap: _scanning ? _stopScan : _startScan,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
         );
       },
     );

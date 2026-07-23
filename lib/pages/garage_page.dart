@@ -116,88 +116,87 @@ class _GaragePageState extends State<GaragePage> {
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: Column(
-          children: [
-            AppPageHeader(
-              title: '我的车库',
-              showBack: !widget.embedded,
-              actions: [
-                if (signedIn)
+          child: Column(
+            children: [
+              AppPageHeader(
+                title: '我的车库',
+                showBack: !widget.embedded,
+                actions: [
+                  if (signedIn)
+                    IconButton(
+                      tooltip: '同步车辆',
+                      onPressed: _syncing ? null : _syncCloudVehicles,
+                      icon: _syncing
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Lucide.refresh, semanticLabel: '同步车辆'),
+                    ),
                   IconButton(
-                    tooltip: '同步车辆',
-                    onPressed: _syncing ? null : _syncCloudVehicles,
-                    icon: _syncing
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Lucide.refresh, semanticLabel: '同步车辆'),
+                    tooltip: '添加车辆',
+                    onPressed: signedIn ? _openAddVehicle : _openLogin,
+                    icon: const Icon(Lucide.plusCircle, semanticLabel: '添加车辆'),
                   ),
-                IconButton(
-                  tooltip: '添加车辆',
-                  onPressed: signedIn ? _openAddVehicle : _openLogin,
-                  icon: const Icon(
-                    Lucide.plusCircle,
-                    semanticLabel: '添加车辆',
-                  ),
-                ),
-              ],
-            ),
-            Expanded(
-              child: !signedIn && !hasLocal
-                  ? _UnsignedEmptyGarage(onLogin: _openLogin)
-                  : signedIn && !hasCloud && !hasLocal
-                  ? _SignedEmptyGarage(
-                      loading: _cloudState.loading || _syncing,
-                      onSync: _syncCloudVehicles,
-                      onAddVehicle: _openAddVehicle,
-                    )
-                  : ListView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                      children: [
-                        if (signedIn) ...[
-                          if (hasCloud) ...[
-                            const _SectionLabel('账号车辆'),
-                            const SizedBox(height: 8),
-                            for (final vehicle in cloudVehicles)
-                              _CloudVehicleCard(
-                                vehicle: vehicle,
-                                isSelected: vehicle.key == selectedKey,
-                                onSelect: () => _selectCloudVehicle(vehicle),
+                ],
+              ),
+              Expanded(
+                child: !signedIn && !hasLocal
+                    ? _UnsignedEmptyGarage(onLogin: _openLogin)
+                    : signedIn && !hasCloud && !hasLocal
+                    ? _SignedEmptyGarage(
+                        loading: _cloudState.loading || _syncing,
+                        onSync: _syncCloudVehicles,
+                        onAddVehicle: _openAddVehicle,
+                      )
+                    : ListView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                        children: [
+                          if (signedIn) ...[
+                            if (hasCloud) ...[
+                              const _SectionLabel('账号车辆'),
+                              const SizedBox(height: 8),
+                              for (final vehicle in cloudVehicles)
+                                _CloudVehicleCard(
+                                  vehicle: vehicle,
+                                  isSelected: vehicle.key == selectedKey,
+                                  onSelect: () => _selectCloudVehicle(vehicle),
+                                ),
+                            ] else ...[
+                              _SignedEmptyInline(
+                                loading: _cloudState.loading || _syncing,
+                                onSync: _syncCloudVehicles,
+                                onAddVehicle: _openAddVehicle,
                               ),
+                              const SizedBox(height: 16),
+                            ],
                           ] else ...[
-                            _SignedEmptyInline(
-                              loading: _cloudState.loading || _syncing,
-                              onSync: _syncCloudVehicles,
-                              onAddVehicle: _openAddVehicle,
-                            ),
+                            _LoginPromptCard(onLogin: _openLogin),
                             const SizedBox(height: 16),
                           ],
-                        ] else ...[
-                          _LoginPromptCard(onLogin: _openLogin),
-                          const SizedBox(height: 16),
+                          if (hasLocal) ...[
+                            if (signedIn || hasCloud) const SizedBox(height: 8),
+                            const _SectionLabel('本地存档'),
+                            const SizedBox(height: 8),
+                            for (final vehicle in localVehicles)
+                              _LocalVehicleCard(
+                                vehicle: vehicle,
+                                isDefault:
+                                    vehicle.id ==
+                                        vehicleStore.defaultVehicleId ||
+                                    vehicle.id ==
+                                        vehicleStore.defaultVehicle?.id,
+                              ),
+                          ],
                         ],
-                        if (hasLocal) ...[
-                          if (signedIn || hasCloud) const SizedBox(height: 8),
-                          const _SectionLabel('本地存档'),
-                          const SizedBox(height: 8),
-                          for (final vehicle in localVehicles)
-                            _LocalVehicleCard(
-                              vehicle: vehicle,
-                              isDefault:
-                                  vehicle.id == vehicleStore.defaultVehicleId ||
-                                  vehicle.id == vehicleStore.defaultVehicle?.id,
-                            ),
-                        ],
-                      ],
-                    ),
-            ),
-          ],
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }

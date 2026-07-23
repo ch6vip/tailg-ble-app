@@ -43,60 +43,60 @@ class AddVehiclePage extends StatelessWidget {
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
-          children: [
-            const AppPageHeader(title: '添加车辆'),
-            const SizedBox(height: 10),
-            const _AddVehicleHero(),
-            const AppSectionLabel('已有车辆'),
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: _AddVehicleAction(
-                icon: Lucide.cloud,
-                title: '我的车辆',
-                subtitle: '登录官方账号后同步账号下已绑定车辆',
-                onTap: () => _openOfficialVehicles(context),
-              ),
-            ),
-            const SizedBox(height: 14),
-            const AppSectionLabel('绑定新车'),
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: _AddVehicleAction(
-                icon: Lucide.pin,
-                title: 'IMEI 绑车',
-                subtitle: '手写/粘贴坐垫二维码中的设备 IMEI（官方 bikeBind）',
-                onTap: () => _openImeiBind(context),
-              ),
-            ),
-            const SizedBox(height: 14),
-            const AppSectionLabel('蓝牙车辆'),
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: _AddVehicleAction(
-                icon: Lucide.bluetoothSearching,
-                title: '扫描附近车辆',
-                subtitle: '通过蓝牙扫描并连接本地车辆',
-                onTap: () => _openBleScan(context),
-              ),
-            ),
-            const SizedBox(height: 14),
-            const AppCard(
-              child: Text(
-                '支持官方云端同步、IMEI 绑定与本地蓝牙直连。蓝牙连接成功后会绑定为默认本地车辆，控车优先走 BLE。',
-                style: TextStyle(
-                  fontSize: 12,
-                  height: 1.45,
-                  color: AppColors.textSecondary,
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
+            children: [
+              const AppPageHeader(title: '添加车辆'),
+              const SizedBox(height: 10),
+              const _AddVehicleHero(),
+              const AppSectionLabel('已有车辆'),
+              AppCard(
+                padding: EdgeInsets.zero,
+                child: _AddVehicleAction(
+                  icon: Lucide.cloud,
+                  title: '我的车辆',
+                  subtitle: '登录官方账号后同步账号下已绑定车辆',
+                  onTap: () => _openOfficialVehicles(context),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 14),
+              const AppSectionLabel('绑定新车'),
+              AppCard(
+                padding: EdgeInsets.zero,
+                child: _AddVehicleAction(
+                  icon: Lucide.pin,
+                  title: 'IMEI 绑车',
+                  subtitle: '手写/粘贴坐垫二维码中的设备 IMEI（官方 bikeBind）',
+                  onTap: () => _openImeiBind(context),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const AppSectionLabel('蓝牙车辆'),
+              AppCard(
+                padding: EdgeInsets.zero,
+                child: _AddVehicleAction(
+                  icon: Lucide.bluetoothSearching,
+                  title: '扫描附近车辆',
+                  subtitle: '通过蓝牙扫描并连接本地车辆',
+                  onTap: () => _openBleScan(context),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const AppCard(
+                child: Text(
+                  '支持官方云端同步、IMEI 绑定与本地蓝牙直连。蓝牙连接成功后会绑定为默认本地车辆，控车优先走 BLE。',
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.45,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }

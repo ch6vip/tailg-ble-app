@@ -258,154 +258,156 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 24),
-          children: [
-            const AppPageHeader(title: '感应解锁'),
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _helpText,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      height: 1.45,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  if (!_snap.bleReady && _supportsInduction) ...[
-                    const SizedBox(height: 10),
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: 24),
+            children: [
+              const AppPageHeader(title: '感应解锁'),
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      connectionManager.isProtocolLoggedIn
-                          ? '蓝牙已连接，正在同步状态…'
-                          : '当前未完成蓝牙协议登录，开关可能不可用。请返回爱车页连接车辆。',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    '解锁模式',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _unlockStatusLine,
-                    style: TextStyle(
-                      fontSize: 12,
-                      height: 1.35,
-                      color: _snap.bondIncomplete
-                          ? colors.warning
-                          : colors.textTertiary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SegmentedButton<bool>(
-                    emptySelectionAllowed: true,
-                    segments: [
-                      ButtonSegment(
-                        value: true,
-                        icon: const Icon(Lucide.sensors, size: 16),
-                        label: const Text('感应'),
-                        enabled: _supportsInduction,
-                      ),
-                      const ButtonSegment(
-                        value: false,
-                        icon: Icon(Lucide.pointer, size: 16),
-                        label: Text('手动'),
-                      ),
-                    ],
-                    selected: {
-                      if (selection != null) selection,
-                      if (selection == null && !_supportsInduction) false,
-                    },
-                    showSelectedIcon: false,
-                    expandedInsets: EdgeInsets.zero,
-                    onSelectionChanged: anyBusy
-                        ? null
-                        : (next) {
-                            if (next.isEmpty) return;
-                            unawaited(_selectUnlockMode(induction: next.first));
-                          },
-                    style: _segmentStyle(colors),
-                  ),
-                  if (_showDistanceSlider && selection == true) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      '感应距离  ${_distanceDraft.round()}',
+                      _helpText,
                       style: const TextStyle(
                         fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        height: 1.45,
+                        color: AppColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      '档位越高，越远就能触发解锁',
+                    if (!_snap.bleReady && _supportsInduction) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        connectionManager.isProtocolLoggedIn
+                            ? '蓝牙已连接，正在同步状态…'
+                            : '当前未完成蓝牙协议登录，开关可能不可用。请返回爱车页连接车辆。',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      '解锁模式',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _unlockStatusLine,
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textTertiary,
+                        height: 1.35,
+                        color: _snap.bondIncomplete
+                            ? colors.warning
+                            : colors.textTertiary,
                       ),
                     ),
-                    Slider(
-                      value: _distanceDraft.clamp(0, maxLevel.toDouble()),
-                      min: 0,
-                      max: maxLevel.toDouble(),
-                      divisions: maxLevel > 0 ? maxLevel : null,
-                      label: '${_distanceDraft.round()}',
-                      onChanged: anyBusy || !canWrite
-                          ? null
-                          : (v) => setState(() => _distanceDraft = v),
-                      onChangeEnd: anyBusy || !canWrite
-                          ? null
-                          : (v) => unawaited(_setDistance(v.round())),
-                    ),
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '近',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textTertiary,
-                          ),
+                    const SizedBox(height: 12),
+                    SegmentedButton<bool>(
+                      emptySelectionAllowed: true,
+                      segments: [
+                        ButtonSegment(
+                          value: true,
+                          icon: const Icon(Lucide.sensors, size: 16),
+                          label: const Text('感应'),
+                          enabled: _supportsInduction,
                         ),
-                        Text(
-                          '远',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textTertiary,
-                          ),
+                        const ButtonSegment(
+                          value: false,
+                          icon: Icon(Lucide.pointer, size: 16),
+                          label: Text('手动'),
                         ),
                       ],
+                      selected: {
+                        if (selection != null) selection,
+                        if (selection == null && !_supportsInduction) false,
+                      },
+                      showSelectedIcon: false,
+                      expandedInsets: EdgeInsets.zero,
+                      onSelectionChanged: anyBusy
+                          ? null
+                          : (next) {
+                              if (next.isEmpty) return;
+                              unawaited(
+                                _selectUnlockMode(induction: next.first),
+                              );
+                            },
+                      style: _segmentStyle(colors),
+                    ),
+                    if (_showDistanceSlider && selection == true) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        '感应距离  ${_distanceDraft.round()}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        '档位越高，越远就能触发解锁',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                      Slider(
+                        value: _distanceDraft.clamp(0, maxLevel.toDouble()),
+                        min: 0,
+                        max: maxLevel.toDouble(),
+                        divisions: maxLevel > 0 ? maxLevel : null,
+                        label: '${_distanceDraft.round()}',
+                        onChanged: anyBusy || !canWrite
+                            ? null
+                            : (v) => setState(() => _distanceDraft = v),
+                        onChangeEnd: anyBusy || !canWrite
+                            ? null
+                            : (v) => unawaited(_setDistance(v.round())),
+                      ),
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '近',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                          Text(
+                            '远',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: anyBusy ? null : () => unawaited(_read()),
+                      child: Text(anyBusy ? '处理中…' : '刷新状态'),
                     ),
                   ],
-                  const SizedBox(height: 12),
-                  OutlinedButton(
-                    onPressed: anyBusy ? null : () => unawaited(_read()),
-                    child: Text(anyBusy ? '处理中…' : '刷新状态'),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }

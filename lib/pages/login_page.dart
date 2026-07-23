@@ -646,7 +646,11 @@ class _TokenSafetyNote extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const LucideIcon(Lucide.shield, size: 18, color: VoidColors.energyAmber),
+          const LucideIcon(
+            Lucide.shield,
+            size: 18,
+            color: VoidColors.energyAmber,
+          ),
           SizedBox(width: 10),
           Expanded(
             child: Text(

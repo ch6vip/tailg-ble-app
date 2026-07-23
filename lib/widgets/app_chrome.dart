@@ -217,11 +217,7 @@ class _AppSkeletonState extends State<AppSkeleton>
           width: widget.width,
           height: widget.height,
           decoration: BoxDecoration(
-            color: Color.lerp(
-              VoidColors.voidPanelHi,
-              VoidColors.voidLift,
-              t,
-            ),
+            color: Color.lerp(VoidColors.voidPanelHi, VoidColors.voidLift, t),
             borderRadius: radius,
           ),
         );

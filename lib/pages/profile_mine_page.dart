@@ -351,63 +351,63 @@ class _ProfileMinePageState extends State<ProfileMinePage>
               bottom: widget.showBottomNav ? 24 : bottomPad,
             ),
             children: [
-            // ── Profile header ──────────────────────────────────────────
-            _ProfileHeader(
-              avatarGlyph: _avatarGlyph,
-              avatarUrl: _avatarUrl,
-              nickname: _nickname,
-              phoneLine: _maskedPhone,
-              // Decompiled UserInfoBean has no member level; show login state only.
-              memberLabel: signedIn ? '已登录' : '游客',
-              // No points balance in official API; hide fake numbers.
-              showPointsEntry: signedIn,
-              onAvatarTap: _onAvatarOrEdit,
-              onEditTap: _onAvatarOrEdit,
-              onPointsTap: _onPointsTap,
-            ),
-
-            // ── Default vehicle ─────────────────────────────────────────
-            _VehicleCard(
-              name: _vehicleName,
-              online: _vehicleOnline,
-              statusLabel: _vehicleOnlineLabel,
-              batteryLabel: _batteryLabel,
-              onTap: _onVehicleCard,
-            ),
-
-            // ── Account & support (list, not equal-weight grid) ────────
-            const VoidSectionLabel('账户与支持'),
-            ValueListenableBuilder<int>(
-              valueListenable: messageReadStore.unreadCount,
-              builder: (context, unread, _) {
-                return _SupportCard(
-                  messageBadge: signedIn && unread > 0 ? unread : null,
-                  onSettings: _openSettings,
-                  onMessages: _openMessages,
-                  onHelp: _openHelp,
-                  onAbout: _openAbout,
-                );
-              },
-            ),
-
-            // ── Account ─────────────────────────────────────────────────
-            _AccountCard(
-              phoneValue: signedIn ? _maskedPhone : '未绑定',
-              showLogout: signedIn,
-              onPhoneTap: _onPhoneRow,
-              onLogoutTap: _confirmLogout,
-            ),
-
-            // ── Version ─────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
-              child: Text(
-                'Tailg Cloud · VOID',
-                textAlign: TextAlign.center,
-                style: VoidType.micro.copyWith(letterSpacing: 2),
+              // ── Profile header ──────────────────────────────────────────
+              _ProfileHeader(
+                avatarGlyph: _avatarGlyph,
+                avatarUrl: _avatarUrl,
+                nickname: _nickname,
+                phoneLine: _maskedPhone,
+                // Decompiled UserInfoBean has no member level; show login state only.
+                memberLabel: signedIn ? '已登录' : '游客',
+                // No points balance in official API; hide fake numbers.
+                showPointsEntry: signedIn,
+                onAvatarTap: _onAvatarOrEdit,
+                onEditTap: _onAvatarOrEdit,
+                onPointsTap: _onPointsTap,
               ),
-            ),
-          ],
+
+              // ── Default vehicle ─────────────────────────────────────────
+              _VehicleCard(
+                name: _vehicleName,
+                online: _vehicleOnline,
+                statusLabel: _vehicleOnlineLabel,
+                batteryLabel: _batteryLabel,
+                onTap: _onVehicleCard,
+              ),
+
+              // ── Account & support (list, not equal-weight grid) ────────
+              const VoidSectionLabel('账户与支持'),
+              ValueListenableBuilder<int>(
+                valueListenable: messageReadStore.unreadCount,
+                builder: (context, unread, _) {
+                  return _SupportCard(
+                    messageBadge: signedIn && unread > 0 ? unread : null,
+                    onSettings: _openSettings,
+                    onMessages: _openMessages,
+                    onHelp: _openHelp,
+                    onAbout: _openAbout,
+                  );
+                },
+              ),
+
+              // ── Account ─────────────────────────────────────────────────
+              _AccountCard(
+                phoneValue: signedIn ? _maskedPhone : '未绑定',
+                showLogout: signedIn,
+                onPhoneTap: _onPhoneRow,
+                onLogoutTap: _confirmLogout,
+              ),
+
+              // ── Version ─────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
+                child: Text(
+                  'Tailg Cloud · VOID',
+                  textAlign: TextAlign.center,
+                  style: VoidType.micro.copyWith(letterSpacing: 2),
+                ),
+              ),
+            ],
           ),
         ),
       ),

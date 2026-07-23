@@ -1592,8 +1592,7 @@ class ConnectionManager {
     // auto-reconnect QGJ — it只更新 DISCONNECTED 状态, 回到「点击连接」等用户。
     // Mirror that: no reconnect race, no scan spam, saves battery.
     final protocolIsQgj =
-        _protocol == ProtocolType.qgj ||
-        _lastKnownProtocol == ProtocolType.qgj;
+        _protocol == ProtocolType.qgj || _lastKnownProtocol == ProtocolType.qgj;
     _resetCharacteristics();
     if (!_userDisconnected &&
         _device != null &&

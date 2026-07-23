@@ -137,107 +137,107 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: Column(
-          children: [
-            const AppPageHeader(title: '故障诊断'),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: AppCard(
-                margin: EdgeInsets.zero,
-                child: Row(
-                  children: [
-                    Icon(
-                      Lucide.info,
-                      color: AppColors.textTertiary,
-                      size: 20,
-                    ),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        '实时故障诊断暂不可用，当前仅显示历史记录',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
+          child: Column(
+            children: [
+              const AppPageHeader(title: '故障诊断'),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: AppCard(
+                  margin: EdgeInsets.zero,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Lucide.info,
+                        color: AppColors.textTertiary,
+                        size: 20,
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          '实时故障诊断暂不可用，当前仅显示历史记录',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              child: _history.isEmpty
-                  ? const AppEmptyState(
-                      icon: Lucide.stethoscope,
-                      title: '暂无诊断记录',
-                      subtitle: '历史诊断记录将在此显示',
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                      itemCount: _history.length,
-                      itemBuilder: (context, index) {
-                        final record = _history[index];
-                        final hasFaults = record.faults.isNotEmpty;
-                        return AppCard(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    hasFaults
-                                        ? Lucide.alert
-                                        : Lucide.checkCircle,
-                                    color: hasFaults
-                                        ? AppColors.danger
-                                        : AppColors.success,
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
+              Expanded(
+                child: _history.isEmpty
+                    ? const AppEmptyState(
+                        icon: Lucide.stethoscope,
+                        title: '暂无诊断记录',
+                        subtitle: '历史诊断记录将在此显示',
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                        itemCount: _history.length,
+                        itemBuilder: (context, index) {
+                          final record = _history[index];
+                          final hasFaults = record.faults.isNotEmpty;
+                          return AppCard(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
                                       hasFaults
-                                          ? '发现 ${record.faults.length} 个故障'
-                                          : '车辆状态正常',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: hasFaults
-                                            ? AppColors.danger
-                                            : AppColors.success,
+                                          ? Lucide.alert
+                                          : Lucide.checkCircle,
+                                      color: hasFaults
+                                          ? AppColors.danger
+                                          : AppColors.success,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        hasFaults
+                                            ? '发现 ${record.faults.length} 个故障'
+                                            : '车辆状态正常',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: hasFaults
+                                              ? AppColors.danger
+                                              : AppColors.success,
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                    Text(
+                                      formatMonthDayMinuteText(record.time),
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textTertiary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (hasFaults) ...[
+                                  const SizedBox(height: 8),
                                   Text(
-                                    formatMonthDayMinuteText(record.time),
+                                    record.faults.join('、'),
                                     style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.textTertiary,
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
                                     ),
                                   ),
                                 ],
-                              ),
-                              if (hasFaults) ...[
-                                const SizedBox(height: 8),
-                                Text(
-                                  record.faults.join('、'),
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
                               ],
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }

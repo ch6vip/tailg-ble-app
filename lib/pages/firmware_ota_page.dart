@@ -84,57 +84,60 @@ class _FirmwareOtaPageState extends State<FirmwareOtaPage> {
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 24),
-          children: [
-            const AppPageHeader(title: '固件升级 OTA'),
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '官方 OTA 流',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '1. POST app/firmVersionInfo/getFirmVersion\n'
-                    '2. 下载官方固件包（完整性校验待完成）\n'
-                    '3. BLE LOGIN 后 writeOtaOrder(7000) + writeOtaFile(7001) 分片\n'
-                    '4. 等待中控校验/重启',
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.5,
-                      color: AppColors.textSecondary,
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: 24),
+            children: [
+              const AppPageHeader(title: '固件升级 OTA'),
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '官方 OTA 流',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  LinearProgressIndicator(
-                    value: _progress.fraction.clamp(0, 1),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${_progress.phase.name} · ${_progress.message}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
+                    const SizedBox(height: 8),
+                    const Text(
+                      '1. POST app/firmVersionInfo/getFirmVersion\n'
+                      '2. 下载官方固件包（完整性校验待完成）\n'
+                      '3. BLE LOGIN 后 writeOtaOrder(7000) + writeOtaFile(7001) 分片\n'
+                      '4. 等待中控校验/重启',
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.5,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _running ? null : () => unawaited(_start()),
-                      child: Text(_running ? '进行中…' : '检查并升级'),
+                    const SizedBox(height: 16),
+                    LinearProgressIndicator(
+                      value: _progress.fraction.clamp(0, 1),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Text(
+                      '${_progress.phase.name} · ${_progress.message}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _running ? null : () => unawaited(_start()),
+                        child: Text(_running ? '进行中…' : '检查并升级'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }

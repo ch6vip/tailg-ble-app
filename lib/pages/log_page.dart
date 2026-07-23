@@ -93,41 +93,41 @@ class _LogPageState extends State<LogPage> {
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: Column(
-          children: [
-            AppPageHeader(
-              title: '日志',
-              actions: [
-                AppHeaderAction(
-                  icon: Lucide.copy,
-                  tooltip: '复制全部',
-                  onTap: _copyAll,
-                ),
-                AppHeaderAction(
-                  icon: Lucide.refresh,
-                  tooltip: '刷新',
-                  // LogService.changes now auto-refreshes the page, but keep
-                  // the manual button for cases where the user wants to force
-                  // a re-read (e.g. after rotating the device).
-                  onTap: _refreshVisibleLogs,
-                ),
-                AppHeaderAction(
-                  icon: Lucide.trash,
-                  tooltip: '清空',
-                  onTap: _confirmClear,
-                ),
-              ],
-            ),
-            Expanded(
-              child: _LogList(
-                key: ValueKey<int>(_listGeneration),
-                entries: entries,
+          child: Column(
+            children: [
+              AppPageHeader(
+                title: '日志',
+                actions: [
+                  AppHeaderAction(
+                    icon: Lucide.copy,
+                    tooltip: '复制全部',
+                    onTap: _copyAll,
+                  ),
+                  AppHeaderAction(
+                    icon: Lucide.refresh,
+                    tooltip: '刷新',
+                    // LogService.changes now auto-refreshes the page, but keep
+                    // the manual button for cases where the user wants to force
+                    // a re-read (e.g. after rotating the device).
+                    onTap: _refreshVisibleLogs,
+                  ),
+                  AppHeaderAction(
+                    icon: Lucide.trash,
+                    tooltip: '清空',
+                    onTap: _confirmClear,
+                  ),
+                ],
               ),
-            ),
-          ],
+              Expanded(
+                child: _LogList(
+                  key: ValueKey<int>(_listGeneration),
+                  entries: entries,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }

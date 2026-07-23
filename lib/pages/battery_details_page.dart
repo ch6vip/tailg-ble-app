@@ -38,88 +38,88 @@ class BatteryDetailsPage extends StatelessWidget {
         return Scaffold(
           backgroundColor: VoidColors.voidDeep,
           body: VoidCanvas(
-        child: SafeArea(
-            child: RefreshIndicator(
-              onRefresh: () => _refreshAllBatteryData(context),
-              color: VoidColors.energy,
-              backgroundColor: VoidColors.voidPanel,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: BouncingScrollPhysics(),
-                ),
-                padding: const EdgeInsets.only(bottom: 24),
-                children: [
-                  _BatteryHero(
-                    snapshot: data,
-                    cloudState: cloudState,
-                    onRefresh: cloudState.signedIn
-                        ? () => unawaited(_refreshAllBatteryData(context))
-                        : null,
-                    onCorrectBattery: cloudState.signedIn
-                        ? () => _showCorrectBatterySheet(context)
-                        : null,
+            child: SafeArea(
+              child: RefreshIndicator(
+                onRefresh: () => _refreshAllBatteryData(context),
+                color: VoidColors.energy,
+                backgroundColor: VoidColors.voidPanel,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                    child: Column(
-                      children: [
-                        _SourceStrip(snapshot: data, cloudState: cloudState),
-                        const SizedBox(height: 14),
-                        _BatterySyncCard(cloudState: cloudState),
-                        if (vehicle != null) ...[
-                          const SizedBox(height: 14),
-                          _VehicleBatteryMetaCard(vehicle: vehicle),
-                        ],
-                        const SizedBox(height: 14),
-                        _CoulombMeterCard(vehicle: vehicle),
-                        const SizedBox(height: 14),
-                        _OfficialSummaryRow(snapshot: data),
-                        const SizedBox(height: 14),
-                        _OfficialMetricGrid(
-                          snapshot: data,
-                          onCycleHelp: () => _showBatteryHelpSheet(
-                            context,
-                            title: BatteryHelpCopy.cycleTitle,
-                            sections: BatteryHelpCopy.cycleSections,
-                          ),
-                          onScoreHelp: () => _showBatteryHelpSheet(
-                            context,
-                            title: BatteryHelpCopy.scoreTitle,
-                            sections: BatteryHelpCopy.scoreSections,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _FaultCard(snapshot: data),
-                        const SizedBox(height: 14),
-                        _BmsDetailsCard(
-                          snapshot: data,
-                          loading: cloudState.bmsInfoLoading,
-                          error: cloudState.bmsInfoError,
-                        ),
-                        const SizedBox(height: 14),
-                        _BatteryRouteHintCard(vehicle: vehicle),
-                        const SizedBox(height: 14),
-                        _BatteryActionsCard(
-                          signedIn: cloudState.signedIn,
-                          shareCar: vehicle?.shareCarFlag == true,
-                          onSwapService: () => _showInfoSheet(
-                            context,
-                            title: BatteryHelpCopy.swapServiceTitle,
-                            body: BatteryHelpCopy.swapServiceBody,
-                          ),
-                          onCorrectBattery: () =>
-                              _showCorrectBatterySheet(context),
-                        ),
-                        const SizedBox(height: 14),
-                        const _BatteryReadOnlyCard(),
-                      ],
+                  padding: const EdgeInsets.only(bottom: 24),
+                  children: [
+                    _BatteryHero(
+                      snapshot: data,
+                      cloudState: cloudState,
+                      onRefresh: cloudState.signedIn
+                          ? () => unawaited(_refreshAllBatteryData(context))
+                          : null,
+                      onCorrectBattery: cloudState.signedIn
+                          ? () => _showCorrectBatterySheet(context)
+                          : null,
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                      child: Column(
+                        children: [
+                          _SourceStrip(snapshot: data, cloudState: cloudState),
+                          const SizedBox(height: 14),
+                          _BatterySyncCard(cloudState: cloudState),
+                          if (vehicle != null) ...[
+                            const SizedBox(height: 14),
+                            _VehicleBatteryMetaCard(vehicle: vehicle),
+                          ],
+                          const SizedBox(height: 14),
+                          _CoulombMeterCard(vehicle: vehicle),
+                          const SizedBox(height: 14),
+                          _OfficialSummaryRow(snapshot: data),
+                          const SizedBox(height: 14),
+                          _OfficialMetricGrid(
+                            snapshot: data,
+                            onCycleHelp: () => _showBatteryHelpSheet(
+                              context,
+                              title: BatteryHelpCopy.cycleTitle,
+                              sections: BatteryHelpCopy.cycleSections,
+                            ),
+                            onScoreHelp: () => _showBatteryHelpSheet(
+                              context,
+                              title: BatteryHelpCopy.scoreTitle,
+                              sections: BatteryHelpCopy.scoreSections,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          _FaultCard(snapshot: data),
+                          const SizedBox(height: 14),
+                          _BmsDetailsCard(
+                            snapshot: data,
+                            loading: cloudState.bmsInfoLoading,
+                            error: cloudState.bmsInfoError,
+                          ),
+                          const SizedBox(height: 14),
+                          _BatteryRouteHintCard(vehicle: vehicle),
+                          const SizedBox(height: 14),
+                          _BatteryActionsCard(
+                            signedIn: cloudState.signedIn,
+                            shareCar: vehicle?.shareCarFlag == true,
+                            onSwapService: () => _showInfoSheet(
+                              context,
+                              title: BatteryHelpCopy.swapServiceTitle,
+                              body: BatteryHelpCopy.swapServiceBody,
+                            ),
+                            onCorrectBattery: () =>
+                                _showCorrectBatterySheet(context),
+                          ),
+                          const SizedBox(height: 14),
+                          const _BatteryReadOnlyCard(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
         );
       },
     );
@@ -1571,12 +1571,7 @@ class _Metric {
   final IconData icon;
   final VoidCallback? onHelp;
 
-  const _Metric(
-    this.label,
-    this.value, {
-    this.icon = Lucide.info,
-    this.onHelp,
-  });
+  const _Metric(this.label, this.value, {this.icon = Lucide.info, this.onHelp});
 }
 
 String _withUnit(String? value, String unit) {

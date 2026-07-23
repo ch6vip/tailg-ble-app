@@ -68,12 +68,10 @@ class ControlAndUnlockCard extends StatelessWidget {
     return switch (channelStatus.kind) {
       ControlTopBarChannelKind.bleDirect ||
       ControlTopBarChannelKind.mqttRemote ||
-      ControlTopBarChannelKind.cloudStandby =>
-        VoidColors.energy,
+      ControlTopBarChannelKind.cloudStandby => VoidColors.energy,
       ControlTopBarChannelKind.bleConnecting ||
       ControlTopBarChannelKind.mqttConnecting ||
-      ControlTopBarChannelKind.mqttRetry =>
-        VoidColors.energyAmber,
+      ControlTopBarChannelKind.mqttRetry => VoidColors.energyAmber,
       ControlTopBarChannelKind.unavailable => VoidColors.energyRed,
     };
   }
@@ -81,7 +79,9 @@ class ControlAndUnlockCard extends StatelessWidget {
   ButtonStyle _segmentStyle() {
     return ButtonStyle(
       minimumSize: const WidgetStatePropertyAll(Size(0, 40)),
-      padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 4)),
+      padding: const WidgetStatePropertyAll(
+        EdgeInsets.symmetric(horizontal: 4),
+      ),
       textStyle: const WidgetStatePropertyAll(
         TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
       ),

@@ -114,131 +114,138 @@ class _CloudTokenPageState extends State<CloudTokenPage> {
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
-          children: [
-            const AppPageHeader(title: '云端 Token'),
-            const SizedBox(height: 12),
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('当前会话', style: AppTextStyles.subtitle),
-                  const SizedBox(height: 8),
-                  Text(
-                    signedIn
-                        ? '已登录 · ${_maskToken(_state.token)}'
-                        : '未登录 · 可粘贴 Token 直接进入官方会话',
-                    style: AppTextStyles.smallText,
-                  ),
-                  if (_state.phone.isNotEmpty) ...[
-                    const SizedBox(height: 4),
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
+            children: [
+              const AppPageHeader(title: '云端 Token'),
+              const SizedBox(height: 12),
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('当前会话', style: AppTextStyles.subtitle),
+                    const SizedBox(height: 8),
                     Text(
-                      '手机号 ${SensitiveValueMasker.phone(_state.phone)}',
-                      style: AppTextStyles.caption,
+                      signedIn
+                          ? '已登录 · ${_maskToken(_state.token)}'
+                          : '未登录 · 可粘贴 Token 直接进入官方会话',
+                      style: AppTextStyles.smallText,
                     ),
-                  ],
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: signedIn && !loading
-                              ? _copyCurrentToken
-                              : null,
-                          icon: const Icon(Lucide.copy, size: AppIconSizes.sm),
-                          label: const Text('复制 Token'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: loading ? null : _pasteFromClipboard,
-                          icon: const Icon(
-                            Lucide.clipboardPaste,
-                            size: AppIconSizes.sm,
-                          ),
-                          label: const Text('粘贴'),
-                        ),
+                    if (_state.phone.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        '手机号 ${SensitiveValueMasker.phone(_state.phone)}',
+                        style: AppTextStyles.caption,
                       ),
                     ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('粘贴 Token 登录', style: AppTextStyles.subtitle),
-                  const SizedBox(height: 4),
-                  const Text(
-                    '支持直接粘贴 Authorization 值，或带 Bearer 前缀 / Authorization 头整行。'
-                    '登录后会写入安全存储并同步车辆。',
-                    style: AppTextStyles.smallText,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _controller,
-                    minLines: 3,
-                    maxLines: 6,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontFamily: 'monospace',
-                      height: 1.35,
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: signedIn && !loading
+                                ? _copyCurrentToken
+                                : null,
+                            icon: const Icon(
+                              Lucide.copy,
+                              size: AppIconSizes.sm,
+                            ),
+                            label: const Text('复制 Token'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: loading ? null : _pasteFromClipboard,
+                            icon: const Icon(
+                              Lucide.clipboardPaste,
+                              size: AppIconSizes.sm,
+                            ),
+                            label: const Text('粘贴'),
+                          ),
+                        ),
+                      ],
                     ),
-                    decoration: InputDecoration(
-                      hintText: '粘贴 Token 或 Authorization: Bearer ...',
-                      hintStyle: const TextStyle(color: AppColors.textTertiary),
-                      filled: true,
-                      fillColor: AppColors.surfaceContainerLow,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.sm),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: FilledButton.icon(
-                      onPressed: loading ? null : _loginWithToken,
-                      icon: loading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Lucide.login),
-                      label: Text(signedIn ? '用此 Token 重新登录' : '用 Token 登录'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            const AppCard(
-              child: Text(
-                'Token 等同于账号登录凭证，请勿分享给不可信的人或页面。'
-                '复制仅用于你自己的多设备调试与迁移。',
-                style: TextStyle(
-                  fontSize: 12,
-                  height: 1.45,
-                  color: AppColors.textSecondary,
+                  ],
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 14),
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('粘贴 Token 登录', style: AppTextStyles.subtitle),
+                    const SizedBox(height: 4),
+                    const Text(
+                      '支持直接粘贴 Authorization 值，或带 Bearer 前缀 / Authorization 头整行。'
+                      '登录后会写入安全存储并同步车辆。',
+                      style: AppTextStyles.smallText,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _controller,
+                      minLines: 3,
+                      maxLines: 6,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'monospace',
+                        height: 1.35,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: '粘贴 Token 或 Authorization: Bearer ...',
+                        hintStyle: const TextStyle(
+                          color: AppColors.textTertiary,
+                        ),
+                        filled: true,
+                        fillColor: AppColors.surfaceContainerLow,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadii.sm),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: FilledButton.icon(
+                        onPressed: loading ? null : _loginWithToken,
+                        icon: loading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Lucide.login),
+                        label: Text(signedIn ? '用此 Token 重新登录' : '用 Token 登录'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              const AppCard(
+                child: Text(
+                  'Token 等同于账号登录凭证，请勿分享给不可信的人或页面。'
+                  '复制仅用于你自己的多设备调试与迁移。',
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.45,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }

@@ -52,160 +52,165 @@ class VehicleSettingsPage extends StatelessWidget {
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: Column(
-          children: [
-            const AppPageHeader(title: '车辆设置'),
-            Expanded(
-              child: StreamBuilder<OfficialCloudState>(
-                stream: officialCloudService.stateStream,
-                initialData: officialCloudService.state,
-                builder: (context, snapshot) {
-                  final state = snapshot.data!;
-                  final vehicle = state.selectedVehicle;
-                  if (vehicle == null) {
-                    return const AppEmptyState(
-                      icon: Lucide.vehicle,
-                      title: '未选择车辆',
-                      subtitle: '请先在官方云端登录并选择一辆车',
-                    );
-                  }
-                  return ListView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 16,
-                    ),
-                    children: [
-                      AppCard(
-                        margin: EdgeInsets.zero,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              vehicle.displayName,
-                              style: AppTextStyles.itemTitle,
-                            ),
-                            const SizedBox(height: 8),
-                            _InfoRow(
-                              label: '车架号',
-                              value: vehicle.frame.isEmpty
-                                  ? '未知'
-                                  : vehicle.frame,
-                            ),
-                            _InfoRow(
-                              label: 'IMEI',
-                              value: vehicle.imei.isEmpty ? '未知' : vehicle.imei,
-                            ),
-                            _InfoRow(
-                              label: 'modelType',
-                              value: '${vehicle.modelType ?? '-'}',
-                            ),
-                            _InfoRow(label: '状态', value: vehicle.onlineLabel),
-                            _InfoRow(label: '设防', value: vehicle.defenceLabel),
-                          ],
-                        ),
+          child: Column(
+            children: [
+              const AppPageHeader(title: '车辆设置'),
+              Expanded(
+                child: StreamBuilder<OfficialCloudState>(
+                  stream: officialCloudService.stateStream,
+                  initialData: officialCloudService.state,
+                  builder: (context, snapshot) {
+                    final state = snapshot.data!;
+                    final vehicle = state.selectedVehicle;
+                    if (vehicle == null) {
+                      return const AppEmptyState(
+                        icon: Lucide.vehicle,
+                        title: '未选择车辆',
+                        subtitle: '请先在官方云端登录并选择一辆车',
+                      );
+                    }
+                    return ListView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
                       ),
-                      const SizedBox(height: 16),
-                      AppCard(
-                        margin: EdgeInsets.zero,
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(
-                            Lucide.message,
-                            color: AppColors.textSecondary,
+                      children: [
+                        AppCard(
+                          margin: EdgeInsets.zero,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                vehicle.displayName,
+                                style: AppTextStyles.itemTitle,
+                              ),
+                              const SizedBox(height: 8),
+                              _InfoRow(
+                                label: '车架号',
+                                value: vehicle.frame.isEmpty
+                                    ? '未知'
+                                    : vehicle.frame,
+                              ),
+                              _InfoRow(
+                                label: 'IMEI',
+                                value: vehicle.imei.isEmpty
+                                    ? '未知'
+                                    : vehicle.imei,
+                              ),
+                              _InfoRow(
+                                label: 'modelType',
+                                value: '${vehicle.modelType ?? '-'}',
+                              ),
+                              _InfoRow(label: '状态', value: vehicle.onlineLabel),
+                              _InfoRow(
+                                label: '设防',
+                                value: vehicle.defenceLabel,
+                              ),
+                            ],
                           ),
-                          title: const Text(
-                            '通知偏好',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                        ),
+                        const SizedBox(height: 16),
+                        AppCard(
+                          margin: EdgeInsets.zero,
+                          child: ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(
+                              Lucide.message,
+                              color: AppColors.textSecondary,
                             ),
-                          ),
-                          subtitle: const Text(
-                            '管理消息推送类型',
-                            style: TextStyle(
-                              fontSize: 12,
+                            title: const Text(
+                              '通知偏好',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            subtitle: const Text(
+                              '管理消息推送类型',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                            trailing: const Icon(
+                              Lucide.chevronRight,
                               color: AppColors.textTertiary,
                             ),
-                          ),
-                          trailing: const Icon(
-                            Lucide.chevronRight,
-                            color: AppColors.textTertiary,
-                          ),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const NotificationPrefsPage(),
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const NotificationPrefsPage(),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      AppCard(
-                        margin: EdgeInsets.zero,
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(
-                            Lucide.sensors,
-                            color: AppColors.textSecondary,
-                          ),
-                          title: const Text(
-                            '感应解锁',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
+                        const SizedBox(height: 12),
+                        AppCard(
+                          margin: EdgeInsets.zero,
+                          child: ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(
+                              Lucide.sensors,
+                              color: AppColors.textSecondary,
                             ),
-                          ),
-                          subtitle: const Text(
-                            '感应 / 手动 · 靠近解锁 · 距离',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textTertiary,
+                            title: const Text(
+                              '感应解锁',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                          trailing: const Icon(Lucide.chevronRight),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const InductionSettingsPage(),
+                            subtitle: const Text(
+                              '感应 / 手动 · 靠近解锁 · 距离',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                            trailing: const Icon(Lucide.chevronRight),
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const InductionSettingsPage(),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      AppCard(
-                        margin: EdgeInsets.zero,
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(
-                            Lucide.unlink,
-                            color: AppColors.danger,
-                          ),
-                          title: const Text(
-                            '解绑车辆',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
+                        const SizedBox(height: 12),
+                        AppCard(
+                          margin: EdgeInsets.zero,
+                          child: ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(
+                              Lucide.unlink,
                               color: AppColors.danger,
                             ),
-                          ),
-                          subtitle: const Text(
-                            '官方 app/car/bikeUnbind',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textTertiary,
+                            title: const Text(
+                              '解绑车辆',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.danger,
+                              ),
                             ),
+                            subtitle: const Text(
+                              '官方 app/car/bikeUnbind',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                            onTap: () => unawaited(_unbind(context)),
                           ),
-                          onTap: () => unawaited(_unbind(context)),
                         ),
-                      ),
-                    ],
-                  );
-                },
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }

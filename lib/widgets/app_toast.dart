@@ -107,8 +107,7 @@ class _ToastWidgetState extends State<_ToastWidget>
     super.dispose();
   }
 
-  Color get _bg =>
-      widget.isError ? AppColors.energyRed : AppColors.energyGreen;
+  Color get _bg => widget.isError ? AppColors.energyRed : AppColors.energyGreen;
 
   Color get _fg => widget.isError ? Colors.white : Colors.black;
 

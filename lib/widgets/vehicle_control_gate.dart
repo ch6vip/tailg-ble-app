@@ -54,7 +54,12 @@ class VehicleControlGateBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(VoidSpace.screenX, 8, VoidSpace.screenX, 8),
+      margin: const EdgeInsets.fromLTRB(
+        VoidSpace.screenX,
+        8,
+        VoidSpace.screenX,
+        8,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: VoidColors.voidPanel.withValues(alpha: 0.85),

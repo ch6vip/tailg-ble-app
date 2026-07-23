@@ -122,19 +122,19 @@ class _RideStatsPageState extends State<RideStatsPage> {
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: Column(
-          children: [
-            const AppPageHeader(title: '骑行统计'),
-            _MonthSelector(
-              month: _month,
-              onPrev: _prevMonth,
-              onNext: _nextMonth,
-            ),
-            Expanded(child: _buildBody()),
-          ],
+          child: Column(
+            children: [
+              const AppPageHeader(title: '骑行统计'),
+              _MonthSelector(
+                month: _month,
+                onPrev: _prevMonth,
+                onNext: _nextMonth,
+              ),
+              Expanded(child: _buildBody()),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 

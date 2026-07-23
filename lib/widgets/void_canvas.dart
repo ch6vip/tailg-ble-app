@@ -246,9 +246,7 @@ class _VoidEnergyRingState extends State<VoidEnergyRing>
                       : const Color(0xFFE2E6EE),
                   energy: p < 15
                       ? VoidColors.energyRed
-                      : (p < 35
-                            ? VoidColors.energyAmber
-                            : VoidColors.energy),
+                      : (p < 35 ? VoidColors.energyAmber : VoidColors.energy),
                 ),
               ),
               Column(

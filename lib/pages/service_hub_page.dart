@@ -50,10 +50,7 @@ class ServiceHubPage extends StatelessWidget {
                     const SizedBox(height: 10),
                     Text('服务中心', style: VoidType.hero.copyWith(fontSize: 34)),
                     const SizedBox(height: 8),
-                    Text(
-                      '定位 · 轨迹 · 车辆 · 能耗 — 全部车务入口',
-                      style: VoidType.body,
-                    ),
+                    Text('定位 · 轨迹 · 车辆 · 能耗 — 全部车务入口', style: VoidType.body),
                   ],
                 ),
               ),
@@ -94,8 +91,10 @@ class ServiceHubPage extends StatelessWidget {
                   _GlyphItem(
                     icon: Lucide.tune,
                     label: '车辆设置',
-                    onTap: () =>
-                        openCloudGatedPage(context, const VehicleSettingsPage()),
+                    onTap: () => openCloudGatedPage(
+                      context,
+                      const VehicleSettingsPage(),
+                    ),
                   ),
                   _GlyphItem(
                     icon: Lucide.battery,
@@ -114,7 +113,9 @@ class ServiceHubPage extends StatelessWidget {
 
               const VoidSectionLabel('更多'),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: VoidSpace.screenX),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: VoidSpace.screenX,
+                ),
                 child: VoidGlass(
                   radius: VoidRadii.lg,
                   padding: const EdgeInsets.symmetric(vertical: 4),
@@ -185,7 +186,9 @@ class _MoreServicesPage extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: VoidSpace.screenX),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: VoidSpace.screenX,
+                ),
                 child: VoidGlass(
                   radius: VoidRadii.lg,
                   padding: const EdgeInsets.symmetric(vertical: 4),
@@ -299,11 +302,7 @@ class _GlyphTile extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: VoidColors.hairline),
               ),
-              child: LucideIcon(
-                item.icon,
-                color: VoidColors.energy,
-                size: 22,
-              ),
+              child: LucideIcon(item.icon, color: VoidColors.energy, size: 22),
             ),
             const SizedBox(height: 10),
             Text(

@@ -56,50 +56,50 @@ class _BindImeiPageState extends State<BindImeiPage> {
       backgroundColor: VoidColors.voidDeep,
       body: VoidCanvas(
         child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 24),
-          children: [
-            const AppPageHeader(title: 'IMEI 绑车'),
-            const SizedBox(height: 8),
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '对照官方手写 IMEI 绑定（bindCar1 / app/car/bikeBind）。坐垫二维码可扫出同一 IMEI 后粘贴至此。',
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.45,
-                      color: AppColors.textSecondary,
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: 24),
+            children: [
+              const AppPageHeader(title: 'IMEI 绑车'),
+              const SizedBox(height: 8),
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '对照官方手写 IMEI 绑定（bindCar1 / app/car/bikeBind）。坐垫二维码可扫出同一 IMEI 后粘贴至此。',
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.45,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _controller,
-                    enabled: !_busy,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    decoration: const InputDecoration(
-                      labelText: '设备 IMEI',
-                      hintText: '请输入 15 位左右 IMEI',
-                      prefixIcon: Icon(Lucide.pin),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _controller,
+                      enabled: !_busy,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(
+                        labelText: '设备 IMEI',
+                        hintText: '请输入 15 位左右 IMEI',
+                        prefixIcon: Icon(Lucide.pin),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _busy ? null : () => unawaited(_submit()),
-                      child: Text(_busy ? '绑定中…' : '确认绑定'),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _busy ? null : () => unawaited(_submit()),
+                        child: Text(_busy ? '绑定中…' : '确认绑定'),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }
