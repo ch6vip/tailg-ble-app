@@ -71,9 +71,6 @@ const _controlConfirmPollDelay = Duration(milliseconds: 800);
 const _controlCommandDebounce = Duration(milliseconds: 1000);
 const _controlCommandSendDelay = Duration(milliseconds: 500);
 
-/// 城市电摩估算均速，用于「预计续航」小时数（官方无直接字段）。
-const _urbanAvgSpeedKmh = 20.0;
-
 class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   final _commandExecutor = ControlCommandExecutor(
@@ -1012,31 +1009,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     }
   }
 
-  String _statusText(OfficialVehicle? cloudVehicle) {
-    if (cloudVehicle == null) {
-      if (!officialCloudService.state.signedIn) {
-        return OfficialCloudMessages.signInRequired;
-      }
-      return '等待连接';
-    }
-    final online = cloudVehicle.onlineLabel;
-    final channel = _topBarChannel().label;
-    final sync = formatRelativeSyncText(
-      officialCloudService.lastVehiclesRefreshAt,
-    );
-    final base = '$online · $channel · $sync';
-    // P1: only when local BLE is still down and permission is the blocker.
-    final needsBlePerm =
-        !connectionManager.isProtocolLoggedIn &&
-        connectionManager.state == ble.ConnectionState.disconnected &&
-        cloudVehicle.normalizedDeviceMac.isNotEmpty &&
-        _blePermission?.granted == false;
-    if (needsBlePerm) {
-      return '$base · 本地控车需授权蓝牙';
-    }
-    return base;
-  }
-
   /// P0-C3 / P0-A3: single truth for 爱车 top-bar channel四态 (+ BLE 连接中 / 待重连).
   ControlTopBarChannel _topBarChannel({
     ControlChannelAvailability? availability,
@@ -1248,51 +1220,12 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     return '--';
   }
 
-  String _enduranceLabel(BatterySnapshot battery) {
-    final km = battery.estimatedRangeKm;
-    if (km == null || km <= 0) return '--';
-    final hours = km / _urbanAvgSpeedKmh;
-    if (hours < 0.1) return '<0.1 h';
-    return '${formatCompactDecimal(hours)} h';
-  }
-
-  String _chargeCountLabel(BatterySnapshot battery) {
-    final loop = battery.loopCount?.trim();
-    if (loop == null || loop.isEmpty) return '--';
-    return loop;
-  }
-
-  String _healthLabel(BatterySnapshot battery) {
-    final score = battery.batteryScore?.trim();
-    if (score != null && score.isNotEmpty) {
-      final cleaned = score.replaceAll('%', '');
-      return '健康 $cleaned%';
-    }
-    return '健康 ${battery.healthLabel}';
-  }
-
   String _locationTitle(ResolvedVehicleLocation? location) {
     final address = location?.address.trim() ?? '';
     if (address.isNotEmpty) return address;
     final coords = location?.coordinateText ?? '';
     if (coords.isNotEmpty) return coords;
     return '暂无位置';
-  }
-
-  String _locationUpdated(ResolvedVehicleLocation? location) {
-    final raw = location?.timeLabel.trim() ?? '';
-    if (raw.isNotEmpty) return '更新于 $raw';
-    final sync = formatRelativeSyncText(
-      officialCloudService.lastVehiclesRefreshAt,
-    );
-    if (sync == '尚未同步') return '位置未同步';
-    return sync.replaceFirst('同步', '更新');
-  }
-
-  String _locationWalk(ResolvedVehicleLocation? location) {
-    if (location == null) return '待定位';
-    if (location.source.isNotEmpty) return location.source;
-    return '已定位';
   }
 
   void _openSettings() {

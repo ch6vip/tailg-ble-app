@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 /// 滑动开锁组件 - 像素级还原设计图
@@ -72,7 +73,7 @@ class _SlideToUnlockButtonState extends State<SlideToUnlockButton>
       );
       // AnimationController.forward returns a TickerFuture we intentionally
       // ignore; the listener already drives setState.
-      _resetController.forward(from: 0);
+      unawaited(_resetController.forward(from: 0));
     }
   }
 
