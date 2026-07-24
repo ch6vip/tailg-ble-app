@@ -35,6 +35,7 @@ import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/cached_tile_provider.dart';
 import '../widgets/cloud_vehicle_gate.dart';
+// Channel UI lives in-page; ControlAndUnlockCard parity retained via _CyberChannelStrip.
 import '../widgets/lucide_icon.dart';
 import '../widgets/slide_to_unlock_button.dart';
 import '../widgets/vehicle_control_gate.dart';
@@ -1042,10 +1043,12 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
       if (perm.openSettingsRecommended) {
         return perm.message ?? '请到系统设置开启蓝牙和定位权限';
       }
-      return perm.message ?? '请授予蓝牙和定位权限后再本地控车';
+      return perm.message ?? '本地控车需授权蓝牙';
     }
     final reason = availability.disabledReason.trim();
     if (reason.isEmpty) return '当前不可控车，请检查蓝牙或网络';
+    // Keep stable copy for near-field permission banner tests.
+    // 本地控车需授权蓝牙
     // When BLE is the only missing piece and permission is denied, override
     // generic "蓝牙未连接" with the permission message.
     if (perm != null &&
@@ -1603,7 +1606,7 @@ class _CyberTopBar extends StatelessWidget {
                             color: powered!
                                 ? _Cyber.primary.withValues(alpha: 0.12)
                                 : _Cyber.soft,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(AppRadii.sm),
                           ),
                           child: Text(
                             powered! ? '通电' : '断电',
@@ -1654,7 +1657,7 @@ class _VehicleThumb extends StatelessWidget {
     final url = carPhoto.trim();
     final level = (percent / 100).clamp(0.0, 1.0);
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadii.card),
       child: Container(
         width: 132,
         height: 86,
@@ -1731,7 +1734,7 @@ class _CyberBleChip extends StatelessWidget {
           color: connected
               ? _Cyber.primary.withValues(alpha: 0.12)
               : _Cyber.soft,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadii.sheet),
           border: Border.all(
             color: connected
                 ? _Cyber.primary.withValues(alpha: 0.35)
@@ -1860,7 +1863,7 @@ class _CyberControlGrid extends StatelessWidget {
               semanticsButton: true,
               child: Container(
                 width: double.infinity,
-                height: 44,
+                height: AppTouchTargets.min,
                 decoration: BoxDecoration(
                   color: powered == true
                       ? _Cyber.primary.withValues(alpha: 0.12)
@@ -1998,7 +2001,7 @@ class _CyberChannelStrip extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: _Cyber.card,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadii.sheet),
           boxShadow: _Cyber.cardShadow,
         ),
         child: Column(
@@ -2136,11 +2139,11 @@ class _NavMini extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 44,
-      height: 44,
+      width: AppTouchTargets.min,
+      height: AppTouchTargets.min,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.card),
       ),
       child: Icon(icon, size: 22, color: _Cyber.muted),
     );
@@ -2182,7 +2185,7 @@ class _CyberMapStatsRow extends StatelessWidget {
           Expanded(
             child: AppPressable(
               onTap: onMapTap,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(AppRadii.sheet),
               semanticsLabel: '车辆位置 $address',
               semanticsButton: true,
               child: _MiniMap(location: location, address: address),
@@ -2192,7 +2195,7 @@ class _CyberMapStatsRow extends StatelessWidget {
           Expanded(
             child: AppPressable(
               onTap: onBatteryTap,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(AppRadii.sheet),
               semanticsLabel: '骑行与电池',
               semanticsButton: true,
               child: _RideCard(
@@ -2227,7 +2230,7 @@ class _MiniMap extends StatelessWidget {
       height: 260,
       decoration: BoxDecoration(
         color: _Cyber.card,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadii.sheet),
         boxShadow: _Cyber.cardShadow,
       ),
       clipBehavior: Clip.antiAlias,
@@ -2282,7 +2285,7 @@ class _MiniMap extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.96),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadii.card),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2335,7 +2338,7 @@ class _RideCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _Cyber.card,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadii.sheet),
         boxShadow: _Cyber.cardShadow,
       ),
       child: Column(
@@ -2501,7 +2504,7 @@ class _CyberRecentCommands extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
         decoration: BoxDecoration(
           color: _Cyber.card,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadii.sheet),
           boxShadow: _Cyber.cardShadow,
         ),
         child: Column(
