@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart';
 import 'package:tailg_ble_app/pages/vehicle_control_home_page.dart';
+import 'package:tailg_ble_app/widgets/void_particles.dart';
+import 'package:tailg_ble_app/widgets/void_typography.dart';
 
 import 'helpers/view_size.dart';
 
 void main() {
   setUp(() {
     homeTabIndex.value = 1;
+    VoidParticleField.enableAnimation = false;
+    KineticType.enableAnimation = false;
   });
 
   testWidgets('App renders home page', (WidgetTester tester) async {

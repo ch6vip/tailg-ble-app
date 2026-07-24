@@ -7,12 +7,16 @@ import 'package:tailg_ble_app/pages/vehicle_control_home_page.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/theme/app_void.dart';
+import 'package:tailg_ble_app/widgets/void_particles.dart';
+import 'package:tailg_ble_app/widgets/void_typography.dart';
 
 import 'helpers/storage_mocks.dart';
 import 'helpers/view_size.dart';
 
 void main() {
   setUp(() async {
+    VoidParticleField.enableAnimation = false;
+    KineticType.enableAnimation = false;
     resetMockStorage();
     await AppServices.reset();
   });

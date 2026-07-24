@@ -8,6 +8,8 @@ import '../theme/app_void.dart';
 /// Each character animates in with staggered scale + fade + slide.
 /// Two modes: [KineticTypeMode.sequential] char-by-char, or
 /// [KineticTypeMode.word] word-by-word.
+///
+/// Set [enableAnimation] to false to disable entrance animation (e.g. in tests).
 enum KineticTypeMode { sequential, word, block }
 
 class KineticType extends StatefulWidget {
@@ -24,6 +26,9 @@ class KineticType extends StatefulWidget {
     this.maxLines,
     this.overflow,
   });
+
+  /// Set to false to disable entrance animation (e.g. in tests).
+  static bool enableAnimation = true;
 
   final String text;
   final TextStyle? style;
@@ -43,7 +48,7 @@ class KineticType extends StatefulWidget {
 class _KineticTypeState extends State<KineticType>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late final List<Animation<double>> _itemAnims;
+  final List<Animation<double>> _itemAnims = [];
   List<String> _items = [];
 
   @override
@@ -54,7 +59,7 @@ class _KineticTypeState extends State<KineticType>
       duration: const Duration(milliseconds: 800),
     );
     _buildItems();
-    if (widget.autoPlay) {
+    if (widget.autoPlay && KineticType.enableAnimation) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) unawaited(_controller.forward());
       });
@@ -66,13 +71,14 @@ class _KineticTypeState extends State<KineticType>
     super.didUpdateWidget(old);
     if (old.text != widget.text || old.mode != widget.mode) {
       _buildItems();
-      if (widget.autoPlay) {
+      if (widget.autoPlay && KineticType.enableAnimation) {
         unawaited(_controller.forward(from: 0));
       }
     }
   }
 
   void _buildItems() {
+    _itemAnims.clear();
     switch (widget.mode) {
       case KineticTypeMode.sequential:
         _items = widget.text.characters.toList();
@@ -117,12 +123,27 @@ class _KineticTypeState extends State<KineticType>
   Widget build(BuildContext context) {
     if (_items.isEmpty) return const SizedBox.shrink();
 
+    // When animations are disabled, render plain text to avoid
+    // invisible widgets (the controller never starts, so anim values
+    // remain at 0 — opacity 0, scale 0.4).
+    if (!KineticType.enableAnimation) {
+      return Text(
+        widget.text,
+        style: widget.style,
+        textAlign: widget.alignment,
+        maxLines: widget.maxLines,
+        overflow: widget.overflow,
+      );
+    }
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
         if (widget.mode == KineticTypeMode.block) {
           return Opacity(
-            opacity: _itemAnims.isNotEmpty ? _itemAnims[0].value : 0,
+            opacity: _itemAnims.isNotEmpty
+                ? _itemAnims[0].value.clamp(0.0, 1.0)
+                : 0,
             child: Transform(
               alignment: Alignment.center,
               transform: Matrix4.identity()
@@ -148,7 +169,7 @@ class _KineticTypeState extends State<KineticType>
           final anim = _itemAnims[i];
           children.add(
             Opacity(
-              opacity: anim.value,
+              opacity: anim.value.clamp(0.0, 1.0),
               child: Transform(
                 alignment: Alignment.center,
                 transform: Matrix4.identity()
@@ -160,9 +181,7 @@ class _KineticTypeState extends State<KineticType>
                   )
                   ..translateByDouble(0, (1 - anim.value) * 20, 0, 1),
                 child: Text(
-                  widget.mode == KineticTypeMode.word
-                      ? '${_items[i]} '
-                      : _items[i],
+                  widget.mode == KineticTypeMode.word ? _items[i] : _items[i],
                   style: widget.style,
                 ),
               ),
@@ -178,6 +197,7 @@ class _KineticTypeState extends State<KineticType>
                   WrapAlignment.values.length - 1,
                 )],
             crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
             children: children,
           ),
         );

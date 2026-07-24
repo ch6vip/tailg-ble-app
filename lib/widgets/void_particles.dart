@@ -26,6 +26,10 @@ class VoidParticleField extends StatefulWidget {
   final double scale;
   final Offset? interactionOffset;
 
+  /// Set to false to disable continuous animation (e.g. in tests that use
+  /// [WidgetTester.pumpAndSettle]).
+  static bool enableAnimation = true;
+
   @override
   State<VoidParticleField> createState() => _VoidParticleFieldState();
 }
@@ -34,17 +38,18 @@ class _VoidParticleFieldState extends State<VoidParticleField>
     with SingleTickerProviderStateMixin {
   late final Ticker _ticker;
   final List<_Particle> _particles = [];
-  double _elapsed = 0;
+  final ValueNotifier<double> _elapsedNotifier = ValueNotifier<double>(0);
 
   @override
   void initState() {
     super.initState();
     _initParticles();
     _ticker = createTicker((elapsed) {
-      _elapsed = elapsed.inMicroseconds / 1000;
-      if (mounted) setState(() {});
+      _elapsedNotifier.value = elapsed.inMicroseconds / 1000;
     });
-    unawaited(_ticker.start());
+    if (VoidParticleField.enableAnimation) {
+      unawaited(_ticker.start());
+    }
   }
 
   void _initParticles() {
@@ -69,6 +74,7 @@ class _VoidParticleFieldState extends State<VoidParticleField>
   @override
   void dispose() {
     _ticker.dispose();
+    _elapsedNotifier.dispose();
     super.dispose();
   }
 
@@ -78,7 +84,7 @@ class _VoidParticleFieldState extends State<VoidParticleField>
       child: CustomPaint(
         painter: _ParticlePainter(
           particles: _particles,
-          elapsed: _elapsed,
+          elapsed: _elapsedNotifier,
           energyColor: widget.energyColor,
           interactionOffset: widget.interactionOffset,
           scale: widget.scale,
@@ -114,14 +120,16 @@ class _Particle {
 class _ParticlePainter extends CustomPainter {
   _ParticlePainter({
     required this.particles,
-    required this.elapsed,
+    required ValueNotifier<double> elapsed,
     required this.energyColor,
     required this.interactionOffset,
     required this.scale,
-  });
+  }) : _elapsed = elapsed,
+       super(repaint: elapsed);
 
   final List<_Particle> particles;
-  final double elapsed;
+  final ValueNotifier<double> _elapsed;
+  double get elapsed => _elapsed.value;
   final Color energyColor;
   final Offset? interactionOffset;
   final double scale;
@@ -202,126 +210,5 @@ class _ParticlePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ParticlePainter old) => true;
-}
-
-/// Animated blob nebula — organic, breathing gradient field.
-class VoidNebula extends StatefulWidget {
-  const VoidNebula({
-    super.key,
-    this.blobCount = 3,
-    this.intensity = 1.0,
-    this.colors,
-  });
-
-  final int blobCount;
-  final double intensity;
-  final List<Color>? colors;
-
-  @override
-  State<VoidNebula> createState() => _VoidNebulaState();
-}
-
-class _VoidNebulaState extends State<VoidNebula>
-    with SingleTickerProviderStateMixin {
-  late final Ticker _ticker;
-  final List<_NebulaBlob> _blobs = [];
-  double _elapsed = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    final rng = math.Random(13);
-    final defaultColors = [
-      VoidColors.energy.withValues(alpha: 0.12 * widget.intensity),
-      const Color(0xFF2E9BFF).withValues(alpha: 0.07 * widget.intensity),
-      const Color(0xFF7C6CFF).withValues(alpha: 0.06 * widget.intensity),
-    ];
-    final colors = widget.colors ?? defaultColors;
-    for (var i = 0; i < widget.blobCount; i++) {
-      _blobs.add(
-        _NebulaBlob(
-          x: rng.nextDouble(),
-          y: rng.nextDouble(),
-          size: 120 + rng.nextDouble() * 200,
-          color: colors[i % colors.length],
-          driftX: (rng.nextDouble() - 0.5) * 0.02,
-          driftY: (rng.nextDouble() - 0.5) * 0.02,
-          phase: rng.nextDouble() * math.pi * 2,
-        ),
-      );
-    }
-    _ticker = createTicker((elapsed) {
-      _elapsed = elapsed.inMicroseconds / 1000;
-      if (mounted) setState(() {});
-    });
-    unawaited(_ticker.start());
-  }
-
-  @override
-  void dispose() {
-    _ticker.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return RepaintBoundary(
-      child: CustomPaint(
-        painter: _NebulaPainter(blobs: _blobs, elapsed: _elapsed),
-        size: Size.infinite,
-      ),
-    );
-  }
-}
-
-class _NebulaBlob {
-  _NebulaBlob({
-    required this.x,
-    required this.y,
-    required this.size,
-    required this.color,
-    required this.driftX,
-    required this.driftY,
-    required this.phase,
-  });
-
-  double x;
-  double y;
-  final double size;
-  final Color color;
-  final double driftX;
-  final double driftY;
-  final double phase;
-}
-
-class _NebulaPainter extends CustomPainter {
-  _NebulaPainter({required this.blobs, required this.elapsed});
-
-  final List<_NebulaBlob> blobs;
-  final double elapsed;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final ms = elapsed / 1000;
-    for (final b in blobs) {
-      b.x += math.sin(ms * 0.3 + b.phase) * b.driftX * 0.5;
-      b.y += math.cos(ms * 0.2 + b.phase * 1.3) * b.driftY * 0.5;
-
-      // Clamp to visible area
-      b.x = b.x.clamp(-0.2, 1.2);
-      b.y = b.y.clamp(-0.2, 1.2);
-
-      final cx = b.x * size.width;
-      final cy = b.y * size.height;
-
-      final paint = Paint()
-        ..color = b.color
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 60);
-      canvas.drawCircle(Offset(cx, cy), b.size, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _NebulaPainter old) => true;
+  bool shouldRepaint(covariant _ParticlePainter oldDelegate) => true;
 }

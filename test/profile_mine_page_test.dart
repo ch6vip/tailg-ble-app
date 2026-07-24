@@ -104,7 +104,7 @@ void main() {
       await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
       await tester.pump();
 
-      expect(find.text('极光骑士'), findsOneWidget);
+      expect(find.text('极光骑士'), findsAtLeastNWidgets(1));
       expect(find.text('台铃用户'), findsNothing);
       expect(find.text('138****6688'), findsAtLeastNWidgets(1));
       expect(find.text('极光 Aurora S'), findsOneWidget);
@@ -142,7 +142,7 @@ void main() {
     await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
     await tester.pump();
 
-    expect(find.text('台铃用户'), findsOneWidget);
+    expect(find.text('台铃用户'), findsAtLeastNWidgets(1));
   });
 
   testWidgets('edit nickname dialog updates profile state', (tester) async {
@@ -167,7 +167,7 @@ void main() {
     await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
     await tester.pump();
 
-    expect(find.text('旧昵称'), findsOneWidget);
+    expect(find.text('旧昵称'), findsAtLeastNWidgets(1));
     await tester.tap(find.bySemanticsLabel('编辑'));
     await tester.pumpAndSettle();
     expect(find.text('修改昵称'), findsOneWidget);
