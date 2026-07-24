@@ -61,7 +61,8 @@ class CyberVehicleControlPageV2 extends StatefulWidget {
   const CyberVehicleControlPageV2({super.key});
 
   @override
-  State<CyberVehicleControlPageV2> createState() => _CyberVehicleControlPageV2State();
+  State<CyberVehicleControlPageV2> createState() =>
+      _CyberVehicleControlPageV2State();
 }
 
 // Align with official control debounce / confirm timings used by control_page.
@@ -1504,7 +1505,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
   }
 }
 
-
 enum _CommandStatus { ok, pending }
 
 enum _CommandKind { power, lock, unlock, find, seat }
@@ -1730,10 +1730,12 @@ class _VehicleThumb extends StatelessWidget {
             ? CachedNetworkImage(
                 imageUrl: url,
                 fit: BoxFit.contain,
-                placeholder: (_, __) =>
-                    CustomPaint(painter: VehicleStagePainter(batteryLevel: level)),
-                errorWidget: (_, __, ___) =>
-                    CustomPaint(painter: VehicleStagePainter(batteryLevel: level)),
+                placeholder: (_, __) => CustomPaint(
+                  painter: VehicleStagePainter(batteryLevel: level),
+                ),
+                errorWidget: (_, __, ___) => CustomPaint(
+                  painter: VehicleStagePainter(batteryLevel: level),
+                ),
               )
             : CustomPaint(painter: VehicleStagePainter(batteryLevel: level)),
       ),
@@ -2001,7 +2003,11 @@ class _CircleKey extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(fontSize: 12, color: _Cyber.muted, height: 1.2),
+            style: const TextStyle(
+              fontSize: 12,
+              color: _Cyber.muted,
+              height: 1.2,
+            ),
           ),
         ],
       ),
@@ -2429,9 +2435,13 @@ class _RideCard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _Metric(value: todayKm, label: '今日')),
+              Expanded(
+                child: _Metric(value: todayKm, label: '今日'),
+              ),
               Container(width: 1, height: 32, color: _Cyber.line),
-              Expanded(child: _Metric(value: totalKm, label: '总里程')),
+              Expanded(
+                child: _Metric(value: totalKm, label: '总里程'),
+              ),
             ],
           ),
         ],

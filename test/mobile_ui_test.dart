@@ -95,10 +95,7 @@ void main() {
   ) async {
     setTestViewSize(tester, const Size(390, 844));
     // Service + Mine stay VOID dark; Cyber vehicle home is light by design.
-    final darkPages = [
-      const ServiceHubPage(),
-      const ProfileMinePage(),
-    ];
+    final darkPages = [const ServiceHubPage(), const ProfileMinePage()];
     for (final page in darkPages) {
       await tester.pumpWidget(
         MaterialApp(

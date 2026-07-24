@@ -28,13 +28,14 @@ class _SlideToUnlockButtonState extends State<SlideToUnlockButton>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _resetAnimation = Tween<double>(begin: 0, end: 0).animate(
-      CurvedAnimation(parent: _resetController, curve: Curves.easeOut),
-    )..addListener(() {
-        setState(() {
-          _dragPosition = _resetAnimation.value;
+    _resetAnimation =
+        Tween<double>(begin: 0, end: 0).animate(
+          CurvedAnimation(parent: _resetController, curve: Curves.easeOut),
+        )..addListener(() {
+          setState(() {
+            _dragPosition = _resetAnimation.value;
+          });
         });
-      });
   }
 
   @override
@@ -66,10 +67,7 @@ class _SlideToUnlockButtonState extends State<SlideToUnlockButton>
       });
     } else {
       // 回弹动画
-      _resetAnimation = Tween<double>(
-        begin: _dragPosition,
-        end: 0.0,
-      ).animate(
+      _resetAnimation = Tween<double>(begin: _dragPosition, end: 0.0).animate(
         CurvedAnimation(parent: _resetController, curve: Curves.easeOut),
       );
       // AnimationController.forward returns a TickerFuture we intentionally
@@ -96,10 +94,7 @@ class _SlideToUnlockButtonState extends State<SlideToUnlockButton>
                 height: 88,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFFE8E8E8),
-                      const Color(0xFFF5F5F5),
-                    ],
+                    colors: [const Color(0xFFE8E8E8), const Color(0xFFF5F5F5)],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
@@ -164,10 +159,6 @@ class _SlideToUnlockButtonState extends State<SlideToUnlockButton>
   }
 
   Widget _buildArrow() {
-    return Icon(
-      Icons.chevron_right,
-      size: 24,
-      color: const Color(0xFFCCCCCC),
-    );
+    return Icon(Icons.chevron_right, size: 24, color: const Color(0xFFCCCCCC));
   }
 }
