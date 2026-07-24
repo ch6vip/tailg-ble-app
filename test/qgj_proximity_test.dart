@@ -53,7 +53,7 @@ void main() {
 
   group('control home induction surface', () {
     test('home hosts channel card; unlock lives in induction settings', () {
-      final home = readSource('lib/pages/vehicle_control_home_page.dart');
+      final home = readSource('lib/pages/cyber_vehicle_control_page_v2.dart');
       final card = readSource('lib/widgets/control_and_unlock_card.dart');
       final settings = readSource('lib/pages/induction_settings_page.dart');
       expect(home, contains('ControlAndUnlockCard'));

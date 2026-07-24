@@ -4,7 +4,7 @@ import 'helpers/source_scan.dart';
 
 void main() {
   test('control home uses local BLE state and locks the command target', () {
-    final source = readSource('lib/pages/vehicle_control_home_page.dart');
+    final source = readSource('lib/pages/cyber_vehicle_control_page_v2.dart');
 
     expect(source, contains('connectionManager.bikeStateStream.listen'));
     expect(source, contains('_ensureKnownControlState'));

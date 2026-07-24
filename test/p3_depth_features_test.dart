@@ -64,7 +64,7 @@ void main() {
         contains('openTlinkInduction'),
       );
       expect(
-        readSource('lib/pages/vehicle_control_home_page.dart'),
+        readSource('lib/pages/cyber_vehicle_control_page_v2.dart'),
         contains('ControlAndUnlockCard'),
       );
       expect(

@@ -85,7 +85,7 @@ void main() {
 
   group('near-field permission UI (P0/P1)', () {
     test('爱车 near-field banner covers auth / settings / connect states', () {
-      final source = readSource('lib/pages/vehicle_control_home_page.dart');
+      final source = readSource('lib/pages/cyber_vehicle_control_page_v2.dart');
       expect(source, contains('需要蓝牙和定位权限才能本地控车'));
       expect(source, contains('授权并连接'));
       expect(source, contains('权限被关闭，请到系统设置开启蓝牙和定位'));

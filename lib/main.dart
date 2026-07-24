@@ -19,7 +19,7 @@ import 'services/app_preferences_service.dart';
 import 'pages/profile_mine_page.dart';
 import 'pages/scan_page.dart';
 import 'pages/service_hub_page.dart';
-import 'pages/vehicle_control_home_page.dart';
+import 'pages/cyber_vehicle_control_page_v2.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_void.dart';
 import 'widgets/app_toast.dart';
@@ -708,7 +708,7 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
+      backgroundColor: const Color(0xFFF5F5F5),
       body: FadeTransition(
         opacity: _fadeAnim,
         child: SlideTransition(
@@ -722,7 +722,7 @@ class _HomePageState extends State<HomePage>
               ),
               TickerMode(
                 enabled: _currentIndex == _vehicleTabIndex,
-                child: const VehicleControlHomePage(),
+                child: const CyberVehicleControlPageV2(),
               ),
               TickerMode(
                 enabled: _currentIndex == _mineTabIndex,

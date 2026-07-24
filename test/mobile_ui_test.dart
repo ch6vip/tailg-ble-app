@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/pages/login_page.dart';
 import 'package:tailg_ble_app/pages/profile_mine_page.dart';
 import 'package:tailg_ble_app/pages/service_hub_page.dart';
-import 'package:tailg_ble_app/pages/vehicle_control_home_page.dart';
+import 'package:tailg_ble_app/pages/cyber_vehicle_control_page_v2.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/theme/app_void.dart';
@@ -94,12 +94,12 @@ void main() {
     tester,
   ) async {
     setTestViewSize(tester, const Size(390, 844));
-    final pages = [
+    // Service + Mine stay VOID dark; Cyber vehicle home is light by design.
+    final darkPages = [
       const ServiceHubPage(),
-      const VehicleControlHomePage(),
       const ProfileMinePage(),
     ];
-    for (final page in pages) {
+    for (final page in darkPages) {
       await tester.pumpWidget(
         MaterialApp(
           themeMode: ThemeMode.dark,
@@ -115,6 +115,17 @@ void main() {
         anyOf(AppColorsDark.instance.pageBg, VoidColors.voidDeep),
       );
     }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        themeMode: ThemeMode.dark,
+        darkTheme: _darkTheme(),
+        home: const CyberVehicleControlPageV2(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+    final cyber = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(cyber.backgroundColor, const Color(0xFFF5F5F5));
     expect(tester.takeException(), isNull);
   });
 

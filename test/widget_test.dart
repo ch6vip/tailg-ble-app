@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart';
-import 'package:tailg_ble_app/pages/vehicle_control_home_page.dart';
+import 'package:tailg_ble_app/pages/cyber_vehicle_control_page_v2.dart';
 import 'package:tailg_ble_app/widgets/void_particles.dart';
 import 'package:tailg_ble_app/widgets/void_typography.dart';
 
@@ -21,7 +21,7 @@ void main() {
       await tester.pump(); // Allow combined stream initial emission
       // No token + no local vehicle → Aurora home with sign-in gate banner.
       // Gate title + status line both use OfficialCloudMessages.signInRequired.
-      expect(find.byType(VehicleControlHomePage), findsOneWidget);
+      expect(find.byType(CyberVehicleControlPageV2), findsOneWidget);
       expect(find.text('请先登录官方账号'), findsAtLeastNWidgets(1));
       expect(find.text('去登录'), findsOneWidget);
       // Nav vehicle item + home shortcuts section both expose 控车.
@@ -149,7 +149,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(VehicleControlHomePage), findsOneWidget);
+      expect(find.byType(CyberVehicleControlPageV2), findsOneWidget);
       expect(find.text('请先登录官方账号'), findsAtLeastNWidgets(1));
       expect(find.text('去登录'), findsOneWidget);
     } finally {

@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
-import 'package:tailg_ble_app/pages/vehicle_control_home_page.dart';
+import 'package:tailg_ble_app/pages/cyber_vehicle_control_page_v2.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/services/official_mqtt_service.dart';
 import 'package:tailg_ble_app/services/permission_service.dart';
@@ -67,7 +67,7 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(const TestApp(home: VehicleControlHomePage()));
+    await tester.pumpWidget(const TestApp(home: CyberVehicleControlPageV2()));
     await tester.pump();
     // Drain microtasks from silent refresh / MQTT skip / permission deny.
     await tester.pump(const Duration(milliseconds: 50));
@@ -87,20 +87,22 @@ void main() {
     expect(find.text('仅云端'), findsOneWidget);
     expect(find.text('控车与解锁'), findsNothing);
     expect(find.text('解锁模式'), findsNothing);
-    expect(find.text('控车'), findsWidgets);
-    expect(find.text('寻车'), findsOneWidget);
+    // Cyber shell shortcuts (no VOID section title 「控车」).
+    expect(find.text('寻车'), findsWidgets);
+    expect(find.text('滑动开锁'), findsWidgets);
+    // Layout order under Cyber shell: keys/slide first, channel next, map/stats.
     expect(
       tester.getTopLeft(find.text('控车渠道')).dy,
-      greaterThan(tester.getTopLeft(find.text('暂无位置')).dy),
+      greaterThan(tester.getTopLeft(find.text('寻车')).dy),
     );
     expect(
-      tester.getTopLeft(find.text('寻车')).dy,
+      tester.getTopLeft(find.text('车辆位置')).dy,
       greaterThan(tester.getTopLeft(find.text('控车渠道')).dy),
     );
 
     await tester.tap(find.text('仅云端'));
     await tester.pump();
-    expect(find.text('仅官方账号远程'), findsOneWidget);
+    // Compact channel strip no longer shows the long description copy.
 
     // Avoid scrollUntilVisible (can hang if target is off-list); just assert
     // the recent-commands section exists in the tree.

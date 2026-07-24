@@ -4,14 +4,14 @@ import 'helpers/source_scan.dart';
 
 void main() {
   test('P1-2 foreground resume refreshes vehicles and MQTT', () {
-    final source = readSource('lib/pages/vehicle_control_home_page.dart');
+    final source = readSource('lib/pages/cyber_vehicle_control_page_v2.dart');
     expect(source, contains('_onForegroundResume'));
     expect(source, contains('refreshVehicles'));
     expect(source, contains('retryPreconnect'));
   });
 
   test('P1-3 busy path never silent-fails keys', () {
-    final source = readSource('lib/pages/vehicle_control_home_page.dart');
+    final source = readSource('lib/pages/cyber_vehicle_control_page_v2.dart');
     expect(source, contains("AppSnack.error(context, '正在执行控车指令，请稍候')"));
     expect(source, contains('dimmed:'));
   });
@@ -26,7 +26,7 @@ void main() {
     final source = readSource('lib/services/permission_service.dart');
     expect(source, contains('openSettingsRecommended'));
     expect(source, contains('openSystemSettings'));
-    final home = readSource('lib/pages/vehicle_control_home_page.dart');
+    final home = readSource('lib/pages/cyber_vehicle_control_page_v2.dart');
     expect(home, contains('openSystemSettings'));
     expect(home, contains('去设置'));
   });
