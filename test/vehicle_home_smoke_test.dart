@@ -114,15 +114,19 @@ void main() {
     expect(find.text('滑动开锁'), findsWidgets);
     expect(find.textContaining('点击通电'), findsNothing);
     expect(find.textContaining('点击断电'), findsNothing);
+    final controlGrid = find.byKey(const ValueKey('cyber-control-grid'));
     final navCard = find.byKey(const ValueKey('cyber-nav-card'));
-    expect(tester.getTopLeft(navCard).dy, closeTo(844, 0.1));
+    double controlsToNavGap() =>
+        tester.getTopLeft(navCard).dy -
+        tester.getBottomRight(controlGrid).dy;
+    expect(controlsToNavGap(), closeTo(32, 0.1));
     expect(tester.takeException(), isNull);
 
-    // The fold stays stable on the narrower logical width used by the visual
-    // reference and does not reveal a clipped secondary card below the nav.
+    // The inter-section rhythm stays stable on the narrower logical width
+    // used by the visual reference.
     applyTestViewSize(tester, const Size(360, 800));
     await tester.pump();
-    expect(tester.getTopLeft(navCard).dy, closeTo(800, 0.1));
+    expect(controlsToNavGap(), closeTo(32, 0.1));
     expect(tester.takeException(), isNull);
     applyTestViewSize(tester, const Size(390, 844));
     await tester.pump();

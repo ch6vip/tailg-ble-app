@@ -1387,12 +1387,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     final mediaPadding = MediaQuery.paddingOf(context);
     final bottomPad = AppNav.contentBottomPadding + mediaPadding.bottom;
     final headerExtent = alert == null ? 440.0 : 506.0;
-    final safeViewportHeight =
-        MediaQuery.sizeOf(context).height - mediaPadding.top;
-    final firstFoldControlsExtent = math.max(
-      230.0,
-      safeViewportHeight - headerExtent,
-    );
     final lastRide = _lastRideVisuals(cloudState);
 
     return Scaffold(
@@ -1446,34 +1440,27 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
               SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    SizedBox(
-                      height: firstFoldControlsExtent,
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 18),
-                          _CyberControlGrid(
-                            armed: isArmed,
-                            dimmed:
-                                _busy ||
-                                !hasVehicle ||
-                                !signedIn ||
-                                !controlAvailability.enabled,
-                            onFind: () =>
-                                unawaited(_sendCommand(CommandCode.find)),
-                            onUnlock: () => unawaited(_sendArmToggle()),
-                            onSettings: _openSettings,
-                            onSeat: () =>
-                                unawaited(_sendCommand(CommandCode.openSeat)),
-                            onShare: _openShare,
-                            onPassword: () {
-                              AppSnack.info(context, '密码解锁请在车辆设置中配置');
-                              _openSettings();
-                            },
-                            onNfc: _openNfc,
-                          ),
-                        ],
-                      ),
+                    const SizedBox(height: 18),
+                    _CyberControlGrid(
+                      armed: isArmed,
+                      dimmed:
+                          _busy ||
+                          !hasVehicle ||
+                          !signedIn ||
+                          !controlAvailability.enabled,
+                      onFind: () => unawaited(_sendCommand(CommandCode.find)),
+                      onUnlock: () => unawaited(_sendArmToggle()),
+                      onSettings: _openSettings,
+                      onSeat: () =>
+                          unawaited(_sendCommand(CommandCode.openSeat)),
+                      onShare: _openShare,
+                      onPassword: () {
+                        AppSnack.info(context, '密码解锁请在车辆设置中配置');
+                        _openSettings();
+                      },
+                      onNfc: _openNfc,
                     ),
+                    const SizedBox(height: 32),
                     _CyberNavCard(
                       onMirror: () =>
                           AppSnack.info(context, '镜像投屏需车辆仪表支持，连接后可用'),
@@ -2657,6 +2644,7 @@ class _CyberControlGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Opacity(
+      key: const ValueKey('cyber-control-grid'),
       opacity: dimmed ? 0.55 : 1,
       child: Padding(
         padding: _Cyber.cardMargin,
