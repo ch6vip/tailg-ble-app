@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../widgets/lucide_icon.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../main.dart'; // P0-6: service locator getters
@@ -13,7 +12,177 @@ import '../services/log_service.dart';
 import '../services/replica_feature_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_chrome.dart';
+import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/lucide_icon.dart';
+
+const _replicaCardDecoration = BoxDecoration(
+  color: CyberHomeColors.card,
+  borderRadius: BorderRadius.all(Radius.circular(AppRadii.tile)),
+  border: Border.fromBorderSide(BorderSide(color: CyberHomeColors.line)),
+);
+
+const _replicaPageTitle = TextStyle(
+  fontSize: 24,
+  fontWeight: FontWeight.w700,
+  color: CyberHomeColors.ink,
+);
+
+const _replicaItemTitle = TextStyle(
+  fontSize: 15,
+  fontWeight: FontWeight.w700,
+  color: CyberHomeColors.ink,
+);
+
+const _replicaBodyText = TextStyle(
+  fontSize: 13,
+  height: 1.45,
+  color: CyberHomeColors.inkMuted,
+);
+
+const _replicaCaptionText = TextStyle(
+  fontSize: 12,
+  color: CyberHomeColors.inkFaint,
+);
+
+final _replicaFilledButtonStyle = FilledButton.styleFrom(
+  minimumSize: const Size.fromHeight(48),
+  backgroundColor: CyberHomeColors.primary,
+  foregroundColor: CyberHomeColors.white,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(AppRadii.tile),
+  ),
+);
+
+InputDecoration _replicaInputDecoration(String label) {
+  final border = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(AppRadii.tile),
+    borderSide: const BorderSide(color: CyberHomeColors.lineStrong),
+  );
+  return InputDecoration(
+    labelText: label,
+    filled: true,
+    fillColor: CyberHomeColors.cardMuted,
+    border: border,
+    enabledBorder: border,
+    focusedBorder: border.copyWith(
+      borderSide: const BorderSide(color: CyberHomeColors.primary),
+    ),
+  );
+}
+
+class _ReplicaPageHeader extends StatelessWidget {
+  const _ReplicaPageHeader({
+    required this.title,
+    required this.actionIcon,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  final String title;
+  final IconData actionIcon;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      child: Row(
+        children: [
+          _ReplicaHeaderAction(
+            icon: Lucide.arrowLeft,
+            label: '返回',
+            filled: true,
+            onTap: () => Navigator.of(context).pop(),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: _replicaPageTitle,
+            ),
+          ),
+          _ReplicaHeaderAction(
+            icon: actionIcon,
+            label: actionLabel,
+            onTap: onAction,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReplicaHeaderAction extends StatelessWidget {
+  const _ReplicaHeaderAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.filled = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: label,
+      excludeFromSemantics: true,
+      child: AppPressable(
+        onTap: onTap,
+        semanticsLabel: label,
+        semanticsButton: true,
+        child: SizedBox(
+          width: AppTouchTargets.min,
+          height: AppTouchTargets.min,
+          child: Center(
+            child: Container(
+              width: filled ? AppTouchTargets.min : 36,
+              height: filled ? AppTouchTargets.min : 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: filled
+                    ? CyberHomeColors.card
+                    : CyberHomeColors.transparent,
+                shape: BoxShape.circle,
+                boxShadow: filled ? AppShadows.cyberActionShadow : const [],
+              ),
+              child: LucideIcon(
+                icon,
+                size: 20,
+                color: CyberHomeColors.inkSecondary,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReplicaSectionLabel extends StatelessWidget {
+  const _ReplicaSectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: CyberHomeColors.inkMuted,
+      ),
+    );
+  }
+}
 
 class NfcKeyPage extends StatefulWidget {
   const NfcKeyPage({super.key});
@@ -60,13 +229,19 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
+              backgroundColor: CyberHomeColors.card,
+              surfaceTintColor: CyberHomeColors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadii.tile),
+              ),
+              titleTextStyle: _replicaItemTitle.copyWith(fontSize: 18),
               title: Text(record == null ? '添加钥匙' : '编辑钥匙'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(labelText: '钥匙名称'),
+                    decoration: _replicaInputDecoration('钥匙名称'),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
@@ -82,16 +257,20 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
                         setDialogState(() => type = value);
                       }
                     },
-                    decoration: const InputDecoration(labelText: '钥匙类型'),
+                    decoration: _replicaInputDecoration('钥匙类型'),
                   ),
                 ],
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(
+                    foregroundColor: CyberHomeColors.inkMuted,
+                  ),
                   child: const Text('取消'),
                 ),
                 FilledButton(
+                  style: _replicaFilledButtonStyle,
                   onPressed: () {
                     final name = nameController.text.trim();
                     if (name.isEmpty) return;
@@ -153,28 +332,26 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
   Widget build(BuildContext context) {
     final canBle = _bleNfc.canWriteOfficialNfc;
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
+      backgroundColor: CyberHomeColors.pageBg,
       body: SafeArea(
         child: Column(
           children: [
-            AppPageHeader(
+            _ReplicaPageHeader(
               title: 'NFC钥匙',
-              actions: [
-                IconButton(
-                  tooltip: '添加钥匙',
-                  onPressed: () => _editKey(),
-                  icon: const Icon(Lucide.plus, semanticLabel: '添加'),
-                ),
-              ],
+              actionIcon: Lucide.plus,
+              actionLabel: '添加钥匙',
+              onAction: () => _editKey(),
             ),
             Expanded(
               child: ListView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(bottom: 24),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                 children: [
-                  const AppSectionLabel('官方 / 本地'),
+                  const _ReplicaSectionLabel('官方 / 本地'),
+                  const SizedBox(height: 8),
                   _ReplicaNotice(
                     icon: Lucide.nfc,
+                    margin: EdgeInsets.zero,
                     title: canBle ? '官方 BLE NFC 可用' : '官方 NFC 待 LOGIN',
                     subtitle: canBle
                         ? '当前 standard 协议已 LOGIN：添加/删除将下发官方 writeData 帧（TailgBleConfig NFC 头），并同步本地列表。'
@@ -185,18 +362,21 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.all(24),
-                        child: CircularProgressIndicator(),
+                        child: CircularProgressIndicator(
+                          color: CyberHomeColors.primary,
+                        ),
                       ),
                     )
                   else if (_records.isEmpty)
                     const _EmptyReplicaCard(
                       icon: Lucide.keyOff,
+                      margin: EdgeInsets.zero,
                       title: '暂无钥匙',
                       subtitle: '添加后可在这里查看钥匙名称和类型。',
                     )
                   else
-                    AppCard(
-                      padding: EdgeInsets.zero,
+                    Container(
+                      decoration: _replicaCardDecoration,
                       child: Column(
                         children: [
                           for (var i = 0; i < _records.length; i++) ...[
@@ -209,7 +389,7 @@ class _NfcKeyPageState extends State<NfcKeyPage> {
                               const Divider(
                                 height: 1,
                                 indent: 68,
-                                color: AppColors.border,
+                                color: CyberHomeColors.line,
                               ),
                           ],
                         ],
@@ -475,28 +655,38 @@ class _ShareBikePageState extends State<ShareBikePage> {
     final result = await showDialog<ShareMemberRecord>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: CyberHomeColors.card,
+        surfaceTintColor: CyberHomeColors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.tile),
+        ),
+        titleTextStyle: _replicaItemTitle.copyWith(fontSize: 18),
         title: Text(member == null ? '添加成员' : '编辑成员'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(labelText: '成员名称'),
+              decoration: _replicaInputDecoration('成员名称'),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: phoneController,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: '手机号/备注'),
+              decoration: _replicaInputDecoration('手机号/备注'),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: CyberHomeColors.inkMuted,
+            ),
             child: const Text('取消'),
           ),
           FilledButton(
+            style: _replicaFilledButtonStyle,
             onPressed: () {
               final name = nameController.text.trim();
               if (name.isEmpty) return;
@@ -539,28 +729,26 @@ class _ShareBikePageState extends State<ShareBikePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
+      backgroundColor: CyberHomeColors.pageBg,
       body: SafeArea(
         child: Column(
           children: [
-            AppPageHeader(
+            _ReplicaPageHeader(
               title: '分享用车',
-              actions: [
-                IconButton(
-                  tooltip: '添加成员',
-                  onPressed: () => _editMember(),
-                  icon: const Icon(Lucide.userPlus),
-                ),
-              ],
+              actionIcon: Lucide.userPlus,
+              actionLabel: '添加成员',
+              onAction: () => _editMember(),
             ),
             Expanded(
               child: ListView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(bottom: 24),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                 children: [
-                  const AppSectionLabel('家庭共享（本地演示）'),
+                  const _ReplicaSectionLabel('家庭共享（本地演示）'),
+                  const SizedBox(height: 8),
                   const _ReplicaNotice(
                     icon: Lucide.share,
+                    margin: EdgeInsets.zero,
                     title: '本地演示 · 非官方家庭共享',
                     subtitle: '仅本机记录联系人草稿，不会调用官方家庭共享 API。正式分享请使用官方 App 授权流程。',
                   ),
@@ -569,18 +757,21 @@ class _ShareBikePageState extends State<ShareBikePage> {
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.all(24),
-                        child: CircularProgressIndicator(),
+                        child: CircularProgressIndicator(
+                          color: CyberHomeColors.primary,
+                        ),
                       ),
                     )
                   else if (_members.isEmpty)
                     const _EmptyReplicaCard(
                       icon: Lucide.groupOff,
+                      margin: EdgeInsets.zero,
                       title: '暂无共享成员',
                       subtitle: '添加成员后可在这里查看共享联系人。',
                     )
                   else
-                    AppCard(
-                      padding: EdgeInsets.zero,
+                    Container(
+                      decoration: _replicaCardDecoration,
                       child: Column(
                         children: [
                           for (var i = 0; i < _members.length; i++) ...[
@@ -593,7 +784,7 @@ class _ShareBikePageState extends State<ShareBikePage> {
                               const Divider(
                                 height: 1,
                                 indent: 68,
-                                color: AppColors.border,
+                                color: CyberHomeColors.line,
                               ),
                           ],
                         ],
@@ -750,6 +941,8 @@ class _NfcKeyTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      minTileHeight: 68,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
       leading: _CircleIcon(
         icon: record.type == '卡片'
             ? Lucide.creditCard
@@ -758,8 +951,17 @@ class _NfcKeyTile extends StatelessWidget {
             : Lucide.smartphone,
       ),
       title: Text(record.name),
+      titleTextStyle: _replicaItemTitle,
       subtitle: Text('${record.type} · ${formatDateText(record.createdAt)}'),
+      subtitleTextStyle: _replicaCaptionText,
       trailing: PopupMenuButton<String>(
+        tooltip: '钥匙操作',
+        color: CyberHomeColors.card,
+        surfaceTintColor: CyberHomeColors.transparent,
+        icon: const LucideIcon(Lucide.more, color: CyberHomeColors.inkMuted),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.tile),
+        ),
         onSelected: (value) => value == 'edit' ? onEdit() : onDelete(),
         itemBuilder: (context) => const [
           PopupMenuItem(value: 'edit', child: Text('重命名')),
@@ -784,14 +986,25 @@ class _ShareMemberTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      minTileHeight: 68,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
       leading: const _CircleIcon(icon: Lucide.mine),
       title: Text(member.name),
+      titleTextStyle: _replicaItemTitle,
       subtitle: Text(
         member.phone.isEmpty
             ? '待邀请 · ${formatDateText(member.createdAt)}'
             : '${member.phone} · 待邀请',
       ),
+      subtitleTextStyle: _replicaCaptionText,
       trailing: PopupMenuButton<String>(
+        tooltip: '成员操作',
+        color: CyberHomeColors.card,
+        surfaceTintColor: CyberHomeColors.transparent,
+        icon: const LucideIcon(Lucide.more, color: CyberHomeColors.inkMuted),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.tile),
+        ),
         onSelected: (value) => value == 'edit' ? onEdit() : onDelete(),
         itemBuilder: (context) => const [
           PopupMenuItem(value: 'edit', child: Text('编辑')),
@@ -806,28 +1019,36 @@ class _ReplicaNotice extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
+  final EdgeInsetsGeometry margin;
 
   const _ReplicaNotice({
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.margin = const EdgeInsets.symmetric(horizontal: AppSpacing.screenX),
   });
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      color: AppColors.primary.withValues(alpha: 0.08),
+    return Container(
+      margin: margin,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: CyberHomeColors.primarySoft,
+        borderRadius: BorderRadius.circular(AppRadii.tile),
+        border: Border.all(color: CyberHomeColors.line),
+      ),
       child: Row(
         children: [
-          _CircleIcon(icon: icon, color: AppColors.primary),
+          _CircleIcon(icon: icon, color: CyberHomeColors.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppTextStyles.bodyLarge),
+                Text(title, style: _replicaItemTitle),
                 const SizedBox(height: 4),
-                Text(subtitle, style: AppTextStyles.smallText),
+                Text(subtitle, style: _replicaBodyText),
               ],
             ),
           ),
@@ -841,27 +1062,32 @@ class _EmptyReplicaCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
+  final EdgeInsetsGeometry margin;
 
   const _EmptyReplicaCard({
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.margin = const EdgeInsets.symmetric(horizontal: AppSpacing.screenX),
   });
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
+    return Container(
+      margin: margin,
+      padding: const EdgeInsets.all(20),
+      decoration: _replicaCardDecoration,
       child: Column(
         children: [
-          Icon(icon, size: AppIconSizes.xl, color: AppColors.textTertiary),
-          const SizedBox(height: 10),
-          Text(title, style: AppTextStyles.itemTitle),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.smallText,
+          LucideIcon(
+            icon,
+            size: AppIconSizes.xl,
+            color: CyberHomeColors.inkFaint,
           ),
+          const SizedBox(height: 10),
+          Text(title, style: _replicaItemTitle),
+          const SizedBox(height: 4),
+          Text(subtitle, textAlign: TextAlign.center, style: _replicaBodyText),
         ],
       ),
     );
@@ -896,7 +1122,7 @@ class _CircleIcon extends StatelessWidget {
   final IconData icon;
   final Color color;
 
-  const _CircleIcon({required this.icon, this.color = AppColors.primary});
+  const _CircleIcon({required this.icon, this.color = CyberHomeColors.primary});
 
   @override
   Widget build(BuildContext context) {
@@ -907,7 +1133,7 @@ class _CircleIcon extends StatelessWidget {
         color: color.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
-      child: Icon(icon, color: color, size: AppIconSizes.md),
+      child: LucideIcon(icon, color: color, size: AppIconSizes.md),
     );
   }
 }

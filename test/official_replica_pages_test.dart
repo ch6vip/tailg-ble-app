@@ -4,6 +4,7 @@ import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/official_replica_pages.dart';
 import 'package:tailg_ble_app/services/log_service.dart';
 import 'package:tailg_ble_app/services/replica_feature_store.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/services/vehicle_store.dart';
 import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 
@@ -11,6 +12,7 @@ import 'helpers/snack_finders.dart';
 import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 import 'helpers/view_size.dart';
 
 void main() {
@@ -66,6 +68,60 @@ void main() {
     LogService().clear();
     VehicleStore().resetForTest();
     ReplicaFeatureStore().resetForTest();
+  });
+
+  testWidgets('NFC key page uses Cyber home mobile layout', (tester) async {
+    setTestViewSize(tester, const Size(390, 844));
+
+    await tester.pumpWidget(const TestApp(home: NfcKeyPage()));
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+    expect(find.text('暂无钥匙'), findsOneWidget);
+    final addAction = find.bySemanticsLabel('添加钥匙');
+    expect(addAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, addAction);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(addAction);
+    await tester.pumpAndSettle();
+    expect(find.text('添加钥匙'), findsWidgets);
+    expect(
+      tester.widget<AlertDialog>(find.byType(AlertDialog)).backgroundColor,
+      CyberHomeColors.card,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('share bike page uses Cyber home mobile layout', (tester) async {
+    setTestViewSize(tester, const Size(390, 844));
+
+    await tester.pumpWidget(const TestApp(home: ShareBikePage()));
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+    expect(find.text('暂无共享成员'), findsOneWidget);
+    final addAction = find.bySemanticsLabel('添加成员');
+    expect(addAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, addAction);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(addAction);
+    await tester.pumpAndSettle();
+    expect(find.text('添加成员'), findsWidgets);
+    expect(
+      tester.widget<AlertDialog>(find.byType(AlertDialog)).backgroundColor,
+      CyberHomeColors.card,
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('electric fence save validates coordinates with info snack', (
