@@ -49,13 +49,18 @@ void main() {
   });
 
   testWidgets('signed-in vehicle home renders vehicle name', (tester) async {
-    setTestViewSize(tester, const Size(390, 1800));
+    setTestViewSize(tester, const Size(390, 844));
     final vehicle = OfficialVehicle.fromJson({
       'carId': 'smoke-1',
       'carNickName': '冒烟测试车',
       'modelType': 3,
       'isGps': 1,
       'btmac': 'AABBCCDDEEFF',
+      'electricQuantity': 18,
+      'frontTirePressure': 1.2,
+      'frontTireTemperature': 23,
+      'rearTirePressure': 1.7,
+      'rearTireTemperature': 23,
     });
     AppServices.instance.officialCloudService.setStateForTest(
       OfficialCloudState.initial().copyWith(
@@ -64,6 +69,16 @@ void main() {
         userId: 'u-smoke',
         vehicles: [vehicle],
         selectedVehicleKey: vehicle.key,
+        vehicleMessages: [
+          OfficialCloudMessage(
+            id: 'vehicle:home-alert',
+            title: '车辆提醒',
+            content: '车辆电量过低，请及时充电',
+            time: DateTime.now().subtract(const Duration(minutes: 3)),
+            category: OfficialCloudMessageCategory.vehicle,
+            carId: vehicle.carId,
+          ),
+        ],
       ),
     );
 
@@ -80,33 +95,65 @@ void main() {
           find.text('点击连接').evaluate().isNotEmpty,
       isTrue,
     );
-    // Channel-only card on home; unlock/induction lives in settings.
-    expect(find.text('控车渠道'), findsOneWidget);
-    expect(find.text('智能'), findsOneWidget);
-    expect(find.text('仅蓝牙'), findsOneWidget);
-    expect(find.text('仅云端'), findsOneWidget);
+    // Design-state additions: large vehicle stage, tire data and warning card.
+    expect(find.byKey(const ValueKey('cyber-hero-vehicle')), findsOneWidget);
+    expect(find.textContaining('1.2 bar'), findsOneWidget);
+    expect(find.textContaining('1.7 bar'), findsOneWidget);
+    expect(find.text('车辆电量过低，请及时充电'), findsOneWidget);
+    expect(find.byKey(const ValueKey('cyber-home-alert')), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 120));
+
+    // Channel controls stay available from the compact status line without
+    // adding a full-width card that is absent from the new design.
+    expect(find.text('控车渠道'), findsNothing);
     expect(find.text('控车与解锁'), findsNothing);
     expect(find.text('解锁模式'), findsNothing);
     // Cyber shell shortcuts (no VOID section title 「控车」).
     expect(find.text('寻车'), findsWidgets);
     expect(find.text('滑动开锁'), findsWidgets);
-    // Layout order under Cyber shell: keys/slide first, channel next, map/stats.
+    // Layout order under Cyber shell: keys/slide, projection, map/stats.
     expect(
-      tester.getTopLeft(find.text('控车渠道')).dy,
+      tester.getTopLeft(find.text('仪表投屏导航')).dy,
       greaterThan(tester.getTopLeft(find.text('寻车')).dy),
     );
     expect(
       tester.getTopLeft(find.text('车辆位置')).dy,
-      greaterThan(tester.getTopLeft(find.text('控车渠道')).dy),
+      greaterThan(tester.getTopLeft(find.text('仪表投屏导航')).dy),
     );
 
+    final header = find.byKey(const ValueKey('cyber-collapsing-header'));
+    expect(tester.getSize(header).height, greaterThan(500));
+    expect(
+      tester
+          .widget<Opacity>(
+            find.byKey(const ValueKey('cyber-expanded-header-opacity')),
+          )
+          .opacity,
+      1,
+    );
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -520));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<Opacity>(
+            find.byKey(const ValueKey('cyber-compact-header-opacity')),
+          )
+          .opacity,
+      greaterThan(0.9),
+    );
+    await tester.tap(find.byKey(const ValueKey('cyber-compact-status')));
+    await tester.pumpAndSettle();
+    expect(find.text('控车渠道'), findsWidgets);
+    expect(find.text('智能'), findsOneWidget);
+    expect(find.text('仅蓝牙'), findsOneWidget);
+    expect(find.text('仅云端'), findsOneWidget);
     await tester.tap(find.text('仅云端'));
     await tester.pump();
-    // Compact channel strip no longer shows the long description copy.
+    Navigator.of(tester.element(find.text('控车渠道').first)).pop();
+    await tester.pumpAndSettle();
 
-    // Avoid scrollUntilVisible (can hang if target is off-list); just assert
-    // the recent-commands section exists in the tree.
-    expect(find.text('最近命令'), findsOneWidget);
+    // Empty recent commands stay out of the design until a command is sent.
+    expect(find.text('最近命令'), findsNothing);
 
     // Drop the page before the binding checks for pending timers.
     await tester.pumpWidget(const SizedBox.shrink());

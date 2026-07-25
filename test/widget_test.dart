@@ -88,12 +88,12 @@ void main() {
     expect(vehicleItemFinder, findsOneWidget);
     expect(mineItemFinder, findsOneWidget);
 
-    // VOID orbital bar is 72; system inset is 0 in tests so bar height is 72.
+    // Cyber floating pill is 76; system inset is 0 in tests.
     // All three tabs share the same slot height (no raised center icon).
-    expect(tester.getSize(barFinder).height, 72);
-    expect(tester.getSize(serviceItemFinder).height, 72);
-    expect(tester.getSize(vehicleItemFinder).height, 72);
-    expect(tester.getSize(mineItemFinder).height, 72);
+    expect(tester.getSize(barFinder).height, 76);
+    expect(tester.getSize(serviceItemFinder).height, 76);
+    expect(tester.getSize(vehicleItemFinder).height, 76);
+    expect(tester.getSize(mineItemFinder).height, 76);
 
     final barTop = tester.getTopLeft(barFinder).dy;
     final serviceTop = tester.getTopLeft(serviceItemFinder).dy;

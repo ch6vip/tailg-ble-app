@@ -4,10 +4,14 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../theme/app_void.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
 import 'lucide_icon.dart';
 
-/// Floating orbital bottom nav — glass pill, Lucide icons, energy active state.
+/// Three-entry floating navigation styled after the light Cyber cockpit.
+///
+/// Product scope intentionally remains 服务 / 控车 / 我的. The two operation
+/// tabs shown in the visual reference are not represented by empty shells.
 class VoidOrbitalNav extends StatelessWidget {
   const VoidOrbitalNav({
     super.key,
@@ -22,29 +26,23 @@ class VoidOrbitalNav extends StatelessWidget {
   final VoidCallback onVehicle;
   final VoidCallback onMine;
 
-  static const double barHeight = 72;
+  static const double barHeight = 76;
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
-    final fill = dark
-        ? VoidColors.voidPanel.withValues(alpha: 0.78)
-        : Colors.white.withValues(alpha: 0.86);
-    final edge = dark ? VoidColors.hairlineStrong : VoidColors.lightHairline;
-
     return Padding(
-      padding: EdgeInsets.fromLTRB(18, 0, 18, 10 + bottomInset * 0.4),
+      padding: EdgeInsets.fromLTRB(18, 0, 18, 10 + bottomInset * 0.45),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(VoidRadii.pill),
+        borderRadius: BorderRadius.circular(AppRadii.pill),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: fill,
-              borderRadius: BorderRadius.circular(VoidRadii.pill),
-              border: Border.all(color: edge),
-              boxShadow: VoidGlow.float,
+              color: CyberHomeColors.navSurface,
+              borderRadius: BorderRadius.circular(AppRadii.pill),
+              border: Border.all(color: CyberHomeColors.white),
+              boxShadow: AppShadows.cyberNavShadow,
             ),
             child: SizedBox(
               key: const ValueKey('official-bottom-nav-bar'),
@@ -71,7 +69,6 @@ class VoidOrbitalNav extends StatelessWidget {
                       icon: Lucide.vehicle,
                       selected: currentIndex == 1,
                       onTap: onVehicle,
-                      primary: true,
                     ),
                   ),
                   Expanded(
@@ -99,25 +96,18 @@ class _NavItem extends StatelessWidget {
     required this.icon,
     required this.selected,
     required this.onTap,
-    this.itemKey,
-    this.primary = false,
+    required this.itemKey,
   });
 
   final String label;
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
-  final Key? itemKey;
-  final bool primary;
+  final Key itemKey;
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final idle = dark ? VoidColors.inkFaint : VoidColors.lightInkMuted;
-    final active = primary && selected
-        ? VoidColors.energy
-        : (selected ? (dark ? VoidColors.ink : VoidColors.lightInk) : idle);
-
+    final color = selected ? CyberHomeColors.ink : CyberHomeColors.inkSecondary;
     return Semantics(
       button: true,
       selected: selected,
@@ -131,39 +121,36 @@ class _NavItem extends StatelessWidget {
         child: SizedBox(
           key: itemKey,
           height: VoidOrbitalNav.barHeight,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                duration: VoidMotion.soft,
-                curve: VoidMotion.outExpo,
-                width: primary ? 48 : 40,
-                height: primary ? 48 : 32,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: selected && primary
-                      ? VoidColors.energy.withValues(alpha: 0.16)
-                      : Colors.transparent,
-                  boxShadow: selected && primary
-                      ? VoidGlow.energy(intensity: 0.45)
-                      : const [],
-                ),
-                child: LucideIcon(icon, size: primary ? 22 : 20, color: active),
+          child: Padding(
+            padding: const EdgeInsets.all(6),
+            child: AnimatedContainer(
+              duration: AppMotion.standard,
+              curve: AppMotion.pressCurve,
+              decoration: BoxDecoration(
+                color: selected
+                    ? CyberHomeColors.navSelected
+                    : CyberHomeColors.transparent,
+                borderRadius: BorderRadius.circular(AppRadii.pill),
               ),
-              const SizedBox(height: 4),
-              AnimatedDefaultTextStyle(
-                duration: VoidMotion.snap,
-                style: TextStyle(
-                  fontSize: 10,
-                  height: 1,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  letterSpacing: 0.4,
-                  color: active,
-                ),
-                child: Text(label),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  LucideIcon(icon, size: 24, color: color, strokeWidth: 1.9),
+                  const SizedBox(height: 4),
+                  AnimatedDefaultTextStyle(
+                    duration: AppMotion.micro,
+                    style: TextStyle(
+                      fontSize: 11,
+                      height: 1,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      letterSpacing: 0.2,
+                      color: color,
+                    ),
+                    child: Text(label),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

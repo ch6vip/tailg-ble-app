@@ -406,7 +406,16 @@ class _VehicleImage extends StatelessWidget {
       VehicleStage.fallbackAsset,
       key: const ValueKey('vehicle-stage-asset-image'),
       fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
       semanticLabel: '台铃车辆',
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (wasSynchronouslyLoaded || frame != null) return child;
+        return SizedBox.expand(
+          child: CustomPaint(
+            painter: VehicleStagePainter(batteryLevel: batteryLevel),
+          ),
+        );
+      },
       errorBuilder: (_, __, ___) => SizedBox.expand(
         child: CustomPaint(
           painter: VehicleStagePainter(batteryLevel: batteryLevel),

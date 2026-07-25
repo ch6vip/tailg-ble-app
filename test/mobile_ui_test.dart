@@ -122,7 +122,7 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 50));
     final cyber = tester.widget<Scaffold>(find.byType(Scaffold));
-    expect(cyber.backgroundColor, const Color(0xFFF5F5F5));
+    expect(cyber.backgroundColor, CyberHomeColors.pageBg);
     expect(tester.takeException(), isNull);
   });
 

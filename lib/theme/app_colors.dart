@@ -303,6 +303,41 @@ abstract final class ReplicaBikeColors {
   static const parking = Color(0xFFDDE7D8);
 }
 
+/// Cyber control-home palette reconstructed from the 2026 light cockpit
+/// design. Keeping these values in theme code prevents the control page from
+/// growing a second set of ad-hoc color literals.
+abstract final class CyberHomeColors {
+  static const pageBg = Color(0xFFF4F5F7);
+  static const pageBgTop = Color(0xFFEAF1FC);
+  static const card = Color(0xFFFFFFFF);
+  static const cardMuted = Color(0xFFF8F9FB);
+  static const control = Color(0xFFF0F1F3);
+  static const controlStrong = Color(0xFFE1E3E7);
+  static const line = Color(0xFFE5E7EC);
+  static const lineStrong = Color(0xFFD7DAE1);
+  static const ink = Color(0xFF15171C);
+  static const inkSecondary = Color(0xFF33363D);
+  static const inkMuted = Color(0xFF696D76);
+  static const inkFaint = Color(0xFF9A9EA7);
+  static const primary = Color(0xFF168CFF);
+  static const primarySoft = Color(0xFFDCEEFF);
+  static const success = Color(0xFF34C759);
+  static const warning = Color(0xFFFF9F0A);
+  static const danger = Color(0xFFFF3B30);
+  static const rideAccent = Color(0xFFFF2D68);
+  static const mapPlaceholder = Color(0xFFE9EEF3);
+  static const alertSurface = Color(0xFFE9EAED);
+  static const navSurface = Color(0xF7FFFFFF);
+  static const navSelected = Color(0xFFE1E2E5);
+  static const transparent = Color(0x00000000);
+  static const white75 = Color(0xBFFFFFFF);
+  static const white96 = Color(0xF5FFFFFF);
+  static const white = Color(0xFFFFFFFF);
+  static const shadow = Color(0x140D1420);
+  static const actionShadow = Color(0x120D1420);
+  static const navShadow = Color(0x24182740);
+}
+
 abstract final class AppRadii {
   static const xs = 6.0;
   static const sm = 10.0;
@@ -357,6 +392,30 @@ abstract final class AppShadows {
 
   static const List<BoxShadow> fnIconShadow = [
     BoxShadow(color: Color(0x0D182740), blurRadius: 10, offset: Offset(0, 3)),
+  ];
+
+  static const List<BoxShadow> cyberCardShadow = [
+    BoxShadow(
+      color: CyberHomeColors.shadow,
+      blurRadius: 20,
+      offset: Offset(0, 6),
+    ),
+  ];
+
+  static const List<BoxShadow> cyberActionShadow = [
+    BoxShadow(
+      color: CyberHomeColors.actionShadow,
+      blurRadius: 16,
+      offset: Offset(0, 5),
+    ),
+  ];
+
+  static const List<BoxShadow> cyberNavShadow = [
+    BoxShadow(
+      color: CyberHomeColors.navShadow,
+      blurRadius: 34,
+      offset: Offset(0, 12),
+    ),
   ];
 }
 

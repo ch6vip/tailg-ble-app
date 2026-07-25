@@ -1,7 +1,16 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 
-/// 滑动开锁组件 - 像素级还原设计图
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
+import 'lucide_icon.dart';
+
+/// Compact slide-to-unlock control used by the light Cyber home.
+///
+/// Drag remains the primary interaction. A semantic tap action is provided so
+/// switch-control and screen-reader users are not blocked by a drag-only UI.
 class SlideToUnlockButton extends StatefulWidget {
   const SlideToUnlockButton({
     super.key,
@@ -18,25 +27,38 @@ class SlideToUnlockButton extends StatefulWidget {
 
 class _SlideToUnlockButtonState extends State<SlideToUnlockButton>
     with SingleTickerProviderStateMixin {
-  double _dragPosition = 0.0;
-  late AnimationController _resetController;
+  static const _trackWidth = 172.0;
+  static const _trackHeight = 68.0;
+  static const _thumbSize = 68.0;
+
+  double _dragPosition = 0;
+  late final AnimationController _resetController;
   late Animation<double> _resetAnimation;
+
+  double get _maxDragDistance => _trackWidth - _thumbSize;
 
   @override
   void initState() {
     super.initState();
     _resetController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: AppMotion.standard,
     );
-    _resetAnimation =
-        Tween<double>(begin: 0, end: 0).animate(
-          CurvedAnimation(parent: _resetController, curve: Curves.easeOut),
-        )..addListener(() {
-          setState(() {
-            _dragPosition = _resetAnimation.value;
-          });
-        });
+    _resetAnimation = const AlwaysStoppedAnimation<double>(0);
+    _resetController.addListener(() {
+      if (mounted) setState(() => _dragPosition = _resetAnimation.value);
+    });
+    if (!widget.isLocked) _dragPosition = _maxDragDistance;
+  }
+
+  @override
+  void didUpdateWidget(covariant SlideToUnlockButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isLocked == widget.isLocked) return;
+    _resetController.stop();
+    setState(() {
+      _dragPosition = widget.isLocked ? 0 : _maxDragDistance;
+    });
   }
 
   @override
@@ -45,121 +67,128 @@ class _SlideToUnlockButtonState extends State<SlideToUnlockButton>
     super.dispose();
   }
 
-  void _onHorizontalDragStart(DragStartDetails details) {
-    if (!widget.isLocked) return;
-  }
-
   void _onHorizontalDragUpdate(DragUpdateDetails details) {
     if (!widget.isLocked) return;
     setState(() {
-      _dragPosition += details.delta.dx;
-      _dragPosition = _dragPosition.clamp(0.0, _maxDragDistance);
+      _dragPosition = (_dragPosition + details.delta.dx).clamp(
+        0.0,
+        _maxDragDistance,
+      );
     });
   }
 
   void _onHorizontalDragEnd(DragEndDetails details) {
     if (!widget.isLocked) return;
-
-    // 滑动超过 80% 即解锁
-    if (_dragPosition > _maxDragDistance * 0.8) {
-      widget.onUnlocked();
-      setState(() {
-        _dragPosition = _maxDragDistance;
-      });
-    } else {
-      // 回弹动画
-      _resetAnimation = Tween<double>(begin: _dragPosition, end: 0.0).animate(
-        CurvedAnimation(parent: _resetController, curve: Curves.easeOut),
-      );
-      // AnimationController.forward returns a TickerFuture we intentionally
-      // ignore; the listener already drives setState.
-      unawaited(_resetController.forward(from: 0));
+    if (_dragPosition >= _maxDragDistance * 0.78) {
+      _activateUnlock();
+      return;
     }
+    _animateTo(0);
   }
 
-  double get _maxDragDistance => 152.0; // 240px宽度 - 88px按钮
+  void _activateUnlock() {
+    if (!widget.isLocked) return;
+    unawaited(HapticFeedback.mediumImpact());
+    setState(() => _dragPosition = _maxDragDistance);
+    widget.onUnlocked();
+  }
+
+  void _animateTo(double target) {
+    _resetAnimation = Tween<double>(begin: _dragPosition, end: target).animate(
+      CurvedAnimation(parent: _resetController, curve: AppMotion.pressCurve),
+    );
+    unawaited(_resetController.forward(from: 0));
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 240,
-          height: 88,
-          child: Stack(
-            children: [
-              // 背景轨道
-              Container(
-                width: 240,
-                height: 88,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [const Color(0xFFE8E8E8), const Color(0xFFF5F5F5)],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.circular(44),
-                ),
-                child: Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildArrow(),
-                      const SizedBox(width: 4),
-                      _buildArrow(),
-                      const SizedBox(width: 4),
-                      _buildArrow(),
-                    ],
-                  ),
-                ),
-              ),
-              // 滑动按钮
-              Positioned(
-                left: _dragPosition,
-                child: GestureDetector(
-                  onHorizontalDragStart: _onHorizontalDragStart,
-                  onHorizontalDragUpdate: _onHorizontalDragUpdate,
-                  onHorizontalDragEnd: _onHorizontalDragEnd,
-                  child: Container(
-                    width: 88,
-                    height: 88,
+    final label = widget.isLocked ? '滑动开锁' : '车辆已解锁';
+    return Semantics(
+      key: const ValueKey('slide-unlock-semantics'),
+      label: label,
+      hint: widget.isLocked ? '向右滑动，或使用辅助功能激活' : null,
+      button: true,
+      enabled: widget.isLocked,
+      onTap: widget.isLocked ? _activateUnlock : null,
+      child: ExcludeSemantics(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: _trackWidth,
+              height: _trackHeight,
+              child: Stack(
+                children: [
+                  DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      color: CyberHomeColors.controlStrong,
+                      borderRadius: BorderRadius.circular(AppRadii.pill),
                     ),
-                    child: Icon(
-                      widget.isLocked ? Icons.lock_outline : Icons.lock_open,
-                      size: 32,
-                      color: const Color(0xFF1A1A1A),
+                    child: SizedBox(
+                      width: _trackWidth,
+                      height: _trackHeight,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          for (var index = 0; index < 3; index++) ...[
+                            LucideIcon(
+                              Lucide.chevronRight,
+                              size: AppIconSizes.md,
+                              color: CyberHomeColors.inkFaint.withValues(
+                                alpha: 0.62 - index * 0.12,
+                              ),
+                            ),
+                            if (index < 2) const SizedBox(width: 1),
+                          ],
+                          const SizedBox(width: 15),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+                  AnimatedPositioned(
+                    duration: _resetController.isAnimating
+                        ? Duration.zero
+                        : AppMotion.micro,
+                    curve: AppMotion.pressCurve,
+                    left: _dragPosition,
+                    child: GestureDetector(
+                      key: const ValueKey('slide-unlock-thumb'),
+                      behavior: HitTestBehavior.opaque,
+                      onHorizontalDragUpdate: _onHorizontalDragUpdate,
+                      onHorizontalDragEnd: _onHorizontalDragEnd,
+                      child: Container(
+                        width: _thumbSize,
+                        height: _thumbSize,
+                        decoration: const BoxDecoration(
+                          color: CyberHomeColors.card,
+                          shape: BoxShape.circle,
+                          boxShadow: AppShadows.cyberActionShadow,
+                        ),
+                        alignment: Alignment.center,
+                        child: LucideIcon(
+                          widget.isLocked ? Lucide.lock : Lucide.unlock,
+                          size: 30,
+                          color: CyberHomeColors.ink,
+                          strokeWidth: 1.8,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 9),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                color: CyberHomeColors.inkMuted,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        const Text(
-          '滑动开锁',
-          style: TextStyle(
-            fontSize: 15,
-            color: Color(0xFF666666),
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      ],
+      ),
     );
-  }
-
-  Widget _buildArrow() {
-    return Icon(Icons.chevron_right, size: 24, color: const Color(0xFFCCCCCC));
   }
 }

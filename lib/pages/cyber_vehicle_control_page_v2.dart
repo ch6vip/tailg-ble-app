@@ -47,6 +47,8 @@ import 'induction_settings_page.dart';
 import 'location_page.dart';
 import 'login_page.dart';
 import 'official_cloud_page.dart';
+import 'official_replica_pages.dart';
+import 'vehicle_message_page.dart';
 import 'vehicle_settings_page.dart';
 
 /// 控车主页 · Cyber UI 入口（能力与旧 `VehicleControlHomePage` 对齐）。
@@ -93,6 +95,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
   bool _disposed = false;
   bool _nearFieldBusy = false;
   bool _disconnecting = false;
+  String? _dismissedAlertId;
   BluetoothAdapterState _adapterState = BluetoothAdapterState.unknown;
   OfficialControlChannel _controlChannel = OfficialControlChannel.automatic;
 
@@ -508,6 +511,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
         silent: true,
         refreshReplicaDetails: true,
       );
+      await officialCloudService.refreshMessages(silent: true);
     } catch (e) {
       logService.operation(
         'Cyber 首页静默刷新失败',
@@ -531,6 +535,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
         officialCloudService.refreshBatteryInfo(force: true, silent: true),
         officialCloudService.refreshVehicleLocation(force: true, silent: true),
         officialCloudService.refreshTodayRideMileage(force: true, silent: true),
+        officialCloudService.refreshMessages(force: true, silent: true),
       ]);
     } catch (e) {
       logService.operation(
@@ -1231,6 +1236,137 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     return '暂无位置';
   }
 
+  _TireSnapshot _tireSnapshot(OfficialVehicle? vehicle) {
+    return _TireSnapshot.fromVehicle(vehicle);
+  }
+
+  _HomeAlert? _homeAlert(
+    OfficialCloudState cloudState,
+    BatterySnapshot battery,
+  ) {
+    final vehicle = cloudState.selectedVehicle;
+    final messages =
+        <OfficialCloudMessage>[
+            ...cloudState.vehicleMessages,
+            ...cloudState.systemMessages,
+          ].where((message) {
+            if (message.carId.isEmpty || vehicle == null) return true;
+            return message.carId == vehicle.carId ||
+                message.carId == vehicle.key;
+          }).toList()
+          ..sort((a, b) => b.time.compareTo(a.time));
+
+    if (messages.isNotEmpty) {
+      final latest = messages.first;
+      final title = latest.content.trim().isNotEmpty
+          ? latest.content.trim()
+          : latest.title.trim();
+      final alert = _HomeAlert(
+        id: latest.id,
+        text: title.isEmpty ? '车辆有一条新消息' : title,
+        time: _formatAlertAge(latest.time),
+      );
+      return alert.id == _dismissedAlertId ? null : alert;
+    }
+
+    final percent = battery.percent;
+    if (percent != null && percent <= 20) {
+      const alert = _HomeAlert(
+        id: 'battery-low',
+        text: '车辆电量过低，请及时充电',
+        time: '刚刚',
+      );
+      return alert.id == _dismissedAlertId ? null : alert;
+    }
+    return null;
+  }
+
+  String _formatAlertAge(DateTime time) {
+    if (time.millisecondsSinceEpoch == 0) return '刚刚';
+    final elapsed = DateTime.now().difference(time);
+    if (elapsed.isNegative || elapsed.inMinutes < 1) return '刚刚';
+    if (elapsed.inMinutes < 60) return '${elapsed.inMinutes}分钟前';
+    if (elapsed.inHours < 24) return '${elapsed.inHours}小时前';
+    return formatMonthDayMinuteText(time);
+  }
+
+  void _openMessages() {
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const VehicleMessagePage()),
+      ),
+    );
+  }
+
+  void _openShare() {
+    if (!requireCloudVehicle(context)) return;
+    unawaited(
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const ShareBikePage())),
+    );
+  }
+
+  void _openNfc() {
+    if (!requireCloudVehicle(context)) return;
+    unawaited(
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const NfcKeyPage())),
+    );
+  }
+
+  void _openControlOptions(ControlTopBarChannel status) {
+    var selected = _controlChannel;
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: CyberHomeColors.pageBg,
+        showDragHandle: true,
+        builder: (sheetContext) => StatefulBuilder(
+          builder: (context, setSheetState) => SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(0, 4, 0, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
+                      '控车渠道',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: CyberHomeColors.ink,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _CyberChannelStrip(
+                    selected: selected,
+                    status: status,
+                    busy: _busy,
+                    onChanged: (value) {
+                      selected = value;
+                      _selectControlChannel(value);
+                      setSheetState(() {});
+                    },
+                    onInduction: () {
+                      Navigator.of(sheetContext).pop();
+                      _openProximitySettings();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _openSettings() {
     if (!requireCloudVehicle(context)) return;
     unawaited(
@@ -1294,6 +1430,8 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     final isPowerOn = _currentPowerState();
     final isArmed = _currentLockState();
     final percent = battery.percent ?? 0;
+    final tire = _tireSnapshot(cloudVehicle);
+    final alert = _homeAlert(cloudState, battery);
     final signedIn = cloudState.signedIn;
     final hasVehicle = cloudVehicle != null;
     final controlAvailability = _controlAvailability();
@@ -1310,83 +1448,102 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
         bottom: false,
         child: RefreshIndicator(
           color: _Cyber.primary,
-          backgroundColor: Colors.white,
+          backgroundColor: _Cyber.card,
           onRefresh: _handleRefresh,
-          child: ListView(
+          child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
-            padding: EdgeInsets.only(top: 4, bottom: bottomPad),
-            children: [
-              ..._buildHomeGates(
-                cloudState: cloudState,
-                cloudVehicle: cloudVehicle,
-                signedIn: signedIn,
-                hasVehicle: hasVehicle,
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
+                  children: _buildHomeGates(
+                    cloudState: cloudState,
+                    cloudVehicle: cloudVehicle,
+                    signedIn: signedIn,
+                    hasVehicle: hasVehicle,
+                  ),
+                ),
               ),
-              _CyberTopBar(
-                vehicleName: _vehicleName(cloudVehicle),
-                rangeText: _rangeLabel(battery).replaceAll(' ', ''),
-                carPhoto: cloudVehicle?.carPhoto ?? '',
-                batteryPercent: percent,
-                online: cloudVehicle?.online ?? false,
-                bluetoothConnected: connectionManager.isProtocolLoggedIn,
-                isLocked: isArmed ?? true,
-                powered: isPowerOn,
-                bleChip: _officialBleChipState(cloudVehicle),
-                onTitleTap: _openVehicleHeader,
-                onBleChipTap: () => unawaited(_onOfficialBleChipTap()),
-                onSettings: _openSettings,
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _CyberVehicleHeaderDelegate(
+                  vehicleName: _vehicleName(cloudVehicle),
+                  rangeText: _rangeLabel(battery).replaceAll(' ', ''),
+                  carPhoto: cloudVehicle?.carPhoto ?? '',
+                  batteryPercent: percent,
+                  batteryKnown: battery.percent != null,
+                  online: cloudVehicle?.online ?? false,
+                  bluetoothConnected: connectionManager.isProtocolLoggedIn,
+                  isLocked: isArmed ?? true,
+                  powered: isPowerOn,
+                  bleChip: _officialBleChipState(cloudVehicle),
+                  channelStatus: controlChannelStatus,
+                  tire: tire,
+                  alert: alert,
+                  onTitleTap: _openVehicleHeader,
+                  onBleChipTap: () => unawaited(_onOfficialBleChipTap()),
+                  onMessages: _openMessages,
+                  onChannelTap: () => _openControlOptions(controlChannelStatus),
+                  onDismissAlert: alert == null
+                      ? null
+                      : () => setState(() => _dismissedAlertId = alert.id),
+                ),
               ),
-              const SizedBox(height: 20),
-              _CyberControlGrid(
-                armed: isArmed,
-                powered: isPowerOn,
-                dimmed:
-                    _busy ||
-                    !hasVehicle ||
-                    !signedIn ||
-                    !controlAvailability.enabled,
-                onFind: () => unawaited(_sendCommand(CommandCode.find)),
-                onUnlock: () => unawaited(_sendArmToggle()),
-                onSettings: _openSettings,
-                onSeat: () => unawaited(_sendCommand(CommandCode.openSeat)),
-                onShare: () => AppSnack.info(context, '车辆分享功能即将上线'),
-                onPassword: () {
-                  AppSnack.info(context, '密码解锁请在车辆设置中配置');
-                  _openSettings();
-                },
-                onNfc: () {
-                  AppSnack.info(context, 'NFC 钥匙请在车辆设置中管理');
-                  _openSettings();
-                },
-                onPower: () => unawaited(_sendPower()),
+              SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 18),
+                    _CyberControlGrid(
+                      armed: isArmed,
+                      powered: isPowerOn,
+                      dimmed:
+                          _busy ||
+                          !hasVehicle ||
+                          !signedIn ||
+                          !controlAvailability.enabled,
+                      onFind: () => unawaited(_sendCommand(CommandCode.find)),
+                      onUnlock: () => unawaited(_sendArmToggle()),
+                      onSettings: _openSettings,
+                      onSeat: () =>
+                          unawaited(_sendCommand(CommandCode.openSeat)),
+                      onShare: _openShare,
+                      onPassword: () {
+                        AppSnack.info(context, '密码解锁请在车辆设置中配置');
+                        _openSettings();
+                      },
+                      onNfc: _openNfc,
+                      onPower: () => unawaited(_sendPower()),
+                    ),
+                    const SizedBox(height: 22),
+                    _CyberNavCard(
+                      onMirror: () =>
+                          AppSnack.info(context, '镜像投屏需车辆仪表支持，连接后可用'),
+                      onSearch: _openLocation,
+                      onHome: () => AppSnack.info(context, '请先在车辆设置中配置家庭地址'),
+                      onWork: () => AppSnack.info(context, '请先在车辆设置中配置公司地址'),
+                    ),
+                    const SizedBox(height: 16),
+                    _CyberMapStatsRow(
+                      location: location,
+                      address: _locationTitle(location),
+                      todayKm: _todayRideLabel(cloudState),
+                      totalKm: _totalMileageLabel(cloudVehicle),
+                      lastDistance: lastRide.$1,
+                      lastDuration: lastRide.$2,
+                      distanceSeries: lastRide.$3,
+                      durationSeries: lastRide.$4,
+                      onMapTap: _openLocation,
+                      onBatteryTap: _openBattery,
+                    ),
+                    if (_commands.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      _CyberRecentCommands(commands: _commands),
+                    ],
+                    SizedBox(height: bottomPad),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-              _CyberChannelStrip(
-                selected: _controlChannel,
-                status: controlChannelStatus,
-                busy: _busy,
-                onChanged: _selectControlChannel,
-                onInduction: _openProximitySettings,
-              ),
-              const SizedBox(height: 16),
-              const _CyberNavCard(),
-              const SizedBox(height: 16),
-              _CyberMapStatsRow(
-                location: location,
-                address: _locationTitle(location),
-                todayKm: _todayRideLabel(cloudState),
-                totalKm: _totalMileageLabel(cloudVehicle),
-                lastDistance: lastRide.$1,
-                lastDuration: lastRide.$2,
-                distanceSeries: lastRide.$3,
-                durationSeries: lastRide.$4,
-                onMapTap: _openLocation,
-                onBatteryTap: _openBattery,
-              ),
-              const SizedBox(height: 16),
-              _CyberRecentCommands(commands: _commands),
             ],
           ),
         ),
@@ -1470,27 +1627,164 @@ class _CommandEntry {
 }
 
 abstract final class _Cyber {
-  static const pageBg = Color(0xFFF5F5F5);
-  static const card = Color(0xFFFFFFFF);
-  static const primary = Color(0xFF2196F3);
-  static const ink = Color(0xFF1A1A1A);
-  static const ink2 = Color(0xFF333333);
-  static const muted = Color(0xFF666666);
-  static const faint = Color(0xFF999999);
-  static const line = Color(0xFFE8E8E8);
-  static const soft = Color(0xFFF0F1F3);
-  static const online = Color(0xFF4CAF50);
-  static const pink = Color(0xFFFF4081);
+  static const pageBg = CyberHomeColors.pageBg;
+  static const card = CyberHomeColors.card;
+  static const primary = CyberHomeColors.primary;
+  static const ink = CyberHomeColors.ink;
+  static const ink2 = CyberHomeColors.inkSecondary;
+  static const muted = CyberHomeColors.inkMuted;
+  static const faint = CyberHomeColors.inkFaint;
+  static const line = CyberHomeColors.line;
+  static const soft = CyberHomeColors.control;
+  static const online = CyberHomeColors.success;
+  static const pink = CyberHomeColors.rideAccent;
   static const screenX = 20.0;
   static const cardMargin = EdgeInsets.symmetric(horizontal: screenX);
   static const tabular = <FontFeature>[FontFeature.tabularFigures()];
-  static List<BoxShadow> get cardShadow => [
-    BoxShadow(
-      color: Colors.black.withValues(alpha: 0.05),
-      blurRadius: 10,
-      offset: const Offset(0, 4),
-    ),
-  ];
+  static const cardShadow = AppShadows.cyberCardShadow;
+}
+
+class _HomeAlert {
+  const _HomeAlert({required this.id, required this.text, required this.time});
+
+  final String id;
+  final String text;
+  final String time;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _HomeAlert &&
+      other.id == id &&
+      other.text == text &&
+      other.time == time;
+
+  @override
+  int get hashCode => Object.hash(id, text, time);
+}
+
+class _TireSnapshot {
+  const _TireSnapshot({required this.front, required this.rear});
+
+  final _TireReading front;
+  final _TireReading rear;
+
+  factory _TireSnapshot.fromVehicle(OfficialVehicle? vehicle) {
+    final raw = vehicle?.raw ?? const <String, dynamic>{};
+    final sources = <Map<String, dynamic>>[raw];
+    for (final key in const ['tireInfo', 'tirePressure', 'tpms', 'carStatus']) {
+      final nested = raw[key];
+      if (nested is Map) sources.add(Map<String, dynamic>.from(nested));
+    }
+    return _TireSnapshot(
+      front: _TireReading(
+        pressureBar: _readPressure(sources, const [
+          'frontTirePressure',
+          'frontTyrePressure',
+          'frontPressure',
+          'tirePressureFront',
+          'frontWheelPressure',
+          'frontPressureBar',
+          'frontPressurePsi',
+        ]),
+        temperatureCelsius: _readNumber(sources, const [
+          'frontTireTemperature',
+          'frontTyreTemperature',
+          'frontTemperature',
+          'tireTemperatureFront',
+          'frontWheelTemperature',
+        ]),
+      ),
+      rear: _TireReading(
+        pressureBar: _readPressure(sources, const [
+          'rearTirePressure',
+          'rearTyrePressure',
+          'rearPressure',
+          'tirePressureRear',
+          'rearWheelPressure',
+          'rearPressureBar',
+          'rearPressurePsi',
+        ]),
+        temperatureCelsius: _readNumber(sources, const [
+          'rearTireTemperature',
+          'rearTyreTemperature',
+          'rearTemperature',
+          'tireTemperatureRear',
+          'rearWheelTemperature',
+        ]),
+      ),
+    );
+  }
+
+  static double? _readPressure(
+    List<Map<String, dynamic>> sources,
+    List<String> keys,
+  ) {
+    for (final source in sources) {
+      for (final key in keys) {
+        final value = _parseNumber(source[key]);
+        if (value == null) continue;
+        if (key.toLowerCase().contains('psi')) return value / 14.5038;
+        if (value > 50) return value / 100;
+        return value;
+      }
+    }
+    return null;
+  }
+
+  static double? _readNumber(
+    List<Map<String, dynamic>> sources,
+    List<String> keys,
+  ) {
+    for (final source in sources) {
+      for (final key in keys) {
+        final value = _parseNumber(source[key]);
+        if (value != null) return value;
+      }
+    }
+    return null;
+  }
+
+  static double? _parseNumber(Object? raw) {
+    if (raw == null) return null;
+    final match = RegExp(r'-?\d+(?:\.\d+)?').firstMatch(raw.toString());
+    return match == null ? null : double.tryParse(match.group(0)!);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is _TireSnapshot && other.front == front && other.rear == rear;
+
+  @override
+  int get hashCode => Object.hash(front, rear);
+}
+
+class _TireReading {
+  const _TireReading({this.pressureBar, this.temperatureCelsius});
+
+  final double? pressureBar;
+  final double? temperatureCelsius;
+
+  String get pressureLabel => pressureBar == null
+      ? '-- bar'
+      : '${formatCompactDecimal(pressureBar!)} bar';
+
+  String get temperatureLabel => temperatureCelsius == null
+      ? '-- °C'
+      : '${formatCompactDecimal(temperatureCelsius!)} °C';
+
+  bool get isPressureAbnormal {
+    final pressure = pressureBar;
+    return pressure != null && (pressure < 1.5 || pressure > 3.5);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is _TireReading &&
+      other.pressureBar == pressureBar &&
+      other.temperatureCelsius == temperatureCelsius;
+
+  @override
+  int get hashCode => Object.hash(pressureBar, temperatureCelsius);
 }
 
 enum _OfficialBleChipState {
@@ -1500,6 +1794,361 @@ enum _OfficialBleChipState {
   connecting,
   disconnecting,
   connected,
+}
+
+class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
+  const _CyberVehicleHeaderDelegate({
+    required this.vehicleName,
+    required this.rangeText,
+    required this.carPhoto,
+    required this.batteryPercent,
+    required this.batteryKnown,
+    required this.online,
+    required this.bluetoothConnected,
+    required this.isLocked,
+    required this.powered,
+    required this.bleChip,
+    required this.channelStatus,
+    required this.tire,
+    required this.alert,
+    required this.onTitleTap,
+    required this.onBleChipTap,
+    required this.onMessages,
+    required this.onChannelTap,
+    required this.onDismissAlert,
+  });
+
+  final String vehicleName;
+  final String rangeText;
+  final String carPhoto;
+  final int batteryPercent;
+  final bool batteryKnown;
+  final bool online;
+  final bool bluetoothConnected;
+  final bool isLocked;
+  final bool? powered;
+  final _OfficialBleChipState bleChip;
+  final ControlTopBarChannel channelStatus;
+  final _TireSnapshot tire;
+  final _HomeAlert? alert;
+  final VoidCallback onTitleTap;
+  final VoidCallback onBleChipTap;
+  final VoidCallback onMessages;
+  final VoidCallback onChannelTap;
+  final VoidCallback? onDismissAlert;
+
+  @override
+  double get minExtent => 142;
+
+  @override
+  double get maxExtent => alert == null ? 510 : 576;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final progress = (shrinkOffset / (maxExtent - minExtent)).clamp(0.0, 1.0);
+    final expandedOpacity = (1 - progress * 1.8).clamp(0.0, 1.0);
+    final compactOpacity = ((progress - 0.42) / 0.58).clamp(0.0, 1.0);
+    return DecoratedBox(
+      key: const ValueKey('cyber-collapsing-header'),
+      decoration: BoxDecoration(
+        color: CyberHomeColors.pageBg,
+        boxShadow: overlapsContent || progress > 0.95
+            ? const [
+                BoxShadow(
+                  color: CyberHomeColors.actionShadow,
+                  blurRadius: 14,
+                  offset: Offset(0, 5),
+                ),
+              ]
+            : const [],
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          IgnorePointer(
+            ignoring: expandedOpacity < 0.5,
+            child: Opacity(
+              key: const ValueKey('cyber-expanded-header-opacity'),
+              opacity: expandedOpacity,
+              child: _CyberHeroHeader(
+                vehicleName: vehicleName,
+                rangeText: rangeText,
+                carPhoto: carPhoto,
+                batteryPercent: batteryPercent,
+                batteryKnown: batteryKnown,
+                online: online,
+                bluetoothConnected: bluetoothConnected,
+                isLocked: isLocked,
+                powered: powered,
+                channelStatus: channelStatus,
+                tire: tire,
+                alert: alert,
+                onTitleTap: onTitleTap,
+                onBleChipTap: onBleChipTap,
+                onMessages: onMessages,
+                onChannelTap: onChannelTap,
+                onDismissAlert: onDismissAlert,
+              ),
+            ),
+          ),
+          IgnorePointer(
+            ignoring: compactOpacity < 0.5,
+            child: Opacity(
+              key: const ValueKey('cyber-compact-header-opacity'),
+              opacity: compactOpacity,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: _CyberTopBar(
+                  vehicleName: vehicleName,
+                  rangeText: rangeText,
+                  carPhoto: carPhoto,
+                  batteryPercent: batteryPercent,
+                  online: online,
+                  bluetoothConnected: bluetoothConnected,
+                  isLocked: isLocked,
+                  powered: powered,
+                  bleChip: bleChip,
+                  channelStatus: channelStatus,
+                  onTitleTap: onTitleTap,
+                  onBleChipTap: onBleChipTap,
+                  onMessages: onMessages,
+                  onChannelTap: onChannelTap,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _CyberVehicleHeaderDelegate oldDelegate) {
+    return vehicleName != oldDelegate.vehicleName ||
+        rangeText != oldDelegate.rangeText ||
+        carPhoto != oldDelegate.carPhoto ||
+        batteryPercent != oldDelegate.batteryPercent ||
+        batteryKnown != oldDelegate.batteryKnown ||
+        online != oldDelegate.online ||
+        bluetoothConnected != oldDelegate.bluetoothConnected ||
+        isLocked != oldDelegate.isLocked ||
+        powered != oldDelegate.powered ||
+        bleChip != oldDelegate.bleChip ||
+        channelStatus != oldDelegate.channelStatus ||
+        tire != oldDelegate.tire ||
+        alert != oldDelegate.alert;
+  }
+}
+
+class _CyberHeroHeader extends StatelessWidget {
+  const _CyberHeroHeader({
+    required this.vehicleName,
+    required this.rangeText,
+    required this.carPhoto,
+    required this.batteryPercent,
+    required this.batteryKnown,
+    required this.online,
+    required this.bluetoothConnected,
+    required this.isLocked,
+    required this.powered,
+    required this.channelStatus,
+    required this.tire,
+    required this.alert,
+    required this.onTitleTap,
+    required this.onBleChipTap,
+    required this.onMessages,
+    required this.onChannelTap,
+    required this.onDismissAlert,
+  });
+
+  final String vehicleName;
+  final String rangeText;
+  final String carPhoto;
+  final int batteryPercent;
+  final bool batteryKnown;
+  final bool online;
+  final bool bluetoothConnected;
+  final bool isLocked;
+  final bool? powered;
+  final ControlTopBarChannel channelStatus;
+  final _TireSnapshot tire;
+  final _HomeAlert? alert;
+  final VoidCallback onTitleTap;
+  final VoidCallback onBleChipTap;
+  final VoidCallback onMessages;
+  final VoidCallback onChannelTap;
+  final VoidCallback? onDismissAlert;
+
+  @override
+  Widget build(BuildContext context) {
+    final level = (batteryPercent / 100).clamp(0.0, 1.0);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: AppPressable(
+                  onTap: onTitleTap,
+                  semanticsLabel: '切换车辆 $vehicleName',
+                  semanticsButton: true,
+                  child: Text(
+                    vehicleName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 27,
+                      height: 1.05,
+                      fontWeight: FontWeight.w700,
+                      color: _Cyber.ink,
+                    ),
+                  ),
+                ),
+              ),
+              _HeroAction(
+                key: const ValueKey('cyber-hero-bluetooth'),
+                icon: bluetoothConnected
+                    ? Lucide.bluetooth
+                    : Lucide.bluetoothSearching,
+                label: bluetoothConnected ? '蓝牙已连接' : '连接车辆蓝牙',
+                primary: true,
+                onTap: onBleChipTap,
+              ),
+              const SizedBox(width: 10),
+              _HeroAction(
+                key: const ValueKey('cyber-hero-messages'),
+                icon: Lucide.message,
+                label: '车辆消息',
+                onTap: onMessages,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                rangeText.replaceAll('km', '').trim(),
+                style: const TextStyle(
+                  fontSize: 54,
+                  height: 0.94,
+                  fontWeight: FontWeight.w700,
+                  color: _Cyber.ink,
+                  fontFeatures: _Cyber.tabular,
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(left: 5, bottom: 4),
+                child: Text(
+                  'km',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: _Cyber.ink,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 12, bottom: 4),
+                child: Text(
+                  batteryKnown ? '$batteryPercent%' : '--%',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w500,
+                    color: _Cyber.muted,
+                    fontFeatures: _Cyber.tabular,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: 116,
+            height: 4,
+            decoration: BoxDecoration(
+              color: _Cyber.ink,
+              borderRadius: BorderRadius.circular(AppRadii.pill),
+            ),
+          ),
+          const SizedBox(height: 10),
+          _CyberStatusLine(
+            key: const ValueKey('cyber-hero-status'),
+            online: online,
+            bluetoothConnected: bluetoothConnected,
+            isLocked: isLocked,
+            powered: powered,
+            channelStatus: channelStatus,
+            onTap: onChannelTap,
+          ),
+          Expanded(
+            child: VehicleStage(
+              key: const ValueKey('cyber-hero-vehicle'),
+              batteryLevel: level,
+              height: 260,
+              imageUrl: carPhoto.trim().isEmpty ? null : carPhoto.trim(),
+            ),
+          ),
+          _TireStatusRow(tire: tire),
+          if (alert != null) ...[
+            const SizedBox(height: 12),
+            _HomeAlertBanner(
+              alert: alert!,
+              onTap: onMessages,
+              onDismiss: onDismissAlert,
+            ),
+          ],
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroAction extends StatelessWidget {
+  const _HeroAction({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.primary = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool primary;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppPressable(
+      onTap: onTap,
+      semanticsLabel: label,
+      semanticsButton: true,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: primary ? _Cyber.primary : _Cyber.card,
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          boxShadow: AppShadows.cyberActionShadow,
+        ),
+        alignment: Alignment.center,
+        child: LucideIcon(
+          icon,
+          size: 28,
+          color: primary ? CyberHomeColors.white : _Cyber.ink,
+          strokeWidth: 1.8,
+        ),
+      ),
+    );
+  }
 }
 
 class _CyberTopBar extends StatelessWidget {
@@ -1513,9 +2162,11 @@ class _CyberTopBar extends StatelessWidget {
     required this.isLocked,
     required this.powered,
     required this.bleChip,
+    required this.channelStatus,
     required this.onTitleTap,
     required this.onBleChipTap,
-    required this.onSettings,
+    required this.onMessages,
+    required this.onChannelTap,
   });
 
   final String vehicleName;
@@ -1527,115 +2178,83 @@ class _CyberTopBar extends StatelessWidget {
   final bool isLocked;
   final bool? powered;
   final _OfficialBleChipState bleChip;
+  final ControlTopBarChannel channelStatus;
   final VoidCallback onTitleTap;
   final VoidCallback onBleChipTap;
-  final VoidCallback onSettings;
+  final VoidCallback onMessages;
+  final VoidCallback onChannelTap;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(_Cyber.screenX, 12, _Cyber.screenX, 0),
+      padding: const EdgeInsets.fromLTRB(_Cyber.screenX, 8, _Cyber.screenX, 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: AppPressable(
-              onTap: onTitleTap,
-              semanticsLabel: '切换车辆 $vehicleName',
-              semanticsButton: true,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppPressable(
+                  onTap: onTitleTap,
+                  semanticsLabel: '切换车辆 $vehicleName',
+                  semanticsButton: true,
+                  child: Text(
                     vehicleName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 26,
+                      fontSize: 25,
                       fontWeight: FontWeight.w700,
                       color: _Cyber.ink,
-                      height: 1.2,
+                      height: 1.15,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: [
-                      Text(
-                        rangeText,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w600,
-                          color: _Cyber.ink2,
-                          fontFeatures: _Cyber.tabular,
-                        ),
-                      ),
-                      Icon(
-                        Icons.circle,
-                        size: 9,
-                        color: online ? _Cyber.online : _Cyber.line,
-                      ),
-                      Icon(
-                        Icons.bluetooth,
-                        size: 16,
-                        color: bluetoothConnected
-                            ? _Cyber.primary
-                            : _Cyber.faint,
-                      ),
-                      Icon(
-                        Icons.signal_cellular_alt,
-                        size: 16,
-                        color: online ? _Cyber.online : _Cyber.faint,
-                      ),
-                      Text(
-                        isLocked ? '已关锁' : '已开锁',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: _Cyber.muted,
-                        ),
-                      ),
-                      if (powered != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: powered!
-                                ? _Cyber.primary.withValues(alpha: 0.12)
-                                : _Cyber.soft,
-                            borderRadius: BorderRadius.circular(AppRadii.sm),
-                          ),
-                          child: Text(
-                            powered! ? '通电' : '断电',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: powered! ? _Cyber.primary : _Cyber.faint,
-                            ),
-                          ),
-                        ),
-                    ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  rangeText,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: _Cyber.ink2,
+                    fontFeatures: _Cyber.tabular,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 6),
+                _CyberStatusLine(
+                  key: const ValueKey('cyber-compact-status'),
+                  online: online,
+                  bluetoothConnected: bluetoothConnected,
+                  isLocked: isLocked,
+                  powered: powered,
+                  channelStatus: channelStatus,
+                  onTap: onChannelTap,
+                  compact: true,
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 10),
           Column(
             children: [
-              _VehicleThumb(carPhoto: carPhoto, percent: batteryPercent),
-              const SizedBox(height: 8),
+              _VehicleThumb(
+                carPhoto: carPhoto,
+                percent: batteryPercent,
+                width: 112,
+                height: 70,
+              ),
+              const SizedBox(height: 5),
               Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   if (bleChip != _OfficialBleChipState.hidden)
                     _CyberBleChip(state: bleChip, onTap: onBleChipTap),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 5),
                   _RoundIconBtn(
-                    icon: Icons.settings_outlined,
-                    onTap: onSettings,
+                    icon: Lucide.message,
+                    label: '车辆消息',
+                    onTap: onMessages,
                   ),
                 ],
               ),
@@ -1647,10 +2266,255 @@ class _CyberTopBar extends StatelessWidget {
   }
 }
 
+class _CyberStatusLine extends StatelessWidget {
+  const _CyberStatusLine({
+    super.key,
+    required this.online,
+    required this.bluetoothConnected,
+    required this.isLocked,
+    required this.powered,
+    required this.channelStatus,
+    required this.onTap,
+    this.compact = false,
+  });
+
+  final bool online;
+  final bool bluetoothConnected;
+  final bool isLocked;
+  final bool? powered;
+  final ControlTopBarChannel channelStatus;
+  final VoidCallback onTap;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final stateLabel = [
+      online ? '车辆在线' : '车辆离线',
+      bluetoothConnected ? '蓝牙已连接' : '蓝牙未连接',
+      isLocked ? '已关锁' : '已开锁',
+      if (powered != null) powered! ? '已通电' : '已断电',
+      channelStatus.label,
+    ].join('，');
+    final iconSize = compact ? 15.0 : 18.0;
+    final textSize = compact ? 11.0 : 13.0;
+    return AppPressable(
+      onTap: onTap,
+      semanticsLabel: '控车状态：$stateLabel。点击选择控车渠道',
+      semanticsButton: true,
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: compact ? 5 : 7,
+        runSpacing: 3,
+        children: [
+          LucideIcon(
+            Lucide.circleDot,
+            size: iconSize,
+            color: online ? _Cyber.online : _Cyber.faint,
+          ),
+          LucideIcon(
+            bluetoothConnected ? Lucide.bluetooth : Lucide.bluetoothOff,
+            size: iconSize,
+            color: bluetoothConnected ? _Cyber.primary : _Cyber.faint,
+          ),
+          LucideIcon(
+            Lucide.radioTower,
+            size: iconSize,
+            color: online ? _Cyber.ink : _Cyber.faint,
+          ),
+          Text(
+            isLocked ? '已关锁' : '已开锁',
+            style: TextStyle(
+              fontSize: textSize,
+              color: _Cyber.muted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 6 : 8,
+              vertical: compact ? 2 : 3,
+            ),
+            decoration: BoxDecoration(
+              color: _Cyber.soft,
+              borderRadius: BorderRadius.circular(AppRadii.pill),
+            ),
+            child: Text(
+              channelStatus.label,
+              style: TextStyle(
+                fontSize: compact ? 10 : 11,
+                color: _Cyber.muted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TireStatusRow extends StatelessWidget {
+  const _TireStatusRow({required this.tire});
+
+  final _TireSnapshot tire;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label:
+          '前轮胎压 ${tire.front.pressureLabel}，温度 ${tire.front.temperatureLabel}；'
+          '后轮胎压 ${tire.rear.pressureLabel}，温度 ${tire.rear.temperatureLabel}',
+      child: ExcludeSemantics(
+        child: Row(
+          children: [
+            Expanded(
+              child: _TireReadingText(prefix: '前', value: tire.front),
+            ),
+            Expanded(
+              child: _TireReadingText(
+                prefix: '后',
+                value: tire.rear,
+                textAlign: TextAlign.end,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TireReadingText extends StatelessWidget {
+  const _TireReadingText({
+    required this.prefix,
+    required this.value,
+    this.textAlign = TextAlign.start,
+  });
+
+  final String prefix;
+  final _TireReading value;
+  final TextAlign textAlign;
+
+  @override
+  Widget build(BuildContext context) {
+    final pressureColor = value.isPressureAbnormal
+        ? CyberHomeColors.danger
+        : _Cyber.muted;
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: '$prefix ',
+            style: TextStyle(color: pressureColor, fontWeight: FontWeight.w700),
+          ),
+          TextSpan(
+            text: '${value.pressureLabel}  ${value.temperatureLabel}',
+            style: const TextStyle(color: _Cyber.muted),
+          ),
+        ],
+      ),
+      textAlign: textAlign,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(
+        fontSize: 13,
+        height: 1.2,
+        fontFeatures: _Cyber.tabular,
+      ),
+    );
+  }
+}
+
+class _HomeAlertBanner extends StatelessWidget {
+  const _HomeAlertBanner({
+    required this.alert,
+    required this.onTap,
+    required this.onDismiss,
+  });
+
+  final _HomeAlert alert;
+  final VoidCallback onTap;
+  final VoidCallback? onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey('cyber-home-alert'),
+      height: 58,
+      decoration: BoxDecoration(
+        color: CyberHomeColors.alertSurface,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: AppPressable(
+              onTap: onTap,
+              semanticsLabel: '车辆提醒：${alert.text}，${alert.time}',
+              semanticsButton: true,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 14),
+                child: Row(
+                  children: [
+                    const LucideIcon(
+                      Lucide.alertCircle,
+                      size: 20,
+                      color: CyberHomeColors.inkSecondary,
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        alert.text,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: _Cyber.ink2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      alert.time,
+                      style: const TextStyle(fontSize: 12, color: _Cyber.faint),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          AppPressable(
+            onTap: onDismiss,
+            enabled: onDismiss != null,
+            semanticsLabel: '关闭车辆提醒',
+            semanticsButton: true,
+            child: const SizedBox(
+              width: AppTouchTargets.min,
+              height: AppTouchTargets.min,
+              child: Center(
+                child: LucideIcon(Lucide.x, size: 20, color: _Cyber.faint),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
+    );
+  }
+}
+
 class _VehicleThumb extends StatelessWidget {
-  const _VehicleThumb({required this.carPhoto, required this.percent});
+  const _VehicleThumb({
+    required this.carPhoto,
+    required this.percent,
+    this.width = 132,
+    this.height = 86,
+  });
   final String carPhoto;
   final int percent;
+  final double width;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -1659,45 +2523,57 @@ class _VehicleThumb extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppRadii.card),
       child: Container(
-        width: 132,
-        height: 86,
-        color: const Color(0xFFEEF1F5),
+        width: width,
+        height: height,
+        color: CyberHomeColors.mapPlaceholder,
         child: url.isNotEmpty
             ? CachedNetworkImage(
                 imageUrl: url,
                 fit: BoxFit.contain,
-                placeholder: (_, __) => CustomPaint(
-                  painter: VehicleStagePainter(batteryLevel: level),
-                ),
-                errorWidget: (_, __, ___) => CustomPaint(
-                  painter: VehicleStagePainter(batteryLevel: level),
-                ),
+                placeholder: (_, __) => _fallback(level),
+                errorWidget: (_, __, ___) => _fallback(level),
               )
-            : CustomPaint(painter: VehicleStagePainter(batteryLevel: level)),
+            : _fallback(level),
       ),
+    );
+  }
+
+  Widget _fallback(double level) {
+    return Image.asset(
+      VehicleStage.fallbackAsset,
+      fit: BoxFit.contain,
+      semanticLabel: '台铃车辆',
+      errorBuilder: (_, __, ___) =>
+          CustomPaint(painter: VehicleStagePainter(batteryLevel: level)),
     );
   }
 }
 
 class _RoundIconBtn extends StatelessWidget {
-  const _RoundIconBtn({required this.icon, required this.onTap});
+  const _RoundIconBtn({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
   final IconData icon;
+  final String label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return AppPressable(
       onTap: onTap,
-      semanticsLabel: '设置',
+      semanticsLabel: label,
       semanticsButton: true,
       child: Container(
-        width: 36,
-        height: 36,
+        width: AppTouchTargets.min,
+        height: AppTouchTargets.min,
         decoration: const BoxDecoration(
           color: _Cyber.soft,
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 18, color: _Cyber.muted),
+        alignment: Alignment.center,
+        child: LucideIcon(icon, size: 19, color: _Cyber.muted),
       ),
     );
   }
@@ -1728,7 +2604,7 @@ class _CyberBleChip extends StatelessWidget {
       semanticsLabel: '蓝牙 $_label',
       semanticsButton: true,
       child: Container(
-        height: 36,
+        height: AppTouchTargets.min,
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: connected
@@ -1754,8 +2630,8 @@ class _CyberBleChip extends StatelessWidget {
                 ),
               )
             else
-              Icon(
-                Icons.bluetooth,
+              LucideIcon(
+                connected ? Lucide.bluetooth : Lucide.bluetoothSearching,
                 size: 14,
                 color: connected ? _Cyber.primary : _Cyber.muted,
               ),
@@ -1813,11 +2689,7 @@ class _CyberControlGrid extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _CircleKey(
-                  icon: Icons.campaign_outlined,
-                  label: '寻车',
-                  onTap: onFind,
-                ),
+                _CircleKey(icon: Lucide.find, label: '寻车', onTap: onFind),
                 Flexible(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
@@ -1828,7 +2700,7 @@ class _CyberControlGrid extends StatelessWidget {
                   ),
                 ),
                 _CircleKey(
-                  icon: Icons.hexagon_outlined,
+                  icon: Lucide.settings,
                   label: '车辆设置',
                   onTap: onSettings,
                 ),
@@ -1838,22 +2710,10 @@ class _CyberControlGrid extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _CircleKey(
-                  icon: Icons.airline_seat_recline_extra_outlined,
-                  label: '打开坐垫',
-                  onTap: onSeat,
-                ),
-                _CircleKey(
-                  icon: Icons.group_outlined,
-                  label: '车辆分享',
-                  onTap: onShare,
-                ),
-                _CircleKey(
-                  icon: Icons.dialpad,
-                  label: '密码解锁',
-                  onTap: onPassword,
-                ),
-                _CircleKey(icon: Icons.nfc, label: 'NFC钥匙', onTap: onNfc),
+                _CircleKey(icon: Lucide.seat, label: '打开坐垫', onTap: onSeat),
+                _CircleKey(icon: Lucide.share, label: '车辆分享', onTap: onShare),
+                _CircleKey(icon: Lucide.key, label: '密码解锁', onTap: onPassword),
+                _CircleKey(icon: Lucide.nfc, label: 'NFC钥匙', onTap: onNfc),
               ],
             ),
             const SizedBox(height: 18),
@@ -1878,8 +2738,8 @@ class _CyberControlGrid extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.power_settings_new,
+                    LucideIcon(
+                      Lucide.power,
                       size: 18,
                       color: powered == true ? _Cyber.primary : _Cyber.muted,
                     ),
@@ -1931,10 +2791,17 @@ class _CircleKey extends StatelessWidget {
             width: 68,
             height: 68,
             decoration: const BoxDecoration(
-              color: _Cyber.soft,
+              color: _Cyber.card,
               shape: BoxShape.circle,
+              boxShadow: AppShadows.cyberActionShadow,
             ),
-            child: Icon(icon, size: 26, color: _Cyber.ink2),
+            alignment: Alignment.center,
+            child: LucideIcon(
+              icon,
+              size: 27,
+              color: _Cyber.ink2,
+              strokeWidth: 1.8,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -1987,7 +2854,7 @@ class _CyberChannelStrip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: on ? Colors.white : _Cyber.muted,
+                color: on ? CyberHomeColors.white : _Cyber.muted,
               ),
             ),
           ),
@@ -2022,7 +2889,7 @@ class _CyberChannelStrip extends StatelessWidget {
                   busy ? '指令执行中' : status.label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: busy ? Colors.orange : _Cyber.muted,
+                    color: busy ? CyberHomeColors.warning : _Cyber.muted,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -2059,7 +2926,17 @@ class _CyberChannelStrip extends StatelessWidget {
 }
 
 class _CyberNavCard extends StatelessWidget {
-  const _CyberNavCard();
+  const _CyberNavCard({
+    required this.onMirror,
+    required this.onSearch,
+    required this.onHome,
+    required this.onWork,
+  });
+
+  final VoidCallback onMirror;
+  final VoidCallback onSearch;
+  final VoidCallback onHome;
+  final VoidCallback onWork;
 
   @override
   Widget build(BuildContext context) {
@@ -2068,20 +2945,20 @@ class _CyberNavCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFE3F2FD), Color(0xFFFFFFFF)],
+          colors: [CyberHomeColors.primarySoft, CyberHomeColors.card],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         boxShadow: _Cyber.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              const Text(
                 '仪表投屏导航',
                 style: TextStyle(
                   fontSize: 17,
@@ -2089,41 +2966,56 @@ class _CyberNavCard extends StatelessWidget {
                   color: _Cyber.ink,
                 ),
               ),
-              Text(
-                '镜像投屏',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: _Cyber.primary,
-                  fontWeight: FontWeight.w500,
+              AppPressable(
+                onTap: onMirror,
+                semanticsLabel: '镜像投屏',
+                semanticsButton: true,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  child: Text(
+                    '镜像投屏',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: _Cyber.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Container(
-            height: 46,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0F4F8),
-              borderRadius: BorderRadius.circular(23),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.search, size: 20, color: _Cyber.faint),
-                SizedBox(width: 8),
-                Text(
-                  '搜索目的地',
-                  style: TextStyle(fontSize: 14, color: _Cyber.faint),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Row(
+          Row(
             children: [
-              _NavMini(icon: Icons.home_outlined),
-              SizedBox(width: 10),
-              _NavMini(icon: Icons.work_outline),
+              Expanded(
+                child: AppPressable(
+                  onTap: onSearch,
+                  semanticsLabel: '搜索目的地',
+                  semanticsButton: true,
+                  child: Container(
+                    height: 52,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: CyberHomeColors.cardMuted,
+                      borderRadius: BorderRadius.circular(AppRadii.pill),
+                    ),
+                    child: const Row(
+                      children: [
+                        LucideIcon(Lucide.search, size: 21, color: _Cyber.ink),
+                        SizedBox(width: 9),
+                        Text(
+                          '搜索目的地',
+                          style: TextStyle(fontSize: 14, color: _Cyber.faint),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              _NavMini(icon: Lucide.home, label: '家庭地址', onTap: onHome),
+              const SizedBox(width: 8),
+              _NavMini(icon: Lucide.briefcase, label: '公司地址', onTap: onWork),
             ],
           ),
         ],
@@ -2133,19 +3025,31 @@ class _CyberNavCard extends StatelessWidget {
 }
 
 class _NavMini extends StatelessWidget {
-  const _NavMini({required this.icon});
+  const _NavMini({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
   final IconData icon;
+  final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: AppTouchTargets.min,
-      height: AppTouchTargets.min,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(AppRadii.card),
+    return AppPressable(
+      onTap: onTap,
+      semanticsLabel: label,
+      semanticsButton: true,
+      child: Container(
+        width: 52,
+        height: 52,
+        decoration: const BoxDecoration(
+          color: CyberHomeColors.white75,
+          shape: BoxShape.circle,
+        ),
+        alignment: Alignment.center,
+        child: LucideIcon(icon, size: 23, color: _Cyber.ink),
       ),
-      child: Icon(icon, size: 22, color: _Cyber.muted),
     );
   }
 }
@@ -2262,7 +3166,10 @@ class _MiniMap extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: _Cyber.primary,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
+                          border: Border.all(
+                            color: CyberHomeColors.white,
+                            width: 3,
+                          ),
                         ),
                       ),
                     ),
@@ -2272,9 +3179,9 @@ class _MiniMap extends StatelessWidget {
             )
           else
             const ColoredBox(
-              color: Color(0xFFE8ECF0),
+              color: CyberHomeColors.mapPlaceholder,
               child: Center(
-                child: Icon(Icons.map_outlined, size: 36, color: _Cyber.faint),
+                child: LucideIcon(Lucide.map, size: 36, color: _Cyber.faint),
               ),
             ),
           Positioned(
@@ -2284,7 +3191,7 @@ class _MiniMap extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.96),
+                color: CyberHomeColors.white96,
                 borderRadius: BorderRadius.circular(AppRadii.card),
               ),
               child: Column(
@@ -2559,7 +3466,7 @@ class _CmdRow extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: (ok ? _Cyber.primary : Colors.orange).withValues(
+              color: (ok ? _Cyber.primary : CyberHomeColors.warning).withValues(
                 alpha: 0.12,
               ),
               shape: BoxShape.circle,
@@ -2567,7 +3474,7 @@ class _CmdRow extends StatelessWidget {
             child: LucideIcon(
               entry.icon,
               size: 14,
-              color: ok ? _Cyber.primary : Colors.orange,
+              color: ok ? _Cyber.primary : CyberHomeColors.warning,
             ),
           ),
           const SizedBox(width: 10),

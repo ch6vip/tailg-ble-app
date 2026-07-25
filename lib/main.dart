@@ -708,7 +708,7 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: CyberHomeColors.pageBg,
       body: FadeTransition(
         opacity: _fadeAnim,
         child: SlideTransition(

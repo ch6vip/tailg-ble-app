@@ -3,6 +3,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'helpers/source_scan.dart';
 
 void main() {
+  test('application UI uses Lucide instead of Material Icons', () {
+    final offenders = patternOffenders(
+      dartFilesUnder('lib').where(
+        (file) =>
+            !_normalizedPath(file.path).endsWith('widgets/lucide_icon.dart'),
+      ),
+      RegExp(r'\bIcons\.'),
+    );
+
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Use Lucide.* / LucideIcon from widgets/lucide_icon.dart; Material '
+          'Icons are outside the repository design system.',
+    );
+  });
+
   test('snack icon assertions use snackIcon helper', () {
     final directSnackIconFinder = RegExp(
       r'find\.byIcon\(Icons\.(info_outline|check_circle_outline|error_outline)\)',
