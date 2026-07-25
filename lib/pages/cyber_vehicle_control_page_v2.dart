@@ -1033,8 +1033,11 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
   bool _shouldShowNearFieldBanner(OfficialVehicle? vehicle) {
     if (vehicle == null) return false;
     if (vehicle.normalizedDeviceMac.isEmpty) return false;
-    // Only when BLE is fully down — connecting/ready hides the banner.
-    return connectionManager.state == ble.ConnectionState.disconnected &&
+    // Keep the hero BLE action as the single connection-status surface.
+    // The banner remains an idle hint, but disappears as soon as a connection
+    // attempt starts so the header does not show two BLE indicators.
+    return !_nearFieldBusy &&
+        connectionManager.state == ble.ConnectionState.disconnected &&
         !connectionManager.isProtocolLoggedIn;
   }
 
@@ -1131,15 +1134,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
 
   Widget _buildNearFieldBanner() {
     final perm = _blePermission;
-    if (_nearFieldBusy ||
-        connectionManager.state == ble.ConnectionState.connecting) {
-      return VehicleControlGateBanner(
-        title: _nearFieldBusy ? '正在连接车辆蓝牙…' : '蓝牙连接中…',
-        actionLabel: '连接中',
-        busy: true,
-        onAction: () {},
-      );
-    }
     if (perm != null && !perm.granted) {
       if (perm.openSettingsRecommended) {
         return VehicleControlGateBanner(
