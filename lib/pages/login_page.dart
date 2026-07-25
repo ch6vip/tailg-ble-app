@@ -11,10 +11,40 @@ import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../services/sms_countdown.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_void.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/lucide_icon.dart';
-import '../widgets/void_canvas.dart';
+
+const _loginTitleText = TextStyle(
+  fontSize: 30,
+  fontWeight: FontWeight.w700,
+  color: CyberHomeColors.ink,
+);
+
+const _loginBodyText = TextStyle(
+  fontSize: 13,
+  height: 1.45,
+  color: CyberHomeColors.inkMuted,
+);
+
+final _loginFilledButtonStyle = FilledButton.styleFrom(
+  minimumSize: const Size.fromHeight(48),
+  backgroundColor: CyberHomeColors.primary,
+  foregroundColor: CyberHomeColors.white,
+  disabledBackgroundColor: CyberHomeColors.controlStrong,
+  disabledForegroundColor: CyberHomeColors.inkFaint,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(AppRadii.tile),
+  ),
+);
+
+final _loginOutlinedButtonStyle = OutlinedButton.styleFrom(
+  minimumSize: const Size(96, 48),
+  foregroundColor: CyberHomeColors.inkSecondary,
+  side: const BorderSide(color: CyberHomeColors.lineStrong),
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(AppRadii.tile),
+  ),
+);
 
 /// 登录页 — 参考官方 LoginOnActivity / LoginPhoneCodeActivity，
 /// 顶部品牌区 + 手机号验证码登录，底部附加粘贴 Token 登录入口。
@@ -224,67 +254,67 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final loading = _busy || officialCloudService.state.loading;
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        intensity: 1.2,
-        child: SafeArea(
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-            children: [
-              const _BrandHeader(),
-              const SizedBox(height: 32),
-              if (_mode == _LoginMode.sms)
-                _SmsLoginForm(
-                  phoneController: _phoneController,
-                  smsController: _smsController,
-                  smsCountdown: _smsCountdown.remaining,
-                  loading: loading,
-                  agreed: _agreed,
-                  validPhone: _validPhone,
-                  validSms: _validSms,
-                  onRequestCode: _requestCode,
-                  onLogin: _loginWithSms,
-                )
-              else
-                _TokenLoginForm(
-                  tokenController: _tokenController,
-                  loading: loading,
-                  onPaste: _pasteFromClipboard,
-                  onLogin: _loginWithToken,
-                ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.center,
-                child: TextButton.icon(
-                  key: const ValueKey('login-mode-toggle'),
-                  onPressed: loading
-                      ? null
-                      : () => _switchMode(
-                          _mode == _LoginMode.sms
-                              ? _LoginMode.token
-                              : _LoginMode.sms,
-                        ),
-                  icon: LucideIcon(
-                    _mode == _LoginMode.sms ? Lucide.key : Lucide.phone,
-                    size: AppIconSizes.sm,
-                    color: VoidColors.energy,
-                  ),
-                  label: Text(
-                    _mode == _LoginMode.sms ? '使用 Token 登录' : '返回手机号登录',
-                    style: const TextStyle(color: VoidColors.energy),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _AgreementRow(
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+          children: [
+            const _BrandHeader(),
+            const SizedBox(height: 28),
+            if (_mode == _LoginMode.sms)
+              _SmsLoginForm(
+                phoneController: _phoneController,
+                smsController: _smsController,
+                smsCountdown: _smsCountdown.remaining,
+                loading: loading,
                 agreed: _agreed,
-                onChanged: (v) => setState(() => _agreed = v),
+                validPhone: _validPhone,
+                validSms: _validSms,
+                onRequestCode: _requestCode,
+                onLogin: _loginWithSms,
+              )
+            else
+              _TokenLoginForm(
+                tokenController: _tokenController,
+                loading: loading,
+                onPaste: _pasteFromClipboard,
+                onLogin: _loginWithToken,
               ),
-              const SizedBox(height: 24),
-              if (_mode == _LoginMode.token) const _TokenSafetyNote(),
-            ],
-          ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.center,
+              child: TextButton.icon(
+                key: const ValueKey('login-mode-toggle'),
+                onPressed: loading
+                    ? null
+                    : () => _switchMode(
+                        _mode == _LoginMode.sms
+                            ? _LoginMode.token
+                            : _LoginMode.sms,
+                      ),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(44, 44),
+                  foregroundColor: CyberHomeColors.primary,
+                ),
+                icon: LucideIcon(
+                  _mode == _LoginMode.sms ? Lucide.key : Lucide.phone,
+                  size: AppIconSizes.sm,
+                  color: CyberHomeColors.primary,
+                ),
+                label: Text(
+                  _mode == _LoginMode.sms ? '使用 Token 登录' : '返回手机号登录',
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _AgreementRow(
+              agreed: _agreed,
+              onChanged: (v) => setState(() => _agreed = v),
+            ),
+            const SizedBox(height: 20),
+            if (_mode == _LoginMode.token) const _TokenSafetyNote(),
+          ],
         ),
       ),
     );
@@ -300,38 +330,38 @@ class _BrandHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const SizedBox(height: 28),
+        const SizedBox(height: 18),
         Container(
-          width: 88,
-          height: 88,
+          width: 72,
+          height: 72,
           decoration: BoxDecoration(
-            color: VoidColors.voidPanel.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(VoidRadii.xl),
-            border: Border.all(color: VoidColors.hairlineStrong),
-            boxShadow: VoidGlow.energy(intensity: 0.8),
+            color: CyberHomeColors.primarySoft,
+            borderRadius: BorderRadius.circular(AppRadii.tile),
+            border: Border.all(color: CyberHomeColors.line),
+            boxShadow: AppShadows.cyberActionShadow,
           ),
           child: const LucideIcon(
             Lucide.vehicle,
-            size: 40,
-            color: VoidColors.energy,
+            size: 34,
+            color: CyberHomeColors.primary,
           ),
         ),
-        const SizedBox(height: 22),
-        Text(
-          'TAILG',
-          style: VoidType.hero.copyWith(
-            fontSize: 36,
-            letterSpacing: 8,
-            fontWeight: FontWeight.w300,
+        const SizedBox(height: 18),
+        const Text('TAILG', style: _loginTitleText),
+        const SizedBox(height: 6),
+        const Text(
+          '台铃智能 · VOID COCKPIT',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: CyberHomeColors.inkFaint,
           ),
         ),
-        const SizedBox(height: 8),
-        Text('台铃智能 · VOID COCKPIT', style: VoidType.micro),
-        const SizedBox(height: 12),
-        Text(
+        const SizedBox(height: 10),
+        const Text(
           '登录后同步车辆，享受控车、定位、电池等服务',
           textAlign: TextAlign.center,
-          style: VoidType.body,
+          style: _loginBodyText,
         ),
       ],
     );
@@ -459,6 +489,7 @@ class _SmsLoginFormState extends State<_SmsLoginForm> {
                 builder: (context, count, _) {
                   return OutlinedButton(
                     key: const ValueKey('login-request-code'),
+                    style: _loginOutlinedButtonStyle,
                     onPressed: canRequest && count == 0
                         ? widget.onRequestCode
                         : null,
@@ -475,12 +506,16 @@ class _SmsLoginFormState extends State<_SmsLoginForm> {
           height: 50,
           child: FilledButton(
             key: const ValueKey('login-sms-submit'),
+            style: _loginFilledButtonStyle,
             onPressed: canLogin ? widget.onLogin : null,
             child: widget.loading
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: CyberHomeColors.white,
+                    ),
                   )
                 : const Text(
                     '登录',
@@ -510,7 +545,6 @@ class _TokenLoginForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -524,6 +558,7 @@ class _TokenLoginForm extends StatelessWidget {
             fontSize: 13,
             fontFamily: 'monospace',
             height: 1.35,
+            color: CyberHomeColors.ink,
           ),
           decoration:
               _inputDecoration(
@@ -544,7 +579,7 @@ class _TokenLoginForm extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             height: 1.45,
-            color: colors.textTertiary,
+            color: CyberHomeColors.inkFaint,
           ),
         ),
         const SizedBox(height: 24),
@@ -552,12 +587,16 @@ class _TokenLoginForm extends StatelessWidget {
           width: double.infinity,
           height: 50,
           child: FilledButton(
+            style: _loginFilledButtonStyle,
             onPressed: loading ? null : onLogin,
             child: loading
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: CyberHomeColors.white,
+                    ),
                   )
                 : const Text(
                     '用 Token 登录',
@@ -580,51 +619,63 @@ class _AgreementRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 24,
-          height: 24,
-          child: Checkbox(
-            value: agreed,
-            onChanged: (v) => onChanged(v ?? false),
-            activeColor: colors.primary,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.xs),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: GestureDetector(
-            onTap: () => onChanged(!agreed),
-            child: RichText(
-              text: TextSpan(
-                style: TextStyle(
-                  fontSize: 12,
-                  height: 1.5,
-                  color: colors.textSecondary,
+    return Semantics(
+      label: '同意用户协议与隐私政策',
+      button: true,
+      toggled: agreed,
+      onTap: () => onChanged(!agreed),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onChanged(!agreed),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: AppTouchTargets.min),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: AppTouchTargets.min,
+                height: AppTouchTargets.min,
+                child: Checkbox(
+                  value: agreed,
+                  onChanged: (v) => onChanged(v ?? false),
+                  activeColor: CyberHomeColors.primary,
+                  checkColor: CyberHomeColors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.xs),
+                  ),
+                  side: const BorderSide(color: CyberHomeColors.lineStrong),
                 ),
-                children: [
-                  TextSpan(text: '我已阅读并同意'),
-                  TextSpan(
-                    text: '《用户协议》',
-                    style: TextStyle(color: colors.primary),
-                  ),
-                  TextSpan(text: '和'),
-                  TextSpan(
-                    text: '《隐私政策》',
-                    style: TextStyle(color: colors.primary),
-                  ),
-                ],
               ),
-            ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: ExcludeSemantics(
+                  child: RichText(
+                    text: const TextSpan(
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.5,
+                        color: CyberHomeColors.inkMuted,
+                      ),
+                      children: [
+                        TextSpan(text: '我已阅读并同意'),
+                        TextSpan(
+                          text: '《用户协议》',
+                          style: TextStyle(color: CyberHomeColors.primary),
+                        ),
+                        TextSpan(text: '和'),
+                        TextSpan(
+                          text: '《隐私政策》',
+                          style: TextStyle(color: CyberHomeColors.primary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -636,12 +687,12 @@ class _TokenSafetyNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colors.warning.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppRadii.card),
+        color: CyberHomeColors.card,
+        borderRadius: BorderRadius.circular(AppRadii.tile),
+        border: Border.all(color: CyberHomeColors.line),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -649,7 +700,7 @@ class _TokenSafetyNote extends StatelessWidget {
           const LucideIcon(
             Lucide.shield,
             size: 18,
-            color: VoidColors.energyAmber,
+            color: CyberHomeColors.warning,
           ),
           SizedBox(width: 10),
           Expanded(
@@ -659,7 +710,7 @@ class _TokenSafetyNote extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 height: 1.45,
-                color: colors.textSecondary,
+                color: CyberHomeColors.inkMuted,
               ),
             ),
           ),
@@ -678,13 +729,12 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     return Text(
       text,
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w700,
-        color: colors.textSecondary,
+        color: CyberHomeColors.inkSecondary,
       ),
     );
   }
@@ -695,32 +745,29 @@ InputDecoration _inputDecoration(
   String hint, {
   String? errorText,
 }) {
-  final colors = AppColors.of(context);
+  final border = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(AppRadii.tile),
+    borderSide: const BorderSide(color: CyberHomeColors.lineStrong),
+  );
   return InputDecoration(
     hintText: hint,
     errorText: errorText,
-    hintStyle: TextStyle(color: colors.textTertiary, fontSize: 14),
+    hintStyle: const TextStyle(color: CyberHomeColors.inkFaint, fontSize: 14),
     filled: true,
-    fillColor: colors.surface,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppRadii.card),
-      borderSide: BorderSide.none,
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppRadii.card),
-      borderSide: BorderSide.none,
-    ),
+    fillColor: CyberHomeColors.card,
+    border: border,
+    enabledBorder: border,
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppRadii.card),
-      borderSide: BorderSide(color: colors.primary, width: 1.5),
+      borderRadius: BorderRadius.circular(AppRadii.tile),
+      borderSide: const BorderSide(color: CyberHomeColors.primary, width: 1.5),
     ),
     errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppRadii.card),
-      borderSide: BorderSide(color: colors.danger, width: 1),
+      borderRadius: BorderRadius.circular(AppRadii.tile),
+      borderSide: const BorderSide(color: CyberHomeColors.danger),
     ),
     focusedErrorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppRadii.card),
-      borderSide: BorderSide(color: colors.danger, width: 1.5),
+      borderRadius: BorderRadius.circular(AppRadii.tile),
+      borderSide: const BorderSide(color: CyberHomeColors.danger, width: 1.5),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
   );

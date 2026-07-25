@@ -4,6 +4,7 @@ import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/official_cloud_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
 
 import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
@@ -48,6 +49,25 @@ void main() {
   tearDown(() {
     app.vehicleStore.resetForTest();
     app.officialCloudService.resetForTest();
+  });
+
+  testWidgets('official cloud page uses Cyber home mobile layout', (
+    tester,
+  ) async {
+    setTestViewSize(tester, const Size(390, 844));
+
+    await tester.pumpWidget(const TestApp(home: OfficialCloudPage()));
+    await tester.pump();
+
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+    final backAction = find.byKey(const ValueKey('official-cloud-back'));
+    expect(backAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, backAction);
+    expect(find.text('登录后查看车辆'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('vehicle detail action keeps a 44dp touch target', (

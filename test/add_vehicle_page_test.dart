@@ -3,12 +3,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/pages/add_vehicle_page.dart';
 import 'package:tailg_ble_app/pages/official_cloud_page.dart';
 import 'package:tailg_ble_app/pages/scan_page.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
 
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
 import 'helpers/view_size.dart';
 
 void main() {
+  testWidgets('add vehicle page uses Cyber home mobile layout', (tester) async {
+    setTestViewSize(tester, const Size(390, 844));
+
+    await tester.pumpWidget(const TestApp(home: AddVehiclePage()));
+    await tester.pump();
+
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+    final backAction = find.byKey(const ValueKey('add-vehicle-back'));
+    expect(backAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, backAction);
+    expect(find.text('同步你的台铃车辆'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('add vehicle page exposes cloud sync and BLE scan entries', (
     tester,
   ) async {

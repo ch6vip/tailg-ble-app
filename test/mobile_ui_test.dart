@@ -11,6 +11,7 @@ import 'package:tailg_ble_app/widgets/void_particles.dart';
 import 'package:tailg_ble_app/widgets/void_typography.dart';
 
 import 'helpers/storage_mocks.dart';
+import 'helpers/touch_target.dart';
 import 'helpers/view_size.dart';
 
 void main() {
@@ -39,6 +40,10 @@ void main() {
     );
     await tester.pump();
 
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
     expect(find.text('手机号'), findsOneWidget);
     expect(find.text('粘贴 Token'), findsNothing);
     expect(find.text('使用 Token 登录'), findsOneWidget);
@@ -49,6 +54,9 @@ void main() {
     expect(find.text('粘贴 Token'), findsOneWidget);
     expect(find.text('用 Token 登录'), findsOneWidget);
     expect(find.text('返回手机号登录'), findsOneWidget);
+    final agreement = find.bySemanticsLabel('同意用户协议与隐私政策');
+    expect(agreement, findsOneWidget);
+    expectMinTouchTargetHeight(tester, agreement);
     expect(tester.takeException(), isNull);
   });
 
@@ -126,7 +134,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('login page uses dark mobile surface and remains stable', (
+  testWidgets('login page uses Cyber home surface and remains stable', (
     tester,
   ) async {
     setTestViewSize(tester, const Size(390, 844));
@@ -148,7 +156,7 @@ void main() {
     await tester.pump();
 
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-    expect(scaffold.backgroundColor, AppColorsDark.instance.pageBg);
+    expect(scaffold.backgroundColor, CyberHomeColors.pageBg);
     expect(find.text('手机号'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
