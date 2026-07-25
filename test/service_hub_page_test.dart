@@ -1,11 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/pages/service_hub_page.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
 
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 import 'helpers/view_size.dart';
 
 void main() {
+  testWidgets('service hub uses Cyber home mobile layout', (tester) async {
+    setTestViewSize(tester, const Size(390, 844));
+    await tester.pumpWidget(const TestApp(home: ServiceHubPage()));
+    await tester.pump();
+
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+    final locationAction = find.bySemanticsLabel('车辆定位');
+    expect(locationAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, locationAction);
+    expect(find.text('更多服务'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('service hub uses sectioned IA without fat equal grid', (
     tester,
   ) async {
@@ -52,6 +70,9 @@ void main() {
       expect(find.text('故障诊断'), findsOneWidget);
       expect(find.text('官方账号'), findsOneWidget);
       expect(find.text('售后服务'), findsOneWidget);
+      final backAction = find.byKey(const ValueKey('more-services-back'));
+      expect(backAction, findsOneWidget);
+      expectMinTouchTargetHeight(tester, backAction);
     } finally {
       semantics.dispose();
     }

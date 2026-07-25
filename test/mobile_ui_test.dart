@@ -98,28 +98,35 @@ void main() {
     },
   );
 
-  testWidgets('main mobile tabs use dark surfaces in system dark mode', (
+  testWidgets('main mobile tabs keep their intended surfaces in dark mode', (
     tester,
   ) async {
     setTestViewSize(tester, const Size(390, 844));
-    // Service + Mine stay VOID dark; Cyber vehicle home is light by design.
-    final darkPages = [const ServiceHubPage(), const ProfileMinePage()];
-    for (final page in darkPages) {
-      await tester.pumpWidget(
-        MaterialApp(
-          themeMode: ThemeMode.dark,
-          darkTheme: _darkTheme(),
-          home: page,
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 50));
+    await tester.pumpWidget(
+      MaterialApp(
+        themeMode: ThemeMode.dark,
+        darkTheme: _darkTheme(),
+        home: const ProfileMinePage(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+    final mine = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(
+      mine.backgroundColor,
+      anyOf(AppColorsDark.instance.pageBg, VoidColors.voidDeep),
+    );
 
-      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-      expect(
-        scaffold.backgroundColor,
-        anyOf(AppColorsDark.instance.pageBg, VoidColors.voidDeep),
-      );
-    }
+    await tester.pumpWidget(
+      MaterialApp(
+        themeMode: ThemeMode.dark,
+        darkTheme: _darkTheme(),
+        home: const ServiceHubPage(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+    final serviceHub = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(serviceHub.backgroundColor, CyberHomeColors.pageBg);
+    expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(
       MaterialApp(

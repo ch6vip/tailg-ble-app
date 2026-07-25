@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/battery_details_page.dart';
+import 'package:tailg_ble_app/pages/replace_battery_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
@@ -193,5 +194,29 @@ void main() {
 
     expect(find.text('最后同步'), findsOneWidget);
     expect(find.textContaining('同步'), findsWidgets);
+  });
+
+  testWidgets('replace battery page uses Cyber home mobile layout', (
+    tester,
+  ) async {
+    setTestViewSize(tester, const Size(390, 844));
+
+    await tester.pumpWidget(const TestApp(home: ReplaceBatteryPage()));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+    final backAction = find.byKey(const ValueKey('replace-battery-back'));
+    final dateAction = find.byKey(const ValueKey('replace-battery-bind-date'));
+    final submitAction = find.byKey(const ValueKey('replace-battery-submit'));
+    expect(backAction, findsOneWidget);
+    expect(dateAction, findsOneWidget);
+    expect(submitAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, backAction);
+    expectMinTouchTargetHeight(tester, dateAction);
+    expect(tester.getSize(submitAction).height, 48);
+    expect(tester.takeException(), isNull);
   });
 }

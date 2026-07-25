@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../widgets/lucide_icon.dart';
 
 import '../main.dart';
 import '../models/official_vehicle.dart';
@@ -9,11 +8,42 @@ import '../services/display_number_formatter.dart';
 import '../services/display_time_formatter.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_void.dart';
-import '../widgets/app_chrome.dart';
-import '../widgets/void_canvas.dart';
+import '../widgets/app_pressable.dart';
+import '../widgets/lucide_icon.dart';
 import 'add_vehicle_page.dart';
 import 'login_page.dart';
+
+const _rideCardDecoration = BoxDecoration(
+  color: CyberHomeColors.card,
+  borderRadius: BorderRadius.all(Radius.circular(AppRadii.tile)),
+  border: Border.fromBorderSide(BorderSide(color: CyberHomeColors.line)),
+);
+
+const _rideItemTitle = TextStyle(
+  fontSize: 15,
+  fontWeight: FontWeight.w700,
+  color: CyberHomeColors.ink,
+);
+
+const _rideBodyText = TextStyle(
+  fontSize: 13,
+  height: 1.45,
+  color: CyberHomeColors.inkMuted,
+);
+
+const _rideCaptionText = TextStyle(
+  fontSize: 12,
+  color: CyberHomeColors.inkFaint,
+);
+
+final _rideFilledButtonStyle = FilledButton.styleFrom(
+  minimumSize: const Size(120, 48),
+  backgroundColor: CyberHomeColors.primary,
+  foregroundColor: CyberHomeColors.white,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(AppRadii.tile),
+  ),
+);
 
 class RideStatsPage extends StatefulWidget {
   const RideStatsPage({super.key});
@@ -119,20 +149,18 @@ class _RideStatsPageState extends State<RideStatsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        child: SafeArea(
-          child: Column(
-            children: [
-              const AppPageHeader(title: '骑行统计'),
-              _MonthSelector(
-                month: _month,
-                onPrev: _prevMonth,
-                onNext: _nextMonth,
-              ),
-              Expanded(child: _buildBody()),
-            ],
-          ),
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const _RideStatsHeader(),
+            _MonthSelector(
+              month: _month,
+              onPrev: _prevMonth,
+              onNext: _nextMonth,
+            ),
+            Expanded(child: _buildBody()),
+          ],
         ),
       ),
     );
@@ -140,7 +168,9 @@ class _RideStatsPageState extends State<RideStatsPage> {
 
   Widget _buildBody() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: CyberHomeColors.primary),
+      );
     }
     if (_gate == _RideStatsGate.needLogin) {
       return _GateState(
@@ -185,11 +215,18 @@ class _RideStatsPageState extends State<RideStatsPage> {
               child: Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.bodyMedium,
+                style: _rideBodyText,
               ),
             ),
             const SizedBox(height: 12),
-            TextButton(onPressed: _loadMonth, child: const Text('重试')),
+            TextButton(
+              onPressed: _loadMonth,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(88, 44),
+                foregroundColor: CyberHomeColors.primary,
+              ),
+              child: const Text('重试'),
+            ),
           ],
         ),
       );
@@ -203,13 +240,13 @@ class _RideStatsPageState extends State<RideStatsPage> {
           child: Text(
             '$_month · $vehicleName\n本月暂无骑行记录',
             textAlign: TextAlign.center,
-            style: AppTextStyles.bodyMedium.copyWith(height: 1.45),
+            style: _rideBodyText,
           ),
         ),
       );
     }
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
       children: [
         _SummaryCard(days: _days),
         const SizedBox(height: 16),
@@ -217,6 +254,57 @@ class _RideStatsPageState extends State<RideStatsPage> {
         const SizedBox(height: 16),
         _DayBreakdown(days: _days),
       ],
+    );
+  }
+}
+
+class _RideStatsHeader extends StatelessWidget {
+  const _RideStatsHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 20, 8),
+      child: Row(
+        children: [
+          Tooltip(
+            message: '返回',
+            excludeFromSemantics: true,
+            child: AppPressable(
+              key: const ValueKey('ride-stats-back'),
+              onTap: () => Navigator.of(context).pop(),
+              semanticsLabel: '返回',
+              semanticsButton: true,
+              child: Container(
+                width: AppTouchTargets.min,
+                height: AppTouchTargets.min,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: CyberHomeColors.card,
+                  shape: BoxShape.circle,
+                  boxShadow: AppShadows.cyberActionShadow,
+                ),
+                child: const LucideIcon(
+                  Lucide.arrowLeft,
+                  size: 20,
+                  color: CyberHomeColors.inkSecondary,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              '骑行统计',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: CyberHomeColors.ink,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -242,13 +330,13 @@ class _GateState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium.copyWith(height: 1.45),
-            ),
+            Text(title, textAlign: TextAlign.center, style: _rideBodyText),
             const SizedBox(height: 14),
-            FilledButton(onPressed: onAction, child: Text(actionLabel)),
+            FilledButton(
+              style: _rideFilledButtonStyle,
+              onPressed: onAction,
+              child: Text(actionLabel),
+            ),
           ],
         ),
       ),
@@ -270,21 +358,32 @@ class _MonthSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          IconButton(icon: const Icon(Lucide.chevronLeft), onPressed: onPrev),
-          Text(
-            month,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 14),
+      child: Container(
+        height: 48,
+        decoration: _rideCardDecoration,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              tooltip: '上个月',
+              icon: const LucideIcon(Lucide.chevronLeft),
+              onPressed: onPrev,
             ),
-          ),
-          IconButton(icon: const Icon(Lucide.chevronRight), onPressed: onNext),
-        ],
+            Expanded(
+              child: Text(
+                month,
+                textAlign: TextAlign.center,
+                style: _rideItemTitle,
+              ),
+            ),
+            IconButton(
+              tooltip: '下个月',
+              icon: const LucideIcon(Lucide.chevronRight),
+              onPressed: onNext,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -304,11 +403,7 @@ class _SummaryCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        boxShadow: AppShadows.elevation1,
-      ),
+      decoration: _rideCardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -317,7 +412,7 @@ class _SummaryCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: CyberHomeColors.inkMuted,
             ),
           ),
           const SizedBox(height: 16),
@@ -367,7 +462,7 @@ class _StatItem extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: CyberHomeColors.ink,
                   ),
                 ),
                 if (unit.isNotEmpty)
@@ -375,17 +470,14 @@ class _StatItem extends StatelessWidget {
                     text: ' $unit',
                     style: const TextStyle(
                       fontSize: 12,
-                      color: AppColors.textSecondary,
+                      color: CyberHomeColors.inkMuted,
                     ),
                   ),
               ],
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
-          ),
+          Text(label, style: _rideCaptionText),
         ],
       ),
     );
@@ -406,12 +498,13 @@ class _CarbonCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceBrandTint,
-        borderRadius: BorderRadius.circular(AppRadii.card),
+        color: CyberHomeColors.primarySoft,
+        borderRadius: BorderRadius.circular(AppRadii.tile),
+        border: Border.all(color: CyberHomeColors.line),
       ),
       child: Row(
         children: [
-          const Icon(Lucide.leaf, color: AppColors.success),
+          const LucideIcon(Lucide.leaf, color: CyberHomeColors.success),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -419,7 +512,7 @@ class _CarbonCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: CyberHomeColors.ink,
               ),
             ),
           ),
@@ -446,7 +539,7 @@ class _DayBreakdown extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: CyberHomeColors.inkMuted,
           ),
         ),
         const SizedBox(height: 10),
@@ -454,11 +547,7 @@ class _DayBreakdown extends StatelessWidget {
           Container(
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(AppRadii.card),
-              boxShadow: AppShadows.elevation1,
-            ),
+            decoration: _rideCardDecoration,
             child: Row(
               children: [
                 Expanded(
@@ -467,7 +556,7 @@ class _DayBreakdown extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: CyberHomeColors.ink,
                     ),
                   ),
                 ),
@@ -475,7 +564,7 @@ class _DayBreakdown extends StatelessWidget {
                   '${formatDecimalDown(sumTravelMileageKm(day.records), fractionDigits: 2)} km',
                   style: const TextStyle(
                     fontSize: 13,
-                    color: AppColors.textSecondary,
+                    color: CyberHomeColors.inkMuted,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -483,7 +572,7 @@ class _DayBreakdown extends StatelessWidget {
                   '${day.records.length} 次',
                   style: const TextStyle(
                     fontSize: 13,
-                    color: AppColors.textTertiary,
+                    color: CyberHomeColors.inkFaint,
                   ),
                 ),
               ],

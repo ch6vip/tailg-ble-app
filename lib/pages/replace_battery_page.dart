@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../widgets/lucide_icon.dart';
-import '../widgets/void_canvas.dart';
 import 'package:flutter/services.dart';
 
 import '../main.dart';
@@ -11,8 +9,9 @@ import '../models/official_vehicle.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_void.dart';
+import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/lucide_icon.dart';
 
 /// Official-like "更正电池信息" flow
 /// (`ReplaceBatteryActivity` / `affirmBatteryInfo`).
@@ -251,224 +250,369 @@ class _ReplaceBatteryPageState extends State<ReplaceBatteryPage> {
     final custom = _selectedType?.isCustom == true;
 
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      appBar: AppBar(
-        title: const Text('更正电池信息'),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-      ),
-      body: VoidCanvas(
-        child: _loadingTypes
-            ? const Center(child: CircularProgressIndicator())
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                children: [
-                  if (vehicle != null) ...[
-                    Text(
-                      vehicle.displayName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const _ReplaceBatteryHeader(),
+            Expanded(
+              child: _loadingTypes
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: CyberHomeColors.primary,
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '当前：${vehicle.batterySpecLabel.isEmpty ? '未设置规格' : vehicle.batterySpecLabel}'
-                      '${vehicle.batteryBindDate.isEmpty ? '' : ' · ${vehicle.batteryBindDate}'}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  if (_error != null) ...[
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AppRadii.md),
-                      ),
-                      child: Text(
-                        _error!,
-                        style: const TextStyle(
-                          color: AppColors.warning,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  _SectionCard(
-                    title: '电池类型',
-                    child: DropdownButtonFormField<OfficialBatteryType>(
-                      // ignore: deprecated_member_use
-                      value: _selectedType,
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        isDense: true,
-                      ),
-                      items: [
-                        for (final type in _types)
-                          DropdownMenuItem(
-                            value: type,
-                            child: Text(
-                              type.name,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                      ],
-                      onChanged: _submitting
-                          ? null
-                          : (value) {
-                              if (value == null) return;
-                              setState(() {
-                                _selectedType = value;
-                                _selectedSpec = null;
-                                _specs = const [];
-                              });
-                              if (!value.isCustom) {
-                                unawaited(_loadSpecs(value.type));
-                              }
-                            },
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (custom) ...[
-                    _SectionCard(
-                      title: '自定义电压 / 安时',
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _voltageController,
-                              enabled: !_submitting,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                      children: [
+                        if (vehicle != null) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: _replaceBatteryCardDecoration,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  vehicle.displayName,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: CyberHomeColors.ink,
                                   ),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                  RegExp(r'[0-9.]'),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '当前：${vehicle.batterySpecLabel.isEmpty ? '未设置规格' : vehicle.batterySpecLabel}'
+                                  '${vehicle.batteryBindDate.isEmpty ? '' : ' · ${vehicle.batteryBindDate}'}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: CyberHomeColors.inkMuted,
+                                  ),
                                 ),
                               ],
-                              decoration: const InputDecoration(
-                                labelText: '电压 (V)',
-                                border: OutlineInputBorder(),
-                                isDense: true,
-                              ),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextField(
-                              controller: _ahController,
-                              enabled: !_submitting,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                  RegExp(r'[0-9.]'),
-                                ),
-                              ],
-                              decoration: const InputDecoration(
-                                labelText: '安时 (AH)',
-                                border: OutlineInputBorder(),
-                                isDense: true,
-                              ),
-                            ),
-                          ),
+                          const SizedBox(height: 16),
                         ],
-                      ),
-                    ),
-                  ] else ...[
-                    _SectionCard(
-                      title: '电池规格',
-                      child: _loadingSpecs
-                          ? const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              child: Center(
-                                child: SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                        if (_error != null) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: CyberHomeColors.warning.withValues(
+                                alpha: 0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                AppRadii.tile,
+                              ),
+                            ),
+                            child: Text(
+                              _error!,
+                              style: const TextStyle(
+                                color: CyberHomeColors.warning,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        _SectionCard(
+                          title: '电池类型',
+                          child: DropdownButtonFormField<OfficialBatteryType>(
+                            // ignore: deprecated_member_use
+                            value: _selectedType,
+                            isExpanded: true,
+                            dropdownColor: CyberHomeColors.card,
+                            icon: const LucideIcon(
+                              Lucide.chevronDown,
+                              size: 18,
+                            ),
+                            decoration: _replaceBatteryInputDecoration(),
+                            style: const TextStyle(color: CyberHomeColors.ink),
+                            items: [
+                              for (final type in _types)
+                                DropdownMenuItem(
+                                  value: type,
+                                  child: Text(
+                                    type.name,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                              ),
-                            )
-                          : DropdownButtonFormField<OfficialBatterySpec>(
-                              // ignore: deprecated_member_use
-                              value: _selectedSpec,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                isDense: true,
-                              ),
-                              items: [
-                                for (final spec in _specs)
-                                  DropdownMenuItem(
-                                    value: spec,
-                                    child: Text(
-                                      spec.spec,
-                                      overflow: TextOverflow.ellipsis,
+                            ],
+                            onChanged: _submitting
+                                ? null
+                                : (value) {
+                                    if (value == null) return;
+                                    setState(() {
+                                      _selectedType = value;
+                                      _selectedSpec = null;
+                                      _specs = const [];
+                                    });
+                                    if (!value.isCustom) {
+                                      unawaited(_loadSpecs(value.type));
+                                    }
+                                  },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (custom) ...[
+                          _SectionCard(
+                            title: '自定义电压 / 安时',
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _voltageController,
+                                    enabled: !_submitting,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                          decimal: true,
+                                        ),
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(
+                                        RegExp(r'[0-9.]'),
+                                      ),
+                                    ],
+                                    decoration: _replaceBatteryInputDecoration(
+                                      labelText: '电压 (V)',
                                     ),
                                   ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _ahController,
+                                    enabled: !_submitting,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                          decimal: true,
+                                        ),
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(
+                                        RegExp(r'[0-9.]'),
+                                      ),
+                                    ],
+                                    decoration: _replaceBatteryInputDecoration(
+                                      labelText: '安时 (AH)',
+                                    ),
+                                  ),
+                                ),
                               ],
-                              onChanged: _submitting
-                                  ? null
-                                  : (value) =>
-                                        setState(() => _selectedSpec = value),
                             ),
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  _SectionCard(
-                    title: '绑定日期',
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(_bindDateLabel),
-                      trailing: const Icon(Lucide.calendar),
-                      onTap: _submitting ? null : _pickBindDate,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: AppTouchTargets.min,
-                    child: FilledButton(
-                      onPressed: _submitting ? null : _submit,
-                      child: _submitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
+                          ),
+                        ] else ...[
+                          _SectionCard(
+                            title: '电池规格',
+                            child: _loadingSpecs
+                                ? const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : DropdownButtonFormField<OfficialBatterySpec>(
+                                    // ignore: deprecated_member_use
+                                    value: _selectedSpec,
+                                    isExpanded: true,
+                                    dropdownColor: CyberHomeColors.card,
+                                    icon: const LucideIcon(
+                                      Lucide.chevronDown,
+                                      size: 18,
+                                    ),
+                                    decoration:
+                                        _replaceBatteryInputDecoration(),
+                                    style: const TextStyle(
+                                      color: CyberHomeColors.ink,
+                                    ),
+                                    items: [
+                                      for (final spec in _specs)
+                                        DropdownMenuItem(
+                                          value: spec,
+                                          child: Text(
+                                            spec.spec,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                    ],
+                                    onChanged: _submitting
+                                        ? null
+                                        : (value) => setState(
+                                            () => _selectedSpec = value,
+                                          ),
+                                  ),
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        _SectionCard(
+                          title: '绑定日期',
+                          child: AppPressable(
+                            key: const ValueKey('replace-battery-bind-date'),
+                            onTap: _submitting ? null : _pickBindDate,
+                            enabled: !_submitting,
+                            semanticsLabel: '选择绑定日期，$_bindDateLabel',
+                            semanticsButton: true,
+                            borderRadius: BorderRadius.circular(AppRadii.tile),
+                            child: Container(
+                              constraints: const BoxConstraints(
+                                minHeight: AppTouchTargets.min,
                               ),
-                            )
-                          : const Text('确认提交'),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: CyberHomeColors.cardMuted,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.tile,
+                                ),
+                                border: Border.all(
+                                  color: CyberHomeColors.lineStrong,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      _bindDateLabel,
+                                      style: const TextStyle(
+                                        color: CyberHomeColors.ink,
+                                      ),
+                                    ),
+                                  ),
+                                  const LucideIcon(
+                                    Lucide.calendar,
+                                    color: CyberHomeColors.primary,
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: FilledButton(
+                            key: const ValueKey('replace-battery-submit'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: CyberHomeColors.primary,
+                              foregroundColor: CyberHomeColors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.tile,
+                                ),
+                              ),
+                            ),
+                            onPressed: _submitting ? null : _submit,
+                            child: _submitting
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: CyberHomeColors.white,
+                                    ),
+                                  )
+                                : const Text('确认提交'),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          '提交后将调用官方 batterySetUp 接口，并自动刷新车辆与电池信息。',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: CyberHomeColors.inkFaint,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '提交后将调用官方 batterySetUp 接口，并自动刷新车辆与电池信息。',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class _ReplaceBatteryHeader extends StatelessWidget {
+  const _ReplaceBatteryHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 20, 8),
+      child: Row(
+        children: [
+          AppPressable(
+            key: const ValueKey('replace-battery-back'),
+            onTap: () => Navigator.of(context).pop(),
+            semanticsLabel: '返回',
+            semanticsButton: true,
+            child: Container(
+              width: AppTouchTargets.min,
+              height: AppTouchTargets.min,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: CyberHomeColors.card,
+                shape: BoxShape.circle,
+                boxShadow: AppShadows.cyberActionShadow,
+              ),
+              child: const LucideIcon(
+                Lucide.arrowLeft,
+                size: 20,
+                color: CyberHomeColors.inkSecondary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              '更正电池信息',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: CyberHomeColors.ink,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+const _replaceBatteryCardDecoration = BoxDecoration(
+  color: CyberHomeColors.card,
+  borderRadius: BorderRadius.all(Radius.circular(AppRadii.tile)),
+  border: Border.fromBorderSide(BorderSide(color: CyberHomeColors.line)),
+);
+
+InputDecoration _replaceBatteryInputDecoration({String? labelText}) {
+  return InputDecoration(
+    labelText: labelText,
+    filled: true,
+    fillColor: CyberHomeColors.cardMuted,
+    isDense: true,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadii.tile),
+      borderSide: const BorderSide(color: CyberHomeColors.lineStrong),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadii.tile),
+      borderSide: const BorderSide(color: CyberHomeColors.lineStrong),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadii.tile),
+      borderSide: const BorderSide(color: CyberHomeColors.primary, width: 1.5),
+    ),
+  );
 }
 
 class _SectionCard extends StatelessWidget {
@@ -482,11 +626,7 @@ class _SectionCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(color: AppColors.outlineVariant),
-      ),
+      decoration: _replaceBatteryCardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -495,7 +635,7 @@ class _SectionCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
+              color: CyberHomeColors.inkSecondary,
             ),
           ),
           const SizedBox(height: 10),

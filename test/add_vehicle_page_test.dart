@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/pages/add_vehicle_page.dart';
+import 'package:tailg_ble_app/pages/bind_imei_page.dart';
 import 'package:tailg_ble_app/pages/official_cloud_page.dart';
 import 'package:tailg_ble_app/pages/scan_page.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
@@ -61,6 +62,7 @@ void main() {
   });
 
   testWidgets('ble scan entry opens scan page', (tester) async {
+    setTestViewSize(tester, const Size(390, 844));
     await tester.pumpWidget(const TestApp(home: AddVehiclePage()));
     await tester.pump();
 
@@ -68,5 +70,33 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ScanPage), findsOneWidget);
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold).last).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+    final backAction = find.byKey(const ValueKey('scan-page-back'));
+    expect(backAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, backAction);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('IMEI bind entry opens Cyber home mobile page', (tester) async {
+    setTestViewSize(tester, const Size(390, 844));
+    await tester.pumpWidget(const TestApp(home: AddVehiclePage()));
+    await tester.pump();
+
+    await tester.tap(find.text('IMEI 绑车'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BindImeiPage), findsOneWidget);
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold).last).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+    final backAction = find.byKey(const ValueKey('bind-imei-back'));
+    expect(backAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, backAction);
+    expect(tester.getSize(find.byType(FilledButton)).height, 48);
+    expect(tester.takeException(), isNull);
   });
 }

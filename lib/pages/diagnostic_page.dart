@@ -2,16 +2,20 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import '../widgets/lucide_icon.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../models/persistence_value.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_void.dart';
-import '../widgets/app_chrome.dart';
-import '../widgets/void_canvas.dart';
+import '../widgets/app_pressable.dart';
+import '../widgets/lucide_icon.dart';
+
+const _diagnosticCardDecoration = BoxDecoration(
+  color: CyberHomeColors.card,
+  borderRadius: BorderRadius.all(Radius.circular(AppRadii.tile)),
+  border: Border.fromBorderSide(BorderSide(color: CyberHomeColors.line)),
+);
 
 class FaultInfo {
   final int code;
@@ -134,21 +138,22 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        child: SafeArea(
-          child: Column(
-            children: [
-              const AppPageHeader(title: '故障诊断'),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: AppCard(
-                  margin: EdgeInsets.zero,
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const _DiagnosticHeader(),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 12, 20, 8),
+              child: DecoratedBox(
+                decoration: _diagnosticCardDecoration,
+                child: Padding(
+                  padding: EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      Icon(
+                      LucideIcon(
                         Lucide.info,
-                        color: AppColors.textTertiary,
+                        color: CyberHomeColors.primary,
                         size: 20,
                       ),
                       SizedBox(width: 10),
@@ -157,7 +162,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                           '实时故障诊断暂不可用，当前仅显示历史记录',
                           style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.textSecondary,
+                            color: CyberHomeColors.inkMuted,
                           ),
                         ),
                       ),
@@ -165,77 +170,159 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                   ),
                 ),
               ),
-              Expanded(
-                child: _history.isEmpty
-                    ? const AppEmptyState(
-                        icon: Lucide.stethoscope,
-                        title: '暂无诊断记录',
-                        subtitle: '历史诊断记录将在此显示',
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                        itemCount: _history.length,
-                        itemBuilder: (context, index) {
-                          final record = _history[index];
-                          final hasFaults = record.faults.isNotEmpty;
-                          return AppCard(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
+            ),
+            Expanded(
+              child: _history.isEmpty
+                  ? const _DiagnosticEmptyState()
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                      itemCount: _history.length,
+                      itemBuilder: (context, index) {
+                        final record = _history[index];
+                        final hasFaults = record.faults.isNotEmpty;
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(16),
+                          decoration: _diagnosticCardDecoration,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  LucideIcon(
+                                    hasFaults
+                                        ? Lucide.alert
+                                        : Lucide.checkCircle,
+                                    color: hasFaults
+                                        ? CyberHomeColors.danger
+                                        : CyberHomeColors.success,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
                                       hasFaults
-                                          ? Lucide.alert
-                                          : Lucide.checkCircle,
-                                      color: hasFaults
-                                          ? AppColors.danger
-                                          : AppColors.success,
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        hasFaults
-                                            ? '发现 ${record.faults.length} 个故障'
-                                            : '车辆状态正常',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: hasFaults
-                                              ? AppColors.danger
-                                              : AppColors.success,
-                                        ),
+                                          ? '发现 ${record.faults.length} 个故障'
+                                          : '车辆状态正常',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: hasFaults
+                                            ? CyberHomeColors.danger
+                                            : CyberHomeColors.success,
                                       ),
                                     ),
-                                    Text(
-                                      formatMonthDayMinuteText(record.time),
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textTertiary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (hasFaults) ...[
-                                  const SizedBox(height: 8),
+                                  ),
                                   Text(
-                                    record.faults.join('、'),
+                                    formatMonthDayMinuteText(record.time),
                                     style: const TextStyle(
-                                      fontSize: 13,
-                                      color: AppColors.textSecondary,
+                                      fontSize: 12,
+                                      color: CyberHomeColors.inkFaint,
                                     ),
                                   ),
                                 ],
+                              ),
+                              if (hasFaults) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  record.faults.join('、'),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: CyberHomeColors.inkMuted,
+                                  ),
+                                ),
                               ],
-                            ),
-                          );
-                        },
-                      ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DiagnosticHeader extends StatelessWidget {
+  const _DiagnosticHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 20, 8),
+      child: Row(
+        children: [
+          AppPressable(
+            key: const ValueKey('diagnostic-back'),
+            onTap: () => Navigator.of(context).pop(),
+            semanticsLabel: '返回',
+            semanticsButton: true,
+            child: Container(
+              width: AppTouchTargets.min,
+              height: AppTouchTargets.min,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: CyberHomeColors.card,
+                shape: BoxShape.circle,
+                boxShadow: AppShadows.cyberActionShadow,
               ),
-            ],
+              child: const LucideIcon(
+                Lucide.arrowLeft,
+                size: 20,
+                color: CyberHomeColors.inkSecondary,
+              ),
+            ),
           ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              '故障诊断',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: CyberHomeColors.ink,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DiagnosticEmptyState extends StatelessWidget {
+  const _DiagnosticEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const LucideIcon(
+              Lucide.stethoscope,
+              size: AppIconSizes.xl,
+              color: CyberHomeColors.inkFaint,
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              '暂无诊断记录',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: CyberHomeColors.ink,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              '历史诊断记录将在此显示',
+              style: TextStyle(fontSize: 13, color: CyberHomeColors.inkMuted),
+            ),
+          ],
         ),
       ),
     );

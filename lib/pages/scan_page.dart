@@ -9,12 +9,27 @@ import '../services/ble_connection_snapshot_guard.dart';
 import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_void.dart';
 import '../theme/app_motion.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/lucide_icon.dart';
-import '../widgets/void_canvas.dart';
+
+const _scanCardDecoration = BoxDecoration(
+  color: CyberHomeColors.card,
+  borderRadius: BorderRadius.all(Radius.circular(AppRadii.tile)),
+  border: Border.fromBorderSide(BorderSide(color: CyberHomeColors.line)),
+);
+
+const _scanItemTitle = TextStyle(
+  fontSize: 15,
+  fontWeight: FontWeight.w700,
+  color: CyberHomeColors.ink,
+);
+
+const _scanCaptionText = TextStyle(
+  fontSize: 12,
+  color: CyberHomeColors.inkFaint,
+);
 
 class ScanPage extends StatefulWidget {
   final DateTime Function()? clock;
@@ -204,89 +219,122 @@ class _ScanPageState extends State<ScanPage>
       builder: (context, adapterSnapshot) {
         final bluetoothOn = adapterSnapshot.data == BluetoothAdapterState.on;
         return Scaffold(
-          backgroundColor: VoidColors.voidDeep,
-          body: VoidCanvas(
-            child: SafeArea(
-              child: Stack(
-                children: [
-                  SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.only(
-                      bottom: AppNav.contentBottomPadding,
-                    ),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-                          child: Row(
-                            children: [
-                              Text('搜索设备', style: AppTextStyles.pageTitle),
-                            ],
-                          ),
-                        ),
-                        if (!bluetoothOn)
-                          const _ScanHintCard(
-                            icon: Lucide.bluetoothOff,
-                            title: '蓝牙未开启',
-                            subtitle: '开启蓝牙后即可搜索附近车辆',
-                          ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16, bottom: 20),
-                          child: _RadarWidget(animation: _radarController),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 20),
-                          child: Column(
-                            children: [
-                              Text(
-                                !bluetoothOn
-                                    ? '等待蓝牙开启'
-                                    : _scanning
-                                    ? '正在搜索附近设备...'
-                                    : '点击下方按钮开始搜索',
-                                style: AppTextStyles.itemTitle.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '请确保蓝牙已开启且靠近车辆',
-                                style: AppTextStyles.caption,
-                              ),
-                            ],
-                          ),
-                        ),
-                        ValueListenableBuilder<List<ScanResult>>(
-                          valueListenable: _resultsNotifier,
-                          builder: (context, results, _) {
-                            return _DeviceList(
-                              results: results,
-                              connectingRemoteId: _connectingRemoteId,
-                              onTap: _connectDevice,
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+          backgroundColor: CyberHomeColors.pageBg,
+          body: SafeArea(
+            child: Stack(
+              children: [
+                SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.only(
+                    bottom: AppNav.contentBottomPadding,
                   ),
-                  Positioned(
-                    bottom: 16,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: ScanFab(
-                        scanning: _scanning,
-                        enabled: bluetoothOn,
-                        onTap: _scanning ? _stopScan : _startScan,
+                  child: Column(
+                    children: [
+                      const _ScanHeader(),
+                      if (!bluetoothOn)
+                        const _ScanHintCard(
+                          icon: Lucide.bluetoothOff,
+                          title: '蓝牙未开启',
+                          subtitle: '开启蓝牙后即可搜索附近车辆',
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16, bottom: 20),
+                        child: _RadarWidget(animation: _radarController),
                       ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: Column(
+                          children: [
+                            Text(
+                              !bluetoothOn
+                                  ? '等待蓝牙开启'
+                                  : _scanning
+                                  ? '正在搜索附近设备...'
+                                  : '点击下方按钮开始搜索',
+                              style: _scanItemTitle,
+                            ),
+                            const SizedBox(height: 4),
+                            Text('请确保蓝牙已开启且靠近车辆', style: _scanCaptionText),
+                          ],
+                        ),
+                      ),
+                      ValueListenableBuilder<List<ScanResult>>(
+                        valueListenable: _resultsNotifier,
+                        builder: (context, results, _) {
+                          return _DeviceList(
+                            results: results,
+                            connectingRemoteId: _connectingRemoteId,
+                            onTap: _connectDevice,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  bottom: 16,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: ScanFab(
+                      scanning: _scanning,
+                      enabled: bluetoothOn,
+                      onTap: _scanning ? _stopScan : _startScan,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _ScanHeader extends StatelessWidget {
+  const _ScanHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+      child: Row(
+        children: [
+          AppPressable(
+            key: const ValueKey('scan-page-back'),
+            onTap: () => Navigator.of(context).pop(),
+            semanticsLabel: '返回',
+            semanticsButton: true,
+            child: Container(
+              width: AppTouchTargets.min,
+              height: AppTouchTargets.min,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: CyberHomeColors.card,
+                shape: BoxShape.circle,
+                boxShadow: AppShadows.cyberActionShadow,
+              ),
+              child: const LucideIcon(
+                Lucide.arrowLeft,
+                size: 20,
+                color: CyberHomeColors.inkSecondary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              '搜索设备',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: CyberHomeColors.ink,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -307,35 +355,30 @@ class _ScanHintCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        boxShadow: AppShadows.elevation1,
-      ),
+      decoration: _scanCardDecoration,
       child: Row(
         children: [
           Container(
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: CyberHomeColors.primarySoft,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppColors.primary, size: AppIconSizes.md),
+            child: LucideIcon(
+              icon,
+              color: CyberHomeColors.primary,
+              size: AppIconSizes.md,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(title, style: _scanItemTitle),
                 const SizedBox(height: 2),
-                Text(subtitle, style: AppTextStyles.caption),
+                Text(subtitle, style: _scanCaptionText),
               ],
             ),
           ),
@@ -367,24 +410,14 @@ class _RadarWidget extends StatelessWidget {
             child: Container(
               width: AppTouchTargets.min,
               height: AppTouchTargets.min,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppColors.primary, AppColors.primaryDark],
-                ),
+              decoration: const BoxDecoration(
+                color: CyberHomeColors.primary,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.35),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                boxShadow: AppShadows.cyberActionShadow,
               ),
-              child: const Icon(
+              child: const LucideIcon(
                 Lucide.bluetoothSearching,
-                color: Colors.white,
+                color: CyberHomeColors.white,
                 size: AppIconSizes.md,
               ),
             ),
@@ -403,7 +436,7 @@ class _RadarPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final ringPaint = Paint()
-      ..color = AppColors.primary.withValues(alpha: 0.12)
+      ..color = CyberHomeColors.primarySoft
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 
@@ -415,7 +448,7 @@ class _RadarPainter extends CustomPainter {
       ..shader = SweepGradient(
         startAngle: sweepAngle - 1.05,
         endAngle: sweepAngle,
-        colors: [Colors.transparent, AppColors.primary.withValues(alpha: 0.15)],
+        colors: [CyberHomeColors.transparent, CyberHomeColors.primarySoft],
         transform: GradientRotation(sweepAngle - 1.05),
       ).createShader(Rect.fromCircle(center: center, radius: 80));
 
@@ -564,11 +597,11 @@ class _DeviceCardState extends State<_DeviceCard> {
         curve: AppMotion.pressCurve,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: widget.disabled ? const Color(0xFFF8F8F8) : Colors.white,
-          borderRadius: BorderRadius.circular(AppRadii.md),
-          boxShadow: widget.disabled
-              ? AppShadows.elevation1
-              : AppShadows.elevation1,
+          color: widget.disabled
+              ? CyberHomeColors.cardMuted
+              : CyberHomeColors.card,
+          borderRadius: BorderRadius.circular(AppRadii.tile),
+          border: Border.all(color: CyberHomeColors.line),
         ),
         child: Row(
           children: [
@@ -576,18 +609,17 @@ class _DeviceCardState extends State<_DeviceCard> {
               width: AppTouchTargets.min,
               height: AppTouchTargets.min,
               decoration: BoxDecoration(
-                gradient: isTailg
-                    ? const LinearGradient(
-                        colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
-                      )
-                    : null,
-                color: isTailg ? null : const Color(0xFFF5F5F5),
-                borderRadius: BorderRadius.circular(AppRadii.card),
+                color: isTailg
+                    ? CyberHomeColors.primarySoft
+                    : CyberHomeColors.control,
+                borderRadius: BorderRadius.circular(AppRadii.tile),
               ),
-              child: Icon(
+              child: LucideIcon(
                 isTailg ? Lucide.vehicle : Lucide.bluetooth,
                 size: AppIconSizes.md,
-                color: isTailg ? AppColors.primary : const Color(0xFF9E9E9E),
+                color: isTailg
+                    ? CyberHomeColors.primary
+                    : CyberHomeColors.inkFaint,
               ),
             ),
             const SizedBox(width: 12),
@@ -599,9 +631,7 @@ class _DeviceCardState extends State<_DeviceCard> {
                     name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.itemTitle.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: _scanItemTitle,
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -610,7 +640,7 @@ class _DeviceCardState extends State<_DeviceCard> {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 12,
-                      color: AppColors.textTertiary,
+                      color: CyberHomeColors.inkFaint,
                       fontFamily: 'monospace',
                     ),
                   ),
@@ -624,13 +654,13 @@ class _DeviceCardState extends State<_DeviceCard> {
                   const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: CyberHomeColors.primary,
+                    ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    '连接中',
-                    style: AppTextStyles.caption.copyWith(fontSize: 11.0),
-                  ),
+                  Text('连接中', style: _scanCaptionText.copyWith(fontSize: 11)),
                 ],
               )
             else
@@ -641,7 +671,7 @@ class _DeviceCardState extends State<_DeviceCard> {
                   const SizedBox(height: 6),
                   Text(
                     widget.disabled ? '等待' : '连接绑定',
-                    style: AppTextStyles.caption.copyWith(fontSize: 11.0),
+                    style: _scanCaptionText.copyWith(fontSize: 11),
                   ),
                 ],
               ),
@@ -667,8 +697,8 @@ class _SignalBars extends StatelessWidget {
       _SignalStrength.weak => 2,
     };
     final activeColor = strength == _SignalStrength.weak
-        ? const Color(0xFFFF9800)
-        : const Color(0xFF4CAF50);
+        ? CyberHomeColors.warning
+        : CyberHomeColors.success;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -679,7 +709,7 @@ class _SignalBars extends StatelessWidget {
           height: heights[i],
           margin: EdgeInsets.only(left: i > 0 ? 2 : 0),
           decoration: BoxDecoration(
-            color: i < activeCount ? activeColor : AppColors.border,
+            color: i < activeCount ? activeColor : CyberHomeColors.lineStrong,
             borderRadius: BorderRadius.circular(1),
           ),
         );
@@ -712,39 +742,35 @@ class ScanFab extends StatelessWidget {
       semanticsEnabled: enabled,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+        constraints: const BoxConstraints(
+          minWidth: 128,
+          minHeight: AppTouchTargets.min,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
           color: !enabled
-              ? const Color(0xFFBDBDBD)
+              ? CyberHomeColors.controlStrong
               : scanning
-              ? const Color(0xFF757575)
-              : AppColors.primary,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: !enabled
-              ? AppShadows.elevation1
-              : scanning
-              ? AppShadows.elevation2
-              : [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+              ? CyberHomeColors.inkSecondary
+              : CyberHomeColors.primary,
+          borderRadius: BorderRadius.circular(AppRadii.tile),
+          boxShadow: AppShadows.cyberActionShadow,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            LucideIcon(
               scanning ? Lucide.stop : Lucide.bluetoothSearching,
-              color: Colors.white,
+              color: enabled ? CyberHomeColors.white : CyberHomeColors.inkFaint,
               size: AppIconSizes.md,
             ),
             const SizedBox(width: 8),
             Text(
               scanning ? '停止' : '扫描',
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: enabled
+                    ? CyberHomeColors.white
+                    : CyberHomeColors.inkFaint,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),

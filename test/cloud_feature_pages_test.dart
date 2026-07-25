@@ -317,6 +317,33 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('ride stats uses Cyber home mobile layout', (tester) async {
+    setTestViewSize(tester, const Size(390, 844));
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(initialized: true),
+    );
+
+    await tester.pumpWidget(const TestApp(home: RideStatsPage()));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+    final backAction = find.byKey(const ValueKey('ride-stats-back'));
+    expect(backAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, backAction);
+    for (final icon in [Lucide.chevronLeft, Lucide.chevronRight]) {
+      final monthAction = find.ancestor(
+        of: find.byIcon(icon),
+        matching: find.byType(IconButton),
+      );
+      expect(monthAction, findsOneWidget);
+      expectMinTouchTargetHeight(tester, monthAction);
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('ride stats ignores stale month completion', (tester) async {
     setTestViewSize(tester, const Size(430, 1200));
     final now = DateTime.now();
