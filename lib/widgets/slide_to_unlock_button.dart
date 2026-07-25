@@ -27,9 +27,9 @@ class SlideToUnlockButton extends StatefulWidget {
 
 class _SlideToUnlockButtonState extends State<SlideToUnlockButton>
     with SingleTickerProviderStateMixin {
-  static const _trackWidth = 172.0;
-  static const _trackHeight = 68.0;
-  static const _thumbSize = 68.0;
+  static const _trackWidth = 160.0;
+  static const _trackHeight = 60.0;
+  static const _thumbSize = 60.0;
 
   double _dragPosition = 0;
   late final AnimationController _resetController;
@@ -167,7 +167,7 @@ class _SlideToUnlockButtonState extends State<SlideToUnlockButton>
                         alignment: Alignment.center,
                         child: LucideIcon(
                           widget.isLocked ? Lucide.lock : Lucide.unlock,
-                          size: 30,
+                          size: 28,
                           color: CyberHomeColors.ink,
                           strokeWidth: 1.8,
                         ),
@@ -177,7 +177,7 @@ class _SlideToUnlockButtonState extends State<SlideToUnlockButton>
                 ],
               ),
             ),
-            const SizedBox(height: 9),
+            const SizedBox(height: 17),
             Text(
               label,
               style: const TextStyle(

@@ -1397,8 +1397,15 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     final controlChannelStatus = _topBarChannel(
       availability: controlAvailability,
     );
-    final bottomPad =
-        AppNav.contentBottomPadding + MediaQuery.paddingOf(context).bottom;
+    final mediaPadding = MediaQuery.paddingOf(context);
+    final bottomPad = AppNav.contentBottomPadding + mediaPadding.bottom;
+    final headerExtent = alert == null ? 440.0 : 506.0;
+    final safeViewportHeight =
+        MediaQuery.sizeOf(context).height - mediaPadding.top;
+    final firstFoldControlsExtent = math.max(
+      230.0,
+      safeViewportHeight - headerExtent,
+    );
     final lastRide = _lastRideVisuals(cloudState);
 
     return Scaffold(
@@ -1426,6 +1433,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _CyberVehicleHeaderDelegate(
+                  expandedExtent: headerExtent,
                   vehicleName: _vehicleName(cloudVehicle),
                   rangeText: _rangeLabel(battery).replaceAll(' ', ''),
                   carPhoto: cloudVehicle?.carPhoto ?? '',
@@ -1451,29 +1459,34 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
               SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    const SizedBox(height: 18),
-                    _CyberControlGrid(
-                      armed: isArmed,
-                      powered: isPowerOn,
-                      dimmed:
-                          _busy ||
-                          !hasVehicle ||
-                          !signedIn ||
-                          !controlAvailability.enabled,
-                      onFind: () => unawaited(_sendCommand(CommandCode.find)),
-                      onUnlock: () => unawaited(_sendArmToggle()),
-                      onSettings: _openSettings,
-                      onSeat: () =>
-                          unawaited(_sendCommand(CommandCode.openSeat)),
-                      onShare: _openShare,
-                      onPassword: () {
-                        AppSnack.info(context, '密码解锁请在车辆设置中配置');
-                        _openSettings();
-                      },
-                      onNfc: _openNfc,
-                      onPower: () => unawaited(_sendPower()),
+                    SizedBox(
+                      height: firstFoldControlsExtent,
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 18),
+                          _CyberControlGrid(
+                            armed: isArmed,
+                            dimmed:
+                                _busy ||
+                                !hasVehicle ||
+                                !signedIn ||
+                                !controlAvailability.enabled,
+                            onFind: () =>
+                                unawaited(_sendCommand(CommandCode.find)),
+                            onUnlock: () => unawaited(_sendArmToggle()),
+                            onSettings: _openSettings,
+                            onSeat: () =>
+                                unawaited(_sendCommand(CommandCode.openSeat)),
+                            onShare: _openShare,
+                            onPassword: () {
+                              AppSnack.info(context, '密码解锁请在车辆设置中配置');
+                              _openSettings();
+                            },
+                            onNfc: _openNfc,
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 22),
                     _CyberNavCard(
                       onMirror: () =>
                           AppSnack.info(context, '镜像投屏需车辆仪表支持，连接后可用'),
@@ -1493,6 +1506,11 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
                       durationSeries: lastRide.$4,
                       onMapTap: _openLocation,
                       onBatteryTap: _openBattery,
+                    ),
+                    const SizedBox(height: 16),
+                    _CyberPowerControl(
+                      powered: isPowerOn,
+                      onTap: () => unawaited(_sendPower()),
                     ),
                     if (_commands.isNotEmpty) ...[
                       const SizedBox(height: 16),
@@ -1756,6 +1774,7 @@ enum _OfficialBleChipState {
 
 class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
   const _CyberVehicleHeaderDelegate({
+    required this.expandedExtent,
     required this.vehicleName,
     required this.rangeText,
     required this.carPhoto,
@@ -1776,6 +1795,7 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.onDismissAlert,
   });
 
+  final double expandedExtent;
   final String vehicleName;
   final String rangeText;
   final String carPhoto;
@@ -1799,7 +1819,7 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get minExtent => 142;
 
   @override
-  double get maxExtent => alert == null ? 440 : 506;
+  double get maxExtent => expandedExtent;
 
   @override
   Widget build(
@@ -1886,7 +1906,8 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(covariant _CyberVehicleHeaderDelegate oldDelegate) {
-    return vehicleName != oldDelegate.vehicleName ||
+    return expandedExtent != oldDelegate.expandedExtent ||
+        vehicleName != oldDelegate.vehicleName ||
         rangeText != oldDelegate.rangeText ||
         carPhoto != oldDelegate.carPhoto ||
         batteryPercent != oldDelegate.batteryPercent ||
@@ -1949,84 +1970,101 @@ class _CyberHeroHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: AppPressable(
-                  onTap: onTitleTap,
-                  semanticsLabel: '切换车辆 $vehicleName',
-                  semanticsButton: true,
-                  child: Text(
-                    vehicleName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 27,
-                      height: 1.05,
-                      fontWeight: FontWeight.w700,
-                      color: _Cyber.ink,
+          SizedBox(
+            height: 94,
+            child: Stack(
+              children: [
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  right: 116,
+                  child: AppPressable(
+                    onTap: onTitleTap,
+                    semanticsLabel: '切换车辆 $vehicleName',
+                    semanticsButton: true,
+                    child: Text(
+                      vehicleName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        height: 1.05,
+                        fontWeight: FontWeight.w700,
+                        color: _Cyber.ink,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              _HeroAction(
-                key: const ValueKey('cyber-hero-bluetooth'),
-                icon: bluetoothConnected
-                    ? Lucide.bluetooth
-                    : Lucide.bluetoothSearching,
-                label: bluetoothConnected ? '蓝牙已连接' : '连接车辆蓝牙',
-                primary: true,
-                onTap: onBleChipTap,
-              ),
-              const SizedBox(width: 10),
-              _HeroAction(
-                key: const ValueKey('cyber-hero-messages'),
-                icon: Lucide.message,
-                label: '车辆消息',
-                onTap: onMessages,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                rangeText.replaceAll('km', '').trim(),
-                style: const TextStyle(
-                  fontSize: 54,
-                  height: 0.94,
-                  fontWeight: FontWeight.w700,
-                  color: _Cyber.ink,
-                  fontFeatures: _Cyber.tabular,
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(left: 5, bottom: 4),
-                child: Text(
-                  'km',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: _Cyber.ink,
+                Positioned(
+                  left: 0,
+                  bottom: 0,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        rangeText.replaceAll('km', '').trim(),
+                        style: const TextStyle(
+                          fontSize: 48,
+                          height: 0.94,
+                          fontWeight: FontWeight.w700,
+                          color: _Cyber.ink,
+                          fontFeatures: _Cyber.tabular,
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 4, bottom: 3),
+                        child: Text(
+                          'km',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: _Cyber.ink,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 10, bottom: 3),
+                        child: Text(
+                          batteryKnown ? '$batteryPercent%' : '--%',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: _Cyber.muted,
+                            fontFeatures: _Cyber.tabular,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 12, bottom: 4),
-                child: Text(
-                  batteryKnown ? '$batteryPercent%' : '--%',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                    color: _Cyber.muted,
-                    fontFeatures: _Cyber.tabular,
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Row(
+                    children: [
+                      _HeroAction(
+                        key: const ValueKey('cyber-hero-bluetooth'),
+                        icon: bluetoothConnected
+                            ? Lucide.bluetooth
+                            : Lucide.bluetoothSearching,
+                        label: bluetoothConnected ? '蓝牙已连接' : '连接车辆蓝牙',
+                        primary: true,
+                        onTap: onBleChipTap,
+                      ),
+                      const SizedBox(width: 10),
+                      _HeroAction(
+                        key: const ValueKey('cyber-hero-messages'),
+                        icon: Lucide.message,
+                        label: '车辆消息',
+                        onTap: onMessages,
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Container(
             width: 116,
             height: 4,
@@ -2046,11 +2084,13 @@ class _CyberHeroHeader extends StatelessWidget {
             onTap: onChannelTap,
           ),
           Expanded(
-            child: VehicleStage(
-              key: const ValueKey('cyber-hero-vehicle'),
-              batteryLevel: level,
-              height: 260,
-              imageUrl: carPhoto.trim().isEmpty ? null : carPhoto.trim(),
+            child: Center(
+              child: VehicleStage(
+                key: const ValueKey('cyber-hero-vehicle'),
+                batteryLevel: level,
+                height: 200,
+                imageUrl: carPhoto.trim().isEmpty ? null : carPhoto.trim(),
+              ),
             ),
           ),
           _TireStatusRow(tire: tire),
@@ -2090,8 +2130,8 @@ class _HeroAction extends StatelessWidget {
       semanticsLabel: label,
       semanticsButton: true,
       child: Container(
-        width: 56,
-        height: 56,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
           color: primary ? _Cyber.primary : _Cyber.card,
           borderRadius: BorderRadius.circular(AppRadii.lg),
@@ -2100,7 +2140,7 @@ class _HeroAction extends StatelessWidget {
         alignment: Alignment.center,
         child: LucideIcon(
           icon,
-          size: 28,
+          size: 25,
           color: primary ? CyberHomeColors.white : _Cyber.ink,
           strokeWidth: 1.8,
         ),
@@ -2398,7 +2438,7 @@ class _HomeAlertBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       key: const ValueKey('cyber-home-alert'),
-      height: 58,
+      height: 48,
       decoration: BoxDecoration(
         color: CyberHomeColors.alertSurface,
         borderRadius: BorderRadius.circular(AppRadii.md),
@@ -2612,7 +2652,6 @@ class _CyberBleChip extends StatelessWidget {
 class _CyberControlGrid extends StatelessWidget {
   const _CyberControlGrid({
     required this.armed,
-    required this.powered,
     required this.dimmed,
     required this.onFind,
     required this.onUnlock,
@@ -2621,11 +2660,9 @@ class _CyberControlGrid extends StatelessWidget {
     required this.onShare,
     required this.onPassword,
     required this.onNfc,
-    required this.onPower,
   });
 
   final bool? armed;
-  final bool? powered;
   final bool dimmed;
   final VoidCallback onFind;
   final VoidCallback onUnlock;
@@ -2634,7 +2671,6 @@ class _CyberControlGrid extends StatelessWidget {
   final VoidCallback onShare;
   final VoidCallback onPassword;
   final VoidCallback onNfc;
-  final VoidCallback onPower;
 
   @override
   Widget build(BuildContext context) {
@@ -2666,55 +2702,13 @@ class _CyberControlGrid extends StatelessWidget {
             ),
             const SizedBox(height: 22),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _CircleKey(icon: Lucide.seat, label: '打开坐垫', onTap: onSeat),
                 _CircleKey(icon: Lucide.share, label: '车辆分享', onTap: onShare),
                 _CircleKey(icon: Lucide.key, label: '密码解锁', onTap: onPassword),
                 _CircleKey(icon: Lucide.nfc, label: 'NFC钥匙', onTap: onNfc),
               ],
-            ),
-            const SizedBox(height: 18),
-            AppPressable(
-              onTap: onPower,
-              semanticsLabel: powered == true ? '断电' : '通电',
-              semanticsButton: true,
-              child: Container(
-                width: double.infinity,
-                height: AppTouchTargets.min,
-                decoration: BoxDecoration(
-                  color: powered == true
-                      ? _Cyber.primary.withValues(alpha: 0.12)
-                      : _Cyber.soft,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: powered == true
-                        ? _Cyber.primary.withValues(alpha: 0.3)
-                        : _Cyber.line,
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    LucideIcon(
-                      Lucide.power,
-                      size: 18,
-                      color: powered == true ? _Cyber.primary : _Cyber.muted,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      powered == null
-                          ? '电源未知 · 点击刷新后重试'
-                          : (powered! ? '已通电 · 点击断电' : '已断电 · 点击通电'),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: powered == true ? _Cyber.primary : _Cyber.ink2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ],
         ),
@@ -2746,8 +2740,8 @@ class _CircleKey extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 68,
-            height: 68,
+            width: 60,
+            height: 60,
             decoration: const BoxDecoration(
               color: _Cyber.card,
               shape: BoxShape.circle,
@@ -2756,12 +2750,12 @@ class _CircleKey extends StatelessWidget {
             alignment: Alignment.center,
             child: LucideIcon(
               icon,
-              size: 27,
+              size: 25,
               color: _Cyber.ink2,
               strokeWidth: 1.8,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Text(
             label,
             style: const TextStyle(
@@ -2771,6 +2765,61 @@ class _CircleKey extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CyberPowerControl extends StatelessWidget {
+  const _CyberPowerControl({required this.powered, required this.onTap});
+
+  final bool? powered;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: _Cyber.cardMargin,
+      child: AppPressable(
+        onTap: onTap,
+        semanticsLabel: powered == true ? '断电' : '通电',
+        semanticsButton: true,
+        child: Container(
+          width: double.infinity,
+          height: AppTouchTargets.min,
+          decoration: BoxDecoration(
+            color: powered == true
+                ? _Cyber.primary.withValues(alpha: 0.12)
+                : _Cyber.soft,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: powered == true
+                  ? _Cyber.primary.withValues(alpha: 0.3)
+                  : _Cyber.line,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              LucideIcon(
+                Lucide.power,
+                size: 18,
+                color: powered == true ? _Cyber.primary : _Cyber.muted,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                powered == null
+                    ? '电源未知 · 点击刷新后重试'
+                    : (powered! ? '已通电 · 点击断电' : '已断电 · 点击通电'),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: powered == true ? _Cyber.primary : _Cyber.ink2,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2899,6 +2948,7 @@ class _CyberNavCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      key: const ValueKey('cyber-nav-card'),
       margin: _Cyber.cardMargin,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(

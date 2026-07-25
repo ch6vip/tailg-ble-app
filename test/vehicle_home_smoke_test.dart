@@ -112,6 +112,19 @@ void main() {
     // Cyber shell shortcuts (no VOID section title 「控车」).
     expect(find.text('寻车'), findsWidgets);
     expect(find.text('滑动开锁'), findsWidgets);
+    final navCard = find.byKey(const ValueKey('cyber-nav-card'));
+    expect(tester.getTopLeft(navCard).dy, closeTo(844, 0.1));
+    expect(tester.takeException(), isNull);
+
+    // The fold stays stable on the narrower logical width used by the visual
+    // reference and does not reveal a clipped secondary card below the nav.
+    applyTestViewSize(tester, const Size(360, 800));
+    await tester.pump();
+    expect(tester.getTopLeft(navCard).dy, closeTo(800, 0.1));
+    expect(tester.takeException(), isNull);
+    applyTestViewSize(tester, const Size(390, 844));
+    await tester.pump();
+
     // Layout order under Cyber shell: keys/slide, projection, map/stats.
     expect(
       tester.getTopLeft(find.text('仪表投屏导航')).dy,
