@@ -8,6 +8,7 @@ import 'package:tailg_ble_app/pages/notification_prefs_page.dart';
 import 'package:tailg_ble_app/pages/ride_stats_page.dart';
 import 'package:tailg_ble_app/pages/vehicle_settings_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 import 'package:tailg_ble_app/widgets/vehicle_switch_sheet.dart';
 
@@ -389,6 +390,21 @@ void main() {
       expect(find.text('IMEI-SETTINGS'), findsOneWidget);
       expect(find.text('车辆在线'), findsOneWidget);
       expect(find.text('通知偏好'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('vehicle-settings-summary')),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor,
+        CyberHomeColors.pageBg,
+      );
+      expect(find.textContaining('app/car/bikeUnbind'), findsNothing);
+
+      applyTestViewSize(tester, const Size(390, 844));
+      await tester.pump();
+      expect(find.text('感应解锁'), findsOneWidget);
+      expect(find.text('解绑车辆'), findsOneWidget);
+      expect(tester.takeException(), isNull);
 
       await tester.tap(find.text('通知偏好'));
       await tester.pumpAndSettle();
