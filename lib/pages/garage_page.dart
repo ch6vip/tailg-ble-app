@@ -9,13 +9,9 @@ import '../models/vehicle_profile.dart';
 import '../services/app_navigation.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_void.dart';
-import '../widgets/app_chrome.dart';
-import '../widgets/void_canvas.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/lucide_icon.dart';
-import '../widgets/status_badge.dart';
 import '../widgets/vehicle_stage.dart';
 import 'add_vehicle_page.dart';
 import 'login_page.dart';
@@ -113,89 +109,181 @@ class _GaragePageState extends State<GaragePage> {
     final hasLocal = localVehicles.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        child: SafeArea(
-          child: Column(
-            children: [
-              AppPageHeader(
-                title: '我的车库',
-                showBack: !widget.embedded,
-                actions: [
-                  if (signedIn)
-                    IconButton(
-                      tooltip: '同步车辆',
-                      onPressed: _syncing ? null : _syncCloudVehicles,
-                      icon: _syncing
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Lucide.refresh, semanticLabel: '同步车辆'),
-                    ),
-                  IconButton(
-                    tooltip: '添加车辆',
-                    onPressed: signedIn ? _openAddVehicle : _openLogin,
-                    icon: const Icon(Lucide.plusCircle, semanticLabel: '添加车辆'),
-                  ),
-                ],
-              ),
-              Expanded(
-                child: !signedIn && !hasLocal
-                    ? _UnsignedEmptyGarage(onLogin: _openLogin)
-                    : signedIn && !hasCloud && !hasLocal
-                    ? _SignedEmptyGarage(
-                        loading: _cloudState.loading || _syncing,
-                        onSync: _syncCloudVehicles,
-                        onAddVehicle: _openAddVehicle,
-                      )
-                    : ListView(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                        children: [
-                          if (signedIn) ...[
-                            if (hasCloud) ...[
-                              const _SectionLabel('账号车辆'),
-                              const SizedBox(height: 8),
-                              for (final vehicle in cloudVehicles)
-                                _CloudVehicleCard(
-                                  vehicle: vehicle,
-                                  isSelected: vehicle.key == selectedKey,
-                                  onSelect: () => _selectCloudVehicle(vehicle),
-                                ),
-                            ] else ...[
-                              _SignedEmptyInline(
-                                loading: _cloudState.loading || _syncing,
-                                onSync: _syncCloudVehicles,
-                                onAddVehicle: _openAddVehicle,
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _GarageHeader(
+              showBack: !widget.embedded,
+              showSync: signedIn,
+              syncing: _syncing,
+              onSync: _syncCloudVehicles,
+              onAdd: signedIn ? _openAddVehicle : _openLogin,
+            ),
+            Expanded(
+              child: !signedIn && !hasLocal
+                  ? _UnsignedEmptyGarage(onLogin: _openLogin)
+                  : signedIn && !hasCloud && !hasLocal
+                  ? _SignedEmptyGarage(
+                      loading: _cloudState.loading || _syncing,
+                      onSync: _syncCloudVehicles,
+                      onAddVehicle: _openAddVehicle,
+                    )
+                  : ListView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                      children: [
+                        if (signedIn) ...[
+                          if (hasCloud) ...[
+                            const _SectionLabel('账号车辆'),
+                            const SizedBox(height: 8),
+                            for (final vehicle in cloudVehicles)
+                              _CloudVehicleCard(
+                                vehicle: vehicle,
+                                isSelected: vehicle.key == selectedKey,
+                                onSelect: () => _selectCloudVehicle(vehicle),
                               ),
-                              const SizedBox(height: 16),
-                            ],
                           ] else ...[
-                            _LoginPromptCard(onLogin: _openLogin),
+                            _SignedEmptyInline(
+                              loading: _cloudState.loading || _syncing,
+                              onSync: _syncCloudVehicles,
+                              onAddVehicle: _openAddVehicle,
+                            ),
                             const SizedBox(height: 16),
                           ],
-                          if (hasLocal) ...[
-                            if (signedIn || hasCloud) const SizedBox(height: 8),
-                            const _SectionLabel('本地存档'),
-                            const SizedBox(height: 8),
-                            for (final vehicle in localVehicles)
-                              _LocalVehicleCard(
-                                vehicle: vehicle,
-                                isDefault:
-                                    vehicle.id ==
-                                        vehicleStore.defaultVehicleId ||
-                                    vehicle.id ==
-                                        vehicleStore.defaultVehicle?.id,
-                              ),
-                          ],
+                        ] else ...[
+                          _LoginPromptCard(onLogin: _openLogin),
+                          const SizedBox(height: 16),
                         ],
-                      ),
-              ),
-            ],
+                        if (hasLocal) ...[
+                          if (signedIn || hasCloud) const SizedBox(height: 8),
+                          const _SectionLabel('本地存档'),
+                          const SizedBox(height: 8),
+                          for (final vehicle in localVehicles)
+                            _LocalVehicleCard(
+                              vehicle: vehicle,
+                              isDefault:
+                                  vehicle.id == vehicleStore.defaultVehicleId ||
+                                  vehicle.id == vehicleStore.defaultVehicle?.id,
+                            ),
+                        ],
+                      ],
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GarageHeader extends StatelessWidget {
+  const _GarageHeader({
+    required this.showBack,
+    required this.showSync,
+    required this.syncing,
+    required this.onSync,
+    required this.onAdd,
+  });
+
+  final bool showBack;
+  final bool showSync;
+  final bool syncing;
+  final VoidCallback onSync;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget action({
+      required Key key,
+      required String label,
+      required Widget icon,
+      required VoidCallback? onTap,
+    }) {
+      return Tooltip(
+        message: label,
+        excludeFromSemantics: true,
+        child: AppPressable(
+          key: key,
+          onTap: onTap,
+          enabled: onTap != null,
+          semanticsLabel: label,
+          semanticsButton: true,
+          child: Container(
+            width: AppTouchTargets.min,
+            height: AppTouchTargets.min,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: CyberHomeColors.card,
+              shape: BoxShape.circle,
+              boxShadow: AppShadows.cyberActionShadow,
+            ),
+            child: icon,
           ),
         ),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(showBack ? 12 : 20, 10, 20, 8),
+      child: Row(
+        children: [
+          if (showBack) ...[
+            action(
+              key: const ValueKey('garage-back'),
+              label: '返回',
+              onTap: () => Navigator.of(context).pop(),
+              icon: const LucideIcon(
+                Lucide.arrowLeft,
+                size: 20,
+                color: CyberHomeColors.inkSecondary,
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+          const Expanded(
+            child: Text(
+              '我的车库',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: CyberHomeColors.ink,
+              ),
+            ),
+          ),
+          if (showSync) ...[
+            action(
+              key: const ValueKey('garage-sync'),
+              label: '同步车辆',
+              onTap: syncing ? null : onSync,
+              icon: syncing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: CyberHomeColors.primary,
+                      ),
+                    )
+                  : const LucideIcon(
+                      Lucide.refresh,
+                      size: 20,
+                      color: CyberHomeColors.primary,
+                    ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          action(
+            key: const ValueKey('garage-add'),
+            label: '添加车辆',
+            onTap: onAdd,
+            icon: const LucideIcon(
+              Lucide.plusCircle,
+              size: 20,
+              color: CyberHomeColors.primary,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -212,9 +300,116 @@ class _SectionLabel extends StatelessWidget {
       style: const TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w700,
-        color: AppColors.textTertiary,
-        letterSpacing: 0.4,
+        color: CyberHomeColors.inkMuted,
       ),
+    );
+  }
+}
+
+const _garageCardDecoration = BoxDecoration(
+  color: CyberHomeColors.card,
+  borderRadius: BorderRadius.all(Radius.circular(AppRadii.tile)),
+  border: Border.fromBorderSide(BorderSide(color: CyberHomeColors.line)),
+);
+
+const _garageTitleStyle = TextStyle(
+  fontSize: 15,
+  fontWeight: FontWeight.w700,
+  color: CyberHomeColors.ink,
+);
+
+const _garageBodyStyle = TextStyle(
+  fontSize: 13,
+  height: 1.45,
+  color: CyberHomeColors.inkMuted,
+);
+
+const _garageMenuTextStyle = TextStyle(color: CyberHomeColors.ink);
+
+final _garageFilledButtonStyle = FilledButton.styleFrom(
+  minimumSize: const Size(120, 48),
+  backgroundColor: CyberHomeColors.primary,
+  foregroundColor: CyberHomeColors.white,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(AppRadii.tile),
+  ),
+);
+
+final _garageOutlinedButtonStyle = OutlinedButton.styleFrom(
+  minimumSize: const Size(120, 48),
+  foregroundColor: CyberHomeColors.primary,
+  side: const BorderSide(color: CyberHomeColors.lineStrong),
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(AppRadii.tile),
+  ),
+);
+
+class _GarageEmptyVisual extends StatelessWidget {
+  const _GarageEmptyVisual({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 56,
+          height: 56,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            color: CyberHomeColors.primarySoft,
+            shape: BoxShape.circle,
+          ),
+          child: LucideIcon(
+            icon,
+            size: AppIconSizes.lg,
+            color: CyberHomeColors.primary,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(title, textAlign: TextAlign.center, style: _garageTitleStyle),
+        const SizedBox(height: 6),
+        Text(subtitle, textAlign: TextAlign.center, style: _garageBodyStyle),
+      ],
+    );
+  }
+}
+
+class _GarageStatus extends StatelessWidget {
+  const _GarageStatus({required this.label, required this.active});
+
+  final String label;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active ? CyberHomeColors.success : CyberHomeColors.inkFaint;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -232,16 +427,16 @@ class _UnsignedEmptyGarage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const AppEmptyState(
+            const _GarageEmptyVisual(
               icon: Lucide.vehicle,
               title: '登录后查看账号车辆',
               subtitle: '登录官方账号后会同步已绑定车辆到车库。',
-              padding: EdgeInsets.zero,
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
+              style: _garageFilledButtonStyle,
               onPressed: onLogin,
-              icon: const Icon(Lucide.login, size: AppIconSizes.md),
+              icon: const LucideIcon(Lucide.login, size: AppIconSizes.md),
               label: const Text('登录账号'),
             ),
           ],
@@ -270,14 +465,14 @@ class _SignedEmptyGarage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppEmptyState(
+            _GarageEmptyVisual(
               icon: Lucide.garage,
               title: '账号下暂无车辆',
               subtitle: loading ? '正在同步账号车辆…' : '可同步账号车辆，或通过官方流程添加绑定。',
-              padding: EdgeInsets.zero,
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
+              style: _garageFilledButtonStyle,
               onPressed: loading ? null : onSync,
               icon: loading
                   ? const SizedBox(
@@ -285,13 +480,14 @@ class _SignedEmptyGarage extends StatelessWidget {
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Lucide.refresh, size: AppIconSizes.md),
+                  : const LucideIcon(Lucide.refresh, size: AppIconSizes.md),
               label: Text(loading ? '同步中…' : '同步车辆'),
             ),
             const SizedBox(height: 10),
             OutlinedButton.icon(
+              style: _garageOutlinedButtonStyle,
               onPressed: onAddVehicle,
-              icon: const Icon(Lucide.plusCircle, size: AppIconSizes.md),
+              icon: const LucideIcon(Lucide.plusCircle, size: AppIconSizes.md),
               label: const Text('添加车辆'),
             ),
           ],
@@ -316,19 +512,15 @@ class _SignedEmptyInline extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        boxShadow: AppShadows.elevation1,
-      ),
+      decoration: _garageCardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('账号下暂无车辆', style: AppTextStyles.subtitle),
+          const Text('账号下暂无车辆', style: _garageTitleStyle),
           const SizedBox(height: 6),
           Text(
             loading ? '正在同步账号车辆…' : '同步账号车辆，或前往添加车辆完成绑定。',
-            style: AppTextStyles.bodyMedium,
+            style: _garageBodyStyle,
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -336,10 +528,15 @@ class _SignedEmptyInline extends StatelessWidget {
             runSpacing: 8,
             children: [
               FilledButton(
+                style: _garageFilledButtonStyle,
                 onPressed: loading ? null : onSync,
                 child: Text(loading ? '同步中…' : '同步'),
               ),
-              OutlinedButton(onPressed: onAddVehicle, child: const Text('添加')),
+              OutlinedButton(
+                style: _garageOutlinedButtonStyle,
+                onPressed: onAddVehicle,
+                child: const Text('添加'),
+              ),
             ],
           ),
         ],
@@ -357,22 +554,19 @@ class _LoginPromptCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        boxShadow: AppShadows.elevation1,
-      ),
+      decoration: _garageCardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('登录账号同步车辆', style: AppTextStyles.subtitle),
+          const Text('登录账号同步车辆', style: _garageTitleStyle),
           const SizedBox(height: 6),
-          const Text(
-            '当前仅显示本地存档。登录后可查看账号下已绑定车辆。',
-            style: AppTextStyles.bodyMedium,
-          ),
+          const Text('当前仅显示本地存档。登录后可查看账号下已绑定车辆。', style: _garageBodyStyle),
           const SizedBox(height: 12),
-          FilledButton(onPressed: onLogin, child: const Text('登录账号')),
+          FilledButton(
+            style: _garageFilledButtonStyle,
+            onPressed: onLogin,
+            child: const Text('登录账号'),
+          ),
         ],
       ),
     );
@@ -405,26 +599,22 @@ class _CloudVehicleCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadii.md),
-          boxShadow: AppShadows.elevation1,
+        decoration: _garageCardDecoration.copyWith(
           border: isSelected
-              ? Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.55),
-                  width: 1.5,
-                )
-              : null,
+              ? Border.all(color: CyberHomeColors.primary, width: 1.5)
+              : const Border.fromBorderSide(
+                  BorderSide(color: CyberHomeColors.line),
+                ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadii.card),
+              borderRadius: BorderRadius.circular(AppRadii.tile),
               child: Container(
                 width: 100,
                 height: 70,
-                color: AppColors.pageBgTop,
+                color: CyberHomeColors.control,
                 child: CustomPaint(
                   painter: VehicleStagePainter(
                     batteryLevel: batteryFactor > 0 ? batteryFactor : 0.7,
@@ -445,8 +635,10 @@ class _CloudVehicleCard extends StatelessWidget {
                           vehicle.displayName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.subtitle.copyWith(
-                            fontWeight: FontWeight.w600,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: CyberHomeColors.ink,
                           ),
                         ),
                       ),
@@ -458,14 +650,14 @@ class _CloudVehicleCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(AppRadii.sm),
+                            color: CyberHomeColors.primarySoft,
+                            borderRadius: BorderRadius.circular(AppRadii.pill),
                           ),
                           child: const Text(
                             '使用中',
                             style: TextStyle(
                               fontSize: 11,
-                              color: AppColors.primary,
+                              color: CyberHomeColors.primary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -479,22 +671,20 @@ class _CloudVehicleCard extends StatelessWidget {
                     child: Container(
                       height: 4,
                       width: 120,
-                      color: AppColors.surfaceContainerHigh,
+                      color: CyberHomeColors.controlStrong,
                       child: FractionallySizedBox(
                         alignment: Alignment.centerLeft,
                         widthFactor: batteryFactor > 0 ? batteryFactor : 0.72,
-                        child: Container(color: AppColors.energyGreen),
+                        child: Container(color: CyberHomeColors.success),
                       ),
                     ),
                   ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      StatusBadge(
-                        type: vehicle.online
-                            ? StatusBadgeType.online
-                            : StatusBadgeType.offline,
-                        compact: true,
+                      _GarageStatus(
+                        label: vehicle.online ? '在线' : '离线',
+                        active: vehicle.online,
                       ),
                       const Spacer(),
                       _MiniActionButton(
@@ -545,16 +735,12 @@ class _LocalVehicleCardState extends State<_LocalVehicleCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        boxShadow: AppShadows.elevation1,
+      decoration: _garageCardDecoration.copyWith(
         border: isDefault
-            ? Border.all(
-                color: AppColors.primary.withValues(alpha: 0.55),
-                width: 1.5,
-              )
-            : null,
+            ? Border.all(color: CyberHomeColors.primary, width: 1.5)
+            : const Border.fromBorderSide(
+                BorderSide(color: CyberHomeColors.line),
+              ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -563,11 +749,11 @@ class _LocalVehicleCardState extends State<_LocalVehicleCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadii.card),
+                borderRadius: BorderRadius.circular(AppRadii.tile),
                 child: Container(
                   width: 100,
                   height: 70,
-                  color: AppColors.pageBgTop,
+                  color: CyberHomeColors.control,
                   child: CustomPaint(
                     painter: VehicleStagePainter(batteryLevel: 0.7),
                     size: const Size(100, 70),
@@ -586,8 +772,10 @@ class _LocalVehicleCardState extends State<_LocalVehicleCard> {
                             vehicle.displayName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.subtitle.copyWith(
-                              fontWeight: FontWeight.w600,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: CyberHomeColors.ink,
                             ),
                           ),
                         ),
@@ -599,14 +787,16 @@ class _LocalVehicleCardState extends State<_LocalVehicleCard> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(AppRadii.sm),
+                              color: CyberHomeColors.primarySoft,
+                              borderRadius: BorderRadius.circular(
+                                AppRadii.pill,
+                              ),
                             ),
                             child: const Text(
                               '默认',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: AppColors.primary,
+                                color: CyberHomeColors.primary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -620,21 +810,18 @@ class _LocalVehicleCardState extends State<_LocalVehicleCard> {
                       child: Container(
                         height: 4,
                         width: 120,
-                        color: AppColors.surfaceContainerHigh,
+                        color: CyberHomeColors.controlStrong,
                         child: FractionallySizedBox(
                           alignment: Alignment.centerLeft,
                           widthFactor: 0.72,
-                          child: Container(color: AppColors.energyGreen),
+                          child: Container(color: CyberHomeColors.success),
                         ),
                       ),
                     ),
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const StatusBadge(
-                          type: StatusBadgeType.connected,
-                          compact: true,
-                        ),
+                        const _GarageStatus(label: '本地', active: true),
                         const Spacer(),
                         _MiniActionButton(
                           icon: Lucide.mapPin,
@@ -654,12 +841,26 @@ class _LocalVehicleCardState extends State<_LocalVehicleCard> {
               ),
               PopupMenuButton<String>(
                 tooltip: '车辆操作',
+                color: CyberHomeColors.card,
+                icon: const LucideIcon(
+                  Lucide.more,
+                  color: CyberHomeColors.inkMuted,
+                ),
                 onSelected: (value) => _handleAction(context, value),
                 itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'rename', child: Text('编辑名称')),
+                  const PopupMenuItem(
+                    value: 'rename',
+                    child: Text('编辑名称', style: _garageMenuTextStyle),
+                  ),
                   if (!isDefault)
-                    const PopupMenuItem(value: 'default', child: Text('设为默认')),
-                  const PopupMenuItem(value: 'delete', child: Text('删除车辆')),
+                    const PopupMenuItem(
+                      value: 'default',
+                      child: Text('设为默认', style: _garageMenuTextStyle),
+                    ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Text('删除车辆', style: _garageMenuTextStyle),
+                  ),
                 ],
               ),
             ],
@@ -764,14 +965,14 @@ class _MiniActionButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 15, color: AppColors.primary),
+              LucideIcon(icon, size: 15, color: CyberHomeColors.primary),
               const SizedBox(width: 3),
               Text(
                 label,
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
+                  color: CyberHomeColors.primary,
                 ),
               ),
             ],

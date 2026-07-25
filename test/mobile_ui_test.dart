@@ -6,7 +6,6 @@ import 'package:tailg_ble_app/pages/service_hub_page.dart';
 import 'package:tailg_ble_app/pages/cyber_vehicle_control_page_v2.dart';
 import 'package:tailg_ble_app/services/service_locator.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
-import 'package:tailg_ble_app/theme/app_void.dart';
 import 'package:tailg_ble_app/widgets/void_particles.dart';
 import 'package:tailg_ble_app/widgets/void_typography.dart';
 
@@ -98,7 +97,7 @@ void main() {
     },
   );
 
-  testWidgets('main mobile tabs keep their intended surfaces in dark mode', (
+  testWidgets('main mobile tabs keep Cyber surfaces in dark mode', (
     tester,
   ) async {
     setTestViewSize(tester, const Size(390, 844));
@@ -111,10 +110,8 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 50));
     final mine = tester.widget<Scaffold>(find.byType(Scaffold));
-    expect(
-      mine.backgroundColor,
-      anyOf(AppColorsDark.instance.pageBg, VoidColors.voidDeep),
-    );
+    expect(mine.backgroundColor, CyberHomeColors.pageBg);
+    expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(
       MaterialApp(

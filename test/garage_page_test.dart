@@ -1,15 +1,18 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/garage_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
+import 'helpers/view_size.dart';
 
 void main() {
   setUp(() async {
@@ -36,6 +39,7 @@ void main() {
   testWidgets('mini vehicle actions keep 44dp touch targets', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
+      setTestViewSize(tester, const Size(390, 844));
       await app.vehicleStore.upsert(
         id: 'AA:BB:CC:DD:EE:FF',
         name: '测试车辆',
@@ -69,9 +73,29 @@ void main() {
       tester.semantics.tap(find.semantics.byLabel(locateLabel));
 
       expect(app.homeTabIndex.value, 0);
+      expect(tester.takeException(), isNull);
     } finally {
       semantics.dispose();
     }
+  });
+
+  testWidgets('garage uses Cyber home mobile layout', (tester) async {
+    setTestViewSize(tester, const Size(390, 844));
+
+    await tester.pumpWidget(const TestApp(home: GaragePage()));
+    await tester.pump();
+
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+    final backAction = find.byKey(const ValueKey('garage-back'));
+    final addAction = find.byKey(const ValueKey('garage-add'));
+    expect(backAction, findsOneWidget);
+    expect(addAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, backAction);
+    expectMinTouchTargetHeight(tester, addAction);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('signed-in garage lists official cloud vehicles', (tester) async {

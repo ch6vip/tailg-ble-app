@@ -5,6 +5,7 @@ import 'package:tailg_ble_app/models/official_user_profile.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/profile_mine_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/storage_mocks.dart';
@@ -27,7 +28,7 @@ void main() {
     app.messageReadStore.resetForTest();
   });
 
-  testWidgets('aurora mine follows design structure when signed out', (
+  testWidgets('Cyber mine follows design structure when signed out', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -55,7 +56,7 @@ void main() {
     }
   });
 
-  testWidgets('aurora mine exposes edit touch target', (tester) async {
+  testWidgets('Cyber mine exposes edit touch target', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
       await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
@@ -67,6 +68,25 @@ void main() {
     } finally {
       semantics.dispose();
     }
+  });
+
+  testWidgets('mine uses Cyber home mobile layout', (tester) async {
+    setTestViewSize(tester, const Size(390, 844));
+
+    await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
+    await tester.pump();
+
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+    final editAction = find.bySemanticsLabel('编辑');
+    final vehicleAction = find.bySemanticsLabel('切换默认车辆 暂无车辆');
+    expect(editAction, findsOneWidget);
+    expect(vehicleAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, editAction);
+    expectMinTouchTargetHeight(tester, vehicleAction);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('signed-in header shows profile nick and logout sheet', (

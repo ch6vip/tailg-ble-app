@@ -12,21 +12,17 @@ import '../services/official_cloud_service.dart';
 import '../services/sensitive_value_masker.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
-import '../theme/app_void.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/lucide_icon.dart';
 import '../widgets/vehicle_switch_sheet.dart';
-import '../widgets/void_canvas.dart';
-import '../widgets/void_glass.dart';
-import '../widgets/void_typography.dart';
 import 'app_preferences_pages.dart';
 import 'garage_page.dart';
 import 'login_page.dart';
 import 'settings_page.dart';
 import 'vehicle_message_page.dart';
 
-/// 我的 · Tailg Aurora (Open Design `profile-mine`)
+/// 我的 · Cyber home light cockpit.
 ///
 /// 布局：
 /// - 扁平资料头（无卡片外壳）
@@ -310,7 +306,7 @@ class _ProfileMinePageState extends State<ProfileMinePage>
     unawaited(HapticFeedback.mediumImpact());
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: CyberHomeColors.transparent,
       isScrollControlled: true,
       builder: (ctx) => const _LogoutSheet(),
     );
@@ -342,85 +338,73 @@ class _ProfileMinePageState extends State<ProfileMinePage>
         AppNav.contentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        child: SafeArea(
-          bottom: false,
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            padding: EdgeInsets.only(
-              top: 6,
-              bottom: widget.showBottomNav ? 24 : bottomPad,
-            ),
-            children: [
-              // ── Profile header ──────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                child: KineticType(
-                  signedIn ? _nickname : '我的',
-                  mode: KineticTypeMode.word,
-                  staggerDelay: 30,
-                  duration: const Duration(milliseconds: 400),
-                  style: VoidType.hero.copyWith(fontSize: 28),
-                ),
-              ),
-              _ProfileHeader(
-                avatarGlyph: _avatarGlyph,
-                avatarUrl: _avatarUrl,
-                nickname: _nickname,
-                phoneLine: _maskedPhone,
-                // Decompiled UserInfoBean has no member level; show login state only.
-                memberLabel: signedIn ? '已登录' : '游客',
-                // No points balance in official API; hide fake numbers.
-                showPointsEntry: signedIn,
-                onAvatarTap: _onAvatarOrEdit,
-                onEditTap: _onAvatarOrEdit,
-                onPointsTap: _onPointsTap,
-              ),
-
-              // ── Default vehicle ─────────────────────────────────────────
-              _VehicleCard(
-                name: _vehicleName,
-                online: _vehicleOnline,
-                statusLabel: _vehicleOnlineLabel,
-                batteryLabel: _batteryLabel,
-                onTap: _onVehicleCard,
-              ),
-
-              // ── Account & support (list, not equal-weight grid) ────────
-              const VoidSectionLabel('账户与支持'),
-              ValueListenableBuilder<int>(
-                valueListenable: messageReadStore.unreadCount,
-                builder: (context, unread, _) {
-                  return _SupportCard(
-                    messageBadge: signedIn && unread > 0 ? unread : null,
-                    onSettings: _openSettings,
-                    onMessages: _openMessages,
-                    onHelp: _openHelp,
-                    onAbout: _openAbout,
-                  );
-                },
-              ),
-
-              // ── Account ─────────────────────────────────────────────────
-              _AccountCard(
-                phoneValue: signedIn ? _maskedPhone : '未绑定',
-                showLogout: signedIn,
-                onPhoneTap: _onPhoneRow,
-                onLogoutTap: _confirmLogout,
-              ),
-
-              // ── Version ─────────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
-                child: Text(
-                  'Tailg Cloud · VOID',
-                  textAlign: TextAlign.center,
-                  style: VoidType.micro.copyWith(letterSpacing: 2),
-                ),
-              ),
-            ],
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: EdgeInsets.only(
+            top: 6,
+            bottom: widget.showBottomNav ? 24 : bottomPad,
           ),
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
+              child: Text(
+                '我的',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: CyberHomeColors.ink,
+                ),
+              ),
+            ),
+            _ProfileHeader(
+              avatarGlyph: _avatarGlyph,
+              avatarUrl: _avatarUrl,
+              nickname: _nickname,
+              phoneLine: _maskedPhone,
+              memberLabel: signedIn ? '已登录' : '游客',
+              showPointsEntry: signedIn,
+              onAvatarTap: _onAvatarOrEdit,
+              onEditTap: _onAvatarOrEdit,
+              onPointsTap: _onPointsTap,
+            ),
+            _VehicleCard(
+              name: _vehicleName,
+              online: _vehicleOnline,
+              statusLabel: _vehicleOnlineLabel,
+              batteryLabel: _batteryLabel,
+              onTap: _onVehicleCard,
+            ),
+            const _MineSectionLabel('账户与支持'),
+            ValueListenableBuilder<int>(
+              valueListenable: messageReadStore.unreadCount,
+              builder: (context, unread, _) {
+                return _SupportCard(
+                  messageBadge: signedIn && unread > 0 ? unread : null,
+                  onSettings: _openSettings,
+                  onMessages: _openMessages,
+                  onHelp: _openHelp,
+                  onAbout: _openAbout,
+                );
+              },
+            ),
+            _AccountCard(
+              phoneValue: signedIn ? _maskedPhone : '未绑定',
+              showLogout: signedIn,
+              onPhoneTap: _onPhoneRow,
+              onLogoutTap: _confirmLogout,
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 18, 20, 6),
+              child: Text(
+                'Tailg Cloud · VOID',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11, color: CyberHomeColors.inkFaint),
+              ),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: widget.showBottomNav
@@ -440,10 +424,36 @@ class _ProfileMinePageState extends State<ProfileMinePage>
 // ═══════════════════════════════════════════════════════════════════════════
 // Design tokens mapped onto theme/
 // ═══════════════════════════════════════════════════════════════════════════
-abstract final class _Aurora {
+abstract final class _Mine {
   static const cardMargin = EdgeInsets.fromLTRB(20, 12, 20, 0);
-  static const cardRadius = AppRadii.lg; // 20 ≈ HTML 18
+  static const cardRadius = AppRadii.tile;
   static const tabularNums = <FontFeature>[FontFeature.tabularFigures()];
+  static const cardDecoration = BoxDecoration(
+    color: CyberHomeColors.card,
+    borderRadius: BorderRadius.all(Radius.circular(AppRadii.tile)),
+    border: Border.fromBorderSide(BorderSide(color: CyberHomeColors.line)),
+  );
+}
+
+class _MineSectionLabel extends StatelessWidget {
+  const _MineSectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 8),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: CyberHomeColors.inkMuted,
+        ),
+      ),
+    );
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -474,7 +484,6 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     final url = avatarUrl;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 16, 6),
@@ -489,7 +498,7 @@ class _ProfileHeader extends StatelessWidget {
             semanticsButton: true,
             child: CircleAvatar(
               radius: 32,
-              backgroundColor: colors.primary.withValues(alpha: 0.12),
+              backgroundColor: CyberHomeColors.primarySoft,
               backgroundImage: url == null || url.isEmpty
                   ? null
                   : NetworkImage(url),
@@ -502,7 +511,7 @@ class _ProfileHeader extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w700,
-                        color: colors.primary,
+                        color: CyberHomeColors.primary,
                         letterSpacing: 0,
                         height: 1,
                       ),
@@ -525,7 +534,7 @@ class _ProfileHeader extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0,
                     height: 1.15,
-                    color: colors.textPrimary,
+                    color: CyberHomeColors.ink,
                   ),
                 ),
                 const SizedBox(height: 5),
@@ -535,8 +544,8 @@ class _ProfileHeader extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 13,
-                    color: colors.textTertiary,
-                    fontFeatures: _Aurora.tabularNums,
+                    color: CyberHomeColors.inkMuted,
+                    fontFeatures: _Mine.tabularNums,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -547,7 +556,7 @@ class _ProfileHeader extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 9),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: colors.primary.withValues(alpha: 0.12),
+                        color: CyberHomeColors.primarySoft,
                         borderRadius: BorderRadius.circular(AppRadii.pill),
                       ),
                       child: Text(
@@ -555,7 +564,7 @@ class _ProfileHeader extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: colors.primary,
+                          color: CyberHomeColors.primary,
                           letterSpacing: 0,
                         ),
                       ),
@@ -572,7 +581,7 @@ class _ProfileHeader extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: colors.textSecondary,
+                            color: CyberHomeColors.inkSecondary,
                           ),
                         ),
                       ),
@@ -598,7 +607,7 @@ class _ProfileHeader extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: colors.textSecondary,
+                      color: CyberHomeColors.inkSecondary,
                       letterSpacing: 0,
                     ),
                   ),
@@ -632,17 +641,17 @@ class _VehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
       child: AppPressable(
         onTap: onTap,
         pressedScale: AppMotion.pressScale,
-        borderRadius: BorderRadius.circular(_Aurora.cardRadius),
+        borderRadius: BorderRadius.circular(_Mine.cardRadius),
         semanticsLabel: '切换默认车辆 $name',
         semanticsButton: true,
-        child: VoidGlassCard(
+        child: Container(
           padding: const EdgeInsets.all(16),
+          decoration: _Mine.cardDecoration,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -653,13 +662,13 @@ class _VehicleCard extends StatelessWidget {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: colors.surfaceContainerHigh,
-                        borderRadius: BorderRadius.circular(AppRadii.md),
+                        color: CyberHomeColors.primarySoft,
+                        borderRadius: BorderRadius.circular(AppRadii.tile),
                       ),
                       child: LucideIcon(
                         Lucide.vehicle,
                         size: 22,
-                        color: VoidColors.energy,
+                        color: CyberHomeColors.primary,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -676,7 +685,7 @@ class _VehicleCard extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0,
                               height: 1.2,
-                              color: colors.textPrimary,
+                              color: CyberHomeColors.ink,
                             ),
                           ),
                           const SizedBox(height: 5),
@@ -687,8 +696,8 @@ class _VehicleCard extends StatelessWidget {
                                 height: 6,
                                 decoration: BoxDecoration(
                                   color: online
-                                      ? colors.primary
-                                      : colors.textTertiary,
+                                      ? CyberHomeColors.success
+                                      : CyberHomeColors.inkFaint,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -697,7 +706,7 @@ class _VehicleCard extends StatelessWidget {
                                 statusLabel,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: colors.textSecondary,
+                                  color: CyberHomeColors.inkMuted,
                                 ),
                               ),
                               Container(
@@ -706,14 +715,14 @@ class _VehicleCard extends StatelessWidget {
                                 margin: const EdgeInsets.symmetric(
                                   horizontal: 6,
                                 ),
-                                color: colors.outlineVariant,
+                                color: CyberHomeColors.line,
                               ),
                               Text(
                                 batteryLabel,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: colors.textSecondary,
-                                  fontFeatures: _Aurora.tabularNums,
+                                  color: CyberHomeColors.inkMuted,
+                                  fontFeatures: _Mine.tabularNums,
                                 ),
                               ),
                             ],
@@ -734,14 +743,14 @@ class _VehicleCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: colors.textSecondary,
+                        color: CyberHomeColors.inkSecondary,
                         letterSpacing: 0,
                       ),
                     ),
                     LucideIcon(
                       Lucide.chevronRight,
                       size: 16,
-                      color: VoidColors.inkMuted,
+                      color: CyberHomeColors.inkFaint,
                     ),
                   ],
                 ),
@@ -775,23 +784,32 @@ class _SupportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     final rows = <_SupportRowData>[
-      _SupportRowData(title: '设置', onTap: onSettings),
-      _SupportRowData(title: '消息中心', badge: messageBadge, onTap: onMessages),
-      _SupportRowData(title: '帮助与反馈', onTap: onHelp),
-      _SupportRowData(title: '关于我们', onTap: onAbout),
+      _SupportRowData(icon: Lucide.tune, title: '设置', onTap: onSettings),
+      _SupportRowData(
+        icon: Lucide.message,
+        title: '消息中心',
+        badge: messageBadge,
+        onTap: onMessages,
+      ),
+      _SupportRowData(icon: Lucide.help, title: '帮助与反馈', onTap: onHelp),
+      _SupportRowData(icon: Lucide.info, title: '关于我们', onTap: onAbout),
     ];
 
-    return VoidGlassCard(
-      margin: _Aurora.cardMargin,
+    return Container(
+      margin: _Mine.cardMargin,
       padding: EdgeInsets.zero,
+      decoration: _Mine.cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var i = 0; i < rows.length; i++) ...[
             if (i > 0)
-              Divider(height: 1, thickness: 1, color: colors.outlineVariant),
+              const Divider(
+                height: 1,
+                thickness: 1,
+                color: CyberHomeColors.line,
+              ),
             _SupportRow(data: rows[i]),
           ],
         ],
@@ -801,8 +819,14 @@ class _SupportCard extends StatelessWidget {
 }
 
 class _SupportRowData {
-  const _SupportRowData({required this.title, required this.onTap, this.badge});
+  const _SupportRowData({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.badge,
+  });
 
+  final IconData icon;
   final String title;
   final VoidCallback onTap;
   final int? badge;
@@ -815,12 +839,11 @@ class _SupportRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     final badge = data.badge;
     return AppPressable(
       onTap: data.onTap,
       pressedScale: AppMotion.pressScale,
-      pressedBackground: colors.surfaceContainerHigh,
+      pressedBackground: CyberHomeColors.cardMuted,
       semanticsLabel: data.title,
       semanticsButton: true,
       child: ConstrainedBox(
@@ -830,6 +853,21 @@ class _SupportRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           child: Row(
             children: [
+              Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: CyberHomeColors.primarySoft,
+                  shape: BoxShape.circle,
+                ),
+                child: LucideIcon(
+                  data.icon,
+                  size: 18,
+                  color: CyberHomeColors.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   data.title,
@@ -839,7 +877,7 @@ class _SupportRow extends StatelessWidget {
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0,
-                    color: colors.textPrimary,
+                    color: CyberHomeColors.ink,
                   ),
                 ),
               ),
@@ -849,7 +887,7 @@ class _SupportRow extends StatelessWidget {
                   height: 18,
                   padding: const EdgeInsets.symmetric(horizontal: 5),
                   decoration: BoxDecoration(
-                    color: colors.danger,
+                    color: CyberHomeColors.danger,
                     borderRadius: BorderRadius.circular(AppRadii.pill),
                   ),
                   alignment: Alignment.center,
@@ -858,9 +896,9 @@ class _SupportRow extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: CyberHomeColors.white,
                       height: 1,
-                      fontFeatures: _Aurora.tabularNums,
+                      fontFeatures: _Mine.tabularNums,
                     ),
                   ),
                 ),
@@ -869,7 +907,7 @@ class _SupportRow extends StatelessWidget {
               const LucideIcon(
                 Lucide.chevronRight,
                 size: 16,
-                color: VoidColors.inkFaint,
+                color: CyberHomeColors.inkFaint,
               ),
             ],
           ),
@@ -897,15 +935,15 @@ class _AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return VoidGlassCard(
-      margin: _Aurora.cardMargin,
+    return Container(
+      margin: _Mine.cardMargin,
       padding: EdgeInsets.zero,
+      decoration: _Mine.cardDecoration,
       child: Column(
         children: [
           AppPressable(
             onTap: onPhoneTap,
-            pressedBackground: colors.surfaceContainerHigh,
+            pressedBackground: CyberHomeColors.cardMuted,
             semanticsLabel: '手机号 $phoneValue',
             semanticsButton: true,
             child: ConstrainedBox(
@@ -924,7 +962,7 @@ class _AccountCard extends StatelessWidget {
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0,
-                          color: colors.textPrimary,
+                          color: CyberHomeColors.ink,
                         ),
                       ),
                     ),
@@ -932,15 +970,15 @@ class _AccountCard extends StatelessWidget {
                       phoneValue,
                       style: TextStyle(
                         fontSize: 14,
-                        color: colors.textTertiary,
-                        fontFeatures: _Aurora.tabularNums,
+                        color: CyberHomeColors.inkMuted,
+                        fontFeatures: _Mine.tabularNums,
                       ),
                     ),
                     const SizedBox(width: 4),
                     const LucideIcon(
                       Lucide.chevronRight,
                       size: 16,
-                      color: VoidColors.inkFaint,
+                      color: CyberHomeColors.inkFaint,
                     ),
                   ],
                 ),
@@ -948,10 +986,10 @@ class _AccountCard extends StatelessWidget {
             ),
           ),
           if (showLogout) ...[
-            Divider(height: 1, thickness: 1, color: colors.outlineVariant),
+            const Divider(height: 1, thickness: 1, color: CyberHomeColors.line),
             AppPressable(
               onTap: onLogoutTap,
-              pressedBackground: colors.surfaceContainerHigh,
+              pressedBackground: CyberHomeColors.cardMuted,
               semanticsLabel: '退出登录',
               semanticsButton: true,
               child: ConstrainedBox(
@@ -962,7 +1000,7 @@ class _AccountCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: colors.danger,
+                      color: CyberHomeColors.danger,
                     ),
                   ),
                 ),
@@ -983,15 +1021,13 @@ class _LogoutSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: const BorderRadius.vertical(
+      decoration: const BoxDecoration(
+        color: CyberHomeColors.card,
+        borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppRadii.sheet),
         ),
-        boxShadow: dark ? const [] : AppShadows.sheetShadow,
+        boxShadow: AppShadows.sheetShadow,
       ),
       padding: EdgeInsets.fromLTRB(
         16,
@@ -1007,7 +1043,7 @@ class _LogoutSheet extends StatelessWidget {
             height: 4,
             margin: const EdgeInsets.only(bottom: 14),
             decoration: BoxDecoration(
-              color: colors.outlineVariant,
+              color: CyberHomeColors.lineStrong,
               borderRadius: BorderRadius.circular(AppRadii.pill),
             ),
           ),
@@ -1017,7 +1053,7 @@ class _LogoutSheet extends StatelessWidget {
               fontSize: 17,
               fontWeight: FontWeight.w700,
               letterSpacing: 0,
-              color: colors.textPrimary,
+              color: CyberHomeColors.ink,
             ),
           ),
           const SizedBox(height: 6),
@@ -1029,7 +1065,7 @@ class _LogoutSheet extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 height: 1.5,
-                color: colors.textSecondary,
+                color: CyberHomeColors.inkMuted,
               ),
             ),
           ),
@@ -1037,8 +1073,8 @@ class _LogoutSheet extends StatelessWidget {
           AppPressable(
             onTap: () => Navigator.of(context).pop(true),
             pressedScale: AppMotion.pressScale,
-            borderRadius: BorderRadius.circular(AppRadii.md),
-            background: colors.danger,
+            borderRadius: BorderRadius.circular(AppRadii.tile),
+            background: CyberHomeColors.danger,
             semanticsLabel: '确认退出',
             semanticsButton: true,
             child: const SizedBox(
@@ -1050,7 +1086,7 @@ class _LogoutSheet extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: CyberHomeColors.white,
                     letterSpacing: 0.1,
                   ),
                 ),
@@ -1061,8 +1097,8 @@ class _LogoutSheet extends StatelessWidget {
           AppPressable(
             onTap: () => Navigator.of(context).pop(false),
             pressedScale: AppMotion.pressScale,
-            borderRadius: BorderRadius.circular(AppRadii.md),
-            background: colors.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(AppRadii.tile),
+            background: CyberHomeColors.cardMuted,
             semanticsLabel: '取消',
             semanticsButton: true,
             child: SizedBox(
@@ -1074,7 +1110,7 @@ class _LogoutSheet extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: colors.textSecondary,
+                    color: CyberHomeColors.inkSecondary,
                     letterSpacing: 0,
                   ),
                 ),
@@ -1098,21 +1134,20 @@ class _PreviewBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     final items = const [
       (Lucide.vehicle, '控车'),
       (Lucide.service, '服务'),
       (Lucide.mine, '我的'),
     ];
     return Material(
-      color: colors.surface.withValues(alpha: 0.96),
+      color: CyberHomeColors.card,
       elevation: 0,
       child: SafeArea(
         top: false,
         child: Container(
           height: 56,
-          decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: colors.outlineVariant)),
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: CyberHomeColors.line)),
           ),
           child: Row(
             children: [
@@ -1131,8 +1166,8 @@ class _PreviewBottomNav extends StatelessWidget {
                           items[i].$1,
                           size: 22,
                           color: currentIndex == i
-                              ? VoidColors.energy
-                              : VoidColors.inkFaint,
+                              ? CyberHomeColors.primary
+                              : CyberHomeColors.inkFaint,
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -1142,8 +1177,8 @@ class _PreviewBottomNav extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0,
                             color: currentIndex == i
-                                ? VoidColors.energy
-                                : VoidColors.inkFaint,
+                                ? CyberHomeColors.primary
+                                : CyberHomeColors.inkFaint,
                           ),
                         ),
                       ],
