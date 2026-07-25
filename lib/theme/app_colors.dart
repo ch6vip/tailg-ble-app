@@ -450,8 +450,8 @@ abstract final class AppTouchTargets {
 
 abstract final class AppNav {
   /// Floating orbital nav clearance (VoidOrbitalNav.barHeight + margin).
-  static const barBaseHeight = 96.0;
-  static const contentBottomPadding = 118.0;
+  static const barBaseHeight = 84.0;
+  static const contentBottomPadding = 104.0;
 }
 
 abstract final class AppTextStyles {

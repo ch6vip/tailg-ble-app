@@ -26,13 +26,13 @@ class VoidOrbitalNav extends StatelessWidget {
   final VoidCallback onVehicle;
   final VoidCallback onMine;
 
-  static const double barHeight = 76;
+  static const double barHeight = 64;
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     return Padding(
-      padding: EdgeInsets.fromLTRB(18, 0, 18, 10 + bottomInset * 0.45),
+      padding: EdgeInsets.fromLTRB(24, 0, 24, 8 + bottomInset * 0.45),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppRadii.pill),
         child: BackdropFilter(
@@ -122,7 +122,7 @@ class _NavItem extends StatelessWidget {
           key: itemKey,
           height: VoidOrbitalNav.barHeight,
           child: Padding(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(4),
             child: AnimatedContainer(
               duration: AppMotion.standard,
               curve: AppMotion.pressCurve,
@@ -135,15 +135,15 @@ class _NavItem extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  LucideIcon(icon, size: 24, color: color, strokeWidth: 1.9),
-                  const SizedBox(height: 4),
+                  LucideIcon(icon, size: 21, color: color, strokeWidth: 1.9),
+                  const SizedBox(height: 3),
                   AnimatedDefaultTextStyle(
                     duration: AppMotion.micro,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 10,
                       height: 1,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                      letterSpacing: 0.2,
+                      letterSpacing: 0,
                       color: color,
                     ),
                     child: Text(label),

@@ -88,12 +88,15 @@ void main() {
     expect(vehicleItemFinder, findsOneWidget);
     expect(mineItemFinder, findsOneWidget);
 
-    // Cyber floating pill is 76; system inset is 0 in tests.
+    // Cyber floating pill is 64; system inset is 0 in tests.
     // All three tabs share the same slot height (no raised center icon).
-    expect(tester.getSize(barFinder).height, 76);
-    expect(tester.getSize(serviceItemFinder).height, 76);
-    expect(tester.getSize(vehicleItemFinder).height, 76);
-    expect(tester.getSize(mineItemFinder).height, 76);
+    expect(tester.getSize(barFinder).height, 64);
+    expect(tester.getSize(serviceItemFinder).height, 64);
+    expect(tester.getSize(vehicleItemFinder).height, 64);
+    expect(tester.getSize(mineItemFinder).height, 64);
+    expect(tester.getSize(serviceItemFinder).height, greaterThanOrEqualTo(44));
+    expect(tester.getSize(vehicleItemFinder).height, greaterThanOrEqualTo(44));
+    expect(tester.getSize(mineItemFinder).height, greaterThanOrEqualTo(44));
 
     final barTop = tester.getTopLeft(barFinder).dy;
     final serviceTop = tester.getTopLeft(serviceItemFinder).dy;
