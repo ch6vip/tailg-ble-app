@@ -112,6 +112,8 @@ void main() {
     // Cyber shell shortcuts (no VOID section title 「控车」).
     expect(find.text('寻车'), findsWidgets);
     expect(find.text('滑动开锁'), findsWidgets);
+    expect(find.textContaining('点击通电'), findsNothing);
+    expect(find.textContaining('点击断电'), findsNothing);
     final navCard = find.byKey(const ValueKey('cyber-nav-card'));
     expect(tester.getTopLeft(navCard).dy, closeTo(844, 0.1));
     expect(tester.takeException(), isNull);

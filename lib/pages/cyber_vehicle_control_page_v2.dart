@@ -619,19 +619,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     return false;
   }
 
-  Future<void> _sendPower() async {
-    if (_busy) {
-      AppSnack.error(context, '正在执行控车指令，请稍候');
-      return;
-    }
-    if (!await _ensureKnownControlState(power: true)) return;
-    if (!mounted) return;
-    final isPowerOn = _currentPowerState();
-    if (isPowerOn == null) return;
-    final cmd = isPowerOn ? CommandCode.powerOff : CommandCode.powerOn;
-    await _sendCommand(cmd);
-  }
-
   Future<void> _sendArmToggle() async {
     if (!await _ensureKnownControlState(lock: true)) return;
     final locked = _currentLockState();
@@ -1506,11 +1493,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
                       durationSeries: lastRide.$4,
                       onMapTap: _openLocation,
                       onBatteryTap: _openBattery,
-                    ),
-                    const SizedBox(height: 16),
-                    _CyberPowerControl(
-                      powered: isPowerOn,
-                      onTap: () => unawaited(_sendPower()),
                     ),
                     if (_commands.isNotEmpty) ...[
                       const SizedBox(height: 16),
@@ -2765,61 +2747,6 @@ class _CircleKey extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CyberPowerControl extends StatelessWidget {
-  const _CyberPowerControl({required this.powered, required this.onTap});
-
-  final bool? powered;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: _Cyber.cardMargin,
-      child: AppPressable(
-        onTap: onTap,
-        semanticsLabel: powered == true ? '断电' : '通电',
-        semanticsButton: true,
-        child: Container(
-          width: double.infinity,
-          height: AppTouchTargets.min,
-          decoration: BoxDecoration(
-            color: powered == true
-                ? _Cyber.primary.withValues(alpha: 0.12)
-                : _Cyber.soft,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: powered == true
-                  ? _Cyber.primary.withValues(alpha: 0.3)
-                  : _Cyber.line,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              LucideIcon(
-                Lucide.power,
-                size: 18,
-                color: powered == true ? _Cyber.primary : _Cyber.muted,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                powered == null
-                    ? '电源未知 · 点击刷新后重试'
-                    : (powered! ? '已通电 · 点击断电' : '已断电 · 点击通电'),
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: powered == true ? _Cyber.primary : _Cyber.ink2,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
