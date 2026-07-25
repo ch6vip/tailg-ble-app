@@ -1030,17 +1030,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     );
   }
 
-  bool _shouldShowNearFieldBanner(OfficialVehicle? vehicle) {
-    if (vehicle == null) return false;
-    if (vehicle.normalizedDeviceMac.isEmpty) return false;
-    // Keep the hero BLE action as the single connection-status surface.
-    // The banner remains an idle hint, but disappears as soon as a connection
-    // attempt starts so the header does not show two BLE indicators.
-    return !_nearFieldBusy &&
-        connectionManager.state == ble.ConnectionState.disconnected &&
-        !connectionManager.isProtocolLoggedIn;
-  }
-
   /// Six-key / disabled path copy: surface permission before generic BLE text.
   String _controlDisabledMessage(ControlChannelAvailability availability) {
     final perm = _blePermission;
@@ -1070,7 +1059,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
 
   List<Widget> _buildHomeGates({
     required OfficialCloudState cloudState,
-    required OfficialVehicle? cloudVehicle,
     required bool signedIn,
     required bool hasVehicle,
   }) {
@@ -1079,7 +1067,9 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
       hasVehicle: hasVehicle,
       loading: cloudState.loading,
       error: cloudState.error,
-      showNearFieldHint: _shouldShowNearFieldBanner(cloudVehicle),
+      // BLE entry and state already live in the vehicle header. Keeping the
+      // near-field hint disabled avoids a second full-width BLE surface.
+      showNearFieldHint: false,
     );
     switch (kind) {
       case VehicleControlHomeGateKind.signedOut:
@@ -1126,35 +1116,10 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
           ),
         ];
       case VehicleControlHomeGateKind.nearField:
-        return [_buildNearFieldBanner()];
+        return const [];
       case VehicleControlHomeGateKind.none:
         return const [];
     }
-  }
-
-  Widget _buildNearFieldBanner() {
-    final perm = _blePermission;
-    if (perm != null && !perm.granted) {
-      if (perm.openSettingsRecommended) {
-        return VehicleControlGateBanner(
-          title: '权限被关闭，请到系统设置开启蓝牙和定位',
-          actionLabel: '去设置',
-          onAction: () {
-            unawaited(permissionService.openSystemSettings());
-          },
-        );
-      }
-      return VehicleControlGateBanner(
-        title: '需要蓝牙和定位权限才能本地控车',
-        actionLabel: '授权并连接',
-        onAction: () => unawaited(_manualNearFieldConnect()),
-      );
-    }
-    return VehicleControlGateBanner(
-      title: '车辆在附近时可连接蓝牙本地控车',
-      actionLabel: '连接蓝牙',
-      onAction: () => unawaited(_manualNearFieldConnect()),
-    );
   }
 
   String _vehicleName(OfficialVehicle? cloudVehicle) {
@@ -1453,7 +1418,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
                 child: Column(
                   children: _buildHomeGates(
                     cloudState: cloudState,
-                    cloudVehicle: cloudVehicle,
                     signedIn: signedIn,
                     hasVehicle: hasVehicle,
                   ),
@@ -1835,7 +1799,7 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get minExtent => 142;
 
   @override
-  double get maxExtent => alert == null ? 510 : 576;
+  double get maxExtent => alert == null ? 440 : 506;
 
   @override
   Widget build(

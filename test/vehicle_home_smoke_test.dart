@@ -101,6 +101,7 @@ void main() {
     expect(find.textContaining('1.7 bar'), findsOneWidget);
     expect(find.text('车辆电量过低，请及时充电'), findsOneWidget);
     expect(find.byKey(const ValueKey('cyber-home-alert')), findsOneWidget);
+    expect(find.text('车辆在附近时可连接蓝牙本地控车'), findsNothing);
     await tester.pump(const Duration(milliseconds: 120));
 
     // Channel controls stay available from the compact status line without
@@ -122,7 +123,7 @@ void main() {
     );
 
     final header = find.byKey(const ValueKey('cyber-collapsing-header'));
-    expect(tester.getSize(header).height, greaterThan(500));
+    expect(tester.getSize(header).height, closeTo(506, 0.1));
     expect(
       tester
           .widget<Opacity>(
