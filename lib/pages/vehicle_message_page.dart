@@ -9,10 +9,7 @@ import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_void.dart';
 import '../theme/app_motion.dart';
-import '../widgets/app_chrome.dart';
-import '../widgets/void_canvas.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import 'official_cloud_page.dart';
@@ -264,7 +261,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
     if (!mounted) return;
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: CyberHomeColors.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
       ),
@@ -288,74 +285,25 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
         .where((message) => !_readIds.contains(message.id))
         .length;
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        child: SafeArea(
-          child: Column(
-            children: [
-              AppPageHeader(
-                title: '消息中心',
-                actions: [
-                  IconButton(
-                    tooltip: '全部已读',
-                    onPressed: !signedIn || all.isEmpty ? null : _markReadAll,
-                    icon: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        const Icon(Lucide.check, semanticLabel: '全部已读'),
-                        if (unreadCount > 0)
-                          Positioned(
-                            right: -6,
-                            top: -6,
-                            child: Container(
-                              width: 16,
-                              height: 16,
-                              decoration: const BoxDecoration(
-                                color: AppColors.danger,
-                                shape: BoxShape.circle,
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                unreadCount > 9 ? '9+' : unreadCount.toString(),
-                                style: const TextStyle(
-                                  fontSize: 9,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: '清空全部消息',
-                    onPressed: !signedIn || all.isEmpty || _clearing
-                        ? null
-                        : _clearAllMessages,
-                    icon: _clearing
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Lucide.trash, semanticLabel: '清空全部消息'),
-                  ),
-                  IconButton(
-                    tooltip: '刷新',
-                    onPressed: _loading
-                        ? null
-                        : () => _refreshMessages(force: true),
-                    icon: const Icon(Lucide.refresh),
-                  ),
-                ],
-              ),
-              _buildTabs(),
-              Expanded(
-                child: _buildBody(signedIn: signedIn, tabMessages: tabMessages),
-              ),
-            ],
-          ),
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _MessageHeader(
+              unreadCount: unreadCount,
+              canMarkRead: signedIn && all.isNotEmpty,
+              canClear: signedIn && all.isNotEmpty && !_clearing,
+              clearing: _clearing,
+              refreshing: _loading,
+              onMarkRead: () => unawaited(_markReadAll()),
+              onClear: () => unawaited(_clearAllMessages()),
+              onRefresh: () => unawaited(_refreshMessages(force: true)),
+            ),
+            _buildTabs(),
+            Expanded(
+              child: _buildBody(signedIn: signedIn, tabMessages: tabMessages),
+            ),
+          ],
         ),
       ),
     );
@@ -366,71 +314,41 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
     required List<List<_VehicleMessage>> tabMessages,
   }) {
     if (!signedIn) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const AppEmptyState(
-                icon: Lucide.lock,
-                title: OfficialCloudMessages.signInRequired,
-                subtitle: '登录后可同步官方车辆消息与系统通知。',
-                padding: EdgeInsets.zero,
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () {
-                  unawaited(
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const OfficialCloudPage(),
-                      ),
-                    ),
-                  );
-                },
-                child: const Text('去登录'),
-              ),
-            ],
+      return _MessageState(
+        icon: Lucide.lock,
+        title: OfficialCloudMessages.signInRequired,
+        subtitle: '登录后可同步车辆消息与系统通知',
+        actionLabel: '去登录',
+        onAction: () => unawaited(
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
           ),
         ),
       );
     }
 
     if (_loading && !_initialized) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: CyberHomeColors.primary),
+      );
     }
 
     if (_error != null && tabMessages[0].isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppEmptyState(
-                icon: Lucide.wifiOff,
-                title: '消息加载失败',
-                subtitle: _error,
-                padding: EdgeInsets.zero,
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _loading
-                    ? null
-                    : () => _refreshMessages(force: true),
-                child: const Text('重试'),
-              ),
-            ],
-          ),
-        ),
+      return _MessageState(
+        icon: Lucide.wifiOff,
+        title: '消息加载失败',
+        subtitle: _error,
+        actionLabel: '重试',
+        onAction: _loading
+            ? null
+            : () => unawaited(_refreshMessages(force: true)),
       );
     }
 
     return RefreshIndicator(
       onRefresh: () => _refreshMessages(force: true),
-      color: VoidColors.energy,
-      backgroundColor: VoidColors.voidPanel,
+      color: CyberHomeColors.primary,
+      backgroundColor: CyberHomeColors.card,
       child: TabBarView(
         controller: _tabController,
         children: [
@@ -447,60 +365,231 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
 
   Widget _buildTabs() {
     const tabs = ['全部', '系统消息', '设备消息'];
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.outlineVariant, width: 1),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
+      child: Container(
+        height: AppTouchTargets.min,
+        decoration: BoxDecoration(
+          color: CyberHomeColors.control,
+          borderRadius: BorderRadius.circular(AppRadii.tile),
         ),
-      ),
-      child: Row(
-        children: List.generate(3, (i) {
-          final active = _activeTab == i;
-          void selectTab() => _tabController.animateTo(i);
-          return Expanded(
-            child: AppPressable(
-              onTap: selectTab,
-              haptic: false,
-              semanticsLabel: tabs[i],
-              semanticsButton: true,
-              semanticsEnabled: true,
-              semanticsSelected: active,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minHeight: AppTouchTargets.min,
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Text(
-                        tabs[i],
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: active
-                              ? AppColors.primary
-                              : AppColors.textTertiary,
-                        ),
+        child: Row(
+          children: List.generate(3, (i) {
+            final active = _activeTab == i;
+            void selectTab() => _tabController.animateTo(i);
+            return Expanded(
+              child: AppPressable(
+                onTap: selectTab,
+                haptic: false,
+                semanticsLabel: tabs[i],
+                semanticsButton: true,
+                semanticsEnabled: true,
+                semanticsSelected: active,
+                child: Padding(
+                  padding: const EdgeInsets.all(3),
+                  child: AnimatedContainer(
+                    duration: AppMotion.tabIndicator,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: active
+                          ? CyberHomeColors.card
+                          : CyberHomeColors.transparent,
+                      borderRadius: BorderRadius.circular(AppRadii.xs),
+                      boxShadow: active
+                          ? AppShadows.cyberActionShadow
+                          : const [],
+                    ),
+                    child: Text(
+                      tabs[i],
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                        color: active
+                            ? CyberHomeColors.ink
+                            : CyberHomeColors.inkMuted,
                       ),
                     ),
-                    AnimatedContainer(
-                      duration: AppMotion.tabIndicator,
-                      height: 2,
-                      margin: const EdgeInsets.symmetric(horizontal: 20),
-                      decoration: BoxDecoration(
-                        color: active ? AppColors.primary : Colors.transparent,
-                        borderRadius: BorderRadius.circular(1),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+}
+
+class _MessageHeader extends StatelessWidget {
+  const _MessageHeader({
+    required this.unreadCount,
+    required this.canMarkRead,
+    required this.canClear,
+    required this.clearing,
+    required this.refreshing,
+    required this.onMarkRead,
+    required this.onClear,
+    required this.onRefresh,
+  });
+
+  final int unreadCount;
+  final bool canMarkRead;
+  final bool canClear;
+  final bool clearing;
+  final bool refreshing;
+  final VoidCallback onMarkRead;
+  final VoidCallback onClear;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+      child: Row(
+        children: [
+          _HeaderButton(
+            icon: Lucide.arrowLeft,
+            label: '返回',
+            onTap: () => Navigator.of(context).pop(),
+            filled: true,
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              '消息中心',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: CyberHomeColors.ink,
+              ),
             ),
-          );
-        }),
+          ),
+          _HeaderButton(
+            icon: Lucide.check,
+            label: '全部已读',
+            enabled: canMarkRead,
+            badge: unreadCount,
+            onTap: onMarkRead,
+          ),
+          _HeaderButton(
+            icon: Lucide.trash,
+            label: '清空全部消息',
+            enabled: canClear,
+            loading: clearing,
+            onTap: onClear,
+          ),
+          _HeaderButton(
+            icon: Lucide.refresh,
+            label: '刷新',
+            enabled: !refreshing,
+            loading: refreshing,
+            onTap: onRefresh,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeaderButton extends StatelessWidget {
+  const _HeaderButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.enabled = true,
+    this.filled = false,
+    this.loading = false,
+    this.badge = 0,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool enabled;
+  final bool filled;
+  final bool loading;
+  final int badge;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: label,
+      excludeFromSemantics: true,
+      child: AppPressable(
+        onTap: onTap,
+        enabled: enabled,
+        semanticsLabel: label,
+        semanticsButton: true,
+        semanticsEnabled: enabled,
+        child: SizedBox(
+          width: AppTouchTargets.min,
+          height: AppTouchTargets.min,
+          child: Center(
+            child: Container(
+              width: filled ? AppTouchTargets.min : 36,
+              height: filled ? AppTouchTargets.min : 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: filled
+                    ? CyberHomeColors.card
+                    : CyberHomeColors.transparent,
+                shape: BoxShape.circle,
+                boxShadow: filled ? AppShadows.cyberActionShadow : const [],
+              ),
+              child: loading
+                  ? const SizedBox(
+                      width: 17,
+                      height: 17,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.8,
+                        color: CyberHomeColors.primary,
+                      ),
+                    )
+                  : Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        LucideIcon(
+                          icon,
+                          size: 20,
+                          color: enabled
+                              ? CyberHomeColors.inkSecondary
+                              : CyberHomeColors.inkFaint,
+                        ),
+                        if (badge > 0)
+                          Positioned(
+                            right: -8,
+                            top: -7,
+                            child: Container(
+                              constraints: const BoxConstraints(minWidth: 16),
+                              height: 16,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 3,
+                              ),
+                              alignment: Alignment.center,
+                              decoration: const BoxDecoration(
+                                color: CyberHomeColors.danger,
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(AppRadii.pill),
+                                ),
+                              ),
+                              child: Text(
+                                badge > 9 ? '9+' : '$badge',
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: CyberHomeColors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -524,7 +613,7 @@ class _MessageList extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
-        children: const [SizedBox(height: 120), _EmptyMessageState()],
+        children: const [SizedBox(height: 100), _EmptyMessageState()],
       );
     }
 
@@ -532,7 +621,7 @@ class _MessageList extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final message = messages[index];
@@ -541,80 +630,110 @@ class _MessageList extends StatelessWidget {
         final semanticsLabel =
             '${message.title}，${message.subtitle}，${message.category.label}，$readLabel';
         void openMessage() => onOpen(message);
-        final card = InkWell(
-          onTap: openMessage,
-          borderRadius: BorderRadius.circular(AppRadii.lg),
-          child: AppCard(
-            margin: EdgeInsets.zero,
-            color: read
-                ? Colors.white
-                : message.severity.color.withValues(alpha: 0.06),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _MessageIcon(message: message, read: read),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              message.title,
-                              style: AppTextStyles.bodyLarge,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            formatMonthDayMinuteText(message.time),
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        message.subtitle,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          height: 1.4,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _Tag(text: message.category.label),
-                          const SizedBox(width: 8),
-                          _Tag(text: readLabel),
-                          const Spacer(),
-                          const Icon(
-                            Lucide.chevronRight,
-                            size: AppIconSizes.sm,
-                            color: AppColors.textTertiary,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
         return RepaintBoundary(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-            child: Semantics(
-              label: semanticsLabel,
-              button: true,
-              enabled: true,
+            padding: const EdgeInsets.only(top: 10),
+            child: AppPressable(
               onTap: openMessage,
-              child: ExcludeSemantics(child: card),
+              semanticsLabel: semanticsLabel,
+              semanticsButton: true,
+              semanticsEnabled: true,
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: read
+                      ? CyberHomeColors.card
+                      : message.severity.color.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(AppRadii.tile),
+                  border: Border.all(
+                    color: read
+                        ? CyberHomeColors.line
+                        : message.severity.color.withValues(alpha: 0.16),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _MessageIcon(message: message, read: read),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  message.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: CyberHomeColors.ink,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                formatMonthDayMinuteText(message.time),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: CyberHomeColors.inkFaint,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            message.subtitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: CyberHomeColors.inkMuted,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              _Tag(text: message.category.label),
+                              const SizedBox(width: 8),
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: read
+                                      ? CyberHomeColors.inkFaint
+                                      : message.severity.color,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                readLabel,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: CyberHomeColors.inkMuted,
+                                ),
+                              ),
+                              const Spacer(),
+                              const LucideIcon(
+                                Lucide.chevronRight,
+                                size: AppIconSizes.sm,
+                                color: CyberHomeColors.inkFaint,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         );
@@ -631,15 +750,16 @@ class _MessageIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = read ? AppColors.textTertiary : message.severity.color;
+    final color = read ? CyberHomeColors.inkFaint : message.severity.color;
     return Container(
       width: 42,
       height: 42,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         shape: BoxShape.circle,
       ),
-      child: Icon(message.icon, color: color, size: AppIconSizes.md),
+      child: LucideIcon(message.icon, color: color, size: AppIconSizes.md),
     );
   }
 }
@@ -654,14 +774,14 @@ class _Tag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.pageBg,
+        color: CyberHomeColors.control,
         borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
       child: Text(
         text,
         style: const TextStyle(
           fontSize: 10,
-          color: AppColors.textSecondary,
+          color: CyberHomeColors.inkMuted,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -689,7 +809,14 @@ class _MessageDetailSheet extends StatelessWidget {
                 _MessageIcon(message: message, read: false),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(message.title, style: AppTextStyles.sectionTitle),
+                  child: Text(
+                    message.title,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w700,
+                      color: CyberHomeColors.ink,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -699,7 +826,7 @@ class _MessageDetailSheet extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 height: 1.55,
-                color: AppColors.textSecondary,
+                color: CyberHomeColors.inkMuted,
               ),
             ),
             const SizedBox(height: 18),
@@ -714,10 +841,106 @@ class _MessageDetailSheet extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: FilledButton(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  backgroundColor: CyberHomeColors.primary,
+                  foregroundColor: CyberHomeColors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.tile),
+                  ),
+                ),
                 onPressed: () => Navigator.pop(context),
                 child: const Text('知道了'),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MessageState extends StatelessWidget {
+  const _MessageState({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final actionLabel = this.actionLabel;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: CyberHomeColors.card,
+                shape: BoxShape.circle,
+                boxShadow: AppShadows.cyberActionShadow,
+              ),
+              child: LucideIcon(
+                icon,
+                size: 28,
+                color: CyberHomeColors.inkMuted,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: CyberHomeColors.ink,
+              ),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 7),
+              Text(
+                subtitle!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.45,
+                  color: CyberHomeColors.inkMuted,
+                ),
+              ),
+            ],
+            if (actionLabel != null) ...[
+              const SizedBox(height: 18),
+              SizedBox(
+                width: 148,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(46),
+                    backgroundColor: CyberHomeColors.primary,
+                    foregroundColor: CyberHomeColors.white,
+                    disabledBackgroundColor: CyberHomeColors.controlStrong,
+                    disabledForegroundColor: CyberHomeColors.inkFaint,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.tile),
+                    ),
+                  ),
+                  onPressed: onAction,
+                  child: Text(actionLabel),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -730,12 +953,10 @@ class _EmptyMessageState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: AppEmptyState(
-        icon: Lucide.message,
-        title: '暂无消息',
-        subtitle: '官方车辆告警、系统通知会显示在这里。',
-      ),
+    return const _MessageState(
+      icon: Lucide.message,
+      title: '暂无消息',
+      subtitle: '车辆告警和系统通知会显示在这里',
     );
   }
 }
@@ -769,9 +990,9 @@ enum _VehicleMessageCategory {
 }
 
 enum _VehicleMessageSeverity {
-  info(AppColors.info),
-  warning(AppColors.warning),
-  error(AppColors.danger);
+  info(CyberHomeColors.primary),
+  warning(CyberHomeColors.warning),
+  error(CyberHomeColors.danger);
 
   final Color color;
   const _VehicleMessageSeverity(this.color);

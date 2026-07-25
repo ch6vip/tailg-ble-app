@@ -5,6 +5,7 @@ import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/official_cloud_page.dart';
 import 'package:tailg_ble_app/pages/vehicle_message_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 
@@ -137,6 +138,16 @@ void main() {
     expect(find.text('车辆移动告警'), findsOneWidget);
     expect(find.text('系统维护通知'), findsOneWidget);
     expect(find.text('请先登录官方账号'), findsNothing);
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+
+    applyTestViewSize(tester, const Size(390, 844));
+    await tester.pump();
+    expect(find.text('车辆移动告警'), findsOneWidget);
+    expect(find.text('系统维护通知'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('custom tabs keep 44dp touch targets', (tester) async {
