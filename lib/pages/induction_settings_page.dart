@@ -1,15 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../widgets/lucide_icon.dart';
 
 import '../main.dart';
 import '../services/induction_mode_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_void.dart';
-import '../widgets/app_chrome.dart';
-import '../widgets/void_canvas.dart';
+import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/lucide_icon.dart';
 
 /// 感应解锁设置页（QGJ / TLink / RSSI 统一入口）。
 ///
@@ -212,7 +210,7 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
     AppSnack.success(context, '状态已刷新');
   }
 
-  ButtonStyle _segmentStyle(AppColorsData colors) {
+  ButtonStyle _segmentStyle() {
     return ButtonStyle(
       minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
       padding: const WidgetStatePropertyAll(
@@ -223,24 +221,24 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
       ),
       foregroundColor: WidgetStateProperty.resolveWith((states) {
         return states.contains(WidgetState.selected)
-            ? Colors.white
-            : colors.textSecondary;
+            ? CyberHomeColors.white
+            : CyberHomeColors.inkMuted;
       }),
       backgroundColor: WidgetStateProperty.resolveWith((states) {
         return states.contains(WidgetState.selected)
-            ? colors.primary
-            : colors.surfaceContainerHigh;
+            ? CyberHomeColors.primary
+            : CyberHomeColors.control;
       }),
       side: WidgetStateProperty.resolveWith((states) {
         return BorderSide(
           color: states.contains(WidgetState.selected)
-              ? colors.primary
-              : colors.outlineVariant,
+              ? CyberHomeColors.primary
+              : CyberHomeColors.line,
         );
       }),
       shape: WidgetStatePropertyAll(
         RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.sm),
+          borderRadius: BorderRadius.circular(AppRadii.xs),
         ),
       ),
     );
@@ -248,164 +246,450 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     final canWrite = _snap.bleReady && _supportsInduction;
     final maxLevel = _maxDistanceLevel;
     final selection = _unlockSelection;
     final anyBusy = _busy || _snap.busy;
 
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: 24),
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _InductionHeader(
+              busy: anyBusy,
+              onRefresh: () => unawaited(_read()),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+                children: [
+                  const _SectionLabel('当前能力'),
+                  _CapabilityCard(
+                    stack: _snap.stack,
+                    helpText: _helpText,
+                    statusLine: _unlockStatusLine,
+                    bondIncomplete: _snap.bondIncomplete,
+                  ),
+                  if (!_snap.bleReady && _supportsInduction) ...[
+                    const SizedBox(height: 10),
+                    _ConnectionNotice(
+                      protocolLoggedIn: connectionManager.isProtocolLoggedIn,
+                    ),
+                  ],
+                  const SizedBox(height: 22),
+                  const _SectionLabel('解锁模式'),
+                  Container(
+                    key: const ValueKey('induction-mode-card'),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: CyberHomeColors.card,
+                      borderRadius: BorderRadius.circular(AppRadii.tile),
+                      border: Border.all(color: CyberHomeColors.line),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SegmentedButton<bool>(
+                          emptySelectionAllowed: true,
+                          segments: [
+                            ButtonSegment(
+                              value: true,
+                              icon: const LucideIcon(Lucide.sensors, size: 16),
+                              label: const Text('感应'),
+                              enabled: _supportsInduction,
+                            ),
+                            const ButtonSegment(
+                              value: false,
+                              icon: LucideIcon(Lucide.pointer, size: 16),
+                              label: Text('手动'),
+                            ),
+                          ],
+                          selected: {
+                            if (selection != null) selection,
+                            if (selection == null && !_supportsInduction) false,
+                          },
+                          showSelectedIcon: false,
+                          expandedInsets: EdgeInsets.zero,
+                          onSelectionChanged: anyBusy
+                              ? null
+                              : (next) {
+                                  if (next.isEmpty) return;
+                                  unawaited(
+                                    _selectUnlockMode(induction: next.first),
+                                  );
+                                },
+                          style: _segmentStyle(),
+                        ),
+                        if (_showDistanceSlider && selection == true) ...[
+                          const SizedBox(height: 18),
+                          const Divider(height: 1, color: CyberHomeColors.line),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  '感应距离',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: CyberHomeColors.ink,
+                                  ),
+                                ),
+                              ),
+                              _DistanceBadge(level: _distanceDraft.round()),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            '档位越高，越远就能触发解锁',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: CyberHomeColors.inkFaint,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Semantics(
+                            label: '感应距离，档位 ${_distanceDraft.round()}',
+                            child: SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                activeTrackColor: CyberHomeColors.primary,
+                                inactiveTrackColor:
+                                    CyberHomeColors.controlStrong,
+                                thumbColor: CyberHomeColors.primary,
+                                overlayColor: CyberHomeColors.primary
+                                    .withValues(alpha: 0.12),
+                                valueIndicatorColor: CyberHomeColors.ink,
+                                valueIndicatorTextStyle: const TextStyle(
+                                  color: CyberHomeColors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              child: Slider(
+                                value: _distanceDraft.clamp(
+                                  0,
+                                  maxLevel.toDouble(),
+                                ),
+                                min: 0,
+                                max: maxLevel.toDouble(),
+                                divisions: maxLevel > 0 ? maxLevel : null,
+                                label: '${_distanceDraft.round()}',
+                                onChanged: anyBusy || !canWrite
+                                    ? null
+                                    : (value) => setState(
+                                        () => _distanceDraft = value,
+                                      ),
+                                onChangeEnd: anyBusy || !canWrite
+                                    ? null
+                                    : (value) => unawaited(
+                                        _setDistance(value.round()),
+                                      ),
+                              ),
+                            ),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '近',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: CyberHomeColors.inkFaint,
+                                  ),
+                                ),
+                                Text(
+                                  '远',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: CyberHomeColors.inkFaint,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InductionHeader extends StatelessWidget {
+  const _InductionHeader({required this.busy, required this.onRefresh});
+
+  final bool busy;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      child: Row(
+        children: [
+          AppPressable(
+            key: const ValueKey('induction-settings-back'),
+            onTap: () => Navigator.of(context).pop(),
+            semanticsLabel: '返回',
+            semanticsButton: true,
+            child: Container(
+              width: AppTouchTargets.min,
+              height: AppTouchTargets.min,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: CyberHomeColors.card,
+                shape: BoxShape.circle,
+                boxShadow: AppShadows.cyberActionShadow,
+              ),
+              child: const LucideIcon(
+                Lucide.arrowLeft,
+                size: 20,
+                color: CyberHomeColors.ink,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              '感应解锁',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: CyberHomeColors.ink,
+              ),
+            ),
+          ),
+          Tooltip(
+            message: '刷新状态',
+            excludeFromSemantics: true,
+            child: AppPressable(
+              key: const ValueKey('induction-settings-refresh'),
+              onTap: onRefresh,
+              enabled: !busy,
+              semanticsLabel: '刷新状态',
+              semanticsButton: true,
+              semanticsEnabled: !busy,
+              child: SizedBox(
+                width: AppTouchTargets.min,
+                height: AppTouchTargets.min,
+                child: Center(
+                  child: busy
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.8,
+                            color: CyberHomeColors.primary,
+                          ),
+                        )
+                      : const LucideIcon(
+                          Lucide.refresh,
+                          size: 20,
+                          color: CyberHomeColors.inkSecondary,
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 0, 2, 9),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: CyberHomeColors.inkMuted,
+        ),
+      ),
+    );
+  }
+}
+
+class _CapabilityCard extends StatelessWidget {
+  const _CapabilityCard({
+    required this.stack,
+    required this.helpText,
+    required this.statusLine,
+    required this.bondIncomplete,
+  });
+
+  final InductionStack stack;
+  final String helpText;
+  final String statusLine;
+  final bool bondIncomplete;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = switch (stack) {
+      InductionStack.qgj || InductionStack.tlink => '车辆感应',
+      InductionStack.rssi => '蓝牙信号感应',
+      InductionStack.none => '手动控车',
+    };
+    final icon = switch (stack) {
+      InductionStack.qgj || InductionStack.tlink => Lucide.sensors,
+      InductionStack.rssi => Lucide.bluetooth,
+      InductionStack.none => Lucide.pointer,
+    };
+    return Container(
+      key: const ValueKey('induction-capability-card'),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: CyberHomeColors.card,
+        borderRadius: BorderRadius.circular(AppRadii.tile),
+        border: Border.all(color: CyberHomeColors.line),
+        boxShadow: AppShadows.cyberCardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const AppPageHeader(title: '感应解锁'),
-              AppCard(
+              Container(
+                width: 42,
+                height: 42,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: CyberHomeColors.primarySoft,
+                  shape: BoxShape.circle,
+                ),
+                child: LucideIcon(
+                  icon,
+                  size: 21,
+                  color: CyberHomeColors.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _helpText,
+                      title,
                       style: const TextStyle(
-                        fontSize: 13,
-                        height: 1.45,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    if (!_snap.bleReady && _supportsInduction) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        connectionManager.isProtocolLoggedIn
-                            ? '蓝牙已连接，正在同步状态…'
-                            : '当前未完成蓝牙协议登录，开关可能不可用。请返回爱车页连接车辆。',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      '解锁模式',
-                      style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
+                        color: CyberHomeColors.ink,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _unlockStatusLine,
+                      statusLine,
                       style: TextStyle(
                         fontSize: 12,
-                        height: 1.35,
-                        color: _snap.bondIncomplete
-                            ? colors.warning
-                            : colors.textTertiary,
+                        height: 1.4,
+                        color: bondIncomplete
+                            ? CyberHomeColors.warning
+                            : CyberHomeColors.inkMuted,
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    SegmentedButton<bool>(
-                      emptySelectionAllowed: true,
-                      segments: [
-                        ButtonSegment(
-                          value: true,
-                          icon: const Icon(Lucide.sensors, size: 16),
-                          label: const Text('感应'),
-                          enabled: _supportsInduction,
-                        ),
-                        const ButtonSegment(
-                          value: false,
-                          icon: Icon(Lucide.pointer, size: 16),
-                          label: Text('手动'),
-                        ),
-                      ],
-                      selected: {
-                        if (selection != null) selection,
-                        if (selection == null && !_supportsInduction) false,
-                      },
-                      showSelectedIcon: false,
-                      expandedInsets: EdgeInsets.zero,
-                      onSelectionChanged: anyBusy
-                          ? null
-                          : (next) {
-                              if (next.isEmpty) return;
-                              unawaited(
-                                _selectUnlockMode(induction: next.first),
-                              );
-                            },
-                      style: _segmentStyle(colors),
-                    ),
-                    if (_showDistanceSlider && selection == true) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        '感应距离  ${_distanceDraft.round()}',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        '档位越高，越远就能触发解锁',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                      Slider(
-                        value: _distanceDraft.clamp(0, maxLevel.toDouble()),
-                        min: 0,
-                        max: maxLevel.toDouble(),
-                        divisions: maxLevel > 0 ? maxLevel : null,
-                        label: '${_distanceDraft.round()}',
-                        onChanged: anyBusy || !canWrite
-                            ? null
-                            : (v) => setState(() => _distanceDraft = v),
-                        onChangeEnd: anyBusy || !canWrite
-                            ? null
-                            : (v) => unawaited(_setDistance(v.round())),
-                      ),
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '近',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
-                          Text(
-                            '远',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      onPressed: anyBusy ? null : () => unawaited(_read()),
-                      child: Text(anyBusy ? '处理中…' : '刷新状态'),
                     ),
                   ],
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 14),
+          const Divider(height: 1, color: CyberHomeColors.line),
+          const SizedBox(height: 12),
+          Text(
+            helpText,
+            style: const TextStyle(
+              fontSize: 12,
+              height: 1.55,
+              color: CyberHomeColors.inkMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConnectionNotice extends StatelessWidget {
+  const _ConnectionNotice({required this.protocolLoggedIn});
+
+  final bool protocolLoggedIn;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: CyberHomeColors.warning.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadii.tile),
+        border: Border.all(
+          color: CyberHomeColors.warning.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const LucideIcon(
+            Lucide.alertCircle,
+            size: 18,
+            color: CyberHomeColors.warning,
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              protocolLoggedIn ? '蓝牙已连接，正在同步状态…' : '当前未完成蓝牙协议登录，请返回爱车页连接车辆。',
+              style: const TextStyle(
+                fontSize: 12,
+                height: 1.45,
+                color: CyberHomeColors.inkMuted,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DistanceBadge extends StatelessWidget {
+  const _DistanceBadge({required this.level});
+
+  final int level;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 42),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: CyberHomeColors.primarySoft,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+      ),
+      child: Text(
+        '档位 $level',
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: CyberHomeColors.primary,
         ),
       ),
     );
