@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../widgets/lucide_icon.dart';
 
 import '../ble/connection_manager.dart' as ble;
 import '../main.dart';
@@ -13,12 +12,62 @@ import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_void.dart';
-import '../widgets/app_chrome.dart';
-import '../widgets/void_canvas.dart';
-import '../widgets/void_typography.dart';
+import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/lucide_icon.dart';
 import 'replace_battery_page.dart';
+
+const _batteryCardDecoration = BoxDecoration(
+  color: CyberHomeColors.card,
+  borderRadius: BorderRadius.all(Radius.circular(AppRadii.tile)),
+  border: Border.fromBorderSide(BorderSide(color: CyberHomeColors.line)),
+);
+
+const _batterySectionTitle = TextStyle(
+  fontSize: 18,
+  fontWeight: FontWeight.w700,
+  color: CyberHomeColors.ink,
+);
+
+const _batteryItemTitle = TextStyle(
+  fontSize: 15,
+  fontWeight: FontWeight.w700,
+  color: CyberHomeColors.ink,
+);
+
+const _batteryBodyText = TextStyle(
+  fontSize: 13,
+  height: 1.45,
+  color: CyberHomeColors.inkMuted,
+);
+
+const _batterySmallText = TextStyle(
+  fontSize: 12,
+  color: CyberHomeColors.inkMuted,
+);
+
+const _batteryCaptionText = TextStyle(
+  fontSize: 12,
+  color: CyberHomeColors.inkFaint,
+);
+
+final _batteryFilledButtonStyle = FilledButton.styleFrom(
+  minimumSize: const Size.fromHeight(48),
+  backgroundColor: CyberHomeColors.primary,
+  foregroundColor: CyberHomeColors.white,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(AppRadii.tile),
+  ),
+);
+
+final _batteryOutlinedButtonStyle = OutlinedButton.styleFrom(
+  minimumSize: const Size.fromHeight(48),
+  foregroundColor: CyberHomeColors.inkSecondary,
+  side: const BorderSide(color: CyberHomeColors.lineStrong),
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(AppRadii.tile),
+  ),
+);
 
 class BatteryDetailsPage extends StatelessWidget {
   const BatteryDetailsPage({super.key});
@@ -37,88 +86,86 @@ class BatteryDetailsPage extends StatelessWidget {
           officialBmsInfo: cloudState.bmsInfo,
         );
         return Scaffold(
-          backgroundColor: VoidColors.voidDeep,
-          body: VoidCanvas(
-            child: SafeArea(
-              child: RefreshIndicator(
-                onRefresh: () => _refreshAllBatteryData(context),
-                color: VoidColors.energy,
-                backgroundColor: VoidColors.voidPanel,
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(
-                    parent: BouncingScrollPhysics(),
-                  ),
-                  padding: const EdgeInsets.only(bottom: 24),
-                  children: [
-                    _BatteryHero(
-                      snapshot: data,
-                      cloudState: cloudState,
-                      onRefresh: cloudState.signedIn
-                          ? () => unawaited(_refreshAllBatteryData(context))
-                          : null,
-                      onCorrectBattery: cloudState.signedIn
-                          ? () => _showCorrectBatterySheet(context)
-                          : null,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                      child: Column(
-                        children: [
-                          _SourceStrip(snapshot: data, cloudState: cloudState),
-                          const SizedBox(height: 14),
-                          _BatterySyncCard(cloudState: cloudState),
-                          if (vehicle != null) ...[
-                            const SizedBox(height: 14),
-                            _VehicleBatteryMetaCard(vehicle: vehicle),
-                          ],
-                          const SizedBox(height: 14),
-                          _CoulombMeterCard(vehicle: vehicle),
-                          const SizedBox(height: 14),
-                          _OfficialSummaryRow(snapshot: data),
-                          const SizedBox(height: 14),
-                          _OfficialMetricGrid(
-                            snapshot: data,
-                            onCycleHelp: () => _showBatteryHelpSheet(
-                              context,
-                              title: BatteryHelpCopy.cycleTitle,
-                              sections: BatteryHelpCopy.cycleSections,
-                            ),
-                            onScoreHelp: () => _showBatteryHelpSheet(
-                              context,
-                              title: BatteryHelpCopy.scoreTitle,
-                              sections: BatteryHelpCopy.scoreSections,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          _FaultCard(snapshot: data),
-                          const SizedBox(height: 14),
-                          _BmsDetailsCard(
-                            snapshot: data,
-                            loading: cloudState.bmsInfoLoading,
-                            error: cloudState.bmsInfoError,
-                          ),
-                          const SizedBox(height: 14),
-                          _BatteryRouteHintCard(vehicle: vehicle),
-                          const SizedBox(height: 14),
-                          _BatteryActionsCard(
-                            signedIn: cloudState.signedIn,
-                            shareCar: vehicle?.shareCarFlag == true,
-                            onSwapService: () => _showInfoSheet(
-                              context,
-                              title: BatteryHelpCopy.swapServiceTitle,
-                              body: BatteryHelpCopy.swapServiceBody,
-                            ),
-                            onCorrectBattery: () =>
-                                _showCorrectBatterySheet(context),
-                          ),
-                          const SizedBox(height: 14),
-                          const _BatteryReadOnlyCard(),
-                        ],
-                      ),
-                    ),
-                  ],
+          backgroundColor: CyberHomeColors.pageBg,
+          body: SafeArea(
+            child: Column(
+              children: [
+                _BatteryHeader(
+                  loading:
+                      cloudState.batteryInfoLoading ||
+                      cloudState.bmsInfoLoading,
+                  canRefresh: cloudState.signedIn,
+                  canCorrect: cloudState.signedIn,
+                  onRefresh: () => unawaited(_refreshAllBatteryData(context)),
+                  onCorrect: () => _showCorrectBatterySheet(context),
                 ),
-              ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () => _refreshAllBatteryData(context),
+                    color: CyberHomeColors.primary,
+                    backgroundColor: CyberHomeColors.card,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(
+                        parent: BouncingScrollPhysics(),
+                      ),
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+                      children: [
+                        _BatteryHero(snapshot: data),
+                        const SizedBox(height: 14),
+                        _SourceStrip(snapshot: data, cloudState: cloudState),
+                        const SizedBox(height: 14),
+                        _BatterySyncCard(cloudState: cloudState),
+                        if (vehicle != null) ...[
+                          const SizedBox(height: 14),
+                          _VehicleBatteryMetaCard(vehicle: vehicle),
+                        ],
+                        const SizedBox(height: 14),
+                        _CoulombMeterCard(vehicle: vehicle),
+                        const SizedBox(height: 14),
+                        _OfficialSummaryRow(snapshot: data),
+                        const SizedBox(height: 14),
+                        _OfficialMetricGrid(
+                          snapshot: data,
+                          onCycleHelp: () => _showBatteryHelpSheet(
+                            context,
+                            title: BatteryHelpCopy.cycleTitle,
+                            sections: BatteryHelpCopy.cycleSections,
+                          ),
+                          onScoreHelp: () => _showBatteryHelpSheet(
+                            context,
+                            title: BatteryHelpCopy.scoreTitle,
+                            sections: BatteryHelpCopy.scoreSections,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        _FaultCard(snapshot: data),
+                        const SizedBox(height: 14),
+                        _BmsDetailsCard(
+                          snapshot: data,
+                          loading: cloudState.bmsInfoLoading,
+                          error: cloudState.bmsInfoError,
+                        ),
+                        const SizedBox(height: 14),
+                        _BatteryRouteHintCard(vehicle: vehicle),
+                        const SizedBox(height: 14),
+                        _BatteryActionsCard(
+                          signedIn: cloudState.signedIn,
+                          shareCar: vehicle?.shareCarFlag == true,
+                          onSwapService: () => _showInfoSheet(
+                            context,
+                            title: BatteryHelpCopy.swapServiceTitle,
+                            body: BatteryHelpCopy.swapServiceBody,
+                          ),
+                          onCorrectBattery: () =>
+                              _showCorrectBatterySheet(context),
+                        ),
+                        const SizedBox(height: 14),
+                        const _BatteryReadOnlyCard(),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -193,10 +240,10 @@ class BatteryDetailsPage extends StatelessWidget {
       showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
-        backgroundColor: AppColors.surface,
+        backgroundColor: CyberHomeColors.card,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppRadii.lg),
+            top: Radius.circular(AppRadii.sheet),
           ),
         ),
         builder: (sheetContext) {
@@ -212,13 +259,13 @@ class BatteryDetailsPage extends StatelessWidget {
                         width: 36,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: AppColors.border,
+                          color: CyberHomeColors.lineStrong,
                           borderRadius: BorderRadius.circular(AppRadii.pill),
                         ),
                       ),
                     ),
                     const SizedBox(height: 14),
-                    Text(title, style: AppTextStyles.sectionTitle),
+                    Text(title, style: _batterySectionTitle),
                     const SizedBox(height: 12),
                     for (final section in sections) ...[
                       Text(
@@ -226,16 +273,17 @@ class BatteryDetailsPage extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: CyberHomeColors.ink,
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Text(section.body, style: AppTextStyles.bodySmall),
+                      Text(section.body, style: _batteryBodyText),
                       const SizedBox(height: 14),
                     ],
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton(
+                        style: _batteryFilledButtonStyle,
                         onPressed: () => Navigator.pop(sheetContext),
                         child: const Text('知道了'),
                       ),
@@ -260,10 +308,10 @@ class BatteryDetailsPage extends StatelessWidget {
     unawaited(
       showModalBottomSheet<void>(
         context: context,
-        backgroundColor: AppColors.surface,
+        backgroundColor: CyberHomeColors.card,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppRadii.lg),
+            top: Radius.circular(AppRadii.sheet),
           ),
         ),
         builder: (sheetContext) {
@@ -279,19 +327,20 @@ class BatteryDetailsPage extends StatelessWidget {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: AppColors.border,
+                        color: CyberHomeColors.lineStrong,
                         borderRadius: BorderRadius.circular(AppRadii.pill),
                       ),
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Text(title, style: AppTextStyles.sectionTitle),
+                  Text(title, style: _batterySectionTitle),
                   const SizedBox(height: 10),
-                  Text(body, style: AppTextStyles.bodySmall),
+                  Text(body, style: _batteryBodyText),
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
+                      style: _batteryFilledButtonStyle,
                       onPressed: onPrimary ?? () => Navigator.pop(sheetContext),
                       child: Text(primaryLabel),
                     ),
@@ -306,223 +355,224 @@ class BatteryDetailsPage extends StatelessWidget {
   }
 }
 
+class _BatteryHeader extends StatelessWidget {
+  const _BatteryHeader({
+    required this.loading,
+    required this.canRefresh,
+    required this.canCorrect,
+    required this.onRefresh,
+    required this.onCorrect,
+  });
+
+  final bool loading;
+  final bool canRefresh;
+  final bool canCorrect;
+  final VoidCallback onRefresh;
+  final VoidCallback onCorrect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      child: Row(
+        children: [
+          _BatteryHeaderAction(
+            key: const ValueKey('battery-details-back'),
+            icon: Lucide.arrowLeft,
+            label: '返回',
+            filled: true,
+            onTap: () => Navigator.of(context).pop(),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              '电池信息',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: CyberHomeColors.ink,
+              ),
+            ),
+          ),
+          _BatteryHeaderAction(
+            key: const ValueKey('battery-details-refresh'),
+            icon: Lucide.refresh,
+            label: '刷新',
+            loading: loading,
+            enabled: canRefresh && !loading,
+            onTap: onRefresh,
+          ),
+          _BatteryHeaderAction(
+            key: const ValueKey('battery-details-correct'),
+            icon: Lucide.edit,
+            label: '更正电池',
+            enabled: canCorrect,
+            onTap: onCorrect,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BatteryHeaderAction extends StatelessWidget {
+  const _BatteryHeaderAction({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.enabled = true,
+    this.filled = false,
+    this.loading = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool enabled;
+  final bool filled;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: label,
+      excludeFromSemantics: true,
+      child: AppPressable(
+        onTap: onTap,
+        enabled: enabled,
+        semanticsLabel: label,
+        semanticsButton: true,
+        semanticsEnabled: enabled,
+        child: SizedBox(
+          width: AppTouchTargets.min,
+          height: AppTouchTargets.min,
+          child: Center(
+            child: Container(
+              width: filled ? AppTouchTargets.min : 36,
+              height: filled ? AppTouchTargets.min : 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: filled
+                    ? CyberHomeColors.card
+                    : CyberHomeColors.transparent,
+                shape: BoxShape.circle,
+                boxShadow: filled ? AppShadows.cyberActionShadow : const [],
+              ),
+              child: loading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.8,
+                        color: CyberHomeColors.primary,
+                      ),
+                    )
+                  : LucideIcon(
+                      icon,
+                      size: 20,
+                      color: enabled
+                          ? CyberHomeColors.inkSecondary
+                          : CyberHomeColors.inkFaint,
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _BatteryHero extends StatelessWidget {
   final BatterySnapshot snapshot;
-  final OfficialCloudState cloudState;
-  final VoidCallback? onRefresh;
-  final VoidCallback? onCorrectBattery;
 
-  const _BatteryHero({
-    required this.snapshot,
-    required this.cloudState,
-    required this.onRefresh,
-    required this.onCorrectBattery,
-  });
+  const _BatteryHero({required this.snapshot});
 
   @override
   Widget build(BuildContext context) {
     final percent = snapshot.percent;
     final color = _batteryColor(percent);
     return Container(
-      height: 430,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFFFFFFF),
-            Color(0xFFE9F1FF),
-            Color(0xFFDDE9FF),
-            AppColors.pageBg,
-          ],
-          stops: [0, 0.42, 0.74, 1],
-        ),
+      key: const ValueKey('battery-details-hero'),
+      height: 300,
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+      decoration: _batteryCardDecoration.copyWith(
+        boxShadow: AppShadows.cyberCardShadow,
       ),
-      child: Stack(
+      child: Column(
         children: [
-          Positioned(
-            left: -60,
-            top: 80,
-            child: Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.38),
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
-            ),
-          ),
-          Positioned(
-            right: -74,
-            top: 142,
-            child: Container(
-              width: 220,
-              height: 220,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary.withValues(alpha: 0.08),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 4,
-            top: 0,
-            child: IconButton(
-              icon: const Icon(
-                Lucide.arrowLeft,
-                color: AppColors.textPrimary,
-                semanticLabel: '返回',
-              ),
-              onPressed: () => Navigator.pop(context),
-              padding: const EdgeInsets.all(16),
-              tooltip: '返回',
-            ),
-          ),
-          const Positioned(
-            left: 0,
-            right: 0,
-            top: 14,
-            child: Center(
-              child: KineticType(
-                '电池信息',
-                mode: KineticTypeMode.word,
-                staggerDelay: 30,
-                duration: Duration(milliseconds: 400),
-                style: AppTextStyles.sectionTitle,
-              ),
-            ),
-          ),
-          Positioned(
-            right: 8,
-            top: 8,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: AppTouchTargets.min,
-                  ),
-                  child: TextButton(
-                    onPressed:
-                        (cloudState.batteryInfoLoading ||
-                            cloudState.bmsInfoLoading)
-                        ? null
-                        : onRefresh,
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.textSecondary,
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                    ),
-                    child: Text(
-                      (cloudState.batteryInfoLoading ||
-                              cloudState.bmsInfoLoading)
-                          ? '刷新中'
-                          : '刷新',
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ),
-                ),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: AppTouchTargets.min,
-                  ),
-                  child: TextButton(
-                    onPressed: onCorrectBattery,
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                    ),
-                    child: const Text('更正电池', style: TextStyle(fontSize: 14)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Positioned.fill(
-            top: 70,
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 150,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Container(
-                        width: 188,
-                        height: 104,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(28),
-                          color: Colors.white.withValues(alpha: 0.56),
-                        ),
-                      ),
-                      _BatteryGlyph(percent: percent, color: color),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: percent == null
-                      ? CrossAxisAlignment.center
-                      : CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      percent == null ? '--' : '$percent',
-                      style: TextStyle(
-                        fontSize: 88,
-                        fontWeight: FontWeight.w300,
-                        color: percent == null
-                            ? AppColors.textTertiary
-                            : AppColors.textPrimary,
-                        height: 0.92,
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(top: percent == null ? 0 : 9),
-                      child: Text(
-                        '%',
-                        style: TextStyle(
-                          fontSize: 24,
-                          color: percent == null
-                              ? AppColors.textTertiary
-                              : AppColors.textPrimary,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 15,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.62),
-                    borderRadius: BorderRadius.circular(AppRadii.pill),
-                  ),
-                  child: Text(
-                    _vehicleName(snapshot),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.bodyMedium,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  snapshot.healthLabel,
-                  style: TextStyle(
-                    fontSize: 13,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _vehicleName(snapshot),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: snapshot.faults.isEmpty
-                        ? AppColors.success
-                        : AppColors.danger,
+                    color: CyberHomeColors.inkSecondary,
                   ),
                 ),
-              ],
-            ),
+              ),
+              Text(
+                snapshot.healthLabel,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: snapshot.faults.isEmpty
+                      ? CyberHomeColors.success
+                      : CyberHomeColors.danger,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          _BatteryGlyph(percent: percent, color: color),
+          const SizedBox(height: 18),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                percent == null ? '--' : '$percent',
+                style: TextStyle(
+                  fontSize: 68,
+                  fontWeight: FontWeight.w300,
+                  color: percent == null
+                      ? CyberHomeColors.inkFaint
+                      : CyberHomeColors.ink,
+                  height: 0.92,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(top: percent == null ? 4 : 7),
+                child: Text(
+                  '%',
+                  style: TextStyle(
+                    fontSize: 21,
+                    color: percent == null
+                        ? CyberHomeColors.inkFaint
+                        : CyberHomeColors.ink,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          const Text(
+            '当前电量',
+            style: TextStyle(fontSize: 12, color: CyberHomeColors.inkMuted),
           ),
         ],
       ),
@@ -530,10 +580,10 @@ class _BatteryHero extends StatelessWidget {
   }
 
   static Color _batteryColor(int? percent) {
-    if (percent == null) return AppColors.textTertiary;
-    if (percent > 60) return AppColors.success;
-    if (percent > 20) return AppColors.warning;
-    return AppColors.danger;
+    if (percent == null) return CyberHomeColors.inkFaint;
+    if (percent > 60) return CyberHomeColors.success;
+    if (percent > 20) return CyberHomeColors.warning;
+    return CyberHomeColors.danger;
   }
 
   static String _vehicleName(BatterySnapshot snapshot) {
@@ -584,26 +634,18 @@ class _BatteryReplicaPainter extends CustomPainter {
     canvas.drawRRect(
       shell.shift(const Offset(0, 4)),
       Paint()
-        ..color = const Color(0x22000000)
+        ..color = CyberHomeColors.shadow
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
     );
-    canvas.drawRRect(
-      shell,
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.white, Color(0xFFEFF3FA)],
-        ).createShader(shell.outerRect),
-    );
+    canvas.drawRRect(shell, Paint()..color = CyberHomeColors.cardMuted);
     canvas.drawRRect(
       shell,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2
-        ..color = Colors.white,
+        ..color = CyberHomeColors.white,
     );
-    canvas.drawRRect(cap, Paint()..color = Colors.white.withValues(alpha: 0.9));
+    canvas.drawRRect(cap, Paint()..color = CyberHomeColors.card);
 
     final inner = shell.deflate(10);
     const segments = 5;
@@ -626,7 +668,7 @@ class _BatteryReplicaPainter extends CustomPainter {
         Paint()
           ..color = active
               ? color.withValues(alpha: i == activeSegments - 1 ? 0.78 : 0.94)
-              : const Color(0xFFE1E5EC),
+              : CyberHomeColors.controlStrong,
       );
     }
   }
@@ -653,26 +695,26 @@ class _BatterySyncCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(color: AppColors.border),
+        color: CyberHomeColors.card,
+        borderRadius: BorderRadius.circular(AppRadii.tile),
+        border: Border.all(color: CyberHomeColors.line),
       ),
       child: Row(
         children: [
-          const Icon(
+          const LucideIcon(
             Lucide.refresh,
             size: AppIconSizes.sm,
-            color: AppColors.textTertiary,
+            color: CyberHomeColors.inkFaint,
           ),
           const SizedBox(width: 8),
-          const Text('最后同步', style: AppTextStyles.smallText),
+          const Text('最后同步', style: _batterySmallText),
           const Spacer(),
           Text(
             sync,
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
+              color: CyberHomeColors.inkMuted,
             ),
           ),
         ],
@@ -707,16 +749,17 @@ class _SourceStrip extends StatelessWidget {
             ? '电量、电压、温度来自官方电池接口；维护、校准请前往官方服务渠道'
             : '登录后可读取电量、电压、温度与 BMS 明细');
     final color = error != null
-        ? AppColors.warning
+        ? CyberHomeColors.warning
         : loading
-        ? AppColors.info
-        : AppColors.success;
+        ? CyberHomeColors.primary
+        : CyberHomeColors.success;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppRadii.md),
+        borderRadius: BorderRadius.circular(AppRadii.tile),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
       child: Row(
         children: [
@@ -727,7 +770,7 @@ class _SourceStrip extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2, color: color),
             )
           else
-            Icon(
+            LucideIcon(
               error == null ? Lucide.badgeCheck : Lucide.info,
               color: color,
               size: AppIconSizes.md,
@@ -746,7 +789,7 @@ class _SourceStrip extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(subtitle, style: AppTextStyles.smallText),
+                Text(subtitle, style: _batterySmallText),
               ],
             ),
           ),
@@ -771,11 +814,7 @@ class _OfficialSummaryRow extends StatelessWidget {
       _Metric('电池容量', bms.batteryCapacity ?? '待读取'),
     ];
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.darkSurface,
-        borderRadius: BorderRadius.all(Radius.circular(AppRadii.card)),
-        boxShadow: AppShadows.cardShadow,
-      ),
+      decoration: _batteryCardDecoration,
       padding: const EdgeInsets.symmetric(vertical: 14),
       child: IntrinsicHeight(
         child: Row(
@@ -786,7 +825,7 @@ class _OfficialSummaryRow extends StatelessWidget {
                   border: index == 0
                       ? null
                       : const Border(
-                          left: BorderSide(color: Colors.white, width: 0.5),
+                          left: BorderSide(color: CyberHomeColors.line),
                         ),
                 ),
                 child: _CompactMetric(metric: items[index]),
@@ -845,7 +884,7 @@ class _OfficialMetricGrid extends StatelessWidget {
             for (final item in items)
               SizedBox(
                 width: tileWidth,
-                height: 96,
+                height: 112,
                 child: _MetricTile(metric: item),
               ),
           ],
@@ -871,7 +910,9 @@ class _CompactMetric extends StatelessWidget {
           style: TextStyle(
             fontSize: metric.value.length > 8 ? 14 : 16,
             fontWeight: FontWeight.w700,
-            color: metric.value == '待读取' ? Colors.white38 : Colors.white,
+            color: metric.value == '待读取'
+                ? CyberHomeColors.inkFaint
+                : CyberHomeColors.ink,
           ),
         ),
         const SizedBox(height: 4),
@@ -879,7 +920,7 @@ class _CompactMetric extends StatelessWidget {
           metric.label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 11, color: Colors.white54),
+          style: const TextStyle(fontSize: 11, color: CyberHomeColors.inkFaint),
         ),
       ],
     );
@@ -895,19 +936,19 @@ class _MetricTile extends StatelessWidget {
     final hasValue = metric.value != '待读取';
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: cardDecoration,
+      decoration: _batteryCardDecoration,
       child: Row(
         children: [
           Container(
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.09),
+              color: CyberHomeColors.primarySoft,
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: LucideIcon(
               metric.icon,
-              color: AppColors.primary,
+              color: CyberHomeColors.primary,
               size: AppIconSizes.md,
             ),
           ),
@@ -920,19 +961,23 @@ class _MetricTile extends StatelessWidget {
                 Row(
                   children: [
                     Flexible(
-                      child: Text(metric.label, style: AppTextStyles.caption),
+                      child: Text(metric.label, style: _batteryCaptionText),
                     ),
                     if (metric.onHelp != null) ...[
                       const SizedBox(width: 2),
-                      InkWell(
+                      AppPressable(
                         onTap: metric.onHelp,
-                        borderRadius: BorderRadius.circular(AppRadii.pill),
-                        child: const Padding(
-                          padding: EdgeInsets.all(4),
-                          child: Icon(
-                            Lucide.help,
-                            size: 16,
-                            color: AppColors.textTertiary,
+                        semanticsLabel: '${metric.label}说明',
+                        semanticsButton: true,
+                        child: const SizedBox(
+                          width: AppTouchTargets.min,
+                          height: AppTouchTargets.min,
+                          child: Center(
+                            child: LucideIcon(
+                              Lucide.help,
+                              size: 16,
+                              color: CyberHomeColors.inkFaint,
+                            ),
                           ),
                         ),
                       ),
@@ -945,12 +990,23 @@ class _MetricTile extends StatelessWidget {
                     metric.value,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.sectionTitle,
+                    style: _batterySectionTitle,
                   )
                 else
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 4),
-                    child: AppSkeleton(width: 56, height: 16),
+                    child: SizedBox(
+                      width: 56,
+                      height: 16,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: CyberHomeColors.controlStrong,
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(AppRadii.pill),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -970,21 +1026,20 @@ class _FaultCard extends StatelessWidget {
     final faults = snapshot.faults;
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: cardDecoration,
+      decoration: _batteryCardDecoration,
       child: Row(
         children: [
-          Icon(
+          LucideIcon(
             faults.isEmpty ? Lucide.checkCircle : Lucide.alertCircle,
-            color: faults.isEmpty ? AppColors.success : AppColors.danger,
+            color: faults.isEmpty
+                ? CyberHomeColors.success
+                : CyberHomeColors.danger,
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               faults.isEmpty ? '未发现电池相关故障' : faults.join('、'),
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.textPrimary,
-              ),
+              style: const TextStyle(fontSize: 14, color: CyberHomeColors.ink),
             ),
           ),
         ],
@@ -1008,7 +1063,7 @@ class _BmsDetailsCard extends StatelessWidget {
     final fields = snapshot.bms.fields;
     final hasBms = snapshot.hasOfficialBmsInfo;
     return Container(
-      decoration: cardDecoration,
+      decoration: _batteryCardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1016,15 +1071,13 @@ class _BmsDetailsCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                const Icon(
+                const LucideIcon(
                   Lucide.list,
-                  color: AppColors.primary,
+                  color: CyberHomeColors.primary,
                   size: AppIconSizes.md,
                 ),
                 const SizedBox(width: 8),
-                const Expanded(
-                  child: Text('BMS 详情', style: AppTextStyles.itemTitle),
-                ),
+                const Expanded(child: Text('BMS 详情', style: _batteryItemTitle)),
                 if (loading)
                   const SizedBox(
                     width: 16,
@@ -1037,10 +1090,10 @@ class _BmsDetailsCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       color: hasBms
-                          ? AppColors.success
+                          ? CyberHomeColors.success
                           : (error == null
-                                ? AppColors.textTertiary
-                                : AppColors.warning),
+                                ? CyberHomeColors.inkFaint
+                                : CyberHomeColors.warning),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1052,7 +1105,10 @@ class _BmsDetailsCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Text(
                 error!,
-                style: const TextStyle(fontSize: 12, color: AppColors.warning),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: CyberHomeColors.warning,
+                ),
               ),
             ),
           ...List.generate(fields.length, (index) {
@@ -1061,7 +1117,11 @@ class _BmsDetailsCard extends StatelessWidget {
               children: [
                 _BmsFieldRow(field: field),
                 if (index != fields.length - 1)
-                  const Divider(height: 1, indent: 16, color: AppColors.border),
+                  const Divider(
+                    height: 1,
+                    indent: 16,
+                    color: CyberHomeColors.line,
+                  ),
               ],
             );
           }),
@@ -1078,8 +1138,8 @@ class _BmsFieldRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = field.hasValue
-        ? AppColors.textPrimary
-        : AppColors.textTertiary;
+        ? CyberHomeColors.ink
+        : CyberHomeColors.inkFaint;
     final source = _sourceDisplay(field);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 11, 16, 11),
@@ -1094,7 +1154,7 @@ class _BmsFieldRow extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: CyberHomeColors.ink,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1140,24 +1200,24 @@ class _BmsFieldRow extends StatelessWidget {
 
   _SourceChip _sourceDisplay(BmsField field) {
     if (!field.hasValue) {
-      return const _SourceChip('待同步', AppColors.warning);
+      return const _SourceChip('待同步', CyberHomeColors.warning);
     }
     return switch (field.source) {
       BatteryDataSource.officialVehicle => const _SourceChip(
         '车辆状态',
-        AppColors.success,
+        CyberHomeColors.success,
       ),
       BatteryDataSource.officialBattery => const _SourceChip(
         '电池服务',
-        AppColors.success,
+        CyberHomeColors.success,
       ),
       BatteryDataSource.officialBms => const _SourceChip(
         'BMS 服务',
-        AppColors.success,
+        CyberHomeColors.success,
       ),
       BatteryDataSource.bmsReserved => const _SourceChip(
         '待同步',
-        AppColors.warning,
+        CyberHomeColors.warning,
       ),
     };
   }
@@ -1177,25 +1237,25 @@ class _BatteryReadOnlyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: cardDecoration,
+      decoration: _batteryCardDecoration,
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
+              LucideIcon(
                 Lucide.lock,
                 size: AppIconSizes.sm,
-                color: AppColors.textSecondary,
+                color: CyberHomeColors.inkMuted,
               ),
               SizedBox(width: 8),
-              Text('电池服务说明', style: AppTextStyles.itemTitle),
+              Text('电池服务说明', style: _batteryItemTitle),
             ],
           ),
           SizedBox(height: 8),
           Text(
             '当前页面用于查看电量、电压、温度、健康状态和 BMS 信息。涉及电池校准、更换和升级的操作，请通过官方服务渠道完成。',
-            style: AppTextStyles.bodySmall,
+            style: _batteryBodyText,
           ),
         ],
       ),
@@ -1329,21 +1389,19 @@ class _CoulombMeterCardState extends State<_CoulombMeterCard> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: cardDecoration,
+      decoration: _batteryCardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
+              const LucideIcon(
                 Lucide.battery,
-                color: AppColors.primary,
+                color: CyberHomeColors.primary,
                 size: AppIconSizes.md,
               ),
               const SizedBox(width: 8),
-              const Expanded(
-                child: Text('库仑计', style: AppTextStyles.itemTitle),
-              ),
+              const Expanded(child: Text('库仑计', style: _batteryItemTitle)),
               if (_busy)
                 const SizedBox(
                   width: 18,
@@ -1353,6 +1411,10 @@ class _CoulombMeterCardState extends State<_CoulombMeterCard> {
               else
                 Switch.adaptive(
                   value: _enabled == true,
+                  activeThumbColor: CyberHomeColors.white,
+                  activeTrackColor: CyberHomeColors.primary,
+                  inactiveThumbColor: CyberHomeColors.white,
+                  inactiveTrackColor: CyberHomeColors.controlStrong,
                   onChanged: !_bleReady || _enabled == null
                       ? null
                       : (v) => unawaited(_toggle(v)),
@@ -1360,26 +1422,33 @@ class _CoulombMeterCardState extends State<_CoulombMeterCard> {
             ],
           ),
           const SizedBox(height: 6),
-          const Text('开启后可自学习电量（锂电不可用）', style: AppTextStyles.bodySmall),
+          const Text('开启后可自学习电量（锂电不可用）', style: _batteryBodyText),
           const SizedBox(height: 8),
           if (!_bleReady)
             const Text(
               '需先近场连接并完成协议登录',
-              style: TextStyle(fontSize: 12, color: AppColors.warning),
+              style: TextStyle(fontSize: 12, color: CyberHomeColors.warning),
             )
           else if (_message != null)
             Text(
               _message!,
-              style: const TextStyle(fontSize: 12, color: AppColors.warning),
+              style: const TextStyle(
+                fontSize: 12,
+                color: CyberHomeColors.warning,
+              ),
             ),
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, AppTouchTargets.min),
+                foregroundColor: CyberHomeColors.primary,
+              ),
               onPressed: _busy || !_bleReady
                   ? null
                   : () => unawaited(_query(silent: false)),
-              icon: const Icon(Lucide.refresh, size: 18),
+              icon: const LucideIcon(Lucide.refresh, size: 18),
               label: const Text('刷新状态'),
             ),
           ),
@@ -1407,11 +1476,11 @@ class _VehicleBatteryMetaCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: cardDecoration,
+      decoration: _batteryCardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('电池绑定信息', style: AppTextStyles.itemTitle),
+          const Text('电池绑定信息', style: _batteryItemTitle),
           const SizedBox(height: 10),
           if (spec.isNotEmpty)
             _MetaLine(
@@ -1439,14 +1508,14 @@ class _MetaLine extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          SizedBox(width: 88, child: Text(label, style: AppTextStyles.caption)),
+          SizedBox(width: 88, child: Text(label, style: _batteryCaptionText)),
           Expanded(
             child: Text(
               value,
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: CyberHomeColors.ink,
               ),
             ),
           ),
@@ -1473,16 +1542,16 @@ class _BatteryRouteHintCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: cardDecoration,
+      decoration: _batteryCardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('官方页面分流', style: AppTextStyles.itemTitle),
+          const Text('官方页面分流', style: _batteryItemTitle),
           const SizedBox(height: 8),
           Text(
             '当前机型 modelType=${modelType ?? "--"} · isGps=${isGps ? "1" : "0"}'
             '${tlv.isEmpty ? "" : " · bmsTlvType=$tlv"}',
-            style: AppTextStyles.caption,
+            style: _batteryCaptionText,
           ),
           const SizedBox(height: 6),
           Text(
@@ -1490,13 +1559,13 @@ class _BatteryRouteHintCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: CyberHomeColors.ink,
             ),
           ),
           const SizedBox(height: 6),
           const Text(
             '本页合并展示官方通用电池信息 + BMS 明细；C39 / TLV 专页 UI 后续按需补齐。',
-            style: AppTextStyles.bodySmall,
+            style: _batteryBodyText,
           ),
         ],
       ),
@@ -1543,16 +1612,17 @@ class _BatteryActionsCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: cardDecoration,
+      decoration: _batteryCardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('电池服务', style: AppTextStyles.itemTitle),
+          const Text('电池服务', style: _batteryItemTitle),
           const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
+                  style: _batteryOutlinedButtonStyle,
                   onPressed: signedIn ? onCorrectBattery : null,
                   child: const Text('更正电池'),
                 ),
@@ -1560,6 +1630,7 @@ class _BatteryActionsCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton(
+                  style: _batteryOutlinedButtonStyle,
                   onPressed: signedIn && !shareCar ? onSwapService : null,
                   child: Text(shareCar ? '共享车不可换电' : '换电服务'),
                 ),

@@ -4,6 +4,8 @@ import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/battery_details_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
+import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 
 import 'helpers/snack_finders.dart';
@@ -81,18 +83,37 @@ void main() {
     await tester.pumpWidget(const TestApp(home: BatteryDetailsPage()));
     await tester.pump();
 
-    final refreshAction = find.ancestor(
-      of: find.text('刷新'),
-      matching: find.byType(TextButton),
-    );
-    final correctionAction = find.ancestor(
-      of: find.text('更正电池'),
-      matching: find.byType(TextButton),
+    final refreshAction = find.byKey(const ValueKey('battery-details-refresh'));
+    final correctionAction = find.byKey(
+      const ValueKey('battery-details-correct'),
     );
     expect(refreshAction, findsOneWidget);
-    expect(correctionAction, findsWidgets);
-    expectMinTouchTargetHeight(tester, refreshAction);
-    expectMinTouchTargetHeight(tester, correctionAction.first);
+    expect(correctionAction, findsOneWidget);
+    final refreshPressable = find.descendant(
+      of: refreshAction,
+      matching: find.byType(AppPressable),
+    );
+    final correctionPressable = find.descendant(
+      of: correctionAction,
+      matching: find.byType(AppPressable),
+    );
+    expect(refreshPressable, findsOneWidget);
+    expect(correctionPressable, findsOneWidget);
+    expect(tester.widget<AppPressable>(refreshPressable).enabled, isTrue);
+    expect(tester.widget<AppPressable>(correctionPressable).enabled, isTrue);
+    expectMinTouchTargetHeight(tester, refreshPressable);
+    expectMinTouchTargetHeight(tester, correctionPressable);
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+
+    applyTestViewSize(tester, const Size(390, 844));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('battery-details-hero')), findsOneWidget);
+    expect(find.text('电池信息'), findsOneWidget);
+    expect(correctionAction, findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('official battery metrics render voltage and temperature', (
@@ -144,6 +165,12 @@ void main() {
     final helpIcons = find.byIcon(Lucide.help);
     expect(helpIcons, findsWidgets);
     await tester.ensureVisible(helpIcons.first);
+    final helpAction = find.ancestor(
+      of: helpIcons.first,
+      matching: find.byType(AppPressable),
+    );
+    expect(helpAction, findsOneWidget);
+    expectMinTouchTargetHeight(tester, helpAction);
     await tester.tap(helpIcons.first);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
