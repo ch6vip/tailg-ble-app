@@ -47,13 +47,14 @@ Official APK reverse material lives **outside** this repo: `E:\ctf-aaa\tlddc\dec
 flutter pub get
 flutter doctor
 flutter run                          # real device needed for BLE
-flutter build apk --debug
-flutter build apk --release          # needs key.properties + keystore locally or via CI
 dart format --output=none --set-exit-if-changed .
 flutter analyze --fatal-warnings --fatal-infos
 flutter test
 flutter test --coverage
 ```
+
+**Never build an APK locally.** When an APK is needed, push the changes to
+GitHub and use the repository's GitHub Actions workflows to build it.
 
 Optional map token:
 
