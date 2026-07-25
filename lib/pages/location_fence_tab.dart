@@ -41,12 +41,12 @@ class _FenceTab extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
+                    icon: const LucideIcon(
                       Lucide.arrowLeft,
-                      color: AppColors.textPrimary,
+                      color: CyberHomeColors.ink,
                     ),
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.white.withValues(alpha: 0.88),
+                      backgroundColor: CyberHomeColors.white96,
                     ),
                     tooltip: '返回',
                   ),
@@ -57,15 +57,11 @@ class _FenceTab extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.88),
-                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                    color: CyberHomeColors.white96,
+                    borderRadius: BorderRadius.circular(AppRadii.tile),
+                    boxShadow: AppShadows.cyberActionShadow,
                   ),
-                  child: Text(
-                    '电子围栏',
-                    style: AppTextStyles.sectionTitle.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  child: Text('电子围栏', style: _locationItemTitle),
                 ),
               ],
             ),
@@ -193,17 +189,11 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 18, 20, 18 + widget.bottomPadding),
       decoration: const BoxDecoration(
-        color: AppColors.surface,
+        color: CyberHomeColors.card,
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppRadii.sheet),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: _locationElevatedShadow,
-            blurRadius: 18,
-            offset: Offset(0, -6),
-          ),
-        ],
+        boxShadow: AppShadows.cyberNavShadow,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -211,21 +201,16 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
         children: [
           Row(
             children: [
-              Text(
-                '围栏设置',
-                style: AppTextStyles.subtitle.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+              Text('围栏设置', style: _locationTitleText),
               const SizedBox(width: 8),
-              const Icon(
+              const LucideIcon(
                 Lucide.help,
                 size: AppIconSizes.sm,
-                color: AppColors.textTertiary,
+                color: CyberHomeColors.inkFaint,
               ),
               const Spacer(),
               Material(
-                color: AppColors.surface,
+                color: CyberHomeColors.card,
                 shape: const CircleBorder(),
                 child: IconButton(
                   tooltip: '刷新围栏',
@@ -234,9 +219,12 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: CyberHomeColors.primary,
+                          ),
                         )
-                      : const Icon(Lucide.refresh, size: AppIconSizes.md),
+                      : const LucideIcon(Lucide.refresh, size: AppIconSizes.md),
                 ),
               ),
             ],
@@ -258,24 +246,21 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadii.card),
-            ),
+            decoration: _locationCardDecoration,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     const Expanded(
-                      child: Text('范围设置', style: AppTextStyles.bodyLarge),
+                      child: Text('范围设置', style: _locationItemTitle),
                     ),
                     Text(
                       formatDistanceMeters(radius),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
+                        color: CyberHomeColors.primary,
                       ),
                     ),
                   ],
@@ -284,12 +269,12 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
                 SliderTheme(
                   data: SliderThemeData(
                     activeTrackColor: _enabled
-                        ? AppColors.primary
-                        : AppColors.textTertiary,
-                    inactiveTrackColor: AppColors.surface,
+                        ? CyberHomeColors.primary
+                        : CyberHomeColors.inkFaint,
+                    inactiveTrackColor: CyberHomeColors.controlStrong,
                     thumbColor: _enabled
-                        ? AppColors.primary
-                        : AppColors.textTertiary,
+                        ? CyberHomeColors.primary
+                        : CyberHomeColors.inkFaint,
                     trackHeight: 6,
                   ),
                   child: Slider(
@@ -308,24 +293,24 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
                   children: [
                     Text(
                       formatDistanceMeters(minRadius),
-                      style: AppTextStyles.caption,
+                      style: _locationCaptionText,
                     ),
                     const Spacer(),
                     Text(
                       formatDistanceMeters(maxRadius),
-                      style: AppTextStyles.caption,
+                      style: _locationCaptionText,
                     ),
                   ],
                 ),
-                const Divider(height: 24, color: AppColors.outlineVariant),
+                const Divider(height: 24, color: CyberHomeColors.line),
                 GestureDetector(
                   onTap: () => _pickTimeRange(context),
                   child: _FenceSettingRow(
                     title: '时间设置',
                     subtitle: '$_timeFrom - $_timeTo',
-                    trailing: const Icon(
+                    trailing: const LucideIcon(
                       Lucide.chevronRight,
-                      color: AppColors.textTertiary,
+                      color: CyberHomeColors.inkFaint,
                     ),
                     dense: true,
                   ),
@@ -337,23 +322,24 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
             const SizedBox(height: 8),
             Text(
               error,
-              style: const TextStyle(fontSize: 12, color: AppColors.warning),
+              style: const TextStyle(
+                fontSize: 12,
+                color: CyberHomeColors.warning,
+              ),
             ),
           ],
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             height: 48,
-            child: ElevatedButton(
+            child: FilledButton(
               onPressed: (_dirty && !_saving && !widget.loading) ? _save : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                disabledBackgroundColor: AppColors.primary.withValues(
-                  alpha: 0.35,
-                ),
-                foregroundColor: Colors.white,
+              style: FilledButton.styleFrom(
+                backgroundColor: CyberHomeColors.primary,
+                disabledBackgroundColor: CyberHomeColors.controlStrong,
+                foregroundColor: CyberHomeColors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.card),
+                  borderRadius: BorderRadius.circular(AppRadii.tile),
                 ),
               ),
               child: _saving
@@ -362,7 +348,7 @@ class _OfficialFenceSheetState extends State<_OfficialFenceSheet> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: CyberHomeColors.white,
                       ),
                     )
                   : const Text(
@@ -431,8 +417,9 @@ class _FenceSettingRow extends StatelessWidget {
       decoration: dense
           ? null
           : BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadii.card),
+              color: CyberHomeColors.cardMuted,
+              borderRadius: BorderRadius.circular(AppRadii.tile),
+              border: Border.all(color: CyberHomeColors.line),
             ),
       child: Row(
         children: [
@@ -441,13 +428,13 @@ class _FenceSettingRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppTextStyles.bodyLarge),
+                Text(title, style: _locationItemTitle),
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.caption,
+                  style: _locationCaptionText,
                 ),
               ],
             ),
@@ -467,7 +454,7 @@ class _FenceSwitchPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = enabled ? AppColors.success : AppColors.textTertiary;
+    final color = enabled ? CyberHomeColors.success : CyberHomeColors.inkFaint;
     return Container(
       width: 52,
       height: 28,

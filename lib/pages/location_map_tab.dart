@@ -77,19 +77,17 @@ class _MapMarker extends StatelessWidget {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: CyberHomeColors.card,
             shape: BoxShape.circle,
-            boxShadow: const [
-              BoxShadow(
-                color: _locationElevatedShadow,
-                blurRadius: 8,
-                offset: Offset(0, 3),
-              ),
-            ],
+            boxShadow: AppShadows.cyberActionShadow,
           ),
-          child: Icon(Lucide.vehicle, color: color, size: AppIconSizes.md),
+          child: LucideIcon(
+            Lucide.vehicle,
+            color: color,
+            size: AppIconSizes.md,
+          ),
         ),
-        Icon(Lucide.chevronDown, color: color, size: AppIconSizes.lg),
+        LucideIcon(Lucide.chevronDown, color: color, size: AppIconSizes.lg),
       ],
     );
   }

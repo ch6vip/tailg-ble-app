@@ -101,9 +101,9 @@ class _TravelMonthSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: AppTouchTargets.min,
+      height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: cardDecoration,
+      decoration: _locationCardDecoration,
       child: Row(
         children: [
           IconButton(
@@ -114,11 +114,7 @@ class _TravelMonthSelector extends StatelessWidget {
               minHeight: AppTouchTargets.min,
             ),
             padding: EdgeInsets.zero,
-            icon: const Icon(
-              Lucide.chevronLeft,
-              size: AppIconSizes.md,
-              semanticLabel: '上一月',
-            ),
+            icon: const LucideIcon(Lucide.chevronLeft, size: AppIconSizes.md),
           ),
           Expanded(
             child: Center(
@@ -129,14 +125,14 @@ class _TravelMonthSelector extends StatelessWidget {
                     month,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.bodyLarge.copyWith(
+                    style: _locationItemTitle.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(width: 6),
-                  const Icon(
+                  const LucideIcon(
                     Lucide.chevronDown,
-                    color: AppColors.textTertiary,
+                    color: CyberHomeColors.inkFaint,
                     size: AppIconSizes.sm,
                   ),
                 ],
@@ -151,11 +147,7 @@ class _TravelMonthSelector extends StatelessWidget {
               minHeight: AppTouchTargets.min,
             ),
             padding: EdgeInsets.zero,
-            icon: const Icon(
-              Lucide.chevronRight,
-              size: AppIconSizes.md,
-              semanticLabel: '下一月',
-            ),
+            icon: const LucideIcon(Lucide.chevronRight, size: AppIconSizes.md),
           ),
         ],
       ),
@@ -193,14 +185,14 @@ class _TravelDayCard extends StatelessWidget {
           );
     return Container(
       padding: const EdgeInsets.fromLTRB(15, 14, 15, 12),
-      decoration: cardDecoration,
+      decoration: _locationCardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             day.travelDate.isEmpty ? '官方轨迹' : day.travelDate,
-            style: AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textTertiary,
+            style: _locationBodyText.copyWith(
+              color: CyberHomeColors.inkMuted,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -208,8 +200,9 @@ class _TravelDayCard extends StatelessWidget {
           Container(
             height: 75,
             decoration: BoxDecoration(
-              color: AppColors.outlineVariant,
-              borderRadius: BorderRadius.circular(AppRadii.card),
+              color: CyberHomeColors.control,
+              borderRadius: BorderRadius.circular(AppRadii.tile),
+              border: Border.all(color: CyberHomeColors.line),
             ),
             child: Row(
               children: [
@@ -220,7 +213,10 @@ class _TravelDayCard extends StatelessWidget {
                     unit: '次',
                   ),
                 ),
-                const VerticalDivider(width: 1, color: Colors.white),
+                const VerticalDivider(
+                  width: 1,
+                  color: CyberHomeColors.lineStrong,
+                ),
                 Expanded(
                   child: _SummaryValue(
                     label: '总里程',
@@ -228,7 +224,10 @@ class _TravelDayCard extends StatelessWidget {
                     unit: mileageParts.$2,
                   ),
                 ),
-                const VerticalDivider(width: 1, color: Colors.white),
+                const VerticalDivider(
+                  width: 1,
+                  color: CyberHomeColors.lineStrong,
+                ),
                 Expanded(
                   child: _SummaryValue(
                     label: '总时长',
@@ -288,9 +287,9 @@ class _TravelRecordCard extends StatelessWidget {
     return AppPressable(
       enabled: interactive,
       pressedScale: AppMotion.pressScale,
-      background: AppColors.surface,
-      pressedBackground: AppColors.officialPressedBg,
-      borderRadius: BorderRadius.circular(AppRadii.card),
+      background: CyberHomeColors.card,
+      pressedBackground: CyberHomeColors.cardMuted,
+      borderRadius: BorderRadius.circular(AppRadii.tile),
       haptic: false,
       semanticsLabel: semanticsLabel,
       semanticsButton: true,
@@ -306,7 +305,7 @@ class _TravelRecordCard extends StatelessWidget {
           children: [
             const SizedBox(width: 12),
             SizedBox(width: 76, child: _TrackTimeRail(record: record)),
-            Container(width: 1, height: 46, color: AppColors.outlineVariant),
+            Container(width: 1, height: 46, color: CyberHomeColors.line),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -317,7 +316,7 @@ class _TravelRecordCard extends StatelessWidget {
                     record.mileageLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.sectionTitle.copyWith(
+                    style: _locationTitleText.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -326,7 +325,7 @@ class _TravelRecordCard extends StatelessWidget {
                     '${record.averageSpeedLabel}  ·  ${record.durationLabel}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.caption,
+                    style: _locationCaptionText,
                   ),
                 ],
               ),
@@ -338,13 +337,13 @@ class _TravelRecordCard extends StatelessWidget {
                 textAlign: TextAlign.right,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.caption,
+                style: _locationCaptionText,
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(
+            const LucideIcon(
               Lucide.chevronRight,
-              color: AppColors.textTertiary,
+              color: CyberHomeColors.inkFaint,
               size: AppIconSizes.md,
             ),
             const SizedBox(width: 10),
@@ -371,25 +370,25 @@ class _TrackTimeRail extends StatelessWidget {
           child: VerticalDivider(
             width: 1,
             thickness: 1,
-            color: AppColors.outlineVariant,
+            color: CyberHomeColors.line,
           ),
         ),
         Positioned(
           left: 0,
           top: 20,
-          child: _TimelineDot(color: AppColors.success),
+          child: _TimelineDot(color: CyberHomeColors.success),
         ),
         Positioned(
           left: 0,
           bottom: 20,
-          child: _TimelineDot(color: AppColors.warning),
+          child: _TimelineDot(color: CyberHomeColors.warning),
         ),
         Positioned(
           left: 20,
           top: 15,
           child: Text(
             record.startTime.isEmpty ? '--' : record.startTime,
-            style: AppTextStyles.caption,
+            style: _locationCaptionText,
           ),
         ),
         Positioned(
@@ -397,7 +396,7 @@ class _TrackTimeRail extends StatelessWidget {
           bottom: 15,
           child: Text(
             record.endTime.isEmpty ? '--' : record.endTime,
-            style: AppTextStyles.caption,
+            style: _locationCaptionText,
           ),
         ),
       ],
@@ -418,7 +417,7 @@ class _TimelineDot extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
+        border: Border.all(color: CyberHomeColors.white, width: 2),
       ),
     );
   }
@@ -443,9 +442,9 @@ class _TravelDetailSheet extends StatelessWidget {
             maxHeight: MediaQuery.of(context).size.height * 0.82,
           ),
           decoration: const BoxDecoration(
-            color: AppColors.pageBg,
+            color: CyberHomeColors.pageBg,
             borderRadius: BorderRadius.vertical(
-              top: Radius.circular(AppRadii.lg),
+              top: Radius.circular(AppRadii.sheet),
             ),
           ),
           child: Column(
@@ -455,7 +454,7 @@ class _TravelDetailSheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: CyberHomeColors.lineStrong,
                   borderRadius: BorderRadius.circular(AppRadii.pill),
                 ),
               ),
@@ -466,12 +465,12 @@ class _TravelDetailSheet extends StatelessWidget {
                     Expanded(
                       child: Text(
                         record.travelDate.isEmpty ? '轨迹详情' : record.travelDate,
-                        style: AppTextStyles.sectionTitle,
+                        style: _locationTitleText,
                       ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Lucide.x, semanticLabel: '关闭'),
+                      icon: const LucideIcon(Lucide.x),
                       tooltip: '关闭',
                     ),
                   ],
@@ -571,7 +570,7 @@ class _TrackDetailStats extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
-      decoration: cardDecoration,
+      decoration: _locationCardDecoration,
       child: Column(
         children: [
           Row(
@@ -617,13 +616,13 @@ class _DetailMetric extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.caption),
+        Text(label, style: _locationCaptionText),
         const SizedBox(height: 6),
         Text(
           value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTextStyles.itemTitle.copyWith(fontWeight: FontWeight.w800),
+          style: _locationItemTitle.copyWith(fontWeight: FontWeight.w800),
         ),
       ],
     );
@@ -645,11 +644,11 @@ class _TrackStartEndCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-      decoration: cardDecoration,
+      decoration: _locationCardDecoration,
       child: Column(
         children: [
           _TrackEndpointRow(
-            color: AppColors.success,
+            color: CyberHomeColors.success,
             title: _endpointTitle(firstPoint, '起点'),
             time: record.startTime.isEmpty ? '--' : record.startTime,
           ),
@@ -657,10 +656,10 @@ class _TrackStartEndCard extends StatelessWidget {
             height: 42,
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.only(left: 7),
-            child: Container(width: 1, color: AppColors.outlineVariant),
+            child: Container(width: 1, color: CyberHomeColors.line),
           ),
           _TrackEndpointRow(
-            color: AppColors.warning,
+            color: CyberHomeColors.warning,
             title: _endpointTitle(lastPoint, '终点'),
             time: record.endTime.isEmpty ? '--' : record.endTime,
           ),
@@ -697,11 +696,14 @@ class _TrackEndpointRow extends StatelessWidget {
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.bodyLarge,
+            style: _locationBodyText.copyWith(
+              color: CyberHomeColors.ink,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         const SizedBox(width: 12),
-        Text(time, style: AppTextStyles.caption),
+        Text(time, style: _locationCaptionText),
       ],
     );
   }
@@ -739,13 +741,13 @@ class _SummaryValue extends StatelessWidget {
         RichText(
           text: TextSpan(
             text: value,
-            style: AppTextStyles.subPageTitle,
+            style: _locationTitleText,
             children: [
               TextSpan(
                 text: unit,
                 style: const TextStyle(
                   fontSize: 11,
-                  color: AppColors.textTertiary,
+                  color: CyberHomeColors.inkFaint,
                 ),
               ),
             ],
@@ -756,7 +758,7 @@ class _SummaryValue extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+          style: const TextStyle(fontSize: 11, color: CyberHomeColors.inkFaint),
         ),
       ],
     );
@@ -773,12 +775,12 @@ class _PointRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
-      decoration: cardDecoration,
+      decoration: _locationCardDecoration,
       child: Row(
         children: [
-          const Icon(
+          const LucideIcon(
             Lucide.tripOrigin,
-            color: AppColors.info,
+            color: CyberHomeColors.primary,
             size: AppIconSizes.sm,
           ),
           const SizedBox(width: 10),
@@ -787,15 +789,16 @@ class _PointRow extends StatelessWidget {
               '${point.lat}, ${point.lng}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.smallText.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: _locationBodyText.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           const SizedBox(width: 8),
           Text(
             point.reportTime.isEmpty ? '--' : point.reportTime,
-            style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+            style: const TextStyle(
+              fontSize: 11,
+              color: CyberHomeColors.inkFaint,
+            ),
           ),
         ],
       ),
@@ -812,12 +815,15 @@ class _LoadingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: cardDecoration,
+      decoration: _locationCardDecoration,
       child: Column(
         children: [
-          const CircularProgressIndicator(strokeWidth: 2),
+          const CircularProgressIndicator(
+            strokeWidth: 2,
+            color: CyberHomeColors.primary,
+          ),
           const SizedBox(height: 12),
-          Text(text, style: AppTextStyles.bodyMedium),
+          Text(text, style: _locationBodyText),
         ],
       ),
     );
@@ -839,17 +845,21 @@ class _EmptyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: cardDecoration,
+      decoration: _locationCardDecoration,
       child: Column(
         children: [
-          Icon(icon, size: AppIconSizes.xl, color: AppColors.textTertiary),
+          LucideIcon(
+            icon,
+            size: AppIconSizes.xl,
+            color: CyberHomeColors.inkFaint,
+          ),
           const SizedBox(height: 10),
-          Text(title, style: AppTextStyles.itemTitle),
+          Text(title, style: _locationItemTitle),
           const SizedBox(height: 4),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: AppTextStyles.caption,
+            style: _locationCaptionText,
           ),
         ],
       ),

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../widgets/lucide_icon.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -20,13 +19,11 @@ import '../services/display_time_formatter.dart';
 import '../services/official_cloud_service.dart';
 import '../services/vehicle_location_resolver.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_void.dart';
 import '../theme/app_motion.dart';
-import '../widgets/app_chrome.dart';
-import '../widgets/void_canvas.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/cached_tile_provider.dart';
+import '../widgets/lucide_icon.dart';
 
 part 'location_map_tab.dart';
 part 'location_travel_tab.dart';
@@ -34,8 +31,34 @@ part 'location_fence_tab.dart';
 
 enum LocationInitialTab { map, travel, fence }
 
-const _locationLightShadow = Color(0x14000000);
-const _locationElevatedShadow = Color(0x26000000);
+const _locationCardDecoration = BoxDecoration(
+  color: CyberHomeColors.card,
+  borderRadius: BorderRadius.all(Radius.circular(AppRadii.tile)),
+  border: Border.fromBorderSide(BorderSide(color: CyberHomeColors.line)),
+);
+
+const _locationTitleText = TextStyle(
+  fontSize: 18,
+  fontWeight: FontWeight.w700,
+  color: CyberHomeColors.ink,
+);
+
+const _locationItemTitle = TextStyle(
+  fontSize: 15,
+  fontWeight: FontWeight.w700,
+  color: CyberHomeColors.ink,
+);
+
+const _locationBodyText = TextStyle(
+  fontSize: 13,
+  height: 1.4,
+  color: CyberHomeColors.inkMuted,
+);
+
+const _locationCaptionText = TextStyle(
+  fontSize: 12,
+  color: CyberHomeColors.inkFaint,
+);
 
 class LocationPage extends StatefulWidget {
   final LocationInitialTab initialTab;
@@ -278,7 +301,7 @@ class _LocationPageState extends State<LocationPage> {
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
-        backgroundColor: Colors.transparent,
+        backgroundColor: CyberHomeColors.transparent,
         builder: (_) => _TravelDetailSheet(record: record),
       );
     } catch (e) {
@@ -320,101 +343,214 @@ class _LocationPageState extends State<LocationPage> {
       _ => '电子围栏',
     };
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        child: SafeArea(
-          // P0-5: 用 ValueListenableBuilder 替代 Builder + 直接读取，
-          // 仅在 cloudState/vehicles 变化时重建依赖子树，FlutterMap 被 RepaintBoundary 隔离
-          child: ValueListenableBuilder<OfficialCloudState>(
-            valueListenable: _cloudStateNotifier,
-            builder: (context, cloudState, _) {
-              return ValueListenableBuilder<List<VehicleProfile>>(
-                valueListenable: _vehiclesNotifier,
-                builder: (context, vehicles, _) {
-                  final localVehicle = vehicleStore.defaultVehicle;
-                  final cloudVehicle = cloudState.signedIn
-                      ? cloudState.selectedVehicle
-                      : null;
-                  final location = _resolveLocation(
-                    localVehicle: localVehicle,
-                    cloudState: cloudState,
-                  );
-                  final loading =
-                      _localLoading ||
-                      cloudState.loading ||
-                      cloudState.vehicleLocationLoading ||
-                      cloudState.travelLoading ||
-                      cloudState.fenceLoading;
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        // P0-5: 用 ValueListenableBuilder 替代 Builder + 直接读取，
+        // 仅在 cloudState/vehicles 变化时重建依赖子树，FlutterMap 被 RepaintBoundary 隔离
+        child: ValueListenableBuilder<OfficialCloudState>(
+          valueListenable: _cloudStateNotifier,
+          builder: (context, cloudState, _) {
+            return ValueListenableBuilder<List<VehicleProfile>>(
+              valueListenable: _vehiclesNotifier,
+              builder: (context, vehicles, _) {
+                final localVehicle = vehicleStore.defaultVehicle;
+                final cloudVehicle = cloudState.signedIn
+                    ? cloudState.selectedVehicle
+                    : null;
+                final location = _resolveLocation(
+                  localVehicle: localVehicle,
+                  cloudState: cloudState,
+                );
+                final loading =
+                    _localLoading ||
+                    cloudState.loading ||
+                    cloudState.vehicleLocationLoading ||
+                    cloudState.travelLoading ||
+                    cloudState.fenceLoading;
 
-                  return Column(
-                    children: [
-                      if (_tabIndex != LocationInitialTab.fence.index)
-                        AppPageHeader(
-                          title: title,
-                          showBack: !widget.embedded,
-                          actions: [
-                            AppHeaderAction(
-                              icon: Lucide.refresh,
-                              tooltip: '刷新地图数据',
-                              onTap: loading
-                                  ? null
-                                  : () => _refreshAll(localVehicle),
-                            ),
-                          ],
-                        ),
-                      if (_tabIndex != LocationInitialTab.fence.index)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                          child: _SegmentedTabs(
-                            index: _tabIndex,
-                            onChanged: (value) =>
-                                setState(() => _tabIndex = value),
-                          ),
-                        ),
-                      Expanded(
-                        child: IndexedStack(
+                return Column(
+                  children: [
+                    if (_tabIndex != LocationInitialTab.fence.index)
+                      _LocationHeader(
+                        title: title,
+                        showBack: !widget.embedded,
+                        loading: loading,
+                        onRefresh: loading
+                            ? null
+                            : () => _refreshAll(localVehicle),
+                      ),
+                    if (_tabIndex != LocationInitialTab.fence.index)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                        child: _SegmentedTabs(
                           index: _tabIndex,
-                          children: [
-                            // P0-5: RepaintBoundary 隔离 FlutterMap，避免父级 rebuild 时地图重绘
-                            RepaintBoundary(
-                              child: _MapTab(
-                                vehicleName:
-                                    localVehicle?.displayName ??
-                                    cloudVehicle?.displayName,
-                                location: location,
-                                cloudState: cloudState,
-                                error: _localError,
-                                loading: loading,
-                                onRefresh: () => _refreshAll(localVehicle),
-                                onCopy: location == null
-                                    ? null
-                                    : () => _copyLocation(location),
-                                onOpenMap: location == null
-                                    ? null
-                                    : () => _openMap(location),
-                              ),
-                            ),
-                            _TravelTab(
-                              cloudState: cloudState,
-                              onRefresh: () => _refreshTravelHistory(),
-                              onChangeMonth: _changeTravelMonth,
-                              onOpenDetail: _openTravelDetail,
-                            ),
-                            _FenceTab(
-                              cloudState: cloudState,
-                              location: location,
-                              onRefresh: _refreshFenceData,
-                              onTabChanged: (value) =>
-                                  setState(() => _tabIndex = value),
-                            ),
-                          ],
+                          onChanged: (value) =>
+                              setState(() => _tabIndex = value),
                         ),
                       ),
-                    ],
-                  );
-                },
-              );
-            },
+                    Expanded(
+                      child: IndexedStack(
+                        index: _tabIndex,
+                        children: [
+                          // P0-5: RepaintBoundary 隔离 FlutterMap，避免父级 rebuild 时地图重绘
+                          RepaintBoundary(
+                            child: _MapTab(
+                              vehicleName:
+                                  localVehicle?.displayName ??
+                                  cloudVehicle?.displayName,
+                              location: location,
+                              cloudState: cloudState,
+                              error: _localError,
+                              loading: loading,
+                              onRefresh: () => _refreshAll(localVehicle),
+                              onCopy: location == null
+                                  ? null
+                                  : () => _copyLocation(location),
+                              onOpenMap: location == null
+                                  ? null
+                                  : () => _openMap(location),
+                            ),
+                          ),
+                          _TravelTab(
+                            cloudState: cloudState,
+                            onRefresh: () => _refreshTravelHistory(),
+                            onChangeMonth: _changeTravelMonth,
+                            onOpenDetail: _openTravelDetail,
+                          ),
+                          _FenceTab(
+                            cloudState: cloudState,
+                            location: location,
+                            onRefresh: _refreshFenceData,
+                            onTabChanged: (value) =>
+                                setState(() => _tabIndex = value),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _LocationHeader extends StatelessWidget {
+  const _LocationHeader({
+    required this.title,
+    required this.showBack,
+    required this.loading,
+    required this.onRefresh,
+  });
+
+  final String title;
+  final bool showBack;
+  final bool loading;
+  final VoidCallback? onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      child: Row(
+        children: [
+          if (showBack) ...[
+            _LocationHeaderAction(
+              icon: Lucide.arrowLeft,
+              label: '返回',
+              filled: true,
+              onTap: () => Navigator.of(context).pop(),
+            ),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: CyberHomeColors.ink,
+              ),
+            ),
+          ),
+          _LocationHeaderAction(
+            icon: Lucide.refresh,
+            label: '刷新地图数据',
+            loading: loading,
+            enabled: onRefresh != null,
+            onTap: onRefresh ?? () {},
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LocationHeaderAction extends StatelessWidget {
+  const _LocationHeaderAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.enabled = true,
+    this.filled = false,
+    this.loading = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool enabled;
+  final bool filled;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: label,
+      excludeFromSemantics: true,
+      child: AppPressable(
+        onTap: onTap,
+        enabled: enabled,
+        semanticsLabel: label,
+        semanticsButton: true,
+        semanticsEnabled: enabled,
+        child: SizedBox(
+          width: AppTouchTargets.min,
+          height: AppTouchTargets.min,
+          child: Center(
+            child: Container(
+              width: filled ? AppTouchTargets.min : 36,
+              height: filled ? AppTouchTargets.min : 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: filled
+                    ? CyberHomeColors.card
+                    : CyberHomeColors.transparent,
+                shape: BoxShape.circle,
+                boxShadow: filled ? AppShadows.cyberActionShadow : const [],
+              ),
+              child: loading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.8,
+                        color: CyberHomeColors.primary,
+                      ),
+                    )
+                  : LucideIcon(
+                      icon,
+                      size: 20,
+                      color: enabled
+                          ? CyberHomeColors.inkSecondary
+                          : CyberHomeColors.inkFaint,
+                    ),
+            ),
           ),
         ),
       ),
@@ -438,9 +574,9 @@ class _SegmentedTabs extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        boxShadow: AppShadows.elevation1,
+        color: CyberHomeColors.control,
+        borderRadius: BorderRadius.circular(AppRadii.tile),
+        border: Border.all(color: CyberHomeColors.line),
       ),
       child: Row(
         children: List.generate(items.length, (i) {
@@ -454,10 +590,12 @@ class _SegmentedTabs extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  LucideIcon(
                     item.icon,
                     size: AppIconSizes.sm,
-                    color: active ? Colors.white : AppColors.textSecondary,
+                    color: active
+                        ? CyberHomeColors.ink
+                        : CyberHomeColors.inkMuted,
                   ),
                   const SizedBox(width: 5),
                   Text(
@@ -465,7 +603,9 @@ class _SegmentedTabs extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: active ? Colors.white : AppColors.textSecondary,
+                      color: active
+                          ? CyberHomeColors.ink
+                          : CyberHomeColors.inkMuted,
                     ),
                   ),
                 ],
@@ -493,15 +633,15 @@ class _OfficialTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? AppColors.primary : Colors.transparent;
+    final color = active ? CyberHomeColors.card : CyberHomeColors.transparent;
     return AppPressable(
       onTap: onTap,
       pressedScale: AppMotion.pressScale,
       background: color,
       pressedBackground: active
-          ? AppColors.primary
-          : AppColors.officialPressedBg,
-      borderRadius: BorderRadius.circular(AppRadii.card),
+          ? CyberHomeColors.cardMuted
+          : CyberHomeColors.controlStrong,
+      borderRadius: BorderRadius.circular(AppRadii.tile),
       semanticsLabel: label,
       semanticsButton: true,
       semanticsSelected: active,
@@ -551,13 +691,13 @@ class _MapPanel extends StatelessWidget {
           )
         : null;
 
-    final radius = fullBleed ? 0.0 : AppRadii.card;
+    final radius = fullBleed ? 0.0 : AppRadii.tile;
     return Container(
       height: fullBleed ? null : (compact ? 260 : 340),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: CyberHomeColors.card,
         borderRadius: BorderRadius.circular(radius),
-        boxShadow: fullBleed ? null : AppShadows.cardShadow,
+        border: fullBleed ? null : Border.all(color: CyberHomeColors.line),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius),
@@ -570,7 +710,7 @@ class _MapPanel extends StatelessWidget {
                 initialCameraFit: cameraFit,
                 minZoom: 3,
                 maxZoom: 18,
-                backgroundColor: const Color(0xFFE9EEF3),
+                backgroundColor: CyberHomeColors.mapPlaceholder,
               ),
               children: [
                 TileLayer(
@@ -601,13 +741,13 @@ class _MapPanel extends StatelessWidget {
                         useRadiusInMeter: true,
                         color:
                             (activeFence.enabled
-                                    ? AppColors.success
-                                    : AppColors.warning)
+                                    ? CyberHomeColors.success
+                                    : CyberHomeColors.warning)
                                 .withValues(alpha: 0.12),
                         borderColor:
                             (activeFence.enabled
-                                    ? AppColors.success
-                                    : AppColors.warning)
+                                    ? CyberHomeColors.success
+                                    : CyberHomeColors.warning)
                                 .withValues(alpha: 0.55),
                         borderStrokeWidth: 2,
                       ),
@@ -619,9 +759,9 @@ class _MapPanel extends StatelessWidget {
                       Polyline(
                         points: mapPoints,
                         strokeWidth: 5,
-                        color: AppColors.success,
+                        color: CyberHomeColors.success,
                         borderStrokeWidth: 3,
-                        borderColor: Colors.white.withValues(alpha: 0.9),
+                        borderColor: CyberHomeColors.white96,
                       ),
                     ],
                   ),
@@ -635,8 +775,8 @@ class _MapPanel extends StatelessWidget {
                         alignment: Alignment.topCenter,
                         child: _MapMarker(
                           color: activeFence?.enabled == false
-                              ? AppColors.warning
-                              : AppColors.primary,
+                              ? CyberHomeColors.warning
+                              : CyberHomeColors.primary,
                         ),
                       ),
                     if (mapPoints.length >= 2) ...[
@@ -646,7 +786,7 @@ class _MapPanel extends StatelessWidget {
                         height: 34,
                         child: const _TrackNodeMarker(
                           label: '起',
-                          color: AppColors.success,
+                          color: CyberHomeColors.success,
                         ),
                       ),
                       Marker(
@@ -655,7 +795,7 @@ class _MapPanel extends StatelessWidget {
                         height: 34,
                         child: const _TrackNodeMarker(
                           label: '终',
-                          color: AppColors.warning,
+                          color: CyberHomeColors.warning,
                         ),
                       ),
                     ],
@@ -666,25 +806,18 @@ class _MapPanel extends StatelessWidget {
             if (location == null && points.isEmpty)
               Positioned.fill(
                 child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.76),
-                  ),
+                  decoration: BoxDecoration(color: CyberHomeColors.white75),
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
+                        LucideIcon(
                           Lucide.map,
                           size: compact ? AppIconSizes.xl : 58,
-                          color: Colors.grey.shade300,
+                          color: CyberHomeColors.inkFaint,
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          '暂无位置数据',
-                          style: AppTextStyles.bodyLarge.copyWith(
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
+                        Text('暂无位置数据', style: _locationBodyText),
                       ],
                     ),
                   ),
@@ -781,7 +914,7 @@ class _LocationDetailCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: cardDecoration,
+      decoration: _locationCardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -793,12 +926,12 @@ class _LocationDetailCard extends StatelessWidget {
                 width: AppTouchTargets.min,
                 height: AppTouchTargets.min,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadii.md),
+                  color: CyberHomeColors.primarySoft,
+                  borderRadius: BorderRadius.circular(AppRadii.tile),
                 ),
-                child: const Icon(
+                child: const LucideIcon(
                   Lucide.mapPin,
-                  color: AppColors.primary,
+                  color: CyberHomeColors.primary,
                   size: AppIconSizes.lg,
                 ),
               ),
@@ -811,14 +944,14 @@ class _LocationDetailCard extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.cardTitle,
+                      style: _locationItemTitle,
                     ),
                     const SizedBox(height: 3),
                     Text(
                       addressText,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodyMedium.copyWith(height: 1.35),
+                      style: _locationBodyText,
                     ),
                     if (activeLocation != null) ...[
                       const SizedBox(height: 8),
@@ -865,7 +998,10 @@ class _LocationDetailCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               errorText,
-              style: const TextStyle(fontSize: 12, color: AppColors.warning),
+              style: const TextStyle(
+                fontSize: 12,
+                color: CyberHomeColors.warning,
+              ),
             ),
           ],
           const SizedBox(height: 16),
@@ -916,7 +1052,7 @@ class _LocationStatusTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.12),
+        color: CyberHomeColors.primarySoft,
         borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
       child: Row(
@@ -926,7 +1062,7 @@ class _LocationStatusTag extends StatelessWidget {
             width: 6,
             height: 6,
             decoration: const BoxDecoration(
-              color: AppColors.primary,
+              color: CyberHomeColors.primary,
               shape: BoxShape.circle,
             ),
           ),
@@ -936,7 +1072,7 @@ class _LocationStatusTag extends StatelessWidget {
             style: const TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
-              color: AppColors.primaryDark,
+              color: CyberHomeColors.primary,
             ),
           ),
         ],
@@ -957,9 +1093,9 @@ class _LocationMetaBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(color: AppColors.outlineVariant),
+        color: CyberHomeColors.cardMuted,
+        borderRadius: BorderRadius.circular(AppRadii.tile),
+        border: Border.all(color: CyberHomeColors.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -971,7 +1107,7 @@ class _LocationMetaBox extends StatelessWidget {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: CyberHomeColors.ink,
               letterSpacing: 0,
             ),
           ),
@@ -980,7 +1116,10 @@ class _LocationMetaBox extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+            style: const TextStyle(
+              fontSize: 11,
+              color: CyberHomeColors.inkFaint,
+            ),
           ),
         ],
       ),
@@ -1007,13 +1146,13 @@ class _LocationActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
-    final bg = primary ? AppColors.dark : AppColors.surfaceContainerLow;
-    final fg = primary ? Colors.white : AppColors.textPrimary;
+    final bg = primary ? CyberHomeColors.primary : CyberHomeColors.cardMuted;
+    final fg = primary ? CyberHomeColors.white : CyberHomeColors.ink;
     final button = Opacity(
       opacity: enabled ? 1 : 0.5,
       child: Material(
         color: bg,
-        borderRadius: BorderRadius.circular(AppRadii.md),
+        borderRadius: BorderRadius.circular(AppRadii.tile),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
@@ -1023,8 +1162,8 @@ class _LocationActionButton extends StatelessWidget {
             decoration: primary
                 ? null
                 : BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppRadii.md),
-                    border: Border.all(color: AppColors.outlineVariant),
+                    borderRadius: BorderRadius.circular(AppRadii.tile),
+                    border: Border.all(color: CyberHomeColors.lineStrong),
                   ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1036,7 +1175,7 @@ class _LocationActionButton extends StatelessWidget {
                     child: CircularProgressIndicator(strokeWidth: 2, color: fg),
                   )
                 else
-                  Icon(icon, size: AppIconSizes.sm, color: fg),
+                  LucideIcon(icon, size: AppIconSizes.sm, color: fg),
                 const SizedBox(width: 7),
                 Text(
                   label,
@@ -1074,14 +1213,14 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
-          SizedBox(width: 76, child: Text(label, style: AppTextStyles.caption)),
+          SizedBox(width: 76, child: Text(label, style: _locationCaptionText)),
           Expanded(
             child: Text(
               value,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.right,
-              style: AppTextStyles.valueText,
+              style: _locationItemTitle,
             ),
           ),
         ],
@@ -1101,27 +1240,21 @@ class _MapChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
+        color: CyberHomeColors.white96,
         borderRadius: BorderRadius.circular(AppRadii.pill),
-        boxShadow: const [
-          BoxShadow(
-            color: _locationLightShadow,
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppShadows.cyberActionShadow,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.textSecondary),
+          LucideIcon(icon, size: 14, color: CyberHomeColors.inkMuted),
           const SizedBox(width: 4),
           Text(
             label,
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
+              color: CyberHomeColors.inkMuted,
             ),
           ),
         ],
@@ -1142,14 +1275,8 @@ class _TrackNodeMarker extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x24000000),
-            blurRadius: 6,
-            offset: Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: CyberHomeColors.white, width: 2),
+        boxShadow: AppShadows.cyberActionShadow,
       ),
       alignment: Alignment.center,
       child: Text(
@@ -1157,7 +1284,7 @@ class _TrackNodeMarker extends StatelessWidget {
         style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w700,
-          color: Colors.white,
+          color: CyberHomeColors.white,
         ),
       ),
     );
@@ -1174,21 +1301,15 @@ class _MapCaption extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        boxShadow: const [
-          BoxShadow(
-            color: _locationLightShadow,
-            blurRadius: 10,
-            offset: Offset(0, 2),
-          ),
-        ],
+        color: CyberHomeColors.white96,
+        borderRadius: BorderRadius.circular(AppRadii.tile),
+        boxShadow: AppShadows.cyberActionShadow,
       ),
       child: Row(
         children: [
-          const Icon(
+          const LucideIcon(
             Lucide.mapPin,
-            color: AppColors.primary,
+            color: CyberHomeColors.primary,
             size: AppIconSizes.sm,
           ),
           const SizedBox(width: 6),
@@ -1197,9 +1318,7 @@ class _MapCaption extends StatelessWidget {
               '${location.source} · ${location.coordinateText}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.smallText.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: _locationBodyText.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -1219,21 +1338,26 @@ class _ReadOnlyNotice extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.info.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppRadii.md),
+        color: CyberHomeColors.primarySoft,
+        borderRadius: BorderRadius.circular(AppRadii.tile),
+        border: Border.all(color: CyberHomeColors.line),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Lucide.lock, color: AppColors.info, size: AppIconSizes.sm),
+          const LucideIcon(
+            Lucide.lock,
+            color: CyberHomeColors.primary,
+            size: AppIconSizes.sm,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppTextStyles.bodyLarge),
+                Text(title, style: _locationItemTitle),
                 const SizedBox(height: 4),
-                Text(subtitle, style: AppTextStyles.smallText),
+                Text(subtitle, style: _locationBodyText),
               ],
             ),
           ),

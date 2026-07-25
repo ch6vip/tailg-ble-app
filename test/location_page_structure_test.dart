@@ -6,6 +6,7 @@ import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/location_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/source_scan.dart';
@@ -184,6 +185,35 @@ void main() {
     final previousMonth = find.byTooltip('上个月');
     expect(previousMonth, findsOneWidget);
     expectMinTouchTargetHeight(tester, previousMonth);
+  });
+
+  testWidgets('LocationPage uses Cyber home surface without mobile overflow', (
+    tester,
+  ) async {
+    resetMockPreferences();
+    setTestViewSize(tester, const Size(390, 844));
+
+    await tester.pumpWidget(const TestApp(home: LocationPage(embedded: true)));
+    await tester.pump();
+
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+    final headerRefresh = find.bySemanticsLabel('刷新地图数据');
+    expect(headerRefresh, findsOneWidget);
+    expectMinTouchTargetHeight(tester, headerRefresh);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.bySemanticsLabel('轨迹'));
+    await tester.pump();
+    expect(find.text('历史轨迹'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.bySemanticsLabel('围栏'));
+    await tester.pump();
+    expect(find.text('围栏设置'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('LocationPage travel month fallback uses injected clock', (
