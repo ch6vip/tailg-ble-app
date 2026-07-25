@@ -117,8 +117,7 @@ void main() {
     final controlGrid = find.byKey(const ValueKey('cyber-control-grid'));
     final navCard = find.byKey(const ValueKey('cyber-nav-card'));
     double controlsToNavGap() =>
-        tester.getTopLeft(navCard).dy -
-        tester.getBottomRight(controlGrid).dy;
+        tester.getTopLeft(navCard).dy - tester.getBottomRight(controlGrid).dy;
     expect(controlsToNavGap(), closeTo(32, 0.1));
     expect(tester.takeException(), isNull);
 
