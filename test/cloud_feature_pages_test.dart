@@ -15,6 +15,7 @@ import 'package:tailg_ble_app/widgets/vehicle_switch_sheet.dart';
 import 'helpers/snack_finders.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
+import 'helpers/touch_target.dart';
 import 'helpers/view_size.dart';
 
 void main() {
@@ -258,9 +259,27 @@ void main() {
       final switches = find.byType(Switch);
       expect(switches, findsNWidgets(2));
       expect((tester.widget<Switch>(switches.first)).value, isTrue);
+      final firstPreference = find.ancestor(
+        of: switches.first,
+        matching: find.byType(SwitchListTile),
+      );
+      expect(firstPreference, findsOneWidget);
+      expectMinTouchTargetHeight(tester, firstPreference);
+      expect(
+        tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor,
+        CyberHomeColors.pageBg,
+      );
+
+      applyTestViewSize(tester, const Size(390, 844));
+      await tester.pump();
+      expect(find.text('车辆消息通知'), findsOneWidget);
+      expect(find.text('系统消息通知'), findsOneWidget);
+      expect(tester.takeException(), isNull);
 
       await tester.tap(switches.first);
-      await tester.tap(find.text('保存'));
+      await tester.tap(
+        find.byKey(const ValueKey('notification-preferences-save')),
+      );
       await tester.pumpAndSettle();
 
       expect(savedConfig, {'carMsg': false, 'sysMsg': false});
