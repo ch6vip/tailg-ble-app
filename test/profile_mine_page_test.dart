@@ -218,4 +218,24 @@ void main() {
     expect(find.text('2'), findsOneWidget);
     expect(find.bySemanticsLabel('消息中心'), findsOneWidget);
   });
+
+  testWidgets('message badge follows later cloud message updates', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const TestApp(home: ProfileMinePage()));
+    await tester.pump();
+
+    final signedIn = OfficialCloudState.initial().copyWith(
+      initialized: true,
+      token: 'token',
+      vehicleMessages: [
+        OfficialCloudMessage.vehicle({'msgId': 'new-1'}),
+      ],
+    );
+    app.officialCloudService.setStateForTest(signedIn);
+    await tester.pumpAndSettle();
+
+    expect(app.messageReadStore.unreadCount.value, 1);
+    expect(find.text('1'), findsOneWidget);
+  });
 }

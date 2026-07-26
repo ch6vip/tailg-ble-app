@@ -4,6 +4,7 @@ import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/garage_page.dart';
+import 'package:tailg_ble_app/pages/location_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
@@ -36,7 +37,9 @@ void main() {
     expect(source, isNot(contains('e is OfficialCloudApiException')));
   });
 
-  testWidgets('mini vehicle actions keep 44dp touch targets', (tester) async {
+  testWidgets('local locate action opens the map with a 44dp target', (
+    tester,
+  ) async {
     final semantics = tester.ensureSemantics();
     try {
       setTestViewSize(tester, const Size(390, 844));
@@ -71,13 +74,84 @@ void main() {
       );
 
       tester.semantics.tap(find.semantics.byLabel(locateLabel));
+      await tester.pumpAndSettle();
 
-      expect(app.homeTabIndex.value, 0);
+      expect(find.byType(LocationPage), findsOneWidget);
       expect(tester.takeException(), isNull);
     } finally {
       semantics.dispose();
     }
   });
+
+  testWidgets('local control selects that vehicle and returns to root', (
+    tester,
+  ) async {
+    await app.vehicleStore.upsert(
+      id: 'AA:BB:CC:DD:EE:01',
+      name: '默认车辆',
+      protocol: VehicleProtocol.auto,
+      makeDefault: true,
+    );
+    await app.vehicleStore.upsert(
+      id: 'AA:BB:CC:DD:EE:02',
+      name: '目标车辆',
+      protocol: VehicleProtocol.auto,
+    );
+
+    await tester.pumpWidget(
+      TestApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => FilledButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const GaragePage()),
+              ),
+              child: const Text('打开车库'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('打开车库'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('控车').last);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GaragePage), findsNothing);
+    expect(find.text('打开车库'), findsOneWidget);
+    expect(app.homeTabIndex.value, 1);
+    expect(app.vehicleStore.defaultVehicle?.id, 'AA:BB:CC:DD:EE:02');
+  });
+
+  testWidgets(
+    'cloud vehicle quick actions stay separate and locate opens map',
+    (tester) async {
+      final vehicle = OfficialVehicle.fromJson({
+        'carId': 'official-locate-1',
+        'carNickName': '云端车',
+        'online': true,
+      });
+      app.officialCloudService.setStateForTest(
+        OfficialCloudState.initial().copyWith(
+          initialized: true,
+          token: 'token',
+          vehicles: [vehicle],
+          selectedVehicleKey: vehicle.key,
+        ),
+      );
+
+      await tester.pumpWidget(const TestApp(home: GaragePage(embedded: true)));
+      await tester.pump();
+
+      expect(find.bySemanticsLabel('定位'), findsOneWidget);
+      expect(find.bySemanticsLabel('控车'), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('定位'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(LocationPage), findsOneWidget);
+    },
+  );
 
   testWidgets('garage uses Cyber home mobile layout', (tester) async {
     setTestViewSize(tester, const Size(390, 844));

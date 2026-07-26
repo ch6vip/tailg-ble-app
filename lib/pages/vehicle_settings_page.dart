@@ -8,6 +8,7 @@ import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/cloud_vehicle_gate.dart';
 import '../widgets/lucide_icon.dart';
 import 'induction_settings_page.dart';
 import 'notification_prefs_page.dart';
@@ -81,7 +82,9 @@ class VehicleSettingsPage extends StatelessWidget {
                 builder: (context, snapshot) {
                   final vehicle = snapshot.data!.selectedVehicle;
                   if (vehicle == null) {
-                    return const _SettingsEmptyState();
+                    return _SettingsEmptyState(
+                      signedIn: snapshot.data!.signedIn,
+                    );
                   }
                   return ListView(
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
@@ -559,7 +562,9 @@ class _DangerActionRow extends StatelessWidget {
 }
 
 class _SettingsEmptyState extends StatelessWidget {
-  const _SettingsEmptyState();
+  const _SettingsEmptyState({required this.signedIn});
+
+  final bool signedIn;
 
   @override
   Widget build(BuildContext context) {
@@ -598,6 +603,11 @@ class _SettingsEmptyState extends StatelessWidget {
               '请先登录并选择一辆车',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: CyberHomeColors.inkMuted),
+            ),
+            const SizedBox(height: 18),
+            FilledButton(
+              onPressed: () => requireCloudVehicle(context),
+              child: Text(signedIn ? '添加车辆' : '去登录'),
             ),
           ],
         ),

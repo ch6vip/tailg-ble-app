@@ -15,6 +15,7 @@ import '../widgets/lucide_icon.dart';
 import '../widgets/vehicle_stage.dart';
 import 'add_vehicle_page.dart';
 import 'login_page.dart';
+import 'location_page.dart';
 
 /// Garage lists official cloud vehicles when signed in, and optional local
 /// archives under a secondary section. Local-only rename/delete stay available
@@ -99,6 +100,45 @@ class _GaragePageState extends State<GaragePage> {
     AppNavigation.returnToVehicleHome(context);
   }
 
+  Future<void> _locateCloudVehicle(OfficialVehicle vehicle) async {
+    unawaited(HapticFeedback.selectionClick());
+    await officialCloudService.selectVehicle(vehicle);
+    if (!mounted) return;
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              const LocationPage(initialTab: LocationInitialTab.map),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _activateLocalVehicle(VehicleProfile vehicle) async {
+    if (vehicleStore.defaultVehicle?.id != vehicle.id) {
+      await vehicleStore.setDefault(vehicle.id);
+    }
+  }
+
+  Future<void> _locateLocalVehicle(VehicleProfile vehicle) async {
+    await _activateLocalVehicle(vehicle);
+    if (!mounted) return;
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              const LocationPage(initialTab: LocationInitialTab.map),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _controlLocalVehicle(VehicleProfile vehicle) async {
+    await _activateLocalVehicle(vehicle);
+    if (!mounted) return;
+    AppNavigation.returnToVehicleHome(context, refresh: false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final signedIn = _cloudState.signedIn;
@@ -142,6 +182,7 @@ class _GaragePageState extends State<GaragePage> {
                                 vehicle: vehicle,
                                 isSelected: vehicle.key == selectedKey,
                                 onSelect: () => _selectCloudVehicle(vehicle),
+                                onLocate: () => _locateCloudVehicle(vehicle),
                               ),
                           ] else ...[
                             _SignedEmptyInline(
@@ -165,6 +206,8 @@ class _GaragePageState extends State<GaragePage> {
                               isDefault:
                                   vehicle.id == vehicleStore.defaultVehicleId ||
                                   vehicle.id == vehicleStore.defaultVehicle?.id,
+                              onLocate: () => _locateLocalVehicle(vehicle),
+                              onControl: () => _controlLocalVehicle(vehicle),
                             ),
                         ],
                       ],
@@ -578,11 +621,13 @@ class _CloudVehicleCard extends StatelessWidget {
     required this.vehicle,
     required this.isSelected,
     required this.onSelect,
+    required this.onLocate,
   });
 
   final OfficialVehicle vehicle;
   final bool isSelected;
   final VoidCallback onSelect;
+  final VoidCallback onLocate;
 
   @override
   Widget build(BuildContext context) {
@@ -590,128 +635,136 @@ class _CloudVehicleCard extends StatelessWidget {
     final batteryFactor = battery == null
         ? 0.0
         : (battery.clamp(0, 100) / 100.0);
-    return AppPressable(
-      onTap: onSelect,
-      haptic: false,
-      semanticsLabel: '${vehicle.displayName}${isSelected ? '，当前选中' : '，点击选择'}',
-      semanticsButton: true,
-      semanticsEnabled: true,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: _garageCardDecoration.copyWith(
-          border: isSelected
-              ? Border.all(color: CyberHomeColors.primary, width: 1.5)
-              : const Border.fromBorderSide(
-                  BorderSide(color: CyberHomeColors.line),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: _garageCardDecoration.copyWith(
+        border: isSelected
+            ? Border.all(color: CyberHomeColors.primary, width: 1.5)
+            : const Border.fromBorderSide(
+                BorderSide(color: CyberHomeColors.line),
+              ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadii.tile),
+            child: Container(
+              width: 100,
+              height: 70,
+              color: CyberHomeColors.control,
+              child: CustomPaint(
+                painter: VehicleStagePainter(
+                  batteryLevel: batteryFactor > 0 ? batteryFactor : 0.7,
                 ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadii.tile),
-              child: Container(
-                width: 100,
-                height: 70,
-                color: CyberHomeColors.control,
-                child: CustomPaint(
-                  painter: VehicleStagePainter(
-                    batteryLevel: batteryFactor > 0 ? batteryFactor : 0.7,
-                  ),
-                  size: const Size(100, 70),
-                ),
+                size: const Size(100, 70),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          vehicle.displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: CyberHomeColors.ink,
-                          ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppPressable(
+                  onTap: onSelect,
+                  haptic: false,
+                  semanticsLabel:
+                      '${vehicle.displayName}${isSelected ? '，当前选中' : '，点击选择'}',
+                  semanticsButton: true,
+                  semanticsEnabled: true,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minHeight: AppTouchTargets.min,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                vehicle.displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: CyberHomeColors.ink,
+                                ),
+                              ),
+                            ),
+                            if (isSelected) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: CyberHomeColors.primarySoft,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.pill,
+                                  ),
+                                ),
+                                child: const Text(
+                                  '使用中',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: CyberHomeColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ),
-                      if (isSelected) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: CyberHomeColors.primarySoft,
-                            borderRadius: BorderRadius.circular(AppRadii.pill),
-                          ),
-                          child: const Text(
-                            '使用中',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: CyberHomeColors.primary,
-                              fontWeight: FontWeight.w600,
+                        const SizedBox(height: 4),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(2),
+                          child: Container(
+                            height: 4,
+                            width: 120,
+                            color: CyberHomeColors.controlStrong,
+                            child: FractionallySizedBox(
+                              alignment: Alignment.centerLeft,
+                              widthFactor: batteryFactor > 0
+                                  ? batteryFactor
+                                  : 0.72,
+                              child: Container(color: CyberHomeColors.success),
                             ),
                           ),
                         ),
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(2),
-                    child: Container(
-                      height: 4,
-                      width: 120,
-                      color: CyberHomeColors.controlStrong,
-                      child: FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: batteryFactor > 0 ? batteryFactor : 0.72,
-                        child: Container(color: CyberHomeColors.success),
-                      ),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      _GarageStatus(
-                        label: vehicle.online ? '在线' : '离线',
-                        active: vehicle.online,
-                      ),
-                      const Spacer(),
-                      _MiniActionButton(
-                        icon: Lucide.mapPin,
-                        label: '定位',
-                        onTap: () {
-                          final nav = Navigator.of(
-                            context,
-                            rootNavigator: true,
-                          );
-                          nav.popUntil((route) => route.isFirst);
-                          homeTabIndex.value = 0;
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      _MiniActionButton(
-                        icon: Lucide.sensors,
-                        label: '控车',
-                        onTap: onSelect,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+                Row(
+                  children: [
+                    _GarageStatus(
+                      label: vehicle.online ? '在线' : '离线',
+                      active: vehicle.online,
+                    ),
+                    const Spacer(),
+                    _MiniActionButton(
+                      icon: Lucide.mapPin,
+                      label: '定位',
+                      onTap: onLocate,
+                    ),
+                    const SizedBox(width: 12),
+                    _MiniActionButton(
+                      icon: Lucide.sensors,
+                      label: '控车',
+                      onTap: onSelect,
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -720,7 +773,14 @@ class _CloudVehicleCard extends StatelessWidget {
 class _LocalVehicleCard extends StatefulWidget {
   final VehicleProfile vehicle;
   final bool isDefault;
-  const _LocalVehicleCard({required this.vehicle, required this.isDefault});
+  final VoidCallback onLocate;
+  final VoidCallback onControl;
+  const _LocalVehicleCard({
+    required this.vehicle,
+    required this.isDefault,
+    required this.onLocate,
+    required this.onControl,
+  });
 
   @override
   State<_LocalVehicleCard> createState() => _LocalVehicleCardState();
@@ -826,13 +886,13 @@ class _LocalVehicleCardState extends State<_LocalVehicleCard> {
                         _MiniActionButton(
                           icon: Lucide.mapPin,
                           label: '定位',
-                          onTap: () => homeTabIndex.value = 0,
+                          onTap: widget.onLocate,
                         ),
                         const SizedBox(width: 12),
                         _MiniActionButton(
                           icon: Lucide.sensors,
                           label: '控车',
-                          onTap: () => homeTabIndex.value = 1,
+                          onTap: widget.onControl,
                         ),
                       ],
                     ),

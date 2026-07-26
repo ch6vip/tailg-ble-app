@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
+import 'package:tailg_ble_app/pages/login_page.dart';
 import 'package:tailg_ble_app/pages/settings_page.dart';
+import 'package:tailg_ble_app/pages/vehicle_settings_page.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 
 import 'helpers/storage_mocks.dart';
@@ -15,10 +17,12 @@ void main() {
   setUp(() {
     resetMockPreferences();
     app.appPreferencesService.resetForTest();
+    app.officialCloudService.resetForTest();
   });
 
   tearDown(() {
     app.appPreferencesService.resetForTest();
+    app.officialCloudService.resetForTest();
   });
 
   testWidgets('settings uses Cyber home mobile surface', (tester) async {
@@ -188,5 +192,30 @@ void main() {
     } finally {
       semantics.dispose();
     }
+  });
+
+  testWidgets('vehicle settings entry applies the cloud vehicle gate', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const TestApp(home: SettingsPage()));
+    await tester.pump();
+
+    await tester.tap(find.text('车辆设置'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LoginPage), findsOneWidget);
+  });
+
+  testWidgets('vehicle settings empty state offers a login action', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const TestApp(home: VehicleSettingsPage()));
+    await tester.pump();
+
+    expect(find.text('去登录'), findsOneWidget);
+    await tester.tap(find.text('去登录'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LoginPage), findsOneWidget);
   });
 }

@@ -56,10 +56,11 @@ class _ProfileMinePageState extends State<ProfileMinePage>
   @override
   void initState() {
     super.initState();
-    _cloudSub = officialCloudService.stateStream.listen((_) {
+    _cloudSub = officialCloudService.stateStream.listen((state) {
       if (mounted) setState(() {});
+      _syncMessageBadge(state);
     });
-    unawaited(_bootstrapMessageBadge());
+    _syncMessageBadge(officialCloudService.state);
     if (officialCloudService.state.signedIn) {
       unawaited(
         officialCloudService.refreshUserProfile(silent: true).catchError((
@@ -82,16 +83,24 @@ class _ProfileMinePageState extends State<ProfileMinePage>
     super.dispose();
   }
 
-  Future<void> _bootstrapMessageBadge() async {
-    await messageReadStore.ensureLoaded();
-    final state = officialCloudService.state;
+  void _syncMessageBadge(OfficialCloudState state) {
     if (!state.signedIn) {
       messageReadStore.setUnreadCount(0);
       return;
     }
-    await messageReadStore.syncFromCloudMessages(
-      vehicleMessages: state.vehicleMessages,
-      systemMessages: state.systemMessages,
+    unawaited(
+      messageReadStore
+          .syncFromCloudMessages(
+            vehicleMessages: state.vehicleMessages,
+            systemMessages: state.systemMessages,
+          )
+          .catchError((Object error) {
+            logService.operation(
+              '我的页消息角标同步失败',
+              detail: OfficialCloudRedactor.errorMessage(error),
+              level: LogLevel.warning,
+            );
+          }),
     );
   }
 

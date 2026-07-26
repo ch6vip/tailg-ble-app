@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import '../services/app_preferences_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/cloud_vehicle_gate.dart';
 import '../widgets/cyber_page_chrome.dart';
 import '../widgets/lucide_icon.dart';
 import 'app_preferences_pages.dart';
@@ -66,23 +67,15 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: Lucide.tune,
                 title: '车辆设置',
                 subtitle: '声音、灵敏度、车辆功能、骑行设置',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const VehicleSettingsPage(),
-                  ),
-                ),
+                onTap: () =>
+                    openCloudGatedPage(context, const VehicleSettingsPage()),
               ),
               _settingItem(
                 icon: Lucide.battery,
                 title: '电池/BMS',
                 subtitle: '电量、电压、温度、故障和预留 BMS 数据',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const BatteryDetailsPage(),
-                  ),
-                ),
+                onTap: () =>
+                    openCloudGatedPage(context, const BatteryDetailsPage()),
               ),
             ]),
             const CyberSectionLabel('通用'),
@@ -154,12 +147,8 @@ class _AdvancedDiagnosticsPage extends StatelessWidget {
                 icon: Lucide.stethoscope,
                 title: '故障诊断',
                 subtitle: '读取车辆错误码',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const DiagnosticPage(),
-                  ),
-                ),
+                onTap: () =>
+                    openCloudGatedPage(context, const DiagnosticPage()),
               ),
               _settingItem(
                 icon: Lucide.fileText,
