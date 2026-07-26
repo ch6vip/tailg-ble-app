@@ -351,12 +351,19 @@ void main() {
     expectMinTouchTargetHeight(tester, backAction);
     final helpAction = find.byKey(const ValueKey('ride-stats-help'));
     expectMinTouchTargetHeight(tester, helpAction);
+    final title = find.byKey(const ValueKey('ride-stats-title'));
+    double titleToHelpGap() =>
+        tester.getTopLeft(helpAction).dx - tester.getBottomRight(title).dx;
+    expect(titleToHelpGap(), greaterThanOrEqualTo(12));
     for (final period in OfficialRidePeriod.values) {
       final periodAction = find.byKey(ValueKey('ride-period-${period.name}'));
       expect(periodAction, findsOneWidget);
       expectMinTouchTargetHeight(tester, periodAction);
     }
     expect(find.byKey(const ValueKey('ride-mileage-notice')), findsOneWidget);
+    applyTestViewSize(tester, const Size(320, 844));
+    await tester.pump();
+    expect(titleToHelpGap(), greaterThanOrEqualTo(12));
     expect(tester.takeException(), isNull);
   });
 

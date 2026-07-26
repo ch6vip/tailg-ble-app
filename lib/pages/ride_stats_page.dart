@@ -304,67 +304,84 @@ class _RideStatsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 64,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          const Text(
-            '骑行统计',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: CyberHomeColors.ink,
-            ),
-          ),
-          Positioned(
-            left: 12,
-            child: Tooltip(
-              message: '返回',
-              excludeFromSemantics: true,
-              child: AppPressable(
-                key: const ValueKey('ride-stats-back'),
-                onTap: () => Navigator.of(context).pop(),
-                semanticsLabel: '返回',
-                semanticsButton: true,
-                child: const SizedBox(
-                  width: AppTouchTargets.min,
-                  height: AppTouchTargets.min,
-                  child: Center(
-                    child: LucideIcon(
-                      Lucide.arrowLeft,
-                      size: 20,
-                      color: CyberHomeColors.inkSecondary,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            right: 12,
-            child: AppPressable(
-              key: const ValueKey('ride-stats-help'),
-              onTap: onHelp,
-              semanticsLabel: '查看统计说明',
-              semanticsButton: true,
-              child: const SizedBox(
-                height: AppTouchTargets.min,
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      '统计说明',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: CyberHomeColors.primary,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 92,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Tooltip(
+                  message: '返回',
+                  excludeFromSemantics: true,
+                  child: AppPressable(
+                    key: const ValueKey('ride-stats-back'),
+                    onTap: () => Navigator.of(context).pop(),
+                    semanticsLabel: '返回',
+                    semanticsButton: true,
+                    child: const SizedBox(
+                      width: AppTouchTargets.min,
+                      height: AppTouchTargets.min,
+                      child: Center(
+                        child: LucideIcon(
+                          Lucide.arrowLeft,
+                          size: 20,
+                          color: CyberHomeColors.inkSecondary,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+            const Expanded(
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '骑行统计',
+                    key: ValueKey('ride-stats-title'),
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: CyberHomeColors.ink,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 92,
+              child: AppPressable(
+                key: const ValueKey('ride-stats-help'),
+                onTap: onHelp,
+                semanticsLabel: '查看统计说明',
+                semanticsButton: true,
+                child: const SizedBox(
+                  width: 92,
+                  height: AppTouchTargets.min,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        '统计说明',
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: CyberHomeColors.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
