@@ -28,6 +28,8 @@
 	<string>用于通过蓝牙连接和控制您的车辆。</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>用于通过蓝牙连接您的车辆。</string>
+	<key>NSCameraUsageDescription</key>
+	<string>用于扫描车辆二维码并搜索或绑定车辆。</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>

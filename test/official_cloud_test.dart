@@ -146,6 +146,44 @@ void main() {
       expect(vehicle.raw['customFlag'], 'raw');
       expect(vehicle.toJson()['customFlag'], 'raw');
     });
+
+    test('parses GarageV2 card flags', () {
+      final vehicle = OfficialVehicle.fromJson({
+        'carId': 'garage-card',
+        'isUsing': '1',
+        'shareCarFlag': true,
+        'shareCount': '3',
+        'authStatus': 2,
+        'isTelligence': '1',
+      });
+
+      expect(vehicle.isUsing, isTrue);
+      expect(vehicle.shareCarFlag, isTrue);
+      expect(vehicle.shareCount, 3);
+      expect(vehicle.authStatus, 2);
+      expect(vehicle.isTelligence, '1');
+    });
+  });
+
+  group('OfficialGaragePage', () {
+    test('parses official pagination envelope and rows', () {
+      final page = OfficialGaragePage.fromPayload({
+        'nowPageIndex': 2,
+        'pageSize': 5,
+        'total': 12,
+        'hasNext': true,
+        'pageData': [
+          {'carId': 'garage-6', 'carNickName': '第六辆车'},
+          {'carId': 'garage-7', 'carNickName': '第七辆车'},
+        ],
+      }, requestedPageIndex: 2);
+
+      expect(page.pageIndex, 2);
+      expect(page.pageSize, 5);
+      expect(page.total, 12);
+      expect(page.hasNext, isTrue);
+      expect(page.vehicles.map((item) => item.carId), ['garage-6', 'garage-7']);
+    });
   });
 
   group('OfficialCloudCommand', () {
@@ -1398,6 +1436,138 @@ void main() {
         await server.close();
       }
     });
+
+    test(
+      'requests official GarageV2 page with only active search field',
+      () async {
+        Map<String, dynamic>? requestBody;
+        final server = await _startOfficialCloudServer((request) async {
+          final bodyText = await utf8.decoder.bind(request).join();
+          requestBody = jsonDecode(bodyText) as Map<String, dynamic>;
+          await _writeJsonResponse(request, 200, {
+            'code': '200',
+            'msg': 'success',
+            'data': {
+              'nowPageIndex': 2,
+              'pageSize': 5,
+              'total': 7,
+              'hasNext': false,
+              'pageData': [
+                {
+                  'carId': 'garage-search-result',
+                  'carNickName': '搜索结果',
+                  'frame': 'VIN123456',
+                },
+              ],
+            },
+          });
+        });
+        final service = OfficialCloudService();
+        try {
+          service.resetForTest(
+            apiConfig: OfficialCloudApiConfig(
+              apiBase: server.apiBase,
+              retryBaseDelay: Duration.zero,
+            ),
+          );
+          service.setStateForTest(
+            OfficialCloudState.initial().copyWith(
+              initialized: true,
+              token: 'test-token',
+            ),
+          );
+
+          final page = await service.fetchGaragePage(
+            pageIndex: 2,
+            frame: ' VIN123456 ',
+          );
+
+          expect(requestBody, {
+            'pageSize': '5',
+            'nowPageIndex': '2',
+            'frame': 'VIN123456',
+          });
+          expect(page.vehicles.single.displayName, '搜索结果');
+          expect(page.hasNext, isFalse);
+        } finally {
+          service.resetForTest();
+          await server.close();
+        }
+      },
+    );
+
+    test(
+      'changeUsingVehicle calls official endpoint and selects refreshed car',
+      () async {
+        final requestBodies = <String, Map<String, dynamic>?>{};
+        final server = await _startOfficialCloudServer((request) async {
+          final bodyText = await utf8.decoder.bind(request).join();
+          requestBodies[request.uri.path] = bodyText.isEmpty
+              ? null
+              : jsonDecode(bodyText) as Map<String, dynamic>;
+          if (request.uri.path.endsWith('/app/centralControl/changeUsingCar')) {
+            await _writeJsonResponse(request, 200, {
+              'code': '200',
+              'msg': 'success',
+            });
+            return;
+          }
+          if (request.uri.path.endsWith('/app/centralControl/carStatus')) {
+            await _writeJsonResponse(request, 200, {
+              'code': '200',
+              'msg': 'success',
+              'data': {
+                'carId': 'target-car',
+                'carNickName': '目标车辆',
+                'imei': 'TARGET-IMEI',
+              },
+            });
+            return;
+          }
+          await _writeJsonResponse(request, 200, {
+            'code': '200',
+            'msg': 'success',
+            'data': <String, Object?>{},
+          });
+        });
+        final service = OfficialCloudService();
+        try {
+          service.resetForTest(
+            apiConfig: OfficialCloudApiConfig(
+              apiBase: server.apiBase,
+              retryBaseDelay: Duration.zero,
+            ),
+          );
+          final current = OfficialVehicle.fromJson({
+            'carId': 'current-car',
+            'carNickName': '当前车辆',
+          });
+          final target = OfficialVehicle.fromJson({
+            'carId': 'target-car',
+            'carNickName': '目标车辆',
+          });
+          service.setStateForTest(
+            OfficialCloudState.initial().copyWith(
+              initialized: true,
+              token: 'test-token',
+              vehicles: [current],
+              selectedVehicleKey: current.key,
+            ),
+          );
+
+          await service.changeUsingVehicle(target);
+
+          expect(requestBodies['/v1/api/app/centralControl/changeUsingCar'], {
+            'carId': 'target-car',
+          });
+          expect(service.state.selectedVehicle?.carId, 'target-car');
+          expect(service.state.selectedVehicle?.imei, 'TARGET-IMEI');
+        } finally {
+          service.resetForTest();
+          await server.close();
+        }
+      },
+    );
 
     test('writes fence settings and refreshes the saved state', () async {
       final requestBodies = <String, Map<String, dynamic>?>{};

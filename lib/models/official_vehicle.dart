@@ -257,6 +257,16 @@ class OfficialVehicle {
 
   bool get shareCarFlag => parsePersistedBool(raw['shareCarFlag']);
 
+  /// GarageV2 `UserCarPageDataBean.isUsing`.
+  bool get isUsing => parsePersistedBool(raw['isUsing'] ?? raw['using']);
+
+  /// GarageV2 hides the share badge when this value is zero.
+  int get shareCount => parsePersistedInt(raw['shareCount']) ?? 0;
+
+  int? get authStatus => parsePersistedInt(raw['authStatus']);
+
+  String get isTelligence => parsePersistedString(raw['isTelligence']);
+
   /// Official `CarControlInfoBean.batterySpecLabel` — "当前使用：xx".
   String get batterySpecLabel => parsePersistedString(
     raw['batterySpecLabel'] ??
@@ -395,6 +405,66 @@ class OfficialVehicle {
   String get onlineLabel => online ? '车辆在线' : '车辆离线';
   String get defenceLabel => isLocked ? '已设防' : '已解防';
   String get powerLabel => isPowerOn ? '车辆已启动' : '车辆未启动';
+}
+
+/// Official `app/userCarPage` page envelope used by GarageV2.
+class OfficialGaragePage {
+  final List<OfficialVehicle> vehicles;
+  final int pageIndex;
+  final int pageSize;
+  final int total;
+  final bool hasNext;
+
+  const OfficialGaragePage({
+    required this.vehicles,
+    required this.pageIndex,
+    required this.pageSize,
+    required this.total,
+    required this.hasNext,
+  });
+
+  factory OfficialGaragePage.fromPayload(
+    Object? payload, {
+    required int requestedPageIndex,
+    int requestedPageSize = 5,
+  }) {
+    final map = parsePersistedMap(payload) ?? const <String, dynamic>{};
+    final rawItems =
+        map['pageData'] ?? map['records'] ?? map['list'] ?? map['rows'];
+    final items = rawItems is Iterable
+        ? rawItems
+              .map(parsePersistedMap)
+              .whereType<Map<String, dynamic>>()
+              .map(OfficialVehicle.fromJson)
+              .where(
+                (vehicle) =>
+                    vehicle.carId.isNotEmpty ||
+                    vehicle.imei.isNotEmpty ||
+                    vehicle.frame.isNotEmpty ||
+                    vehicle.carName.isNotEmpty,
+              )
+              .toList(growable: false)
+        : const <OfficialVehicle>[];
+    final pageIndex =
+        parsePersistedInt(map['nowPageIndex']) ?? requestedPageIndex;
+    final pageSize = parsePersistedInt(map['pageSize']) ?? requestedPageSize;
+    final total = parsePersistedInt(map['total']) ?? items.length;
+    final explicitHasNext = map.containsKey('hasNext')
+        ? parsePersistedBool(map['hasNext'])
+        : null;
+    final hasNext =
+        explicitHasNext ??
+        ((pageSize > 0 && pageIndex * pageSize < total) ||
+            (items.length >= requestedPageSize && total > items.length));
+
+    return OfficialGaragePage(
+      vehicles: items,
+      pageIndex: pageIndex,
+      pageSize: pageSize,
+      total: total,
+      hasNext: hasNext,
+    );
+  }
 }
 
 class OfficialTravelDay {

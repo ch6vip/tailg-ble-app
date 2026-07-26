@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
-import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/pages/garage_page.dart';
-import 'package:tailg_ble_app/pages/location_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
-import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
 import 'helpers/source_scan.dart';
 import 'helpers/storage_mocks.dart';
@@ -30,73 +27,160 @@ void main() {
     app.homeTabIndex.value = 1;
   });
 
-  test('garage sync errors redact exception details before display', () {
+  test('garage errors redact exception details before display', () {
     final source = readSource('lib/pages/garage_page.dart');
 
     expect(source, contains('OfficialCloudRedactor.errorMessage(e)'));
     expect(source, isNot(contains('e is OfficialCloudApiException')));
   });
 
-  testWidgets('local locate action opens the map with a 44dp target', (
+  testWidgets('signed-out garage keeps official search and add structure', (
     tester,
   ) async {
-    final semantics = tester.ensureSemantics();
-    try {
-      setTestViewSize(tester, const Size(390, 844));
-      await app.vehicleStore.upsert(
-        id: 'AA:BB:CC:DD:EE:FF',
-        name: '测试车辆',
-        protocol: VehicleProtocol.auto,
-        makeDefault: true,
-      );
+    setTestViewSize(tester, const Size(390, 844));
 
-      await tester.pumpWidget(const TestApp(home: GaragePage(embedded: true)));
-      await tester.pump();
+    await tester.pumpWidget(const TestApp(home: GaragePage()));
+    await tester.pump();
 
-      final locateAction = find.ancestor(
-        of: find.text('定位'),
-        matching: find.byType(AppPressable),
-      );
-      expect(locateAction, findsOneWidget);
-      expectMinTouchTargetHeight(tester, locateAction);
-
-      const locateLabel = '定位';
-      final locateSemantics = find.bySemanticsLabel(locateLabel);
-      expect(
-        tester.getSemantics(locateSemantics),
-        matchesSemantics(
-          label: locateLabel,
-          isButton: true,
-          hasEnabledState: true,
-          isEnabled: true,
-          hasTapAction: true,
-        ),
-      );
-
-      tester.semantics.tap(find.semantics.byLabel(locateLabel));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(LocationPage), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    } finally {
-      semantics.dispose();
-    }
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+    expect(find.text('我的车库'), findsNothing);
+    expect(find.byKey(const ValueKey('garage-search-field')), findsOneWidget);
+    expect(find.text('点击卡片选择设备'), findsOneWidget);
+    expect(find.text('登录并添加爱车'), findsOneWidget);
+    expect(find.text('登录后查看我的车库'), findsOneWidget);
+    expectMinTouchTargetHeight(
+      tester,
+      find.byKey(const ValueKey('garage-back')),
+    );
+    expectMinTouchTargetHeight(
+      tester,
+      find.byKey(const ValueKey('garage-add')),
+    );
+    expect(tester.takeException(), isNull);
   });
 
-  testWidgets('local control selects that vehicle and returns to root', (
+  testWidgets('signed-in garage renders official GarageV2 vehicle card', (
     tester,
   ) async {
-    await app.vehicleStore.upsert(
-      id: 'AA:BB:CC:DD:EE:01',
-      name: '默认车辆',
-      protocol: VehicleProtocol.auto,
-      makeDefault: true,
+    setTestViewSize(tester, const Size(390, 844));
+    final vehicle = _vehicle(
+      carId: 'garage-1',
+      nickName: '追风',
+      using: true,
+      shareCount: 2,
     );
-    await app.vehicleStore.upsert(
-      id: 'AA:BB:CC:DD:EE:02',
-      name: '目标车辆',
-      protocol: VehicleProtocol.auto,
+    _setSignedIn([vehicle]);
+    _stubGaragePage([vehicle]);
+
+    await tester.pumpWidget(const TestApp(home: GaragePage(embedded: true)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('追风'), findsOneWidget);
+    expect(find.text('使用中'), findsOneWidget);
+    expect(find.text('在线'), findsOneWidget);
+    expect(find.text('车主车辆'), findsOneWidget);
+    expect(find.text('已分享 2 次'), findsOneWidget);
+    expect(find.bySemanticsLabel('车辆码'), findsOneWidget);
+    expect(find.bySemanticsLabel('修改'), findsOneWidget);
+    expect(find.bySemanticsLabel('解绑'), findsOneWidget);
+    expect(find.text('账号车辆'), findsNothing);
+    expect(find.text('本地存档'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('frame search sends official GarageV2 search values', (
+    tester,
+  ) async {
+    setTestViewSize(tester, const Size(390, 844));
+    final calls = <Map<String, Object>>[];
+    _setSignedIn(const []);
+    app.officialCloudService.fetchGaragePageOverride =
+        ({required pageIndex, required frame, required shareUserPhone}) async {
+          calls.add({
+            'pageIndex': pageIndex,
+            'frame': frame,
+            'shareUserPhone': shareUserPhone,
+          });
+          return const OfficialGaragePage(
+            vehicles: [],
+            pageIndex: 1,
+            pageSize: 5,
+            total: 0,
+            hasNext: false,
+          );
+        };
+
+    await tester.pumpWidget(const TestApp(home: GaragePage(embedded: true)));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('garage-search-field')),
+      'VIN123456',
     );
+    await tester.tap(find.byKey(const ValueKey('garage-search')));
+    await tester.pumpAndSettle();
+
+    expect(calls.last, {
+      'pageIndex': 1,
+      'frame': 'VIN123456',
+      'shareUserPhone': '',
+    });
+  });
+
+  testWidgets('shared vehicle hides owner-only operations', (tester) async {
+    setTestViewSize(tester, const Size(390, 844));
+    final vehicle = _vehicle(
+      carId: 'shared-1',
+      nickName: '好友的车',
+      using: true,
+      shared: true,
+    );
+    _setSignedIn([vehicle]);
+    _stubGaragePage([vehicle]);
+
+    await tester.pumpWidget(const TestApp(home: GaragePage(embedded: true)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('好友车辆'), findsOneWidget);
+    expect(find.bySemanticsLabel('车辆码'), findsNothing);
+    expect(find.bySemanticsLabel('解绑'), findsNothing);
+    expect(find.bySemanticsLabel('修改'), findsOneWidget);
+  });
+
+  testWidgets('vehicle code action opens frame QR sheet', (tester) async {
+    setTestViewSize(tester, const Size(390, 844));
+    final vehicle = _vehicle(
+      carId: 'code-1',
+      nickName: '车辆码测试车',
+      using: true,
+      frame: 'FRAME12345',
+    );
+    _setSignedIn([vehicle]);
+    _stubGaragePage([vehicle]);
+
+    await tester.pumpWidget(const TestApp(home: GaragePage(embedded: true)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('车辆码'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('车架号：FRAME12345'), findsOneWidget);
+    expect(find.text('车辆码'), findsWidgets);
+  });
+
+  testWidgets('switch confirmation dispatches official changeUsingCar flow', (
+    tester,
+  ) async {
+    setTestViewSize(tester, const Size(390, 844));
+    final current = _vehicle(carId: 'current-1', nickName: '当前车辆', using: true);
+    final target = _vehicle(carId: 'target-2', nickName: '目标车辆');
+    _setSignedIn([current, target]);
+    _stubGaragePage([current, target]);
+    OfficialVehicle? changedTo;
+    app.officialCloudService.changeUsingVehicleOverride = (vehicle) async {
+      changedTo = vehicle;
+    };
 
     await tester.pumpWidget(
       TestApp(
@@ -114,133 +198,91 @@ void main() {
     );
     await tester.tap(find.text('打开车库'));
     await tester.pumpAndSettle();
-
-    await tester.tap(find.bySemanticsLabel('控车').last);
+    final targetCard = find.bySemanticsLabel('目标车辆，点击切换');
+    await tester.ensureVisible(targetCard);
+    await tester.pumpAndSettle();
+    await tester.tap(targetCard);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('确认切换'));
     await tester.pumpAndSettle();
 
+    expect(changedTo?.carId, 'target-2');
     expect(find.byType(GaragePage), findsNothing);
-    expect(find.text('打开车库'), findsOneWidget);
     expect(app.homeTabIndex.value, 1);
-    expect(app.vehicleStore.defaultVehicle?.id, 'AA:BB:CC:DD:EE:02');
   });
 
-  testWidgets(
-    'cloud vehicle quick actions stay separate and locate opens map',
-    (tester) async {
-      final vehicle = OfficialVehicle.fromJson({
-        'carId': 'official-locate-1',
-        'carNickName': '云端车',
-        'online': true,
-      });
-      app.officialCloudService.setStateForTest(
-        OfficialCloudState.initial().copyWith(
-          initialized: true,
-          token: 'token',
-          vehicles: [vehicle],
-          selectedVehicleKey: vehicle.key,
-        ),
-      );
-
-      await tester.pumpWidget(const TestApp(home: GaragePage(embedded: true)));
-      await tester.pump();
-
-      expect(find.bySemanticsLabel('定位'), findsOneWidget);
-      expect(find.bySemanticsLabel('控车'), findsOneWidget);
-      await tester.tap(find.bySemanticsLabel('定位'));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(LocationPage), findsOneWidget);
-    },
-  );
-
-  testWidgets('garage uses Cyber home mobile layout', (tester) async {
+  testWidgets('unbind requires matching middle four phone digits', (
+    tester,
+  ) async {
     setTestViewSize(tester, const Size(390, 844));
-
-    await tester.pumpWidget(const TestApp(home: GaragePage()));
-    await tester.pump();
-
-    expect(
-      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
-      CyberHomeColors.pageBg,
-    );
-    final backAction = find.byKey(const ValueKey('garage-back'));
-    final addAction = find.byKey(const ValueKey('garage-add'));
-    expect(backAction, findsOneWidget);
-    expect(addAction, findsOneWidget);
-    expectMinTouchTargetHeight(tester, backAction);
-    expectMinTouchTargetHeight(tester, addAction);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('garage edit dialog keeps Cyber light surface', (tester) async {
-    await app.vehicleStore.upsert(
-      id: 'AA:BB:CC:DD:EE:FF',
-      name: '测试车辆',
-      protocol: VehicleProtocol.auto,
-      makeDefault: true,
-    );
+    final vehicle = _vehicle(carId: 'unbind-1', nickName: '待解绑车辆', using: true);
+    _setSignedIn([vehicle], phone: '13812345678');
+    _stubGaragePage([vehicle]);
+    String? unboundId;
+    int? unbindType;
+    app.officialCloudService.unbindVehicleOverride = (carId, type) async {
+      unboundId = carId;
+      unbindType = type;
+    };
 
     await tester.pumpWidget(const TestApp(home: GaragePage(embedded: true)));
-    await tester.pump();
-    await tester.tap(find.byTooltip('车辆操作'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('编辑名称'));
+    await tester.tap(find.bySemanticsLabel('解绑'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('138****5678'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, '1234');
+    await tester.tap(find.text('确认解绑'));
     await tester.pumpAndSettle();
 
-    expect(
-      tester.widget<AlertDialog>(find.byType(AlertDialog)).backgroundColor,
-      CyberHomeColors.card,
-    );
-    await tester.tap(find.text('取消'));
-    await tester.pumpAndSettle();
+    expect(unboundId, 'unbind-1');
+    expect(unbindType, 1);
   });
+}
 
-  testWidgets('signed-in garage lists official cloud vehicles', (tester) async {
-    await app.vehicleStore.upsert(
-      id: 'AA:BB:CC:DD:EE:FF',
-      name: '测试车辆',
-      protocol: VehicleProtocol.auto,
-      makeDefault: true,
-    );
-    final vehicle = OfficialVehicle.fromJson({
-      'carId': 'official-garage-1',
-      'carNickName': '云端车',
-      'online': true,
-      'electricQuantity': 88,
-    });
-    app.officialCloudService.setStateForTest(
-      OfficialCloudState.initial().copyWith(
-        initialized: true,
-        token: 'token',
-        vehicles: [vehicle],
-        selectedVehicleKey: vehicle.key,
-      ),
-    );
-
-    await tester.pumpWidget(const TestApp(home: GaragePage(embedded: true)));
-    await tester.pump();
-
-    expect(find.text('账号车辆'), findsOneWidget);
-    expect(find.text('云端车'), findsOneWidget);
-    expect(find.text('使用中'), findsOneWidget);
-    expect(find.text('本地存档'), findsOneWidget);
-    expect(find.text('测试车辆'), findsOneWidget);
+OfficialVehicle _vehicle({
+  required String carId,
+  required String nickName,
+  bool using = false,
+  bool shared = false,
+  int shareCount = 0,
+  String frame = 'FRAME0001',
+}) {
+  return OfficialVehicle.fromJson({
+    'carId': carId,
+    'carNickName': nickName,
+    'carName': 'TL-智能款',
+    'frame': frame,
+    'online': true,
+    'isUsing': using,
+    'shareCarFlag': shared,
+    'shareCount': shareCount,
   });
+}
 
-  testWidgets('signed-in empty cloud garage shows empty copy', (tester) async {
-    // No local vehicles after setUp reset; only signed-in empty cloud list.
-    app.officialCloudService.setStateForTest(
-      OfficialCloudState.initial().copyWith(
-        initialized: true,
-        token: 'token',
-        vehicles: const [],
-      ),
-    );
+void _setSignedIn(
+  List<OfficialVehicle> vehicles, {
+  String phone = '13812345678',
+}) {
+  app.officialCloudService.setStateForTest(
+    OfficialCloudState.initial().copyWith(
+      initialized: true,
+      token: 'test-token',
+      phone: phone,
+      vehicles: vehicles,
+      selectedVehicleKey: vehicles.isEmpty ? null : vehicles.first.key,
+    ),
+  );
+}
 
-    await tester.pumpWidget(const TestApp(home: GaragePage(embedded: true)));
-    await tester.pump();
-
-    expect(find.text('账号下暂无车辆'), findsOneWidget);
-    expect(find.text('同步车辆'), findsOneWidget);
-  });
+void _stubGaragePage(List<OfficialVehicle> vehicles) {
+  app.officialCloudService.fetchGaragePageOverride =
+      ({required pageIndex, required frame, required shareUserPhone}) async {
+        return OfficialGaragePage(
+          vehicles: vehicles,
+          pageIndex: pageIndex,
+          pageSize: 5,
+          total: vehicles.length,
+          hasNext: false,
+        );
+      };
 }

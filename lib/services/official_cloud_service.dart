@@ -541,6 +541,7 @@ class OfficialCloudService {
     bool silent = false,
     bool refreshReplicaDetails = true,
     bool force = false,
+    String? preferredVehicleKey,
   }) async {
     final token = _state.token;
     if (token.isEmpty) return;
@@ -558,8 +559,63 @@ class OfficialCloudService {
         refreshReplicaDetails: refreshReplicaDetails,
         refreshKey: refreshKey,
         token: token,
+        preferredVehicleKey: preferredVehicleKey,
       ),
     );
+  }
+
+  /// GarageV2 vehicle list (`POST app/userCarPage`).
+  ///
+  /// The official client always requests five rows and sends only the active
+  /// search field: `frame` or `shareUserPhone`.
+  Future<OfficialGaragePage> fetchGaragePage({
+    int pageIndex = 1,
+    String frame = '',
+    String shareUserPhone = '',
+  }) async {
+    final token = _state.token;
+    if (token.isEmpty) {
+      throw const OfficialCloudApiException(
+        OfficialCloudMessages.signInRequired,
+      );
+    }
+    final normalizedPageIndex = pageIndex < 1 ? 1 : pageIndex;
+    final normalizedFrame = frame.trim();
+    final normalizedSharePhone = shareUserPhone.trim();
+    final override = fetchGaragePageOverride;
+    if (override != null) {
+      return override(
+        pageIndex: normalizedPageIndex,
+        frame: normalizedFrame,
+        shareUserPhone: normalizedSharePhone,
+      );
+    }
+
+    try {
+      final response = await _apiClient.request(
+        'app/userCarPage',
+        method: 'POST',
+        token: token,
+        body: {
+          'pageSize': '5',
+          'nowPageIndex': '$normalizedPageIndex',
+          if (normalizedFrame.isNotEmpty) 'frame': normalizedFrame,
+          if (normalizedSharePhone.isNotEmpty)
+            'shareUserPhone': normalizedSharePhone,
+        },
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
+      );
+      _ensureSuccess(response.body, fallback: '获取车库车辆失败');
+      _ensureCurrentSession(token);
+      return OfficialGaragePage.fromPayload(
+        response.body['data'],
+        requestedPageIndex: normalizedPageIndex,
+      );
+    } catch (e) {
+      _ensureCurrentSession(token);
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
+    }
   }
 
   Future<void> _refreshVehiclesNow({
@@ -567,6 +623,7 @@ class OfficialCloudService {
     required bool refreshReplicaDetails,
     required String refreshKey,
     required String token,
+    String? preferredVehicleKey,
   }) async {
     if (!silent) _setLoading(true);
     try {
@@ -580,7 +637,7 @@ class OfficialCloudService {
       _ensureSuccess(response.body, fallback: '获取官方车辆失败');
       if (!_isCurrentSession(token)) return;
       final vehicles = OfficialCloudDataParser.vehicles(response.body['data']);
-      var selected = _state.selectedVehicleKey;
+      var selected = preferredVehicleKey ?? _state.selectedVehicleKey;
       if (vehicles.isEmpty) {
         selected = null;
       } else if (selected == null ||
@@ -767,6 +824,73 @@ class OfficialCloudService {
     await _applySelectedVehicleToLocalProfile();
     if (changed) {
       _refreshVehicleDependents(refreshReplicaDetails: true);
+    }
+  }
+
+  /// GarageV2 switch-current-car operation.
+  Future<void> changeUsingVehicle(OfficialVehicle vehicle) async {
+    final token = _state.token;
+    if (token.isEmpty) {
+      throw const OfficialCloudApiException(
+        OfficialCloudMessages.signInRequired,
+      );
+    }
+    final carId = vehicle.carId.trim();
+    if (carId.isEmpty) {
+      throw const OfficialCloudApiException('缺少车辆 carId，无法切换');
+    }
+    final override = changeUsingVehicleOverride;
+    if (override != null) {
+      await override(vehicle);
+      return;
+    }
+
+    try {
+      final response = await _apiClient.request(
+        'app/centralControl/changeUsingCar',
+        method: 'POST',
+        token: token,
+        body: {'carId': carId},
+      );
+      _ensureSuccess(response.body, fallback: '切换车辆失败');
+      _ensureCurrentSession(token);
+
+      // The status endpoint returns the newly selected vehicle with its full
+      // BLE/MQTT credentials. Prefer that payload over the lighter garage row.
+      try {
+        await refreshVehicles(
+          force: true,
+          refreshReplicaDetails: true,
+          preferredVehicleKey: vehicle.key,
+        );
+      } catch (e) {
+        if (!_isCurrentSession(token)) rethrow;
+        final merged = <OfficialVehicle>[
+          vehicle,
+          ..._state.vehicles.where((item) => item.carId != carId),
+        ];
+        _state = _state.copyWith(
+          vehicles: merged,
+          selectedVehicleKey: vehicle.key,
+          error: null,
+        );
+        await Future.wait([
+          _storage.saveSelectedVehicleKey(vehicle.key),
+          _storage.saveCarControlInfo(vehicle),
+        ]);
+        _emit();
+        await _applySelectedVehicleToLocalProfile();
+        _log.operation(
+          '切车后车辆状态刷新失败，已使用车库数据',
+          detail: OfficialCloudRedactor.errorMessage(e),
+          level: LogLevel.warning,
+        );
+      }
+      _log.operation('官方当前车辆已切换', detail: carId);
+    } catch (e) {
+      _ensureCurrentSession(token);
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
     }
   }
 
@@ -2300,6 +2424,8 @@ class OfficialCloudService {
     refreshRideStatisticsOverride = null;
     refreshTravelHistoryOverride = null;
     selectVehicleOverride = null;
+    fetchGaragePageOverride = null;
+    changeUsingVehicleOverride = null;
     afterLogoutSideEffects.clear();
   }
 
@@ -2356,6 +2482,17 @@ class OfficialCloudService {
   /// Test-only override for controlling official vehicle selection.
   @visibleForTesting
   Future<void> Function(OfficialVehicle vehicle)? selectVehicleOverride;
+
+  @visibleForTesting
+  Future<OfficialGaragePage> Function({
+    required int pageIndex,
+    required String frame,
+    required String shareUserPhone,
+  })?
+  fetchGaragePageOverride;
+
+  @visibleForTesting
+  Future<void> Function(OfficialVehicle vehicle)? changeUsingVehicleOverride;
 
   /// Test-only: records every command handed to [sendCommand] since the last
   /// [resetForTest]. Populated only while [sendCommandOverride] is set.
