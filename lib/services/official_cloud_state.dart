@@ -87,6 +87,10 @@ class OfficialCloudState {
   final Map<String, List<OfficialTravelPoint>> travelDetails;
   final bool travelDetailLoading;
   final String? travelDetailError;
+  final OfficialRideStatistics? rideStatistics;
+  final OfficialRidePeriod ridePeriod;
+  final bool rideStatisticsLoading;
+  final String? rideStatisticsError;
 
   /// Official control-home "今日骑行" mileage from `app/carTravel/records`.
   final String todayRideMileage;
@@ -125,6 +129,10 @@ class OfficialCloudState {
     required this.travelDetails,
     required this.travelDetailLoading,
     required this.travelDetailError,
+    required this.rideStatistics,
+    required this.ridePeriod,
+    required this.rideStatisticsLoading,
+    required this.rideStatisticsError,
     required this.todayRideMileage,
     required this.vehicleMessages,
     required this.systemMessages,
@@ -162,6 +170,10 @@ class OfficialCloudState {
     travelDetails: {},
     travelDetailLoading: false,
     travelDetailError: null,
+    rideStatistics: null,
+    ridePeriod: OfficialRidePeriod.day,
+    rideStatisticsLoading: false,
+    rideStatisticsError: null,
     todayRideMileage: '',
     vehicleMessages: [],
     systemMessages: [],
@@ -214,6 +226,10 @@ class OfficialCloudState {
     Map<String, List<OfficialTravelPoint>>? travelDetails,
     bool? travelDetailLoading,
     Object? travelDetailError = _sentinel,
+    Object? rideStatistics = _sentinel,
+    OfficialRidePeriod? ridePeriod,
+    bool? rideStatisticsLoading,
+    Object? rideStatisticsError = _sentinel,
     String? todayRideMileage,
     List<OfficialCloudMessage>? vehicleMessages,
     List<OfficialCloudMessage>? systemMessages,
@@ -275,6 +291,15 @@ class OfficialCloudState {
       travelDetailError: identical(travelDetailError, _sentinel)
           ? this.travelDetailError
           : travelDetailError as String?,
+      rideStatistics: identical(rideStatistics, _sentinel)
+          ? this.rideStatistics
+          : rideStatistics as OfficialRideStatistics?,
+      ridePeriod: ridePeriod ?? this.ridePeriod,
+      rideStatisticsLoading:
+          rideStatisticsLoading ?? this.rideStatisticsLoading,
+      rideStatisticsError: identical(rideStatisticsError, _sentinel)
+          ? this.rideStatisticsError
+          : rideStatisticsError as String?,
       todayRideMileage: todayRideMileage ?? this.todayRideMileage,
       vehicleMessages: vehicleMessages ?? this.vehicleMessages,
       systemMessages: systemMessages ?? this.systemMessages,

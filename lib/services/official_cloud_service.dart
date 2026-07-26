@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/battery_setup_models.dart';
 import '../models/command_types.dart';
 import '../models/official_bms_info.dart';
+import '../models/official_ride_statistics.dart';
 import '../models/official_user_profile.dart';
 import '../models/official_vehicle.dart';
 import '../models/persistence_value.dart';
@@ -44,6 +45,7 @@ class OfficialCloudService {
   OfficialCloudState _state = OfficialCloudState.initial();
   final Map<String, DateTime> _lastSuccessfulRefresh = {};
   final Map<String, Future<void>> _inFlightRefreshes = {};
+  int _rideStatisticsGeneration = 0;
   bool _initialized = false;
   Future<void>? _initializing;
   bool _disposed = false;
@@ -171,6 +173,7 @@ class OfficialCloudService {
         userId: userId,
       );
       _clearRefreshCache();
+      _rideStatisticsGeneration += 1;
       _state = _state.copyWith(
         token: token,
         phone: normalizedPhone,
@@ -178,6 +181,10 @@ class OfficialCloudService {
         userProfile: null,
         vehicles: const [],
         selectedVehicleKey: null,
+        rideStatistics: null,
+        ridePeriod: OfficialRidePeriod.day,
+        rideStatisticsLoading: false,
+        rideStatisticsError: null,
         error: null,
       );
       _emit();
@@ -248,6 +255,7 @@ class OfficialCloudService {
   }) async {
     // Stage candidate session in-memory (unverified). Do NOT save to disk yet.
     _clearRefreshCache();
+    _rideStatisticsGeneration += 1;
     _state = _state.copyWith(
       token: token,
       phone: seedPhone.trim(),
@@ -255,6 +263,10 @@ class OfficialCloudService {
       userProfile: null,
       vehicles: const [],
       selectedVehicleKey: null,
+      rideStatistics: null,
+      ridePeriod: OfficialRidePeriod.day,
+      rideStatisticsLoading: false,
+      rideStatisticsError: null,
       error: null,
     );
     _emit();
@@ -297,6 +309,7 @@ class OfficialCloudService {
     await _storage.clearCredentialsAndSelection();
     _clearRefreshCache();
     _inFlightRefreshes.clear();
+    _rideStatisticsGeneration += 1;
     _state = _state.copyWith(
       token: '',
       phone: '',
@@ -304,6 +317,10 @@ class OfficialCloudService {
       userProfile: null,
       vehicles: const [],
       selectedVehicleKey: null,
+      rideStatistics: null,
+      ridePeriod: OfficialRidePeriod.day,
+      rideStatisticsLoading: false,
+      rideStatisticsError: null,
       error: null,
     );
     _emit();
@@ -335,6 +352,7 @@ class OfficialCloudService {
     await _storage.clearCredentialsAndSelection();
     _clearRefreshCache();
     _inFlightRefreshes.clear();
+    _rideStatisticsGeneration += 1;
     _state = _state.copyWith(
       token: '',
       phone: '',
@@ -363,6 +381,10 @@ class OfficialCloudService {
       travelDetails: const {},
       travelDetailLoading: false,
       travelDetailError: null,
+      rideStatistics: null,
+      ridePeriod: OfficialRidePeriod.day,
+      rideStatisticsLoading: false,
+      rideStatisticsError: null,
       todayRideMileage: '',
       vehicleMessages: [],
       systemMessages: [],
@@ -719,6 +741,7 @@ class OfficialCloudService {
       _storage.saveCarControlInfo(vehicle),
     ]);
     if (changed) {
+      _rideStatisticsGeneration += 1;
       _state = _state.copyWith(
         selectedVehicleKey: vehicle.key,
         batteryInfo: null,
@@ -732,6 +755,10 @@ class OfficialCloudService {
         travelDays: const [],
         travelDetails: const {},
         travelError: null,
+        rideStatistics: null,
+        ridePeriod: OfficialRidePeriod.day,
+        rideStatisticsLoading: false,
+        rideStatisticsError: null,
       );
     } else {
       _state = _state.copyWith(selectedVehicleKey: vehicle.key);
@@ -1469,6 +1496,190 @@ class OfficialCloudService {
     }
   }
 
+  /// Official ride-statistics detail (`app/appRiding/getRidingDetail`).
+  Future<void> refreshRideStatistics({
+    required OfficialRidePeriod period,
+    bool silent = false,
+    bool force = false,
+  }) async {
+    final token = _state.token;
+    final vehicle = _state.selectedVehicle;
+    if (token.isEmpty || vehicle == null) return;
+    final frame = vehicle.frame.trim();
+    if (frame.isEmpty) {
+      _rideStatisticsGeneration += 1;
+      _state = _state.copyWith(
+        rideStatistics: null,
+        ridePeriod: period,
+        rideStatisticsLoading: false,
+        rideStatisticsError: '当前车辆缺少车架号，无法读取骑行统计',
+      );
+      _emit();
+      return;
+    }
+
+    final key = period.requestKey(_clock());
+    final refreshKey = 'rideStatistics:${vehicle.key}:${period.wireName}:$key';
+    if (!force &&
+        silent &&
+        _state.ridePeriod == period &&
+        _state.rideStatistics != null &&
+        _shouldUseRecentRefresh(refreshKey)) {
+      return;
+    }
+    final inFlight = _inFlightRefreshes[refreshKey];
+    if (silent && inFlight != null) return inFlight;
+    final generation = ++_rideStatisticsGeneration;
+
+    final override = refreshRideStatisticsOverride;
+    if (override != null) {
+      if (!silent) {
+        _state = _state.copyWith(
+          rideStatistics: _state.ridePeriod == period
+              ? _state.rideStatistics
+              : null,
+          ridePeriod: period,
+          rideStatisticsLoading: true,
+          rideStatisticsError: null,
+        );
+        _emit();
+      }
+      try {
+        await override(period);
+      } finally {
+        if (_isCurrentRideStatisticsRequest(
+          generation: generation,
+          token: token,
+          vehicleKey: vehicle.key,
+          period: period,
+        )) {
+          _state = _state.copyWith(rideStatisticsLoading: false);
+          _emit();
+        }
+      }
+      return;
+    }
+
+    await _coalesceRefresh(
+      refreshKey: refreshKey,
+      silent: silent,
+      force: force,
+      run: () => _refreshRideStatisticsNow(
+        silent: silent,
+        refreshKey: refreshKey,
+        generation: generation,
+        vehicle: vehicle,
+        period: period,
+        key: key,
+        token: token,
+      ),
+    );
+  }
+
+  Future<void> _refreshRideStatisticsNow({
+    required bool silent,
+    required String refreshKey,
+    required int generation,
+    required OfficialVehicle vehicle,
+    required OfficialRidePeriod period,
+    required String key,
+    required String token,
+  }) async {
+    if (!silent) {
+      _state = _state.copyWith(
+        rideStatistics: _state.ridePeriod == period
+            ? _state.rideStatistics
+            : null,
+        ridePeriod: period,
+        rideStatisticsLoading: true,
+        rideStatisticsError: null,
+      );
+      _emit();
+    }
+    try {
+      final response = await _apiClient.request(
+        'app/appRiding/getRidingDetail',
+        method: 'POST',
+        token: token,
+        body: {
+          'model': period.wireName,
+          'key': key,
+          'carFrame': vehicle.frame.trim(),
+        },
+        retryPolicy: OfficialCloudRetryPolicy.readRequest,
+      );
+      _ensureSuccess(response.body, fallback: '获取官方骑行统计失败');
+      if (!_isCurrentRideStatisticsRequest(
+        generation: generation,
+        token: token,
+        vehicleKey: vehicle.key,
+        period: period,
+      )) {
+        return;
+      }
+      final rawData = response.body['data'];
+      if (rawData is! Map) {
+        throw const OfficialCloudApiException('官方骑行统计数据格式异常');
+      }
+      final data = <String, dynamic>{};
+      rawData.forEach((key, value) => data[key.toString()] = value);
+      final statistics = OfficialRideStatistics.fromJson(data);
+      _state = _state.copyWith(
+        rideStatistics: statistics,
+        ridePeriod: period,
+        rideStatisticsLoading: false,
+        rideStatisticsError: null,
+      );
+      _emit();
+      _log.operation('官方骑行统计已刷新', detail: 'period=${period.wireName}');
+      _markRefreshSuccess(refreshKey);
+    } catch (e) {
+      if (!_isCurrentSession(token)) return;
+      await _handleAuthFailureIfNeeded(e);
+      if (_isCurrentRideStatisticsRequest(
+        generation: generation,
+        token: token,
+        vehicleKey: vehicle.key,
+        period: period,
+      )) {
+        _state = _state.copyWith(
+          rideStatisticsLoading: false,
+          rideStatisticsError: OfficialCloudRedactor.errorMessage(e),
+        );
+        _emit();
+      }
+      if (!silent) rethrow;
+      _log.operation(
+        '官方骑行统计刷新失败',
+        detail: OfficialCloudRedactor.errorMessage(e),
+        level: LogLevel.warning,
+      );
+    } finally {
+      if (_isCurrentRideStatisticsRequest(
+            generation: generation,
+            token: token,
+            vehicleKey: vehicle.key,
+            period: period,
+          ) &&
+          _state.rideStatisticsLoading) {
+        _state = _state.copyWith(rideStatisticsLoading: false);
+        _emit();
+      }
+    }
+  }
+
+  bool _isCurrentRideStatisticsRequest({
+    required int generation,
+    required String token,
+    required String vehicleKey,
+    required OfficialRidePeriod period,
+  }) {
+    return generation == _rideStatisticsGeneration &&
+        _isCurrentSession(token) &&
+        _state.selectedVehicle?.key == vehicleKey &&
+        _state.ridePeriod == period;
+  }
+
   Future<void> refreshTravelHistory({
     String? month,
     bool silent = false,
@@ -2077,6 +2288,7 @@ class OfficialCloudService {
     }
     _state = OfficialCloudState.initial();
     _clearRefreshCache();
+    _rideStatisticsGeneration += 1;
     sentCommands.clear();
     sendCommandOverride = null;
     bindVehicleByImeiOverride = null;
@@ -2085,6 +2297,7 @@ class OfficialCloudService {
     getMessageControlOverride = null;
     setMessagePushConfigOverride = null;
     deleteMessagesOverride = null;
+    refreshRideStatisticsOverride = null;
     refreshTravelHistoryOverride = null;
     selectVehicleOverride = null;
     afterLogoutSideEffects.clear();
@@ -2130,6 +2343,11 @@ class OfficialCloudService {
   /// Test-only override for the official server-side message deletion call.
   @visibleForTesting
   Future<void> Function()? deleteMessagesOverride;
+
+  /// Test-only override for controlling ride-statistics request completion.
+  @visibleForTesting
+  Future<void> Function(OfficialRidePeriod period)?
+  refreshRideStatisticsOverride;
 
   /// Test-only override for controlling travel-history request completion.
   @visibleForTesting

@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tailg_ble_app/models/command_types.dart';
+import 'package:tailg_ble_app/models/official_ride_statistics.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/models/vehicle_profile.dart';
 import 'package:tailg_ble_app/services/control_channel_resolver.dart';
@@ -1230,6 +1231,103 @@ void main() {
       OfficialCloudService().resetForTest();
       LogService().clear();
     });
+
+    test(
+      'requests and parses official day week month ride statistics',
+      () async {
+        final requestBodies = <Map<String, dynamic>>[];
+        final server = await _startOfficialCloudServer((request) async {
+          final text = await utf8.decoder.bind(request).join();
+          if (request.uri.path.endsWith('/app/appRiding/getRidingDetail')) {
+            requestBodies.add(jsonDecode(text) as Map<String, dynamic>);
+            await _writeJsonResponse(request, 200, {
+              'code': '200',
+              'msg': 'success',
+              'data': {
+                'avgSpeed': '18.7',
+                'carbonAbsorption': '0.43',
+                'carbonSaving': '2.14',
+                'dayMileage': '12500',
+                'maxSpeed': '52.3',
+                'monthsMileage': '31000',
+                'ridingCount': '3',
+                'ridingTime': '90',
+                'totalMileage': '456780',
+                'weekMileage': '22000',
+                'yearMileage': '150000',
+              },
+            });
+            return;
+          }
+          await _writeJsonResponse(request, 404, {'msg': 'unexpected path'});
+        });
+        final service = OfficialCloudService();
+        try {
+          service.resetForTest(
+            clock: () => DateTime(2026, 7, 6, 10),
+            apiConfig: OfficialCloudApiConfig(
+              apiBase: server.apiBase,
+              retryBaseDelay: Duration.zero,
+            ),
+          );
+          final vehicle = OfficialVehicle.fromJson({
+            'carId': 'ride-statistics-car',
+            'frame': 'FRAME-RIDE-STATS',
+          });
+          service.setStateForTest(
+            OfficialCloudState.initial().copyWith(
+              initialized: true,
+              token: 'test-token',
+              vehicles: [vehicle],
+              selectedVehicleKey: vehicle.key,
+            ),
+          );
+
+          await service.refreshRideStatistics(
+            period: OfficialRidePeriod.day,
+            force: true,
+          );
+          await service.refreshRideStatistics(
+            period: OfficialRidePeriod.week,
+            force: true,
+          );
+          await service.refreshRideStatistics(
+            period: OfficialRidePeriod.month,
+            force: true,
+          );
+
+          expect(requestBodies, [
+            {
+              'model': 'days',
+              'key': '20260706',
+              'carFrame': 'FRAME-RIDE-STATS',
+            },
+            {
+              'model': 'weeks',
+              'key': '20260728',
+              'carFrame': 'FRAME-RIDE-STATS',
+            },
+            {
+              'model': 'months',
+              'key': '202607',
+              'carFrame': 'FRAME-RIDE-STATS',
+            },
+          ]);
+          expect(service.state.ridePeriod, OfficialRidePeriod.month);
+          expect(service.state.rideStatistics?.carbonSaving, '2.14');
+          expect(service.state.rideStatistics?.weekMileage, '22000');
+          expect(
+            OfficialRideStatistics.formatMileageKm(
+              service.state.rideStatistics!.totalMileage,
+            ),
+            '456.78',
+          );
+        } finally {
+          service.resetForTest();
+          await server.close();
+        }
+      },
+    );
 
     test('writes car nickname and refreshes vehicle cache', () async {
       final requestBodies = <String, Map<String, dynamic>?>{};

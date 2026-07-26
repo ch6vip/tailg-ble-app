@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../main.dart';
-import '../models/official_vehicle.dart';
-import '../services/display_number_formatter.dart';
-import '../services/display_time_formatter.dart';
+import '../models/official_ride_statistics.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_pressable.dart';
@@ -13,27 +11,20 @@ import '../widgets/lucide_icon.dart';
 import 'add_vehicle_page.dart';
 import 'login_page.dart';
 
-const _rideCardDecoration = BoxDecoration(
+const _rideNotice =
+    '为剔除车辆静止时的卫星信号飘移、短距离骑行、原地推车或短暂挪动等无效干扰，系统设定单次持续移动距离小于50米时，不纳入总里程累计。这确保您仪表盘上的每一公里，都真实反映您的实际骑行足迹。';
+
+const _ridePanelDecoration = BoxDecoration(
   color: CyberHomeColors.card,
   borderRadius: BorderRadius.all(Radius.circular(AppRadii.tile)),
   border: Border.fromBorderSide(BorderSide(color: CyberHomeColors.line)),
-);
-
-const _rideItemTitle = TextStyle(
-  fontSize: 15,
-  fontWeight: FontWeight.w700,
-  color: CyberHomeColors.ink,
+  boxShadow: AppShadows.cyberCardShadow,
 );
 
 const _rideBodyText = TextStyle(
   fontSize: 13,
   height: 1.45,
   color: CyberHomeColors.inkMuted,
-);
-
-const _rideCaptionText = TextStyle(
-  fontSize: 12,
-  color: CyberHomeColors.inkFaint,
 );
 
 final _rideFilledButtonStyle = FilledButton.styleFrom(
@@ -53,22 +44,26 @@ class RideStatsPage extends StatefulWidget {
 }
 
 class _RideStatsPageState extends State<RideStatsPage> {
-  String _month = formatMonthText(DateTime.now());
+  OfficialRidePeriod _period = OfficialRidePeriod.day;
+  OfficialRideStatistics? _statistics;
   bool _loading = false;
   String? _error;
-  List<OfficialTravelDay> _days = [];
   var _loadGeneration = 0;
   _RideStatsGate _gate = _RideStatsGate.ready;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_loadMonth());
+    final cloud = officialCloudService.state;
+    if (cloud.ridePeriod == _period) {
+      _statistics = cloud.rideStatistics;
+    }
+    unawaited(_loadStatistics());
   }
 
-  Future<void> _loadMonth() async {
+  Future<void> _loadStatistics() async {
     final generation = ++_loadGeneration;
-    final month = _month;
+    final period = _period;
     final cloud = officialCloudService.state;
 
     if (!cloud.signedIn) {
@@ -77,7 +72,7 @@ class _RideStatsPageState extends State<RideStatsPage> {
         _gate = _RideStatsGate.needLogin;
         _loading = false;
         _error = null;
-        _days = const [];
+        _statistics = null;
       });
       return;
     }
@@ -87,17 +82,7 @@ class _RideStatsPageState extends State<RideStatsPage> {
         _gate = _RideStatsGate.needVehicle;
         _loading = false;
         _error = null;
-        _days = const [];
-      });
-      return;
-    }
-    if (cloud.userId.trim().isEmpty) {
-      if (!mounted || generation != _loadGeneration) return;
-      setState(() {
-        _gate = _RideStatsGate.needRelogin;
-        _loading = false;
-        _error = null;
-        _days = const [];
+        _statistics = null;
       });
       return;
     }
@@ -108,42 +93,125 @@ class _RideStatsPageState extends State<RideStatsPage> {
       _error = null;
     });
     try {
-      await officialCloudService.refreshTravelHistory(
-        month: month,
+      await officialCloudService.refreshRideStatistics(
+        period: period,
         force: true,
       );
-      if (!mounted || generation != _loadGeneration) return;
+      if (!mounted || generation != _loadGeneration || period != _period) {
+        return;
+      }
       final state = officialCloudService.state;
-      final travelError = state.travelError?.trim();
+      final requestError = state.rideStatisticsError?.trim();
       setState(() {
-        _days = state.travelDays;
+        _statistics = state.ridePeriod == period
+            ? state.rideStatistics
+            : _statistics;
         _loading = false;
-        _error = (travelError != null && travelError.isNotEmpty)
-            ? travelError
-            : null;
+        _error = requestError == null || requestError.isEmpty
+            ? null
+            : requestError;
       });
-    } catch (e) {
-      if (!mounted || generation != _loadGeneration) return;
+    } catch (error) {
+      if (!mounted || generation != _loadGeneration || period != _period) {
+        return;
+      }
       setState(() {
-        _error = OfficialCloudRedactor.errorMessage(e);
+        _error = OfficialCloudRedactor.errorMessage(error);
         _loading = false;
-        _days = const [];
       });
     }
   }
 
-  void _prevMonth() {
-    final prev = shiftMonthText(_month, -1);
-    if (prev == null) return;
-    _month = prev;
-    unawaited(_loadMonth());
+  void _selectPeriod(OfficialRidePeriod period) {
+    if (_period == period) return;
+    setState(() {
+      _period = period;
+      _statistics = null;
+      _error = null;
+    });
+    unawaited(_loadStatistics());
   }
 
-  void _nextMonth() {
-    final next = shiftMonthText(_month, 1);
-    if (next == null) return;
-    _month = next;
-    unawaited(_loadMonth());
+  void _openLogin() {
+    unawaited(
+      Navigator.of(context)
+          .push(MaterialPageRoute<void>(builder: (_) => const LoginPage()))
+          .then((_) => _loadStatistics()),
+    );
+  }
+
+  void _openAddVehicle() {
+    unawaited(
+      Navigator.of(context)
+          .push(MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()))
+          .then((_) => _loadStatistics()),
+    );
+  }
+
+  void _showCarbonHelp() {
+    _showInfoSheet(title: '节碳量说明', content: '每行驶1公里，相当于\n减排二氧化碳0.171kg');
+  }
+
+  void _showTreeHelp() {
+    _showInfoSheet(title: '树木吸碳说明', content: '每棵树平均每天吸收\n二氧化碳5.023kg');
+  }
+
+  void _showStatisticsHelp() {
+    _showInfoSheet(title: '轨迹记录、统计说明', content: _rideNotice);
+  }
+
+  void _showInfoSheet({required String title, required String content}) {
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: CyberHomeColors.card,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadii.tile),
+          ),
+        ),
+        builder: (sheetContext) => SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 12, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: CyberHomeColors.ink,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: '关闭',
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      icon: const LucideIcon(
+                        Lucide.x,
+                        size: 20,
+                        color: CyberHomeColors.inkMuted,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Text(content, style: _rideBodyText),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -153,12 +221,7 @@ class _RideStatsPageState extends State<RideStatsPage> {
       body: SafeArea(
         child: Column(
           children: [
-            const _RideStatsHeader(),
-            _MonthSelector(
-              month: _month,
-              onPrev: _prevMonth,
-              onNext: _nextMonth,
-            ),
+            _RideStatsHeader(onHelp: _showStatisticsHelp),
             Expanded(child: _buildBody()),
           ],
         ),
@@ -167,139 +230,137 @@ class _RideStatsPageState extends State<RideStatsPage> {
   }
 
   Widget _buildBody() {
-    if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: CyberHomeColors.primary),
-      );
-    }
     if (_gate == _RideStatsGate.needLogin) {
       return _GateState(
         title: '请先登录官方账号',
         actionLabel: '去登录',
-        onAction: () => unawaited(
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute<void>(builder: (_) => const LoginPage())),
-        ),
+        onAction: _openLogin,
       );
     }
     if (_gate == _RideStatsGate.needVehicle) {
       return _GateState(
         title: '暂无车辆，请先同步官方车辆',
         actionLabel: '添加车辆',
-        onAction: () => unawaited(
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const AddVehiclePage()),
-          ),
-        ),
+        onAction: _openAddVehicle,
       );
     }
-    if (_gate == _RideStatsGate.needRelogin) {
-      return _GateState(
-        title: '登录信息不完整，请重新登录后再查看骑行统计',
-        actionLabel: '重新登录',
-        onAction: () => unawaited(
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute<void>(builder: (_) => const LoginPage())),
-        ),
-      );
+    if (_error != null && _statistics == null) {
+      return _ErrorState(message: _error!, onRetry: _loadStatistics);
     }
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+
+    return Stack(
+      children: [
+        ListView(
+          key: const ValueKey('ride-stats-content'),
+          padding: const EdgeInsets.only(bottom: 28),
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: _rideBodyText,
-              ),
+            _EnvironmentalSummary(
+              period: _period,
+              statistics: _statistics,
+              onCarbonHelp: _showCarbonHelp,
+              onTreeHelp: _showTreeHelp,
             ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: _loadMonth,
-              style: TextButton.styleFrom(
-                minimumSize: const Size(88, 44),
-                foregroundColor: CyberHomeColors.primary,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _PeriodSelector(selected: _period, onSelected: _selectPeriod),
+                  const SizedBox(height: 16),
+                  const _MileageNotice(),
+                  const SizedBox(height: 12),
+                  _MileageSummary(period: _period, statistics: _statistics),
+                  const SizedBox(height: 14),
+                  _MetricsGrid(statistics: _statistics),
+                ],
               ),
-              child: const Text('重试'),
             ),
           ],
         ),
-      );
-    }
-    if (_days.isEmpty) {
-      final vehicleName =
-          officialCloudService.state.selectedVehicle?.displayName ?? '当前车辆';
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Text(
-            '$_month · $vehicleName\n本月暂无骑行记录',
-            textAlign: TextAlign.center,
-            style: _rideBodyText,
+        if (_loading)
+          const Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: LinearProgressIndicator(
+              minHeight: 2,
+              color: CyberHomeColors.primary,
+              backgroundColor: CyberHomeColors.primarySoft,
+            ),
           ),
-        ),
-      );
-    }
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      children: [
-        _SummaryCard(days: _days),
-        const SizedBox(height: 16),
-        _CarbonCard(days: _days),
-        const SizedBox(height: 16),
-        _DayBreakdown(days: _days),
       ],
     );
   }
 }
 
+enum _RideStatsGate { ready, needLogin, needVehicle }
+
 class _RideStatsHeader extends StatelessWidget {
-  const _RideStatsHeader();
+  const _RideStatsHeader({required this.onHelp});
+
+  final VoidCallback onHelp;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 20, 8),
-      child: Row(
+    return SizedBox(
+      height: 64,
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          Tooltip(
-            message: '返回',
-            excludeFromSemantics: true,
-            child: AppPressable(
-              key: const ValueKey('ride-stats-back'),
-              onTap: () => Navigator.of(context).pop(),
-              semanticsLabel: '返回',
-              semanticsButton: true,
-              child: Container(
-                width: AppTouchTargets.min,
-                height: AppTouchTargets.min,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: CyberHomeColors.card,
-                  shape: BoxShape.circle,
-                  boxShadow: AppShadows.cyberActionShadow,
-                ),
-                child: const LucideIcon(
-                  Lucide.arrowLeft,
-                  size: 20,
-                  color: CyberHomeColors.inkSecondary,
+          const Text(
+            '骑行统计',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: CyberHomeColors.ink,
+            ),
+          ),
+          Positioned(
+            left: 12,
+            child: Tooltip(
+              message: '返回',
+              excludeFromSemantics: true,
+              child: AppPressable(
+                key: const ValueKey('ride-stats-back'),
+                onTap: () => Navigator.of(context).pop(),
+                semanticsLabel: '返回',
+                semanticsButton: true,
+                child: const SizedBox(
+                  width: AppTouchTargets.min,
+                  height: AppTouchTargets.min,
+                  child: Center(
+                    child: LucideIcon(
+                      Lucide.arrowLeft,
+                      size: 20,
+                      color: CyberHomeColors.inkSecondary,
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text(
-              '骑行统计',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: CyberHomeColors.ink,
+          Positioned(
+            right: 12,
+            child: AppPressable(
+              key: const ValueKey('ride-stats-help'),
+              onTap: onHelp,
+              semanticsLabel: '查看统计说明',
+              semanticsButton: true,
+              child: const SizedBox(
+                height: AppTouchTargets.min,
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '统计说明',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: CyberHomeColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -309,7 +370,492 @@ class _RideStatsHeader extends StatelessWidget {
   }
 }
 
-enum _RideStatsGate { ready, needLogin, needVehicle, needRelogin }
+class _EnvironmentalSummary extends StatelessWidget {
+  const _EnvironmentalSummary({
+    required this.period,
+    required this.statistics,
+    required this.onCarbonHelp,
+    required this.onTreeHelp,
+  });
+
+  final OfficialRidePeriod period;
+  final OfficialRideStatistics? statistics;
+  final VoidCallback onCarbonHelp;
+  final VoidCallback onTreeHelp;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+      decoration: const BoxDecoration(
+        color: CyberHomeColors.card,
+        border: Border(bottom: BorderSide(color: CyberHomeColors.line)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _EcoMetric(
+              key: const ValueKey('ride-carbon-metric'),
+              title: period.carbonTitle,
+              value: OfficialRideStatistics.displayValue(
+                statistics?.carbonSaving ?? '',
+              ),
+              unit: 'kg',
+              icon: Lucide.leaf,
+              accent: CyberHomeColors.success,
+              tooltip: '节碳量说明',
+              onHelp: onCarbonHelp,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _EcoMetric(
+              key: const ValueKey('ride-tree-metric'),
+              title: '树木吸碳',
+              value: OfficialRideStatistics.displayValue(
+                statistics?.carbonAbsorption ?? '',
+              ),
+              unit: '棵',
+              icon: Lucide.activity,
+              accent: CyberHomeColors.warning,
+              tooltip: '树木吸碳说明',
+              onHelp: onTreeHelp,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EcoMetric extends StatelessWidget {
+  const _EcoMetric({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.unit,
+    required this.icon,
+    required this.accent,
+    required this.tooltip,
+    required this.onHelp,
+  });
+
+  final String title;
+  final String value;
+  final String unit;
+  final IconData icon;
+  final Color accent;
+  final String tooltip;
+  final VoidCallback onHelp;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            LucideIcon(icon, size: 18, color: accent),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: CyberHomeColors.inkMuted,
+                ),
+              ),
+            ),
+            Tooltip(
+              message: tooltip,
+              child: IconButton(
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints.tightFor(
+                  width: AppTouchTargets.min,
+                  height: AppTouchTargets.min,
+                ),
+                padding: EdgeInsets.zero,
+                onPressed: onHelp,
+                icon: const LucideIcon(
+                  Lucide.help,
+                  size: 17,
+                  color: CyberHomeColors.inkFaint,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 36,
+          child: FittedBox(
+            alignment: Alignment.centerLeft,
+            fit: BoxFit.scaleDown,
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: value,
+                    style: const TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
+                      color: CyberHomeColors.ink,
+                    ),
+                  ),
+                  TextSpan(
+                    text: ' $unit',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: CyberHomeColors.inkMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PeriodSelector extends StatelessWidget {
+  const _PeriodSelector({required this.selected, required this.onSelected});
+
+  final OfficialRidePeriod selected;
+  final ValueChanged<OfficialRidePeriod> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 50,
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: CyberHomeColors.control,
+        borderRadius: BorderRadius.circular(AppRadii.tile),
+        border: Border.all(color: CyberHomeColors.line),
+      ),
+      child: Row(
+        children: [
+          for (final period in OfficialRidePeriod.values)
+            Expanded(
+              child: AppPressable(
+                key: ValueKey('ride-period-${period.name}'),
+                onTap: () => onSelected(period),
+                borderRadius: BorderRadius.circular(AppRadii.xs),
+                semanticsLabel: '按${period.tabLabel}查看骑行统计',
+                semanticsButton: true,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  height: AppTouchTargets.min,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: selected == period
+                        ? CyberHomeColors.card
+                        : CyberHomeColors.transparent,
+                    borderRadius: BorderRadius.circular(AppRadii.xs),
+                    boxShadow: selected == period
+                        ? AppShadows.cyberActionShadow
+                        : null,
+                  ),
+                  child: Text(
+                    period.tabLabel,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: selected == period
+                          ? CyberHomeColors.primary
+                          : CyberHomeColors.inkMuted,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MileageNotice extends StatelessWidget {
+  const _MileageNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Text.rich(
+      const TextSpan(
+        children: [
+          TextSpan(
+            text: '* ',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: CyberHomeColors.danger,
+            ),
+          ),
+          TextSpan(text: _rideNotice),
+        ],
+      ),
+      key: const ValueKey('ride-mileage-notice'),
+      style: _rideBodyText.copyWith(
+        fontSize: 12,
+        color: CyberHomeColors.inkFaint,
+      ),
+    );
+  }
+}
+
+class _MileageSummary extends StatelessWidget {
+  const _MileageSummary({required this.period, required this.statistics});
+
+  final OfficialRidePeriod period;
+  final OfficialRideStatistics? statistics;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 102,
+      decoration: _ridePanelDecoration,
+      child: Row(
+        children: [
+          Expanded(
+            child: _MileageValue(
+              label: period.mileageTitle,
+              value: OfficialRideStatistics.formatMileageKm(
+                statistics?.mileageFor(period) ?? '',
+              ),
+            ),
+          ),
+          const SizedBox(
+            height: 50,
+            child: VerticalDivider(
+              width: 1,
+              thickness: 1,
+              color: CyberHomeColors.line,
+            ),
+          ),
+          Expanded(
+            child: _MileageValue(
+              label: '累计里程',
+              value: OfficialRideStatistics.formatMileageKm(
+                statistics?.totalMileage ?? '',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MileageValue extends StatelessWidget {
+  const _MileageValue({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: CyberHomeColors.inkMuted,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: value,
+                style: const TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.w700,
+                  color: CyberHomeColors.ink,
+                ),
+              ),
+              const TextSpan(
+                text: ' km',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: CyberHomeColors.inkMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MetricsGrid extends StatelessWidget {
+  const _MetricsGrid({required this.statistics});
+
+  final OfficialRideStatistics? statistics;
+
+  @override
+  Widget build(BuildContext context) {
+    String value(String? raw) => OfficialRideStatistics.displayValue(raw ?? '');
+
+    return Container(
+      decoration: _ridePanelDecoration,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _MetricCell(
+                  label: '最快时速',
+                  value: value(statistics?.maxSpeed),
+                  unit: 'km/h',
+                  icon: Lucide.gauge,
+                  accent: CyberHomeColors.primary,
+                ),
+              ),
+              const _GridVerticalDivider(),
+              Expanded(
+                child: _MetricCell(
+                  label: '总时长',
+                  value: value(statistics?.ridingTime),
+                  unit: '分钟',
+                  icon: Lucide.history,
+                  accent: CyberHomeColors.warning,
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 1, color: CyberHomeColors.line),
+          Row(
+            children: [
+              Expanded(
+                child: _MetricCell(
+                  label: '骑行次数',
+                  value: value(statistics?.ridingCount),
+                  unit: '次',
+                  icon: Lucide.route,
+                  accent: CyberHomeColors.rideAccent,
+                ),
+              ),
+              const _GridVerticalDivider(),
+              Expanded(
+                child: _MetricCell(
+                  label: '平均时速',
+                  value: value(statistics?.avgSpeed),
+                  unit: 'km/h',
+                  icon: Lucide.activity,
+                  accent: CyberHomeColors.success,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GridVerticalDivider extends StatelessWidget {
+  const _GridVerticalDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      height: 92,
+      child: VerticalDivider(
+        width: 1,
+        thickness: 1,
+        color: CyberHomeColors.line,
+      ),
+    );
+  }
+}
+
+class _MetricCell extends StatelessWidget {
+  const _MetricCell({
+    required this.label,
+    required this.value,
+    required this.unit,
+    required this.icon,
+    required this.accent,
+  });
+
+  final String label;
+  final String value;
+  final String unit;
+  final IconData icon;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 116,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 12, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                LucideIcon(icon, size: 17, color: accent),
+                const SizedBox(width: 7),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: CyberHomeColors.inkMuted,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            SizedBox(
+              width: double.infinity,
+              height: 31,
+              child: FittedBox(
+                alignment: Alignment.centerLeft,
+                fit: BoxFit.scaleDown,
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: value,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: CyberHomeColors.ink,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' $unit',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: CyberHomeColors.inkMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _GateState extends StatelessWidget {
   const _GateState({
@@ -344,241 +890,33 @@ class _GateState extends StatelessWidget {
   }
 }
 
-class _MonthSelector extends StatelessWidget {
-  const _MonthSelector({
-    required this.month,
-    required this.onPrev,
-    required this.onNext,
-  });
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.message, required this.onRetry});
 
-  final String month;
-  final VoidCallback onPrev;
-  final VoidCallback onNext;
+  final String message;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 6, 20, 14),
-      child: Container(
-        height: 48,
-        decoration: _rideCardDecoration,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              tooltip: '上个月',
-              icon: const LucideIcon(Lucide.chevronLeft),
-              onPressed: onPrev,
-            ),
-            Expanded(
-              child: Text(
-                month,
-                textAlign: TextAlign.center,
-                style: _rideItemTitle,
+            Text(message, textAlign: TextAlign.center, style: _rideBodyText),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: onRetry,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(88, AppTouchTargets.min),
+                foregroundColor: CyberHomeColors.primary,
               ),
-            ),
-            IconButton(
-              tooltip: '下个月',
-              icon: const LucideIcon(Lucide.chevronRight),
-              onPressed: onNext,
+              child: const Text('重试'),
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.days});
-
-  final List<OfficialTravelDay> days;
-
-  @override
-  Widget build(BuildContext context) {
-    final records = days.expand((day) => day.records);
-    final totalKm = sumTravelMileageKm(records);
-    final totalTrips = records.length;
-    final totalSeconds = sumTravelDurationSeconds(records);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: _rideCardDecoration,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '本月概览',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: CyberHomeColors.inkMuted,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _StatItem(
-                // Official ride-stats always shows km (setTextViewSetMilageValue).
-                value: formatDecimalDown(totalKm, fractionDigits: 2),
-                unit: 'km',
-                label: '总里程',
-              ),
-              _StatItem(value: '$totalTrips', unit: '次', label: '骑行次数'),
-              _StatItem(
-                value: formatCompactDuration(totalSeconds),
-                unit: '',
-                label: '总时长',
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  const _StatItem({
-    required this.value,
-    required this.unit,
-    required this.label,
-  });
-
-  final String value;
-  final String unit;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: value,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: CyberHomeColors.ink,
-                  ),
-                ),
-                if (unit.isNotEmpty)
-                  TextSpan(
-                    text: ' $unit',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: CyberHomeColors.inkMuted,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(label, style: _rideCaptionText),
-        ],
-      ),
-    );
-  }
-}
-
-class _CarbonCard extends StatelessWidget {
-  const _CarbonCard({required this.days});
-
-  final List<OfficialTravelDay> days;
-
-  @override
-  Widget build(BuildContext context) {
-    final km = sumTravelMileageKm(days.expand((day) => day.records));
-    // Simple estimate: ~0.021 kg CO2 avoided per km vs car.
-    final carbonKg = km * 0.021;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: CyberHomeColors.primarySoft,
-        borderRadius: BorderRadius.circular(AppRadii.tile),
-        border: Border.all(color: CyberHomeColors.line),
-      ),
-      child: Row(
-        children: [
-          const LucideIcon(Lucide.leaf, color: CyberHomeColors.success),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              '约减排 ${carbonKg.toStringAsFixed(2)} kg CO₂',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: CyberHomeColors.ink,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DayBreakdown extends StatelessWidget {
-  const _DayBreakdown({required this.days});
-
-  final List<OfficialTravelDay> days;
-
-  @override
-  Widget build(BuildContext context) {
-    final sorted = [...days]
-      ..sort((a, b) => b.travelDate.compareTo(a.travelDate));
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '每日明细',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: CyberHomeColors.inkMuted,
-          ),
-        ),
-        const SizedBox(height: 10),
-        for (final day in sorted)
-          Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(14),
-            decoration: _rideCardDecoration,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    day.travelDate,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: CyberHomeColors.ink,
-                    ),
-                  ),
-                ),
-                Text(
-                  '${formatDecimalDown(sumTravelMileageKm(day.records), fractionDigits: 2)} km',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: CyberHomeColors.inkMuted,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  '${day.records.length} 次',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: CyberHomeColors.inkFaint,
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
     );
   }
 }

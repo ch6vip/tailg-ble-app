@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
+import 'package:tailg_ble_app/models/official_ride_statistics.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/notification_prefs_page.dart';
 import 'package:tailg_ble_app/pages/ride_stats_page.dart';
@@ -175,62 +176,67 @@ void main() {
     expect(app.officialCloudService.state.selectedVehicleKey, first.key);
   });
 
-  testWidgets(
-    'ride stats renders cloud travel summary and blocks future month',
-    (tester) async {
-      setTestViewSize(tester, const Size(430, 1200));
-      final now = DateTime.now();
-      final currentMonth =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}';
-      final day = OfficialTravelDay.fromJson({
-        'travelDate': '$currentMonth-01',
-        // Official deviceTravel totalMileage / mileage are meters.
-        'totalMileage': '12500',
-        'deviceTravelDtoList': [
-          {
-            'deviceTravelId': 'trip-1',
-            'mileage': '12500',
-            'hours': '1',
-            'min': '30',
-            'sec': '0',
-          },
-        ],
-      });
-      final vehicle = OfficialVehicle.fromJson({
-        'carId': 'stats-car',
-        'frame': 'FRAME-STATS',
-        'carNickName': '统计测试车',
-      });
-      // Gate requires signed-in user + vehicle; override skips network and
-      // leaves the seeded travelDays in place for rendering.
-      app.officialCloudService.refreshTravelHistoryOverride = (_) async {};
-      app.officialCloudService.setStateForTest(
-        OfficialCloudState.initial().copyWith(
-          initialized: true,
-          token: 'token',
-          userId: 'uid-1',
-          vehicles: [vehicle],
-          selectedVehicleKey: vehicle.key,
-          travelDays: [day],
-        ),
-      );
+  testWidgets('ride stats renders official day statistics structure', (
+    tester,
+  ) async {
+    setTestViewSize(tester, const Size(430, 1200));
+    final vehicle = OfficialVehicle.fromJson({
+      'carId': 'stats-car',
+      'frame': 'FRAME-STATS',
+      'carNickName': '统计测试车',
+    });
+    final statistics = _rideStatistics(
+      dayMileage: '12500',
+      totalMileage: '456780',
+      carbonSaving: '2.14',
+      carbonAbsorption: '0.43',
+      maxSpeed: '52.3',
+      ridingTime: '90',
+      ridingCount: '3',
+      avgSpeed: '18.7',
+    );
+    app.officialCloudService.refreshRideStatisticsOverride = (_) async {};
+    app.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        vehicles: [vehicle],
+        selectedVehicleKey: vehicle.key,
+        rideStatistics: statistics,
+        ridePeriod: OfficialRidePeriod.day,
+      ),
+    );
 
-      await tester.pumpWidget(const TestApp(home: RideStatsPage()));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(const TestApp(home: RideStatsPage()));
+    await tester.pumpAndSettle();
 
-      expect(find.textContaining('12.5', findRichText: true), findsWidgets);
-      expect(find.textContaining('1h30m', findRichText: true), findsWidgets);
-      expect(find.textContaining('1 次', findRichText: true), findsWidgets);
-      // 12.5 km * 0.021 kg/km ≈ 0.26
-      expect(find.textContaining('0.26 kg CO₂'), findsOneWidget);
-      expect(find.text(currentMonth), findsOneWidget);
+    expect(find.text('日节碳量'), findsOneWidget);
+    expect(find.text('树木吸碳'), findsOneWidget);
+    expect(find.text('今日里程'), findsOneWidget);
+    expect(find.text('累计里程'), findsOneWidget);
+    expect(find.text('最快时速'), findsOneWidget);
+    expect(find.text('总时长'), findsOneWidget);
+    expect(find.text('骑行次数'), findsOneWidget);
+    expect(find.text('平均时速'), findsOneWidget);
+    expect(find.textContaining('12.50', findRichText: true), findsOneWidget);
+    expect(find.textContaining('456.78', findRichText: true), findsOneWidget);
+    expect(find.textContaining('2.14', findRichText: true), findsOneWidget);
+    expect(find.textContaining('0.43', findRichText: true), findsOneWidget);
+    expect(find.byKey(const ValueKey('ride-period-day')), findsOneWidget);
+    expect(find.byIcon(Lucide.chevronLeft), findsNothing);
+    expect(find.byIcon(Lucide.chevronRight), findsNothing);
+    expect(find.textContaining('0.26 kg CO₂'), findsNothing);
 
-      await tester.tap(find.byIcon(Lucide.chevronRight));
-      await tester.pump();
+    await tester.tap(find.byTooltip('节碳量说明'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('减排二氧化碳0.171kg'), findsOneWidget);
+    Navigator.of(tester.element(find.text('节碳量说明'))).pop();
+    await tester.pumpAndSettle();
 
-      expect(find.text(currentMonth), findsOneWidget);
-    },
-  );
+    await tester.tap(find.byTooltip('树木吸碳说明'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('二氧化碳5.023kg'), findsOneWidget);
+  });
 
   testWidgets(
     'notification preferences loads, toggles, and saves cloud config',
@@ -287,7 +293,7 @@ void main() {
     },
   );
 
-  testWidgets('ride stats ignores travel completion after disposal', (
+  testWidgets('ride stats ignores request completion after disposal', (
     tester,
   ) async {
     final completion = Completer<void>();
@@ -295,13 +301,12 @@ void main() {
       'carId': 'dispose-travel-car',
       'frame': 'FRAME-DISPOSE',
     });
-    app.officialCloudService.refreshTravelHistoryOverride = (_) =>
+    app.officialCloudService.refreshRideStatisticsOverride = (_) =>
         completion.future;
     app.officialCloudService.setStateForTest(
       OfficialCloudState.initial().copyWith(
         initialized: true,
         token: 'token',
-        userId: 'uid-1',
         vehicles: [vehicle],
         selectedVehicleKey: vehicle.key,
       ),
@@ -319,8 +324,19 @@ void main() {
 
   testWidgets('ride stats uses Cyber home mobile layout', (tester) async {
     setTestViewSize(tester, const Size(390, 844));
+    final vehicle = OfficialVehicle.fromJson({
+      'carId': 'mobile-stats-car',
+      'frame': 'FRAME-MOBILE-STATS',
+    });
+    app.officialCloudService.refreshRideStatisticsOverride = (_) async {};
     app.officialCloudService.setStateForTest(
-      OfficialCloudState.initial().copyWith(initialized: true),
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'token',
+        vehicles: [vehicle],
+        selectedVehicleKey: vehicle.key,
+        rideStatistics: _rideStatistics(),
+      ),
     );
 
     await tester.pumpWidget(const TestApp(home: RideStatsPage()));
@@ -333,39 +349,33 @@ void main() {
     final backAction = find.byKey(const ValueKey('ride-stats-back'));
     expect(backAction, findsOneWidget);
     expectMinTouchTargetHeight(tester, backAction);
-    for (final icon in [Lucide.chevronLeft, Lucide.chevronRight]) {
-      final monthAction = find.ancestor(
-        of: find.byIcon(icon),
-        matching: find.byType(IconButton),
-      );
-      expect(monthAction, findsOneWidget);
-      expectMinTouchTargetHeight(tester, monthAction);
+    final helpAction = find.byKey(const ValueKey('ride-stats-help'));
+    expectMinTouchTargetHeight(tester, helpAction);
+    for (final period in OfficialRidePeriod.values) {
+      final periodAction = find.byKey(ValueKey('ride-period-${period.name}'));
+      expect(periodAction, findsOneWidget);
+      expectMinTouchTargetHeight(tester, periodAction);
     }
+    expect(find.byKey(const ValueKey('ride-mileage-notice')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('ride stats ignores stale month completion', (tester) async {
+  testWidgets('ride stats ignores stale period completion', (tester) async {
     setTestViewSize(tester, const Size(430, 1200));
-    final now = DateTime.now();
-    final currentMonth = DateTime(now.year, now.month);
-    final previousMonth = DateTime(now.year, now.month - 1);
-    final currentLabel = _monthLabel(currentMonth);
-    final previousLabel = _monthLabel(previousMonth);
-    final completions = <String, Completer<void>>{};
+    final completions = <OfficialRidePeriod, Completer<void>>{};
     final vehicle = OfficialVehicle.fromJson({
       'carId': 'race-travel-car',
       'frame': 'FRAME-RACE',
     });
-    app.officialCloudService.refreshTravelHistoryOverride = (month) {
+    app.officialCloudService.refreshRideStatisticsOverride = (period) {
       final completion = Completer<void>();
-      completions[month] = completion;
+      completions[period] = completion;
       return completion.future;
     };
     app.officialCloudService.setStateForTest(
       OfficialCloudState.initial().copyWith(
         initialized: true,
         token: 'token',
-        userId: 'uid-1',
         vehicles: [vehicle],
         selectedVehicleKey: vehicle.key,
       ),
@@ -373,35 +383,40 @@ void main() {
 
     await tester.pumpWidget(const TestApp(home: RideStatsPage()));
     await tester.pump();
-    expect(completions, contains(currentLabel));
+    expect(completions, contains(OfficialRidePeriod.day));
 
-    await tester.tap(find.byIcon(Lucide.chevronLeft));
+    await tester.tap(find.byKey(const ValueKey('ride-period-week')));
     await tester.pump();
-    expect(completions, contains(previousLabel));
+    expect(completions, contains(OfficialRidePeriod.week));
 
-    final previousDay = _travelDay('$previousLabel-01');
+    final weekStatistics = _rideStatistics(
+      weekMileage: '22000',
+      totalMileage: '100000',
+    );
     app.officialCloudService.setStateForTest(
       app.officialCloudService.state.copyWith(
-        travelDays: [previousDay],
-        travelMonth: previousLabel,
+        rideStatistics: weekStatistics,
+        ridePeriod: OfficialRidePeriod.week,
       ),
     );
-    completions[previousLabel]!.complete();
+    completions[OfficialRidePeriod.week]!.complete();
     await tester.pump();
-    expect(find.text(previousDay.travelDate), findsOneWidget);
+    expect(find.text('本周里程'), findsOneWidget);
+    expect(find.textContaining('22.00', findRichText: true), findsOneWidget);
 
-    final currentDay = _travelDay('$currentLabel-01');
+    final staleDayStatistics = _rideStatistics(dayMileage: '99000');
     app.officialCloudService.setStateForTest(
       app.officialCloudService.state.copyWith(
-        travelDays: [currentDay],
-        travelMonth: currentLabel,
+        rideStatistics: staleDayStatistics,
+        ridePeriod: OfficialRidePeriod.day,
       ),
     );
-    completions[currentLabel]!.complete();
+    completions[OfficialRidePeriod.day]!.complete();
     await tester.pump();
 
-    expect(find.text(previousDay.travelDate), findsOneWidget);
-    expect(find.text(currentDay.travelDate), findsNothing);
+    expect(find.text('本周里程'), findsOneWidget);
+    expect(find.textContaining('22.00', findRichText: true), findsOneWidget);
+    expect(find.textContaining('99.00', findRichText: true), findsNothing);
   });
 
   testWidgets(
@@ -461,17 +476,30 @@ void main() {
   );
 }
 
-String _monthLabel(DateTime value) {
-  return '${value.year}-${value.month.toString().padLeft(2, '0')}';
-}
-
-OfficialTravelDay _travelDay(String date) {
-  return OfficialTravelDay.fromJson({
-    'travelDate': date,
-    // meters (1 km)
-    'totalMileage': '1000',
-    'deviceTravelDtoList': [
-      {'deviceTravelId': 'trip-$date', 'mileage': '1000'},
-    ],
-  });
+OfficialRideStatistics _rideStatistics({
+  String avgSpeed = '18',
+  String carbonAbsorption = '0.2',
+  String carbonSaving = '1.0',
+  String dayMileage = '1000',
+  String maxSpeed = '40',
+  String monthsMileage = '30000',
+  String ridingCount = '2',
+  String ridingTime = '30',
+  String totalMileage = '100000',
+  String weekMileage = '7000',
+  String yearMileage = '150000',
+}) {
+  return OfficialRideStatistics(
+    avgSpeed: avgSpeed,
+    carbonAbsorption: carbonAbsorption,
+    carbonSaving: carbonSaving,
+    dayMileage: dayMileage,
+    maxSpeed: maxSpeed,
+    monthsMileage: monthsMileage,
+    ridingCount: ridingCount,
+    ridingTime: ridingTime,
+    totalMileage: totalMileage,
+    weekMileage: weekMileage,
+    yearMileage: yearMileage,
+  );
 }

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/battery_details_page.dart';
 import 'package:tailg_ble_app/pages/cyber_vehicle_control_page_v2.dart';
+import 'package:tailg_ble_app/pages/ride_stats_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/services/official_mqtt_service.dart';
 import 'package:tailg_ble_app/services/permission_service.dart';
@@ -54,6 +55,7 @@ void main() {
     final vehicle = OfficialVehicle.fromJson({
       'carId': 'smoke-1',
       'carNickName': '冒烟测试车',
+      'frame': 'FRAME-SMOKE',
       'modelType': 3,
       'isGps': 1,
       'acc': 0,
@@ -84,6 +86,8 @@ void main() {
         ],
       ),
     );
+    AppServices.instance.officialCloudService.refreshRideStatisticsOverride =
+        (_) async {};
 
     await tester.pumpWidget(const TestApp(home: CyberVehicleControlPageV2()));
     await tester.pump();
@@ -186,6 +190,15 @@ void main() {
     await tester.tap(find.text('仅云端'));
     await tester.pump();
     Navigator.of(tester.element(find.text('控车渠道').first)).pop();
+    await tester.pumpAndSettle();
+
+    final rideStatsEntry = find.byKey(const ValueKey('cyber-ride-stats-entry'));
+    await tester.ensureVisible(rideStatsEntry);
+    await tester.tap(rideStatsEntry);
+    await tester.pumpAndSettle();
+    expect(find.byType(RideStatsPage), findsOneWidget);
+    expect(find.text('骑行统计'), findsOneWidget);
+    Navigator.of(tester.element(find.byType(RideStatsPage))).pop();
     await tester.pumpAndSettle();
 
     // Empty recent commands stay out of the design until a command is sent.

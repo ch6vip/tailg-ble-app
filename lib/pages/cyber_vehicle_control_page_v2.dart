@@ -48,6 +48,7 @@ import 'location_page.dart';
 import 'login_page.dart';
 import 'official_cloud_page.dart';
 import 'official_replica_pages.dart';
+import 'ride_stats_page.dart';
 import 'vehicle_message_page.dart';
 import 'vehicle_settings_page.dart';
 
@@ -1317,6 +1318,15 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     );
   }
 
+  void _openRideStats() {
+    if (!requireCloudVehicle(context)) return;
+    unawaited(
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const RideStatsPage())),
+    );
+  }
+
   void _openLocation() {
     if (!requireCloudVehicle(context)) return;
     unawaited(
@@ -1442,7 +1452,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
                       distanceSeries: lastRide.$3,
                       durationSeries: lastRide.$4,
                       onMapTap: _openLocation,
-                      onBatteryTap: _openBattery,
+                      onRideStatsTap: _openRideStats,
                     ),
                     if (_commands.isNotEmpty) ...[
                       const SizedBox(height: 16),
@@ -2542,7 +2552,7 @@ class _CyberMapStatsRow extends StatelessWidget {
     required this.distanceSeries,
     required this.durationSeries,
     required this.onMapTap,
-    required this.onBatteryTap,
+    required this.onRideStatsTap,
   });
 
   final ResolvedVehicleLocation? location;
@@ -2554,7 +2564,7 @@ class _CyberMapStatsRow extends StatelessWidget {
   final List<double> distanceSeries;
   final List<double> durationSeries;
   final VoidCallback onMapTap;
-  final VoidCallback onBatteryTap;
+  final VoidCallback onRideStatsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -2576,9 +2586,10 @@ class _CyberMapStatsRow extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: AppPressable(
-              onTap: onBatteryTap,
+              key: const ValueKey('cyber-ride-stats-entry'),
+              onTap: onRideStatsTap,
               borderRadius: BorderRadius.circular(AppRadii.sheet),
-              semanticsLabel: '骑行与电池',
+              semanticsLabel: '查看骑行统计',
               semanticsButton: true,
               child: _RideCard(
                 todayKm: todayKm,
