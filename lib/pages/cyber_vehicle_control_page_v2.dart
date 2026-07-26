@@ -37,7 +37,7 @@ import '../widgets/cached_tile_provider.dart';
 import '../widgets/cloud_vehicle_gate.dart';
 // Channel UI lives in-page; ControlAndUnlockCard parity retained via _CyberChannelStrip.
 import '../widgets/lucide_icon.dart';
-import '../widgets/slide_to_unlock_button.dart';
+import '../widgets/slide_power_button.dart';
 import '../widgets/vehicle_control_gate.dart';
 import '../widgets/vehicle_stage.dart';
 import '../widgets/vehicle_switch_sheet.dart';
@@ -648,6 +648,14 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     final locked = _currentLockState();
     if (locked == null) return;
     final cmd = locked ? CommandCode.unlock : CommandCode.lock;
+    await _sendCommand(cmd);
+  }
+
+  Future<void> _sendPowerToggle() async {
+    if (!await _ensureKnownControlState(power: true)) return;
+    final powered = _currentPowerState();
+    if (powered == null) return;
+    final cmd = powered ? CommandCode.powerOff : CommandCode.powerOn;
     await _sendCommand(cmd);
   }
 
@@ -1467,22 +1475,23 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
                   children: [
                     const SizedBox(height: 18),
                     _CyberControlGrid(
+                      powered: isPowerOn,
                       armed: isArmed,
+                      busy: _busy,
+                      controlsEnabled:
+                          signedIn && hasVehicle && controlAvailability.enabled,
                       dimmed:
                           _busy ||
                           !hasVehicle ||
                           !signedIn ||
                           !controlAvailability.enabled,
                       onFind: () => unawaited(_sendCommand(CommandCode.find)),
-                      onUnlock: () => unawaited(_sendArmToggle()),
+                      onPowerToggle: () => unawaited(_sendPowerToggle()),
+                      onArmToggle: () => unawaited(_sendArmToggle()),
                       onSettings: _openSettings,
                       onSeat: () =>
                           unawaited(_sendCommand(CommandCode.openSeat)),
                       onShare: _openShare,
-                      onPassword: () {
-                        AppSnack.info(context, '密码解锁请在车辆设置中配置');
-                        _openSettings();
-                      },
                       onNfc: _openNfc,
                     ),
                     const SizedBox(height: 32),
@@ -2673,29 +2682,36 @@ class _CyberBleChip extends StatelessWidget {
 
 class _CyberControlGrid extends StatelessWidget {
   const _CyberControlGrid({
+    required this.powered,
     required this.armed,
+    required this.busy,
+    required this.controlsEnabled,
     required this.dimmed,
     required this.onFind,
-    required this.onUnlock,
+    required this.onPowerToggle,
+    required this.onArmToggle,
     required this.onSettings,
     required this.onSeat,
     required this.onShare,
-    required this.onPassword,
     required this.onNfc,
   });
 
+  final bool? powered;
   final bool? armed;
+  final bool busy;
+  final bool controlsEnabled;
   final bool dimmed;
   final VoidCallback onFind;
-  final VoidCallback onUnlock;
+  final VoidCallback onPowerToggle;
+  final VoidCallback onArmToggle;
   final VoidCallback onSettings;
   final VoidCallback onSeat;
   final VoidCallback onShare;
-  final VoidCallback onPassword;
   final VoidCallback onNfc;
 
   @override
   Widget build(BuildContext context) {
+    final armLabel = armed == null ? '设防/解防' : (armed! ? '解防' : '设防');
     return Opacity(
       key: const ValueKey('cyber-control-grid'),
       opacity: dimmed ? 0.55 : 1,
@@ -2710,16 +2726,18 @@ class _CyberControlGrid extends StatelessWidget {
                 Flexible(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: SlideToUnlockButton(
-                      isLocked: armed ?? true,
-                      onUnlocked: onUnlock,
+                    child: SlidePowerButton(
+                      isPowered: powered,
+                      enabled: controlsEnabled,
+                      busy: busy,
+                      onSlide: onPowerToggle,
                     ),
                   ),
                 ),
                 _CircleKey(
-                  icon: Lucide.settings,
-                  label: '车辆设置',
-                  onTap: onSettings,
+                  icon: armed == true ? Lucide.unlock : Lucide.lock,
+                  label: armLabel,
+                  onTap: onArmToggle,
                 ),
               ],
             ),
@@ -2727,9 +2745,13 @@ class _CyberControlGrid extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                _CircleKey(
+                  icon: Lucide.settings,
+                  label: '车辆设置',
+                  onTap: onSettings,
+                ),
                 _CircleKey(icon: Lucide.seat, label: '打开坐垫', onTap: onSeat),
                 _CircleKey(icon: Lucide.share, label: '车辆分享', onTap: onShare),
-                _CircleKey(icon: Lucide.key, label: '密码解锁', onTap: onPassword),
                 _CircleKey(icon: Lucide.nfc, label: 'NFC钥匙', onTap: onNfc),
               ],
             ),

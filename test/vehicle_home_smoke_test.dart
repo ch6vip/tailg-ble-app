@@ -56,6 +56,8 @@ void main() {
       'carNickName': '冒烟测试车',
       'modelType': 3,
       'isGps': 1,
+      'acc': 0,
+      'defenceStatus': 1,
       'btmac': 'AABBCCDDEEFF',
       'electricQuantity': 18,
       'frontTirePressure': 1.2,
@@ -119,7 +121,9 @@ void main() {
     expect(find.text('解锁模式'), findsNothing);
     // Cyber shell shortcuts (no VOID section title 「控车」).
     expect(find.text('寻车'), findsWidgets);
-    expect(find.text('滑动开锁'), findsWidgets);
+    expect(find.text('右滑启动'), findsWidgets);
+    expect(find.text('解防'), findsWidgets);
+    expect(find.text('密码解锁'), findsNothing);
     expect(find.textContaining('点击通电'), findsNothing);
     expect(find.textContaining('点击断电'), findsNothing);
     final controlGrid = find.byKey(const ValueKey('cyber-control-grid'));
