@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/models/official_vehicle.dart';
+import 'package:tailg_ble_app/pages/battery_details_page.dart';
 import 'package:tailg_ble_app/pages/cyber_vehicle_control_page_v2.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
 import 'package:tailg_ble_app/services/official_mqtt_service.dart';
@@ -104,6 +105,13 @@ void main() {
     expect(find.text('车辆在附近时可连接蓝牙本地控车'), findsNothing);
     await tester.pump(const Duration(milliseconds: 120));
 
+    await tester.tap(find.byKey(const ValueKey('cyber-hero-battery-entry')));
+    await tester.pumpAndSettle();
+    expect(find.byType(BatteryDetailsPage), findsOneWidget);
+    expect(find.text('电池信息'), findsOneWidget);
+    Navigator.of(tester.element(find.byType(BatteryDetailsPage))).pop();
+    await tester.pumpAndSettle();
+
     // Channel controls stay available from the compact status line without
     // adding a full-width card that is absent from the new design.
     expect(find.text('控车渠道'), findsNothing);
@@ -160,6 +168,11 @@ void main() {
           .opacity,
       greaterThan(0.9),
     );
+    await tester.tap(find.byKey(const ValueKey('cyber-compact-battery-entry')));
+    await tester.pumpAndSettle();
+    expect(find.byType(BatteryDetailsPage), findsOneWidget);
+    Navigator.of(tester.element(find.byType(BatteryDetailsPage))).pop();
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('cyber-compact-status')));
     await tester.pumpAndSettle();
     expect(find.text('控车渠道'), findsWidgets);

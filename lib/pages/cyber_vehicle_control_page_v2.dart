@@ -1429,6 +1429,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
                   tire: tire,
                   alert: alert,
                   onTitleTap: _openVehicleHeader,
+                  onBatteryTap: _openBattery,
                   onBleChipTap: () => unawaited(_onOfficialBleChipTap()),
                   onMessages: _openMessages,
                   onChannelTap: () => _openControlOptions(controlChannelStatus),
@@ -1758,6 +1759,7 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.tire,
     required this.alert,
     required this.onTitleTap,
+    required this.onBatteryTap,
     required this.onBleChipTap,
     required this.onMessages,
     required this.onChannelTap,
@@ -1779,6 +1781,7 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
   final _TireSnapshot tire;
   final _HomeAlert? alert;
   final VoidCallback onTitleTap;
+  final VoidCallback onBatteryTap;
   final VoidCallback onBleChipTap;
   final VoidCallback onMessages;
   final VoidCallback onChannelTap;
@@ -1835,6 +1838,7 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
                 tire: tire,
                 alert: alert,
                 onTitleTap: onTitleTap,
+                onBatteryTap: onBatteryTap,
                 onBleChipTap: onBleChipTap,
                 onMessages: onMessages,
                 onChannelTap: onChannelTap,
@@ -1861,6 +1865,7 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
                   bleChip: bleChip,
                   channelStatus: channelStatus,
                   onTitleTap: onTitleTap,
+                  onBatteryTap: onBatteryTap,
                   onBleChipTap: onBleChipTap,
                   onMessages: onMessages,
                   onChannelTap: onChannelTap,
@@ -1907,6 +1912,7 @@ class _CyberHeroHeader extends StatelessWidget {
     required this.tire,
     required this.alert,
     required this.onTitleTap,
+    required this.onBatteryTap,
     required this.onBleChipTap,
     required this.onMessages,
     required this.onChannelTap,
@@ -1926,6 +1932,7 @@ class _CyberHeroHeader extends StatelessWidget {
   final _TireSnapshot tire;
   final _HomeAlert? alert;
   final VoidCallback onTitleTap;
+  final VoidCallback onBatteryTap;
   final VoidCallback onBleChipTap;
   final VoidCallback onMessages;
   final VoidCallback onChannelTap;
@@ -1967,43 +1974,50 @@ class _CyberHeroHeader extends StatelessWidget {
                 Positioned(
                   left: 0,
                   bottom: 0,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        rangeText.replaceAll('km', '').trim(),
-                        style: const TextStyle(
-                          fontSize: 48,
-                          height: 0.94,
-                          fontWeight: FontWeight.w700,
-                          color: _Cyber.ink,
-                          fontFeatures: _Cyber.tabular,
-                        ),
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.only(left: 4, bottom: 3),
-                        child: Text(
-                          'km',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                            color: _Cyber.ink,
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 10, bottom: 3),
-                        child: Text(
-                          batteryKnown ? '$batteryPercent%' : '--%',
+                  child: AppPressable(
+                    key: const ValueKey('cyber-hero-battery-entry'),
+                    onTap: onBatteryTap,
+                    semanticsLabel:
+                        '查看电池信息，续航 $rangeText，电量 ${batteryKnown ? '$batteryPercent%' : '未知'}',
+                    semanticsButton: true,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          rangeText.replaceAll('km', '').trim(),
                           style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            color: _Cyber.muted,
+                            fontSize: 48,
+                            height: 0.94,
+                            fontWeight: FontWeight.w700,
+                            color: _Cyber.ink,
                             fontFeatures: _Cyber.tabular,
                           ),
                         ),
-                      ),
-                    ],
+                        const Padding(
+                          padding: EdgeInsets.only(left: 4, bottom: 3),
+                          child: Text(
+                            'km',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: _Cyber.ink,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 10, bottom: 3),
+                          child: Text(
+                            batteryKnown ? '$batteryPercent%' : '--%',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: _Cyber.muted,
+                              fontFeatures: _Cyber.tabular,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Positioned(
@@ -2131,6 +2145,7 @@ class _CyberTopBar extends StatelessWidget {
     required this.bleChip,
     required this.channelStatus,
     required this.onTitleTap,
+    required this.onBatteryTap,
     required this.onBleChipTap,
     required this.onMessages,
     required this.onChannelTap,
@@ -2147,6 +2162,7 @@ class _CyberTopBar extends StatelessWidget {
   final _OfficialBleChipState bleChip;
   final ControlTopBarChannel channelStatus;
   final VoidCallback onTitleTap;
+  final VoidCallback onBatteryTap;
   final VoidCallback onBleChipTap;
   final VoidCallback onMessages;
   final VoidCallback onChannelTap;
@@ -2179,16 +2195,29 @@ class _CyberTopBar extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  rangeText,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
-                    color: _Cyber.ink2,
-                    fontFeatures: _Cyber.tabular,
+                AppPressable(
+                  key: const ValueKey('cyber-compact-battery-entry'),
+                  onTap: onBatteryTap,
+                  semanticsLabel: '查看电池信息，续航 $rangeText，电量 $batteryPercent%',
+                  semanticsButton: true,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minHeight: AppTouchTargets.min,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        rangeText,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                          color: _Cyber.ink2,
+                          fontFeatures: _Cyber.tabular,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 6),
                 _CyberStatusLine(
                   key: const ValueKey('cyber-compact-status'),
                   online: online,
