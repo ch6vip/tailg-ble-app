@@ -5,6 +5,7 @@ import 'package:tailg_ble_app/pages/cyber_vehicle_control_page_v2.dart';
 import 'package:tailg_ble_app/widgets/void_particles.dart';
 import 'package:tailg_ble_app/widgets/void_typography.dart';
 
+import 'helpers/touch_target.dart';
 import 'helpers/view_size.dart';
 
 void main() {
@@ -94,9 +95,9 @@ void main() {
     expect(tester.getSize(serviceItemFinder).height, 64);
     expect(tester.getSize(vehicleItemFinder).height, 64);
     expect(tester.getSize(mineItemFinder).height, 64);
-    expect(tester.getSize(serviceItemFinder).height, greaterThanOrEqualTo(44));
-    expect(tester.getSize(vehicleItemFinder).height, greaterThanOrEqualTo(44));
-    expect(tester.getSize(mineItemFinder).height, greaterThanOrEqualTo(44));
+    expectMinTouchTargetHeight(tester, serviceItemFinder);
+    expectMinTouchTargetHeight(tester, vehicleItemFinder);
+    expectMinTouchTargetHeight(tester, mineItemFinder);
 
     final barTop = tester.getTopLeft(barFinder).dy;
     final serviceTop = tester.getTopLeft(serviceItemFinder).dy;

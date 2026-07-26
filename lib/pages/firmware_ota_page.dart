@@ -10,7 +10,8 @@ import '../widgets/app_snack.dart';
 import '../widgets/cyber_page_chrome.dart';
 import '../widgets/lucide_icon.dart';
 
-/// P3-5: experimental official OTA flow (query -> download -> BLE chunks).
+/// P3-5: experimental official OTA flow:
+/// query -> download -> writeOtaOrder -> writeOtaFileChunk.
 class FirmwareOtaPage extends StatefulWidget {
   const FirmwareOtaPage({super.key});
 
@@ -94,8 +95,8 @@ class _FirmwareOtaPageState extends State<FirmwareOtaPage> {
                   const Row(
                     children: [
                       SizedBox(
-                        width: 44,
-                        height: 44,
+                        width: AppTouchTargets.min,
+                        height: AppTouchTargets.min,
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             color: CyberHomeColors.primarySoft,
