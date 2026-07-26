@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import '../theme/app_void.dart';
+import '../theme/motion_policy.dart';
 
 /// Volumetric particle field — animated, reactive, immersive.
 ///
@@ -47,8 +48,17 @@ class _VoidParticleFieldState extends State<VoidParticleField>
     _ticker = createTicker((elapsed) {
       _elapsedNotifier.value = elapsed.inMicroseconds / 1000;
     });
-    if (VoidParticleField.enableAnimation) {
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final enabled =
+        VoidParticleField.enableAnimation && MotionPolicy.loopsEnabled(context);
+    if (enabled && !_ticker.isActive) {
       unawaited(_ticker.start());
+    } else if (!enabled && _ticker.isActive) {
+      _ticker.stop();
     }
   }
 

@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lottie/lottie.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
+import '../theme/motion_policy.dart';
 import 'lucide_icon.dart';
 
 /// Official-like bidirectional power slider.
@@ -46,6 +48,15 @@ class _SlidePowerButtonState extends State<SlidePowerButton>
   bool _awaitingResult = false;
   bool _dragging = false;
   bool? _commandOriginPowered;
+  String? _successAsset;
+  Timer? _successTimer;
+
+  static const _loadingAsset =
+      'assets/official_tailg/lottie/anmim/control_daw_start_stop_load.json';
+  static const _powerOnAsset =
+      'assets/official_tailg/lottie/startanmim/control_daw_start.json';
+  static const _powerOffAsset =
+      'assets/official_tailg/lottie/stopanmim/control_daw_stop.json';
 
   double get _maxDragDistance => _trackWidth - _thumbSize;
   double get _idlePosition => widget.isPowered == true ? _maxDragDistance : 0;
@@ -98,6 +109,10 @@ class _SlidePowerButtonState extends State<SlidePowerButton>
   void didUpdateWidget(covariant SlidePowerButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.isPowered != widget.isPowered) {
+      if (oldWidget.isPowered != null && widget.isPowered != null) {
+        _successTimer?.cancel();
+        _successAsset = widget.isPowered! ? _powerOnAsset : _powerOffAsset;
+      }
       _awaitingResult = false;
       _commandOriginPowered = null;
       _animateTo(_idlePosition);
@@ -112,9 +127,19 @@ class _SlidePowerButtonState extends State<SlidePowerButton>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MotionPolicy.reduceMotion(context) && _successAsset != null) {
+      _successTimer?.cancel();
+      _successAsset = null;
+    }
+  }
+
+  @override
   void dispose() {
     _resetController.dispose();
     _feedbackController.dispose();
+    _successTimer?.cancel();
     super.dispose();
   }
 
@@ -186,10 +211,18 @@ class _SlidePowerButtonState extends State<SlidePowerButton>
     unawaited(_resetController.forward(from: 0));
   }
 
+  void _clearSuccessAfter(Duration duration) {
+    if (_successTimer?.isActive ?? false) return;
+    _successTimer = Timer(duration, () {
+      if (mounted) setState(() => _successAsset = null);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final powered = widget.isPowered == true;
     final arrow = powered ? Lucide.chevronLeft : Lucide.chevronRight;
+    final reduceMotion = MotionPolicy.reduceMotion(context);
     return Semantics(
       key: const ValueKey('slide-power-semantics'),
       label: _label,
@@ -280,13 +313,15 @@ class _SlidePowerButtonState extends State<SlidePowerButton>
                             child: AnimatedSwitcher(
                               duration: AppMotion.status,
                               child: _awaitingResult
-                                  ? const SizedBox(
+                                  ? SizedBox(
                                       key: ValueKey('power-progress'),
                                       width: 24,
                                       height: 24,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.2,
-                                        color: CyberHomeColors.primary,
+                                      child: Lottie.asset(
+                                        _loadingAsset,
+                                        animate: !reduceMotion,
+                                        repeat: !reduceMotion,
+                                        fit: BoxFit.contain,
                                       ),
                                     )
                                   : const LucideIcon(
@@ -300,6 +335,19 @@ class _SlidePowerButtonState extends State<SlidePowerButton>
                           ),
                         ),
                       ),
+                      if (_successAsset case final asset?)
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: Lottie.asset(
+                              asset,
+                              key: const ValueKey('power-success-animation'),
+                              repeat: false,
+                              fit: BoxFit.fill,
+                              onLoaded: (composition) =>
+                                  _clearSuccessAfter(composition.duration),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),

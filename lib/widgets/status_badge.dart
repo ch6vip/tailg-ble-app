@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/theme/app_motion.dart';
+import 'package:tailg_ble_app/theme/motion_policy.dart';
 
 /// Unified status badge for the v8 Ninebot design system.
 ///
@@ -179,22 +180,30 @@ class _PulsingDotState extends State<_PulsingDot>
       begin: AppMotion.pulseMin,
       end: AppMotion.pulseMax,
     ).animate(CurvedAnimation(parent: _ctrl, curve: AppMotion.pulseCurve));
-    if (widget.pulsing) {
-      unawaited(_ctrl.repeat(reverse: true));
-    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncAnimation();
   }
 
   @override
   void didUpdateWidget(covariant _PulsingDot oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.pulsing != oldWidget.pulsing) {
-      if (widget.pulsing) {
-        unawaited(_ctrl.repeat(reverse: true));
-      } else {
-        _ctrl.stop();
-        _ctrl.value = 0;
-      }
+      _syncAnimation();
     }
+  }
+
+  void _syncAnimation() {
+    if (widget.pulsing && MotionPolicy.loopsEnabled(context)) {
+      if (!_ctrl.isAnimating) unawaited(_ctrl.repeat(reverse: true));
+      return;
+    }
+    _ctrl
+      ..stop()
+      ..value = 0;
   }
 
   @override

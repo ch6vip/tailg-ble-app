@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../theme/app_void.dart';
+import '../theme/motion_policy.dart';
 import 'void_particles.dart';
 
 /// Full-bleed immersive void field with soft energy nebula.
@@ -218,7 +219,18 @@ class _VoidEnergyRingState extends State<VoidEnergyRing>
   void initState() {
     super.initState();
     _pulse = AnimationController(vsync: this, duration: VoidMotion.breathe);
-    unawaited(_pulse.repeat(reverse: true));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MotionPolicy.loopsEnabled(context)) {
+      if (!_pulse.isAnimating) unawaited(_pulse.repeat(reverse: true));
+    } else {
+      _pulse
+        ..stop()
+        ..value = 0.5;
+    }
   }
 
   @override

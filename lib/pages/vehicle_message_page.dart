@@ -10,6 +10,8 @@ import '../services/log_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
+import '../theme/motion_policy.dart';
+import '../widgets/app_chrome.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import 'official_cloud_page.dart';
@@ -301,7 +303,10 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
             ),
             _buildTabs(),
             Expanded(
-              child: _buildBody(signedIn: signedIn, tabMessages: tabMessages),
+              child: AnimatedSwitcher(
+                duration: MotionPolicy.duration(context, AppMotion.dataChange),
+                child: _buildBody(signedIn: signedIn, tabMessages: tabMessages),
+              ),
             ),
           ],
         ),
@@ -314,38 +319,47 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
     required List<List<_VehicleMessage>> tabMessages,
   }) {
     if (!signedIn) {
-      return _MessageState(
-        icon: Lucide.lock,
-        title: OfficialCloudMessages.signInRequired,
-        subtitle: '登录后可同步车辆消息与系统通知',
-        actionLabel: '去登录',
-        onAction: () => unawaited(
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const OfficialCloudPage()),
+      return KeyedSubtree(
+        key: const ValueKey('message-signed-out'),
+        child: _MessageState(
+          icon: Lucide.lock,
+          title: OfficialCloudMessages.signInRequired,
+          subtitle: '登录后可同步车辆消息与系统通知',
+          actionLabel: '去登录',
+          onAction: () => unawaited(
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const OfficialCloudPage(),
+              ),
+            ),
           ),
         ),
       );
     }
 
     if (_loading && !_initialized) {
-      return const Center(
-        child: CircularProgressIndicator(color: CyberHomeColors.primary),
+      return const _MessageListSkeleton(
+        key: ValueKey('message-loading-skeleton'),
       );
     }
 
     if (_error != null && tabMessages[0].isEmpty) {
-      return _MessageState(
-        icon: Lucide.wifiOff,
-        title: '消息加载失败',
-        subtitle: _error,
-        actionLabel: '重试',
-        onAction: _loading
-            ? null
-            : () => unawaited(_refreshMessages(force: true)),
+      return KeyedSubtree(
+        key: const ValueKey('message-error'),
+        child: _MessageState(
+          icon: Lucide.wifiOff,
+          title: '消息加载失败',
+          subtitle: _error,
+          actionLabel: '重试',
+          onAction: _loading
+              ? null
+              : () => unawaited(_refreshMessages(force: true)),
+        ),
       );
     }
 
     return RefreshIndicator(
+      key: const ValueKey('message-content'),
       onRefresh: () => _refreshMessages(force: true),
       color: CyberHomeColors.primary,
       backgroundColor: CyberHomeColors.card,
@@ -608,136 +622,224 @@ class _MessageList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final duration = MotionPolicy.duration(context, AppMotion.dataChange);
     if (messages.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
+      return AnimatedSwitcher(
+        duration: duration,
+        child: ListView(
+          key: const ValueKey('message-list-empty'),
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          children: const [SizedBox(height: 100), _EmptyMessageState()],
         ),
-        children: const [SizedBox(height: 100), _EmptyMessageState()],
       );
     }
 
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(
-        parent: BouncingScrollPhysics(),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
-      itemCount: messages.length,
-      itemBuilder: (context, index) {
-        final message = messages[index];
-        final read = readIds.contains(message.id);
-        final readLabel = read ? '已读' : '未读';
-        final semanticsLabel =
-            '${message.title}，${message.subtitle}，${message.category.label}，$readLabel';
-        void openMessage() => onOpen(message);
-        return RepaintBoundary(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: AppPressable(
-              onTap: openMessage,
-              semanticsLabel: semanticsLabel,
-              semanticsButton: true,
-              semanticsEnabled: true,
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: read
-                      ? CyberHomeColors.card
-                      : message.severity.color.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(AppRadii.tile),
-                  border: Border.all(
+    final listKey = ValueKey(
+      'message-list-${messages.map((message) => message.id).join('|')}',
+    );
+    return AnimatedSwitcher(
+      duration: duration,
+      child: ListView.builder(
+        key: listKey,
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+        itemCount: messages.length,
+        findChildIndexCallback: (key) {
+          if (key is! ValueKey<String>) return null;
+          final index = messages.indexWhere(
+            (message) => message.id == key.value,
+          );
+          return index < 0 ? null : index;
+        },
+        itemBuilder: (context, index) {
+          final message = messages[index];
+          final read = readIds.contains(message.id);
+          final readLabel = read ? '已读' : '未读';
+          final semanticsLabel =
+              '${message.title}，${message.subtitle}，${message.category.label}，$readLabel';
+          void openMessage() => onOpen(message);
+          return RepaintBoundary(
+            key: ValueKey(message.id),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: AppPressable(
+                onTap: openMessage,
+                semanticsLabel: semanticsLabel,
+                semanticsButton: true,
+                semanticsEnabled: true,
+                child: AnimatedContainer(
+                  duration: AppMotion.status,
+                  curve: AppMotion.pressCurve,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
                     color: read
-                        ? CyberHomeColors.line
-                        : message.severity.color.withValues(alpha: 0.16),
+                        ? CyberHomeColors.card
+                        : message.severity.color.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(AppRadii.tile),
+                    border: Border.all(
+                      color: read
+                          ? CyberHomeColors.line
+                          : message.severity.color.withValues(alpha: 0.16),
+                    ),
                   ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _MessageIcon(message: message, read: read),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  message.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: CyberHomeColors.ink,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _MessageIcon(message: message, read: read),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    message.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: CyberHomeColors.ink,
+                                    ),
                                   ),
                                 ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  formatMonthDayMinuteText(message.time),
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: CyberHomeColors.inkFaint,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              message.subtitle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: CyberHomeColors.inkMuted,
+                                height: 1.4,
                               ),
-                              const SizedBox(width: 8),
-                              Text(
-                                formatMonthDayMinuteText(message.time),
-                                style: const TextStyle(
-                                  fontSize: 11,
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                _Tag(text: message.category.label),
+                                const SizedBox(width: 8),
+                                AnimatedContainer(
+                                  duration: AppMotion.status,
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: read
+                                        ? CyberHomeColors.inkFaint
+                                        : message.severity.color,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  readLabel,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: CyberHomeColors.inkMuted,
+                                  ),
+                                ),
+                                const Spacer(),
+                                const LucideIcon(
+                                  Lucide.chevronRight,
+                                  size: AppIconSizes.sm,
                                   color: CyberHomeColors.inkFaint,
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            message.subtitle,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: CyberHomeColors.inkMuted,
-                              height: 1.4,
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              _Tag(text: message.category.label),
-                              const SizedBox(width: 8),
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  color: read
-                                      ? CyberHomeColors.inkFaint
-                                      : message.severity.color,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 5),
-                              Text(
-                                readLabel,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: CyberHomeColors.inkMuted,
-                                ),
-                              ),
-                              const Spacer(),
-                              const LucideIcon(
-                                Lucide.chevronRight,
-                                size: AppIconSizes.sm,
-                                color: CyberHomeColors.inkFaint,
-                              ),
-                            ],
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _MessageListSkeleton extends StatelessWidget {
+  const _MessageListSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+      children: [
+        for (var index = 0; index < 4; index++)
+          Container(
+            height: 112,
+            margin: const EdgeInsets.only(top: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: CyberHomeColors.card,
+              borderRadius: BorderRadius.circular(AppRadii.tile),
+              border: Border.all(color: CyberHomeColors.line),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppSkeleton(
+                  width: 42,
+                  height: 42,
+                  borderRadius: BorderRadius.all(Radius.circular(21)),
+                  baseColor: CyberHomeColors.control,
+                  highlightColor: CyberHomeColors.cardMuted,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppSkeleton(
+                        width: 146,
+                        height: 16,
+                        baseColor: CyberHomeColors.control,
+                        highlightColor: CyberHomeColors.cardMuted,
+                      ),
+                      SizedBox(height: 10),
+                      AppSkeleton(
+                        width: double.infinity,
+                        height: 12,
+                        baseColor: CyberHomeColors.control,
+                        highlightColor: CyberHomeColors.cardMuted,
+                      ),
+                      SizedBox(height: 8),
+                      AppSkeleton(
+                        width: 110,
+                        height: 10,
+                        baseColor: CyberHomeColors.control,
+                        highlightColor: CyberHomeColors.cardMuted,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        );
-      },
+      ],
     );
   }
 }
@@ -751,7 +853,9 @@ class _MessageIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = read ? CyberHomeColors.inkFaint : message.severity.color;
-    return Container(
+    return AnimatedContainer(
+      duration: AppMotion.status,
+      curve: AppMotion.pressCurve,
       width: 42,
       height: 42,
       alignment: Alignment.center,

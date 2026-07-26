@@ -49,6 +49,15 @@ void main() {
     );
   });
 
+  test('message list uses skeleton and stable animated rows', () {
+    final source = readSource('lib/pages/vehicle_message_page.dart');
+
+    expect(source, contains('message-loading-skeleton'));
+    expect(source, contains('findChildIndexCallback'));
+    expect(source, contains('AnimatedContainer'));
+    expect(source, contains('MotionPolicy.duration'));
+  });
+
   test('official message models parse vehicle and system records', () {
     final vehicle = OfficialCloudMessage.vehicle({
       'msgId': 'm-1',
@@ -278,7 +287,7 @@ void main() {
 
     await tester.tap(find.byIcon(Lucide.trash));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('已清空 2 条消息'), findsOneWidget);
     expect(snackIcon(Lucide.checkCircle), findsOneWidget);

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
 import '../theme/app_void.dart';
+import '../theme/motion_policy.dart';
 import 'app_pressable.dart';
 import 'lucide_icon.dart';
 import 'void_typography.dart';
@@ -184,12 +185,16 @@ class AppSkeleton extends StatefulWidget {
   final double width;
   final double height;
   final BorderRadius? borderRadius;
+  final Color? baseColor;
+  final Color? highlightColor;
 
   const AppSkeleton({
     super.key,
     required this.width,
     this.height = 12,
     this.borderRadius,
+    this.baseColor,
+    this.highlightColor,
   });
 
   @override
@@ -204,9 +209,17 @@ class _AppSkeletonState extends State<AppSkeleton>
   );
 
   @override
-  void initState() {
-    super.initState();
-    unawaited(_controller.repeat(reverse: true));
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MotionPolicy.loopsEnabled(context)) {
+      if (!_controller.isAnimating) {
+        unawaited(_controller.repeat(reverse: true));
+      }
+    } else {
+      _controller
+        ..stop()
+        ..value = 0.5;
+    }
   }
 
   @override
@@ -219,6 +232,8 @@ class _AppSkeletonState extends State<AppSkeleton>
   Widget build(BuildContext context) {
     final radius =
         widget.borderRadius ?? BorderRadius.circular(widget.height / 2);
+    final base = widget.baseColor ?? VoidColors.voidPanelHi;
+    final highlight = widget.highlightColor ?? VoidColors.voidLift;
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
@@ -227,7 +242,7 @@ class _AppSkeletonState extends State<AppSkeleton>
           width: widget.width,
           height: widget.height,
           decoration: BoxDecoration(
-            color: Color.lerp(VoidColors.voidPanelHi, VoidColors.voidLift, t),
+            color: Color.lerp(base, highlight, t),
             borderRadius: radius,
           ),
         );

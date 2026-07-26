@@ -100,4 +100,28 @@ void main() {
     expect(find.text('暂无记录'), findsOneWidget);
     expect(find.text('车辆连接后会自动显示'), findsOneWidget);
   });
+
+  testWidgets('skeleton settles when system animations are disabled', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const TestApp(
+        home: MediaQuery(
+          data: MediaQueryData(disableAnimations: true),
+          child: Scaffold(
+            body: AppSkeleton(
+              key: ValueKey('reduced-motion-skeleton'),
+              width: 120,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('reduced-motion-skeleton')),
+      findsOneWidget,
+    );
+  });
 }

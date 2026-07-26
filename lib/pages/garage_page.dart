@@ -10,6 +10,9 @@ import '../models/official_vehicle.dart';
 import '../services/app_navigation.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
+import '../theme/motion_policy.dart';
+import '../widgets/app_chrome.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/lucide_icon.dart';
@@ -474,9 +477,15 @@ class _GaragePageState extends State<GaragePage> {
               ),
             ),
             Expanded(
-              child: !signedIn
-                  ? _GarageSignedOut(onLogin: _openAddVehicle)
-                  : _buildVehicleList(),
+              child: AnimatedSwitcher(
+                duration: MotionPolicy.duration(context, AppMotion.dataChange),
+                child: !signedIn
+                    ? _GarageSignedOut(
+                        key: const ValueKey('garage-signed-out'),
+                        onLogin: _openAddVehicle,
+                      )
+                    : _buildVehicleList(),
+              ),
             ),
           ],
         ),
@@ -486,18 +495,25 @@ class _GaragePageState extends State<GaragePage> {
 
   Widget _buildVehicleList() {
     if (_loading && _vehicles.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: CyberHomeColors.primary),
+      return const _GarageListSkeleton(
+        key: ValueKey('garage-loading-skeleton'),
       );
     }
     if (_error != null && _vehicles.isEmpty) {
-      return _GarageError(message: _error!, onRetry: _refresh);
+      return KeyedSubtree(
+        key: const ValueKey('garage-error'),
+        child: _GarageError(message: _error!, onRetry: _refresh),
+      );
     }
     if (_vehicles.isEmpty) {
-      return _GarageEmpty(searching: _activeQuery.isNotEmpty);
+      return KeyedSubtree(
+        key: const ValueKey('garage-empty'),
+        child: _GarageEmpty(searching: _activeQuery.isNotEmpty),
+      );
     }
 
     return RefreshIndicator(
+      key: const ValueKey('garage-vehicle-list'),
       color: CyberHomeColors.primary,
       onRefresh: _refresh,
       child: ListView.builder(
@@ -507,6 +523,13 @@ class _GaragePageState extends State<GaragePage> {
         ),
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         itemCount: _vehicles.length + (_loadingMore ? 1 : 0),
+        findChildIndexCallback: (key) {
+          if (key is! ValueKey<String>) return null;
+          final index = _vehicles.indexWhere(
+            (vehicle) => vehicle.key == key.value,
+          );
+          return index < 0 ? null : index;
+        },
         itemBuilder: (context, index) {
           if (index == _vehicles.length) {
             return const Padding(
@@ -525,6 +548,7 @@ class _GaragePageState extends State<GaragePage> {
           }
           final vehicle = _vehicles[index];
           return _GarageVehicleCard(
+            key: ValueKey(vehicle.key),
             vehicle: vehicle,
             isUsing: _isUsing(vehicle),
             busy: _busyVehicleKey == vehicle.key,
@@ -535,6 +559,63 @@ class _GaragePageState extends State<GaragePage> {
           );
         },
       ),
+    );
+  }
+}
+
+class _GarageListSkeleton extends StatelessWidget {
+  const _GarageListSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      children: [
+        for (var index = 0; index < 2; index++)
+          Container(
+            height: 250,
+            margin: const EdgeInsets.only(bottom: 18),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: CyberHomeColors.card,
+              borderRadius: BorderRadius.circular(AppRadii.tile),
+              border: Border.all(color: CyberHomeColors.line),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppSkeleton(
+                  width: 132,
+                  height: 20,
+                  baseColor: CyberHomeColors.control,
+                  highlightColor: CyberHomeColors.cardMuted,
+                ),
+                SizedBox(height: 18),
+                Expanded(
+                  child: Center(
+                    child: AppSkeleton(
+                      width: 220,
+                      height: 104,
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(AppRadii.tile),
+                      ),
+                      baseColor: CyberHomeColors.control,
+                      highlightColor: CyberHomeColors.cardMuted,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+                AppSkeleton(
+                  width: 180,
+                  height: 14,
+                  baseColor: CyberHomeColors.control,
+                  highlightColor: CyberHomeColors.cardMuted,
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -893,6 +974,7 @@ class _SearchTypeOption extends StatelessWidget {
 
 class _GarageVehicleCard extends StatelessWidget {
   const _GarageVehicleCard({
+    super.key,
     required this.vehicle,
     required this.isUsing,
     required this.busy,
@@ -913,7 +995,9 @@ class _GarageVehicleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shared = vehicle.shareCarFlag;
-    return Container(
+    return AnimatedContainer(
+      duration: AppMotion.status,
+      curve: AppMotion.pressCurve,
       margin: const EdgeInsets.only(bottom: 18),
       decoration: BoxDecoration(
         color: CyberHomeColors.card,
@@ -1075,20 +1159,31 @@ class _GarageVehicleCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (busy)
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: CyberHomeColors.white75,
-                        borderRadius: BorderRadius.circular(AppRadii.tile),
-                      ),
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          color: CyberHomeColors.primary,
-                        ),
-                      ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: AnimatedSwitcher(
+                      duration: AppMotion.status,
+                      child: busy
+                          ? DecoratedBox(
+                              key: const ValueKey('garage-card-busy'),
+                              decoration: BoxDecoration(
+                                color: CyberHomeColors.white75,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.tile,
+                                ),
+                              ),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: CyberHomeColors.primary,
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink(
+                              key: ValueKey('garage-card-ready'),
+                            ),
                     ),
                   ),
+                ),
               ],
             ),
           ),
@@ -1277,7 +1372,7 @@ class _GarageAddBar extends StatelessWidget {
 }
 
 class _GarageSignedOut extends StatelessWidget {
-  const _GarageSignedOut({required this.onLogin});
+  const _GarageSignedOut({super.key, required this.onLogin});
 
   final VoidCallback onLogin;
 

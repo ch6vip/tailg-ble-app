@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
@@ -89,6 +91,38 @@ void main() {
     expect(find.text('账号车辆'), findsNothing);
     expect(find.text('本地存档'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('signed-in garage cross-fades skeleton into loaded content', (
+    tester,
+  ) async {
+    setTestViewSize(tester, const Size(390, 844));
+    final completion = Completer<OfficialGaragePage>();
+    _setSignedIn(const []);
+    app.officialCloudService.fetchGaragePageOverride =
+        ({required pageIndex, required frame, required shareUserPhone}) {
+          return completion.future;
+        };
+
+    await tester.pumpWidget(const TestApp(home: GaragePage(embedded: true)));
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey('garage-loading-skeleton')),
+      findsOneWidget,
+    );
+
+    completion.complete(
+      const OfficialGaragePage(
+        vehicles: [],
+        pageIndex: 1,
+        pageSize: 5,
+        total: 0,
+        hasNext: false,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('garage-loading-skeleton')), findsNothing);
   });
 
   testWidgets('frame search sends official GarageV2 search values', (

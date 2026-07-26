@@ -38,6 +38,15 @@ void main() {
     expect(cancelIsScan, lessThan(disposeResultsNotifier));
   });
 
+  test('ScanPage keeps device identity stable across RSSI refreshes', () {
+    final source = readSource('lib/pages/scan_page.dart');
+
+    expect(source, contains('_stabilizeScanResults'));
+    expect(source, contains('for (final previous in _resultsNotifier.value)'));
+    expect(source, contains('findChildIndexCallback'));
+    expect(source, contains('MotionPolicy.loopsEnabled(context)'));
+  });
+
   test('ScanPage does not expose raw connection exceptions in snack text', () {
     final source = readSource('lib/pages/scan_page.dart');
     final catchStart = source.indexOf("logService.ble('连接绑定设备失败'");

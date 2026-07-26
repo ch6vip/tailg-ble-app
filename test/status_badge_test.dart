@@ -71,4 +71,20 @@ void main() {
       semantics.dispose();
     }
   });
+
+  testWidgets('active badge stops pulsing under reduced motion', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(disableAnimations: true),
+          child: Scaffold(body: StatusBadge(type: StatusBadgeType.online)),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('车辆状态：在线'), findsOneWidget);
+  });
 }

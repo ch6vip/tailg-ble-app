@@ -10,6 +10,7 @@ import '../models/vehicle_profile.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
+import '../theme/motion_policy.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/lucide_icon.dart';
@@ -51,6 +52,7 @@ class _ScanPageState extends State<ScanPage>
   Timer? _throttle;
   List<ScanResult>? _pendingResults;
   late AnimationController _radarController;
+  bool _radarMotionEnabled = true;
 
   @override
   bool get wantKeepAlive => true;
@@ -71,19 +73,60 @@ class _ScanPageState extends State<ScanPage>
         final next = _pendingResults;
         _pendingResults = null;
         if (next != null) {
-          _resultsNotifier.value = next;
+          _resultsNotifier.value = _stabilizeScanResults(next);
         }
       });
     });
     _isScanSub = FlutterBluePlus.isScanning.listen((scanning) {
       if (!mounted) return;
       setState(() => _scanning = scanning);
-      if (scanning) {
-        unawaited(_radarController.repeat());
-      } else {
-        _radarController.stop();
-      }
+      _syncRadarAnimation();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final enabled = MotionPolicy.loopsEnabled(context);
+    if (_radarMotionEnabled == enabled) return;
+    _radarMotionEnabled = enabled;
+    _syncRadarAnimation();
+  }
+
+  void _syncRadarAnimation() {
+    if (_scanning && _radarMotionEnabled) {
+      if (!_radarController.isAnimating) {
+        unawaited(_radarController.repeat());
+      }
+      return;
+    }
+    _radarController
+      ..stop()
+      ..value = 0.08;
+  }
+
+  List<ScanResult> _stabilizeScanResults(List<ScanResult> results) {
+    final byId = <String, ScanResult>{};
+    for (final result in results) {
+      final id = result.device.remoteId.toString();
+      final current = byId[id];
+      if (current == null || result.rssi > current.rssi) byId[id] = result;
+    }
+    final stable = <ScanResult>[];
+    for (final previous in _resultsNotifier.value) {
+      final id = previous.device.remoteId.toString();
+      final latest = byId.remove(id);
+      if (latest != null) stable.add(latest);
+    }
+    final newcomers = byId.values.toList()
+      ..sort((a, b) {
+        final strength = b.rssi.compareTo(a.rssi);
+        if (strength != 0) return strength;
+        return a.device.remoteId.toString().compareTo(
+          b.device.remoteId.toString(),
+        );
+      });
+    return List.unmodifiable([...stable, ...newcomers]);
   }
 
   @override
@@ -479,29 +522,40 @@ class _DeviceList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (results.isEmpty) return const SizedBox.shrink();
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: results.length,
-      itemBuilder: (context, index) {
-        final r = results[index];
-        final remoteId = r.device.remoteId.toString();
-        final connecting = connectingRemoteId == remoteId;
-        final disabled = connectingRemoteId != null && !connecting;
-        return Padding(
-          key: ValueKey(remoteId),
-          padding: const EdgeInsets.only(bottom: 10),
-          child: _DeviceEntrance(
-            child: _DeviceCard(
-              result: r,
-              connecting: connecting,
-              disabled: disabled,
-              onTap: () => onTap(r.device),
+    return AnimatedSize(
+      duration: MotionPolicy.duration(context, AppMotion.dataChange),
+      alignment: Alignment.topCenter,
+      child: ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: results.length,
+        findChildIndexCallback: (key) {
+          if (key is! ValueKey<String>) return null;
+          final index = results.indexWhere(
+            (result) => result.device.remoteId.toString() == key.value,
+          );
+          return index < 0 ? null : index;
+        },
+        itemBuilder: (context, index) {
+          final r = results[index];
+          final remoteId = r.device.remoteId.toString();
+          final connecting = connectingRemoteId == remoteId;
+          final disabled = connectingRemoteId != null && !connecting;
+          return Padding(
+            key: ValueKey(remoteId),
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _DeviceEntrance(
+              child: _DeviceCard(
+                result: r,
+                connecting: connecting,
+                disabled: disabled,
+                onTap: () => onTap(r.device),
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
@@ -522,6 +576,7 @@ class _DeviceEntranceState extends State<_DeviceEntrance>
   late final AnimationController _controller;
   late final Animation<double> _fade;
   late final Animation<Offset> _slide;
+  bool _started = false;
 
   @override
   void initState() {
@@ -535,7 +590,18 @@ class _DeviceEntranceState extends State<_DeviceEntrance>
         .animate(
           CurvedAnimation(parent: _controller, curve: AppMotion.entranceCurve),
         );
-    unawaited(_controller.forward());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MotionPolicy.reduceMotion(context)) {
+      _controller.value = 1;
+      _started = true;
+    } else if (!_started) {
+      _started = true;
+      unawaited(_controller.forward());
+    }
   }
 
   @override

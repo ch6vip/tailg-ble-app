@@ -42,6 +42,7 @@ void main() {
 
     command.complete();
     await tester.pump();
+    expect(find.byKey(const ValueKey('power-success-animation')), findsNothing);
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(thumb).dx, closeTo(initialX, 0.1));
   });
@@ -89,6 +90,10 @@ void main() {
 
     command.complete();
     await tester.pump();
+    expect(
+      find.byKey(const ValueKey('power-success-animation')),
+      findsOneWidget,
+    );
     await tester.pumpAndSettle();
     expect(find.text('右滑启动'), findsOneWidget);
     expect(tester.getTopLeft(thumb).dx, closeTo(initialX - 100, 0.1));
