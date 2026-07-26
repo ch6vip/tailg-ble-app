@@ -89,6 +89,15 @@ class QgjResponse {
   });
 }
 
+/// Official QGJ seat capability gate (`ECU_QUERY_KEY_VERSION`, 0x1005).
+/// Key versions 2, 6 and 9 expose the seat-lock command.
+bool? parseQgjSeatSupport(QgjResponse? response) {
+  if (response == null || !response.success || response.payload.isEmpty) {
+    return null;
+  }
+  return const {2, 6, 9}.contains(response.payload.first);
+}
+
 QgjResponse? parseQgjResponse(Uint8List data) {
   if (data.length < 6 || data[0] != 0xA7) return null;
   final length = (data[2] << 8) | data[3];

@@ -10,6 +10,7 @@ import 'location_service.dart';
 import 'log_service.dart';
 import 'manual_mode_service.dart';
 import 'message_read_store.dart';
+import 'network_availability_service.dart';
 import 'official_cloud_service.dart';
 import 'official_mqtt_service.dart';
 import 'permission_service.dart';
@@ -29,6 +30,7 @@ class AppServices {
   final LogService logService;
   final VehicleStore vehicleStore;
   final MessageReadStore messageReadStore;
+  final NetworkAvailabilityService networkAvailabilityService;
   final OfficialCloudService officialCloudService;
   final OfficialMqttService officialMqttService;
   final AppPreferencesService appPreferencesService;
@@ -44,6 +46,7 @@ class AppServices {
     required this.logService,
     required this.vehicleStore,
     required this.messageReadStore,
+    NetworkAvailabilityService? networkAvailabilityService,
     required this.officialCloudService,
     OfficialMqttService? officialMqttService,
     required this.appPreferencesService,
@@ -57,6 +60,8 @@ class AppServices {
              logService: logService,
              officialCloudService: officialCloudService,
            ),
+       networkAvailabilityService =
+           networkAvailabilityService ?? NetworkAvailabilityService.platform(),
        officialMqttService = officialMqttService ?? OfficialMqttService();
 
   factory AppServices.production() {

@@ -7,6 +7,7 @@ import 'official_cloud_service.dart';
 import 'official_remote_error_messages.dart';
 
 typedef BleCommandSender = Future<bool> Function(CommandCode command);
+typedef BleCommandPreflight = Future<String?> Function(CommandCode command);
 typedef CloudCommandSender = Future<String> Function(CommandCode command);
 typedef CommandErrorMessage = String Function(Object error);
 
@@ -15,6 +16,7 @@ const _defaultCloudCommandTimeout = Duration(seconds: 20);
 
 class ControlCommandExecutor {
   final BleCommandSender? sendBleCommand;
+  final BleCommandPreflight? beforeBleCommand;
   final CloudCommandSender sendCloudCommand;
   final CommandErrorMessage errorMessage;
   final Duration bleTimeout;
@@ -22,6 +24,7 @@ class ControlCommandExecutor {
 
   const ControlCommandExecutor({
     this.sendBleCommand,
+    this.beforeBleCommand,
     required this.sendCloudCommand,
     this.errorMessage = _defaultErrorMessage,
     this.bleTimeout = _defaultBleCommandTimeout,
@@ -58,6 +61,20 @@ class ControlCommandExecutor {
       );
     }
     try {
+      final preflight = beforeBleCommand;
+      if (preflight != null) {
+        final failure = await preflight(command).timeout(
+          bleTimeout,
+          onTimeout: () => throw TimeoutException('BLE preflight timed out'),
+        );
+        if (failure != null && failure.trim().isNotEmpty) {
+          return ControlCommandResult.failure(
+            command,
+            transport: ControlCommandTransport.ble,
+            message: failure.trim(),
+          );
+        }
+      }
       final success = await sender(command).timeout(
         bleTimeout,
         onTimeout: () => throw TimeoutException('BLE command timed out'),

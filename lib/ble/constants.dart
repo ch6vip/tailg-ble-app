@@ -124,6 +124,7 @@ class QgjCommandHeaders {
 class QgjCommandIds {
   static const login = 0x1001;
   static const setStatus = 0x1002;
+  static const keyVersionGet = 0x1005;
   static const autoLockTimeGet = 0x2000;
   static const autoLockTimeSet = 0x2001;
   static const autoLockGet = autoLockTimeGet;

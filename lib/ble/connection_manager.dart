@@ -1222,6 +1222,12 @@ class ConnectionManager {
     }, priority: GattOperationPriority.high);
   }
 
+  Future<bool?> checkQgjSeatSupport() async {
+    if (!isProtocolLoggedIn || _protocol != ProtocolType.qgj) return null;
+    final response = await sendQgjCommand(QgjCommandIds.keyVersionGet);
+    return parseQgjSeatSupport(response);
+  }
+
   /// Standard-stack raw hex write (official `writeData` path) after LOGIN.
   Future<bool> writeStandardHex(String hexData) async {
     if (_state != ConnectionState.ready ||

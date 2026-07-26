@@ -15,6 +15,7 @@ import '../ble/official_ble_connection_context.dart';
 import '../config/map_tile_config.dart';
 import '../models/battery_snapshot.dart';
 import '../models/command_types.dart';
+import '../models/control_command_activity.dart';
 import '../models/official_vehicle.dart';
 import '../services/control_channel_resolver.dart';
 import '../services/control_channel_status.dart';
@@ -81,23 +82,35 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   final _commandExecutor = ControlCommandExecutor(
     sendBleCommand: (command) => connectionManager.sendCommand(command),
+    beforeBleCommand: (command) async {
+      if (command != CommandCode.openSeat ||
+          connectionManager.protocol != ble.ProtocolType.qgj) {
+        return null;
+      }
+      final supported = await connectionManager.checkQgjSeatSupport();
+      if (supported == true) return null;
+      if (supported == false) return '当前车辆固件不支持开坐垫';
+      return '无法确认座桶锁能力，请检查蓝牙后重试';
+    },
     sendCloudCommand: (command) => officialMqttService.sendCommandPreferMqtt(
       command: command,
       cloud: officialCloudService,
     ),
   );
   final Stopwatch _controlDebounceWatch = Stopwatch();
-  final List<_CommandEntry> _commands = <_CommandEntry>[];
+  final ControlCommandActivityLog _commandLog = ControlCommandActivityLog();
 
   StreamSubscription<OfficialCloudState>? _cloudSub;
   StreamSubscription<ble.ConnectionState>? _bleStateSub;
   StreamSubscription<BikeState?>? _bleBikeStateSub;
   StreamSubscription<OfficialMqttLinkState>? _mqttLinkSub;
+  StreamSubscription<bool>? _networkSub;
   StreamSubscription<BluetoothAdapterState>? _adapterSub;
   bool _busy = false;
   bool _disposed = false;
   bool _nearFieldBusy = false;
   bool _disconnecting = false;
+  bool _networkReady = true;
   BluetoothAdapterState _adapterState = BluetoothAdapterState.unknown;
   OfficialControlChannel _controlChannel = OfficialControlChannel.automatic;
   CommandCode? _activeCommand;
@@ -129,6 +142,11 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     _mqttLinkSub = officialMqttService.linkStateStream.listen((_) {
       if (mounted) setState(() {});
     });
+    _networkSub = networkAvailabilityService.changes.listen((available) {
+      if (_networkReady == available) return;
+      _networkReady = available;
+      if (mounted) setState(() {});
+    });
     // Desktop/widget tests have no BLE platform channel; keep unknown there.
     // Accessing FlutterBluePlus.adapterState on Windows throws
     // "unsupported on this platform" (sync or via stream errors).
@@ -157,6 +175,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     unawaited(manualModeService.init());
     _bindInductionVehicle();
     unawaited(_refreshBlePermission(request: false));
+    unawaited(_refreshNetworkAvailability());
     unawaited(_silentRefresh());
     unawaited(officialMqttService.preconnectForCloud(officialCloudService));
     unawaited(_ensureNearFieldLink(auto: true));
@@ -174,6 +193,8 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     if (bleBikeStateSub != null) unawaited(bleBikeStateSub.cancel());
     final mqttSub = _mqttLinkSub;
     if (mqttSub != null) unawaited(mqttSub.cancel());
+    final networkSub = _networkSub;
+    if (networkSub != null) unawaited(networkSub.cancel());
     final adapterSub = _adapterSub;
     if (adapterSub != null) unawaited(adapterSub.cancel());
     super.dispose();
@@ -199,6 +220,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
 
   Future<void> _onForegroundResume() async {
     if (_disposed) return;
+    await _refreshNetworkAvailability();
     unawaited(_refreshBlePermission(request: false));
     unawaited(_ensureNearFieldLink(auto: true));
     if (!officialCloudService.state.signedIn) return;
@@ -228,6 +250,14 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     );
     if (_disposed || !mounted) return;
     setState(() => _blePermission = result);
+  }
+
+  Future<void> _refreshNetworkAvailability() async {
+    final available = await networkAvailabilityService.checkNow(
+      fallback: _networkReady,
+    );
+    if (_disposed || !mounted || available == _networkReady) return;
+    setState(() => _networkReady = available);
   }
 
   /// Official-like near-field path: open control home → auto link BLE by
@@ -609,6 +639,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
       defaultVehicleId: vehicleStore.defaultVehicle?.id,
       channel: _controlChannel,
       busy: ignoreBusy ? false : _busy,
+      networkReady: _networkReady,
     );
   }
 
@@ -692,17 +723,15 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
       if (mounted) AppSnack.error(context, '请勿频繁操作');
       return;
     }
+    await _refreshNetworkAvailability();
+    if (!mounted || _disposed) return;
     if (cmd == CommandCode.find &&
         !await _ensureKnownControlState(power: true)) {
       return;
     }
-    final mqttStatus = officialMqttService.latestStatusPayload;
     final policy = ControlCommandPolicy.evaluate(
       command: cmd,
       isPowerOn: _currentPowerState() == true,
-      isMoving: mqttStatus?.isMoving ?? false,
-      keyStarted: mqttStatus?.isKeyStarted ?? false,
-      notPoweredOff: mqttStatus?.isNotPoweredOff ?? false,
     );
     if (!policy.allowed) {
       if (mounted) {
@@ -731,14 +760,10 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
         ? connectionManager.device?.remoteId.toString()
         : null;
     final baseline = _vehicleStateSnapshot();
-    _pushCommand(
-      _CommandEntry(
-        kind: _kindFor(cmd),
-        title: '${cmd.label}中…',
-        subtitle: '指令已发送，等待回执',
-        time: '刚刚',
-        status: _CommandStatus.pending,
-      ),
+    final activityId = _startCommandActivity(
+      command: cmd,
+      title: '${cmd.label}中…',
+      subtitle: '指令已发送，等待回执',
     );
 
     try {
@@ -749,14 +774,11 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
               connectionManager.device?.remoteId.toString() !=
                   bleDeviceAtSend)) {
         AppSnack.error(context, '车辆或控车渠道已变化，本次指令已取消');
-        _pushCommand(
-          _CommandEntry(
-            kind: _kindFor(cmd),
-            title: '${cmd.label}已取消',
-            subtitle: '目标车辆或连接已变化',
-            time: '刚刚',
-            status: _CommandStatus.pending,
-          ),
+        _finishCommandActivity(
+          id: activityId,
+          title: '${cmd.label}已取消',
+          subtitle: '目标车辆或连接已变化',
+          status: ControlCommandActivityStatus.cancelled,
         );
         return;
       }
@@ -797,27 +819,19 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
           if (!mounted) return;
           final commandError = officialMqttService.pendingCommandError;
           AppSnack.error(context, commandError ?? _unconfirmedMessage(cmd));
-          _pushCommand(
-            _CommandEntry(
-              kind: _kindFor(cmd),
-              title: commandError == null
-                  ? '${cmd.label}未确认'
-                  : '${cmd.label}失败',
-              subtitle: commandError ?? '请稍后重试',
-              time: '刚刚',
-              status: _CommandStatus.pending,
-            ),
+          _finishCommandActivity(
+            id: activityId,
+            title: commandError == null ? '${cmd.label}未确认' : '${cmd.label}失败',
+            subtitle: commandError ?? '请稍后重试',
+            status: ControlCommandActivityStatus.failed,
           );
         } else {
           AppSnack.info(context, result.successMessage ?? '${cmd.label}成功');
-          _pushCommand(
-            _CommandEntry(
-              kind: _kindFor(cmd),
-              title: _successTitle(cmd),
-              subtitle: _successSubtitle(cmd),
-              time: '刚刚',
-              status: _CommandStatus.ok,
-            ),
+          _finishCommandActivity(
+            id: activityId,
+            title: _successTitle(cmd),
+            subtitle: _successSubtitle(cmd),
+            status: ControlCommandActivityStatus.succeeded,
           );
         }
       } else {
@@ -830,16 +844,13 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
         await _refreshStateForConfirmation();
         if (mounted) {
           AppSnack.error(context, _failureMessage(cmd, result.failureMessage));
-          _pushCommand(
-            _CommandEntry(
-              kind: _kindFor(cmd),
-              title: '${cmd.label}失败',
-              subtitle: result.failureMessage?.trim().isNotEmpty == true
-                  ? result.failureMessage!.trim()
-                  : '请稍后重试',
-              time: '刚刚',
-              status: _CommandStatus.pending,
-            ),
+          _finishCommandActivity(
+            id: activityId,
+            title: '${cmd.label}失败',
+            subtitle: result.failureMessage?.trim().isNotEmpty == true
+                ? result.failureMessage!.trim()
+                : '请稍后重试',
+            status: ControlCommandActivityStatus.failed,
           );
         }
       }
@@ -872,12 +883,35 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     );
   }
 
-  void _pushCommand(_CommandEntry entry) {
+  int _startCommandActivity({
+    required CommandCode command,
+    required String title,
+    required String subtitle,
+  }) {
+    late int id;
     setState(() {
-      _commands.insert(0, entry);
-      if (_commands.length > 4) {
-        _commands.removeRange(4, _commands.length);
-      }
+      id = _commandLog.start(
+        command: command,
+        title: title,
+        subtitle: subtitle,
+      );
+    });
+    return id;
+  }
+
+  void _finishCommandActivity({
+    required int id,
+    required String title,
+    required String subtitle,
+    required ControlCommandActivityStatus status,
+  }) {
+    setState(() {
+      _commandLog.finish(
+        id: id,
+        title: title,
+        subtitle: subtitle,
+        status: status,
+      );
     });
   }
 
@@ -919,17 +953,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
       CommandCode.find => '车辆已响应',
       CommandCode.openSeat => '坐垫锁已释放',
       _ => command.label,
-    };
-  }
-
-  _CommandKind _kindFor(CommandCode command) {
-    return switch (command) {
-      CommandCode.powerOn || CommandCode.powerOff => _CommandKind.power,
-      CommandCode.lock => _CommandKind.lock,
-      CommandCode.unlock => _CommandKind.unlock,
-      CommandCode.find => _CommandKind.find,
-      CommandCode.openSeat => _CommandKind.seat,
-      _ => _CommandKind.find,
     };
   }
 
@@ -1383,6 +1406,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     final mediaPadding = MediaQuery.paddingOf(context);
     final bottomPad = AppNav.contentBottomPadding + mediaPadding.bottom;
     final lastRide = _lastRideVisuals(cloudState);
+    final commandActivities = _commandLog.entries;
 
     return Scaffold(
       backgroundColor: _Cyber.pageBg,
@@ -1467,9 +1491,9 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
                       onMapTap: _openLocation,
                       onRideStatsTap: _openRideStats,
                     ),
-                    if (_commands.isNotEmpty) ...[
+                    if (commandActivities.isNotEmpty) ...[
                       const SizedBox(height: 16),
-                      _CyberRecentCommands(commands: _commands),
+                      _CyberRecentCommands(commands: commandActivities),
                     ],
                     SizedBox(height: bottomPad),
                   ],
@@ -1529,31 +1553,14 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
   }
 }
 
-enum _CommandStatus { ok, pending }
-
-enum _CommandKind { power, lock, unlock, find, seat }
-
-class _CommandEntry {
-  const _CommandEntry({
-    required this.kind,
-    required this.title,
-    required this.subtitle,
-    required this.time,
-    required this.status,
-  });
-
-  final _CommandKind kind;
-  final String title;
-  final String subtitle;
-  final String time;
-  final _CommandStatus status;
-
-  IconData get icon => switch (kind) {
-    _CommandKind.power => Lucide.power,
-    _CommandKind.lock => Lucide.lock,
-    _CommandKind.unlock => Lucide.unlock,
-    _CommandKind.find => Lucide.find,
-    _CommandKind.seat => Lucide.seat,
+IconData _commandActivityIcon(CommandCode command) {
+  return switch (command) {
+    CommandCode.powerOn || CommandCode.powerOff => Lucide.power,
+    CommandCode.lock => Lucide.lock,
+    CommandCode.unlock => Lucide.unlock,
+    CommandCode.find => Lucide.find,
+    CommandCode.openSeat => Lucide.seat,
+    _ => Lucide.find,
   };
 }
 
@@ -3003,7 +3010,7 @@ class _SparkPainter extends CustomPainter {
 
 class _CyberRecentCommands extends StatelessWidget {
   const _CyberRecentCommands({required this.commands});
-  final List<_CommandEntry> commands;
+  final List<ControlCommandActivity> commands;
 
   @override
   Widget build(BuildContext context) {
@@ -3046,7 +3053,7 @@ class _CyberRecentCommands extends StatelessWidget {
               )
             else
               for (final c in commands)
-                _AnimatedCmdRow(key: ObjectKey(c), entry: c),
+                _AnimatedCmdRow(key: ValueKey(c.id), entry: c),
           ],
         ),
       ),
@@ -3057,7 +3064,7 @@ class _CyberRecentCommands extends StatelessWidget {
 class _AnimatedCmdRow extends StatefulWidget {
   const _AnimatedCmdRow({super.key, required this.entry});
 
-  final _CommandEntry entry;
+  final ControlCommandActivity entry;
 
   @override
   State<_AnimatedCmdRow> createState() => _AnimatedCmdRowState();
@@ -3111,11 +3118,16 @@ class _AnimatedCmdRowState extends State<_AnimatedCmdRow>
 
 class _CmdRow extends StatelessWidget {
   const _CmdRow({required this.entry});
-  final _CommandEntry entry;
+  final ControlCommandActivity entry;
 
   @override
   Widget build(BuildContext context) {
-    final ok = entry.status == _CommandStatus.ok;
+    final statusColor = switch (entry.status) {
+      ControlCommandActivityStatus.succeeded => _Cyber.primary,
+      ControlCommandActivityStatus.pending => CyberHomeColors.warning,
+      ControlCommandActivityStatus.failed => CyberHomeColors.danger,
+      ControlCommandActivityStatus.cancelled => _Cyber.faint,
+    };
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -3124,15 +3136,13 @@ class _CmdRow extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: (ok ? _Cyber.primary : CyberHomeColors.warning).withValues(
-                alpha: 0.12,
-              ),
+              color: statusColor.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: LucideIcon(
-              entry.icon,
+              _commandActivityIcon(entry.command),
               size: 14,
-              color: ok ? _Cyber.primary : CyberHomeColors.warning,
+              color: statusColor,
             ),
           ),
           const SizedBox(width: 10),
@@ -3159,10 +3169,7 @@ class _CmdRow extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            entry.time,
-            style: const TextStyle(fontSize: 11, color: _Cyber.faint),
-          ),
+          Text('刚刚', style: const TextStyle(fontSize: 11, color: _Cyber.faint)),
         ],
       ),
     );

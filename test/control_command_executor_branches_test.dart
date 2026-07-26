@@ -96,5 +96,31 @@ void main() {
       expect(result.success, isFalse);
       expect(result.transport, ControlCommandTransport.unavailable);
     });
+
+    test('BLE preflight failure prevents the command write', () async {
+      final sent = <CommandCode>[];
+      final executor = ControlCommandExecutor(
+        beforeBleCommand: (command) async =>
+            command == CommandCode.openSeat ? '当前车辆固件不支持开坐垫' : null,
+        sendBleCommand: (command) async {
+          sent.add(command);
+          return true;
+        },
+        sendCloudCommand: (_) async => 'ok',
+      );
+
+      final result = await executor.send(
+        command: CommandCode.openSeat,
+        availability: availability(
+          channel: OfficialControlChannel.ble,
+          bleReady: true,
+        ),
+      );
+
+      expect(result.success, isFalse);
+      expect(result.transport, ControlCommandTransport.ble);
+      expect(result.failureMessage, '当前车辆固件不支持开坐垫');
+      expect(sent, isEmpty);
+    });
   });
 }

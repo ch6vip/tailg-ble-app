@@ -9,6 +9,7 @@ import 'services/induction_mode_service.dart';
 import 'services/location_service.dart';
 import 'services/log_service.dart';
 import 'services/manual_mode_service.dart';
+import 'services/network_availability_service.dart';
 import 'services/official_cloud_service.dart';
 import 'services/official_mqtt_service.dart';
 import 'services/permission_service.dart';
@@ -176,6 +177,8 @@ LocationService get locationService => AppServices.instance.locationService;
 LogService get logService => AppServices.instance.logService;
 VehicleStore get vehicleStore => AppServices.instance.vehicleStore;
 MessageReadStore get messageReadStore => AppServices.instance.messageReadStore;
+NetworkAvailabilityService get networkAvailabilityService =>
+    AppServices.instance.networkAvailabilityService;
 OfficialCloudService get officialCloudService =>
     AppServices.instance.officialCloudService;
 OfficialMqttService get officialMqttService =>

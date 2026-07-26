@@ -31,11 +31,13 @@ void main() {
   ControlChannelAvailability base(
     OfficialCloudState state, {
     bool bleReady = true,
+    bool networkReady = true,
     OfficialControlChannel channel = OfficialControlChannel.automatic,
   }) {
     return ControlChannelResolver.resolve(
       cloudState: state,
       bleReady: bleReady,
+      networkReady: networkReady,
       channel: channel,
     );
   }
@@ -98,5 +100,14 @@ void main() {
     );
     expect(supportedCloud.enabled, isTrue);
     expect(supportedCloud.canUseCloud, isTrue);
+  });
+
+  test('cloud control is disabled immediately while the phone is offline', () {
+    final gps = stateFor(modelType: 8, isGps: 1);
+    final offline = base(gps, bleReady: false, networkReady: false);
+
+    expect(offline.enabled, isFalse);
+    expect(offline.canUseCloud, isFalse);
+    expect(offline.disabledReason, '手机网络未连接');
   });
 }
