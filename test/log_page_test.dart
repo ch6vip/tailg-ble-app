@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/log_page.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 
@@ -40,6 +42,11 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(const TestApp(home: LogPage()));
+
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
 
     await tester.tap(find.byIcon(Lucide.copy));
     await tester.pump();

@@ -8,10 +8,8 @@ import '../services/app_preferences_service.dart';
 import '../services/clipboard_text.dart';
 import '../services/diagnostic_export_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_void.dart';
-import '../widgets/app_chrome.dart';
-import '../widgets/void_canvas.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/cyber_page_chrome.dart';
 
 const _appVersion = '1.0.0+1';
 const _buildCommit = String.fromEnvironment(
@@ -57,58 +55,56 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        child: SafeArea(
-          child: Column(
-            children: [
-              const AppPageHeader(title: '语言设置'),
-              Expanded(
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 24),
-                  children: [
-                    const AppSectionLabel('语言'),
-                    AppCard(
-                      padding: EdgeInsets.zero,
-                      child: Column(
-                        children: [
-                          for (
-                            var i = 0;
-                            i < AppLanguagePreference.values.length;
-                            i++
-                          ) ...[
-                            _OptionRow(
-                              title: AppLanguagePreference.values[i].label,
-                              selected:
-                                  _selected == AppLanguagePreference.values[i],
-                              onTap: () => setState(
-                                () =>
-                                    _selected = AppLanguagePreference.values[i],
-                              ),
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const CyberPageHeader(title: '语言设置'),
+            Expanded(
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 24),
+                children: [
+                  const CyberSectionLabel('语言'),
+                  CyberCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        for (
+                          var i = 0;
+                          i < AppLanguagePreference.values.length;
+                          i++
+                        ) ...[
+                          _OptionRow(
+                            title: AppLanguagePreference.values[i].label,
+                            selected:
+                                _selected == AppLanguagePreference.values[i],
+                            onTap: () => setState(
+                              () => _selected = AppLanguagePreference.values[i],
                             ),
-                            if (i != AppLanguagePreference.values.length - 1)
-                              const _InsetDivider(),
-                          ],
+                          ),
+                          if (i != AppLanguagePreference.values.length - 1)
+                            const _InsetDivider(),
                         ],
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: FilledButton(
-                    onPressed: _saving ? null : _confirm,
-                    child: Text(_saving ? '保存中...' : '确认'),
                   ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: FilledButton(
+                  style: cyberFilledButtonStyle(),
+                  onPressed: _saving ? null : _confirm,
+                  child: Text(_saving ? '保存中...' : '确认'),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -146,46 +142,44 @@ class _UnitSettingsPageState extends State<UnitSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        child: SafeArea(
-          child: Column(
-            children: [
-              const AppPageHeader(title: '单位设置'),
-              Expanded(
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 24),
-                  children: [
-                    const AppSectionLabel('距离单位'),
-                    AppCard(
-                      padding: EdgeInsets.zero,
-                      child: Column(
-                        children: [
-                          for (
-                            var i = 0;
-                            i < DistanceUnitPreference.values.length;
-                            i++
-                          ) ...[
-                            _OptionRow(
-                              title: DistanceUnitPreference.values[i].label,
-                              subtitle: DistanceUnitPreference.values[i].hint,
-                              selected:
-                                  _selected == DistanceUnitPreference.values[i],
-                              onTap: () =>
-                                  _select(DistanceUnitPreference.values[i]),
-                            ),
-                            if (i != DistanceUnitPreference.values.length - 1)
-                              const _InsetDivider(),
-                          ],
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const CyberPageHeader(title: '单位设置'),
+            Expanded(
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 24),
+                children: [
+                  const CyberSectionLabel('距离单位'),
+                  CyberCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        for (
+                          var i = 0;
+                          i < DistanceUnitPreference.values.length;
+                          i++
+                        ) ...[
+                          _OptionRow(
+                            title: DistanceUnitPreference.values[i].label,
+                            subtitle: DistanceUnitPreference.values[i].hint,
+                            selected:
+                                _selected == DistanceUnitPreference.values[i],
+                            onTap: () =>
+                                _select(DistanceUnitPreference.values[i]),
+                          ),
+                          if (i != DistanceUnitPreference.values.length - 1)
+                            const _InsetDivider(),
                         ],
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -210,94 +204,94 @@ class AboutAppPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        child: SafeArea(
-          child: Column(
-            children: [
-              const AppPageHeader(title: '关于台铃智能'),
-              Expanded(
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 24),
-                  children: [
-                    const SizedBox(height: 18),
-                    AppCard(
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 76,
-                            height: 76,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(
-                                AppRadii.sheet,
-                              ),
-                            ),
-                            child: const Icon(
-                              Lucide.vehicle,
-                              color: AppColors.primary,
-                              size: AppIconSizes.xl,
-                            ),
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const CyberPageHeader(title: '关于台铃智能'),
+            Expanded(
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 24),
+                children: [
+                  const SizedBox(height: 18),
+                  CyberCard(
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 76,
+                          height: 76,
+                          decoration: BoxDecoration(
+                            color: CyberHomeColors.primarySoft,
+                            borderRadius: BorderRadius.circular(AppRadii.tile),
                           ),
-                          const SizedBox(height: 14),
-                          const Text('台铃智能', style: AppTextStyles.dialogTitle),
-                          const SizedBox(height: 4),
-                          const Text('智慧用车服务', style: AppTextStyles.smallText),
-                        ],
-                      ),
-                    ),
-                    const AppSectionLabel('版本'),
-                    AppCard(
-                      padding: EdgeInsets.zero,
-                      child: Column(
-                        children: const [
-                          _InfoRow(label: '应用版本', value: _appVersion),
-                          _InsetDivider(),
-                          _InfoRow(label: 'Git 提交', value: _buildCommit),
-                        ],
-                      ),
-                    ),
-                    const AppSectionLabel('服务支持'),
-                    AppCard(
-                      padding: EdgeInsets.zero,
-                      child: Column(
-                        children: [
-                          _ActionRow(
-                            icon: Lucide.support,
-                            title: '服务诊断',
-                            subtitle: '复制信息用于客服排查问题',
-                            onTap: () => _copyDiagnosticReport(context),
+                          child: const LucideIcon(
+                            Lucide.vehicle,
+                            color: CyberHomeColors.primary,
+                            size: AppIconSizes.xl,
                           ),
-                          const _InsetDivider(),
-                          _ActionRow(
-                            icon: Lucide.fileText,
-                            title: '用户协议',
-                            subtitle: '查看服务使用条款',
-                            onTap: () => AppSnack.notYetOpen(context, '用户协议'),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text(
+                          '台铃智能',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: CyberHomeColors.ink,
                           ),
-                          _InsetDivider(),
-                          _ActionRow(
-                            icon: Lucide.privacy,
-                            title: '隐私政策',
-                            subtitle: '了解个人信息保护规则',
-                            onTap: () => AppSnack.notYetOpen(context, '隐私政策'),
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text('智慧用车服务', style: cyberCaptionStyle),
+                      ],
                     ),
-                    const SizedBox(height: 20),
-                    const Center(
-                      child: Text(
-                        'Copyright 2026',
-                        style: AppTextStyles.caption,
-                      ),
+                  ),
+                  const CyberSectionLabel('版本'),
+                  CyberCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: const [
+                        _InfoRow(label: '应用版本', value: _appVersion),
+                        _InsetDivider(),
+                        _InfoRow(label: 'Git 提交', value: _buildCommit),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const CyberSectionLabel('服务支持'),
+                  CyberCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        _ActionRow(
+                          icon: Lucide.support,
+                          title: '服务诊断',
+                          subtitle: '复制信息用于客服排查问题',
+                          onTap: () => _copyDiagnosticReport(context),
+                        ),
+                        const _InsetDivider(),
+                        _ActionRow(
+                          icon: Lucide.fileText,
+                          title: '用户协议',
+                          subtitle: '查看服务使用条款',
+                          onTap: () => AppSnack.notYetOpen(context, '用户协议'),
+                        ),
+                        _InsetDivider(),
+                        _ActionRow(
+                          icon: Lucide.privacy,
+                          title: '隐私政策',
+                          subtitle: '了解个人信息保护规则',
+                          onTap: () => AppSnack.notYetOpen(context, '隐私政策'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Center(
+                    child: Text('Copyright 2026', style: cyberCaptionStyle),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -333,17 +327,19 @@ class _OptionRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: AppTextStyles.itemTitle),
+                  Text(title, style: cyberItemTitleStyle),
                   if (subtitle != null) ...[
                     const SizedBox(height: 4),
-                    Text(subtitle, style: AppTextStyles.smallText),
+                    Text(subtitle, style: cyberCaptionStyle),
                   ],
                 ],
               ),
             ),
-            Icon(
+            LucideIcon(
               selected ? Lucide.checkCircle : Lucide.radioUnchecked,
-              color: selected ? AppColors.primary : AppColors.textTertiary,
+              color: selected
+                  ? CyberHomeColors.primary
+                  : CyberHomeColors.inkFaint,
             ),
           ],
         ),
@@ -380,15 +376,15 @@ class _ActionRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: AppTextStyles.itemTitle),
+                  Text(title, style: cyberItemTitleStyle),
                   const SizedBox(height: 4),
-                  Text(subtitle, style: AppTextStyles.smallText),
+                  Text(subtitle, style: cyberCaptionStyle),
                 ],
               ),
             ),
-            const Icon(
+            const LucideIcon(
               Lucide.chevronRight,
-              color: AppColors.textTertiary,
+              color: CyberHomeColors.inkFaint,
               size: AppIconSizes.md,
             ),
           ],
@@ -421,7 +417,7 @@ class _PreferenceRowPressable extends StatelessWidget {
       onTap: onTap,
       child: ExcludeSemantics(
         child: Material(
-          color: Colors.transparent,
+          color: CyberHomeColors.transparent,
           child: InkWell(onTap: onTap, child: child),
         ),
       ),
@@ -441,13 +437,13 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 13, 16, 13),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: AppTextStyles.bodyMedium)),
+          Expanded(child: Text(label, style: cyberBodyStyle)),
           const SizedBox(width: 12),
           Flexible(
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: AppTextStyles.valueText,
+              style: cyberItemTitleStyle.copyWith(fontSize: 13),
             ),
           ),
         ],
@@ -467,10 +463,14 @@ class _RowIcon extends StatelessWidget {
       width: 38,
       height: 38,
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppRadii.card),
+        color: CyberHomeColors.primarySoft,
+        borderRadius: BorderRadius.circular(AppRadii.tile),
       ),
-      child: Icon(icon, color: AppColors.primary, size: AppIconSizes.md),
+      child: LucideIcon(
+        icon,
+        color: CyberHomeColors.primary,
+        size: AppIconSizes.md,
+      ),
     );
   }
 }
@@ -485,7 +485,7 @@ class _InsetDivider extends StatelessWidget {
       thickness: 1,
       indent: 16,
       endIndent: 16,
-      color: AppColors.border,
+      color: CyberHomeColors.line,
     );
   }
 }

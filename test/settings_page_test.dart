@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/settings_page.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
 
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
@@ -18,6 +19,20 @@ void main() {
 
   tearDown(() {
     app.appPreferencesService.resetForTest();
+  });
+
+  testWidgets('settings uses Cyber home mobile surface', (tester) async {
+    setTestViewSize(tester, const Size(390, 844));
+
+    await tester.pumpWidget(const TestApp(home: SettingsPage()));
+    await tester.pump();
+
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
+    expect(find.byKey(const ValueKey('app-page-header-back')), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('settings switches keep 44dp touch targets', (tester) async {

@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/app_preferences_pages.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/widgets/lucide_icon.dart';
 
 import 'helpers/platform_mocks.dart';
@@ -8,6 +10,7 @@ import 'helpers/snack_finders.dart';
 import 'helpers/storage_mocks.dart';
 import 'helpers/test_app.dart';
 import 'helpers/touch_target.dart';
+import 'helpers/view_size.dart';
 
 void main() {
   setUp(() {
@@ -22,6 +25,26 @@ void main() {
     app.appPreferencesService.resetForTest();
     app.logService.clear();
     clearPlatformChannelMock();
+  });
+
+  testWidgets('preference pages use Cyber home mobile surfaces', (
+    tester,
+  ) async {
+    setTestViewSize(tester, const Size(390, 844));
+
+    for (final page in <Widget>[
+      const LanguageSettingsPage(),
+      const UnitSettingsPage(),
+      const AboutAppPage(),
+    ]) {
+      await tester.pumpWidget(TestApp(home: page));
+      await tester.pump();
+      expect(
+        tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+        CyberHomeColors.pageBg,
+      );
+      expect(tester.takeException(), isNull);
+    }
   });
 
   testWidgets('copying diagnostic report shows success snack', (tester) async {

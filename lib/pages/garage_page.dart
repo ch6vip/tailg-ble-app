@@ -887,26 +887,59 @@ class _LocalVehicleCardState extends State<_LocalVehicleCard> {
     final name = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('编辑车辆名称'),
+        backgroundColor: CyberHomeColors.card,
+        surfaceTintColor: CyberHomeColors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.tile),
+        ),
+        title: const Text(
+          '编辑车辆名称',
+          style: TextStyle(
+            color: CyberHomeColors.ink,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLength: 24,
-          decoration: const InputDecoration(hintText: '输入车辆名称'),
+          style: const TextStyle(color: CyberHomeColors.ink),
+          decoration: InputDecoration(
+            hintText: '输入车辆名称',
+            hintStyle: const TextStyle(color: CyberHomeColors.inkFaint),
+            filled: true,
+            fillColor: CyberHomeColors.cardMuted,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadii.tile),
+              borderSide: const BorderSide(color: CyberHomeColors.lineStrong),
+            ),
+          ),
         ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: CyberHomeColors.inkMuted,
+            ),
             onPressed: () => Navigator.pop(context),
             child: const Text('取消'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: CyberHomeColors.primary,
+              foregroundColor: CyberHomeColors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadii.tile),
+              ),
+            ),
             onPressed: () => Navigator.pop(context, controller.text),
             child: const Text('保存'),
           ),
         ],
       ),
     );
-    controller.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.dispose();
+    });
     if (!mounted) return;
     if (name != null) await vehicleStore.rename(vehicle.id, name);
   }
@@ -915,14 +948,38 @@ class _LocalVehicleCardState extends State<_LocalVehicleCard> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('删除车辆'),
-        content: Text('确定删除 ${vehicle.displayName}？'),
+        backgroundColor: CyberHomeColors.card,
+        surfaceTintColor: CyberHomeColors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.tile),
+        ),
+        title: const Text(
+          '删除车辆',
+          style: TextStyle(
+            color: CyberHomeColors.ink,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          '确定删除 ${vehicle.displayName}？',
+          style: const TextStyle(color: CyberHomeColors.inkMuted),
+        ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: CyberHomeColors.inkMuted,
+            ),
             onPressed: () => Navigator.pop(context, false),
             child: const Text('取消'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: CyberHomeColors.danger,
+              foregroundColor: CyberHomeColors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadii.tile),
+              ),
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('删除'),
           ),

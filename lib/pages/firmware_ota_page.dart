@@ -6,10 +6,9 @@ import '../main.dart';
 import '../services/firmware_ota_service.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_void.dart';
-import '../widgets/app_chrome.dart';
-import '../widgets/void_canvas.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/cyber_page_chrome.dart';
+import '../widgets/lucide_icon.dart';
 
 /// P3-5: experimental official OTA flow (query -> download -> BLE chunks).
 class FirmwareOtaPage extends StatefulWidget {
@@ -81,61 +80,73 @@ class _FirmwareOtaPageState extends State<FirmwareOtaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: 24),
-            children: [
-              const AppPageHeader(title: '固件升级 OTA'),
-              AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '官方 OTA 流',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            const CyberPageHeader(title: '固件升级 OTA'),
+            const SizedBox(height: 8),
+            CyberCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: CyberHomeColors.primarySoft,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: LucideIcon(
+                              Lucide.download,
+                              size: 20,
+                              color: CyberHomeColors.primary,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      '1. POST app/firmVersionInfo/getFirmVersion\n'
-                      '2. 下载官方固件包（完整性校验待完成）\n'
-                      '3. BLE LOGIN 后 writeOtaOrder(7000) + writeOtaFile(7001) 分片\n'
-                      '4. 等待中控校验/重启',
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.5,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    LinearProgressIndicator(
+                      SizedBox(width: 12),
+                      Expanded(child: Text('车辆固件', style: cyberItemTitleStyle)),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    '检查官方固件版本并通过蓝牙更新车辆中控。升级期间请保持车辆通电和手机靠近车辆。',
+                    style: cyberBodyStyle,
+                  ),
+                  const SizedBox(height: 18),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                    child: LinearProgressIndicator(
+                      minHeight: 6,
                       value: _progress.fraction.clamp(0, 1),
+                      backgroundColor: CyberHomeColors.controlStrong,
+                      color: CyberHomeColors.primary,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${_progress.phase.name} · ${_progress.message}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '${_progress.phase.name} · ${_progress.message}',
+                    style: cyberCaptionStyle,
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      style: cyberFilledButtonStyle(),
+                      onPressed: _running ? null : () => unawaited(_start()),
+                      child: Text(_running ? '进行中…' : '检查并升级'),
                     ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: _running ? null : () => unawaited(_start()),
-                        child: Text(_running ? '进行中…' : '检查并升级'),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

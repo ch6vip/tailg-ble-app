@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/pages/cloud_token_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/theme/app_colors.dart';
 
 import 'helpers/platform_mocks.dart';
 import 'helpers/storage_mocks.dart';
@@ -126,6 +127,11 @@ void main() {
     // Re-create the page inside testWidgets so we can pump it.
     await tester.pumpWidget(MaterialApp(home: CloudTokenPageTestHarness()));
     await tester.pump();
+
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      CyberHomeColors.pageBg,
+    );
 
     await tester.tap(find.text('复制 Token'));
     await tester.pump();

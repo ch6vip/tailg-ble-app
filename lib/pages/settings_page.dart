@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import '../services/app_preferences_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_void.dart';
-import '../widgets/app_chrome.dart';
+import '../widgets/cyber_page_chrome.dart';
 import '../widgets/lucide_icon.dart';
-import '../widgets/void_canvas.dart';
 import 'app_preferences_pages.dart';
 import 'battery_details_page.dart';
 import 'cloud_token_page.dart';
@@ -32,112 +30,105 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        child: SafeArea(
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
-            children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
-                child: Text('设置', style: AppTextStyles.pageTitle),
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 32),
+          children: [
+            const CyberPageHeader(title: '设置'),
+            const CyberSectionLabel('账号与车辆'),
+            _group([
+              _settingItem(
+                icon: Lucide.garage,
+                title: '我的车辆',
+                subtitle: '账号车辆、默认车辆与同步',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(builder: (_) => const GaragePage()),
+                ),
               ),
-              const AppSectionLabel('账号与车辆'),
-              _group([
-                _settingItem(
-                  icon: Lucide.garage,
-                  title: '我的车辆',
-                  subtitle: '账号车辆、默认车辆与同步',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(builder: (_) => const GaragePage()),
+              _settingItem(
+                icon: Lucide.message,
+                title: '消息中心',
+                subtitle: '系统消息、设备消息和安全提醒',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const VehicleMessagePage(),
                   ),
                 ),
-                _settingItem(
-                  icon: Lucide.message,
-                  title: '消息中心',
-                  subtitle: '系统消息、设备消息和安全提醒',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const VehicleMessagePage(),
-                    ),
+              ),
+            ]),
+            const CyberSectionLabel('用车设置'),
+            _group([
+              _settingItem(
+                icon: Lucide.tune,
+                title: '车辆设置',
+                subtitle: '声音、灵敏度、车辆功能、骑行设置',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const VehicleSettingsPage(),
                   ),
                 ),
-              ]),
-              const AppSectionLabel('用车设置'),
-              _group([
-                _settingItem(
-                  icon: Lucide.tune,
-                  title: '车辆设置',
-                  subtitle: '声音、灵敏度、车辆功能、骑行设置',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const VehicleSettingsPage(),
-                    ),
+              ),
+              _settingItem(
+                icon: Lucide.battery,
+                title: '电池/BMS',
+                subtitle: '电量、电压、温度、故障和预留 BMS 数据',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const BatteryDetailsPage(),
                   ),
                 ),
-                _settingItem(
-                  icon: Lucide.battery,
-                  title: '电池/BMS',
-                  subtitle: '电量、电压、温度、故障和预留 BMS 数据',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const BatteryDetailsPage(),
-                    ),
+              ),
+            ]),
+            const CyberSectionLabel('通用'),
+            _group(const [
+              _LanguageSettingTile(),
+              _DistanceUnitSettingTile(),
+              _RespectTextScaleSettingTile(),
+            ]),
+            const CyberSectionLabel('高级'),
+            _group([
+              _settingItem(
+                icon: Lucide.shieldCheck,
+                title: '高级诊断',
+                subtitle: '设备信息、日志、协议和升级前检测',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const _AdvancedDiagnosticsPage(),
                   ),
                 ),
-              ]),
-              const AppSectionLabel('通用'),
-              _group(const [
-                _LanguageSettingTile(),
-                _DistanceUnitSettingTile(),
-                _RespectTextScaleSettingTile(),
-              ]),
-              const AppSectionLabel('高级'),
-              _group([
-                _settingItem(
-                  icon: Lucide.shieldCheck,
-                  title: '高级诊断',
-                  subtitle: '设备信息、日志、协议和升级前检测',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const _AdvancedDiagnosticsPage(),
-                    ),
+              ),
+              _settingItem(
+                icon: Lucide.key,
+                title: '官方会话 / Token',
+                subtitle: '调试用：粘贴或复制官方登录凭证',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const CloudTokenPage(),
                   ),
                 ),
-                _settingItem(
-                  icon: Lucide.key,
-                  title: '官方会话 / Token',
-                  subtitle: '调试用：粘贴或复制官方登录凭证',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const CloudTokenPage(),
-                    ),
-                  ),
+              ),
+            ]),
+            const CyberSectionLabel('关于'),
+            _group([
+              _settingItem(
+                icon: Lucide.info,
+                title: '关于台铃智能',
+                subtitle: '版本信息、用户协议和隐私政策',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(builder: (_) => const AboutAppPage()),
                 ),
-              ]),
-              const AppSectionLabel('关于'),
-              _group([
-                _settingItem(
-                  icon: Lucide.info,
-                  title: '关于台铃智能',
-                  subtitle: '版本信息、用户协议和隐私政策',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const AboutAppPage(),
-                    ),
-                  ),
-                ),
-              ]),
-            ],
-          ),
+              ),
+            ]),
+          ],
         ),
       ),
     );
@@ -150,39 +141,37 @@ class _AdvancedDiagnosticsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        child: SafeArea(
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: AppNav.contentBottomPadding),
-            children: [
-              const AppPageHeader(title: '高级诊断'),
-              const SizedBox(height: 12),
-              _group([
-                _settingItem(
-                  icon: Lucide.stethoscope,
-                  title: '故障诊断',
-                  subtitle: '读取车辆错误码',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const DiagnosticPage(),
-                    ),
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 32),
+          children: [
+            const CyberPageHeader(title: '高级诊断'),
+            const SizedBox(height: 4),
+            _group([
+              _settingItem(
+                icon: Lucide.stethoscope,
+                title: '故障诊断',
+                subtitle: '读取车辆错误码',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const DiagnosticPage(),
                   ),
                 ),
-                _settingItem(
-                  icon: Lucide.fileText,
-                  title: '日志',
-                  subtitle: '查看操作记录',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(builder: (_) => const LogPage()),
-                  ),
+              ),
+              _settingItem(
+                icon: Lucide.fileText,
+                title: '日志',
+                subtitle: '查看操作记录',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(builder: (_) => const LogPage()),
                 ),
-              ]),
-            ],
-          ),
+              ),
+            ]),
+          ],
         ),
       ),
     );
@@ -195,7 +184,7 @@ Widget _group(List<Widget> rows) {
     if (i > 0) children.add(_insetDivider());
     children.add(rows[i]);
   }
-  return AppCard(
+  return CyberCard(
     padding: EdgeInsets.zero,
     child: Column(children: children),
   );
@@ -206,7 +195,7 @@ Widget _insetDivider() {
     height: 1,
     thickness: 1,
     indent: 66,
-    color: AppColors.border,
+    color: CyberHomeColors.line,
   );
 }
 
@@ -219,7 +208,7 @@ Widget _settingItem({
   bool showChevron = true,
 }) {
   final row = Material(
-    color: Colors.transparent,
+    color: CyberHomeColors.transparent,
     child: InkWell(
       onTap: onTap,
       child: Padding(
@@ -230,20 +219,20 @@ Widget _settingItem({
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppRadii.card),
+                color: CyberHomeColors.primarySoft,
+                borderRadius: BorderRadius.circular(AppRadii.tile),
               ),
-              child: Icon(icon, size: 20, color: AppColors.primary),
+              child: LucideIcon(icon, size: 20, color: CyberHomeColors.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: AppTextStyles.itemTitle),
+                  Text(title, style: cyberItemTitleStyle),
                   if (subtitle != null) ...[
                     const SizedBox(height: 2),
-                    Text(subtitle, style: AppTextStyles.caption),
+                    Text(subtitle, style: cyberCaptionStyle),
                   ],
                 ],
               ),
@@ -251,10 +240,10 @@ Widget _settingItem({
             if (trailing != null)
               trailing
             else if (showChevron)
-              const Icon(
+              const LucideIcon(
                 Lucide.chevronRight,
-                size: 22,
-                color: AppColors.textTertiary,
+                size: 18,
+                color: CyberHomeColors.inkFaint,
               ),
           ],
         ),
@@ -279,10 +268,10 @@ Widget _buildToggle({
   final toggle = Switch(
     value: value,
     onChanged: onChanged,
-    activeThumbColor: Colors.white,
-    activeTrackColor: AppColors.primary,
-    inactiveThumbColor: Colors.white,
-    inactiveTrackColor: AppColors.border,
+    activeThumbColor: CyberHomeColors.white,
+    activeTrackColor: CyberHomeColors.primary,
+    inactiveThumbColor: CyberHomeColors.white,
+    inactiveTrackColor: CyberHomeColors.controlStrong,
     materialTapTargetSize: MaterialTapTargetSize.padded,
   );
   return Semantics(

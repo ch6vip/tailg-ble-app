@@ -189,24 +189,55 @@ class _ProfileMinePageState extends State<ProfileMinePage>
         context: context,
         builder: (ctx) {
           return AlertDialog(
-            title: const Text('修改昵称'),
+            backgroundColor: CyberHomeColors.card,
+            surfaceTintColor: CyberHomeColors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadii.tile),
+            ),
+            title: const Text(
+              '修改昵称',
+              style: TextStyle(
+                color: CyberHomeColors.ink,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             content: TextField(
               controller: controller,
               autofocus: true,
               maxLength: 20,
-              decoration: const InputDecoration(
+              style: const TextStyle(color: CyberHomeColors.ink),
+              decoration: InputDecoration(
                 hintText: '输入昵称',
                 counterText: '',
+                hintStyle: const TextStyle(color: CyberHomeColors.inkFaint),
+                filled: true,
+                fillColor: CyberHomeColors.cardMuted,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.tile),
+                  borderSide: const BorderSide(
+                    color: CyberHomeColors.lineStrong,
+                  ),
+                ),
               ),
               textInputAction: TextInputAction.done,
               onSubmitted: (value) => Navigator.of(ctx).pop(value.trim()),
             ),
             actions: [
               TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: CyberHomeColors.inkMuted,
+                ),
                 onPressed: () => Navigator.of(ctx).pop(),
                 child: const Text('取消'),
               ),
               FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: CyberHomeColors.primary,
+                  foregroundColor: CyberHomeColors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.tile),
+                  ),
+                ),
                 onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
                 child: const Text('保存'),
               ),

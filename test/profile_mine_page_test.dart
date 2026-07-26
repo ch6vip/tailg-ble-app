@@ -191,6 +191,10 @@ void main() {
     await tester.tap(find.bySemanticsLabel('编辑'));
     await tester.pumpAndSettle();
     expect(find.text('修改昵称'), findsOneWidget);
+    expect(
+      tester.widget<AlertDialog>(find.byType(AlertDialog)).backgroundColor,
+      CyberHomeColors.card,
+    );
     // Without network mock, saving will fail; cancel to keep unit stable.
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();

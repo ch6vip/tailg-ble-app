@@ -7,10 +7,8 @@ import '../services/diagnostic_export_service.dart';
 import '../services/display_time_formatter.dart';
 import '../services/log_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_void.dart';
-import '../widgets/app_chrome.dart';
-import '../widgets/void_canvas.dart';
 import '../widgets/app_snack.dart';
+import '../widgets/cyber_page_chrome.dart';
 
 class LogPage extends StatefulWidget {
   const LogPage({super.key});
@@ -68,14 +66,35 @@ class _LogPageState extends State<LogPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('清空日志'),
-        content: const Text('清空后无法恢复。'),
+        backgroundColor: CyberHomeColors.card,
+        surfaceTintColor: CyberHomeColors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.tile),
+        ),
+        title: const Text(
+          '清空日志',
+          style: TextStyle(
+            color: CyberHomeColors.ink,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: const Text('清空后无法恢复。', style: cyberBodyStyle),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: CyberHomeColors.inkMuted,
+            ),
             onPressed: () => Navigator.pop(context, false),
             child: const Text('取消'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: CyberHomeColors.danger,
+              foregroundColor: CyberHomeColors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadii.tile),
+              ),
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('清空'),
           ),
@@ -90,42 +109,40 @@ class _LogPageState extends State<LogPage> {
   Widget build(BuildContext context) {
     final entries = _log.all;
     return Scaffold(
-      backgroundColor: VoidColors.voidDeep,
-      body: VoidCanvas(
-        child: SafeArea(
-          child: Column(
-            children: [
-              AppPageHeader(
-                title: '日志',
-                actions: [
-                  AppHeaderAction(
-                    icon: Lucide.copy,
-                    tooltip: '复制全部',
-                    onTap: _copyAll,
-                  ),
-                  AppHeaderAction(
-                    icon: Lucide.refresh,
-                    tooltip: '刷新',
-                    // LogService.changes now auto-refreshes the page, but keep
-                    // the manual button for cases where the user wants to force
-                    // a re-read (e.g. after rotating the device).
-                    onTap: _refreshVisibleLogs,
-                  ),
-                  AppHeaderAction(
-                    icon: Lucide.trash,
-                    tooltip: '清空',
-                    onTap: _confirmClear,
-                  ),
-                ],
-              ),
-              Expanded(
-                child: _LogList(
-                  key: ValueKey<int>(_listGeneration),
-                  entries: entries,
+      backgroundColor: CyberHomeColors.pageBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            CyberPageHeader(
+              title: '日志',
+              actions: [
+                CyberHeaderAction(
+                  icon: Lucide.copy,
+                  label: '复制全部',
+                  onTap: _copyAll,
                 ),
+                CyberHeaderAction(
+                  icon: Lucide.refresh,
+                  label: '刷新',
+                  // LogService.changes now auto-refreshes the page, but keep
+                  // the manual button for cases where the user wants to force
+                  // a re-read (e.g. after rotating the device).
+                  onTap: _refreshVisibleLogs,
+                ),
+                CyberHeaderAction(
+                  icon: Lucide.trash,
+                  label: '清空',
+                  onTap: _confirmClear,
+                ),
+              ],
+            ),
+            Expanded(
+              child: _LogList(
+                key: ValueKey<int>(_listGeneration),
+                entries: entries,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -140,7 +157,7 @@ class _LogList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (entries.isEmpty) {
       return const Center(
-        child: AppEmptyState(
+        child: CyberEmptyState(
           icon: Lucide.receipt,
           title: '暂无日志',
           subtitle: '云端控车与诊断操作的运行日志会显示在这里。',
@@ -168,15 +185,21 @@ class _LogTile extends StatelessWidget {
     final timeStr = formatLogClockTime(entry.time);
     final detail = entry.detail;
     final levelColor = switch (entry.level) {
-      LogLevel.debug => AppColors.textTertiary,
-      LogLevel.info => AppColors.info,
-      LogLevel.warning => AppColors.warning,
-      LogLevel.error => AppColors.danger,
+      LogLevel.debug => CyberHomeColors.inkFaint,
+      LogLevel.info => CyberHomeColors.primary,
+      LogLevel.warning => CyberHomeColors.warning,
+      LogLevel.error => CyberHomeColors.danger,
     };
 
     return RepaintBoundary(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: CyberHomeColors.card,
+          borderRadius: BorderRadius.circular(AppRadii.tile),
+          border: Border.all(color: CyberHomeColors.line),
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -184,7 +207,7 @@ class _LogTile extends StatelessWidget {
               timeStr,
               style: const TextStyle(
                 fontSize: 11,
-                color: AppColors.textTertiary,
+                color: CyberHomeColors.inkFaint,
                 fontFamily: 'monospace',
               ),
             ),
@@ -207,7 +230,7 @@ class _LogTile extends StatelessWidget {
                     entry.message,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: AppColors.textPrimary,
+                      color: CyberHomeColors.ink,
                       height: 1.4,
                     ),
                   ),
@@ -218,7 +241,7 @@ class _LogTile extends StatelessWidget {
                         detail,
                         style: const TextStyle(
                           fontSize: 11,
-                          color: AppColors.textSecondary,
+                          color: CyberHomeColors.inkMuted,
                           fontFamily: 'monospace',
                         ),
                       ),

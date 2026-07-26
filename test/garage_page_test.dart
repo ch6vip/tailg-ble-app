@@ -98,6 +98,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('garage edit dialog keeps Cyber light surface', (tester) async {
+    await app.vehicleStore.upsert(
+      id: 'AA:BB:CC:DD:EE:FF',
+      name: '测试车辆',
+      protocol: VehicleProtocol.auto,
+      makeDefault: true,
+    );
+
+    await tester.pumpWidget(const TestApp(home: GaragePage(embedded: true)));
+    await tester.pump();
+    await tester.tap(find.byTooltip('车辆操作'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('编辑名称'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<AlertDialog>(find.byType(AlertDialog)).backgroundColor,
+      CyberHomeColors.card,
+    );
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('signed-in garage lists official cloud vehicles', (tester) async {
     await app.vehicleStore.upsert(
       id: 'AA:BB:CC:DD:EE:FF',

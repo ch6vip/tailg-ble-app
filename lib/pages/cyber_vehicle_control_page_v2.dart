@@ -390,14 +390,38 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('提示'),
-          content: const Text('确定断开车辆蓝牙连接？'),
+          backgroundColor: CyberHomeColors.card,
+          surfaceTintColor: CyberHomeColors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.tile),
+          ),
+          title: const Text(
+            '提示',
+            style: TextStyle(
+              color: CyberHomeColors.ink,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: const Text(
+            '确定断开车辆蓝牙连接？',
+            style: TextStyle(color: CyberHomeColors.inkMuted),
+          ),
           actions: [
             TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: CyberHomeColors.inkMuted,
+              ),
               onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('取消'),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: CyberHomeColors.primary,
+                foregroundColor: CyberHomeColors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.tile),
+                ),
+              ),
               onPressed: () => Navigator.pop(dialogContext, true),
               child: const Text('断开'),
             ),
