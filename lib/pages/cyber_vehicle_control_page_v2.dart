@@ -95,7 +95,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
   bool _disposed = false;
   bool _nearFieldBusy = false;
   bool _disconnecting = false;
-  String? _dismissedAlertId;
   BluetoothAdapterState _adapterState = BluetoothAdapterState.unknown;
   OfficialControlChannel _controlChannel = OfficialControlChannel.automatic;
 
@@ -126,8 +125,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     _mqttLinkSub = officialMqttService.linkStateStream.listen((_) {
       if (mounted) setState(() {});
     });
-    messageReadStore.addListener(_onMessageReadStateChanged);
-    unawaited(_loadMessageReadState());
     // Desktop/widget tests have no BLE platform channel; keep unknown there.
     // Accessing FlutterBluePlus.adapterState on Windows throws
     // "unsupported on this platform" (sync or via stream errors).
@@ -165,7 +162,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
   void dispose() {
     _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
-    messageReadStore.removeListener(_onMessageReadStateChanged);
     final cloudSub = _cloudSub;
     if (cloudSub != null) unawaited(cloudSub.cancel());
     final bleSub = _bleStateSub;
@@ -177,15 +173,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     final adapterSub = _adapterSub;
     if (adapterSub != null) unawaited(adapterSub.cancel());
     super.dispose();
-  }
-
-  Future<void> _loadMessageReadState() async {
-    await messageReadStore.ensureLoaded();
-    if (mounted) setState(() {});
-  }
-
-  void _onMessageReadStateChanged() {
-    if (mounted) setState(() {});
   }
 
   void _bindInductionVehicle() {
@@ -1226,83 +1213,12 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     return '暂无位置';
   }
 
-  _TireSnapshot _tireSnapshot(OfficialVehicle? vehicle) {
-    return _TireSnapshot.fromVehicle(vehicle);
-  }
-
-  _HomeAlert? _homeAlert(
-    OfficialCloudState cloudState,
-    BatterySnapshot battery,
-  ) {
-    final vehicle = cloudState.selectedVehicle;
-    final messages =
-        <OfficialCloudMessage>[
-            ...cloudState.vehicleMessages,
-            ...cloudState.systemMessages,
-          ].where((message) {
-            if (messageReadStore.readIds.contains(message.id) ||
-                messageReadStore.hiddenIds.contains(message.id)) {
-              return false;
-            }
-            if (message.carId.isEmpty || vehicle == null) return true;
-            return message.carId == vehicle.carId ||
-                message.carId == vehicle.key;
-          }).toList()
-          ..sort((a, b) => b.time.compareTo(a.time));
-
-    if (messages.isNotEmpty) {
-      final latest = messages.first;
-      final title = latest.content.trim().isNotEmpty
-          ? latest.content.trim()
-          : latest.title.trim();
-      final alert = _HomeAlert(
-        id: latest.id,
-        text: title.isEmpty ? '车辆有一条新消息' : title,
-        time: _formatAlertAge(latest.time),
-        destination: _HomeAlertDestination.messages,
-      );
-      return alert.id == _dismissedAlertId ? null : alert;
-    }
-
-    final percent = battery.percent;
-    if (percent != null && percent <= 20) {
-      const alert = _HomeAlert(
-        id: 'battery-low',
-        text: '车辆电量过低，请及时充电',
-        time: '刚刚',
-        destination: _HomeAlertDestination.battery,
-      );
-      return alert.id == _dismissedAlertId ? null : alert;
-    }
-    return null;
-  }
-
-  String _formatAlertAge(DateTime time) {
-    if (time.millisecondsSinceEpoch == 0) return '刚刚';
-    final elapsed = DateTime.now().difference(time);
-    if (elapsed.isNegative || elapsed.inMinutes < 1) return '刚刚';
-    if (elapsed.inMinutes < 60) return '${elapsed.inMinutes}分钟前';
-    if (elapsed.inHours < 24) return '${elapsed.inHours}小时前';
-    return formatMonthDayMinuteText(time);
-  }
-
   void _openMessages() {
-    unawaited(_showMessages());
-  }
-
-  Future<void> _showMessages() async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const VehicleMessagePage()));
-    if (mounted) setState(() {});
-  }
-
-  void _openAlert(_HomeAlert alert) {
-    if (alert.destination == _HomeAlertDestination.battery) {
-      _openBattery();
-      return;
-    }
-    unawaited(_showMessages());
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const VehicleMessagePage()),
+      ),
+    );
   }
 
   void _openShare() {
@@ -1437,8 +1353,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     final isPowerOn = _currentPowerState();
     final isArmed = _currentLockState();
     final percent = battery.percent ?? 0;
-    final tire = _tireSnapshot(cloudVehicle);
-    final alert = _homeAlert(cloudState, battery);
     final signedIn = cloudState.signedIn;
     final hasVehicle = cloudVehicle != null;
     final controlAvailability = _controlAvailability();
@@ -1447,7 +1361,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     );
     final mediaPadding = MediaQuery.paddingOf(context);
     final bottomPad = AppNav.contentBottomPadding + mediaPadding.bottom;
-    final headerExtent = alert == null ? 440.0 : 506.0;
     final lastRide = _lastRideVisuals(cloudState);
 
     return Scaffold(
@@ -1475,7 +1388,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _CyberVehicleHeaderDelegate(
-                  expandedExtent: headerExtent,
+                  expandedExtent: 424,
                   vehicleName: _vehicleName(cloudVehicle),
                   rangeText: _rangeLabel(battery).replaceAll(' ', ''),
                   carPhoto: cloudVehicle?.carPhoto ?? '',
@@ -1487,19 +1400,11 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
                   powered: isPowerOn,
                   bleChip: _officialBleChipState(cloudVehicle),
                   channelStatus: controlChannelStatus,
-                  tire: tire,
-                  alert: alert,
                   onTitleTap: _openVehicleHeader,
                   onBatteryTap: _openBattery,
                   onBleChipTap: () => unawaited(_onOfficialBleChipTap()),
                   onMessages: _openMessages,
-                  onAlertTap: alert == null
-                      ? _openMessages
-                      : () => _openAlert(alert),
                   onChannelTap: () => _openControlOptions(controlChannelStatus),
-                  onDismissAlert: alert == null
-                      ? null
-                      : () => setState(() => _dismissedAlertId = alert.id),
                 ),
               ),
               SliverToBoxAdapter(
@@ -1655,158 +1560,6 @@ abstract final class _Cyber {
   static const cardShadow = AppShadows.cyberCardShadow;
 }
 
-enum _HomeAlertDestination { messages, battery }
-
-class _HomeAlert {
-  const _HomeAlert({
-    required this.id,
-    required this.text,
-    required this.time,
-    required this.destination,
-  });
-
-  final String id;
-  final String text;
-  final String time;
-  final _HomeAlertDestination destination;
-
-  @override
-  bool operator ==(Object other) =>
-      other is _HomeAlert &&
-      other.id == id &&
-      other.text == text &&
-      other.time == time &&
-      other.destination == destination;
-
-  @override
-  int get hashCode => Object.hash(id, text, time, destination);
-}
-
-class _TireSnapshot {
-  const _TireSnapshot({required this.front, required this.rear});
-
-  final _TireReading front;
-  final _TireReading rear;
-
-  factory _TireSnapshot.fromVehicle(OfficialVehicle? vehicle) {
-    final raw = vehicle?.raw ?? const <String, dynamic>{};
-    final sources = <Map<String, dynamic>>[raw];
-    for (final key in const ['tireInfo', 'tirePressure', 'tpms', 'carStatus']) {
-      final nested = raw[key];
-      if (nested is Map) sources.add(Map<String, dynamic>.from(nested));
-    }
-    return _TireSnapshot(
-      front: _TireReading(
-        pressureBar: _readPressure(sources, const [
-          'frontTirePressure',
-          'frontTyrePressure',
-          'frontPressure',
-          'tirePressureFront',
-          'frontWheelPressure',
-          'frontPressureBar',
-          'frontPressurePsi',
-        ]),
-        temperatureCelsius: _readNumber(sources, const [
-          'frontTireTemperature',
-          'frontTyreTemperature',
-          'frontTemperature',
-          'tireTemperatureFront',
-          'frontWheelTemperature',
-        ]),
-      ),
-      rear: _TireReading(
-        pressureBar: _readPressure(sources, const [
-          'rearTirePressure',
-          'rearTyrePressure',
-          'rearPressure',
-          'tirePressureRear',
-          'rearWheelPressure',
-          'rearPressureBar',
-          'rearPressurePsi',
-        ]),
-        temperatureCelsius: _readNumber(sources, const [
-          'rearTireTemperature',
-          'rearTyreTemperature',
-          'rearTemperature',
-          'tireTemperatureRear',
-          'rearWheelTemperature',
-        ]),
-      ),
-    );
-  }
-
-  static double? _readPressure(
-    List<Map<String, dynamic>> sources,
-    List<String> keys,
-  ) {
-    for (final source in sources) {
-      for (final key in keys) {
-        final value = _parseNumber(source[key]);
-        if (value == null) continue;
-        if (key.toLowerCase().contains('psi')) return value / 14.5038;
-        if (value > 50) return value / 100;
-        return value;
-      }
-    }
-    return null;
-  }
-
-  static double? _readNumber(
-    List<Map<String, dynamic>> sources,
-    List<String> keys,
-  ) {
-    for (final source in sources) {
-      for (final key in keys) {
-        final value = _parseNumber(source[key]);
-        if (value != null) return value;
-      }
-    }
-    return null;
-  }
-
-  static double? _parseNumber(Object? raw) {
-    if (raw == null) return null;
-    final match = RegExp(r'-?\d+(?:\.\d+)?').firstMatch(raw.toString());
-    return match == null ? null : double.tryParse(match.group(0)!);
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      other is _TireSnapshot && other.front == front && other.rear == rear;
-
-  @override
-  int get hashCode => Object.hash(front, rear);
-}
-
-class _TireReading {
-  const _TireReading({this.pressureBar, this.temperatureCelsius});
-
-  final double? pressureBar;
-  final double? temperatureCelsius;
-
-  String get pressureLabel => pressureBar == null
-      ? '-- bar'
-      : '${formatCompactDecimal(pressureBar!)} bar';
-
-  String get temperatureLabel => temperatureCelsius == null
-      ? '-- °C'
-      : '${formatCompactDecimal(temperatureCelsius!)} °C';
-
-  bool get isPressureAbnormal {
-    final pressure = pressureBar;
-    return pressure != null && (pressure < 1.5 || pressure > 3.5);
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      other is _TireReading &&
-      other.pressureBar == pressureBar &&
-      other.temperatureCelsius == temperatureCelsius;
-
-  @override
-  int get hashCode => Object.hash(pressureBar, temperatureCelsius);
-}
-
 enum _OfficialBleChipState {
   hidden,
   noBle,
@@ -1830,15 +1583,11 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.powered,
     required this.bleChip,
     required this.channelStatus,
-    required this.tire,
-    required this.alert,
     required this.onTitleTap,
     required this.onBatteryTap,
     required this.onBleChipTap,
     required this.onMessages,
-    required this.onAlertTap,
     required this.onChannelTap,
-    required this.onDismissAlert,
   });
 
   final double expandedExtent;
@@ -1853,15 +1602,11 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
   final bool? powered;
   final _OfficialBleChipState bleChip;
   final ControlTopBarChannel channelStatus;
-  final _TireSnapshot tire;
-  final _HomeAlert? alert;
   final VoidCallback onTitleTap;
   final VoidCallback onBatteryTap;
   final VoidCallback onBleChipTap;
   final VoidCallback onMessages;
-  final VoidCallback onAlertTap;
   final VoidCallback onChannelTap;
-  final VoidCallback? onDismissAlert;
 
   @override
   double get minExtent => 142;
@@ -1911,15 +1656,11 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
                 isLocked: isLocked,
                 powered: powered,
                 channelStatus: channelStatus,
-                tire: tire,
-                alert: alert,
                 onTitleTap: onTitleTap,
                 onBatteryTap: onBatteryTap,
                 onBleChipTap: onBleChipTap,
                 onMessages: onMessages,
-                onAlertTap: onAlertTap,
                 onChannelTap: onChannelTap,
-                onDismissAlert: onDismissAlert,
               ),
             ),
           ),
@@ -1968,9 +1709,7 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
         isLocked != oldDelegate.isLocked ||
         powered != oldDelegate.powered ||
         bleChip != oldDelegate.bleChip ||
-        channelStatus != oldDelegate.channelStatus ||
-        tire != oldDelegate.tire ||
-        alert != oldDelegate.alert;
+        channelStatus != oldDelegate.channelStatus;
   }
 }
 
@@ -1986,15 +1725,11 @@ class _CyberHeroHeader extends StatelessWidget {
     required this.isLocked,
     required this.powered,
     required this.channelStatus,
-    required this.tire,
-    required this.alert,
     required this.onTitleTap,
     required this.onBatteryTap,
     required this.onBleChipTap,
     required this.onMessages,
-    required this.onAlertTap,
     required this.onChannelTap,
-    required this.onDismissAlert,
   });
 
   final String vehicleName;
@@ -2007,15 +1742,11 @@ class _CyberHeroHeader extends StatelessWidget {
   final bool isLocked;
   final bool? powered;
   final ControlTopBarChannel channelStatus;
-  final _TireSnapshot tire;
-  final _HomeAlert? alert;
   final VoidCallback onTitleTap;
   final VoidCallback onBatteryTap;
   final VoidCallback onBleChipTap;
   final VoidCallback onMessages;
-  final VoidCallback onAlertTap;
   final VoidCallback onChannelTap;
-  final VoidCallback? onDismissAlert;
 
   @override
   Widget build(BuildContext context) {
@@ -2155,15 +1886,6 @@ class _CyberHeroHeader extends StatelessWidget {
               ),
             ),
           ),
-          _TireStatusRow(tire: tire),
-          if (alert != null) ...[
-            const SizedBox(height: 12),
-            _HomeAlertBanner(
-              alert: alert!,
-              onTap: onAlertTap,
-              onDismiss: onDismissAlert,
-            ),
-          ],
           const SizedBox(height: 8),
         ],
       ),
@@ -2422,157 +2144,6 @@ class _CyberStatusLine extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TireStatusRow extends StatelessWidget {
-  const _TireStatusRow({required this.tire});
-
-  final _TireSnapshot tire;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label:
-          '前轮胎压 ${tire.front.pressureLabel}，温度 ${tire.front.temperatureLabel}；'
-          '后轮胎压 ${tire.rear.pressureLabel}，温度 ${tire.rear.temperatureLabel}',
-      child: ExcludeSemantics(
-        child: Row(
-          children: [
-            Expanded(
-              child: _TireReadingText(prefix: '前', value: tire.front),
-            ),
-            Expanded(
-              child: _TireReadingText(
-                prefix: '后',
-                value: tire.rear,
-                textAlign: TextAlign.end,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TireReadingText extends StatelessWidget {
-  const _TireReadingText({
-    required this.prefix,
-    required this.value,
-    this.textAlign = TextAlign.start,
-  });
-
-  final String prefix;
-  final _TireReading value;
-  final TextAlign textAlign;
-
-  @override
-  Widget build(BuildContext context) {
-    final pressureColor = value.isPressureAbnormal
-        ? CyberHomeColors.danger
-        : _Cyber.muted;
-    return Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(
-            text: '$prefix ',
-            style: TextStyle(color: pressureColor, fontWeight: FontWeight.w700),
-          ),
-          TextSpan(
-            text: '${value.pressureLabel}  ${value.temperatureLabel}',
-            style: const TextStyle(color: _Cyber.muted),
-          ),
-        ],
-      ),
-      textAlign: textAlign,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: const TextStyle(
-        fontSize: 13,
-        height: 1.2,
-        fontFeatures: _Cyber.tabular,
-      ),
-    );
-  }
-}
-
-class _HomeAlertBanner extends StatelessWidget {
-  const _HomeAlertBanner({
-    required this.alert,
-    required this.onTap,
-    required this.onDismiss,
-  });
-
-  final _HomeAlert alert;
-  final VoidCallback onTap;
-  final VoidCallback? onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      key: const ValueKey('cyber-home-alert'),
-      height: 48,
-      decoration: BoxDecoration(
-        color: CyberHomeColors.alertSurface,
-        borderRadius: BorderRadius.circular(AppRadii.md),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: AppPressable(
-              onTap: onTap,
-              semanticsLabel: '车辆提醒：${alert.text}，${alert.time}',
-              semanticsButton: true,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 14),
-                child: Row(
-                  children: [
-                    const LucideIcon(
-                      Lucide.alertCircle,
-                      size: 20,
-                      color: CyberHomeColors.inkSecondary,
-                    ),
-                    const SizedBox(width: 9),
-                    Expanded(
-                      child: Text(
-                        alert.text,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: _Cyber.ink2,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      alert.time,
-                      style: const TextStyle(fontSize: 12, color: _Cyber.faint),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          AppPressable(
-            onTap: onDismiss,
-            enabled: onDismiss != null,
-            semanticsLabel: '关闭车辆提醒',
-            semanticsButton: true,
-            child: const SizedBox(
-              width: AppTouchTargets.min,
-              height: AppTouchTargets.min,
-              child: Center(
-                child: LucideIcon(Lucide.x, size: 20, color: _Cyber.faint),
-              ),
-            ),
-          ),
-          const SizedBox(width: 4),
         ],
       ),
     );

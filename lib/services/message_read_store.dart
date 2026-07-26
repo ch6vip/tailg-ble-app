@@ -5,7 +5,7 @@ import '../models/official_vehicle.dart';
 
 /// Local read/hidden state for official cloud messages, shared by the message
 /// center and the mine-page bell badge.
-class MessageReadStore extends ChangeNotifier {
+class MessageReadStore {
   MessageReadStore();
 
   static const prefReadIds = 'vehicle_message_read_ids';
@@ -30,7 +30,6 @@ class MessageReadStore extends ChangeNotifier {
       ..clear()
       ..addAll(prefs.getStringList(prefHiddenIds) ?? const []);
     _loaded = true;
-    notifyListeners();
   }
 
   Future<void> persist() async {
@@ -50,8 +49,6 @@ class MessageReadStore extends ChangeNotifier {
     required Set<String> hiddenIds,
   }) async {
     await ensureLoaded();
-    final changed =
-        !setEquals(_readIds, readIds) || !setEquals(_hiddenIds, hiddenIds);
     _readIds
       ..clear()
       ..addAll(readIds);
@@ -59,7 +56,6 @@ class MessageReadStore extends ChangeNotifier {
       ..clear()
       ..addAll(hiddenIds);
     await persist();
-    if (changed) notifyListeners();
   }
 
   Future<void> markRead(Iterable<String> ids) async {
@@ -68,20 +64,14 @@ class MessageReadStore extends ChangeNotifier {
     _readIds.addAll(ids);
     if (_readIds.length != before) {
       await persist();
-      notifyListeners();
     }
   }
 
   Future<void> hideAndRead(Iterable<String> ids) async {
     await ensureLoaded();
-    final readBefore = _readIds.length;
-    final hiddenBefore = _hiddenIds.length;
     _hiddenIds.addAll(ids);
     _readIds.addAll(ids);
     await persist();
-    if (_readIds.length != readBefore || _hiddenIds.length != hiddenBefore) {
-      notifyListeners();
-    }
   }
 
   /// Recompute badge from the latest cloud message lists.
@@ -112,11 +102,9 @@ class MessageReadStore extends ChangeNotifier {
 
   /// Test / locator reset helper.
   void resetForTest() {
-    final changed = _readIds.isNotEmpty || _hiddenIds.isNotEmpty;
     _readIds.clear();
     _hiddenIds.clear();
     unreadCount.value = 0;
     _loaded = false;
-    if (changed) notifyListeners();
   }
 }

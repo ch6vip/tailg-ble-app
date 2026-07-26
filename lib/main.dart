@@ -222,7 +222,6 @@ void main() async {
   try {
     await appPreferencesService.init();
     await vehicleStore.init();
-    await messageReadStore.ensureLoaded();
     await officialCloudService.init();
     await manualModeService.init();
     await autoConnectService.init(connectionManager);
