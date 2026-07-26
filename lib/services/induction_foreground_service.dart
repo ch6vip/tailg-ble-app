@@ -28,6 +28,10 @@ class InductionForegroundService {
       return false;
     } on PlatformException {
       return false;
+    } on FlutterError {
+      return false;
+    } on StateError {
+      return false;
     }
   }
 
@@ -39,6 +43,10 @@ class InductionForegroundService {
     } on MissingPluginException {
       return false;
     } on PlatformException {
+      return false;
+    } on FlutterError {
+      return false;
+    } on StateError {
       return false;
     }
   }
