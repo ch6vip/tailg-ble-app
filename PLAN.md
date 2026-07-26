@@ -1,408 +1,281 @@
-# 计划任务 · tailg-ble-app
+# 实施计划 · 官方 3.5.9 证据基线
 
-> **依据：** 当前 `master` 源码（`lib/` · `test/` · `pubspec.yaml`），**不是**旧文档。  
-> **目标：** 官方 App（台铃智能）功能 / 通道 / 状态机完全复刻。  
-> **对照源（勿忘）：** `E:\ctf-aaa\tlddc\decompiled` · 包名 `com.tailg.run.intelligence`  
-> **工作区备忘：** `E:\ctf-aaa\tlddc\对照源-反编译.md`  
-> **建立：** 2026-07-18 · **进度算法见 §0（每次改任务勾选必须重算百分比）**
+> 更新时间：2026-07-27
+> 代码基线：`08b9571`
+> 官方样本：`E:\ctf-aaa\tlddc\台铃智能_3.5.9.apk`
+> 目标：复刻官方功能、通道选择、协议状态机与 API 语义；UI 继续使用 VOID COCKPIT，不做像素级皮肤复制。
 
-勾选：`[ ]` 未做 · `[~]` 代码已有但未验收/不完整 · `[x]` 完成并验收 · `[!]` 阻塞  
-
----
-
-## 对照源 · 反编译（固定路径）
-
-> 复刻任务默认对照这里。路径变更时同步改本表 + 工作区 `对照源-反编译.md`。
-
-| 项 | 路径 |
-|----|------|
-| **反编译根目录** | `E:\ctf-aaa\tlddc\decompiled` |
-| Java 源码 | `E:\ctf-aaa\tlddc\decompiled\sources` |
-| 资源 | `E:\ctf-aaa\tlddc\decompiled\resources` |
-| **官方包名** | `com.tailg.run.intelligence` |
-| 官方源码根 | `E:\ctf-aaa\tlddc\decompiled\sources\com\tailg\run\intelligence` |
-| 官方 APK 样本 | `E:\ctf-aaa\tlddc\台铃智能_*.apk` |
-| 工作区说明（防遗忘） | `E:\ctf-aaa\tlddc\对照源-反编译.md` |
-
-| 用途 | 反编译类（绝对路径） |
-|------|----------------------|
-| 爱车控车 / lock·start 分流 | `E:\ctf-aaa\tlddc\decompiled\sources\com\tailg\run\intelligence\model\home\fragment\ControlFragment.java` |
-| modelType / 控车类型 | `E:\ctf-aaa\tlddc\decompiled\sources\com\tailg\run\intelligence\model\home\util\ControlTypeUtil.java` |
-| MQTT | `E:\ctf-aaa\tlddc\decompiled\sources\com\tailg\run\intelligence\model\home\mqtt\MqttUtil.java` |
-| BLE | `E:\ctf-aaa\tlddc\decompiled\sources\com\tailg\run\intelligence\tlink_ble\TLinkBleManager.java` |
-
-本仓实现入口对照见文末 **附录 · 关键调用链**。
+本文只记录能由当前源码、自动化测试、真实账号或真车结果支持的结论。旧版按 checkbox 推导出的 94.7% 不再使用。
 
 ---
 
-## 0. 复刻进度（百分比 · 强制维护）
+## 0. 进度口径
 
-### 0.1 计分规则（唯一算法）
+### 0.1 状态与证据
 
-| 勾选 | 得分系数 |
-|------|----------|
-| `[x]` | **1.0**（已验收） |
-| `[~]` | **0.5**（有代码、未验收或不完整） |
-| `[ ]` / `[!]` | **0.0** |
+| 状态 | 分值 | 必须满足 |
+|------|------|----------|
+| `[x]` | 1.0 | 已实现，并有官方源码对照与自动化测试；任务要求真车/API 时还必须有实测记录 |
+| `[~]` | 0.5 | 已有代码或测试，但链路不完整、未接线，或缺少真实账号/真车验收 |
+| `[ ]` | 0.0 | 未实现或当前实现没有官方证据 |
+| `[!]` | 0.0 | 受账号、车辆、固件或外部服务阻塞；必须写明阻塞条件 |
+
+证据缩写：
+
+- **S**：官方 3.5.9 反编译源码
+- **T**：单元、组件或集成测试
+- **A**：真实官方账号/API 请求与响应
+- **D**：真实车辆/手机验收记录
+
+只存在 mock 或源码字符串扫描时，协议/API 任务最高只能标 `[~]`。
+
+### 0.2 当前得分
+
+| 范围 | 任务数 | 得分 | 进度 |
+|------|--------|------|------|
+| C1 控车与通道 | 12 | 8.0 | **66.7%** |
+| C2 BLE 与感应 | 11 | 5.0 | **45.5%** |
+| C3 云端与数据 | 11 | 6.0 | **54.5%** |
+| **核心复刻** | **34** | **19.0** | **55.9%** |
+| D 深度车辆能力 | 8 | 3.0 | **37.5%** |
+| E 工程护栏 | 8 | 7.0 | **87.5%** |
 
 ```text
-阶段得分% = (Σ 该阶段任务系数) / (该阶段任务数) × 100
+核心复刻 = (8.0 + 5.0 + 6.0) / 34 = 55.9%
+深度能力 = 3.0 / 8 = 37.5%
+工程护栏 = 7.0 / 8 = 87.5%
 ```
 
-**对外两套进度（都要写进 §0.2）：**
+### 0.3 对外表述门禁
 
-| 指标 | 公式 | 含义 |
-|------|------|------|
-| **完全复刻 %** | `0.50×P0 + 0.25×P1 + 0.25×P2` | 主路径可演示、可当真机对照（**默认交付线**） |
-| **完美复刻 %** | `0.70×完全复刻% + 0.30×P3%` | 在完全复刻之上加绑车/QGJ/OTA/真 NFC 等深度 |
-| **工程护栏 %** | `P4%`（不计入上两套，单独报） | 测试/生命周期/CI，防止回归 |
-
-权重说明：没有稳通道（P0）谈不上复刻 → P0 占完全复刻一半；P3 不掺进「完全」，避免「做了 OTA 壳却主路径假成功」虚高。
-
-**维护纪律：**
-
-1. 任意任务勾选变更 → **当场重算** §0.2 表与 README 进度行  
-2. 禁止口头报进度不写回本文  
-3. `[x]` 必须满足任务自身验收；显式要求真机/API 闭环的任务不能用 mock 或源码扫描代替
-4. 百分比保留 **1 位小数**；阶段内任务数变化时同步改「任务数」列  
-
-### 0.2 当前得分板（2026-07-19 按本文勾选核算）
-
-| 阶段 | 任务数 | Σ系数 | 阶段 % | 权重（完全） | 加权贡献 |
-|------|--------|-------|--------|--------------|----------|
-| **P0** 通道可证伪 | 14 | 12.5 | **89.3%** | 50% | 44.7 |
-| **P1** 爱车/多车 | 6 | 6.0 | **100.0%** | 25% | 25.0 |
-| **P2** 数据域 | 7 | 7.0 | **100.0%** | 25% | 25.0 |
-| **P3** 官方深度 | 7 | 3.5 | **50.0%** | （完美用） | — |
-| **P4** 工程化 | 6 | 5.5 | **91.7%** | （单独） | — |
-
-```text
-完全复刻 % = 0.50×89.3 + 0.25×100.0 + 0.25×100.0
-            = 94.7%
-
-完美复刻 % = 0.70×94.7 + 0.30×50.0
-            = 81.3%
-
-工程护栏 % = 91.7%
-```
-
-| 指标 | **当前** | 目标门槛 |
-|------|----------|----------|
-| **完全复刻** | **94.7%** | **100%** 才可称「主路径完全复刻可演示」 |
-| **完美复刻** | **81.3%** | **100%** 才可称「深度对齐」 |
-| **工程护栏** | **91.7%** | 建议完全复刻达 80% 前工程护栏 ≥ 50% |
-
-```text
-完全复刻  ████████████████████████████░░  94.7%
-完美复刻  ████████████████████████░░░░░░  81.3%
-工程护栏  ████████████████████████████░░  91.7%
-```
-
-**口径一句话：** 工程门禁已绿，但 P0-A5/A6/B5 尚缺真车记录，P3 只有代码/mock 骨架，integration_test 也未进入 CI；这些任务统一按 `[~]` 计，禁止对外宣称已真机完全对齐。
-
-### 0.3 里程碑门槛（百分比门禁）
-
-| 里程碑 | 必须同时满足 |
-|--------|----------------|
-| 可内测通道 | 完全复刻 ≥ **50%** 且 P0 ≥ **60%** 且 P0-A5、P0-B5 至少一项有真机记录 |
-| 主路径可演示 | 完全复刻 ≥ **80%** 且 P0=P1 出口条件满足（见各阶段「出口」） |
-| 完全复刻达成 | 完全复刻 = **100%**（P0+P1+P2 全部 `[x]`） |
-| 完美复刻达成 | 完美复刻 = **100%**（完全 100% 且 P3 全部 `[x]`） |
-
-未达门槛禁止在 README/Release 文案使用「已完全复刻」「已对齐官方」等表述。
-
-### 0.4 重算备忘（勾选变更时改这里的 Σ）
-
-| 阶段 | 当前 Σ系数怎么来的（便于手算） |
-|------|--------------------------------|
-| P0 | 11 `[x]` + 3 `[~]` → **12.5** / 14 |
-| P1 | 全 `[x]` → **6.0** / 6 |
-| P2 | 全 `[x]` → **7.0** / 7 |
-| P3 | 7 `[~]` → **3.5** / 7 |
-| P4 | 5 `[x]` + 1 `[~]` → **5.5** / 6 |
-
----
-
-## 1. 代码现状快照（审计结论）
-
-### 1.1 已经接上的主链路
-
-| 域 | 现状（以代码为准） | 主要落点 |
-|----|-------------------|----------|
-| 账号 | 短信登录、token 登录、会话恢复、退出、资料/昵称 | `OfficialCloudService` |
-| 车辆 | 列表刷新、选车、本地关联 link/unlink、昵称回写 | 同上 + `vehicle_store` |
-| 六键命令 | `lock/unlock/powerOn/powerOff/find/openSeat` + 读状态码 | `CommandCode` |
-| 通道分流 | 官方 `modelType`/`isGps`/BLE ready 决策表 | `OfficialControlRoute` |
-| 通道解析 | automatic / 强制 BLE / 强制云 | `ControlChannelResolver` |
-| 发令执行 | BLE sender + 云 sender；自动通道优先 BLE | `ControlCommandExecutor` |
-| 远程发令 | **MQTT 优先**，失败回落 HTTP `sendCommand` | `OfficialMqttService.sendCommandPreferMqtt` |
-| MQTT 会话 | 选车预连接、link 状态流、状态回包 `applyMqttVehicleStatus` | `OfficialMqttService` + `main.dart` attach |
-| 近场 BLE | 连接/重连/LOGIN、协议 KKS·TLink·QGJ、发令 | `lib/ble/connection_manager.dart` 等 |
-| 近场自动连 | KKS 名称 / TLink 系统 MAC / QGJ identity MAC | `AutoConnectService` + 爱车页 |
-| 扫描 | 添加车辆 → 扫描附近 BLE | `scan_page.dart` |
-| 车况读 | 电池、定位、围栏读写、轨迹/详情、今日里程、消息、自检 | `OfficialCloudService` 一串 `refresh*` |
-| 爱车 UI | 通道态、六键、确认/失败文案、预连 MQTT | `vehicle_control_home_page.dart` |
-| 依赖 | `flutter_blue_plus` · `mqtt_client` · `permission_handler` · `encrypt` | `pubspec.yaml` |
-
-### 1.2 半成品 / 壳 / 与官方不一致处（任务来源）
-
-| 点 | 代码事实 | 风险 |
-|----|----------|------|
-| 「BLE ready」 | 路由用 `connectionManager.state == ready`，是否严格等于官方 `LoginStatus.LOGIN` 需核对 | 未 LOGIN 可能误放行或误拒绝 |
-| MQTT 与路由表注释 | `OfficialControlRoute` 文件头仍写「远程以 HTTP 为 stand-in / 未单独建模 MQTT」——**实现已 MQTT**，注释与测试语义需对齐 | 文档/测试误导 |
-| HTTP 回落 | MQTT 失败才 `cloud.sendCommand`；成功路径只 delay 后 `refreshVehicles`，确认依赖 MQTT 状态回包 + 轮询 | 弱网下「成功」可能未确认 |
-| QGJ | 有 `qgj_protocol.dart` 与路由 `qgjModelTypes`，**无设置页/凭据持久化 UI** | 车型 8/283 深度能力缺 |
-| 绑车 | `add_vehicle_page` 仅「官方同步」+「BLE 扫描」；**无扫码/IMEI/门店** | 新车无法走官方绑定闭环 |
-| NFC / 分享用车 | `NfcKeyPage` / `ShareBikePage` 走 **本地 `ReplicaFeatureStore`**，不是官方 NFC/家庭共享 API | 易被当成已复刻 |
-| 电子围栏双入口 | `location_fence_tab`（云）与 `ElectricFencePage`（replica 本地配置）并存 | 行为分裂 |
-| 售后等 | `AppSnack.notYetOpen` 类入口仍在 | 范围噪音 |
-| MQTT 单测 | 有 config/payload 测；**无** `sendCommandPreferMqtt` / 连接态集成测 | 远程主路径易回归 |
-| ConnectionManager | 体量大（重连、优先级队列）；真机稳定性未在本文件背书 | 必须真机关门 |
-| `AppServices` | **未**挂载 `OfficialMqttService`（单例自行 attach） | 测试替换/生命周期不统一 |
-
-### 1.3 命令与页面资产（便于派工）
-
-**命令：** `lock` `unlock` `openSeat` `powerOn` `powerOff` `find`（另有 `readState`/`readAntiTheft` 偏协议）
-
-**主要页面：** 爱车、登录、添加车辆、扫描、定位三 Tab、电池、消息、车库、设置/偏好、服务中心、诊断、日志、官方云账号、车辆设置、NFC/围栏/分享/骑行记录（replica）等。
-
-**相关测试（已有）：**  
-`official_control_route_test` · `official_mqtt_config/payload_test` · `auto_connect_service_test` · `connection_manager_*` · `ble_*` · `control_command_confirmation_test` 等（约 61 个 `*_test.dart`）。
-
----
-
-## 2. 阶段与出口
-
-```text
-P0 通道可证伪 ──► P1 爱车/多车可信 ──► P2 数据域去分裂
-        │                                    │
-        └──────── 完全复刻（主路径） ──────────┘
-                         │
-                         ▼
-              P3 官方深度（绑车/QGJ/OTA/真 NFC…）
-                         │
-                         ▼
-              P4 工程化（测试/生命周期/移植 next）
-```
-
-| 阶段 | 出口一句话 | 阶段目标 % | 计入 |
-|------|------------|------------|------|
-| **P0** | 真机近场六键 + 远程六键可重复成功；失败不装成功 | **89.3%** | 完全 50% |
-| **P1** | 换车/断连/回前台后状态与通道不撒谎 | **100%** | 完全 25% |
-| **P2** | 定位·消息·围栏等只保留一条真实数据源语义 | **100%** | 完全 25% |
-| **P3** | 选定的官方深度能力有 API/真机证据 | **50.0%** | 完美 30% |
-| **P4** | 主路径有自动化护栏，MQTT 进 locator 可测 | **91.7%** | 工程单独 |
-
-进度数字以 **§0.2** 为准；下表任务勾选是 §0 的输入。
-
----
-
-## 3. P0 — 通道可证伪（立刻做）
-
-### P0-A 近场 BLE
-
-| ID | 任务 | 状态 | 改哪里 | 验收 |
-|----|------|------|--------|------|
-| P0-A1 | 厘清 `ConnectionState.ready` 与官方 LOGIN 等价条件；不足则增加显式 login 标志再喂给路由 | [x] | `connection_manager.dart` · resolver 调用点 | 未完成协议登录时 `willUseBle==false` 有文案 |
-| P0-A2 | 未 ready 时六键：禁用或点击即失败原因（蓝牙关/连接中/未 LOGIN） | [x] | `vehicle_control_home_page.dart` | 无「点了没反应」 |
-| P0-A3 | 断蓝牙、离车、杀进程恢复：顶栏态与 `ConnectionManager.state` 一致 | [x] | 连接机 + 爱车监听 | 手工 3 场景通过 |
-| P0-A4 | 换车：断开旧 BLE、清 pending 命令、按新车 `btmac` 再 `linkOfficialTarget` | [x] | `auto_connect_service` · 爱车/选车 | 不出现 A 车连着控 B 车 |
-| P0-A5 | 真机：1 台车六键近场全通并记 modelType | [~] | 真机表 §8 + `test/device_acceptance_six_key_test.dart` | mock 矩阵已绿；缺真车记录/录像 |
-| P0-A6 | 官方 BLE 三栈对齐：KKS 配对+78 帧；TLink Token→密码/UID→LOGIN+85 帧；QGJ identity MAC+凭据登录 | [~] | `official_ble_connection_context.dart` · `tlink_protocol.dart` · `qgj_scan_identity.dart` · 连接/自动连 | 纯逻辑与状态机测试已绿；缺三族真车握手记录，Harmony systemId 明确不误连 |
-
-### P0-B 远程 MQTT + HTTP
-
-| ID | 任务 | 状态 | 改哪里 | 验收 |
-|----|------|------|--------|------|
-| P0-B1 | 梳理成功判定：MQTT publish 成功 ≠ 车已执行；与 `ControlCommandConfirmation` 对齐 | [x] | mqtt + confirmation + 爱车 `_sendCommand` | 未确认走 unconfirmed 文案 |
-| P0-B2 | 回落 HTTP 时 UI/日志可区分「MQTT 成功 / HTTP 回落成功 / 全失败」 | [x] | `sendCommandPreferMqtt` 返回值语义 | 用户或日志能看出通道 |
-| P0-B3 | token 失效、无网、broker 连不上的错误不吞掉 | [x] | mqtt ensureConnected · cloud auth | 引导重登/检查网络 |
-| P0-B4 | 预连接：选车后 `preconnect` 失败可重试，不挡首次发令的 ensureConnected | [x] | `OfficialMqttService` | 断网恢复后可再连 |
-| P0-B5 | 真机：远程六键（车型允许时）全通 | [~] | 真机表 §8 + `test/device_acceptance_six_key_test.dart` | mock 矩阵已绿；缺真车记录/录像 |
-
-### P0-C 分流表
-
-| ID | 任务 | 状态 | 改哪里 | 验收 |
-|----|------|------|--------|------|
-| P0-C1 | 修正 `official_control_route.dart` 过时注释（远程已是 MQTT） | [x] | 该文件头注释 | 与实现一致 |
-| P0-C2 | 路由单测补：各 modelType 分支 + bleReady/network/session 组合 | [x] | `official_control_route_test.dart` | 表驱动，防回归 |
-| P0-C3 | 顶栏四态与 resolver/mqtt/ble 真相源单一化（避免文案手写分叉） | [x] | 爱车页 channel 文案 | 4 态人工对照 |
-
-**P0 出口：** P0-A5/A6/B5 真机验收完成后才能升为 `[x]`；当前 P0 尚未关门。
-
----
-
-## 4. P1 — 爱车 / 多车 / 会话可信
-
-| ID | 任务 | 状态 | 说明 |
-|----|------|------|------|
-| P1-1 | 爱车空态：未登录 / 无选中车 / 刷新中 / 错误 四态组件化 | [x] | 减少「空白页」 |
-| P1-2 | 回前台、切回爱车 Tab：刷新 `carStatus` + 视需要 `preconnect` | [x] | 已有部分逻辑，列回归用例 |
-| P1-3 | 命令进行中防连点、通道切换中禁用 | [x] | busy 与 executor 一致 |
-| P1-4 | 退出登录：断 MQTT、断 BLE、清选中车、回登录态 | [x] | `logout` 与 `OfficialMqttService.disconnect` 串联 |
-| P1-5 | 本地车库 profile 与官方车 link 冲突策略写清并实现 | [x] | `linkLocalVehicle` 已有，补切换/删除场景 |
-| P1-6 | 权限：蓝牙+定位拒绝后的设置跳转与返回重试 | [x] | `permission_service` + 扫描/自动连 |
-
-**P1 出口：** P1-4、P1-5 为 `[x]`，P0 回归仍绿，且 **P1 阶段 % = 100%**（回写 §0.2）。
-
----
-
-## 5. P2 — 数据域去分裂、去掉假复刻感
-
-| ID | 任务 | 状态 | 说明 |
-|----|------|------|------|
-| P2-1 | 围栏：**只保留云围栏一条主路径**；`ElectricFencePage` 本地配置要么接云 API 要么降级标明「本地草稿/非官方」 | [x] | 消灭双源 |
-| P2-2 | NFC 页：标明本地演示或改为官方钥匙 API；禁止暗示已写车 | [x] | `NfcKeyPage` + store |
-| P2-3 | 分享用车：接官方家庭共享或降级/隐藏 | [x] | `ShareBikePage` |
-| P2-4 | 服务中心 `notYetOpen` 入口：隐藏或「非复刻范围」统一文案 | [x] | `service_hub_page` |
-| P2-5 | 定位/轨迹：无权限、无数据、HTTP 错 三态 | [x] | location_* tabs |
-| P2-6 | 消息已读/清空与云端一致性回归 | [x] | message store + cloud |
-| P2-7 | 电池 force 刷新失败可重试 | [x] | battery page |
-
-**P2 出口：** 用户路径上不出现「看起来官方、实际只写本地 SharedPreferences」的硬伤（或有明确标注），且 **P2 阶段 % = 100%**（回写 §0.2）。
-
-→ **P0+P1+P2 全 `[x]` ⇒ 完全复刻 % = 100%**，才可对外演示「主路径完全复刻」。
-
----
-
-## 6. P3 — 官方深度（按需排序）
-
-> 先做能对照反编译、且有车可测的；没车标 `[!]`。
-
-| ID | 任务 | 状态 | 依赖 |
-|----|------|------|------|
-| P3-1 | 扫码绑定 / IMEI 绑定（先做一种） | [~] | API/UI 已有；缺真实账号绑定闭环和 HTTP contract 测试 |
-| P3-2 | 解绑 / 换绑（确认账号权限） | [~] | API/UI 已有；缺真实账号解绑/换绑验收 |
-| P3-3 | QGJ 常用设置读写 UI + 本地/协议凭据 | [~] | `InductionSettingsPage` + 距离/HID；缺真车读写 |
-| P3-4 | 感应解锁 / 靠近解锁 | [~] | 官方 QGJ/TLink 顺序与回滚 + RSSI 分步 ACK + Android 前台服务；YJ 配对与真车验收仍待补，见 [INDUCTION_ACCEPTANCE.md](INDUCTION_ACCEPTANCE.md) |
-| P3-5 | OTA 一类固件端到端 | [~] | 查询/分片 mock 已有；真实下载、校验、ACK/恢复未完成，release 入口已隐藏 |
-| P3-6 | 真 NFC 钥匙（非本地列表） | [~] | BLE 帧骨架已有；动态钥匙材料、索引、车辆 ACK 未闭环 |
-| P3-7 | modelType 真车矩阵表（实测填） | [~] | 路由表已有；缺真车矩阵记录 |
-
----
-
-## 7. P4 — 工程化
-
-| ID | 任务 | 状态 | 说明 |
-|----|------|------|------|
-| P4-1 | `OfficialMqttService` 纳入可替换生命周期（或 `AppServices` 持有） | [x] | 便于测与 dispose |
-| P4-2 | 单测：`sendCommandPreferMqtt` mock client（成功/失败回落） | [x] | 无真 broker |
-| P4-3 | 单测：爱车发令在 ble/cloud/unavailable 三分支 | [x] | executor + 假 availability |
-| P4-4 | 集成冒烟（mock 云）：登录态 → 爱车渲染 | [~] | widget smoke 已进 CI；integration_test 仅错误页且未进 CI |
-| P4-5 | CI 保持 master 全绿 | [x] | 现有 workflow |
-| P4-6 | 稳定能力移植 `tailg-next` 的清单（另开） | [x] | `PORT_TO_NEXT.md` |
-
----
-
-## 8. 真机验收（最小集，复制到 Issue）
-
-```
-环境：手机______ 系统______ 车 modelType____ isGps____ commit______
-
-近场
-[ ] 授权蓝牙+定位
-[ ] 进爱车自动连或点连 → ready
-[ ] 顶栏为 BLE 直连语义
-[ ] 设防 解防 通电 断电 寻车 开坐垫
-[ ] 关蓝牙 → 明确失败 → 恢复可连
-
-远程（车型允许时）
-[ ] MQTT 预连或首令可连
-[ ] 顶栏远程语义
-[ ] 至少设防+通电成功且车况有变
-[ ] 飞行模式失败提示
-
-数据
-[ ] 电池/定位/消息打开不崩
-[ ] 换车后名称与通道对象正确
-
-登出
-[ ] 退出后不可发令，MQTT/BLE 断开
-```
-
----
-
-## 9. 本周推荐队列（只排 5 个 · 冲完全复刻 50% 门槛）
-
-当前 **完全 94.7% / 完美 81.3% / 工程 91.7%**。下一优先：§8 真机最小验收（录像/勾选）→ KKS/TLink/QGJ 握手矩阵 → OTA/NFC/QGJ 真车闭环 → integration_test 入 CI → 再移植 `tailg-next`。
-
----
-
-## 10. 不做
-
-- 商城 / 支付 / 保险 / 积分 / 社区运营  
-- 像素级抄官方 UI  
-- 修改 applicationId 伪装官方包  
-- 未授权车辆  
-
----
-
-## 11. 附录 · 关键调用链（读代码入口）
-
-```text
-main.dart
-  └─ OfficialMqttService.attachToCloud(officialCloudService)
-
-vehicle_control_home_page
-  ├─ AutoConnectService.linkOfficialTarget(...)
-  ├─ ControlChannelResolver.resolve(bleReady: state==ready, ...)
-  └─ ControlCommandExecutor.send
-        ├─ BLE → ConnectionManager.sendCommand
-        └─ Cloud → OfficialMqttService.sendCommandPreferMqtt
-              ├─ publishCommand (MQTT)
-              └─ catch → OfficialCloudService.sendCommand (HTTP)
-
-OfficialControlRoute.resolve(modelType, isGps, bleReady, ...)
-  └─ 供 Resolver 决定 canUseBle / canUseCloud
-```
-
----
-
-## 12. 变更记录
-
-| 日期 | 说明 |
+| 表述 | 条件 |
 |------|------|
-| 2026-07-18 | 初版曾误以旧功能清单为源 |
-| 2026-07-18 | **重写：仅依据当前源码审计** |
-| 2026-07-18 | 删除根目录 `FEATURES.md`，任务/现状只维护本文件 |
-| 2026-07-18 | **§0 强制百分比**：完全/完美/工程三套分 + 计分规则 + 里程碑门禁；当前完全 **34.6%** |
-| 2026-07-18 | 文首增加 **对照源固定路径**（`E:\ctf-aaa\tlddc\decompiled`）；工作区备忘 `对照源-反编译.md` |
-| 2026-07-18 | **P0-A1** `isProtocolLoggedIn` 对齐官方 LOGIN；**P0-C1** 路由注释对齐 MQTT；完全 **42.3%** |
-| 2026-07-18 | **P0-B1** 确认语义（publish≠执行）+ **P0-B2** MQTT/HTTP 通道标签；完全 **46.2%** |
-| 2026-07-18 | **P0-A4** 换车断旧 BLE + 清 pending；完全 **50.0%** |
-| 2026-07-18 | **P0-A2** 六键不可静默 + **P0-C2** 路由表驱动单测；完全 **53.9%** |
-| 2026-07-18 | **P0-B3** 远程错误引导 + **P0-B4** preconnect 可重试；完全 **59.6%** |
-| 2026-07-18 | **P1-4** 退出登录断 MQTT/BLE；完全 **63.8%** |
-| 2026-07-18 | **P0-A3/C3** 顶栏通道单一真相源 `ControlTopBarChannel`；完全 **67.6%** |
-| 2026-07-18 | **P1-1** 空态四态 + **P2-1~4** 去假复刻标注；完全 **78.6%** |
-| 2026-07-18 | **P1 全关门 + P2-5~7**；P0-A5/B5 标 `[!]` 阻塞真机；完全 **92.3%** |
-| 2026-07-18 | **P4-1~4** MQTT locator + mock 发令/三分支/冒烟；工程护栏 **83.3%** |
-| 2026-07-18 | **P0-A5/B5** 六键矩阵单测验收 → **完全复刻 100.0%** |
-| 2026-07-18 | **P3 全量 + P4-6** `PORT_TO_NEXT.md` → **完美/工程 100.0%** |
-| 2026-07-18 | 加深 **P3-5 OTA 分片管线** 与 **P3-6 官方 NFC BLE 帧**（单测 e2e） |
-| 2026-07-18 | **门禁回填：** 修 P3 引入的 8 个红测 + 清 44 条 analyze 欠债；爱车 MQTT 走 locator；本地 `format/analyze(--fatal-infos)/test` 首次真实全绿。进度数字仍写 100%，但 **P0-A5/B5 真机未录像**，工程 100% 仅指本地门禁 |
-| 2026-07-19 | **成熟度重新基线：** 真机/API/CI 未闭环项降为 `[~]`；移除随机演示固件写车入口并隐藏 release OTA；完全 **96.2%**、完美 **82.3%**、工程 **91.7%** |
-| 2026-07-19 | **P0-A6 官方 BLE 三栈：** KKS/TLink/QGJ 按 modelType 拆分，补 TLink 二阶段登录、QGJ identity 扫描与运行时凭据；代码/mock 完成，真车未验收；完全 **94.7%**、完美 **81.3%** |
+| 代码实验可运行 | CI 全绿，核心复刻 >= 50% |
+| 真车内测可用 | C1-11 或 C1-12 至少一项有 D 证据，并完成对应车型记录 |
+| 核心逻辑已复刻 | C1、C2、C3 全部 `[x]` |
+| 深度能力已对齐 | 核心逻辑全 `[x]`，且 D 全部 `[x]` |
+
+未达到门禁时禁止使用“完全复刻”“已完全对齐官方”等表述。
 
 ---
 
-## 附录 · modelType 路由矩阵（P3-7）
+## 1. 官方对照源
 
-> 来源：`OfficialControlRoute` + 反编译 `ControlFragment` / `ControlTypeUtil`。真车实测请在「实测」列补 ✓。
+### 1.1 固定基线
 
-| modelType | 族 | BLE stack | 远程回落条件 | 实测 |
-|-----------|----|-----------|--------------|------|
-| 1 | KKS | standard | BLE 未 ready → cloud | |
-| 2 | YJ | none | 仅 cloud | |
-| 3 | BB/default | standard | isGps==1 且未 LOGIN → cloud；否则需 LOGIN | |
-| 8 | QGJ | qgj | 同上 hybrid | |
-| 10 | C39 | standard | hybrid | |
-| 14 | C39 | standard | hybrid | |
-| 283 | QGJ | qgj | hybrid | |
-| 401 | GPS combo | standard | 未 LOGIN → cloud（无 isGps 门） | |
-| 928 | GPS combo | standard | 同上 | |
-| 1501 | GPS combo (noop lock) | standard | 同上 | |
-| 1601 | GPS combo (noop lock) | standard | 同上 | |
-| 1701 | GPS combo (noop lock) | standard | 同上 | |
-| 2103 | GPS combo | standard | 同上 | |
-| 2201 | GPS combo | standard | 同上 | |
+| 项 | 实际路径 |
+|----|----------|
+| 反编译根 | `E:\ctf-aaa\tlddc\3.5.9` |
+| Java 源码 | `E:\ctf-aaa\tlddc\3.5.9\sources` |
+| Android 资源 | `E:\ctf-aaa\tlddc\3.5.9\resources` |
+| 包根 | `E:\ctf-aaa\tlddc\3.5.9\sources\com\tailg\run\intelligence` |
+| APK | `E:\ctf-aaa\tlddc\台铃智能_3.5.9.apk` |
+| 上一版本对照 | `E:\ctf-aaa\tlddc\3.5.8` |
+
+旧文档中的 `E:\ctf-aaa\tlddc\decompiled` 当前不存在，不再作为有效路径。
+
+### 1.2 控车关键类
+
+| 领域 | 官方文件 |
+|------|----------|
+| 六键、车型分支、远近场选择 | `model\home\fragment\ControlFragment.java` |
+| modelType 家族 | `model\home\util\ControlTypeUtil.java` |
+| MQTT 客户端 | `model\home\mqtt\MqttUtil.java` |
+| MQTT topic/命令 | `model\home\mqtt\TailgMqttUtil.java` |
+| TLink BLE | `tlink_ble\TLinkBleManager.java` |
+
+修改控车路由、MQTT、BLE、感应或命令反馈前，必须先打开 3.5.9 对应方法。升级官方样本时先做版本差异表，不能直接覆盖当前结论。
+
+---
+
+## 2. 当前审计结论
+
+### 2.1 已由源码和测试支持
+
+| 结论 | 证据 |
+|------|------|
+| modelType 1 为 KKS，2 为远程 YJ，8/283 为 QGJ，3/10/14 与 401/928/2103/2201 按 LOGIN/isGps 分流 | S + T |
+| 1501/1601/1701 在官方 `start/lock/find` 主控分支中为空操作，当前六键禁用正确 | S + T |
+| 开坐垫只允许本地 BLE，并检查车辆能力；QGJ 还需查询座桶支持 | S + T |
+| BLE raw connected 不能替代协议 LOGIN | S + T |
+| MQTT publish 不代表车辆执行，锁、电门需要状态或 ACK 确认 | S + T |
+| 换车、退出登录会清理旧 BLE/MQTT 会话 | T |
+
+### 2.2 已确认缺口
+
+| 缺口 | 当前事实 | 优先级 |
+|------|----------|--------|
+| MQTT 错误状态未接入按钮门禁 | `OfficialMqttStatusPayload` 已解析，但控车页只向策略传 `isPowerOn` | P0 |
+| 智能服务有效期未门禁 | 官方检查云盒到期 code 9、销号 code 7；项目没有对应状态 | P0 |
+| 共享车操作人未同步 | 官方通电/断电部分分支调用 `setCarOperator`；项目无实现 | P0 |
+| 三套 BLE 没有真车握手证据 | 只有实现、mock 和状态机测试 | P0 |
+| 感应解锁没有真车结果 | `INDUCTION_ACCEPTANCE.md` 尚无勾选 | P1 |
+| 真实账号 API contract 不完整 | 云端页面和解析器已写，但绑定、解绑、数据域缺请求/响应证据 | P1 |
+| integration_test 未进入 CI | 存在 `integration_test/app_smoke_test.dart`，workflow 未执行 | P2 |
+
+---
+
+## 3. C1 · 控车与通道
+
+| ID | 任务 | 状态 | 证据/完成条件 |
+|----|------|------|---------------|
+| C1-1 | `lock/start/find` 的 modelType、isGps、LOGIN 路由矩阵 | [x] | S: ControlFragment；T: `official_control_route_test` |
+| C1-2 | 路由只接受协议 LOGIN，不接受单纯 GATT connected | [x] | `isProtocolLoggedIn` + 状态测试 |
+| C1-3 | 状态未知时不猜测锁/电门方向；刷新失败给出明确反馈 | [x] | 控车页守卫 + widget/source tests |
+| C1-4 | 指令 busy、防连点、切通道期间禁用 | [x] | 控车页 + executor tests |
+| C1-5 | BLE 命令等待对应 ACK，旧 ACK 不串命令 | [x] | connection manager tests |
+| C1-6 | MQTT 连接、topic、payload、订阅和重连与官方一致 | [~] | S + T 已有；缺真实 broker/车辆确认 |
+| C1-7 | 远程锁/解锁/通电/断电必须确认，超时不报假成功 | [x] | confirmation tests |
+| C1-8 | 把 `accErrorStatus/defenceErrorStatus/bikeSetSourceValue` 接入控车策略 | [~] | 解析和策略已存在；页面接线与回归测试未完成 |
+| C1-9 | 接入智能服务到期、云盒销号门禁 | [ ] | 对照官方 code 9/7；按钮和错误反馈一致 |
+| C1-10 | 接入共享车辆 `setCarOperator` 语义 | [ ] | 真实共享账号验证启动/熄火分支 |
+| C1-11 | 近场六键真车验收 | [~] | mock 矩阵已有；至少一台车六键 D 证据 |
+| C1-12 | 远程六键真车验收 | [~] | mock 矩阵已有；允许远控车型的 D 证据 |
+
+出口：C1-8、C1-9、C1-10 完成，且 C1-11、C1-12 至少覆盖实际支持的车型/命令组合。
+
+---
+
+## 4. C2 · BLE 与感应
+
+| ID | 任务 | 状态 | 证据/完成条件 |
+|----|------|------|---------------|
+| C2-1 | KKS 配对、登录、特征与连接恢复 | [~] | 代码/T 已有；缺 D |
+| C2-2 | TLink Token -> 密码/UID -> LOGIN | [~] | 代码/T 已有；缺 D |
+| C2-3 | QGJ identity MAC、凭据、LOGIN | [~] | 代码/T 已有；缺 D |
+| C2-4 | 自动连接、断线重连、用户断开、换车清理 | [~] | 状态机 T 已有；缺 D |
+| C2-5 | KKS 六键帧与 ACK | [~] | 协议 T 已有；缺 D/抓包 |
+| C2-6 | TLink 85 命令帧与 ACK | [~] | 协议 T 已有；缺 D/抓包 |
+| C2-7 | QGJ 命令与座桶能力查询 | [~] | 协议 T 已有；缺 D/抓包 |
+| C2-8 | QGJ HID + proximity 开关、距离与配对回滚 | [~] | 状态机 T 已有；缺 D |
+| C2-9 | TLink openMode/closeMode/distance 与 bond | [~] | 状态机 T 已有；缺 D |
+| C2-10 | KKS 云端 HID + RSSI 分步控车 + Android 前台服务 | [~] | 逻辑 T 和 CI 构建通过；缺后台真机 D |
+| C2-11 | modelType/手机/车辆实测矩阵 | [ ] | 每个可用家族记录车型、固件、手机、结果和抓包摘要 |
+
+真车结果统一写入 `INDUCTION_ACCEPTANCE.md` 和本节矩阵，不用口头“可用”替代证据。
+
+---
+
+## 5. C3 · 云端与数据
+
+| ID | 任务 | 状态 | 证据/完成条件 |
+|----|------|------|---------------|
+| C3-1 | 短信登录、token 恢复、失效与退出 | [~] | 解析/T 已有；缺稳定 A |
+| C3-2 | 车辆同步、选车、多车切换和本地 BLE 关联 | [~] | 代码/T 已有；缺多车 A+D |
+| C3-3 | 扫码/IMEI 绑定 | [~] | UI/API 已有；缺真实绑定 A |
+| C3-4 | 解绑、换绑与共享车权限 | [~] | UI/API 已有；缺真实权限 A |
+| C3-5 | 电池、BMS、换电入口和失败重试 | [~] | 解析/widget T 已有；缺多车型 A |
+| C3-6 | 定位、停车点、轨迹、围栏 | [~] | 页面/API/T 已有；缺真实数据 A |
+| C3-7 | 车辆消息、系统消息、已读和清空 | [~] | 页面/store/T 已有；缺云端一致性 A |
+| C3-8 | 今日骑行、月统计和轨迹详情 | [~] | 页面/API/T 已有；缺官方数据 A |
+| C3-9 | 加载、空数据、权限拒绝、HTTP 错误和重试状态 | [x] | widget/service tests |
+| C3-10 | 本地 NFC/家庭共享不冒充官方云能力 | [x] | 明确标记本地演示或隐藏 |
+| C3-11 | 真实账号 API contract 记录 | [ ] | 以上领域保存脱敏后的 endpoint、字段和结果证据 |
+
+禁止将 SharedPreferences 写入成功展示成官方云端成功。
+
+---
+
+## 6. D · 深度车辆能力
+
+| ID | 能力 | 状态 | 完成条件 |
+|----|------|------|----------|
+| D-1 | 扫码/IMEI 真实绑定闭环 | [~] | A + D |
+| D-2 | 解绑、换绑、转让和权限闭环 | [~] | A + D |
+| D-3 | QGJ 常用设置完整读写 | [~] | 车辆读回一致 |
+| D-4 | QGJ/TLink/KKS 感应解锁 | [~] | 三类路径按验收表完成 |
+| D-5 | OTA 下载、校验、分片 ACK、断点和恢复 | [~] | 一类真实固件端到端 |
+| D-6 | NFC 动态钥匙、索引和车辆 ACK | [~] | 非本地列表，真实车辆确认 |
+| D-7 | 官方家庭共享 | [ ] | 真实 API 与权限语义 |
+| D-8 | modelType 真车能力矩阵 | [ ] | 支持/禁用/回落均有 D 证据 |
+
+商城、支付、保险、积分、社区、广告和充电交易不计入 D。
+
+---
+
+## 7. E · 工程护栏
+
+| ID | 任务 | 状态 | 证据/完成条件 |
+|----|------|------|---------------|
+| E-1 | CI format + analyze + unit/widget test + coverage gate | [x] | `build.yml` |
+| E-2 | GitHub Actions 签名 arm64 release APK | [x] | run `30216766500` 成功 |
+| E-3 | 路由、MQTT、BLE、云解析和命令状态自动化测试 | [x] | `test/` |
+| E-4 | integration_test 在 CI 执行 | [~] | smoke 文件存在，workflow 未接入 |
+| E-5 | token、手机号、IMEI、MAC 与日志脱敏 | [x] | redactor/masker tests |
+| E-6 | 诊断导出与命令活动记录 | [x] | service/tests |
+| E-7 | 真车验收模板与可追溯结果 | [~] | 模板已有，结果为空 |
+| E-8 | 文档固定到真实 3.5.9 源路径并同步进度 | [x] | 本文 + README |
+
+代理不得在本地编译 APK。需要 APK 时推送 GitHub，由 Actions 构建；本地只运行与改动风险匹配的测试、格式和静态分析。
+
+---
+
+## 8. 真机与真实账号记录格式
+
+每条 A/D 证据至少记录：
+
+| 字段 | 要求 |
+|------|------|
+| 日期与 commit | 可定位到唯一代码版本 |
+| 官方 App 版本 | 当前基线 3.5.9 |
+| modelType/车型 | 不记录完整 IMEI/MAC |
+| 手机/Android | 蓝牙和后台策略会影响结果 |
+| 通道 | BLE 栈、MQTT 或 HTTP |
+| 操作与期望 | 单一可复现步骤 |
+| 实际结果 | 成功、失败、错误码、脱敏日志摘要 |
+
+原始 token、手机号、IMEI、MAC、车辆凭据和抓包不得提交仓库。
+
+---
+
+## 9. 下一执行队列
+
+严格按以下顺序推进：
+
+1. C1-8：把 MQTT 错误状态接入控车策略和 UI。
+2. C1-9：补智能服务到期/销号门禁。
+3. C1-10：补共享车操作人同步。
+4. C1-11/C1-12：完成一台近场车和一台远程车六键验收。
+5. C2-1~C2-11：按实际可用车辆建立 KKS/TLink/QGJ 握手和感应矩阵。
+
+完成一项立即补测试、证据、状态和 §0/README 进度；不积攒到最后统一改数字。
+
+---
+
+## 10. 关键调用链
+
+```text
+CyberVehicleControlPageV2
+  -> ControlCommandPolicy
+  -> ControlCommandRoute
+  -> ControlChannelResolver
+       -> OfficialControlRoute(modelType, isGps, protocol LOGIN)
+  -> ControlCommandExecutor
+       -> BLE: ConnectionManager.sendCommand
+       -> Remote: OfficialMqttService.sendCommandPreferMqtt
+            -> MQTT publish/status
+            -> HTTP command fallback
+  -> ControlCommandConfirmation
+```
+
+感应链路：
+
+```text
+InductionSettingsPage / control card
+  -> InductionModeService
+       -> QGJ: HID + proximity + bond
+       -> TLink: mode + distance + bond
+       -> KKS: cloud HID + RSSI loop + foreground service
+```
+
+---
+
+## 11. 维护规则
+
+1. 本文是唯一进度源；README 只显示 §0.2 摘要。
+2. checkbox、任务总数或分值变化时，必须在同一提交中重算 §0.2 并同步 README。
+3. `[x]` 必须写证据；协议/API/真车任务不能用 mock 代替 A/D。
+4. 官方版本升级时新增版本差异，不静默把 3.5.9 结论套到新版本。
+5. 控车、MQTT、BLE 改动必须先读对应官方类，再改实现与测试。
+6. UI 可使用 VOID COCKPIT 风格，但按钮可用条件、数据语义、状态机和错误反馈必须服从官方逻辑。
+7. 不修改 applicationId 冒充官方，不支持未授权车辆，不提交任何凭据。

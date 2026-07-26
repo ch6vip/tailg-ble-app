@@ -10,11 +10,11 @@
 |--|--|
 | 仓库 | [`ch6vip/tailg-ble-app`](https://github.com/ch6vip/tailg-ble-app) · Public |
 | 角色 | 工作区内 **测试 / 复刻实验线**（正式 cloud 产品线见 [`tailg-next`](https://github.com/ch6vip/tailg-next)） |
-| 对照源 | **`E:\ctf-aaa\tlddc\decompiled`** · 包名 `com.tailg.run.intelligence` · 备忘 [对照源-反编译.md](../对照源-反编译.md) |
+| 对照源 | **`E:\ctf-aaa\tlddc\3.5.9`** · 包名 `com.tailg.run.intelligence` |
 | 技术栈 | Flutter 3.44.6 · Dart 3.12.2 · Android API 23+ |
 | 包名 | Dart `tailg_ble_app` · Android `de.tttq.tailg_ble_app` · 显示名「台铃智能」 |
 | 版本 | 以 `pubspec.yaml` 为准（当前 `1.1.0+14`） |
-| **复刻进度** | **完全 94.7%** · 完美 81.3% · 工程 91.7%（见 [PLAN.md §0](PLAN.md)；代码/mock 已有但未完成真机或 CI 验收的任务按 `[~]` 计） |
+| **复刻进度** | **核心 55.9%** · 深度能力 37.5% · 工程护栏 87.5%（见 [PLAN.md §0](PLAN.md)；真实账号/真车无证据的协议与 API 任务不得标完成） |
 
 ---
 
@@ -33,7 +33,7 @@
 | 数据语义 | 列表、状态、电池、定位、消息等与官方 API 语义一致 |
 | 失败语义 | 未登录 / 无车 / 蓝牙未开 / 未 LOGIN / 无网 / MQTT 未连 / 指令未确认 → 明确结果，禁止静默假成功 |
 
-### 完美复刻（Perfect）= 后续加深
+### 深度能力 = 后续加深
 
 车型矩阵、QGJ 设置全集、感应解锁、OTA、NFC 钥匙、绑定闭环（扫码/IMEI/门店/解绑/转让）等。进度与任务见 [PLAN.md](PLAN.md)。
 
@@ -47,13 +47,13 @@
 
 | 通道 | 状态 | 说明 |
 |------|------|------|
-| 官方云 API | ✅ 主路径 | 登录、车辆同步、状态、消息、定位、轨迹、围栏、电池、部分写回 |
-| MQTT 远程控车 | ✅ 实验线已接 | 预连接 + 发令 + 状态回包（`OfficialMqttService`） |
-| 本地 BLE | ✅ 实验线已接 | 协议 / 连接 / 扫描 / 爱车近场自动连（`lib/ble/`） |
-| 通道路由 | ✅ 按官方表 | `OfficialControlRoute`：BLE / MQTT / 不可用 |
-| 感应解锁 | 协议加固中 · 真车待测 | QGJ / TLink 官方顺序与回滚、KKS HID + RSSI 分步确认、Android 前台服务；YJ 配对待补 |
-| OTA / NFC / 完整绑车 | ⏳ 未完成 | 完美复刻阶段 |
-| 商城等运营 | ❌ 不做 | L3 |
+| 官方云 API | 代码已接，实号待验 | 登录、车辆同步、状态、消息、定位、轨迹、围栏、电池、部分写回 |
+| MQTT 远程控车 | 代码/mock 已接，真车待验 | 预连接 + 发令 + 状态回包（`OfficialMqttService`） |
+| 本地 BLE | 三栈代码已接，真车待验 | 协议 / 连接 / 扫描 / 爱车近场自动连（`lib/ble/`） |
+| 通道路由 | 源码与测试已对照 | `OfficialControlRoute`：BLE / MQTT / 不可用 |
+| 感应解锁 | 状态机已接，真车待验 | QGJ / TLink 官方顺序与回滚、KKS HID + RSSI 分步确认、Android 前台服务 |
+| OTA / NFC / 完整绑车 | 代码骨架，闭环未完成 | 深度能力阶段 |
+| 商城等运营 | 不做 | L3 |
 
 分阶段任务、**百分比计分与里程碑门禁**见 **[PLAN.md](PLAN.md)**（§0 为唯一进度口径；改任务勾选必须重算百分比）。  
 未达 PLAN 门槛前，禁止使用「已完全复刻」等表述。
@@ -90,11 +90,10 @@ android|ios…    平台工程（含 BLE / 定位权限）
 
 | 路径 | 说明 |
 |------|------|
-| **`E:\ctf-aaa\tlddc\decompiled`** | 官方 App **反编译根目录**（`sources/` + `resources/`） |
-| `...\decompiled\sources\com\tailg\run\intelligence` | 官方包源码根 |
-| `E:\ctf-aaa\tlddc\台铃智能_*.apk` | 官方安装包样本 |
-| `E:\ctf-aaa\tlddc\对照源-反编译.md` | 工作区对照源备忘（高频类路径） |
-| `E:\ctf-aaa\tlddc\版本说明.md` | 与 `tailg-next` 的正式/测试分工 |
+| **`E:\ctf-aaa\tlddc\3.5.9`** | 当前官方 App 反编译基线（`sources/` + `resources/`） |
+| `...\3.5.9\sources\com\tailg\run\intelligence` | 官方包源码根 |
+| `E:\ctf-aaa\tlddc\台铃智能_3.5.9.apk` | 当前官方安装包样本 |
+| `E:\ctf-aaa\tlddc\3.5.8` | 上一版本差异对照 |
 
 关键反编译类（控车/MQTT/BLE）列表见 **[PLAN.md · 对照源](PLAN.md)**。
 
@@ -108,7 +107,7 @@ android|ios…    平台工程（含 BLE / 定位权限）
 flutter pub get
 flutter doctor
 flutter run                 # 调试；近场控车需真机蓝牙
-flutter build apk --release # 发布包（需本地或 CI 签名）
+git push origin master      # 推送后由 GitHub Actions 构建签名 APK
 ```
 
 ### 质量门禁（与 CI 一致）
