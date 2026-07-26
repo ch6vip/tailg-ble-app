@@ -97,7 +97,49 @@ void main() {
     test('induction service routes model types', () {
       expect(InductionModeService.stackForModelType(8), InductionStack.qgj);
       expect(InductionModeService.stackForModelType(3), InductionStack.tlink);
+      expect(
+        InductionModeService.stackForModelType(1501),
+        InductionStack.tlink,
+      );
+      expect(
+        InductionModeService.stackForModelType(1601),
+        InductionStack.tlink,
+      );
+      expect(
+        InductionModeService.stackForModelType(1701),
+        InductionStack.tlink,
+      );
       expect(InductionModeService.stackForModelType(1), InductionStack.rssi);
+    });
+
+    test('QGJ enable follows official proximity then HID then bond order', () {
+      final source = readSource('lib/services/induction_mode_service.dart');
+      final start = source.indexOf('Future<_EnableResult> _setQgjEnabled');
+      final end = source.indexOf('Future<_EnableResult> _setTlinkEnabled');
+      final method = source.substring(start, end);
+      final proximity = method.indexOf('QgjCommandIds.proximityStatusSet');
+      final hid = method.indexOf('QgjCommandIds.hidStatusSet');
+      final bond = method.indexOf('createBond');
+      expect(proximity, greaterThanOrEqualTo(0));
+      expect(hid, greaterThan(proximity));
+      expect(bond, greaterThan(hid));
+      expect(method, contains('buildQgjProximityStatusPayload(false)'));
+    });
+
+    test('Android RSSI foreground-service contract is registered', () {
+      final manifest = readSource('android/app/src/main/AndroidManifest.xml');
+      final activity = readSource(
+        'android/app/src/main/kotlin/de/tttq/tailg_ble_app/MainActivity.kt',
+      );
+      final service = readSource(
+        'android/app/src/main/kotlin/de/tttq/tailg_ble_app/'
+        'InductionForegroundService.kt',
+      );
+      expect(manifest, contains('FOREGROUND_SERVICE_CONNECTED_DEVICE'));
+      expect(manifest, contains('.InductionForegroundService'));
+      expect(activity, contains('induction_service'));
+      expect(service, contains('startForeground'));
+      expect(service, contains('START_NOT_STICKY'));
     });
   });
 }

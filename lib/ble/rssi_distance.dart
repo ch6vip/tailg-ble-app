@@ -59,15 +59,51 @@ RssiProximityAction classifyDistance(
 }
 
 /// Official task latch (`mRssiTaskState`): avoid re-firing until opposite side.
-enum RssiTaskState { idle, pending, poweredOn, locked }
+enum RssiTaskState { idle, pending, unlocked, poweredOn, poweredOff, locked }
+
+/// Individual BLE operations used by the phone-side RSSI fallback.
+enum RssiProximityStep { unlock, powerOn, powerOff, lock }
+
+/// Returns only the operations still required for the requested transition.
+///
+/// Keeping the intermediate states allows a failed power or lock command to be
+/// retried without pretending that the whole transition succeeded.
+List<RssiProximityStep> pendingRssiSteps(
+  RssiProximityAction action,
+  RssiTaskState state,
+) {
+  return switch (action) {
+    RssiProximityAction.approachUnlock => switch (state) {
+      RssiTaskState.idle || RssiTaskState.poweredOff || RssiTaskState.locked =>
+        const [RssiProximityStep.unlock, RssiProximityStep.powerOn],
+      RssiTaskState.unlocked => const [RssiProximityStep.powerOn],
+      RssiTaskState.pending || RssiTaskState.poweredOn => const [],
+    },
+    RssiProximityAction.leaveLock => switch (state) {
+      RssiTaskState.idle || RssiTaskState.unlocked || RssiTaskState.poweredOn =>
+        const [RssiProximityStep.powerOff, RssiProximityStep.lock],
+      RssiTaskState.poweredOff => const [RssiProximityStep.lock],
+      RssiTaskState.pending || RssiTaskState.locked => const [],
+    },
+    RssiProximityAction.hold => const [],
+  };
+}
+
+RssiTaskState confirmedRssiState(
+  RssiTaskState current,
+  RssiProximityStep step, {
+  required bool success,
+}) {
+  if (!success) return current;
+  return switch (step) {
+    RssiProximityStep.unlock => RssiTaskState.unlocked,
+    RssiProximityStep.powerOn => RssiTaskState.poweredOn,
+    RssiProximityStep.powerOff => RssiTaskState.poweredOff,
+    RssiProximityStep.lock => RssiTaskState.locked,
+  };
+}
 
 /// Decide whether a classified action may fire given the last completed state.
 bool shouldFireRssiAction(RssiProximityAction action, RssiTaskState state) {
-  return switch (action) {
-    RssiProximityAction.approachUnlock =>
-      state == RssiTaskState.idle || state == RssiTaskState.locked,
-    RssiProximityAction.leaveLock =>
-      state == RssiTaskState.idle || state == RssiTaskState.poweredOn,
-    RssiProximityAction.hold => false,
-  };
+  return pendingRssiSteps(action, state).isNotEmpty;
 }

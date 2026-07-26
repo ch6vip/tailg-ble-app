@@ -30,6 +30,10 @@ class AppPermissionService {
   static Future<PermissionCheckResult> Function({bool request})?
   requestBleScanPermissionsOverride;
 
+  @visibleForTesting
+  static Future<PermissionCheckResult> Function({bool request})?
+  requestNotificationPermissionOverride;
+
   /// BLE scan/connect permissions (Android 12+ Scan/Connect + location for older
   /// stacks / OEM scan requirements).
   ///
@@ -96,6 +100,26 @@ class AppPermissionService {
       );
     }
     return const PermissionCheckResult.granted();
+  }
+
+  Future<PermissionCheckResult> requestNotificationPermission({
+    bool request = true,
+  }) async {
+    final override = requestNotificationPermissionOverride;
+    if (override != null) return override(request: request);
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return const PermissionCheckResult.granted();
+    }
+    final status = request
+        ? await Permission.notification.request()
+        : await Permission.notification.status;
+    if (status.isGranted || status.isLimited) {
+      return const PermissionCheckResult.granted();
+    }
+    return PermissionCheckResult.denied(
+      status.isPermanentlyDenied ? '通知权限被永久拒绝，请到系统设置开启后重试' : '后台感应需要通知权限',
+      openSettingsRecommended: status.isPermanentlyDenied,
+    );
   }
 
   /// Opens system app settings so the user can re-grant BLE/location.

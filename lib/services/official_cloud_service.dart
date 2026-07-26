@@ -2128,6 +2128,46 @@ class OfficialCloudService {
     }
   }
 
+  /// Official KKS induction switch (`HomeViewModel.blueOn/blueOff`).
+  Future<void> setKksHidEnabled(bool enabled) async {
+    final token = _state.token;
+    final vehicle = _state.selectedVehicle;
+    if (token.isEmpty || vehicle == null) {
+      throw const OfficialCloudApiException(
+        OfficialCloudMessages.signInAndSelectVehicleRequired,
+      );
+    }
+    if (vehicle.imei.isEmpty) {
+      throw const OfficialCloudApiException('当前车辆缺少官方 IMEI，无法设置感应解锁');
+    }
+
+    final override = setKksHidEnabledOverride;
+    if (override != null) {
+      sentKksHidStates.add(enabled);
+      await override(enabled);
+      return;
+    }
+
+    try {
+      final response = await _apiClient.request(
+        enabled ? 'app/web/hid/on' : 'app/web/hid/off',
+        method: 'POST',
+        token: token,
+        body: {'imei': vehicle.imei, 'protocolType': '1'},
+      );
+      _ensureSuccess(
+        response.body,
+        fallback: enabled ? '开启感应解锁失败' : '关闭感应解锁失败',
+      );
+      _ensureCurrentSession(token);
+      _log.operation(enabled ? 'KKS 感应解锁已开启' : 'KKS 感应解锁已关闭');
+    } catch (e) {
+      _ensureCurrentSession(token);
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
+    }
+  }
+
   /// P3-1: bind vehicle by IMEI (`POST app/car/bikeBind`, decompiled bindCar1).
   Future<void> bindVehicleByImei(String imei) async {
     final token = _state.token;
@@ -2414,7 +2454,9 @@ class OfficialCloudService {
     _clearRefreshCache();
     _rideStatisticsGeneration += 1;
     sentCommands.clear();
+    sentKksHidStates.clear();
     sendCommandOverride = null;
+    setKksHidEnabledOverride = null;
     bindVehicleByImeiOverride = null;
     unbindVehicleOverride = null;
     getFirmVersionOverride = null;
@@ -2448,6 +2490,9 @@ class OfficialCloudService {
   /// actually dispatched (e.g. the right-slide power gesture).
   @visibleForTesting
   Future<String> Function(CommandCode)? sendCommandOverride;
+
+  @visibleForTesting
+  Future<void> Function(bool enabled)? setKksHidEnabledOverride;
 
   @visibleForTesting
   Future<void> Function(String imei)? bindVehicleByImeiOverride;
@@ -2498,4 +2543,7 @@ class OfficialCloudService {
   /// [resetForTest]. Populated only while [sendCommandOverride] is set.
   @visibleForTesting
   final List<CommandCode> sentCommands = [];
+
+  @visibleForTesting
+  final List<bool> sentKksHidStates = [];
 }

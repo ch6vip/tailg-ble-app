@@ -1271,6 +1271,66 @@ void main() {
     });
 
     test(
+      'switches KKS HID through the official on and off endpoints',
+      () async {
+        final requestBodies = <String, Map<String, dynamic>>{};
+        final authorizationHeaders = <String, String?>{};
+        final server = await _startOfficialCloudServer((request) async {
+          final text = await utf8.decoder.bind(request).join();
+          requestBodies[request.uri.path] =
+              jsonDecode(text) as Map<String, dynamic>;
+          authorizationHeaders[request.uri.path] = request.headers.value(
+            HttpHeaders.authorizationHeader,
+          );
+          await _writeJsonResponse(request, 200, {
+            'code': '200',
+            'msg': 'success',
+          });
+        });
+        final service = OfficialCloudService();
+        try {
+          service.resetForTest(
+            apiConfig: OfficialCloudApiConfig(
+              apiBase: server.apiBase,
+              retryBaseDelay: Duration.zero,
+            ),
+          );
+          final vehicle = OfficialVehicle.fromJson({
+            'carId': 'kks-car',
+            'imei': 'KKS-IMEI-001',
+            'modelType': 1,
+          });
+          service.setStateForTest(
+            OfficialCloudState.initial().copyWith(
+              initialized: true,
+              token: 'test-token',
+              vehicles: [vehicle],
+              selectedVehicleKey: vehicle.key,
+            ),
+          );
+
+          await service.setKksHidEnabled(true);
+          await service.setKksHidEnabled(false);
+
+          expect(requestBodies, {
+            '/v1/api/app/web/hid/on': {
+              'imei': 'KKS-IMEI-001',
+              'protocolType': '1',
+            },
+            '/v1/api/app/web/hid/off': {
+              'imei': 'KKS-IMEI-001',
+              'protocolType': '1',
+            },
+          });
+          expect(authorizationHeaders.values, everyElement('test-token'));
+        } finally {
+          service.resetForTest();
+          await server.close();
+        }
+      },
+    );
+
+    test(
       'requests and parses official day week month ride statistics',
       () async {
         final requestBodies = <Map<String, dynamic>>[];

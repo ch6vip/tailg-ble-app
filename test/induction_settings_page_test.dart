@@ -4,6 +4,7 @@ import 'package:tailg_ble_app/main.dart' as app;
 import 'package:tailg_ble_app/models/official_vehicle.dart';
 import 'package:tailg_ble_app/pages/induction_settings_page.dart';
 import 'package:tailg_ble_app/services/official_cloud_service.dart';
+import 'package:tailg_ble_app/services/permission_service.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 import 'package:tailg_ble_app/widgets/app_pressable.dart';
 
@@ -18,12 +19,14 @@ void main() {
     app.officialCloudService.resetForTest();
     app.manualModeService.resetForTest();
     app.inductionModeService.resetForTest();
+    AppPermissionService.requestNotificationPermissionOverride = null;
   });
 
   tearDown(() {
     app.officialCloudService.resetForTest();
     app.manualModeService.resetForTest();
     app.inductionModeService.resetForTest();
+    AppPermissionService.requestNotificationPermissionOverride = null;
   });
 
   testWidgets(

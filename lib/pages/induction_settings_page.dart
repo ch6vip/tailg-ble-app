@@ -99,7 +99,7 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
           '距离档越大，越容易触发感应。',
     InductionStack.rssi =>
       '开启后，App 会根据蓝牙信号强弱自动解防或上锁。'
-          '请保持手机蓝牙已连接车辆；切到后台时会暂停轮询以省电。'
+          '请保持手机蓝牙已连接车辆；Android 后台运行时会显示常驻通知。'
           '手动模式开启时不会自动控车。',
     InductionStack.none => '当前车辆暂不支持本地感应解锁，请使用手动控车。',
   };
@@ -128,6 +128,17 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
 
     if (!induction) {
       if (_manualMode && _snap.enabled != true) return;
+      final vehicleManaged =
+          _snap.stack == InductionStack.qgj ||
+          _snap.stack == InductionStack.tlink;
+      if (vehicleManaged && _snap.enabled == null) {
+        AppSnack.info(context, '请先连接车辆蓝牙并读取感应状态');
+        return;
+      }
+      if (vehicleManaged && _snap.enabled == true && !_snap.bleReady) {
+        AppSnack.info(context, '请先连接车辆蓝牙，确认关闭感应后再切换手动模式');
+        return;
+      }
       setState(() => _busy = true);
       if (_snap.enabled == true) {
         final closed = await inductionModeService.setEnabled(false);
@@ -144,7 +155,11 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
         _manualMode = true;
         _busy = false;
       });
-      AppSnack.success(context, '已切换为手动模式');
+      if (_snap.lastError != null) {
+        AppSnack.info(context, _snap.lastError!);
+      } else {
+        AppSnack.success(context, '已切换为手动模式');
+      }
       return;
     }
 
@@ -163,6 +178,16 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
       return;
     }
 
+    if (_snap.stack == InductionStack.rssi) {
+      final notification = await permissionService
+          .requestNotificationPermission();
+      if (!mounted) return;
+      if (!notification.granted) {
+        AppSnack.info(context, notification.message ?? '后台感应需要通知权限');
+        return;
+      }
+    }
+
     setState(() => _busy = true);
     final ok = await inductionModeService.setEnabled(
       true,
@@ -177,7 +202,9 @@ class _InductionSettingsPageState extends State<InductionSettingsPage> {
       AppSnack.error(context, _snap.lastError ?? '开启感应失败');
       return;
     }
-    if (_snap.bondIncomplete) {
+    if (_snap.lastError != null) {
+      AppSnack.info(context, _snap.lastError!);
+    } else if (_snap.bondIncomplete) {
       AppSnack.info(context, _snap.lastError ?? '感应已开启，请允许系统蓝牙配对');
     } else {
       AppSnack.success(context, '感应解锁已开启');

@@ -51,7 +51,7 @@
 | MQTT 远程控车 | ✅ 实验线已接 | 预连接 + 发令 + 状态回包（`OfficialMqttService`） |
 | 本地 BLE | ✅ 实验线已接 | 协议 / 连接 / 扫描 / 爱车近场自动连（`lib/ble/`） |
 | 通道路由 | ✅ 按官方表 | `OfficialControlRoute`：BLE / MQTT / 不可用 |
-| 感应解锁 | ✅ 代码齐 · ⏳ 真车 | QGJ / TLink / RSSI 三路径（`InductionModeService`）；真车验收待补 |
+| 感应解锁 | 协议加固中 · 真车待测 | QGJ / TLink 官方顺序与回滚、KKS HID + RSSI 分步确认、Android 前台服务；YJ 配对待补 |
 | OTA / NFC / 完整绑车 | ⏳ 未完成 | 完美复刻阶段 |
 | 商城等运营 | ❌ 不做 | L3 |
 

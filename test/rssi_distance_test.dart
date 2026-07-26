@@ -63,6 +63,49 @@ void main() {
         isFalse,
       );
     });
+
+    test('keeps confirmed intermediate state when a later step fails', () {
+      expect(
+        pendingRssiSteps(
+          RssiProximityAction.approachUnlock,
+          RssiTaskState.locked,
+        ),
+        [RssiProximityStep.unlock, RssiProximityStep.powerOn],
+      );
+      final unlocked = confirmedRssiState(
+        RssiTaskState.locked,
+        RssiProximityStep.unlock,
+        success: true,
+      );
+      expect(unlocked, RssiTaskState.unlocked);
+      expect(
+        confirmedRssiState(unlocked, RssiProximityStep.powerOn, success: false),
+        RssiTaskState.unlocked,
+      );
+      expect(
+        pendingRssiSteps(
+          RssiProximityAction.approachUnlock,
+          RssiTaskState.unlocked,
+        ),
+        [RssiProximityStep.powerOn],
+      );
+    });
+
+    test('retries lock without repeating a confirmed power off', () {
+      final poweredOff = confirmedRssiState(
+        RssiTaskState.poweredOn,
+        RssiProximityStep.powerOff,
+        success: true,
+      );
+      expect(poweredOff, RssiTaskState.poweredOff);
+      expect(
+        pendingRssiSteps(
+          RssiProximityAction.leaveLock,
+          RssiTaskState.poweredOff,
+        ),
+        [RssiProximityStep.lock],
+      );
+    });
   });
 
   group('Induction stack routing', () {
@@ -73,6 +116,18 @@ void main() {
       expect(InductionModeService.stackForModelType(10), InductionStack.tlink);
       expect(InductionModeService.stackForModelType(14), InductionStack.tlink);
       expect(InductionModeService.stackForModelType(401), InductionStack.tlink);
+      expect(
+        InductionModeService.stackForModelType(1501),
+        InductionStack.tlink,
+      );
+      expect(
+        InductionModeService.stackForModelType(1601),
+        InductionStack.tlink,
+      );
+      expect(
+        InductionModeService.stackForModelType(1701),
+        InductionStack.tlink,
+      );
       expect(InductionModeService.stackForModelType(1), InductionStack.rssi);
       expect(InductionModeService.stackForModelType(2), InductionStack.none);
       expect(InductionModeService.stackForModelType(null), InductionStack.none);

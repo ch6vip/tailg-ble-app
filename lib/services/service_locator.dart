@@ -55,6 +55,7 @@ class AppServices {
              connectionManager: connectionManager,
              manualModeService: manualModeService,
              logService: logService,
+             officialCloudService: officialCloudService,
            ),
        officialMqttService = officialMqttService ?? OfficialMqttService();
 
@@ -62,6 +63,7 @@ class AppServices {
     final connectionManager = ble.ConnectionManager();
     final manualModeService = ManualModeService();
     final logService = LogService();
+    final officialCloudService = OfficialCloudService();
     return AppServices(
       connectionManager: connectionManager,
       autoConnectService: AutoConnectService(),
@@ -70,12 +72,13 @@ class AppServices {
         connectionManager: connectionManager,
         manualModeService: manualModeService,
         logService: logService,
+        officialCloudService: officialCloudService,
       ),
       locationService: LocationService(),
       logService: logService,
       vehicleStore: VehicleStore(),
       messageReadStore: MessageReadStore(),
-      officialCloudService: OfficialCloudService(),
+      officialCloudService: officialCloudService,
       officialMqttService: OfficialMqttService(),
       appPreferencesService: AppPreferencesService(),
       permissionService: AppPermissionService(),

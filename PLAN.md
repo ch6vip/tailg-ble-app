@@ -274,7 +274,7 @@ P0 通道可证伪 ──► P1 爱车/多车可信 ──► P2 数据域去分
 | P3-1 | 扫码绑定 / IMEI 绑定（先做一种） | [~] | API/UI 已有；缺真实账号绑定闭环和 HTTP contract 测试 |
 | P3-2 | 解绑 / 换绑（确认账号权限） | [~] | API/UI 已有；缺真实账号解绑/换绑验收 |
 | P3-3 | QGJ 常用设置读写 UI + 本地/协议凭据 | [~] | `InductionSettingsPage` + 距离/HID；缺真车读写 |
-| P3-4 | 感应解锁 / 靠近解锁 | [~] | 三路径 + 合卡 UI + 手动互斥/bond 提示/RSSI 前后台；验收表见 [INDUCTION_ACCEPTANCE.md](INDUCTION_ACCEPTANCE.md) |
+| P3-4 | 感应解锁 / 靠近解锁 | [~] | 官方 QGJ/TLink 顺序与回滚 + RSSI 分步 ACK + Android 前台服务；YJ 配对与真车验收仍待补，见 [INDUCTION_ACCEPTANCE.md](INDUCTION_ACCEPTANCE.md) |
 | P3-5 | OTA 一类固件端到端 | [~] | 查询/分片 mock 已有；真实下载、校验、ACK/恢复未完成，release 入口已隐藏 |
 | P3-6 | 真 NFC 钥匙（非本地列表） | [~] | BLE 帧骨架已有；动态钥匙材料、索引、车辆 ACK 未闭环 |
 | P3-7 | modelType 真车矩阵表（实测填） | [~] | 路由表已有；缺真车矩阵记录 |

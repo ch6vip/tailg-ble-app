@@ -9,8 +9,10 @@ import '../ble/constants.dart';
 import '../ble/qgj_protocol.dart';
 import '../ble/rssi_distance.dart';
 import '../ble/tlink_protocol.dart';
+import 'induction_foreground_service.dart';
 import 'log_service.dart';
 import 'manual_mode_service.dart';
+import 'official_cloud_service.dart';
 import 'official_control_route.dart';
 
 /// Which official induction stack a [modelType] uses.
@@ -139,9 +141,14 @@ class InductionModeService with WidgetsBindingObserver {
     required ConnectionManager connectionManager,
     ManualModeService? manualModeService,
     LogService? logService,
+    InductionForegroundService? foregroundService,
+    OfficialCloudService? officialCloudService,
   }) : _cm = connectionManager,
        _manual = manualModeService ?? ManualModeService(),
-       _log = logService ?? LogService();
+       _log = logService ?? LogService(),
+       _foregroundService =
+           foregroundService ?? const InductionForegroundService(),
+       _cloud = officialCloudService ?? OfficialCloudService();
 
   static const _prefEnabledPrefix = 'induction_enabled_';
   static const _prefDistancePrefix = 'induction_distance_';
@@ -151,6 +158,8 @@ class InductionModeService with WidgetsBindingObserver {
   final ConnectionManager _cm;
   final ManualModeService _manual;
   final LogService _log;
+  final InductionForegroundService _foregroundService;
+  final OfficialCloudService _cloud;
 
   InductionModeSnapshot _snapshot = InductionModeSnapshot.empty;
   final _controller = StreamController<InductionModeSnapshot>.broadcast();
@@ -214,12 +223,18 @@ class InductionModeService with WidgetsBindingObserver {
     setAppForeground(fg);
   }
 
-  /// Pause RSSI polling in background to save battery.
+  /// Android RSSI induction continues under a visible foreground service.
   void setAppForeground(bool foreground) {
     if (_appInForeground == foreground) return;
     _appInForeground = foreground;
     if (!foreground) {
-      _stopRssiLoop();
+      final stack = resolveStack(_boundModelType);
+      if (!_foregroundService.supportsBackgroundRssi ||
+          stack != InductionStack.rssi ||
+          _snapshot.enabled != true ||
+          !_bleReadyFor(stack)) {
+        _stopRssiLoop();
+      }
       return;
     }
     final stack = resolveStack(_boundModelType);
@@ -238,7 +253,8 @@ class InductionModeService with WidgetsBindingObserver {
     // TLink openMode models (ControlFragment iv_mode cases).
     if (type == 3 ||
         OfficialControlRoute.c39ModelTypes.contains(type) ||
-        OfficialControlRoute.gpsComboModelTypes.contains(type)) {
+        OfficialControlRoute.gpsComboModelTypes.contains(type) ||
+        OfficialControlRoute.unsupportedControlModelTypes.contains(type)) {
       return InductionStack.tlink;
     }
     // KKS uses phone RSSI / cloud blueOn; local BLE still benefits from RSSI.
@@ -400,7 +416,7 @@ class InductionModeService with WidgetsBindingObserver {
         bleReady: true,
       ),
     );
-    if (enabled && _appInForeground) {
+    if (enabled) {
       _startRssiLoop();
     } else {
       _stopRssiLoop();
@@ -411,7 +427,10 @@ class InductionModeService with WidgetsBindingObserver {
   /// home-page 感应|手动 switch cannot race with ManualModeService prefs.
   Future<bool> setEnabled(bool enabled, {bool clearManualMode = true}) async {
     final stack = resolveStack(_boundModelType);
-    if (!_bleReadyFor(stack)) {
+    final ready = _bleReadyFor(stack);
+    final canDisableDisconnectedRssi = !enabled && stack == InductionStack.rssi;
+    if (stack == InductionStack.none ||
+        (!ready && !canDisableDisconnectedRssi)) {
       _publish(_snapshot.copyWith(lastError: '请先连接车辆蓝牙并完成协议登录'));
       return false;
     }
@@ -455,11 +474,13 @@ class InductionModeService with WidgetsBindingObserver {
           enabled: enabled,
           distance: _snapshot.distance,
           busy: false,
-          bleReady: true,
+          bleReady: ready,
           bondIncomplete: result.bondIncomplete,
-          lastError: result.bondIncomplete
-              ? '感应已开启，但系统蓝牙配对未完成。请在系统弹窗中允许配对，否则靠近解锁可能无效'
-              : null,
+          lastError:
+              result.warning ??
+              (result.bondIncomplete
+                  ? '感应已开启，但系统蓝牙配对未完成。请在系统弹窗中允许配对，否则靠近解锁可能无效'
+                  : null),
         ),
       );
       return true;
@@ -471,33 +492,49 @@ class InductionModeService with WidgetsBindingObserver {
 
   Future<_EnableResult> _setQgjEnabled(bool enabled) async {
     if (enabled) {
-      await _cm.removeBond(quiet: true);
-      await _cm.sendQgjCommand(
-        QgjCommandIds.hidStatusSet,
-        buildQgjHidPayload(QgjHidModes.open),
-      );
-      final response = await _cm.sendQgjCommand(
+      final proximityResponse = await _cm.sendQgjCommand(
         QgjCommandIds.proximityStatusSet,
         buildQgjProximityStatusPayload(true),
       );
-      if (response?.success != true) {
+      if (proximityResponse?.success != true) {
         return const _EnableResult(ok: false, message: '车辆未确认开启感应');
+      }
+      final hidResponse = await _cm.sendQgjCommand(
+        QgjCommandIds.hidStatusSet,
+        buildQgjHidPayload(QgjHidModes.open),
+      );
+      if (hidResponse?.success != true) {
+        await _cm.sendQgjCommand(
+          QgjCommandIds.proximityStatusSet,
+          buildQgjProximityStatusPayload(false),
+        );
+        return const _EnableResult(ok: false, message: '车辆未确认开启蓝牙感应配对');
       }
       final bonded = await _cm.createBond(quiet: true);
       return _EnableResult(ok: true, bondIncomplete: !bonded);
     }
-    final response = await _cm.sendQgjCommand(
+    final proximityResponse = await _cm.sendQgjCommand(
       QgjCommandIds.proximityStatusSet,
       buildQgjProximityStatusPayload(false),
     );
-    await _cm.sendQgjCommand(
+    if (proximityResponse?.success != true) {
+      return const _EnableResult(ok: false, message: '车辆未确认关闭感应');
+    }
+    final hidResponse = await _cm.sendQgjCommand(
       QgjCommandIds.hidStatusSet,
       buildQgjHidPayload(QgjHidModes.close),
     );
-    await _cm.removeBond(quiet: true);
+    if (hidResponse?.success != true) {
+      await _cm.sendQgjCommand(
+        QgjCommandIds.proximityStatusSet,
+        buildQgjProximityStatusPayload(false),
+      );
+      return const _EnableResult(ok: false, message: '车辆未确认关闭蓝牙感应配对');
+    }
+    final bondRemoved = await _cm.removeBond(quiet: true);
     return _EnableResult(
-      ok: response?.success == true,
-      message: response?.success == true ? null : '车辆未确认关闭感应',
+      ok: true,
+      warning: bondRemoved ? null : '车辆感应已关闭，但系统蓝牙配对未能移除',
     );
   }
 
@@ -509,23 +546,55 @@ class InductionModeService with WidgetsBindingObserver {
       }
       final bonded = await _cm.createBond(quiet: true);
       if (bonded) {
-        await _cm.writeStandardHex(tlinkHidOpenAfterBondPlain);
+        final hidOpened = await _cm.writeStandardHex(
+          tlinkHidOpenAfterBondPlain,
+        );
+        if (!hidOpened) {
+          await _cm.closeTlinkInduction();
+          await _cm.removeBond(quiet: true);
+          return const _EnableResult(ok: false, message: '车辆感应已开启，但蓝牙感应配对写入失败');
+        }
       }
       return _EnableResult(ok: true, bondIncomplete: !bonded);
     }
     final ok = await _cm.closeTlinkInduction();
-    await _cm.removeBond(quiet: true);
-    return _EnableResult(ok: ok, message: ok ? null : '车辆未确认关闭感应');
+    if (!ok) {
+      return const _EnableResult(ok: false, message: '车辆未确认关闭感应');
+    }
+    final bondRemoved = await _cm.removeBond(quiet: true);
+    return _EnableResult(
+      ok: true,
+      warning: bondRemoved ? null : '车辆感应已关闭，但系统蓝牙配对未能移除',
+    );
   }
 
   Future<_EnableResult> _setRssiEnabled(bool enabled) async {
     if (enabled) {
-      if (_appInForeground) {
-        _startRssiLoop();
+      if (_boundModelType == 1) {
+        try {
+          await _cloud.setKksHidEnabled(true);
+        } catch (e) {
+          return _EnableResult(
+            ok: false,
+            message: OfficialCloudRedactor.errorMessage(e),
+          );
+        }
       }
+      _startRssiLoop();
     } else {
       _stopRssiLoop();
       _rssiTaskState = RssiTaskState.idle;
+      if (_boundModelType == 1) {
+        try {
+          await _cloud.setKksHidEnabled(false);
+        } catch (e) {
+          return _EnableResult(
+            ok: true,
+            warning:
+                '本机感应已停止，但车辆云端设置未关闭：${OfficialCloudRedactor.errorMessage(e)}',
+          );
+        }
+      }
     }
     return const _EnableResult(ok: true);
   }
@@ -573,14 +642,21 @@ class InductionModeService with WidgetsBindingObserver {
   // ---------------------------------------------------------------------------
 
   void _startRssiLoop() {
-    if (!_appInForeground) return;
     if (_rssiTimer != null) return;
     _rssiSamples.clear();
     _rssiTaskState = RssiTaskState.idle;
     _rssiTimer = Timer.periodic(rssiPollInterval, (_) {
       unawaited(_rssiTick());
     });
+    unawaited(_startRssiForegroundService());
     _log.operation('RSSI 感应轮询已启动', level: LogLevel.info);
+  }
+
+  Future<void> _startRssiForegroundService() async {
+    final started = await _foregroundService.start(vehicleLabel: _boundCarId);
+    if (!started) {
+      _log.operation('RSSI 前台服务启动失败', level: LogLevel.warning);
+    }
   }
 
   void _stopRssiLoop() {
@@ -588,10 +664,10 @@ class InductionModeService with WidgetsBindingObserver {
     _rssiTimer = null;
     _rssiSamples.clear();
     _rssiFiring = false;
+    unawaited(_foregroundService.stop());
   }
 
   Future<void> _rssiTick() async {
-    if (!_appInForeground) return;
     if (_manual.enabled) return;
     if (!_cm.isProtocolLoggedIn) return;
     if (_rssiFiring) return;
@@ -619,7 +695,6 @@ class InductionModeService with WidgetsBindingObserver {
     }
 
     _rssiFiring = true;
-    _rssiTaskState = RssiTaskState.pending;
     try {
       if (action == RssiProximityAction.approachUnlock) {
         _log.operation(
@@ -627,22 +702,31 @@ class InductionModeService with WidgetsBindingObserver {
           detail: 'd=${distance.toStringAsFixed(2)}m',
           level: LogLevel.info,
         );
-        final ok = await _cm.sendCommand(CommandCode.unlock);
-        if (ok) {
-          await _cm.sendCommand(CommandCode.powerOn);
-          _rssiTaskState = RssiTaskState.poweredOn;
-        } else {
-          _rssiTaskState = RssiTaskState.idle;
-        }
       } else if (action == RssiProximityAction.leaveLock) {
         _log.operation(
           'RSSI 感应 → 设防',
           detail: 'd=${distance.toStringAsFixed(2)}m',
           level: LogLevel.info,
         );
-        await _cm.sendCommand(CommandCode.powerOff);
-        final ok = await _cm.sendCommand(CommandCode.lock);
-        _rssiTaskState = ok ? RssiTaskState.locked : RssiTaskState.idle;
+      }
+      final steps = pendingRssiSteps(action, _rssiTaskState);
+      for (final step in steps) {
+        final command = switch (step) {
+          RssiProximityStep.unlock => CommandCode.unlock,
+          RssiProximityStep.powerOn => CommandCode.powerOn,
+          RssiProximityStep.powerOff => CommandCode.powerOff,
+          RssiProximityStep.lock => CommandCode.lock,
+        };
+        final ok = await _cm.sendCommand(command);
+        _rssiTaskState = confirmedRssiState(_rssiTaskState, step, success: ok);
+        if (!ok) {
+          _log.operation(
+            'RSSI 感应步骤未确认',
+            detail: command.label,
+            level: LogLevel.warning,
+          );
+          break;
+        }
       }
     } catch (e) {
       _log.operation(
@@ -650,7 +734,6 @@ class InductionModeService with WidgetsBindingObserver {
         detail: e.toString(),
         level: LogLevel.warning,
       );
-      _rssiTaskState = RssiTaskState.idle;
     } finally {
       _rssiFiring = false;
       _rssiSamples.clear();
@@ -719,10 +802,12 @@ class _EnableResult {
   final bool ok;
   final bool bondIncomplete;
   final String? message;
+  final String? warning;
 
   const _EnableResult({
     required this.ok,
     this.bondIncomplete = false,
     this.message,
+    this.warning,
   });
 }
