@@ -214,14 +214,16 @@ class _ScannerMaskPainter extends CustomPainter {
     );
     final overlay = Path()
       ..addRect(Offset.zero & size)
-      ..addRRect(RRect.fromRectAndRadius(window, const Radius.circular(8)))
+      ..addRRect(
+        RRect.fromRectAndRadius(window, const Radius.circular(AppRadii.tile)),
+      )
       ..fillType = PathFillType.evenOdd;
     canvas.drawPath(
       overlay,
       Paint()..color = CyberHomeColors.ink.withValues(alpha: 0.62),
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(window, const Radius.circular(8)),
+      RRect.fromRectAndRadius(window, const Radius.circular(AppRadii.tile)),
       Paint()
         ..color = CyberHomeColors.white
         ..style = PaintingStyle.stroke
