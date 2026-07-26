@@ -21,6 +21,7 @@ import 'pages/scan_page.dart';
 import 'pages/service_hub_page.dart';
 import 'pages/cyber_vehicle_control_page_v2.dart';
 import 'theme/app_colors.dart';
+import 'theme/app_motion.dart';
 import 'theme/app_void.dart';
 import 'widgets/app_toast.dart';
 import 'widgets/lucide_icon.dart';
@@ -369,9 +370,9 @@ const _buttonShape = RoundedRectangleBorder(
   borderRadius: BorderRadius.all(Radius.circular(AppRadii.md)),
 );
 
-/// 沉浸式 VOID 页面转场：缩放 + 淡入 + 轻微旋转，对标 Awwwards 级感官体验。
-class _VoidPageTransitionsBuilder extends PageTransitionsBuilder {
-  const _VoidPageTransitionsBuilder();
+/// Lightweight drill-down transition for the Cyber control interface.
+class _CyberPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _CyberPageTransitionsBuilder();
 
   @override
   Widget buildTransitions<T>(
@@ -388,15 +389,12 @@ class _VoidPageTransitionsBuilder extends PageTransitionsBuilder {
     );
     return FadeTransition(
       opacity: curved,
-      child: ScaleTransition(
-        scale: Tween<double>(begin: 0.96, end: 1.0).animate(curved),
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.025),
-            end: Offset.zero,
-          ).animate(curved),
-          child: child,
-        ),
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0.045, 0),
+          end: Offset.zero,
+        ).animate(curved),
+        child: child,
       ),
     );
   }
@@ -518,9 +516,9 @@ class _TailgBleAppState extends State<TailgBleApp> {
         ),
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: _VoidPageTransitionsBuilder(),
-            TargetPlatform.iOS: _VoidPageTransitionsBuilder(),
-            TargetPlatform.fuchsia: _VoidPageTransitionsBuilder(),
+            TargetPlatform.android: _CyberPageTransitionsBuilder(),
+            TargetPlatform.iOS: _CyberPageTransitionsBuilder(),
+            TargetPlatform.fuchsia: _CyberPageTransitionsBuilder(),
           },
         ),
         extensions: const [ImmersiveTokens.light],
@@ -571,9 +569,9 @@ class _TailgBleAppState extends State<TailgBleApp> {
         ),
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: _VoidPageTransitionsBuilder(),
-            TargetPlatform.iOS: _VoidPageTransitionsBuilder(),
-            TargetPlatform.fuchsia: _VoidPageTransitionsBuilder(),
+            TargetPlatform.android: _CyberPageTransitionsBuilder(),
+            TargetPlatform.iOS: _CyberPageTransitionsBuilder(),
+            TargetPlatform.fuchsia: _CyberPageTransitionsBuilder(),
           },
         ),
         extensions: const [ImmersiveTokens.dark],
@@ -617,9 +615,10 @@ class _HomePageState extends State<HomePage>
   static const _mineTabIndex = 2;
 
   int _currentIndex = _vehicleTabIndex;
+  int? _previousIndex;
+  double _tabDirection = 1;
   late AnimationController _pageAnimController;
-  late Animation<double> _fadeAnim;
-  late Animation<Offset> _slideAnim;
+  late Animation<double> _tabAnim;
   late final ValueNotifier<int> _homeTabIndex;
 
   @override
@@ -627,17 +626,14 @@ class _HomePageState extends State<HomePage>
     super.initState();
     _pageAnimController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 250),
+      duration: AppMotion.tabSwitch,
     );
-    _fadeAnim = CurvedAnimation(
+    _tabAnim = CurvedAnimation(
       parent: _pageAnimController,
-      curve: Curves.easeOut,
+      curve: AppMotion.entranceCurve,
     );
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.02),
-      end: Offset.zero,
-    ).animate(_fadeAnim);
     _pageAnimController.value = 1.0;
+    _pageAnimController.addStatusListener(_onTabAnimationStatus);
 
     _homeTabIndex = homeTabIndex;
     final initialTab =
@@ -656,6 +652,7 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     _homeTabIndex.removeListener(_onExternalTabChanged);
+    _pageAnimController.removeStatusListener(_onTabAnimationStatus);
     _pageAnimController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -664,8 +661,7 @@ class _HomePageState extends State<HomePage>
   void _onExternalTabChanged() {
     final index = _homeTabIndex.value;
     if (index == _currentIndex || index < 0 || index > _mineTabIndex) return;
-    setState(() => _currentIndex = index);
-    unawaited(_pageAnimController.forward(from: 0));
+    _changeTab(index);
     if (index == _vehicleTabIndex && officialCloudService.state.signedIn) {
       unawaited(_silentRefreshVehicles(reason: '切换到控车页后官方车辆刷新失败'));
     }
@@ -673,12 +669,26 @@ class _HomePageState extends State<HomePage>
 
   void _switchTab(int index) {
     if (index == _currentIndex) return;
-    setState(() => _currentIndex = index);
-    unawaited(_pageAnimController.forward(from: 0));
+    _changeTab(index);
     _homeTabIndex.value = index;
     if (index == _vehicleTabIndex && officialCloudService.state.signedIn) {
       unawaited(_silentRefreshVehicles(reason: '切换到控车页后官方车辆刷新失败'));
     }
+  }
+
+  void _changeTab(int index) {
+    final previous = _currentIndex;
+    setState(() {
+      _previousIndex = previous;
+      _tabDirection = index > previous ? 1 : -1;
+      _currentIndex = index;
+    });
+    unawaited(_pageAnimController.forward(from: 0));
+  }
+
+  void _onTabAnimationStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed || _previousIndex == null) return;
+    setState(() => _previousIndex = null);
   }
 
   @override
@@ -709,28 +719,9 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: CyberHomeColors.pageBg,
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: SlideTransition(
-          position: _slideAnim,
-          child: IndexedStack(
-            index: _currentIndex,
-            children: [
-              TickerMode(
-                enabled: _currentIndex == _serviceTabIndex,
-                child: const ServiceHubPage(),
-              ),
-              TickerMode(
-                enabled: _currentIndex == _vehicleTabIndex,
-                child: const CyberVehicleControlPageV2(),
-              ),
-              TickerMode(
-                enabled: _currentIndex == _mineTabIndex,
-                child: const ProfileMinePage(),
-              ),
-            ],
-          ),
-        ),
+      body: AnimatedBuilder(
+        animation: _tabAnim,
+        builder: (context, _) => _buildTabStack(context),
       ),
       extendBody: true,
       bottomNavigationBar: VoidOrbitalNav(
@@ -738,6 +729,61 @@ class _HomePageState extends State<HomePage>
         onService: () => _switchTab(_serviceTabIndex),
         onVehicle: () => _switchTab(_vehicleTabIndex),
         onMine: () => _switchTab(_mineTabIndex),
+      ),
+    );
+  }
+
+  Widget _buildTabStack(BuildContext context) {
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final previous = reduceMotion ? null : _previousIndex;
+    final progress = previous == null ? 1.0 : _tabAnim.value;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        for (var index = _serviceTabIndex; index <= _mineTabIndex; index++)
+          _buildTabLayer(index, previous: previous, progress: progress),
+      ],
+    );
+  }
+
+  Widget _buildTabLayer(
+    int index, {
+    required int? previous,
+    required double progress,
+  }) {
+    final current = index == _currentIndex;
+    final outgoing = index == previous;
+    final visible = current || outgoing;
+    final opacity = current ? progress : (outgoing ? 1 - progress : 0.0);
+    final horizontalOffset = current
+        ? _tabDirection * (1 - progress) * 12
+        : (outgoing ? -_tabDirection * progress * 8 : 0.0);
+    final page = switch (index) {
+      _serviceTabIndex => const ServiceHubPage(
+        key: ValueKey('home-tab-service'),
+      ),
+      _vehicleTabIndex => const CyberVehicleControlPageV2(
+        key: ValueKey('home-tab-vehicle'),
+      ),
+      _mineTabIndex => const ProfileMinePage(key: ValueKey('home-tab-mine')),
+      _ => const SizedBox.shrink(),
+    };
+    return Offstage(
+      key: ValueKey('home-tab-offstage-$index'),
+      offstage: !visible,
+      child: TickerMode(
+        enabled: current,
+        child: IgnorePointer(
+          ignoring: !current,
+          child: Opacity(
+            key: ValueKey('home-tab-opacity-$index'),
+            opacity: opacity.clamp(0.0, 1.0),
+            child: Transform.translate(
+              offset: Offset(horizontalOffset, 0),
+              child: page,
+            ),
+          ),
+        ),
       ),
     );
   }

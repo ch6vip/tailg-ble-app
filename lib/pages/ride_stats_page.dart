@@ -6,6 +6,7 @@ import '../main.dart';
 import '../models/official_ride_statistics.dart';
 import '../services/official_cloud_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/animated_value_text.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/lucide_icon.dart';
 import 'add_vehicle_page.dart';
@@ -512,26 +513,18 @@ class _EcoMetric extends StatelessWidget {
           child: FittedBox(
             alignment: Alignment.centerLeft,
             fit: BoxFit.scaleDown,
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: value,
-                    style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w700,
-                      color: CyberHomeColors.ink,
-                    ),
-                  ),
-                  TextSpan(
-                    text: ' $unit',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: CyberHomeColors.inkMuted,
-                    ),
-                  ),
-                ],
+            child: AnimatedValueText(
+              value,
+              style: const TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.w700,
+                color: CyberHomeColors.ink,
+              ),
+              unit: ' $unit',
+              unitStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: CyberHomeColors.inkMuted,
               ),
             ),
           ),
@@ -689,26 +682,18 @@ class _MileageValue extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: value,
-                style: const TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.w700,
-                  color: CyberHomeColors.ink,
-                ),
-              ),
-              const TextSpan(
-                text: ' km',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: CyberHomeColors.inkMuted,
-                ),
-              ),
-            ],
+        AnimatedValueText(
+          value,
+          style: const TextStyle(
+            fontSize: 23,
+            fontWeight: FontWeight.w700,
+            color: CyberHomeColors.ink,
+          ),
+          unit: ' km',
+          unitStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: CyberHomeColors.inkMuted,
           ),
         ),
       ],
@@ -843,26 +828,18 @@ class _MetricCell extends StatelessWidget {
               child: FittedBox(
                 alignment: Alignment.centerLeft,
                 fit: BoxFit.scaleDown,
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: value,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: CyberHomeColors.ink,
-                        ),
-                      ),
-                      TextSpan(
-                        text: ' $unit',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: CyberHomeColors.inkMuted,
-                        ),
-                      ),
-                    ],
+                child: AnimatedValueText(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: CyberHomeColors.ink,
+                  ),
+                  unit: ' $unit',
+                  unitStyle: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: CyberHomeColors.inkMuted,
                   ),
                 ),
               ),

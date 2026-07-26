@@ -26,11 +26,23 @@ abstract final class AppMotion {
   /// Page-level tab indicator transition. ~200 ms.
   static const tabIndicator = Duration(milliseconds: 200);
 
+  /// Compact vehicle-state and icon transitions.
+  static const status = Duration(milliseconds: 180);
+
+  /// Home tab cross-fade / directional slide.
+  static const tabSwitch = Duration(milliseconds: 220);
+
+  /// Numeric and command-list data refresh.
+  static const dataChange = Duration(milliseconds: 240);
+
   /// Emphasis / page-level transition. ~350 ms.
   static const emphasis = Duration(milliseconds: 350);
 
   /// Slow reveal (hero, onboarding, empty states). ~500 ms.
   static const reveal = Duration(milliseconds: 500);
+
+  /// Failed gesture recovery, including the short shake feedback.
+  static const failureFeedback = Duration(milliseconds: 320);
 
   /// Long-press hold timeout (power knob). 1200 ms.
   static const longPressHold = Duration(milliseconds: 1200);

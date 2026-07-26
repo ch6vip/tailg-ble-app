@@ -134,9 +134,32 @@ void main() {
     await tester.pump();
 
     await tester.tap(find.text('服务'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+
+    final serviceOpacity = tester.widget<Opacity>(
+      find.byKey(const ValueKey('home-tab-opacity-0')),
+    );
+    final vehicleOpacity = tester.widget<Opacity>(
+      find.byKey(const ValueKey('home-tab-opacity-1')),
+    );
+    expect(serviceOpacity.opacity, inExclusiveRange(0, 1));
+    expect(vehicleOpacity.opacity, inExclusiveRange(0, 1));
+
     await tester.pumpAndSettle();
 
     expect(find.text('服务中心'), findsOneWidget);
+    expect(
+      tester
+          .widget<Offstage>(
+            find.byKey(
+              const ValueKey('home-tab-offstage-1'),
+              skipOffstage: false,
+            ),
+          )
+          .offstage,
+      isTrue,
+    );
     for (final label in ['车辆定位', '历史轨迹', '电子围栏', '车辆设置', '电池服务']) {
       expect(find.text(label), findsOneWidget);
     }

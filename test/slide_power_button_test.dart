@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/widgets/slide_power_button.dart';
@@ -5,17 +7,21 @@ import 'package:tailg_ble_app/widgets/slide_power_button.dart';
 import 'helpers/test_app.dart';
 
 void main() {
-  testWidgets('power-off slider starts right and resets after activation', (
+  testWidgets('power-off slider waits at the end then resets on failure', (
     tester,
   ) async {
     var activations = 0;
+    final command = Completer<void>();
     await tester.pumpWidget(
       TestApp(
         home: Scaffold(
           body: Center(
             child: SlidePowerButton(
               isPowered: false,
-              onSlide: () => activations++,
+              onSlide: () async {
+                activations += 1;
+                await command.future;
+              },
             ),
           ),
         ),
@@ -27,23 +33,42 @@ void main() {
     expect(find.text('右滑启动'), findsOneWidget);
 
     await tester.drag(thumb, const Offset(120, 0));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 160));
 
     expect(activations, 1);
+    expect(find.text('正在通电'), findsOneWidget);
+    expect(find.byKey(const ValueKey('power-progress')), findsOneWidget);
+    expect(tester.getTopLeft(thumb).dx, closeTo(initialX + 100, 0.1));
+
+    command.complete();
+    await tester.pump();
+    await tester.pumpAndSettle();
     expect(tester.getTopLeft(thumb).dx, closeTo(initialX, 0.1));
   });
 
-  testWidgets('power-on slider starts right, slides left and resets', (
+  testWidgets('confirmed power-off keeps the thumb at its new resting side', (
     tester,
   ) async {
     var activations = 0;
+    var powered = true;
+    final command = Completer<void>();
+    late StateSetter update;
     await tester.pumpWidget(
       TestApp(
         home: Scaffold(
           body: Center(
-            child: SlidePowerButton(
-              isPowered: true,
-              onSlide: () => activations++,
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                update = setState;
+                return SlidePowerButton(
+                  isPowered: powered,
+                  onSlide: () async {
+                    activations += 1;
+                    await command.future;
+                    update(() => powered = false);
+                  },
+                );
+              },
             ),
           ),
         ),
@@ -55,10 +80,18 @@ void main() {
     expect(find.text('左滑关闭'), findsOneWidget);
 
     await tester.drag(thumb, const Offset(-120, 0));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 160));
 
     expect(activations, 1);
-    expect(tester.getTopLeft(thumb).dx, closeTo(initialX, 0.1));
+    expect(find.text('正在断电'), findsOneWidget);
+    expect(find.byKey(const ValueKey('power-progress')), findsOneWidget);
+    expect(tester.getTopLeft(thumb).dx, closeTo(initialX - 100, 0.1));
+
+    command.complete();
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.text('右滑启动'), findsOneWidget);
+    expect(tester.getTopLeft(thumb).dx, closeTo(initialX - 100, 0.1));
   });
 
   testWidgets('unknown and busy states disable activation', (tester) async {
@@ -70,7 +103,9 @@ void main() {
             child: SlidePowerButton(
               isPowered: powered,
               busy: busy,
-              onSlide: () => activations++,
+              onSlide: () async {
+                activations += 1;
+              },
             ),
           ),
         ),

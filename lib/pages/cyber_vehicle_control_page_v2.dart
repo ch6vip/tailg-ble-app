@@ -31,6 +31,8 @@ import '../services/official_mqtt_service.dart';
 import '../services/permission_service.dart';
 import '../services/vehicle_location_resolver.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
+import '../widgets/animated_value_text.dart';
 import '../widgets/app_pressable.dart';
 import '../widgets/app_snack.dart';
 import '../widgets/cached_tile_provider.dart';
@@ -98,6 +100,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
   bool _disconnecting = false;
   BluetoothAdapterState _adapterState = BluetoothAdapterState.unknown;
   OfficialControlChannel _controlChannel = OfficialControlChannel.automatic;
+  CommandCode? _activeCommand;
 
   /// Cached BLE/location permission probe for near-field banner + six-key copy.
   PermissionCheckResult? _blePermission;
@@ -718,7 +721,10 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
       return;
     }
 
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _activeCommand = cmd;
+    });
     unawaited(HapticFeedback.mediumImpact());
     final vehicleKeyAtSend = officialCloudService.state.selectedVehicle?.key;
     final bleDeviceAtSend = availability.willUseBle
@@ -839,9 +845,13 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
       }
     } finally {
       if (mounted) {
-        setState(() => _busy = false);
+        setState(() {
+          _busy = false;
+          _activeCommand = null;
+        });
       } else {
         _busy = false;
+        _activeCommand = null;
       }
     }
   }
@@ -1366,6 +1376,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     final signedIn = cloudState.signedIn;
     final hasVehicle = cloudVehicle != null;
     final controlAvailability = _controlAvailability();
+    final visualControlAvailability = _controlAvailability(ignoreBusy: true);
     final controlChannelStatus = _topBarChannel(
       availability: controlAvailability,
     );
@@ -1425,15 +1436,17 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
                       powered: isPowerOn,
                       armed: isArmed,
                       busy: _busy,
+                      activeCommand: _activeCommand,
                       controlsEnabled:
-                          signedIn && hasVehicle && controlAvailability.enabled,
+                          signedIn &&
+                          hasVehicle &&
+                          visualControlAvailability.enabled,
                       dimmed:
-                          _busy ||
                           !hasVehicle ||
                           !signedIn ||
-                          !controlAvailability.enabled,
+                          !visualControlAvailability.enabled,
                       onFind: () => unawaited(_sendCommand(CommandCode.find)),
-                      onPowerToggle: () => unawaited(_sendPowerToggle()),
+                      onPowerToggle: _sendPowerToggle,
                       onArmToggle: () => unawaited(_sendArmToggle()),
                       onSettings: _openSettings,
                       onSeat: () =>
@@ -1795,7 +1808,7 @@ class _CyberHeroHeader extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
+                        AnimatedValueText(
                           rangeText.replaceAll('km', '').trim(),
                           style: const TextStyle(
                             fontSize: 48,
@@ -1818,7 +1831,7 @@ class _CyberHeroHeader extends StatelessWidget {
                         ),
                         Padding(
                           padding: const EdgeInsets.only(left: 10, bottom: 3),
-                          child: Text(
+                          child: AnimatedValueText(
                             batteryKnown ? '$batteryPercent%' : '--%',
                             style: const TextStyle(
                               fontSize: 18,
@@ -2009,7 +2022,7 @@ class _CyberTopBar extends StatelessWidget {
                     ),
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: Text(
+                      child: AnimatedValueText(
                         rangeText,
                         style: const TextStyle(
                           fontSize: 22,
@@ -2105,30 +2118,36 @@ class _CyberStatusLine extends StatelessWidget {
         spacing: compact ? 5 : 7,
         runSpacing: 3,
         children: [
-          LucideIcon(
+          _AnimatedStatusIcon(
             Lucide.circleDot,
             size: iconSize,
             color: online ? _Cyber.online : _Cyber.faint,
           ),
-          LucideIcon(
+          _AnimatedStatusIcon(
             bluetoothConnected ? Lucide.bluetooth : Lucide.bluetoothOff,
             size: iconSize,
             color: bluetoothConnected ? _Cyber.primary : _Cyber.faint,
           ),
-          LucideIcon(
+          _AnimatedStatusIcon(
             Lucide.radioTower,
             size: iconSize,
             color: online ? _Cyber.ink : _Cyber.faint,
           ),
-          Text(
-            isLocked ? '已关锁' : '已开锁',
-            style: TextStyle(
-              fontSize: textSize,
-              color: _Cyber.muted,
-              fontWeight: FontWeight.w600,
+          AnimatedSwitcher(
+            duration: AppMotion.status,
+            child: Text(
+              isLocked ? '已关锁' : '已开锁',
+              key: ValueKey(isLocked),
+              style: TextStyle(
+                fontSize: textSize,
+                color: _Cyber.muted,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-          Container(
+          AnimatedContainer(
+            duration: AppMotion.status,
+            curve: AppMotion.pressCurve,
             padding: EdgeInsets.symmetric(
               horizontal: compact ? 6 : 8,
               vertical: compact ? 2 : 3,
@@ -2137,16 +2156,52 @@ class _CyberStatusLine extends StatelessWidget {
               color: _Cyber.soft,
               borderRadius: BorderRadius.circular(AppRadii.pill),
             ),
-            child: Text(
-              channelStatus.label,
-              style: TextStyle(
-                fontSize: compact ? 10 : 11,
-                color: _Cyber.muted,
-                fontWeight: FontWeight.w600,
+            child: AnimatedSwitcher(
+              duration: AppMotion.status,
+              child: Text(
+                channelStatus.label,
+                key: ValueKey(channelStatus.label),
+                style: TextStyle(
+                  fontSize: compact ? 10 : 11,
+                  color: _Cyber.muted,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AnimatedStatusIcon extends StatelessWidget {
+  const _AnimatedStatusIcon(
+    this.icon, {
+    required this.size,
+    required this.color,
+  });
+
+  final IconData icon;
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: AppMotion.status,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.88, end: 1).animate(animation),
+          child: child,
+        ),
+      ),
+      child: LucideIcon(
+        icon,
+        key: ValueKey((icon.codePoint, color)),
+        size: size,
+        color: color,
       ),
     );
   }
@@ -2251,7 +2306,9 @@ class _CyberBleChip extends StatelessWidget {
       onTap: onTap,
       semanticsLabel: '蓝牙 $_label',
       semanticsButton: true,
-      child: Container(
+      child: AnimatedContainer(
+        duration: AppMotion.status,
+        curve: AppMotion.pressCurve,
         height: AppTouchTargets.min,
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
@@ -2268,28 +2325,36 @@ class _CyberBleChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (connecting)
-              const SizedBox(
-                width: 12,
-                height: 12,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.6,
-                  color: _Cyber.primary,
-                ),
-              )
-            else
-              LucideIcon(
-                connected ? Lucide.bluetooth : Lucide.bluetoothSearching,
-                size: 14,
-                color: connected ? _Cyber.primary : _Cyber.muted,
-              ),
+            AnimatedSwitcher(
+              duration: AppMotion.status,
+              child: connecting
+                  ? const SizedBox(
+                      key: ValueKey('ble-progress'),
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.6,
+                        color: _Cyber.primary,
+                      ),
+                    )
+                  : LucideIcon(
+                      connected ? Lucide.bluetooth : Lucide.bluetoothSearching,
+                      key: ValueKey(state),
+                      size: 14,
+                      color: connected ? _Cyber.primary : _Cyber.muted,
+                    ),
+            ),
             const SizedBox(width: 4),
-            Text(
-              _label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: connected ? _Cyber.primary : _Cyber.muted,
+            AnimatedSwitcher(
+              duration: AppMotion.status,
+              child: Text(
+                _label,
+                key: ValueKey(_label),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: connected ? _Cyber.primary : _Cyber.muted,
+                ),
               ),
             ),
           ],
@@ -2304,6 +2369,7 @@ class _CyberControlGrid extends StatelessWidget {
     required this.powered,
     required this.armed,
     required this.busy,
+    required this.activeCommand,
     required this.controlsEnabled,
     required this.dimmed,
     required this.onFind,
@@ -2318,10 +2384,11 @@ class _CyberControlGrid extends StatelessWidget {
   final bool? powered;
   final bool? armed;
   final bool busy;
+  final CommandCode? activeCommand;
   final bool controlsEnabled;
   final bool dimmed;
   final VoidCallback onFind;
-  final VoidCallback onPowerToggle;
+  final Future<void> Function() onPowerToggle;
   final VoidCallback onArmToggle;
   final VoidCallback onSettings;
   final VoidCallback onSeat;
@@ -2331,8 +2398,14 @@ class _CyberControlGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final armLabel = armed == null ? '设防/解防' : (armed! ? '解防' : '设防');
-    return Opacity(
+    bool active(CommandCode command) => activeCommand == command;
+    bool subdued(CommandCode command) =>
+        busy && activeCommand != null && !active(command);
+    final armActive = active(CommandCode.lock) || active(CommandCode.unlock);
+    final armSubdued = busy && activeCommand != null && !armActive;
+    return AnimatedOpacity(
       key: const ValueKey('cyber-control-grid'),
+      duration: AppMotion.status,
       opacity: dimmed ? 0.55 : 1,
       child: Padding(
         padding: _Cyber.cardMargin,
@@ -2341,7 +2414,13 @@ class _CyberControlGrid extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _CircleKey(icon: Lucide.find, label: '寻车', onTap: onFind),
+                _CircleKey(
+                  icon: Lucide.find,
+                  label: '寻车',
+                  busy: active(CommandCode.find),
+                  subdued: subdued(CommandCode.find),
+                  onTap: onFind,
+                ),
                 Flexible(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
@@ -2356,6 +2435,8 @@ class _CyberControlGrid extends StatelessWidget {
                 _CircleKey(
                   icon: armed == true ? Lucide.unlock : Lucide.lock,
                   label: armLabel,
+                  busy: armActive,
+                  subdued: armSubdued,
                   onTap: onArmToggle,
                 ),
               ],
@@ -2369,7 +2450,13 @@ class _CyberControlGrid extends StatelessWidget {
                   label: '车辆设置',
                   onTap: onSettings,
                 ),
-                _CircleKey(icon: Lucide.seat, label: '打开坐垫', onTap: onSeat),
+                _CircleKey(
+                  icon: Lucide.seat,
+                  label: '打开坐垫',
+                  busy: active(CommandCode.openSeat),
+                  subdued: subdued(CommandCode.openSeat),
+                  onTap: onSeat,
+                ),
                 _CircleKey(icon: Lucide.share, label: '车辆分享', onTap: onShare),
                 _CircleKey(icon: Lucide.nfc, label: 'NFC钥匙', onTap: onNfc),
               ],
@@ -2386,11 +2473,15 @@ class _CircleKey extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.busy = false,
+    this.subdued = false,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool busy;
+  final bool subdued;
 
   @override
   Widget build(BuildContext context) {
@@ -2400,35 +2491,57 @@ class _CircleKey extends StatelessWidget {
       onTap: onTap,
       semanticsLabel: label,
       semanticsButton: true,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: const BoxDecoration(
-              color: _Cyber.card,
-              shape: BoxShape.circle,
-              boxShadow: AppShadows.cyberActionShadow,
+      child: AnimatedOpacity(
+        duration: AppMotion.status,
+        opacity: subdued ? 0.48 : 1,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: const BoxDecoration(
+                color: _Cyber.card,
+                shape: BoxShape.circle,
+                boxShadow: AppShadows.cyberActionShadow,
+              ),
+              alignment: Alignment.center,
+              child: AnimatedSwitcher(
+                duration: AppMotion.status,
+                child: busy
+                    ? const SizedBox(
+                        key: ValueKey('command-progress'),
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: _Cyber.primary,
+                        ),
+                      )
+                    : LucideIcon(
+                        icon,
+                        key: ValueKey(icon),
+                        size: 25,
+                        color: _Cyber.ink2,
+                        strokeWidth: 1.8,
+                      ),
+              ),
             ),
-            alignment: Alignment.center,
-            child: LucideIcon(
-              icon,
-              size: 25,
-              color: _Cyber.ink2,
-              strokeWidth: 1.8,
+            const SizedBox(height: 16),
+            AnimatedSwitcher(
+              duration: AppMotion.status,
+              child: Text(
+                busy ? '$label中' : label,
+                key: ValueKey((label, busy)),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: _Cyber.muted,
+                  height: 1.2,
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: _Cyber.muted,
-              height: 1.2,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -2803,7 +2916,7 @@ class _Spark extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              AnimatedValueText(
                 value,
                 style: const TextStyle(
                   fontSize: 16,
@@ -2840,7 +2953,7 @@ class _Metric extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
+        AnimatedValueText(
           value,
           textAlign: TextAlign.center,
           style: const TextStyle(
@@ -2932,8 +3045,64 @@ class _CyberRecentCommands extends StatelessWidget {
                 ),
               )
             else
-              for (final c in commands) _CmdRow(entry: c),
+              for (final c in commands)
+                _AnimatedCmdRow(key: ObjectKey(c), entry: c),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AnimatedCmdRow extends StatefulWidget {
+  const _AnimatedCmdRow({super.key, required this.entry});
+
+  final _CommandEntry entry;
+
+  @override
+  State<_AnimatedCmdRow> createState() => _AnimatedCmdRowState();
+}
+
+class _AnimatedCmdRowState extends State<_AnimatedCmdRow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _curved;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: AppMotion.dataChange,
+    );
+    _curved = CurvedAnimation(
+      parent: _controller,
+      curve: AppMotion.entranceCurve,
+    );
+    _slide = Tween<Offset>(
+      begin: const Offset(0, -0.12),
+      end: Offset.zero,
+    ).animate(_curved);
+    unawaited(_controller.forward());
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizeTransition(
+      sizeFactor: _curved,
+      alignment: Alignment.topCenter,
+      child: FadeTransition(
+        opacity: _curved,
+        child: SlideTransition(
+          position: _slide,
+          child: _CmdRow(entry: widget.entry),
         ),
       ),
     );
