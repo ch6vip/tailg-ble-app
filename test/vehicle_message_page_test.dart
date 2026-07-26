@@ -85,10 +85,12 @@ void main() {
   setUp(() {
     resetMockPreferences();
     app.officialCloudService.resetForTest();
+    app.messageReadStore.resetForTest();
   });
 
   tearDown(() {
     app.officialCloudService.resetForTest();
+    app.messageReadStore.resetForTest();
   });
 
   testWidgets('unsigned page prompts login for official messages', (
@@ -148,6 +150,58 @@ void main() {
     expect(find.text('车辆移动告警'), findsOneWidget);
     expect(find.text('系统维护通知'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('opening message center preserves unread state', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      final vehicleMessage = OfficialCloudMessage.vehicle({
+        'msgId': 'vm-unread-state',
+        'title': '未读车辆提醒',
+        'content': '进入消息中心后仍应保持未读',
+        'sendTime': '2026-07-11 12:00:00',
+      });
+      app.officialCloudService.setStateForTest(
+        OfficialCloudState.initial().copyWith(
+          initialized: true,
+          token: 'token',
+          userId: 'uid-1',
+          vehicleMessages: [vehicleMessage],
+        ),
+      );
+
+      await tester.pumpWidget(const TestApp(home: VehicleMessagePage()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(app.messageReadStore.readIds, isNot(contains(vehicleMessage.id)));
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('全部已读')),
+        matchesSemantics(
+          label: '全部已读',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel('全部已读'));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(app.messageReadStore.readIds, contains(vehicleMessage.id));
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('全部已读')),
+        matchesSemantics(
+          label: '全部已读',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: false,
+        ),
+      );
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('custom tabs keep 44dp touch targets', (tester) async {

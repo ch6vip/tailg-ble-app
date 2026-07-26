@@ -44,6 +44,8 @@ void main() {
 
   test('markRead and hideAndRead persist their combined state', () async {
     final store = MessageReadStore();
+    var notifications = 0;
+    store.addListener(() => notifications += 1);
 
     await store.markRead(['message-read', 'message-read']);
     await store.hideAndRead(['message-hidden']);
@@ -58,6 +60,7 @@ void main() {
     expect(prefs.getStringList(MessageReadStore.prefHiddenIds), [
       'message-hidden',
     ]);
+    expect(notifications, 3);
   });
 
   test('syncFromCloudMessages counts only visible unread ids', () async {

@@ -29,6 +29,7 @@ void main() {
     AppServices.instance.autoConnectService.resetForTest();
     AppServices.instance.manualModeService.resetForTest();
     AppServices.instance.inductionModeService.resetForTest();
+    AppServices.instance.messageReadStore.resetForTest();
     OfficialMqttService.liveConnectEnabled = false;
 
     // Near-field path probes BLE permissions; short-circuit platform channels.
@@ -46,6 +47,7 @@ void main() {
     AppServices.instance.autoConnectService.resetForTest();
     AppServices.instance.manualModeService.resetForTest();
     AppServices.instance.inductionModeService.resetForTest();
+    AppServices.instance.messageReadStore.resetForTest();
     resetMockStorage();
   });
 
@@ -194,5 +196,94 @@ void main() {
     // Drop the page before the binding checks for pending timers.
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
+  });
+
+  testWidgets(
+    'home alert only shows unread messages and reacts to read state',
+    (tester) async {
+      setTestViewSize(tester, const Size(390, 844));
+      final vehicle = OfficialVehicle.fromJson({
+        'carId': 'message-filter-car',
+        'carNickName': '消息测试车',
+        'modelType': 3,
+        'btmac': 'AABBCCDDEE01',
+        'electricQuantity': 80,
+      });
+      final latest = OfficialCloudMessage(
+        id: 'vehicle:latest-read',
+        title: '最新提醒',
+        content: '这条消息已经读过',
+        time: DateTime.now(),
+        category: OfficialCloudMessageCategory.vehicle,
+        carId: vehicle.carId,
+      );
+      final older = OfficialCloudMessage(
+        id: 'vehicle:older-unread',
+        title: '较早提醒',
+        content: '这条消息还未读',
+        time: DateTime.now().subtract(const Duration(minutes: 5)),
+        category: OfficialCloudMessageCategory.vehicle,
+        carId: vehicle.carId,
+      );
+      await AppServices.instance.messageReadStore.markRead([latest.id]);
+      AppServices.instance.officialCloudService.setStateForTest(
+        OfficialCloudState.initial().copyWith(
+          initialized: true,
+          token: 'message-filter-token',
+          userId: 'message-filter-user',
+          vehicles: [vehicle],
+          selectedVehicleKey: vehicle.key,
+          vehicleMessages: [latest, older],
+        ),
+      );
+
+      await tester.pumpWidget(const TestApp(home: CyberVehicleControlPageV2()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('这条消息已经读过'), findsNothing);
+      expect(find.text('这条消息还未读'), findsOneWidget);
+
+      await AppServices.instance.messageReadStore.markRead([older.id]);
+      await AppServices.instance.messageReadStore.syncFromCloudMessages(
+        vehicleMessages: [latest, older],
+        systemMessages: const [],
+      );
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('cyber-home-alert')), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    },
+  );
+
+  testWidgets('low battery alert opens battery details', (tester) async {
+    setTestViewSize(tester, const Size(390, 844));
+    final vehicle = OfficialVehicle.fromJson({
+      'carId': 'low-battery-car',
+      'carNickName': '低电量测试车',
+      'modelType': 3,
+      'btmac': 'AABBCCDDEE02',
+      'electricQuantity': 18,
+    });
+    AppServices.instance.officialCloudService.setStateForTest(
+      OfficialCloudState.initial().copyWith(
+        initialized: true,
+        token: 'low-battery-token',
+        userId: 'low-battery-user',
+        vehicles: [vehicle],
+        selectedVehicleKey: vehicle.key,
+      ),
+    );
+
+    await tester.pumpWidget(const TestApp(home: CyberVehicleControlPageV2()));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.tap(find.byKey(const ValueKey('cyber-home-alert')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BatteryDetailsPage), findsOneWidget);
+    expect(find.text('电池信息'), findsOneWidget);
   });
 }

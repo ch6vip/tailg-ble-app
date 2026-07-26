@@ -291,7 +291,7 @@ class _VehicleMessagePageState extends State<VehicleMessagePage>
           children: [
             _MessageHeader(
               unreadCount: unreadCount,
-              canMarkRead: signedIn && all.isNotEmpty,
+              canMarkRead: signedIn && unreadCount > 0,
               canClear: signedIn && all.isNotEmpty && !_clearing,
               clearing: _clearing,
               refreshing: _loading,

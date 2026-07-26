@@ -126,6 +126,8 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     _mqttLinkSub = officialMqttService.linkStateStream.listen((_) {
       if (mounted) setState(() {});
     });
+    messageReadStore.addListener(_onMessageReadStateChanged);
+    unawaited(_loadMessageReadState());
     // Desktop/widget tests have no BLE platform channel; keep unknown there.
     // Accessing FlutterBluePlus.adapterState on Windows throws
     // "unsupported on this platform" (sync or via stream errors).
@@ -163,6 +165,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
   void dispose() {
     _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
+    messageReadStore.removeListener(_onMessageReadStateChanged);
     final cloudSub = _cloudSub;
     if (cloudSub != null) unawaited(cloudSub.cancel());
     final bleSub = _bleStateSub;
@@ -174,6 +177,15 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     final adapterSub = _adapterSub;
     if (adapterSub != null) unawaited(adapterSub.cancel());
     super.dispose();
+  }
+
+  Future<void> _loadMessageReadState() async {
+    await messageReadStore.ensureLoaded();
+    if (mounted) setState(() {});
+  }
+
+  void _onMessageReadStateChanged() {
+    if (mounted) setState(() {});
   }
 
   void _bindInductionVehicle() {
@@ -1228,6 +1240,10 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
             ...cloudState.vehicleMessages,
             ...cloudState.systemMessages,
           ].where((message) {
+            if (messageReadStore.readIds.contains(message.id) ||
+                messageReadStore.hiddenIds.contains(message.id)) {
+              return false;
+            }
             if (message.carId.isEmpty || vehicle == null) return true;
             return message.carId == vehicle.carId ||
                 message.carId == vehicle.key;
@@ -1243,6 +1259,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
         id: latest.id,
         text: title.isEmpty ? '车辆有一条新消息' : title,
         time: _formatAlertAge(latest.time),
+        destination: _HomeAlertDestination.messages,
       );
       return alert.id == _dismissedAlertId ? null : alert;
     }
@@ -1253,6 +1270,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
         id: 'battery-low',
         text: '车辆电量过低，请及时充电',
         time: '刚刚',
+        destination: _HomeAlertDestination.battery,
       );
       return alert.id == _dismissedAlertId ? null : alert;
     }
@@ -1269,11 +1287,22 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
   }
 
   void _openMessages() {
-    unawaited(
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => const VehicleMessagePage()),
-      ),
-    );
+    unawaited(_showMessages());
+  }
+
+  Future<void> _showMessages() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const VehicleMessagePage()));
+    if (mounted) setState(() {});
+  }
+
+  void _openAlert(_HomeAlert alert) {
+    if (alert.destination == _HomeAlertDestination.battery) {
+      _openBattery();
+      return;
+    }
+    unawaited(_showMessages());
   }
 
   void _openShare() {
@@ -1464,6 +1493,9 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
                   onBatteryTap: _openBattery,
                   onBleChipTap: () => unawaited(_onOfficialBleChipTap()),
                   onMessages: _openMessages,
+                  onAlertTap: alert == null
+                      ? _openMessages
+                      : () => _openAlert(alert),
                   onChannelTap: () => _openControlOptions(controlChannelStatus),
                   onDismissAlert: alert == null
                       ? null
@@ -1623,22 +1655,31 @@ abstract final class _Cyber {
   static const cardShadow = AppShadows.cyberCardShadow;
 }
 
+enum _HomeAlertDestination { messages, battery }
+
 class _HomeAlert {
-  const _HomeAlert({required this.id, required this.text, required this.time});
+  const _HomeAlert({
+    required this.id,
+    required this.text,
+    required this.time,
+    required this.destination,
+  });
 
   final String id;
   final String text;
   final String time;
+  final _HomeAlertDestination destination;
 
   @override
   bool operator ==(Object other) =>
       other is _HomeAlert &&
       other.id == id &&
       other.text == text &&
-      other.time == time;
+      other.time == time &&
+      other.destination == destination;
 
   @override
-  int get hashCode => Object.hash(id, text, time);
+  int get hashCode => Object.hash(id, text, time, destination);
 }
 
 class _TireSnapshot {
@@ -1795,6 +1836,7 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.onBatteryTap,
     required this.onBleChipTap,
     required this.onMessages,
+    required this.onAlertTap,
     required this.onChannelTap,
     required this.onDismissAlert,
   });
@@ -1817,6 +1859,7 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
   final VoidCallback onBatteryTap;
   final VoidCallback onBleChipTap;
   final VoidCallback onMessages;
+  final VoidCallback onAlertTap;
   final VoidCallback onChannelTap;
   final VoidCallback? onDismissAlert;
 
@@ -1874,6 +1917,7 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
                 onBatteryTap: onBatteryTap,
                 onBleChipTap: onBleChipTap,
                 onMessages: onMessages,
+                onAlertTap: onAlertTap,
                 onChannelTap: onChannelTap,
                 onDismissAlert: onDismissAlert,
               ),
@@ -1948,6 +1992,7 @@ class _CyberHeroHeader extends StatelessWidget {
     required this.onBatteryTap,
     required this.onBleChipTap,
     required this.onMessages,
+    required this.onAlertTap,
     required this.onChannelTap,
     required this.onDismissAlert,
   });
@@ -1968,6 +2013,7 @@ class _CyberHeroHeader extends StatelessWidget {
   final VoidCallback onBatteryTap;
   final VoidCallback onBleChipTap;
   final VoidCallback onMessages;
+  final VoidCallback onAlertTap;
   final VoidCallback onChannelTap;
   final VoidCallback? onDismissAlert;
 
@@ -2114,7 +2160,7 @@ class _CyberHeroHeader extends StatelessWidget {
             const SizedBox(height: 12),
             _HomeAlertBanner(
               alert: alert!,
-              onTap: onMessages,
+              onTap: onAlertTap,
               onDismiss: onDismissAlert,
             ),
           ],
