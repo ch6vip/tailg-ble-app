@@ -1432,14 +1432,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
                       onNfc: _openNfc,
                     ),
                     const SizedBox(height: 32),
-                    _CyberNavCard(
-                      onMirror: () =>
-                          AppSnack.info(context, '镜像投屏需车辆仪表支持，连接后可用'),
-                      onSearch: _openLocation,
-                      onHome: () => AppSnack.info(context, '请先在车辆设置中配置家庭地址'),
-                      onWork: () => AppSnack.info(context, '请先在车辆设置中配置公司地址'),
-                    ),
-                    const SizedBox(height: 16),
                     _CyberMapStatsRow(
                       location: location,
                       address: _locationTitle(location),
@@ -2539,136 +2531,6 @@ class _CyberChannelStrip extends StatelessWidget {
   }
 }
 
-class _CyberNavCard extends StatelessWidget {
-  const _CyberNavCard({
-    required this.onMirror,
-    required this.onSearch,
-    required this.onHome,
-    required this.onWork,
-  });
-
-  final VoidCallback onMirror;
-  final VoidCallback onSearch;
-  final VoidCallback onHome;
-  final VoidCallback onWork;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      key: const ValueKey('cyber-nav-card'),
-      margin: _Cyber.cardMargin,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [CyberHomeColors.primarySoft, CyberHomeColors.card],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        boxShadow: _Cyber.cardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '仪表投屏导航',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: _Cyber.ink,
-                ),
-              ),
-              AppPressable(
-                onTap: onMirror,
-                semanticsLabel: '镜像投屏',
-                semanticsButton: true,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                  child: Text(
-                    '镜像投屏',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: _Cyber.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: AppPressable(
-                  onTap: onSearch,
-                  semanticsLabel: '搜索目的地',
-                  semanticsButton: true,
-                  child: Container(
-                    height: 52,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: CyberHomeColors.cardMuted,
-                      borderRadius: BorderRadius.circular(AppRadii.pill),
-                    ),
-                    child: const Row(
-                      children: [
-                        LucideIcon(Lucide.search, size: 21, color: _Cyber.ink),
-                        SizedBox(width: 9),
-                        Text(
-                          '搜索目的地',
-                          style: TextStyle(fontSize: 14, color: _Cyber.faint),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              _NavMini(icon: Lucide.home, label: '家庭地址', onTap: onHome),
-              const SizedBox(width: 8),
-              _NavMini(icon: Lucide.briefcase, label: '公司地址', onTap: onWork),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavMini extends StatelessWidget {
-  const _NavMini({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppPressable(
-      onTap: onTap,
-      semanticsLabel: label,
-      semanticsButton: true,
-      child: Container(
-        width: 52,
-        height: 52,
-        decoration: const BoxDecoration(
-          color: CyberHomeColors.white75,
-          shape: BoxShape.circle,
-        ),
-        alignment: Alignment.center,
-        child: LucideIcon(icon, size: 23, color: _Cyber.ink),
-      ),
-    );
-  }
-}
-
 class _CyberMapStatsRow extends StatelessWidget {
   const _CyberMapStatsRow({
     required this.location,
@@ -2697,6 +2559,7 @@ class _CyberMapStatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
+      key: const ValueKey('cyber-map-stats-row'),
       padding: _Cyber.cardMargin,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

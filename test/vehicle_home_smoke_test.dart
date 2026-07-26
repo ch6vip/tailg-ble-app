@@ -127,29 +127,27 @@ void main() {
     expect(find.textContaining('点击通电'), findsNothing);
     expect(find.textContaining('点击断电'), findsNothing);
     final controlGrid = find.byKey(const ValueKey('cyber-control-grid'));
-    final navCard = find.byKey(const ValueKey('cyber-nav-card'));
-    double controlsToNavGap() =>
-        tester.getTopLeft(navCard).dy - tester.getBottomRight(controlGrid).dy;
-    expect(controlsToNavGap(), closeTo(32, 0.1));
+    final mapStats = find.byKey(const ValueKey('cyber-map-stats-row'));
+    double controlsToMapGap() =>
+        tester.getTopLeft(mapStats).dy - tester.getBottomRight(controlGrid).dy;
+    expect(find.byKey(const ValueKey('cyber-nav-card')), findsNothing);
+    expect(find.text('仪表投屏导航'), findsNothing);
+    expect(controlsToMapGap(), closeTo(32, 0.1));
     expect(tester.takeException(), isNull);
 
     // The inter-section rhythm stays stable on the narrower logical width
     // used by the visual reference.
     applyTestViewSize(tester, const Size(360, 800));
     await tester.pump();
-    expect(controlsToNavGap(), closeTo(32, 0.1));
+    expect(controlsToMapGap(), closeTo(32, 0.1));
     expect(tester.takeException(), isNull);
     applyTestViewSize(tester, const Size(390, 844));
     await tester.pump();
 
-    // Layout order under Cyber shell: keys/slide, projection, map/stats.
-    expect(
-      tester.getTopLeft(find.text('仪表投屏导航')).dy,
-      greaterThan(tester.getTopLeft(find.text('寻车')).dy),
-    );
+    // Layout order under Cyber shell: keys/slide, then map/stats.
     expect(
       tester.getTopLeft(find.text('车辆位置')).dy,
-      greaterThan(tester.getTopLeft(find.text('仪表投屏导航')).dy),
+      greaterThan(tester.getTopLeft(find.text('寻车')).dy),
     );
 
     final header = find.byKey(const ValueKey('cyber-collapsing-header'));
@@ -162,6 +160,8 @@ void main() {
           .opacity,
       1,
     );
+    applyTestViewSize(tester, const Size(390, 700));
+    await tester.pump();
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -520));
     await tester.pumpAndSettle();
     expect(
