@@ -10,12 +10,14 @@ import '../models/battery_setup_models.dart';
 import '../models/command_types.dart';
 import '../models/official_bms_info.dart';
 import '../models/official_ride_statistics.dart';
+import '../models/official_smart_service_status.dart';
 import '../models/official_user_profile.dart';
 import '../models/official_vehicle.dart';
 import '../models/persistence_value.dart';
 import '../models/vehicle_profile.dart';
 import 'display_time_formatter.dart';
 import 'log_service.dart';
+import 'official_car_operator_policy.dart';
 import 'sensitive_value_masker.dart';
 import 'vehicle_store.dart';
 
@@ -45,6 +47,8 @@ class OfficialCloudService {
   OfficialCloudState _state = OfficialCloudState.initial();
   final Map<String, DateTime> _lastSuccessfulRefresh = {};
   final Map<String, Future<void>> _inFlightRefreshes = {};
+  final Map<String, OfficialSmartServiceStatus> _smartServiceStatuses = {};
+  final Set<String> _smartServiceStatusLoadedKeys = {};
   int _rideStatisticsGeneration = 0;
   bool _initialized = false;
   Future<void>? _initializing;
@@ -58,6 +62,20 @@ class OfficialCloudService {
   DateTime? get lastVehiclesRefreshAt => _lastSuccessfulRefresh['vehicles'];
   DateTime? get lastBatteryRefreshAt => _lastSuccessfulRefresh['batteryInfo'];
   DateTime? get lastBmsRefreshAt => _lastSuccessfulRefresh['bmsInfo'];
+
+  OfficialSmartServiceStatus? get selectedSmartServiceStatus {
+    final key = _state.selectedVehicle?.key;
+    return key == null ? null : _smartServiceStatuses[key];
+  }
+
+  OfficialSmartServiceControlDecision get selectedRemoteControlServiceDecision {
+    final vehicle = _state.selectedVehicle;
+    final status = selectedSmartServiceStatus;
+    if (vehicle == null || status == null) {
+      return const OfficialSmartServiceControlDecision.available();
+    }
+    return status.decisionForModelType(vehicle.modelType);
+  }
 
   Future<void> init() => _init(refreshOnSignedIn: true);
 
@@ -2128,6 +2146,154 @@ class OfficialCloudService {
     }
   }
 
+  /// Loads the official SIM/service state used by ControlFragment before
+  /// remote MQTT commands. Codes 9 and 7 are handled per model family.
+  Future<void> refreshSelectedSmartServiceStatus({
+    bool silent = true,
+    bool force = false,
+  }) async {
+    final token = _state.token;
+    final vehicle = _state.selectedVehicle;
+    if (token.isEmpty || vehicle == null) return;
+
+    final vehicleKey = vehicle.key;
+    final refreshKey = 'smartService:$vehicleKey';
+    if (vehicle.iccId.isEmpty) {
+      _smartServiceStatuses.remove(vehicleKey);
+      _smartServiceStatusLoadedKeys.add(vehicleKey);
+      _markRefreshSuccess(refreshKey);
+      return;
+    }
+
+    await _coalesceRefresh(
+      refreshKey: refreshKey,
+      silent: silent,
+      force: force,
+      run: () async {
+        try {
+          final override = refreshSmartServiceStatusOverride;
+          final OfficialSmartServiceStatus status;
+          if (override != null) {
+            status = await override(vehicle);
+          } else {
+            final response = await _apiClient.request(
+              'app/sim/queryDetail',
+              method: 'POST',
+              token: token,
+              body: {'simNo': vehicle.simNo, 'iccId': vehicle.iccId},
+              retryPolicy: OfficialCloudRetryPolicy.readRequest,
+            );
+            _ensureSuccess(response.body, fallback: '获取智能服务状态失败');
+            status = OfficialSmartServiceStatus.fromPayload(
+              response.body['data'],
+            );
+          }
+          if (!_isCurrentSession(token) ||
+              _state.selectedVehicle?.key != vehicleKey) {
+            return;
+          }
+          _smartServiceStatuses[vehicleKey] = status;
+          _smartServiceStatusLoadedKeys.add(vehicleKey);
+          _markRefreshSuccess(refreshKey);
+        } catch (e) {
+          if (!_isCurrentSession(token)) return;
+          await _handleAuthFailureIfNeeded(e);
+          rethrow;
+        }
+      },
+    );
+  }
+
+  /// Best-effort check matching the official per-model branches. An
+  /// unavailable SIM query does not invent a warning or block.
+  Future<OfficialSmartServiceControlDecision>
+  resolveSelectedRemoteControlServiceDecision() async {
+    final vehicle = _state.selectedVehicle;
+    if (!_state.signedIn || vehicle == null) {
+      return const OfficialSmartServiceControlDecision.available();
+    }
+    // Official KKS/YJ control branches do not consult querySimDetail.
+    if (vehicle.modelType == 1 || vehicle.modelType == 2) {
+      return const OfficialSmartServiceControlDecision.available();
+    }
+    if (!_smartServiceStatusLoadedKeys.contains(vehicle.key)) {
+      try {
+        await refreshSelectedSmartServiceStatus(silent: true);
+      } catch (e) {
+        _log.operation(
+          '官方智能服务状态预检失败',
+          detail: OfficialCloudRedactor.errorMessage(e),
+          level: LogLevel.warning,
+        );
+      }
+    }
+    return selectedRemoteControlServiceDecision;
+  }
+
+  /// Fire-and-forget in the official app. Callers should log failures without
+  /// turning an already accepted vehicle command into a false failure.
+  Future<void> syncCarOperatorAfterCommand({
+    required CommandCode command,
+    required OfficialVehicle vehicle,
+  }) async {
+    final update = OfficialCarOperatorPolicy.updateFor(
+      command: command,
+      vehicle: vehicle,
+    );
+    if (update == null) return;
+    await setCarOperator(
+      carId: update.carId,
+      operatorFlag: update.operatorFlag,
+    );
+  }
+
+  Future<void> setCarOperator({
+    required String carId,
+    required String operatorFlag,
+  }) async {
+    final token = _state.token;
+    if (token.isEmpty) {
+      throw const OfficialCloudApiException(
+        OfficialCloudMessages.signInRequired,
+      );
+    }
+    final id = carId.trim();
+    if (id.isEmpty) {
+      throw const OfficialCloudApiException('缺少车辆 carId，无法同步操作人');
+    }
+    if (operatorFlag != '0' && operatorFlag != '1') {
+      throw const OfficialCloudApiException('车辆操作人状态无效');
+    }
+
+    final override = setCarOperatorOverride;
+    if (override != null) {
+      sentCarOperatorUpdates.add(
+        OfficialCarOperatorUpdate(carId: id, operatorFlag: operatorFlag),
+      );
+      await override(id, operatorFlag);
+      return;
+    }
+
+    try {
+      final response = await _apiClient.request(
+        'app/car/setCarOperator',
+        method: 'POST',
+        token: token,
+        body: {'carId': id, 'operatorFlag': operatorFlag},
+      );
+      _ensureSuccess(response.body, fallback: '同步车辆操作人失败');
+      _ensureCurrentSession(token);
+      _log.operation(
+        '官方车辆操作人已同步',
+        detail: 'carId=${SensitiveValueMasker.compact(id)} flag=$operatorFlag',
+      );
+    } catch (e) {
+      _ensureCurrentSession(token);
+      await _handleAuthFailureIfNeeded(e);
+      rethrow;
+    }
+  }
+
   /// Official KKS induction switch (`HomeViewModel.blueOn/blueOff`).
   Future<void> setKksHidEnabled(bool enabled) async {
     final token = _state.token;
@@ -2276,6 +2442,10 @@ class OfficialCloudService {
 
   void _refreshVehicleDependents({required bool refreshReplicaDetails}) {
     _runSilentRefresh(
+      refreshSelectedSmartServiceStatus(silent: true),
+      failureMessage: '官方智能服务状态静默刷新失败',
+    );
+    _runSilentRefresh(
       refreshBatteryInfo(silent: true),
       failureMessage: '官方电池信息静默刷新失败',
     );
@@ -2388,6 +2558,8 @@ class OfficialCloudService {
   void _clearRefreshCache() {
     _lastSuccessfulRefresh.clear();
     _inFlightRefreshes.clear();
+    _smartServiceStatuses.clear();
+    _smartServiceStatusLoadedKeys.clear();
   }
 
   String? _selectVehicleKey(
@@ -2458,6 +2630,8 @@ class OfficialCloudService {
     sendCommandOverride = null;
     setKksHidEnabledOverride = null;
     bindVehicleByImeiOverride = null;
+    refreshSmartServiceStatusOverride = null;
+    setCarOperatorOverride = null;
     unbindVehicleOverride = null;
     getFirmVersionOverride = null;
     getMessageControlOverride = null;
@@ -2469,6 +2643,7 @@ class OfficialCloudService {
     fetchGaragePageOverride = null;
     changeUsingVehicleOverride = null;
     afterLogoutSideEffects.clear();
+    sentCarOperatorUpdates.clear();
   }
 
   @visibleForTesting
@@ -2496,6 +2671,14 @@ class OfficialCloudService {
 
   @visibleForTesting
   Future<void> Function(String imei)? bindVehicleByImeiOverride;
+
+  @visibleForTesting
+  Future<OfficialSmartServiceStatus> Function(OfficialVehicle vehicle)?
+  refreshSmartServiceStatusOverride;
+
+  @visibleForTesting
+  Future<void> Function(String carId, String operatorFlag)?
+  setCarOperatorOverride;
 
   @visibleForTesting
   Future<void> Function(String carId, int unbindType)? unbindVehicleOverride;
@@ -2546,4 +2729,7 @@ class OfficialCloudService {
 
   @visibleForTesting
   final List<bool> sentKksHidStates = [];
+
+  @visibleForTesting
+  final List<OfficialCarOperatorUpdate> sentCarOperatorUpdates = [];
 }

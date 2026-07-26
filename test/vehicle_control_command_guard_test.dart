@@ -19,5 +19,7 @@ void main() {
     // The power slider sends directly without an extra confirmation sheet.
     expect(source, isNot(contains('_PowerConfirmationSheet')));
     expect(source, isNot(contains('滑动启动')));
+    expect(source, contains('resolveSelectedRemoteControlServiceDecision'));
+    expect(source, contains('syncCarOperatorAfterCommand'));
   });
 }

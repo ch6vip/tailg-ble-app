@@ -257,6 +257,10 @@ class OfficialVehicle {
 
   bool get shareCarFlag => parsePersistedBool(raw['shareCarFlag']);
 
+  String get simNo => parsePersistedString(raw['simNo']);
+
+  String get iccId => parsePersistedString(raw['iccId'] ?? raw['iccid']);
+
   /// GarageV2 `UserCarPageDataBean.isUsing`.
   bool get isUsing => parsePersistedBool(raw['isUsing'] ?? raw['using']);
 

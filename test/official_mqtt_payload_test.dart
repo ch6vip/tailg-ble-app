@@ -48,5 +48,17 @@ void main() {
       expect(notPoweredOff?.isNotPoweredOff, isTrue);
       expect(notPoweredOff?.controlErrorMessage('lock'), '车辆未断电，请勿操作');
     });
+
+    test(
+      'maps start/stop failures and does not leak them to other commands',
+      () {
+        for (final code in [5, 6, 7, 20]) {
+          final payload = OfficialMqttStatusPayload(accErrorStatus: code);
+          expect(payload.controlErrorMessage('start'), '车辆启动失败');
+          expect(payload.controlErrorMessage('stop'), '车辆熄火失败');
+          expect(payload.controlErrorMessage('lock'), isNull);
+        }
+      },
+    );
   });
 }

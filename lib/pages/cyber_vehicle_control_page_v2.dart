@@ -739,7 +739,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
       }
       return;
     }
-    final availability = _commandAvailability(cmd);
+    var availability = _commandAvailability(cmd);
     if (!availability.enabled) {
       // P0-A2: never silent — surface BLE off / connecting / not LOGIN / cloud.
       // Prefer permission-specific copy when BLE is the missing piece.
@@ -750,12 +750,43 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
       return;
     }
 
+    if (!availability.willUseBle) {
+      final vehicleKeyBeforeGate =
+          officialCloudService.state.selectedVehicle?.key;
+      final serviceDecision = await officialCloudService
+          .resolveSelectedRemoteControlServiceDecision();
+      if (!mounted || _disposed) return;
+      if (officialCloudService.state.selectedVehicle?.key !=
+          vehicleKeyBeforeGate) {
+        AppSnack.error(context, '车辆已变化，请重新操作');
+        return;
+      }
+      final serviceMessage = serviceDecision.message;
+      if (serviceMessage != null) {
+        if (serviceDecision.blocksControl) {
+          AppSnack.error(context, serviceMessage);
+          return;
+        }
+        AppSnack.info(context, serviceMessage);
+      }
+      availability = _commandAvailability(cmd);
+      if (availability.willUseBle) {
+        AppSnack.info(context, '控车渠道已切换，请重新操作');
+        return;
+      }
+      if (!availability.enabled) {
+        AppSnack.error(context, _controlDisabledMessage(availability));
+        return;
+      }
+    }
+
     setState(() {
       _busy = true;
       _activeCommand = cmd;
     });
     unawaited(HapticFeedback.mediumImpact());
-    final vehicleKeyAtSend = officialCloudService.state.selectedVehicle?.key;
+    final vehicleAtSend = officialCloudService.state.selectedVehicle;
+    final vehicleKeyAtSend = vehicleAtSend?.key;
     final bleDeviceAtSend = availability.willUseBle
         ? connectionManager.device?.remoteId.toString()
         : null;
@@ -788,6 +819,15 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
         availability: availability,
       );
       if (result.success) {
+        if (vehicleAtSend != null) {
+          _runBackgroundTask(
+            officialCloudService.syncCarOperatorAfterCommand(
+              command: cmd,
+              vehicle: vehicleAtSend,
+            ),
+            failureMessage: '同步官方车辆操作人失败',
+          );
+        }
         if (result.shouldRefreshBikeState) {
           await _refreshStateForConfirmation(preferBle: true);
         }
@@ -989,7 +1029,11 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
       );
     }
 
-    if (!_needsStateConfirmation(command)) {
+    final needsMqttResponse = ControlCommandConfirmation.needsMqttResponse(
+      command: command,
+      pendingAtSend: mqttPendingAtSend,
+    );
+    if (!_needsStateConfirmation(command) && !needsMqttResponse) {
       return ControlCommandConfirmation.isConfirmed(
         command: command,
         transport: transport,
@@ -1009,6 +1053,24 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
         pendingAtSend: mqttPendingAtSend,
         pendingNow: officialMqttService.pendingCommandApiName,
       );
+      if (needsMqttResponse && mqttAcked) {
+        return ControlCommandConfirmation.guard.allows(
+          context: ControlCommandConfirmationContext(
+            transport: transport,
+            officialVehicleKey: expectedOfficialVehicleKey,
+          ),
+          currentOfficialVehicleKey:
+              officialCloudService.state.selectedVehicle?.key,
+        );
+      }
+      if (needsMqttResponse &&
+          confirmationTimer.elapsed > _controlConfirmTimeout) {
+        return false;
+      }
+      if (needsMqttResponse) {
+        await Future<void>.delayed(_controlConfirmPollDelay);
+        continue;
+      }
       final confirmed = ControlCommandConfirmation.isConfirmed(
         command: command,
         transport: transport,

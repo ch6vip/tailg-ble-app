@@ -33,15 +33,15 @@
 
 | 范围 | 任务数 | 得分 | 进度 |
 |------|--------|------|------|
-| C1 控车与通道 | 12 | 8.0 | **66.7%** |
+| C1 控车与通道 | 12 | 9.5 | **79.2%** |
 | C2 BLE 与感应 | 11 | 5.0 | **45.5%** |
 | C3 云端与数据 | 11 | 6.0 | **54.5%** |
-| **核心复刻** | **34** | **19.0** | **55.9%** |
+| **核心复刻** | **34** | **20.5** | **60.3%** |
 | D 深度车辆能力 | 8 | 3.0 | **37.5%** |
 | E 工程护栏 | 8 | 7.0 | **87.5%** |
 
 ```text
-核心复刻 = (8.0 + 5.0 + 6.0) / 34 = 55.9%
+核心复刻 = (9.5 + 5.0 + 6.0) / 34 = 60.3%
 深度能力 = 3.0 / 8 = 37.5%
 工程护栏 = 7.0 / 8 = 87.5%
 ```
@@ -105,9 +105,8 @@
 
 | 缺口 | 当前事实 | 优先级 |
 |------|----------|--------|
-| MQTT 错误状态未接入按钮门禁 | `OfficialMqttStatusPayload` 已解析，但控车页只向策略传 `isPowerOn` | P0 |
-| 智能服务有效期未门禁 | 官方检查云盒到期 code 9、销号 code 7；项目没有对应状态 | P0 |
-| 共享车操作人未同步 | 官方通电/断电部分分支调用 `setCarOperator`；项目无实现 | P0 |
+| 智能服务门禁缺真实 API 证据 | code 9/7 已按车型实现阻断、提示或忽略；尚未用真实账号核对响应 | P0 |
+| 共享车操作人缺真实 API 证据 | `setCarOperator` 路径与车型策略已接；尚未用真实共享车辆核对 | P0 |
 | 三套 BLE 没有真车握手证据 | 只有实现、mock 和状态机测试 | P0 |
 | 感应解锁没有真车结果 | `INDUCTION_ACCEPTANCE.md` 尚无勾选 | P1 |
 | 真实账号 API contract 不完整 | 云端页面和解析器已写，但绑定、解绑、数据域缺请求/响应证据 | P1 |
@@ -126,13 +125,13 @@
 | C1-5 | BLE 命令等待对应 ACK，旧 ACK 不串命令 | [x] | connection manager tests |
 | C1-6 | MQTT 连接、topic、payload、订阅和重连与官方一致 | [~] | S + T 已有；缺真实 broker/车辆确认 |
 | C1-7 | 远程锁/解锁/通电/断电必须确认，超时不报假成功 | [x] | confirmation tests |
-| C1-8 | 把 `accErrorStatus/defenceErrorStatus/bikeSetSourceValue` 接入控车策略 | [~] | 解析和策略已存在；页面接线与回归测试未完成 |
-| C1-9 | 接入智能服务到期、云盒销号门禁 | [ ] | 对照官方 code 9/7；按钮和错误反馈一致 |
-| C1-10 | 接入共享车辆 `setCarOperator` 语义 | [ ] | 真实共享账号验证启动/熄火分支 |
+| C1-8 | 把 `accErrorStatus/defenceErrorStatus/bikeSetSourceValue` 接入控车策略 | [x] | S: `mqttMsgDialog`；T: payload、回执等待与页面接线测试 |
+| C1-9 | 接入智能服务到期、云盒销号门禁 | [~] | S + T：code 9/7 已按 modelType 阻断/提示/忽略；缺真实 A |
+| C1-10 | 接入共享车辆 `setCarOperator` 语义 | [~] | S + T：KKS/YJ 双向、其他家族共享通电；缺真实共享 A |
 | C1-11 | 近场六键真车验收 | [~] | mock 矩阵已有；至少一台车六键 D 证据 |
 | C1-12 | 远程六键真车验收 | [~] | mock 矩阵已有；允许远控车型的 D 证据 |
 
-出口：C1-8、C1-9、C1-10 完成，且 C1-11、C1-12 至少覆盖实际支持的车型/命令组合。
+出口：C1-9、C1-10 补齐真实 API 证据，且 C1-11、C1-12 至少覆盖实际支持的车型/命令组合。
 
 ---
 
@@ -232,11 +231,9 @@
 
 严格按以下顺序推进：
 
-1. C1-8：把 MQTT 错误状态接入控车策略和 UI。
-2. C1-9：补智能服务到期/销号门禁。
-3. C1-10：补共享车操作人同步。
-4. C1-11/C1-12：完成一台近场车和一台远程车六键验收。
-5. C2-1~C2-11：按实际可用车辆建立 KKS/TLink/QGJ 握手和感应矩阵。
+1. C1-9/C1-10：用脱敏真实账号响应核对 SIM 状态与 `setCarOperator` contract。
+2. C1-11/C1-12：完成一台近场车和一台远程车六键验收。
+3. C2-1~C2-11：按实际可用车辆建立 KKS/TLink/QGJ 握手和感应矩阵。
 
 完成一项立即补测试、证据、状态和 §0/README 进度；不积攒到最后统一改数字。
 
@@ -250,12 +247,14 @@ CyberVehicleControlPageV2
   -> ControlCommandRoute
   -> ControlChannelResolver
        -> OfficialControlRoute(modelType, isGps, protocol LOGIN)
+  -> OfficialCloudService.resolveSelectedRemoteControlServiceDecision
   -> ControlCommandExecutor
        -> BLE: ConnectionManager.sendCommand
        -> Remote: OfficialMqttService.sendCommandPreferMqtt
             -> MQTT publish/status
             -> HTTP command fallback
   -> ControlCommandConfirmation
+  -> OfficialCloudService.syncCarOperatorAfterCommand
 ```
 
 感应链路：

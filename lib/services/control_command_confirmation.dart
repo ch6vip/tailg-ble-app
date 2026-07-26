@@ -83,6 +83,16 @@ class ControlCommandConfirmation {
     };
   }
 
+  /// Search has no durable target state, but an MQTT search still needs the
+  /// current command response so official error payloads are not missed.
+  static bool needsMqttResponse({
+    required CommandCode command,
+    required String? pendingAtSend,
+  }) {
+    final pending = pendingAtSend?.trim() ?? '';
+    return pending.isNotEmpty && !needsVehicleStateConfirmation(command);
+  }
+
   /// Whether [isLocked]/[isPowerOn] match the expected post-command state.
   static bool matchesExpectedState({
     required CommandCode command,

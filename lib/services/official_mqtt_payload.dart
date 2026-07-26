@@ -94,9 +94,9 @@ class OfficialMqttStatusPayload {
     }
     if (const {5, 6, 7, 20}.contains(accErrorStatus)) {
       return switch (pendingCommandApiName) {
-        'start' => '车辆当前状态不支持启动',
-        'stop' => '车辆当前状态不支持熄火',
-        _ => '车辆当前状态不支持此操作',
+        'start' => '车辆启动失败',
+        'stop' => '车辆熄火失败',
+        _ => null,
       };
     }
     return null;

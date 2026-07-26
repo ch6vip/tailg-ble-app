@@ -98,6 +98,33 @@ void main() {
       );
     });
 
+    test(
+      'find waits for its MQTT response so command errors are observable',
+      () {
+        expect(
+          ControlCommandConfirmation.needsMqttResponse(
+            command: CommandCode.find,
+            pendingAtSend: 'search',
+          ),
+          isTrue,
+        );
+        expect(
+          ControlCommandConfirmation.needsMqttResponse(
+            command: CommandCode.find,
+            pendingAtSend: null,
+          ),
+          isFalse,
+        );
+        expect(
+          ControlCommandConfirmation.needsMqttResponse(
+            command: CommandCode.lock,
+            pendingAtSend: 'lock',
+          ),
+          isFalse,
+        );
+      },
+    );
+
     test('BLE transport success is confirmed without cloud state', () {
       final confirmed = ControlCommandConfirmation.isConfirmed(
         command: CommandCode.lock,
