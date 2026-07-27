@@ -120,7 +120,7 @@ flutter test --coverage
 
 | 工作流 | 触发 | 行为 |
 |--------|------|------|
-| `build.yml` | PR / push `master`·`develop`，手动 | format → analyze → test →（push 时）签名 APK artifact |
+| `build.yml` | 非纯文档 PR / push `master`·`develop`，手动 | format → analyze → test →（push 时）签名 APK artifact；纯 Markdown / LICENSE / NOTICE 提交不触发 |
 | `release.yml` | `v*` tag，手动 | 门禁 → Release APK（可 Telegram 通知） |
 
 密钥、`key.properties`、token、手机号、IMEI、抓包隐私数据 **禁止入库**。
