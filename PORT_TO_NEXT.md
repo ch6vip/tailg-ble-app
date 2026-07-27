@@ -1,45 +1,69 @@
-# 稳定能力移植 tailg-next 清单（PLAN P4-6）
+# tailg-next 稳定能力移植清单
 
-> 源：`tailg-ble-app`（官方完全复刻线）  
-> 目标：`tailg-next`（正式版，`com.ch6vip.tailg.next`）  
-> 建立：2026-07-18 · 对照工作区 `版本说明.md`
+> 源：`tailg-ble-app`（测试 / 官方逻辑复刻线）
+> 目标：`tailg-next`（生产线，`com.ch6vip.tailg.next`）
+> 核验日期：2026-07-27 · 源基线：`2671ea7`
 
-## 原则
+本文只列出适合移植到生产线的能力和证据边界。`tailg-ble-app`
+中的代码不会自动进入 `tailg-next`，每一批移植都需要在目标仓库独立评审。
 
-1. **先在 ble-app 验收**（单测 / 冒烟 / 真机）再移植  
-2. 保持 next 的 applicationId / 品牌 / 云账号配置不变  
-3. 优先移植「通道与状态机」，UI 用 next 现有设计系统
+## 移植原则
 
-## 已具备、建议优先移植
+1. 优先移植纯逻辑、协议和状态机，不复制页面实现。
+2. 保持 `tailg-next` 的 applicationId、品牌、账号配置和设计系统不变。
+3. 有 S + T 证据的逻辑可以进入候选；缺 A/D 的能力必须继续标记待实测。
+4. 不复制 token、手机号、IMEI、MAC、车辆凭据、抓包或本仓环境配置。
+5. 每批移植记录源提交、目标提交、测试结果和真实设备验收状态。
 
-| 能力 | ble-app 落点 | next 建议接入点 | 验收 |
-|------|--------------|-----------------|------|
-| 官方通道路由表 | `OfficialControlRoute` | 控车 service | 单测表驱动 |
-| 通道 resolver | `ControlChannelResolver` | 同上 | 登录/无车/LOGIN 组合 |
-| MQTT 优先 + HTTP 回落 | `OfficialMqttService.sendCommandPreferMqtt` | 远程控车 | mock 成功/回落 |
-| 命令确认（publish≠执行） | `ControlCommandConfirmation` | 爱车发令 | 未确认文案 |
-| LOGIN ≠ GATT ready | `ConnectionManager.isProtocolLoggedIn` | BLE 连接机 | 未 LOGIN 不 willUseBle |
-| 换车断旧 BLE | `AutoConnectService.linkOfficialTarget` | 选车 | 不串车 |
-| 登出断 MQTT/BLE | `afterLogoutSideEffects` | 会话层 | 退出不可发令 |
-| 顶栏通道四态 | `ControlTopBarChannel` | 爱车顶栏 | 四态文案 |
-| IMEI 绑车 / 解绑 | `bindVehicleByImei` / `unbindVehicle` | 添加车辆 / 设置 | API mock |
-| QGJ 感应解锁读写 | `QgjSettingsPage` + 0x2030/31 | 设置 | LOGIN 后读写 |
+证据口径与 [PLAN.md](PLAN.md) 一致：S 为官方源码，T 为自动化测试，A 为真实
+官方账号/API，D 为真实车辆/手机。
 
-## 移植步骤（每个能力）
+## 第一批：控车核心
 
-1. 复制纯逻辑文件（尽量无 Flutter UI 依赖）  
-2. 接 next 的 DI / service locator  
-3. 补 next 侧单测（可复用 ble-app 表驱动用例）  
-4. 真机或 mock 冒烟  
-5. 在 next 发版说明中记录来源 commit
+| 能力 | 源落点 | 当前证据 | 目标侧验收 |
+|------|--------|----------|------------|
+| modelType / isGps / LOGIN 路由 | `OfficialControlRoute` | S + T | 表驱动覆盖所有车型分支 |
+| 通道可用性与命令分流 | `ControlChannelResolver`、`ControlCommandRoute` | S + T | BLE/MQTT/不可用组合 |
+| MQTT 优先、HTTP 回落 | `OfficialMqttService.sendCommandPreferMqtt` | S + T，缺 D | broker 与真车回执 |
+| publish 不等于执行 | `ControlCommandConfirmation` | S + T | 锁、电门、寻车超时与错误 |
+| MQTT 单命令错误 | `OfficialMqttStatusPayload` | S + T | `accErrorStatus` / `defenceErrorStatus` |
+| 智能服务 code 7/9 | `OfficialSmartServiceStatus` | S + T，缺 A | 按 modelType 阻断、提示或忽略 |
+| 车辆操作人同步 | `OfficialCarOperatorPolicy`、`setCarOperator` | S + T，缺 A | 自有车/共享车通电与断电 |
+| 命令防连点和目标绑定 | 控车页 + executor/confirmation guard | T | 发令期间换车、换通道 |
 
-## 暂不移植
+## 第二批：连接与感应
 
-- 像素级官方 UI / 商城等 L3  
-- 未在 ble-app 关门的 P3 深度（完整 OTA 分片写包、真 NFC 写车）  
+| 能力 | 源落点 | 当前证据 | 目标侧验收 |
+|------|--------|----------|------------|
+| GATT connected 与协议 LOGIN 分离 | `ConnectionManager.isProtocolLoggedIn` | S + T，缺 D | 未 LOGIN 禁止控车 |
+| 换车、登出清理会话 | `AutoConnectService`、logout side effects | T，缺 D | BLE/MQTT 不串车 |
+| QGJ HID + proximity | `InductionModeService`、`InductionSettingsPage` | S + T，缺 D | 真车读写、配对、回滚 |
+| TLink mode + distance | `InductionModeService` | S + T，缺 D | 真车开关与距离读回 |
+| KKS HID + RSSI | `InductionModeService`、Android foreground service | S + T，缺 D | 后台、锁屏、停止行为 |
 
-## 完成定义
+真车验收统一参考 [INDUCTION_ACCEPTANCE.md](INDUCTION_ACCEPTANCE.md)，不要把 mock
+结果写成设备验收。
 
-- [ ] 上表「建议优先移植」逐项在 next 有对应代码与测试  
-- [ ] next CI 全绿  
-- [ ] 版本说明中记录移植批次
+## 第三批：云端业务
+
+| 能力 | 源落点 | 当前证据 | 目标侧验收 |
+|------|--------|----------|------------|
+| 登录、token 恢复与失效 | `OfficialCloudService` | T，缺稳定 A | 真实账号生命周期 |
+| 车辆同步、选车与切换 | `OfficialCloudService`、vehicle store | T，缺多车 A/D | 多车一致性 |
+| IMEI 绑定与解绑 | `bindVehicleByImei`、`unbindVehicle` | T，缺 A | 权限与错误码 |
+| 电池、定位、轨迹、围栏、消息 | cloud models/services | T，缺多车型 A | 脱敏 contract 记录 |
+
+## 暂缓移植
+
+- 只有页面或本地 SharedPreferences 演示、没有官方云语义的功能。
+- 未完成真车闭环的 OTA、NFC 写车和完整车型矩阵。
+- 商城、支付、保险、积分、社区、广告等范围外运营能力。
+- `tailg-ble-app` 的 VOID COCKPIT 页面；生产线继续使用自己的设计系统。
+
+## 每批完成定义
+
+- [ ] 记录唯一的源提交与目标提交。
+- [ ] 目标仓库补齐对应单元/集成测试并通过 CI。
+- [ ] 保留源逻辑的失败语义、脱敏和权限边界。
+- [ ] 需要 A/D 的能力明确记录实测结果；未实测不得标完成。
+- [ ] 在 `tailg-next` 的版本说明中记录移植批次和回滚点。

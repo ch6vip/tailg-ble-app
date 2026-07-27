@@ -4,12 +4,12 @@
 
 | Item | Path |
 |------|------|
-| **Decompiled root** | `E:\ctf-aaa\tlddc\decompiled` |
-| Java sources | `E:\ctf-aaa\tlddc\decompiled\sources` |
+| **Decompiled root** | `E:\ctf-aaa\tlddc\3.5.9` |
+| Java sources | `E:\ctf-aaa\tlddc\3.5.9\sources` |
+| Android resources | `E:\ctf-aaa\tlddc\3.5.9\resources` |
 | Package | `com.tailg.run.intelligence` |
-| Package root | `E:\ctf-aaa\tlddc\decompiled\sources\com\tailg\run\intelligence` |
-| Workspace memo | `E:\ctf-aaa\tlddc\对照源-反编译.md` |
-| Key classes | `ControlFragment` · `ControlTypeUtil` · `MqttUtil` · `TLinkBleManager`（full paths in PLAN / 对照源-反编译.md） |
+| Package root | `E:\ctf-aaa\tlddc\3.5.9\sources\com\tailg\run\intelligence` |
+| Key classes | `ControlFragment` · `ControlTypeUtil` · `MqttUtil` · `TLinkBleManager`（full paths in PLAN） |
 
 Before changing control routing, MQTT, or BLE protocol behavior, open the corresponding decompiled class. This tree is local reference material and is not part of the git repo.
 
@@ -39,7 +39,7 @@ There is **no `docs/` tree**. Keep durable notes in those root markdown files (o
 | `test/` | Unit / widget tests |
 | `android/` · `ios/` · … | Platform projects (BLE + location permissions) |
 
-Official APK reverse material lives **outside** this repo: `E:\ctf-aaa\tlddc\decompiled`.
+Official APK reverse material lives **outside** this repo: `E:\ctf-aaa\tlddc\3.5.9`.
 
 ## Build, Test, Development
 
