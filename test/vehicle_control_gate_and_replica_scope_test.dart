@@ -76,10 +76,12 @@ void main() {
       expect(source, contains('已保存为本地草稿（未同步官方围栏）'));
     });
 
-    test('service hub marks after-sales out of replica scope', () {
+    test('service hub omits unavailable after-sales entry', () {
       final source = readSource('lib/pages/service_hub_page.dart');
-      expect(source, contains('outOfReplicaScope'));
-      expect(source, contains('非复刻范围'));
+      expect(source, isNot(contains('售后服务')));
+      expect(source, isNot(contains('outOfReplicaScope')));
+      expect(source, contains('故障诊断'));
+      expect(source, contains('官方账号'));
     });
   });
 

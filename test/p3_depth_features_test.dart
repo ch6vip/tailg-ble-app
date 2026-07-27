@@ -95,7 +95,9 @@ void main() {
         readSource('lib/services/ble_nfc_service.dart'),
         contains('canWriteOfficialNfc'),
       );
-      expect(readSource('PORT_TO_NEXT.md'), contains('P4-6'));
+      final portChecklist = readSource('PORT_TO_NEXT.md');
+      expect(portChecklist, contains('## 暂缓移植'));
+      expect(portChecklist, contains('未完成真车闭环的 OTA、NFC 写车'));
       expect(
         readSource('lib/pages/add_vehicle_page.dart'),
         contains('IMEI 绑车'),
