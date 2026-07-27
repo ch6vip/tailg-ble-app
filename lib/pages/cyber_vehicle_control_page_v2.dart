@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -658,9 +657,12 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     }
   }
 
-  ControlChannelAvailability _commandAvailability(CommandCode command) {
+  ControlChannelAvailability _commandAvailability(
+    CommandCode command, {
+    bool ignoreBusy = false,
+  }) {
     return ControlCommandRoute.resolve(
-      base: _controlAvailability(),
+      base: _controlAvailability(ignoreBusy: ignoreBusy),
       command: command,
       vehicle: officialCloudService.state.selectedVehicle,
     );
@@ -1317,15 +1319,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     );
   }
 
-  void _openShare() {
-    if (!requireCloudVehicle(context)) return;
-    unawaited(
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute<void>(builder: (_) => const ShareBikePage())),
-    );
-  }
-
   void _openNfc() {
     if (!requireCloudVehicle(context)) return;
     unawaited(
@@ -1461,7 +1454,22 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     final signedIn = cloudState.signedIn;
     final hasVehicle = cloudVehicle != null;
     final controlAvailability = _controlAvailability();
-    final visualControlAvailability = _controlAvailability(ignoreBusy: true);
+    final findAvailability = _commandAvailability(
+      CommandCode.find,
+      ignoreBusy: true,
+    );
+    final powerAvailability = _commandAvailability(
+      isPowerOn == true ? CommandCode.powerOff : CommandCode.powerOn,
+      ignoreBusy: true,
+    );
+    final armAvailability = _commandAvailability(
+      isArmed == true ? CommandCode.unlock : CommandCode.lock,
+      ignoreBusy: true,
+    );
+    final seatAvailability = _commandAvailability(
+      CommandCode.openSeat,
+      ignoreBusy: true,
+    );
     final controlChannelStatus = _topBarChannel(
       availability: controlAvailability,
     );
@@ -1495,7 +1503,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _CyberVehicleHeaderDelegate(
-                  expandedExtent: 424,
+                  expandedExtent: 376,
                   vehicleName: _vehicleName(cloudVehicle),
                   rangeText: _rangeLabel(battery).replaceAll(' ', ''),
                   carPhoto: cloudVehicle?.carPhoto ?? '',
@@ -1523,21 +1531,16 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
                       armed: isArmed,
                       busy: _busy,
                       activeCommand: _activeCommand,
-                      controlsEnabled:
-                          signedIn &&
-                          hasVehicle &&
-                          visualControlAvailability.enabled,
-                      dimmed:
-                          !hasVehicle ||
-                          !signedIn ||
-                          !visualControlAvailability.enabled,
+                      findAvailability: findAvailability,
+                      powerAvailability: powerAvailability,
+                      armAvailability: armAvailability,
+                      seatAvailability: seatAvailability,
                       onFind: () => unawaited(_sendCommand(CommandCode.find)),
                       onPowerToggle: _sendPowerToggle,
                       onArmToggle: () => unawaited(_sendArmToggle()),
                       onSettings: _openSettings,
                       onSeat: () =>
                           unawaited(_sendCommand(CommandCode.openSeat)),
-                      onShare: _openShare,
                       onNfc: _openNfc,
                     ),
                     const SizedBox(height: 32),
@@ -1548,8 +1551,6 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
                       totalKm: _totalMileageLabel(cloudVehicle),
                       lastDistance: lastRide.$1,
                       lastDuration: lastRide.$2,
-                      distanceSeries: lastRide.$3,
-                      durationSeries: lastRide.$4,
                       onMapTap: _openLocation,
                       onRideStatsTap: _openRideStats,
                     ),
@@ -1568,9 +1569,7 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
     );
   }
 
-  (String, String, List<double>, List<double>) _lastRideVisuals(
-    OfficialCloudState cloudState,
-  ) {
+  (String, String) _lastRideVisuals(OfficialCloudState cloudState) {
     OfficialTravelRecord? latest;
     for (final day in cloudState.travelDays) {
       for (final record in day.records) {
@@ -1581,30 +1580,13 @@ class _CyberVehicleControlPageV2State extends State<CyberVehicleControlPageV2>
       }
     }
     if (latest == null) {
-      return (
-        '--',
-        '--',
-        const [0.25, 0.45, 0.35, 0.6, 0.5, 0.75, 0.55],
-        const [0.3, 0.5, 0.4, 0.55, 0.45, 0.65, 0.5],
-      );
+      return ('--', '--');
     }
     final distKm = latest.mileageKm;
     final mins = (latest.durationSeconds / 60).round();
-    final seed = (distKm * 100).round().clamp(1, 9999);
-    final rnd = math.Random(seed);
-    final distSeries = List<double>.generate(
-      8,
-      (_) => 0.25 + rnd.nextDouble() * 0.7,
-    );
-    final durSeries = List<double>.generate(
-      8,
-      (_) => 0.2 + rnd.nextDouble() * 0.75,
-    );
     return (
       '${formatDecimalDown(distKm, fractionDigits: 1)} km',
       mins > 0 ? '$mins min' : latest.durationLabel,
-      distSeries,
-      durSeries,
     );
   }
 
@@ -1637,7 +1619,6 @@ abstract final class _Cyber {
   static const line = CyberHomeColors.line;
   static const soft = CyberHomeColors.control;
   static const online = CyberHomeColors.success;
-  static const pink = CyberHomeColors.rideAccent;
   static const screenX = 20.0;
   static const cardMargin = EdgeInsets.symmetric(horizontal: screenX);
   static const tabular = <FontFeature>[FontFeature.tabularFigures()];
@@ -1693,7 +1674,7 @@ class _CyberVehicleHeaderDelegate extends SliverPersistentHeaderDelegate {
   final VoidCallback onChannelTap;
 
   @override
-  double get minExtent => 142;
+  double get minExtent => 152;
 
   @override
   double get maxExtent => expandedExtent;
@@ -1965,7 +1946,7 @@ class _CyberHeroHeader extends StatelessWidget {
               child: VehicleStage(
                 key: const ValueKey('cyber-hero-vehicle'),
                 batteryLevel: level,
-                height: 200,
+                height: 164,
                 imageUrl: carPhoto.trim().isEmpty ? null : carPhoto.trim(),
               ),
             ),
@@ -2439,14 +2420,15 @@ class _CyberControlGrid extends StatelessWidget {
     required this.armed,
     required this.busy,
     required this.activeCommand,
-    required this.controlsEnabled,
-    required this.dimmed,
+    required this.findAvailability,
+    required this.powerAvailability,
+    required this.armAvailability,
+    required this.seatAvailability,
     required this.onFind,
     required this.onPowerToggle,
     required this.onArmToggle,
     required this.onSettings,
     required this.onSeat,
-    required this.onShare,
     required this.onNfc,
   });
 
@@ -2454,14 +2436,15 @@ class _CyberControlGrid extends StatelessWidget {
   final bool? armed;
   final bool busy;
   final CommandCode? activeCommand;
-  final bool controlsEnabled;
-  final bool dimmed;
+  final ControlChannelAvailability findAvailability;
+  final ControlChannelAvailability powerAvailability;
+  final ControlChannelAvailability armAvailability;
+  final ControlChannelAvailability seatAvailability;
   final VoidCallback onFind;
   final Future<void> Function() onPowerToggle;
   final VoidCallback onArmToggle;
   final VoidCallback onSettings;
   final VoidCallback onSeat;
-  final VoidCallback onShare;
   final VoidCallback onNfc;
 
   @override
@@ -2472,66 +2455,71 @@ class _CyberControlGrid extends StatelessWidget {
         busy && activeCommand != null && !active(command);
     final armActive = active(CommandCode.lock) || active(CommandCode.unlock);
     final armSubdued = busy && activeCommand != null && !armActive;
-    return AnimatedOpacity(
+    return Padding(
       key: const ValueKey('cyber-control-grid'),
-      duration: AppMotion.status,
-      opacity: dimmed ? 0.55 : 1,
-      child: Padding(
-        padding: _Cyber.cardMargin,
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _CircleKey(
-                  icon: Lucide.find,
-                  label: '寻车',
-                  busy: active(CommandCode.find),
-                  subdued: subdued(CommandCode.find),
-                  onTap: onFind,
-                ),
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: SlidePowerButton(
-                      isPowered: powered,
-                      enabled: controlsEnabled,
-                      busy: busy,
-                      onSlide: onPowerToggle,
-                    ),
+      padding: _Cyber.cardMargin,
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _CircleKey(
+                icon: Lucide.find,
+                label: '寻车',
+                available: findAvailability.enabled,
+                unavailableReason: findAvailability.disabledReason,
+                busy: active(CommandCode.find),
+                subdued: subdued(CommandCode.find),
+                onTap: onFind,
+              ),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: SlidePowerButton(
+                    isPowered: powered,
+                    enabled: powerAvailability.enabled,
+                    busy: busy,
+                    unavailableReason: powerAvailability.disabledReason,
+                    onUnavailable: onPowerToggle,
+                    onSlide: onPowerToggle,
                   ),
                 ),
-                _CircleKey(
-                  icon: armed == true ? Lucide.unlock : Lucide.lock,
-                  label: armLabel,
-                  busy: armActive,
-                  subdued: armSubdued,
-                  onTap: onArmToggle,
-                ),
-              ],
-            ),
-            const SizedBox(height: 22),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _CircleKey(
-                  icon: Lucide.settings,
-                  label: '车辆设置',
-                  onTap: onSettings,
-                ),
-                _CircleKey(
-                  icon: Lucide.seat,
-                  label: '打开坐垫',
-                  busy: active(CommandCode.openSeat),
-                  subdued: subdued(CommandCode.openSeat),
-                  onTap: onSeat,
-                ),
-                _CircleKey(icon: Lucide.share, label: '车辆分享', onTap: onShare),
-                _CircleKey(icon: Lucide.nfc, label: 'NFC钥匙', onTap: onNfc),
-              ],
-            ),
-          ],
-        ),
+              ),
+              _CircleKey(
+                icon: armed == true ? Lucide.unlock : Lucide.lock,
+                label: armLabel,
+                available: armAvailability.enabled,
+                unavailableReason: armAvailability.disabledReason,
+                busy: armActive,
+                subdued: armSubdued,
+                onTap: onArmToggle,
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _CircleKey(
+                icon: Lucide.settings,
+                label: '车辆设置',
+                onTap: onSettings,
+              ),
+              _CircleKey(
+                icon: Lucide.seat,
+                label: '打开坐垫',
+                available: seatAvailability.enabled,
+                unavailableReason: seatAvailability.disabledReason,
+                busy: active(CommandCode.openSeat),
+                subdued: subdued(CommandCode.openSeat),
+                onTap: onSeat,
+              ),
+              _CircleKey(icon: Lucide.nfc, label: 'NFC钥匙', onTap: onNfc),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -2542,6 +2530,8 @@ class _CircleKey extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.available = true,
+    this.unavailableReason = '',
     this.busy = false,
     this.subdued = false,
   });
@@ -2549,6 +2539,8 @@ class _CircleKey extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool available;
+  final String unavailableReason;
   final bool busy;
   final bool subdued;
 
@@ -2558,21 +2550,24 @@ class _CircleKey extends StatelessWidget {
       // Stay tappable while dimmed so unavailable reason snacks can still fire.
       enabled: true,
       onTap: onTap,
-      semanticsLabel: label,
+      semanticsLabel: available
+          ? label
+          : '$label，不可用${unavailableReason.isEmpty ? '' : '：$unavailableReason'}',
       semanticsButton: true,
+      semanticsEnabled: available,
       child: AnimatedOpacity(
         duration: AppMotion.status,
-        opacity: subdued ? 0.48 : 1,
+        opacity: subdued || !available ? 0.48 : 1,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 60,
               height: 60,
-              decoration: const BoxDecoration(
-                color: _Cyber.card,
+              decoration: BoxDecoration(
+                color: available ? _Cyber.card : CyberHomeColors.cardMuted,
                 shape: BoxShape.circle,
-                boxShadow: AppShadows.cyberActionShadow,
+                boxShadow: available ? AppShadows.cyberActionShadow : null,
               ),
               alignment: Alignment.center,
               child: AnimatedSwitcher(
@@ -2591,23 +2586,32 @@ class _CircleKey extends StatelessWidget {
                         icon,
                         key: ValueKey(icon),
                         size: 25,
-                        color: _Cyber.ink2,
+                        color: available ? _Cyber.ink2 : _Cyber.faint,
                         strokeWidth: 1.8,
                       ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             AnimatedSwitcher(
               duration: AppMotion.status,
               child: Text(
                 busy ? '$label中' : label,
-                key: ValueKey((label, busy)),
-                style: const TextStyle(
+                key: ValueKey((label, busy, available)),
+                style: TextStyle(
                   fontSize: 12,
-                  color: _Cyber.muted,
+                  color: available ? _Cyber.muted : _Cyber.faint,
                   height: 1.2,
                 ),
               ),
+            ),
+            SizedBox(
+              height: 16,
+              child: !available && !busy
+                  ? const Text(
+                      '不可用',
+                      style: TextStyle(fontSize: 10, color: _Cyber.faint),
+                    )
+                  : null,
             ),
           ],
         ),
@@ -2731,8 +2735,6 @@ class _CyberMapStatsRow extends StatelessWidget {
     required this.totalKm,
     required this.lastDistance,
     required this.lastDuration,
-    required this.distanceSeries,
-    required this.durationSeries,
     required this.onMapTap,
     required this.onRideStatsTap,
   });
@@ -2743,8 +2745,6 @@ class _CyberMapStatsRow extends StatelessWidget {
   final String totalKm;
   final String lastDistance;
   final String lastDuration;
-  final List<double> distanceSeries;
-  final List<double> durationSeries;
   final VoidCallback onMapTap;
   final VoidCallback onRideStatsTap;
 
@@ -2753,46 +2753,64 @@ class _CyberMapStatsRow extends StatelessWidget {
     return Padding(
       key: const ValueKey('cyber-map-stats-row'),
       padding: _Cyber.cardMargin,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: AppPressable(
-              onTap: onMapTap,
-              borderRadius: BorderRadius.circular(AppRadii.sheet),
-              semanticsLabel: '车辆位置 $address',
-              semanticsButton: true,
-              child: _MiniMap(location: location, address: address),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final stacked = constraints.maxWidth < 420;
+          final mapCard = AppPressable(
+            key: const ValueKey('cyber-map-entry'),
+            onTap: onMapTap,
+            borderRadius: BorderRadius.circular(AppRadii.sheet),
+            semanticsLabel: '车辆位置 $address',
+            semanticsButton: true,
+            child: _MiniMap(
+              location: location,
+              address: address,
+              height: stacked ? 210 : 260,
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: AppPressable(
-              key: const ValueKey('cyber-ride-stats-entry'),
-              onTap: onRideStatsTap,
-              borderRadius: BorderRadius.circular(AppRadii.sheet),
-              semanticsLabel: '查看骑行统计',
-              semanticsButton: true,
-              child: _RideCard(
-                todayKm: todayKm,
-                totalKm: totalKm,
-                lastDistance: lastDistance,
-                lastDuration: lastDuration,
-                distanceSeries: distanceSeries,
-                durationSeries: durationSeries,
-              ),
+          );
+          final rideCard = AppPressable(
+            key: const ValueKey('cyber-ride-stats-entry'),
+            onTap: onRideStatsTap,
+            borderRadius: BorderRadius.circular(AppRadii.sheet),
+            semanticsLabel: '查看骑行统计',
+            semanticsButton: true,
+            child: _RideCard(
+              height: stacked ? 216 : 260,
+              todayKm: todayKm,
+              totalKm: totalKm,
+              lastDistance: lastDistance,
+              lastDuration: lastDuration,
             ),
-          ),
-        ],
+          );
+          if (stacked) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [mapCard, const SizedBox(height: 12), rideCard],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: mapCard),
+              const SizedBox(width: 12),
+              Expanded(child: rideCard),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
 class _MiniMap extends StatelessWidget {
-  const _MiniMap({required this.location, required this.address});
+  const _MiniMap({
+    required this.location,
+    required this.address,
+    required this.height,
+  });
   final ResolvedVehicleLocation? location;
   final String address;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -2802,7 +2820,7 @@ class _MiniMap extends StatelessWidget {
     final center = LatLng(lat, lng);
 
     return Container(
-      height: 260,
+      height: height,
       decoration: BoxDecoration(
         color: _Cyber.card,
         borderRadius: BorderRadius.circular(AppRadii.sheet),
@@ -2894,25 +2912,23 @@ class _MiniMap extends StatelessWidget {
 
 class _RideCard extends StatelessWidget {
   const _RideCard({
+    required this.height,
     required this.todayKm,
     required this.totalKm,
     required this.lastDistance,
     required this.lastDuration,
-    required this.distanceSeries,
-    required this.durationSeries,
   });
 
+  final double height;
   final String todayKm;
   final String totalKm;
   final String lastDistance;
   final String lastDuration;
-  final List<double> distanceSeries;
-  final List<double> durationSeries;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 260,
+      height: height,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _Cyber.card,
@@ -2931,18 +2947,16 @@ class _RideCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          _Spark(
-            value: lastDistance,
-            label: '最近骑行',
-            color: _Cyber.pink,
-            series: distanceSeries,
-          ),
-          const SizedBox(height: 10),
-          _Spark(
-            value: lastDuration,
-            label: '耗时',
-            color: _Cyber.primary,
-            series: durationSeries,
+          Row(
+            children: [
+              Expanded(
+                child: _RideSummaryMetric(value: lastDistance, label: '最近骑行'),
+              ),
+              Container(width: 1, height: 38, color: _Cyber.line),
+              Expanded(
+                child: _RideSummaryMetric(value: lastDuration, label: '耗时'),
+              ),
+            ],
           ),
           const Spacer(),
           Container(height: 1, color: _Cyber.line),
@@ -2964,50 +2978,27 @@ class _RideCard extends StatelessWidget {
   }
 }
 
-class _Spark extends StatelessWidget {
-  const _Spark({
-    required this.value,
-    required this.label,
-    required this.color,
-    required this.series,
-  });
+class _RideSummaryMetric extends StatelessWidget {
+  const _RideSummaryMetric({required this.value, required this.label});
 
   final String value;
   final String label;
-  final Color color;
-  final List<double> series;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AnimatedValueText(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: _Cyber.ink,
-                  fontFeatures: _Cyber.tabular,
-                ),
-              ),
-              Text(
-                label,
-                style: const TextStyle(fontSize: 11, color: _Cyber.faint),
-              ),
-            ],
+        AnimatedValueText(
+          value,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: _Cyber.ink,
+            fontFeatures: _Cyber.tabular,
           ),
         ),
-        SizedBox(
-          width: 64,
-          height: 32,
-          child: CustomPaint(
-            painter: _SparkPainter(values: series, color: color),
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 11, color: _Cyber.faint)),
       ],
     );
   }
@@ -3035,39 +3026,6 @@ class _Metric extends StatelessWidget {
       ],
     );
   }
-}
-
-class _SparkPainter extends CustomPainter {
-  _SparkPainter({required this.values, required this.color});
-  final List<double> values;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (values.isEmpty) return;
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final path = Path();
-    final n = values.length;
-    for (var i = 0; i < n; i++) {
-      final x = n == 1 ? 0.0 : size.width * i / (n - 1);
-      final y = size.height * (1 - values[i].clamp(0.05, 1.0));
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _SparkPainter old) =>
-      old.values != values || old.color != color;
 }
 
 class _CyberRecentCommands extends StatelessWidget {

@@ -20,7 +20,9 @@ void main() {
     final locationAction = find.bySemanticsLabel('车辆定位');
     expect(locationAction, findsOneWidget);
     expectMinTouchTargetHeight(tester, locationAction);
-    expect(find.text('更多服务'), findsOneWidget);
+    expect(find.text('故障诊断'), findsOneWidget);
+    expect(find.text('官方账号'), findsOneWidget);
+    expect(find.text('更多服务'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -43,11 +45,9 @@ void main() {
       expect(find.text('电池服务'), findsOneWidget);
       expect(find.text('骑行统计'), findsOneWidget);
       expect(find.text('更多'), findsOneWidget);
-      expect(find.text('更多服务'), findsOneWidget);
-
-      // Secondary entries stay off the first screen.
-      expect(find.text('故障诊断'), findsNothing);
-      expect(find.text('官方账号'), findsNothing);
+      expect(find.text('故障诊断'), findsOneWidget);
+      expect(find.text('官方账号'), findsOneWidget);
+      expect(find.text('更多服务'), findsNothing);
       expect(find.text('售后服务'), findsNothing);
       expect(find.text('常用服务'), findsNothing);
     } finally {
@@ -55,24 +55,21 @@ void main() {
     }
   });
 
-  testWidgets('更多服务 opens secondary entries page', (tester) async {
+  testWidgets('direct service entries keep accessible touch targets', (
+    tester,
+  ) async {
     final semantics = tester.ensureSemantics();
     try {
       setTestViewSize(tester, const Size(430, 1800));
       await tester.pumpWidget(const TestApp(home: ServiceHubPage()));
       await tester.pump();
 
-      await tester.tap(find.text('更多服务'));
-      await tester.pumpAndSettle();
-
-      // Page header + list title both say 更多服务.
-      expect(find.text('更多服务'), findsWidgets);
-      expect(find.text('故障诊断'), findsOneWidget);
-      expect(find.text('官方账号'), findsOneWidget);
-      expect(find.text('售后服务'), findsOneWidget);
-      final backAction = find.byKey(const ValueKey('more-services-back'));
-      expect(backAction, findsOneWidget);
-      expectMinTouchTargetHeight(tester, backAction);
+      final diagnostic = find.bySemanticsLabel('故障诊断');
+      final account = find.bySemanticsLabel('官方账号');
+      expect(diagnostic, findsOneWidget);
+      expect(account, findsOneWidget);
+      expectMinTouchTargetHeight(tester, diagnostic);
+      expectMinTouchTargetHeight(tester, account);
     } finally {
       semantics.dispose();
     }

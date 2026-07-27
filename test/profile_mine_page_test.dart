@@ -42,7 +42,7 @@ void main() {
       expect(find.text('账户与支持'), findsOneWidget);
       expect(find.text('设置'), findsOneWidget);
       expect(find.text('消息中心'), findsOneWidget);
-      expect(find.text('帮助与反馈'), findsOneWidget);
+      expect(find.text('帮助与反馈'), findsNothing);
       expect(find.text('关于我们'), findsOneWidget);
       // Vehicle tools live on the service hub, not as equal mine grid tiles.
       expect(find.text('骑行统计'), findsNothing);
@@ -131,10 +131,13 @@ void main() {
       expect(find.text('在线'), findsOneWidget);
       expect(find.text('73%'), findsOneWidget);
       expect(find.text('已登录'), findsOneWidget);
-      expect(find.text('我的积分'), findsOneWidget);
+      expect(find.text('我的积分'), findsNothing);
       expect(find.text('会员 Lv.3'), findsNothing);
       expect(find.text('1280'), findsNothing);
       expect(find.text('退出登录'), findsOneWidget);
+      final phoneIdentity = find.byKey(const ValueKey('mine-phone-identity'));
+      expect(phoneIdentity, findsOneWidget);
+      expect(tester.widget<Semantics>(phoneIdentity).properties.onTap, isNull);
 
       tester.semantics.tap(find.semantics.byLabel('退出登录'));
       await tester.pumpAndSettle();

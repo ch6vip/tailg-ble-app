@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tailg_ble_app/theme/app_colors.dart';
 
-/// P0-2 回归测试：暗色主题接线验证。
-///
-/// 原 Bug：main.dart:228 硬编码 `themeMode: ThemeMode.light`，
-/// 导致 AppColorsDark（app_colors.dart:223-283）已完整定义却永不生效。
+/// 保留亮/暗 token 的独立兼容性验证；主 Cyber 界面当前固定使用亮色。
 void main() {
-  group('P0-2: dark theme wiring', () {
+  group('theme token compatibility', () {
     testWidgets('ThemeMode.system 下，暗色环境返回 AppColorsDark token', (
       tester,
     ) async {

@@ -13,7 +13,8 @@ void main() {
   test('P1-3 busy path never silent-fails keys', () {
     final source = readSource('lib/pages/cyber_vehicle_control_page_v2.dart');
     expect(source, contains("AppSnack.error(context, '正在执行控车指令，请稍候')"));
-    expect(source, contains('dimmed:'));
+    expect(source, contains('busy && activeCommand != null'));
+    expect(source, contains('semanticsEnabled: available'));
   });
 
   test('P1-5 link policy replaces conflicting local vehicle mapping', () {

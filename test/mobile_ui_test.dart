@@ -97,14 +97,12 @@ void main() {
     },
   );
 
-  testWidgets('main mobile tabs keep Cyber surfaces in dark mode', (
-    tester,
-  ) async {
+  testWidgets('main mobile tabs keep Cyber light surfaces', (tester) async {
     setTestViewSize(tester, const Size(390, 844));
     await tester.pumpWidget(
       MaterialApp(
-        themeMode: ThemeMode.dark,
-        darkTheme: _darkTheme(),
+        themeMode: ThemeMode.light,
+        theme: _lightTheme(),
         home: const ProfileMinePage(),
       ),
     );
@@ -115,8 +113,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        themeMode: ThemeMode.dark,
-        darkTheme: _darkTheme(),
+        themeMode: ThemeMode.light,
+        theme: _lightTheme(),
         home: const ServiceHubPage(),
       ),
     );
@@ -127,8 +125,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        themeMode: ThemeMode.dark,
-        darkTheme: _darkTheme(),
+        themeMode: ThemeMode.light,
+        theme: _lightTheme(),
         home: const CyberVehicleControlPageV2(),
       ),
     );
@@ -145,13 +143,13 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        themeMode: ThemeMode.dark,
-        darkTheme: ThemeData(
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: AppColorsDark.instance.pageBg,
+        themeMode: ThemeMode.light,
+        theme: ThemeData(
+          brightness: Brightness.light,
+          scaffoldBackgroundColor: CyberHomeColors.pageBg,
           colorScheme: ColorScheme.fromSeed(
-            seedColor: AppColorsDark.instance.primary,
-            brightness: Brightness.dark,
+            seedColor: CyberHomeColors.primary,
+            brightness: Brightness.light,
           ),
         ),
         home: const LoginPage(),
@@ -166,13 +164,13 @@ void main() {
   });
 }
 
-ThemeData _darkTheme() {
+ThemeData _lightTheme() {
   return ThemeData(
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: AppColorsDark.instance.pageBg,
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: CyberHomeColors.pageBg,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColorsDark.instance.primary,
-      brightness: Brightness.dark,
+      seedColor: CyberHomeColors.primary,
+      brightness: Brightness.light,
     ),
   );
 }

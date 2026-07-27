@@ -9,9 +9,11 @@ void main() {
 
     expect(source, contains("AppSnack.error(context, '正在执行控车指令，请稍候')"));
     expect(source, contains('当前不可控车，请检查蓝牙或网络'));
-    expect(source, contains('dimmed:'));
+    expect(source, contains('semanticsEnabled: available'));
+    expect(source, contains("'不可用'"));
     expect(source, isNot(contains('if (_busy) return;')));
-    // Shortcuts stay tappable while dimmed so reason snacks can fire.
+    // Shortcuts remain tappable for reason feedback while semantics and
+    // visuals expose their command-specific unavailable state.
     expect(source, contains('enabled: true'));
     expect(source, contains('onTap: onTap'));
   });

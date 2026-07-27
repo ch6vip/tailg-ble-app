@@ -22,12 +22,16 @@ class SlidePowerButton extends StatefulWidget {
     required this.onSlide,
     this.enabled = true,
     this.busy = false,
+    this.unavailableReason = '',
+    this.onUnavailable,
   });
 
   final bool? isPowered;
   final Future<void> Function() onSlide;
   final bool enabled;
   final bool busy;
+  final String unavailableReason;
+  final Future<void> Function()? onUnavailable;
 
   @override
   State<SlidePowerButton> createState() => _SlidePowerButtonState();
@@ -67,6 +71,11 @@ class _SlidePowerButtonState extends State<SlidePowerButton>
       !widget.busy &&
       !_awaitingResult &&
       widget.isPowered != null;
+  bool get _canExplainUnavailable =>
+      !widget.enabled &&
+      !widget.busy &&
+      !_awaitingResult &&
+      widget.onUnavailable != null;
 
   String get _label {
     if (_awaitingResult) {
@@ -223,144 +232,158 @@ class _SlidePowerButtonState extends State<SlidePowerButton>
     final powered = widget.isPowered == true;
     final arrow = powered ? Lucide.chevronLeft : Lucide.chevronRight;
     final reduceMotion = MotionPolicy.reduceMotion(context);
+    final semanticsLabel =
+        !widget.enabled && widget.unavailableReason.isNotEmpty
+        ? '$_label：${widget.unavailableReason}'
+        : _label;
     return Semantics(
       key: const ValueKey('slide-power-semantics'),
-      label: _label,
+      label: semanticsLabel,
       hint: _canSlide ? (powered ? '向左滑动关闭车辆电门' : '向右滑动启动车辆电门') : null,
       button: true,
       enabled: _canSlide,
-      onTap: _canSlide ? () => unawaited(_activate()) : null,
+      onTap: _canSlide
+          ? () => unawaited(_activate())
+          : _canExplainUnavailable
+          ? () => unawaited(widget.onUnavailable!.call())
+          : null,
       child: ExcludeSemantics(
-        child: AnimatedBuilder(
-          animation: _shakeAnimation,
-          builder: (context, child) => Transform.translate(
-            offset: Offset(_shakeAnimation.value, 0),
-            child: child,
-          ),
-          child: AnimatedOpacity(
-            duration: AppMotion.status,
-            opacity: _canSlide || _awaitingResult ? 1 : 0.58,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: _trackWidth,
-                  height: _trackHeight,
-                  child: Stack(
-                    children: [
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: CyberHomeColors.controlStrong,
-                          borderRadius: BorderRadius.circular(AppRadii.pill),
-                        ),
-                        child: SizedBox(
-                          width: _trackWidth,
-                          height: _trackHeight,
-                          child: Row(
-                            mainAxisAlignment: powered
-                                ? MainAxisAlignment.start
-                                : MainAxisAlignment.end,
-                            children: [
-                              if (powered) const SizedBox(width: 15),
-                              for (var index = 0; index < 3; index++) ...[
-                                LucideIcon(
-                                  arrow,
-                                  size: AppIconSizes.md,
-                                  color: CyberHomeColors.inkFaint.withValues(
-                                    alpha: 0.62 - index * 0.12,
-                                  ),
-                                ),
-                                if (index < 2) const SizedBox(width: 1),
-                              ],
-                              if (!powered) const SizedBox(width: 15),
-                            ],
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _canExplainUnavailable
+              ? () => unawaited(widget.onUnavailable!.call())
+              : null,
+          child: AnimatedBuilder(
+            animation: _shakeAnimation,
+            builder: (context, child) => Transform.translate(
+              offset: Offset(_shakeAnimation.value, 0),
+              child: child,
+            ),
+            child: AnimatedOpacity(
+              duration: AppMotion.status,
+              opacity: _canSlide || _awaitingResult ? 1 : 0.58,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: _trackWidth,
+                    height: _trackHeight,
+                    child: Stack(
+                      children: [
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: CyberHomeColors.controlStrong,
+                            borderRadius: BorderRadius.circular(AppRadii.pill),
                           ),
-                        ),
-                      ),
-                      AnimatedPositioned(
-                        duration:
-                            _dragging ||
-                                _awaitingResult ||
-                                _resetController.isAnimating
-                            ? Duration.zero
-                            : AppMotion.micro,
-                        curve: AppMotion.pressCurve,
-                        left: _dragPosition,
-                        child: GestureDetector(
-                          key: const ValueKey('slide-power-thumb'),
-                          behavior: HitTestBehavior.opaque,
-                          onHorizontalDragStart: _canSlide
-                              ? _onHorizontalDragStart
-                              : null,
-                          onHorizontalDragUpdate: _canSlide
-                              ? _onHorizontalDragUpdate
-                              : null,
-                          onHorizontalDragEnd: _canSlide
-                              ? _onHorizontalDragEnd
-                              : null,
-                          onHorizontalDragCancel: _canSlide
-                              ? _onHorizontalDragCancel
-                              : null,
-                          child: Container(
-                            width: _thumbSize,
-                            height: _thumbSize,
-                            decoration: const BoxDecoration(
-                              color: CyberHomeColors.card,
-                              shape: BoxShape.circle,
-                              boxShadow: AppShadows.cyberActionShadow,
-                            ),
-                            alignment: Alignment.center,
-                            child: AnimatedSwitcher(
-                              duration: AppMotion.status,
-                              child: _awaitingResult
-                                  ? SizedBox(
-                                      key: ValueKey('power-progress'),
-                                      width: 24,
-                                      height: 24,
-                                      child: Lottie.asset(
-                                        _loadingAsset,
-                                        animate: !reduceMotion,
-                                        repeat: !reduceMotion,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    )
-                                  : const LucideIcon(
-                                      Lucide.power,
-                                      key: ValueKey('power-icon'),
-                                      size: 28,
-                                      color: CyberHomeColors.ink,
-                                      strokeWidth: 1.8,
+                          child: SizedBox(
+                            width: _trackWidth,
+                            height: _trackHeight,
+                            child: Row(
+                              mainAxisAlignment: powered
+                                  ? MainAxisAlignment.start
+                                  : MainAxisAlignment.end,
+                              children: [
+                                if (powered) const SizedBox(width: 15),
+                                for (var index = 0; index < 3; index++) ...[
+                                  LucideIcon(
+                                    arrow,
+                                    size: AppIconSizes.md,
+                                    color: CyberHomeColors.inkFaint.withValues(
+                                      alpha: 0.62 - index * 0.12,
                                     ),
+                                  ),
+                                  if (index < 2) const SizedBox(width: 1),
+                                ],
+                                if (!powered) const SizedBox(width: 15),
+                              ],
                             ),
                           ),
                         ),
-                      ),
-                      if (_successAsset case final asset?)
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: Lottie.asset(
-                              asset,
-                              key: const ValueKey('power-success-animation'),
-                              repeat: false,
-                              fit: BoxFit.fill,
-                              onLoaded: (composition) =>
-                                  _clearSuccessAfter(composition.duration),
+                        AnimatedPositioned(
+                          duration:
+                              _dragging ||
+                                  _awaitingResult ||
+                                  _resetController.isAnimating
+                              ? Duration.zero
+                              : AppMotion.micro,
+                          curve: AppMotion.pressCurve,
+                          left: _dragPosition,
+                          child: GestureDetector(
+                            key: const ValueKey('slide-power-thumb'),
+                            behavior: HitTestBehavior.opaque,
+                            onHorizontalDragStart: _canSlide
+                                ? _onHorizontalDragStart
+                                : null,
+                            onHorizontalDragUpdate: _canSlide
+                                ? _onHorizontalDragUpdate
+                                : null,
+                            onHorizontalDragEnd: _canSlide
+                                ? _onHorizontalDragEnd
+                                : null,
+                            onHorizontalDragCancel: _canSlide
+                                ? _onHorizontalDragCancel
+                                : null,
+                            child: Container(
+                              width: _thumbSize,
+                              height: _thumbSize,
+                              decoration: const BoxDecoration(
+                                color: CyberHomeColors.card,
+                                shape: BoxShape.circle,
+                                boxShadow: AppShadows.cyberActionShadow,
+                              ),
+                              alignment: Alignment.center,
+                              child: AnimatedSwitcher(
+                                duration: AppMotion.status,
+                                child: _awaitingResult
+                                    ? SizedBox(
+                                        key: ValueKey('power-progress'),
+                                        width: 24,
+                                        height: 24,
+                                        child: Lottie.asset(
+                                          _loadingAsset,
+                                          animate: !reduceMotion,
+                                          repeat: !reduceMotion,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      )
+                                    : const LucideIcon(
+                                        Lucide.power,
+                                        key: ValueKey('power-icon'),
+                                        size: 28,
+                                        color: CyberHomeColors.ink,
+                                        strokeWidth: 1.8,
+                                      ),
+                              ),
                             ),
                           ),
                         ),
-                    ],
+                        if (_successAsset case final asset?)
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: Lottie.asset(
+                                asset,
+                                key: const ValueKey('power-success-animation'),
+                                repeat: false,
+                                fit: BoxFit.fill,
+                                onLoaded: (composition) =>
+                                    _clearSuccessAfter(composition.duration),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 17),
-                Text(
-                  _label,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: CyberHomeColors.inkMuted,
-                    fontWeight: FontWeight.w500,
+                  const SizedBox(height: 17),
+                  Text(
+                    _label,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: CyberHomeColors.inkMuted,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

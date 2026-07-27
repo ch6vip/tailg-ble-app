@@ -89,7 +89,14 @@ void main() {
     AppServices.instance.officialCloudService.refreshRideStatisticsOverride =
         (_) async {};
 
-    await tester.pumpWidget(const TestApp(home: CyberVehicleControlPageV2()));
+    await tester.pumpWidget(
+      const TestApp(
+        home: MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(1.3)),
+          child: CyberVehicleControlPageV2(),
+        ),
+      ),
+    );
     await tester.pump();
     // Drain microtasks from silent refresh / MQTT skip / permission deny.
     await tester.pump(const Duration(milliseconds: 50));
@@ -127,6 +134,7 @@ void main() {
     expect(find.text('寻车'), findsWidgets);
     expect(find.text('右滑启动'), findsWidgets);
     expect(find.text('解防'), findsWidgets);
+    expect(find.text('车辆分享'), findsNothing);
     expect(find.text('密码解锁'), findsNothing);
     expect(find.textContaining('点击通电'), findsNothing);
     expect(find.textContaining('点击断电'), findsNothing);
@@ -144,6 +152,16 @@ void main() {
     applyTestViewSize(tester, const Size(360, 800));
     await tester.pump();
     expect(controlsToMapGap(), closeTo(32, 0.1));
+    final mapEntry = find.byKey(const ValueKey('cyber-map-entry'));
+    final rideEntry = find.byKey(const ValueKey('cyber-ride-stats-entry'));
+    expect(
+      tester.getTopLeft(rideEntry).dy,
+      greaterThan(tester.getBottomRight(mapEntry).dy),
+    );
+    expect(
+      tester.getSize(rideEntry).width,
+      closeTo(tester.getSize(mapEntry).width, 0.1),
+    );
     expect(tester.takeException(), isNull);
     applyTestViewSize(tester, const Size(390, 844));
     await tester.pump();
@@ -155,7 +173,7 @@ void main() {
     );
 
     final header = find.byKey(const ValueKey('cyber-collapsing-header'));
-    expect(tester.getSize(header).height, closeTo(424, 0.1));
+    expect(tester.getSize(header).height, closeTo(376, 0.1));
     expect(
       tester
           .widget<Opacity>(

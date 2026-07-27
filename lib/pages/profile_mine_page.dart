@@ -27,19 +27,15 @@ import 'vehicle_message_page.dart';
 /// 布局：
 /// - 扁平资料头（无卡片外壳）
 /// - 默认车辆卡片 + 切换（页内主 elevation 卡）
-/// - 「账户与支持」列表（设置 / 消息 / 帮助 / 关于），与手机号卡同行几何对齐
+/// - 「账户与支持」列表（设置 / 消息 / 关于），与手机号卡同行几何对齐
 /// - 账户行（手机号 / 退出登录）
 /// - 版本脚注
 ///
 /// 车务能力（骑行统计、诊断等）主入口在服务中心，本页不再等权九宫格重复。
 ///
-/// 作为「我的」Tab 内容页使用时，底栏由 shell（`main.dart`）提供，
-/// 本页不再自带 TabBar。也可在预览场景下设置 [showBottomNav] = true。
+/// 作为「我的」Tab 内容页使用，底栏由 shell（`main.dart`）提供。
 class ProfileMinePage extends StatefulWidget {
-  const ProfileMinePage({super.key, this.showBottomNav = false});
-
-  /// 预览 / 独立路由时显示临时底栏；嵌入 shell 时保持 false。
-  final bool showBottomNav;
+  const ProfileMinePage({super.key});
 
   @override
   State<ProfileMinePage> createState() => _ProfileMinePageState();
@@ -48,7 +44,6 @@ class ProfileMinePage extends StatefulWidget {
 class _ProfileMinePageState extends State<ProfileMinePage>
     with AutomaticKeepAliveClientMixin {
   StreamSubscription<OfficialCloudState>? _cloudSub;
-  int _previewNavIndex = 2;
 
   @override
   bool get wantKeepAlive => true;
@@ -313,33 +308,12 @@ class _ProfileMinePageState extends State<ProfileMinePage>
     );
   }
 
-  void _openHelp() {
-    // Official mine routes problem/feedback via customer-menu H5
-    // (`problemService` dict). No native page yet.
-    AppSnack.featureUnavailable(context, '帮助与反馈');
-  }
-
   void _openAbout() {
     unawaited(
       Navigator.of(
         context,
       ).push(MaterialPageRoute<void>(builder: (_) => const AboutAppPage())),
     );
-  }
-
-  void _onPhoneRow() {
-    if (!officialCloudService.state.signedIn) {
-      _openLogin();
-      return;
-    }
-    // Official app has no in-place phone change on mine; phone is login identity.
-    AppSnack.featureUnavailable(context, '更换手机号');
-  }
-
-  void _onPointsTap() {
-    // Decompiled: myPointsCustomer is a menu flag/H5 URL, not a points balance.
-    // Official mine shows static「我的积分 / 赚更多积分」entry — no numeric balance.
-    AppSnack.featureUnavailable(context, '我的积分');
   }
 
   Future<void> _confirmLogout() async {
@@ -383,10 +357,7 @@ class _ProfileMinePageState extends State<ProfileMinePage>
         bottom: false,
         child: ListView(
           physics: const BouncingScrollPhysics(),
-          padding: EdgeInsets.only(
-            top: 6,
-            bottom: widget.showBottomNav ? 24 : bottomPad,
-          ),
+          padding: EdgeInsets.only(top: 6, bottom: bottomPad),
           children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
@@ -405,10 +376,8 @@ class _ProfileMinePageState extends State<ProfileMinePage>
               nickname: _nickname,
               phoneLine: _maskedPhone,
               memberLabel: signedIn ? '已登录' : '游客',
-              showPointsEntry: signedIn,
               onAvatarTap: _onAvatarOrEdit,
               onEditTap: _onAvatarOrEdit,
-              onPointsTap: _onPointsTap,
             ),
             _VehicleCard(
               name: _vehicleName,
@@ -425,7 +394,6 @@ class _ProfileMinePageState extends State<ProfileMinePage>
                   messageBadge: signedIn && unread > 0 ? unread : null,
                   onSettings: _openSettings,
                   onMessages: _openMessages,
-                  onHelp: _openHelp,
                   onAbout: _openAbout,
                 );
               },
@@ -433,7 +401,6 @@ class _ProfileMinePageState extends State<ProfileMinePage>
             _AccountCard(
               phoneValue: signedIn ? _maskedPhone : '未绑定',
               showLogout: signedIn,
-              onPhoneTap: _onPhoneRow,
               onLogoutTap: _confirmLogout,
             ),
             const Padding(
@@ -447,16 +414,6 @@ class _ProfileMinePageState extends State<ProfileMinePage>
           ],
         ),
       ),
-      bottomNavigationBar: widget.showBottomNav
-          ? _PreviewBottomNav(
-              currentIndex: _previewNavIndex,
-              onTap: (i) {
-                if (i == 2) return;
-                setState(() => _previewNavIndex = i);
-                AppSnack.info(context, i == 0 ? '控车' : '服务');
-              },
-            )
-          : null,
     );
   }
 }
@@ -506,10 +463,8 @@ class _ProfileHeader extends StatelessWidget {
     required this.nickname,
     required this.phoneLine,
     required this.memberLabel,
-    required this.showPointsEntry,
     required this.onAvatarTap,
     required this.onEditTap,
-    required this.onPointsTap,
   });
 
   final String avatarGlyph;
@@ -517,10 +472,8 @@ class _ProfileHeader extends StatelessWidget {
   final String nickname;
   final String phoneLine;
   final String memberLabel;
-  final bool showPointsEntry;
   final VoidCallback onAvatarTap;
   final VoidCallback onEditTap;
-  final VoidCallback onPointsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -609,23 +562,6 @@ class _ProfileHeader extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (showPointsEntry) ...[
-                      const SizedBox(width: 10),
-                      AppPressable(
-                        onTap: onPointsTap,
-                        pressedScale: AppMotion.pressScale,
-                        semanticsLabel: '我的积分',
-                        semanticsButton: true,
-                        child: Text(
-                          '我的积分',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: CyberHomeColors.inkSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ],
@@ -812,14 +748,12 @@ class _SupportCard extends StatelessWidget {
     required this.messageBadge,
     required this.onSettings,
     required this.onMessages,
-    required this.onHelp,
     required this.onAbout,
   });
 
   final int? messageBadge;
   final VoidCallback onSettings;
   final VoidCallback onMessages;
-  final VoidCallback onHelp;
   final VoidCallback onAbout;
 
   @override
@@ -832,7 +766,6 @@ class _SupportCard extends StatelessWidget {
         badge: messageBadge,
         onTap: onMessages,
       ),
-      _SupportRowData(icon: Lucide.help, title: '帮助与反馈', onTap: onHelp),
       _SupportRowData(icon: Lucide.info, title: '关于我们', onTap: onAbout),
     ];
 
@@ -964,13 +897,11 @@ class _AccountCard extends StatelessWidget {
   const _AccountCard({
     required this.phoneValue,
     required this.showLogout,
-    required this.onPhoneTap,
     required this.onLogoutTap,
   });
 
   final String phoneValue;
   final bool showLogout;
-  final VoidCallback onPhoneTap;
   final VoidCallback onLogoutTap;
 
   @override
@@ -981,46 +912,41 @@ class _AccountCard extends StatelessWidget {
       decoration: _Mine.cardDecoration,
       child: Column(
         children: [
-          AppPressable(
-            onTap: onPhoneTap,
-            pressedBackground: CyberHomeColors.cardMuted,
-            semanticsLabel: '手机号 $phoneValue',
-            semanticsButton: true,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 52),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 15,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '手机号',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0,
-                          color: CyberHomeColors.ink,
+          Semantics(
+            key: const ValueKey('mine-phone-identity'),
+            container: true,
+            label: '手机号 $phoneValue',
+            child: ExcludeSemantics(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 52),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 15,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '手机号',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0,
+                            color: CyberHomeColors.ink,
+                          ),
                         ),
                       ),
-                    ),
-                    Text(
-                      phoneValue,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: CyberHomeColors.inkMuted,
-                        fontFeatures: _Mine.tabularNums,
+                      Text(
+                        phoneValue,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: CyberHomeColors.inkMuted,
+                          fontFeatures: _Mine.tabularNums,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    const LucideIcon(
-                      Lucide.chevronRight,
-                      size: 16,
-                      color: CyberHomeColors.inkFaint,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1158,76 +1084,6 @@ class _LogoutSheet extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Optional preview bottom nav (standalone / design review only)
-// ═══════════════════════════════════════════════════════════════════════════
-class _PreviewBottomNav extends StatelessWidget {
-  const _PreviewBottomNav({required this.currentIndex, required this.onTap});
-
-  final int currentIndex;
-  final ValueChanged<int> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final items = const [
-      (Lucide.vehicle, '控车'),
-      (Lucide.service, '服务'),
-      (Lucide.mine, '我的'),
-    ];
-    return Material(
-      color: CyberHomeColors.card,
-      elevation: 0,
-      child: SafeArea(
-        top: false,
-        child: Container(
-          height: 56,
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: CyberHomeColors.line)),
-          ),
-          child: Row(
-            children: [
-              for (var i = 0; i < items.length; i++)
-                Expanded(
-                  child: AppPressable(
-                    onTap: () => onTap(i),
-                    pressedScale: AppMotion.pressScale,
-                    semanticsLabel: items[i].$2,
-                    semanticsButton: true,
-                    semanticsSelected: currentIndex == i,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        LucideIcon(
-                          items[i].$1,
-                          size: 22,
-                          color: currentIndex == i
-                              ? CyberHomeColors.primary
-                              : CyberHomeColors.inkFaint,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          items[i].$2,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0,
-                            color: currentIndex == i
-                                ? CyberHomeColors.primary
-                                : CyberHomeColors.inkFaint,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
       ),
     );
   }

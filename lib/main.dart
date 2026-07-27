@@ -526,9 +526,7 @@ class _TailgBleAppState extends State<TailgBleApp> {
         ),
         extensions: const [ImmersiveTokens.light],
       ),
-      // P0-2: 接线暗色主题。AppColorsDark 已完整定义（app_colors.dart:223-283）
-      // 但此前被 ThemeMode.light 硬编码旁路。现改为跟随系统。
-      // Sprint 3 Token 重建后通过 ThemeExtension<AppTokens> 统一注入。
+      // Keep dark tokens available for future pages that support both modes.
       darkTheme: ThemeData(
         colorScheme: darkColorScheme,
         scaffoldBackgroundColor: VoidColors.voidDeep,
@@ -579,8 +577,8 @@ class _TailgBleAppState extends State<TailgBleApp> {
         ),
         extensions: const [ImmersiveTokens.dark],
       ),
-      // VOID COCKPIT is dark-first; system light still works via light tokens.
-      themeMode: ThemeMode.dark,
+      // Current Cyber cockpit pages use the light token set directly.
+      themeMode: ThemeMode.light,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

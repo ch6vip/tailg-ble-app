@@ -2,7 +2,7 @@
 
 台铃电动车 **官方 App（台铃智能）的非官方 Flutter 复刻实验**。
 
-目标不是「只做云端遥控器」，而是在功能、业务逻辑、数据通道与状态机上 **对齐官方**：近场 BLE、远程 MQTT、云 API、绑车与车况全链路可用。UI 采用自有 **VOID COCKPIT** 设计语言（Awwwards 级暗色画布 + Lucide 图标），**不要求像素级抄皮肤**。
+目标不是「只做云端遥控器」，而是在功能、业务逻辑、数据通道与状态机上 **对齐官方**：近场 BLE、远程 MQTT、云 API、绑车与车况全链路可用。UI 采用自有 **VOID COCKPIT** 设计语言（轻量 Cyber 驾驶舱 + Lucide 图标），**不要求像素级抄皮肤**。
 
 > 仅供学习研究与个人车辆管理。请勿用于未授权车辆或任何违法用途。
 
@@ -150,17 +150,17 @@ flutter run --dart-define=TIANDITU_TOKEN=<token>
 
 ## 设计
 
-**VOID COCKPIT**（暗色优先 · 实验排版 · 动能环可视化）
+**VOID COCKPIT**（亮色 Cyber 驾驶舱 · 紧凑信息层级 · 状态动效）
 
 | 层 | 路径 | 说明 |
 |----|------|------|
 | Tokens | `lib/theme/app_void.dart` | `VoidColors` / `VoidType` / `VoidMotion` / `Glow` |
-| 兼容 | `lib/theme/app_colors.dart` | 静态 token 对齐 void 深色；`AppColors.of` 仍可用 |
-| Canvas | `lib/widgets/void_canvas.dart` | 星云底、玻璃面板、能量环、section label |
-| 底栏 | `lib/widgets/void_nav.dart` | 悬浮轨道导航（控车主入口发光） |
+| 兼容 | `lib/theme/app_colors.dart` | Cyber 亮色 token；`AppColors.of` 保留亮/暗色兼容 |
+| Canvas | `lib/widgets/void_canvas.dart` | 旧 VOID 组件兼容层，主 Tab 不再使用装饰画布 |
+| 底栏 | `lib/main.dart` | 紧凑三栏导航（服务 / 控车 / 我的） |
 | 图标 | `flutter_lucide` + `lib/widgets/lucide_icon.dart` | **仅 Lucide**；禁止 `Icons.*` 与 emoji |
 
-触控目标 ≥ 44×44；颜色不作唯一信息载体。ThemeMode 默认 dark。
+触控目标 ≥ 44×44；颜色不作唯一信息载体。当前主界面固定使用亮色主题。
 
 ---
 

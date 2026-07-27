@@ -1,10 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../widgets/app_pressable.dart';
-import '../widgets/app_snack.dart';
 import '../widgets/cloud_vehicle_gate.dart';
 import '../widgets/lucide_icon.dart';
 import 'battery_details_page.dart';
@@ -128,120 +125,33 @@ class ServiceHubPage extends StatelessWidget {
               child: Container(
                 decoration: _serviceCardDecoration,
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                child: _ServiceListTile(
-                  icon: Lucide.more,
-                  title: '更多服务',
-                  subtitle: '故障诊断、官方账号、售后服务',
-                  onTap: () {
-                    unawaited(
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const _MoreServicesPage(),
-                        ),
+                child: Column(
+                  children: [
+                    _ServiceListTile(
+                      icon: Lucide.stethoscope,
+                      title: '故障诊断',
+                      subtitle: '车辆健康与异常排查',
+                      onTap: () =>
+                          openCloudGatedPage(context, const DiagnosticPage()),
+                    ),
+                    const Divider(
+                      height: 1,
+                      thickness: 1,
+                      indent: 60,
+                      color: CyberHomeColors.line,
+                    ),
+                    _ServiceListTile(
+                      icon: Lucide.cloud,
+                      title: '官方账号',
+                      subtitle: '云端登录与账号同步',
+                      onTap: () => openCloudGatedPage(
+                        context,
+                        const OfficialCloudPage(),
+                        requireVehicle: false,
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MoreServicesPage extends StatelessWidget {
-  const _MoreServicesPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: CyberHomeColors.pageBg,
-      body: SafeArea(
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0, 10, 0, 8),
-              child: Row(
-                children: [
-                  AppPressable(
-                    key: const ValueKey('more-services-back'),
-                    onTap: () => Navigator.pop(context),
-                    semanticsLabel: '返回',
-                    semanticsButton: true,
-                    child: Container(
-                      width: AppTouchTargets.min,
-                      height: AppTouchTargets.min,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: CyberHomeColors.card,
-                        boxShadow: AppShadows.cyberActionShadow,
-                      ),
-                      child: const LucideIcon(
-                        Lucide.arrowLeft,
-                        size: 20,
-                        color: CyberHomeColors.inkSecondary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    '更多服务',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: CyberHomeColors.ink,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              decoration: _serviceCardDecoration,
-              child: Column(
-                children: [
-                  _ServiceListTile(
-                    icon: Lucide.stethoscope,
-                    title: '故障诊断',
-                    subtitle: '车辆健康与异常排查',
-                    onTap: () =>
-                        openCloudGatedPage(context, const DiagnosticPage()),
-                  ),
-                  const Divider(
-                    height: 1,
-                    thickness: 1,
-                    indent: 60,
-                    color: CyberHomeColors.line,
-                  ),
-                  _ServiceListTile(
-                    icon: Lucide.cloud,
-                    title: '官方账号',
-                    subtitle: '云端登录与账号同步',
-                    onTap: () => openCloudGatedPage(
-                      context,
-                      const OfficialCloudPage(),
-                      requireVehicle: false,
-                    ),
-                  ),
-                  const Divider(
-                    height: 1,
-                    thickness: 1,
-                    indent: 60,
-                    color: CyberHomeColors.line,
-                  ),
-                  _ServiceListTile(
-                    icon: Lucide.help,
-                    title: '售后服务',
-                    subtitle: '非复刻范围 · 请使用官方渠道',
-                    onTap: () => AppSnack.outOfReplicaScope(context, '售后服务'),
-                  ),
-                ],
               ),
             ),
           ],

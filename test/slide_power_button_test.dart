@@ -135,4 +135,36 @@ void main() {
     await tester.pump();
     expect(activations, 0);
   });
+
+  testWidgets('unavailable slider remains tappable for reason feedback', (
+    tester,
+  ) async {
+    var explanations = 0;
+    var activations = 0;
+    await tester.pumpWidget(
+      TestApp(
+        home: Scaffold(
+          body: Center(
+            child: SlidePowerButton(
+              isPowered: false,
+              enabled: false,
+              unavailableReason: '蓝牙未连接',
+              onUnavailable: () async {
+                explanations += 1;
+              },
+              onSlide: () async {
+                activations += 1;
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('控车不可用'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('slide-power-semantics')));
+    await tester.pump();
+    expect(explanations, 1);
+    expect(activations, 0);
+  });
 }
