@@ -87,8 +87,14 @@ flutter run --dart-define=TIANDITU_TOKEN=<token>
 
 | Workflow | Trigger | Behavior |
 |----------|---------|----------|
-| `.github/workflows/build.yml` | PR/push `master`·`develop`, manual | format → analyze → test → coverage gate; push also builds signed arm64 APK artifact |
+| `.github/workflows/build.yml` | PR/push `master`·`develop`, manual | format → analyze → test → coverage gate；仅 Android 运行时相关 push 构建签名 arm64 APK，手动触发始终构建 |
 | `.github/workflows/release.yml` | `v*` tags, manual | same gates → GitHub Release (+ optional Telegram) |
+
+APK path gate in `build.yml`:
+
+- Build APK: changes under `lib/`, `assets/`, `android/`, dependency files (`pubspec.yaml` / `pubspec.lock`), `.metadata`, or the build workflow itself
+- Skip APK: docs, tests, acceptance records, `tool/`, and non-Android platform-only changes
+- Format, analyze, tests, and coverage still run for every matching push/PR; release and manual workflows always build
 
 Never commit keystores, `key.properties`, tokens, phone numbers, IMEI, or raw captures. Secrets only via GitHub Actions secrets / local untracked files.
 
